@@ -1,0 +1,3 @@
+// the configured options and settings for MRMC_CPP
+#define MRMC_CPP_VERSION_MAJOR @MRMC_CPP_VERSION_MAJOR@
+#define MRMC_CPP_VERSION_MINOR @MRMC_CPP_VERSION_MINOR@
