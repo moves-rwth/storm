@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 	
 	std::cout << "Hello, World." << std::endl;
 	std::cout << "This is MRMC-Cpp Version " << MRMC_CPP_VERSION_MAJOR << "." << MRMC_CPP_VERSION_MINOR << std::endl;
-	
+
 	return 0;
 }
 
