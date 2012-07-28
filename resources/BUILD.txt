@@ -1,0 +1,16 @@
+CMake
+
+Prerequisites:
+ Boost >= 1.49
+	Build using the Boost Build system, for x64 use "bjam address-model=64" or "bjam.exe address-model=64 --build-type=complete"
+	You may use --toolset to specify the compiler, for ex. msvc-10.0, intel11.1, etc
+ Doxygen
+	Set DOXYGEN_EXECUTABLE to your doxygen executable, e.g. "C:/Program Files/doxygen/bin/doxygen.exe"
+ GTest >= 1.6.0
+	Download, build using CMake
+	If you installed gtest to e.g. "C:/C++ Projects/gtest-1.6.0"
+	Set GTEST_INCLUDE_DIR to "C:/C++ Projects/gtest-1.6.0/include"
+	Set GTEST_LIBRARY to 
+	Set GTEST_LIBRARY_DEBUG to 
+	Set GTEST_MAIN_LIBRARY to 
+	Set GTEST_MAIN_LIBRARY_DEBUG to 
