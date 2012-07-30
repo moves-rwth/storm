@@ -35,6 +35,7 @@ include_directories("${PROJECT_SOURCE_DIR}/src")
 FIND_PACKAGE(GTest REQUIRED)
 FIND_PACKAGE(Boost REQUIRED)
 FIND_PACKAGE(Doxygen REQUIRED)
+FIND_PACKAGE(Threads REQUIRED)
 
 if(Boost_FOUND)
 include_directories(${Boost_INCLUDE_DIRS})
@@ -69,4 +70,13 @@ add_test(
     NAME MRMC-tests
     COMMAND MRMC-tests
 )
+
+# GTest needs pThreads, so it is linked into MRMC-tests.
+if (THREADS_FOUND)
+
+include_directories(${THREADS_INCLUDE_DIRS})
+target_link_libraries (MRMC-tests ${CMAKE_THREAD_LIBS_INIT})
+
+endif(THREADS_FOUND)
+
 endif(GTEST_FOUND)
