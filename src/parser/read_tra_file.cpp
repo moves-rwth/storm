@@ -1,5 +1,9 @@
-/* TODO: Include the proper description here, with reference to the original authors
- * read_tra_file.cpp
+/*! read_tra_file.cpp
+ * Provides functions for reading a *.tra file describing the transition
+ * system of a Markov chain (DTMC) and saving it into a corresponding
+ * matrix.
+ *
+ * Reuses code from the file "read_tra_file.c" from the old MRMC project.
  *
  *  Created on: 15.08.2012
  *      Author: Thomas Heinemann
@@ -81,7 +85,6 @@ static uint_fast32_t make_first_pass(FILE* p) {
 
 sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename)
 {
-   //TODO: Tidy this function up + comment(Thomas Heinemann, 15-08-2012)
    FILE *p;
    char  s[1024];
    uint_fast32_t rows, row, col, nnz, non_zero;
@@ -125,7 +128,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename)
    sp = new sparse::StaticSparseMatrix<double>(rows,non_zero);
    sp->initialize();
    if ( NULL == sp ) {
-      //TODO: Throw exception (Thomas Heinemann, 15-08-2012)
+      throw std::bad_alloc();
       return NULL;
       }
 
