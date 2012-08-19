@@ -1,0 +1,29 @@
+CMake
+
+Prerequisites:
+ Boost >= 1.49
+	Build using the Boost Build system, for x64 use "bjam address-model=64" or "bjam.exe address-model=64 --build-type=complete"
+	You may use --toolset to specify the compiler, for ex. msvc-10.0, intel11.1, etc
+ Doxygen
+	Set DOXYGEN_EXECUTABLE to your doxygen executable, e.g. "C:/Program Files/doxygen/bin/doxygen.exe"
+ GTest >= 1.6.0
+	Download, build using CMake
+	If you installed gtest to e.g. "C:/C++ Projects/gtest-1.6.0"
+	Set GTEST_INCLUDE_DIR to "C:/C++ Projects/gtest-1.6.0/include"
+	Set GTEST_LIBRARY to "C:/C++ Projects/gtest-1.6.0/build/Release/gtest.lib"
+	Set GTEST_LIBRARY_DEBUG to "C:/C++ Projects/gtest-1.6.0/build/Debug/gtest.lib"
+	Set GTEST_MAIN_LIBRARY to "C:/C++ Projects/gtest-1.6.0/build/Release/gtest_main.lib"
+	Set GTEST_MAIN_LIBRARY_DEBUG to "C:/C++ Projects/gtest-1.6.0/build/Debug/gtest_main.lib"
+ STLSoft
+	Download from http://www.stlsoft.org/
+	Headers-Only, unpack to a location of your choice, e.g. "C:/C++ Projects/stlsoft"
+	Set STLSOFT_INCLUDE_DIR to "C:/C++ Projects/stlsoft/include"
+ Pantheios
+	Download from http://www.pantheios.org/
+	Unpack and build following the provided instructions
+	If you installed Pantheios to e.g. "C:/C++ Projects/pantheios"
+	Set PANTHEIOS_INCLUDE_DIR to "C:/C++ Projects/pantheios/include"
+	The other fields should be auto completed after to next "Configure" round
+
+If no error occured during the last CMake Configure round, press Generate. 
+Now you can build MRMC-Cpp using the generated project/makefiles in the Build folder you selected.

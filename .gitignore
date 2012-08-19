@@ -24,4 +24,4 @@ ipch/
 obj/
 
 # The build Dir
-build/
+build//CMakeLists.txt
