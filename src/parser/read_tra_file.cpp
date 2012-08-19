@@ -24,7 +24,6 @@ namespace mrmc {
 
 namespace parser{
 
-
 /*!
 * This method does the first pass through the .tra file and computes
 * the number of non zero elements that are not diagonal elements,
@@ -83,8 +82,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
  * @return a pointer to a sparse matrix.
  */
 
-sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename)
-{
+sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
    FILE *p;
    char  s[1024];
    uint_fast32_t rows, row, col, nnz, non_zero;
@@ -155,6 +153,6 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename)
    return sp;
 }
 
-}
+} //namespace parser
 
-}
+} //namespace mrmc
