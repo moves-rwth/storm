@@ -2,7 +2,7 @@
  * wrong_file_format.h
  *
  *  Created on: 16.08.2012
- *      Author: thomas
+ *      Author: Thomas Heinemann
  */
 
 #ifndef WRONG_FILE_FORMAT_H_

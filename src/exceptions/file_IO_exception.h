@@ -2,7 +2,7 @@
  * file_IO_exception.h
  *
  *  Created on: 16.08.2012
- *      Author: thomas
+ *      Author: Thomas Heinemann
  */
 
 #ifndef MRMC_EXCEPTIONS_FILE_IO_EXCEPTION_H_

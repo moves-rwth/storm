@@ -40,10 +40,8 @@ static uint_fast32_t make_first_pass(FILE* p) {
       pantheios::log_ERROR("make_first_pass was called with NULL! (SHOULD NEVER HAPPEN)");
       throw exceptions::file_IO_exception ("make_first_pass: File not readable (this should be checked before calling this function!)");
    }
-
-   char  s[1024], states[7], transitions[12];
-   int rows=0, row=0, col=0, non_zero=0;
-   double val=0.0;
+   char s[1024];                 //String buffer
+   uint_fast32_t rows=0, non_zero=0;
 
    //Reading No. of states
    if (fgets(s, 1024, p) != NULL) {
@@ -64,6 +62,8 @@ static uint_fast32_t make_first_pass(FILE* p) {
    //And increase number of transitions
    while (NULL != fgets( s, 1024, p ))
    {
+      uint_fast32_t row=0, col=0;
+      double val=0.0;
       if (sscanf( s, "%d%d%lf", &row, &col, &val ) != 3) {
          throw mrmc::exceptions::wrong_file_format();
       }
@@ -84,10 +84,8 @@ static uint_fast32_t make_first_pass(FILE* p) {
 
 sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
    FILE *p;
-   char  s[1024];
-   uint_fast32_t rows, row, col, nnz, non_zero;
-   double val = 0.0;
-   int count = 0;
+   char s[1024];
+   uint_fast32_t rows, non_zero;
    sparse::StaticSparseMatrix<double> *sp = NULL;
 
    p = fopen(filename, "r");
@@ -108,8 +106,12 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
       }
    }
 
-   //Reading No. of transitions
+   /* Reading No. of transitions
+    * Note that the result is not used in this function as make_first_pass()
+    * computes the relevant number (non_zero)
+    */
    if (fgets(s, 1024, p) != NULL) {
+      uint_fast32_t nnz=0;
       if (sscanf( s, "TRANSITIONS %d", &nnz) == 0) {
          throw mrmc::exceptions::wrong_file_format();
       }
@@ -133,6 +135,8 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
    //Reading transitions (one per line) and saving the results in the matrix
    while (NULL != fgets( s, 1024, p ))
    {
+      uint_fast32_t row=0, col=0;
+      double val = 0.0;
       if (sscanf( s, "%d%d%lf", &row, &col, &val) != 3) {
          throw mrmc::exceptions::wrong_file_format();
       }
@@ -142,12 +146,10 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
                            pantheios::integer(row), " x ",
                            pantheios::integer(col));
       sp->addNextValue(row,col,val);
-      ++count;
    }
 
    (void)fclose(p);
 
-   pantheios::log_DEBUG("Written ", pantheios::integer(count), " Elements");
    pantheios::log_DEBUG("Finalizing Matrix");
    sp->finalize();
    return sp;
