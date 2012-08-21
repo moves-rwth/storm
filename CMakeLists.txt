@@ -6,7 +6,11 @@ project (MRMC-cpp CXX C)
 set (MRMC_CPP_VERSION_MAJOR 1)
 set (MRMC_CPP_VERSION_MINOR 0)
  
-set (CMAKE_CXX_FLAGS "-g")
+#Configurations for GCC
+if(CMAKE_COMPILER_IS_GNUCC)
+    #Debug symbols
+    set (CMAKE_CXX_FLAGS "-g")
+endif()
  
 # configure a header file to pass some of the CMake settings
 # to the source code
