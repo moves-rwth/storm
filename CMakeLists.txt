@@ -11,7 +11,7 @@ set (CMAKE_CXX_FLAGS "-g")
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
-  "${PROJECT_SOURCE_DIR}/src/MRMCConfig.h.in"
+  "${PROJECT_SOURCE_DIR}/MRMCConfig.h.in"
   "${PROJECT_BINARY_DIR}/MRMCConfig.h"
   )
  
