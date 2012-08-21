@@ -61,10 +61,16 @@ TEST(ReadTraFileTest, ParseFileTest1) {
    ASSERT_EQ(val,0);
 }
 
-TEST(ReadTraFileTest, WrongFormatTestHeader) {
-   pantheios::log_INFORMATIONAL("Started WrongFormatTestHeader");
+TEST(ReadTraFileTest, WrongFormatTestHeader1) {
+   pantheios::log_INFORMATIONAL("Started WrongFormatTestHeader1");
 
-   ASSERT_THROW(mrmc::parser::read_tra_file("test/parser/wrong_format_header.tra"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::read_tra_file("test/parser/wrong_format_header1.tra"), mrmc::exceptions::wrong_file_format);
+}
+
+TEST(ReadTraFileTest, WrongFormatTestHeader2) {
+   pantheios::log_INFORMATIONAL("Started WrongFormatTestHeader2");
+
+   ASSERT_THROW(mrmc::parser::read_tra_file("test/parser/wrong_format_header2.tra"), mrmc::exceptions::wrong_file_format);
 }
 
 TEST(ReadTraFileTest, WrongFormatTestTransition) {

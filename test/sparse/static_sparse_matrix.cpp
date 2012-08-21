@@ -3,7 +3,6 @@
 #include "src/exceptions/invalid_argument.h"
 
 TEST(StaticSparseMatrixTest, ZeroRowsTest) {
-   pantheios::log_INFORMATIONAL("Started ZeroRowsTest");
 	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(0, 50);
 
 	ASSERT_THROW(ssm->initialize(), mrmc::exceptions::invalid_argument);
@@ -92,11 +91,16 @@ TEST(StaticSparseMatrixTest, Test) {
 	}
 
 	// test for a few of the empty rows
-	for (int row = 14; row < 24; ++row) {
+	for (int row = 15; row < 24; ++row) {
 		for (int col = 1; col <= 25; ++col) {
-			target = 1;
-			ASSERT_FALSE(ssm->getValue(row, col, &target));
-			ASSERT_EQ(0, target);
+		   target = 1;
+		   if (row != col) {
+		      ASSERT_FALSE(ssm->getValue(row, col, &target));
+		   } else {
+		      ASSERT_TRUE(ssm->getValue(row, col, &target));
+		   }
+
+		   ASSERT_EQ(0, target);
 		}
 	}
 

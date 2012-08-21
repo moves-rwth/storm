@@ -33,6 +33,11 @@ class StaticSparseMatrix {
 		current_size = 0;
 		storage_size = 0;
 		
+		value_storage = NULL;
+		diagonal_storage = NULL;
+		column_indications = NULL;
+		row_indications = NULL;
+
 		row_count = rows;
 		non_zero_entry_count = non_zero_entries;
 
@@ -71,7 +76,7 @@ class StaticSparseMatrix {
 		}
 
 		if ((row > row_count) || (col > row_count) || (row == 0) || (col == 0)) {
-			throw new mrmc::exceptions::out_of_range("mrmc::StaticSparseMatrix::getValue: row or col not in 1 .. rows");
+			throw mrmc::exceptions::out_of_range("mrmc::StaticSparseMatrix::getValue: row or col not in 1 .. rows");
 		}
 
 		uint_fast32_t row_start = row_indications[row - 1];
@@ -100,12 +105,12 @@ class StaticSparseMatrix {
 
 		if (row_count == 0) {
 			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid_argument for row_count = 0");
-			throw new mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: Matrix with 0 rows is not reasonable");
+			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: Matrix with 0 rows is not reasonable");
 		}
 
 		if (((row_count * row_count) - row_count) < non_zero_entry_count) {
 			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid_argument: More non-zero entries than entries in target matrix");
-			throw new mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: More non-zero entries than entries in target matrix");
+			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: More non-zero entries than entries in target matrix");
 		}
 
 		storage_size = non_zero_entry_count;
@@ -122,10 +127,10 @@ class StaticSparseMatrix {
 		
 		if ((value_storage == NULL) || (column_indications == NULL) || (row_indications == NULL) || (diagonal_storage == NULL)) {
 			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing bad_alloc: memory allocation failed");
-#ifdef __linux__
-			throw new std::bad_alloc();
+#ifdef _WIN32
+			throw std::bad_alloc("mrmc::StaticSparseMatrix::initialize: memory allocation failed");
 #else
-			throw new std::bad_alloc("mrmc::StaticSparseMatrix::initialize: memory allocation failed");
+			throw std::bad_alloc();
 #endif
 		}
 	}
@@ -138,7 +143,7 @@ class StaticSparseMatrix {
 	void addNextValue(const uint_fast32_t row, const uint_fast32_t col, const T value) {
 		if ((row > row_count) || (col > row_count) || (row == 0) || (col == 0)) {
 			pantheios::log_ERROR("StaticSparseMatrix::addNextValue: Throwing out_of_range: row or col not in 1 .. rows");
-			throw new mrmc::exceptions::out_of_range("mrmc::StaticSparseMatrix::addNextValue: row or col not in 1 .. rows");
+			throw mrmc::exceptions::out_of_range("mrmc::StaticSparseMatrix::addNextValue: row or col not in 1 .. rows");
 		}
 		
 		if (row == col) {
@@ -162,7 +167,7 @@ class StaticSparseMatrix {
 	void finalize() {
 		if (storage_size != current_size) {
 			pantheios::log_ERROR("StaticSparseMatrix::finalize: Throwing invalid_state: Wrong call count for addNextValue");
-			throw new mrmc::exceptions::invalid_state("mrmc::StaticSparseMatrix::finalize: Wrong call count for addNextValue");
+			throw mrmc::exceptions::invalid_state("mrmc::StaticSparseMatrix::finalize: Wrong call count for addNextValue");
 		}
 
 		if (last_row != row_count) {
