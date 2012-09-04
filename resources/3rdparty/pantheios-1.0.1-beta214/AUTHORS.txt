@@ -1,0 +1,74 @@
+pantheios - Authors
+===================
+
+Updated:    13th August 2011
+
+
+Authors:
+
+  Matthew Wilson (all those crazy inventions)
+  Garth Lancaster (sage, salt 'o the earth, advice and counterpointing)
+  Adi Shavit (contributions that became be.speech)
+
+
+Bug reports, fixes, questions, requests and suggestions (for which we are
+very grateful):
+
+  Felix Gartsman - VC++ 8 build problem
+  Mike Batten - GCC build problem on Linux
+  Volker Lucas - GCC build problem
+  CookieRaver - broken UNIX makefiles; be.file fixes and 
+      suggestions; fe.N criticism
+  David Wang - VC++ string access shim (SYSTEMTIME) bug
+  Simon Sadler - suggestion for be.file; VC8 compilation issues;
+      dynamic library issues
+  Brad Cox - MAC OSX build problem; PPC vs Intel issues
+  Jim Bateman - be.COMErrorObject problems; b64 inserter compilation
+      problem; VC++ 9 compatibility issues
+  Mikael Pahmp - time formatting; missing file
+  Neal Becker - 64-bit Linux issues
+  S2027 - reported be.file Windows tail-ing issue, and provided fix. (Which
+      is nice.)
+  David Gibbs - reported VC8 / winstl::findfile_sequence bug.
+  Adi Shavit - distribution issues
+  Dave Nicholas - Linux linking issues
+  sjdc (Daniel) - fix for \r\n on Windows; highlighting further problems
+      with synchronisation.
+  alskc - reported bc564 build problem (in beta 29)
+  mis232 - reported build problems with 64-bit UNIX
+  spin-vector (Jay) - lots of ACE/UNIX/time issues & requests that'll be
+      seen over the late beta releases.
+  loo66 - Intel 9.1 compilation problem; not yet fixed
+  Mike Morel - integer inserter bug on 64-bit Linux
+  vortic - bug in beta 74 distro; out-of-date info supplied by libselw
+  Jonathan Wakely - bug in bec.file.h in 1.0.1 beta 104; request for Sun
+      compiler support; finding syslog bugs; finding big-endian gaffs; ACE +
+      UNIX makefiles (to appear in b188)
+  Lars Ivar Igesund - request for Trace explanations; request for Sun
+      compiler support
+  Sergey Nikulov - b64 bug reports & patches; UNIX compilation bug reports &
+      patches; FreeBSD compatibility
+  John Cook - Mac OS-X compilation problem (due to GCC being thick)
+  Juan Manuel Alvarez - missing implicit link headers; request for tutorials
+  Randy Freier - build questions
+  Maciej Kaniewski - Borland 5.9+ compatibility
+  Frank Audun Kvamtrø - request for extended back-end customisation
+  markitus82 - Borland compatibility
+  Jason Woodall - extended severity usage
+  Ali Sohanghpurwala - argument padding, FAQ
+  Derek Baikie - Intel 11 compilation issues
+  Jacobo Cabaleiro - thread-safety for be.file
+  jdt141 - GCC 4.2 trace example compile error
+  brandstaetter - Fedora build errors
+  Angel Tankson - enhancement requests for 2GB+ file support
+  John Corelli - be.N / fe.N enquiries, feature requests
+  wassime - contribution of custom front-end example
+  Skoobie Du - year+mon defect in date/time format specifiers in be.file
+      file name
+  Johan Franzén - reported unwanted conversion of integral argument to
+      CComBSTR / CString instance
+  itti83, mitchomtl - VC++10 compilation issues in test program(s);
+
+Contributions are welcomed.
+
+=============================== End of file ================================

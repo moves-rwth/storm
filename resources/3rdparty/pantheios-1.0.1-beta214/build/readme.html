@@ -1,0 +1,110 @@
+<html>
+ <head>
+  <title>Pantheios - Project Map - build</title>
+  <!--
+   Created: 22nd September 2008
+   Updated: 22nd September 2008
+   -->
+ </head>
+ <body>
+  <h1>Pantheios - Project Map - build</h1>
+
+  <p>
+  Each sub-directory of this directory, <code>build</code>, contains a makefile
+  for a given compiler/architecture/operating system combination. To build
+  Pantheios, open a shell / command-box in that directory, and execute
+  <code>make</code> (or <code>NMAKE</code>). The following are common command-lines
+  that are used:
+  <ul>
+   <li>
+    <code>make build.libs</code> - compiles and links all libraries
+   </li>
+   <li>
+    <code>make build</code> - compiles and links all libraries, examples, and test programs
+   </li>
+   <li>
+    <code>make build.examples</code> - compiles and links all examples (and any library dependencies)
+   </li>
+   <li>
+    <code>make test</code> - compiles and links all unit-/component-test programs (and any library dependencies), and executes them
+   </li>
+   <li>
+    <code>make test.unit</code> - compiles and links all unit-test programs (and any library dependencies), and executes them
+   </li>
+   <li>
+    <code>make test.component</code> - compiles and links all component-test programs (and any library dependencies), and executes them
+   </li>
+   <li>
+    <code>make test.performance</code> - compiles and links all performance-test programs (and any library dependencies), and executes them
+   </li>
+  </ul>
+  </p>
+
+  <p>
+  The Pantheios team most commonly execute <code>make</code> with
+  "<code>make build test test.performance</code>", which causes all libraries, examples
+  and test programs to be built, and then executes the unit-tests, component-tests and
+  performance-tests. This pretty much verifies that everything is ok for a given
+  installation.
+  </p>
+
+  <p>
+  Selecting your build directory is pretty straightforward: just select the directory
+  that most closely matches, from the following list. Note: It is not necessary to
+  separate specific architectures / operating systems
+  in every case. For example, the gcc41.unix directory contains a makefile that
+  will work regardless of bit-size (e.g. 32-bit vs 64-bit) and operating system
+  flavour (e.g. Linux vs BSD vs Solaris). Once you know your compiler, architecture,
+  and operating system,
+  </p>
+
+  <table border="1">
+   <tr>
+    <th>Compiler</th>
+    <th>Compiler Version</th>
+    <th>Operating System</th>
+    <th>Architecture</th>
+    <th>Makefile Directory</th>
+   </tr>
+   <tr><td>Borland</td><td>5.5.1</td><td>Windows</td><td>x86</td><td>bc551</td></tr>
+   <tr><td>Borland</td><td>5.6</td><td>Windows</td><td>x86</td><td>bc56</td></tr>
+   <tr><td>Borland</td><td>5.64</td><td>Windows</td><td>x86</td><td>bc564</td></tr>
+   <tr><td>Borland</td><td>5.82</td><td>Windows</td><td>x86</td><td>bc582</td></tr>
+   <tr><td>Comeau</td><td>4.3.3</td><td>UNIX</td><td>&lt;any&gt;</td><td>como433.unix</td></tr>
+   <tr><td>Comeau</td><td>4.3.3</td><td>Windows</td><td>x86</td><td>como433.win32</td></tr>
+   <tr><td>Metrowerks CodeWarrior</td><td>8.3</td><td>UNIX</td><td>&lt;any&gt;</td><td>cw8.unix</td></tr>
+   <tr><td>Metrowerks CodeWarrior</td><td>8.3</td><td>Windows</td><td>x86</td><td>cw8.win32</td></tr>
+   <tr><td>Digital Mars</td><td>&lt;latest&gt;</td><td>UNIX</td><td>&lt;any&gt;</td><td>dm</td></tr>
+   <tr><td>GCC</td><td>3.2</td><td>UNIX</td><td>&lt;any&gt;</td><td>gcc32.unix</td></tr>
+   <tr><td>GCC</td><td>3.2</td><td>Windows</td><td>x86</td><td>gcc32.win32</td></tr>
+   <tr><td>GCC</td><td>3.3</td><td>Mac OS-X</td><td>&lt;any&gt;</td><td>gcc33.mac</td></tr>
+   <tr><td>GCC</td><td>3.3</td><td>UNIX</td><td>&lt;any&gt;</td><td>gcc33.unix</td></tr>
+   <tr><td>GCC</td><td>3.3</td><td>Windows</td><td>x86</td><td>gcc33.win32</td></tr>
+   <tr><td>GCC</td><td>3.4</td><td>UNIX</td><td>&lt;any&gt;</td><td>gcc34.unix</td></tr>
+   <tr><td>GCC</td><td>3.4</td><td>Windows</td><td>x86</td><td>gcc34.win32</td></tr>
+   <tr><td>GCC</td><td>4.0</td><td>Mac OS-X</td><td>&lt;any&gt;</td><td>gcc40.mac</td></tr>
+   <tr><td>GCC</td><td>4.0</td><td>UNIX</td><td>&lt;any&gt;</td><td>gcc40.unix</td></tr>
+   <tr><td>GCC</td><td>4.1</td><td>Mac OS-X</td><td>&lt;any&gt;</td><td>gcc41.mac</td></tr>
+   <tr><td>GCC</td><td>4.1</td><td>UNIX</td><td>&lt;any&gt;</td><td>gcc41.unix</td></tr>
+   <tr><td>GCC</td><td>4.2</td><td>Mac OS-X</td><td>&lt;any&gt;</td><td>gcc42.mac</td></tr>
+   <tr><td>GCC</td><td>4.2</td><td>UNIX</td><td>&lt;any&gt;</td><td>gcc42.unix</td></tr>
+   <tr><td>GCC</td><td>4.3</td><td>Mac OS-X</td><td>&lt;any&gt;</td><td>gcc43.mac</td></tr>
+   <tr><td>GCC</td><td>4.3</td><td>UNIX</td><td>&lt;any&gt;</td><td>gcc43.unix</td></tr>
+   <tr><td>Intel</td><td>6</td><td>Windows</td><td>x86</td><td>icl6.win32</td></tr>
+   <tr><td>Intel</td><td>7</td><td>Windows</td><td>x86</td><td>icl7.win32</td></tr>
+   <tr><td>Intel</td><td>8</td><td>Windows</td><td>x86</td><td>icl8.win32</td></tr>
+   <tr><td>Intel</td><td>9</td><td>Windows</td><td>x86</td><td>icl9.win32</td></tr>
+   <tr><td>Visual C++</td><td>5</td><td>Windows</td><td>x86</td><td>vc5</td></tr>
+   <tr><td>Visual C++</td><td>6</td><td>Windows</td><td>x86</td><td>vc6</td></tr>
+   <tr><td>Visual C++</td><td>7</td><td>Windows</td><td>x86</td><td>vc7</td></tr>
+   <tr><td>Visual C++</td><td>7.1</td><td>Windows</td><td>x86</td><td>vc71</td></tr>
+   <tr><td>Visual C++</td><td>8</td><td>Windows</td><td>x86</td><td>vc8</td></tr>
+   <tr><td>Visual C++</td><td>8</td><td>Windows</td><td>x64</td><td>vc8.x64</td></tr>
+   <tr><td>Visual C++</td><td>9</td><td>Windows</td><td>x86</td><td>vc9</td></tr>
+   <tr><td>Visual C++</td><td>9</td><td>Windows</td><td>x64</td><td>vc9.x64</td></tr>
+  </table>
+
+ </body>
+</html>
+
+
