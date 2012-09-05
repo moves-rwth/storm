@@ -24,40 +24,53 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
 
 # Main Sources
-FILE(GLOB_RECURSE MRMCHeaders ${PROJECT_SOURCE_DIR}/src/*.h)
-FILE(GLOB_RECURSE MRMCSources ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE MRMCHeaders ${PROJECT_SOURCE_DIR}/src/*.h)
+file(GLOB_RECURSE MRMCSources ${PROJECT_SOURCE_DIR}/src/*.cpp)
 # Test Sources
 # Note that the tests also need the source files, except the main file!
-FILE(GLOB_RECURSE MRMCTestHeaders ${PROJECT_SOURCE_DIR}/test/*.h)
-FILE(GLOB_RECURSE MRMCTestSources ${PROJECT_SOURCE_DIR}/test/*.cpp ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
+file(GLOB_RECURSE MRMCTestHeaders ${PROJECT_SOURCE_DIR}/test/*.h)
+file(GLOB_RECURSE MRMCTestSources ${PROJECT_SOURCE_DIR}/test/*.cpp ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 # Main Grouping
-SOURCE_GROUP(Headers FILES ${MRMCHeaders})
-SOURCE_GROUP(Sources FILES ${MRMCSources})
+source_group(Headers FILES ${MRMCHeaders})
+source_group(Sources FILES ${MRMCSources})
 # Test Grouping
-SOURCE_GROUP(Headers FILES ${MRMCTestHeaders})
-SOURCE_GROUP(Sources FILES ${MRMCTestSources})
+source_group(Headers FILES ${MRMCTestHeaders})
+source_group(Sources FILES ${MRMCTestSources})
 
 # Add base folder for better inclusion pathes
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
 # temp search path for Pantheios/STLSoft
-message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
-message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+if (NOT GTEST_INCLUDE_DIR)
+	set(GTEST_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/include)
+endif()
+
+if (NOT STLSOFT_INCLUDE_DIR)
+	set(STLSOFT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/stlsoft-1.9.116/include)
+endif()
+
+if (NOT PANTHEIOS_INCLUDE_DIR)
+	set(PANTHEIOS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/pantheios-1.0.1-beta214/include)
+endif()
+
+message(STATUS "GTEST Include Dir is: ${GTEST_INCLUDE_DIR}")
+#message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+#list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0)
+#list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdparty/pantheios-1.0.1-beta214)
+#list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdparty/gteststlsoft-1.9.116)
+#message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
 
 # external packages
-FIND_PACKAGE(GTest REQUIRED)
-FIND_PACKAGE(Threads REQUIRED)
-SET(Boost_USE_STATIC_LIBS        ON)
-SET(Boost_USE_MULTITHREADED      ON)
-SET(Boost_USE_STATIC_RUNTIME    OFF)
-FIND_PACKAGE(Boost REQUIRED)
-FIND_PACKAGE(Doxygen REQUIRED)
-FIND_PACKAGE(STLSoft REQUIRED)
-
-#set(PANTHEIOS_USE_DYNAMIC_RUNTIME ON)
-FIND_PACKAGE(Pantheios REQUIRED COMPONENTS SimpleFrontEnd File)
+find_package(GTest REQUIRED)
+find_package(Threads REQUIRED)
+set(Boost_USE_STATIC_LIBS        ON)
+set(Boost_USE_MULTITHREADED      ON)
+set(Boost_USE_STATIC_RUNTIME    OFF)
+find_package(Boost REQUIRED)
+find_package(Doxygen REQUIRED)
+find_package(STLSoft REQUIRED)
 
 # STLsoft headers
 # include_directories("${PROJECT_SRC_DIR}/resources/3rdParty/stlsoft-1.9.114")
@@ -65,10 +78,9 @@ FIND_PACKAGE(Pantheios REQUIRED COMPONENTS SimpleFrontEnd File)
 # include_directories("${PROJECT_SRC_DIR}/resources/3rdParty/pantheios-1.0.1-beta213")
 
 if (STLSOFT_FOUND)
-    message(STATUS "STLSoft found")
-    INCLUDE_DIRECTORIES(${STLSOFT_INCLUDE_DIR})
+    include_directories(${STLSOFT_INCLUDE_DIR})
 endif()
-FIND_PACKAGE(STLSoft REQUIRED)
+find_package(STLSoft REQUIRED)
 
 #Dynamic runtime for Pantheios is configured for dll-files, hence only usable under Windows...
 if (WIN32)
@@ -76,49 +88,28 @@ if (WIN32)
 else()
     set(PANTHEIOS_USE_DYNAMIC_RUNTIME OFF)
 endif()
-FIND_PACKAGE(Pantheios REQUIRED COMPONENTS SimpleFrontEnd File)
+find_package(Pantheios REQUIRED COMPONENTS SimpleFrontEnd File)
 
-# STLsoft headers
-# include_directories("${PROJECT_SRC_DIR}/resources/3rdParty/stlsoft-1.9.114")
-# Pantheios Logging library
-# include_directories("${PROJECT_SRC_DIR}/resources/3rdParty/pantheios-1.0.1-beta213")
-
-if (STLSOFT_FOUND)
-    message(STATUS "STLSoft found")
-    INCLUDE_DIRECTORIES(${STLSOFT_INCLUDE_DIR})
-endif()
-
-IF (PANTHEIOS_FOUND)
-    message(STATUS "Pantheios found")
-    INCLUDE_DIRECTORIES(${PANTHEIOS_INCLUDE_DIR})
-    LINK_DIRECTORIES(${PANTHEIOS_LIBRARY_DIRS})
-else()
-    message(STATUS "NO PANTHEIOS!")
-ENDIF()
     
 IF (PANTHEIOS_FOUND)
-    message(STATUS "Pantheios found")
-    INCLUDE_DIRECTORIES(${PANTHEIOS_INCLUDE_DIR})
-    LINK_DIRECTORIES(${PANTHEIOS_LIBRARY_DIRS})
+    include_directories(${PANTHEIOS_INCLUDE_DIR})
+    link_directories(${PANTHEIOS_LIBRARY_DIRS})
 else()
     message(STATUS "NO PANTHEIOS!")
 ENDIF()
     
 if(Boost_FOUND)
-include_directories(${Boost_INCLUDE_DIRS})
+	include_directories(${Boost_INCLUDE_DIRS})
 
-if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
-    set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
-    message(STATUS "Boost_LIBRARY_DIRS was empty, setting to ${Boost_LIBRARY_DIRS}")
-endif ()
-
-link_directories(${Boost_LIBRARY_DIRS})
-
+	if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
+		set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
+	endif ()
+	link_directories(${Boost_LIBRARY_DIRS})
 endif(Boost_FOUND)
 
 # must be created AFTER Boost was added because of LINK_DIRECTORIES
-ADD_EXECUTABLE(MRMC-cpp ${MRMCSources} ${MRMCHeaders})
-ADD_EXECUTABLE(MRMC-tests ${MRMCTestSources} ${MRMCTestHeaders})
+add_executable(MRMC-cpp ${MRMCSources} ${MRMCHeaders})
+add_executable(MRMC-tests ${MRMCTestSources} ${MRMCTestHeaders})
 
 # Add target link deps for Pantheios
 target_link_libraries(MRMC-cpp ${PANTHEIOS_LIBRARIES})
@@ -127,8 +118,8 @@ target_link_libraries(MRMC-tests ${PANTHEIOS_LIBRARIES})
 # add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
 
-SET(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
-STRING(REGEX REPLACE ";" " " CMAKE_DOXYGEN_INPUT_LIST "${PROJECT_SOURCE_DIR}/src")
+set(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
+string(REGEX REPLACE ";" " " CMAKE_DOXYGEN_INPUT_LIST "${PROJECT_SOURCE_DIR}/src")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 

@@ -205,6 +205,8 @@
 #    define PANTHEIOS_IMPL_LINK_COMPILER_NAME           "vc9"
 #   elif _MSC_VER == 1600
 #    define PANTHEIOS_IMPL_LINK_COMPILER_NAME           "vc10"
+#   elif _MSC_VER == 1700
+#    define PANTHEIOS_IMPL_LINK_COMPILER_NAME           "vc11"
 #   else /* ? _MSC_VER */
 #    error Visual C++ version not supported
 #   endif /* _MSC_VER */

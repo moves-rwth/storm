@@ -664,8 +664,10 @@
 #  define STLSOFT_COMPILER_VERSION_STRING       "Visual C++ 9.0"
 # elif (_MSC_VER == 1600)
 #  define STLSOFT_COMPILER_VERSION_STRING       "Visual C++ 10.0"
+# elif (_MSC_VER == 1700)
+#  define STLSOFT_COMPILER_VERSION_STRING       "Visual C++ 11.0"
 # else /* ? _MSC_VER */
-#  error Currently only versions 5.0, 6.0, 7.0, 7.1, 8.0, 9.0 and 10.0 of the Visual C++ compiler are supported by the STLSoft libraries
+#  error Currently only versions 5.0, 6.0, 7.0, 7.1, 8.0, 9.0, 10.0 and 11.0 of the Visual C++ compiler are supported by the STLSoft libraries
 # endif /* _MSC_VER */
 
 #else /* ? compiler */

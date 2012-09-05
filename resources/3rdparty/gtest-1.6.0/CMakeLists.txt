@@ -238,3 +238,8 @@ if (gtest_build_tests)
   cxx_executable(gtest_xml_output_unittest_ test gtest)
   py_test(gtest_xml_output_unittest)
 endif()
+
+
+if( MSVC ) # VS2012 doesn't support correctly the tuples yet
+	add_definitions( /D _VARIADIC_MAX=10 )
+endif()
