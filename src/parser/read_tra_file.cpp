@@ -24,6 +24,9 @@ namespace mrmc {
 
 namespace parser{
 
+// Disable C4996 - This function or variable may be unsafe.
+#pragma warning(disable:4996)
+
 /*!
 * This method does the first pass through the .tra file and computes
 * the number of non zero elements that are not diagonal elements,

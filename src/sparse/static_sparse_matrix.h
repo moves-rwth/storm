@@ -2,6 +2,7 @@
 #define MRMC_SPARSE_STATIC_SPARSE_MATRIX_H_
 
 #include <exception>
+#include <new>
 #include "boost/integer/integer_mask.hpp"
 
 #include <pantheios/pantheios.hpp>
@@ -46,16 +47,20 @@ class StaticSparseMatrix {
 
 	~StaticSparseMatrix() {
 		if (value_storage != NULL) {
-			free(value_storage);
+			//free(value_storage);
+			delete value_storage;
 		}
 		if (column_indications != NULL) {
-			free(column_indications);
+			//free(column_indications);
+			delete column_indications;
 		}
 		if (row_indications != NULL) {
-			free(row_indications);
+			//free(row_indications);
+			delete row_indications;
 		}
 		if (diagonal_storage != NULL) {
-			free(diagonal_storage);
+			//free(diagonal_storage);
+			delete diagonal_storage;
 		}
 	}
 
@@ -116,22 +121,22 @@ class StaticSparseMatrix {
 		storage_size = non_zero_entry_count;
 		last_row = 0;
 
-		value_storage = static_cast<T*>(calloc(storage_size, sizeof(*value_storage)));
+		//value_storage = static_cast<T*>(calloc(storage_size, sizeof(*value_storage)));
+		value_storage = new (std::nothrow) T[storage_size]();
 
-		column_indications = static_cast<uint_fast32_t*>(calloc(storage_size, sizeof(*column_indications)));
+		//column_indications = static_cast<uint_fast32_t*>(calloc(storage_size, sizeof(*column_indications)));
+		column_indications = new (std::nothrow) uint_fast32_t[storage_size]();
 
-		row_indications = static_cast<uint_fast32_t*>(calloc(row_count + 1, sizeof(*row_indications)));
+		//row_indications = static_cast<uint_fast32_t*>(calloc(row_count + 1, sizeof(*row_indications)));
+		row_indications = new (std::nothrow) uint_fast32_t[row_count + 1]();
 
 		// row_count + 1 so that access with 1-based indices can be direct without the overhead of a -1 each time
-		diagonal_storage = static_cast<T*>(calloc(row_count + 1, sizeof(*diagonal_storage)));
+		//diagonal_storage = static_cast<T*>(calloc(row_count + 1, sizeof(*diagonal_storage)));
+		diagonal_storage = new (std::nothrow) T[row_count + 1]();
 		
 		if ((value_storage == NULL) || (column_indications == NULL) || (row_indications == NULL) || (diagonal_storage == NULL)) {
 			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing bad_alloc: memory allocation failed");
-#ifdef _WIN32
-			throw std::bad_alloc("mrmc::StaticSparseMatrix::initialize: memory allocation failed");
-#else
 			throw std::bad_alloc();
-#endif
 		}
 	}
 

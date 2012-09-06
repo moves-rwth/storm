@@ -22,6 +22,9 @@
 *.unsuccessfulbuild
 ipch/
 obj/
-
+CMakeFiles/
 # The build Dir
 build//CMakeLists.txt
+/*.vcxproj
+/*.filters
+/*.sln

@@ -91,12 +91,12 @@ endif()
 find_package(Pantheios REQUIRED COMPONENTS SimpleFrontEnd File)
 
     
-IF (PANTHEIOS_FOUND)
+if (PANTHEIOS_FOUND)
     include_directories(${PANTHEIOS_INCLUDE_DIR})
     link_directories(${PANTHEIOS_LIBRARY_DIRS})
 else()
     message(STATUS "NO PANTHEIOS!")
-ENDIF()
+endif()
     
 if(Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS})
@@ -131,25 +131,25 @@ COMMENT "Generating API documentation with Doxygen" VERBATIM
 endif(DOXYGEN_FOUND)
 
 if (GTEST_FOUND)
-# For make-based builds, defines make target named test.
-# For Visual Studio builds, defines Visual Studio project named RUN_TESTS.
-enable_testing()
+	# For make-based builds, defines make target named test.
+	# For Visual Studio builds, defines Visual Studio project named RUN_TESTS.
+	enable_testing()
 
-include_directories(${GTEST_INCLUDE_DIRS})
-target_link_libraries(MRMC-tests ${GTEST_LIBRARIES})
+	include_directories(${GTEST_INCLUDE_DIRS})
+	target_link_libraries(MRMC-tests ${GTEST_LIBRARIES})
 
-add_test(
-    NAME MRMC-tests
-    COMMAND MRMC-tests
-)
-
+	add_test(
+		NAME MRMC-tests
+		COMMAND MRMC-tests
+	)
+	if( MSVC ) # VS2012 doesn't support correctly the tuples yet
+		add_definitions( /D _VARIADIC_MAX=10 )
+	endif()
 endif(GTEST_FOUND)
 
 
 if (THREADS_FOUND)
-
-include_directories(${THREADS_INCLUDE_DIRS})
-target_link_libraries (MRMC-tests ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (MRMC-cpp ${CMAKE_THREAD_LIBS_INIT})
-
+	include_directories(${THREADS_INCLUDE_DIRS})
+	target_link_libraries (MRMC-tests ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries (MRMC-cpp ${CMAKE_THREAD_LIBS_INIT})
 endif(THREADS_FOUND)

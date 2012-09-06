@@ -22,6 +22,7 @@ PANTHEIOS_EXTERN_C PAN_CHAR_T const PANTHEIOS_FE_PROCESS_IDENTITY[] = "mrmc-cpp"
 #include "MRMCConfig.h"
 
 #include "src/sparse/static_sparse_matrix.h"
+#include "src/dtmc/atomic_proposition.h"
  
 int main(int argc, char* argv[]) {
 	// Logging init
