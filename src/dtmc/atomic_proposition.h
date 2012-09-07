@@ -33,7 +33,7 @@ class AtomicProposition {
 	}
 
 	~AtomicProposition() {
-		delete node_array;
+		delete[] node_array;
 	}
 
 	bool hasNodeLabel(uint_fast32_t nodeId) {

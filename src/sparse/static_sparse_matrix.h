@@ -19,7 +19,7 @@ namespace sparse {
 //! A sparse Matrix for DTMCs with a constant number of non-zero entries on the non-diagonal fields.
 /*! 
 	The sparse matrix used for calculation on the DTMCs.
-	Adressing is NOT zero-based! The valid range for getValue and addNextValue is 1 to rows (first argument to constructor).
+	Addressing is NOT zero-based! The valid range for getValue and addNextValue is 1 to rows (first argument to constructor).
  */
 template <class T>
 class StaticSparseMatrix {
@@ -27,7 +27,7 @@ class StaticSparseMatrix {
 		
 	//! Constructor
 	 /*!
-		\param rows Row-Count and therefor column-count of the symetric matrix
+		\param rows Row-Count and therefore column-count of the symmetric matrix
 		\param non_zero_entries The exact count of entries that will be submitted through addNextValue *excluding* those on the diagonal (A_{i,j} with i = j)
 	 */
 	StaticSparseMatrix(uint_fast32_t rows, uint_fast32_t non_zero_entries) {
@@ -48,19 +48,19 @@ class StaticSparseMatrix {
 	~StaticSparseMatrix() {
 		if (value_storage != NULL) {
 			//free(value_storage);
-			delete value_storage;
+			delete[] value_storage;
 		}
 		if (column_indications != NULL) {
 			//free(column_indications);
-			delete column_indications;
+			delete[] column_indications;
 		}
 		if (row_indications != NULL) {
 			//free(row_indications);
-			delete row_indications;
+			delete[] row_indications;
 		}
 		if (diagonal_storage != NULL) {
 			//free(diagonal_storage);
-			delete diagonal_storage;
+			delete[] diagonal_storage;
 		}
 	}
 
@@ -198,7 +198,7 @@ class StaticSparseMatrix {
 
 	/*! Array containing the column number of the corresponding value_storage entry */
 	uint_fast32_t* column_indications;
-	/*! Array containing the row boundarys of valueStorage */
+	/*! Array containing the row boundaries of valueStorage */
 	uint_fast32_t* row_indications;
 };
 

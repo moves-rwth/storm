@@ -29,7 +29,7 @@ namespace parser{
 
 /*!
 * This method does the first pass through the .tra file and computes
-* the number of non zero elements that are not diagonal elements,
+* the number of non-zero elements that are not diagonal elements,
 * which correspondents to the number of transitions that are not
 * self-loops.
 * (Diagonal elements are treated in a special way).
@@ -50,6 +50,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
    if (fgets(s, 1024, p) != NULL) {
       if (sscanf( s, "STATES %d", &rows) == 0) {
          pantheios::log_WARNING(pantheios::integer(rows));
+         (void)fclose(p);
          throw mrmc::exceptions::wrong_file_format();
       }
    }
@@ -57,6 +58,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
    //Reading No. of transitions
    if (fgets(s, 1024, p) != NULL) {
       if (sscanf( s, "TRANSITIONS %d", &non_zero) == 0) {
+         (void)fclose(p);
          throw mrmc::exceptions::wrong_file_format();
       }
    }
@@ -68,6 +70,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
       uint_fast32_t row=0, col=0;
       double val=0.0;
       if (sscanf( s, "%d%d%lf", &row, &col, &val ) != 3) {
+         (void)fclose(p);
          throw mrmc::exceptions::wrong_file_format();
       }
       //Diagonal elements are not counted into the result!
@@ -86,7 +89,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
  */
 
 sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
-   FILE *p;
+   FILE *p = NULL;
    char s[1024];
    uint_fast32_t rows, non_zero;
    sparse::StaticSparseMatrix<double> *sp = NULL;
@@ -105,6 +108,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
    if (fgets(s, 1024, p) != NULL) {
       if (sscanf( s, "STATES %d", &rows) == 0) {
          pantheios::log_WARNING(pantheios::integer(rows));
+         (void)fclose(p);
          throw mrmc::exceptions::wrong_file_format();
       }
    }
@@ -116,6 +120,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
    if (fgets(s, 1024, p) != NULL) {
       uint_fast32_t nnz=0;
       if (sscanf( s, "TRANSITIONS %d", &nnz) == 0) {
+         (void)fclose(p);
          throw mrmc::exceptions::wrong_file_format();
       }
    }
@@ -124,9 +129,8 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
                         pantheios::integer(rows), " rows and ",
                         pantheios::integer(non_zero), " Non-Zero-Elements");
    /* Creating matrix
-    * Variable non_zero does NOT count any diagonal element,
-    * But all diagonal elements are allocated, so the number of allocated
-    * elements is non_zero
+    * Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
+    * non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
     */
    sp = new sparse::StaticSparseMatrix<double>(rows,non_zero);
    sp->initialize();
@@ -141,6 +145,8 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
       uint_fast32_t row=0, col=0;
       double val = 0.0;
       if (sscanf( s, "%d%d%lf", &row, &col, &val) != 3) {
+         delete sp;
+         (void)fclose(p);
          throw mrmc::exceptions::wrong_file_format();
       }
       pantheios::log_DEBUG("Write value ",
