@@ -12,6 +12,8 @@
 #include "src/exceptions/invalid_argument.h"
 #include "src/exceptions/out_of_range.h"
 
+
+
 namespace mrmc {
 
 namespace dtmc {
@@ -22,18 +24,39 @@ namespace dtmc {
  */
 class AtomicProposition {
  public:
-		
+
+   /*! Default Constructor
+    * Creates an uninitialized object
+    * Useful for array construction, afterwards, the initialize function has to be called.
+    */
+	AtomicProposition() {
+
+	}
+
 	//! Constructor
 	 /*!
 		\param nodeCount Amount of nodes that the DTMC has to label
 	 */
 	AtomicProposition(uint_fast32_t nodeCount) {
-		node_count = nodeCount;
-		node_array = new uint_fast64_t[(int) std::ceil(nodeCount / 64)]();
+	   node_array = NULL;
+	   initialize(nodeCount);
 	}
 
 	~AtomicProposition() {
-		delete[] node_array;
+	   if (node_array != NULL) {
+	      delete[] node_array;
+	   }
+	}
+
+	void initialize(uint_fast32_t nodeCount) {
+	   if (node_array == NULL) {
+	      node_count = nodeCount;
+	      node_array = new uint_fast64_t[(int) std::ceil(nodeCount / 64)]();
+	      if (node_array == NULL) {
+	         throw std::bad_alloc();
+	      }
+	   }
+
 	}
 
 	bool hasNodeLabel(uint_fast32_t nodeId) {

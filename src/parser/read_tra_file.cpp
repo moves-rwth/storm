@@ -9,6 +9,8 @@
  *      Author: Thomas Heinemann
  */
 
+#include "parser.h"
+
 #include "src/parser/read_tra_file.h"
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
@@ -43,11 +45,11 @@ static uint_fast32_t make_first_pass(FILE* p) {
       pantheios::log_ERROR("make_first_pass was called with NULL! (SHOULD NEVER HAPPEN)");
       throw exceptions::file_IO_exception ("make_first_pass: File not readable (this should be checked before calling this function!)");
    }
-   char s[1024];                 //String buffer
+   char s[BUFFER_SIZE];                 //String buffer
    uint_fast32_t rows=0, non_zero=0;
 
    //Reading No. of states
-   if (fgets(s, 1024, p) != NULL) {
+   if (fgets(s, BUFFER_SIZE, p) != NULL) {
       if (sscanf( s, "STATES %d", &rows) == 0) {
          pantheios::log_WARNING(pantheios::integer(rows));
          (void)fclose(p);
@@ -56,7 +58,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
    }
 
    //Reading No. of transitions
-   if (fgets(s, 1024, p) != NULL) {
+   if (fgets(s, BUFFER_SIZE, p) != NULL) {
       if (sscanf( s, "TRANSITIONS %d", &non_zero) == 0) {
          (void)fclose(p);
          throw mrmc::exceptions::wrong_file_format();
@@ -65,7 +67,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
 
    //Reading transitions (one per line)
    //And increase number of transitions
-   while (NULL != fgets( s, 1024, p ))
+   while (NULL != fgets( s, BUFFER_SIZE, p ))
    {
       uint_fast32_t row=0, col=0;
       double val=0.0;
@@ -90,7 +92,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
 
 sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
    FILE *p = NULL;
-   char s[1024];
+   char s[BUFFER_SIZE];
    uint_fast32_t rows, non_zero;
    sparse::StaticSparseMatrix<double> *sp = NULL;
 
@@ -105,7 +107,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
    rewind(p);
 
    //Reading No. of states
-   if (fgets(s, 1024, p) != NULL) {
+   if (fgets(s, BUFFER_SIZE, p) != NULL) {
       if (sscanf( s, "STATES %d", &rows) == 0) {
          pantheios::log_WARNING(pantheios::integer(rows));
          (void)fclose(p);
@@ -117,7 +119,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
     * Note that the result is not used in this function as make_first_pass()
     * computes the relevant number (non_zero)
     */
-   if (fgets(s, 1024, p) != NULL) {
+   if (fgets(s, BUFFER_SIZE, p) != NULL) {
       uint_fast32_t nnz=0;
       if (sscanf( s, "TRANSITIONS %d", &nnz) == 0) {
          (void)fclose(p);
@@ -140,7 +142,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
       }
 
    //Reading transitions (one per line) and saving the results in the matrix
-   while (NULL != fgets( s, 1024, p ))
+   while (NULL != fgets( s, BUFFER_SIZE, p ))
    {
       uint_fast32_t row=0, col=0;
       double val = 0.0;
