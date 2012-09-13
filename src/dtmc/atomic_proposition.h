@@ -51,9 +51,11 @@ class AtomicProposition {
 	void initialize(uint_fast32_t nodeCount) {
 	   if (node_array == NULL) {
 	      node_count = nodeCount;
-	      node_array = new uint_fast64_t[(int) std::ceil(nodeCount / 64)]();
-	      if (node_array == NULL) {
-	         throw std::bad_alloc();
+	      int n = (int) std::ceil(nodeCount / 64.0);
+	      node_array = new uint_fast64_t[n];
+	      //Initialization with 0 is crucial!
+	      for (int i = 0; i < n; i++) {
+	         node_array[i] = 0L;
 	      }
 	   }
 

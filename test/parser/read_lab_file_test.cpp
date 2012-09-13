@@ -75,3 +75,15 @@ TEST(ReadLabFileTest, ParseTest) {
    //Deleting the labelling
    delete labelling;
 }
+
+TEST(ReadLabFileTest, WrongHeaderTest1) {
+   ASSERT_THROW(mrmc::parser::read_lab_file(3,"test/parser/lab_files/wrong_format_header1.lab"), mrmc::exceptions::wrong_file_format);
+}
+
+TEST(ReadLabFileTest, WrongHeaderTest2) {
+   ASSERT_THROW(mrmc::parser::read_lab_file(3,"test/parser/lab_files/wrong_format_header2.lab"), mrmc::exceptions::wrong_file_format);
+}
+
+TEST(ReadLabFileTest, WrongPropositionTest) {
+   ASSERT_THROW(mrmc::parser::read_lab_file(3,"test/parser/lab_files/wrong_format_proposition.lab"), mrmc::exceptions::wrong_file_format);
+}
