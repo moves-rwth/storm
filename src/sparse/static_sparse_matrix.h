@@ -12,6 +12,8 @@
 #include "src/exceptions/invalid_argument.h"
 #include "src/exceptions/out_of_range.h"
 
+#include "Eigen/Sparse"
+
 namespace mrmc {
 
 namespace sparse {
@@ -190,6 +192,32 @@ class StaticSparseMatrix {
 
 	T* getStoragePointer() const {
 		return value_storage;
+	}
+
+	Eigen::SparseMatrix<T> toEigenSparseMatrix() {
+		typedef Eigen::Triplet<double> ETd;
+		std::vector<ETd> tripletList;
+		triplets.reserve(non_zero_entry_count + row_count);
+
+		uint_fast32_t row_start;
+		uint_fast32_t row_end;
+		for (uint_fast32_t row = 1; row <= row_count; ++row) {
+			row_start	= row_indications[row - 1];
+			row_end		= row_indications[row];
+			while (row_start < row_end) {
+				tripletList.push_back(ETd(row - 1, column_indications[row_start] - 1, value_storage[row_start]));
+				++row_start;
+			}
+		}
+		for (uint_fast32_t i = 1; i <= row_count; ++i) {
+			tripletList .push_back(ETd(i, i, diagonal_storage[i]));
+		}
+
+		SparseMatrixType mat(row_count, row_count);
+		mat.setFromTriplets(tripletList.begin(), tripletList.end());
+		mat.makeCompressed();
+
+		return mat;
 	}
 
  private:

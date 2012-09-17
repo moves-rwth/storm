@@ -25,6 +25,9 @@
 #	define STRTOK_FUNC strtok_r
 #endif
 
+// Disable C4996 - This function or variable may be unsafe.
+#pragma warning(disable:4996)
+
 
 namespace mrmc {
 
