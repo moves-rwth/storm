@@ -8,12 +8,15 @@ set (MRMC_CPP_VERSION_MINOR 0)
  
 #Configurations for GCC
 if(CMAKE_COMPILER_IS_GNUCC) 
-        
+	set(MRMC_GCC_NO_DEBUG_SYMBOLS OFF CACHE BOOL "Whether debug symbols should be included in MRMC with GCC, set ON for better performance")
     #Using C++11        
     set (CMAKE_CXX_FLAGS "-std=c++0x")
     
     #Debug symbols
-    set (CMAKE_CXX_FLAGS_DEBUG "-g")
+	if (NOT MRMC_GCC_NO_DEBUG_SYMBOLS)
+		set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+		message(STATUS "Using Debug Symbols for GCC")
+	endif()
 endif()
  
 # configure a header file to pass some of the CMake settings
