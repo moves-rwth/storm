@@ -32,10 +32,12 @@ namespace parser {
 
 
 /*!
- * Reads a .lab file and puts the result in a labelling structure.
+ * Reads a .lab file and puts the result in a labeling structure.
+ *
+ * Labelings created with this method have to be freed with the delete operator.
  * @param node_count the number of states.
  * @param filename   input .lab file's name.
- * @return returns a pointer to a labelling object.
+ * @return The pointer to the created labeling object.
  */
 mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
 {

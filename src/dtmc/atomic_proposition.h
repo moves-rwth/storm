@@ -25,38 +25,25 @@ namespace dtmc {
 class AtomicProposition {
  public:
 
-   /*! Default Constructor
-    * Creates an uninitialized object
-    * Useful for array construction, afterwards, the initialize function has to be called.
-    */
-	AtomicProposition() {
-
-	}
-
 	//! Constructor
 	 /*!
 		\param nodeCount Amount of nodes that the DTMC has to label
 	 */
 	AtomicProposition(uint_fast32_t nodeCount) {
 	   node_array = NULL;
-	   initialize(nodeCount);
+      if (node_array == NULL) {
+          node_count = nodeCount;
+          int n = (int) std::ceil(nodeCount / 64.0);
+          node_array = new uint_fast64_t[n];
+          //Initialization with 0 is crucial!
+          memset(node_array, 0, n*sizeof(uint_fast64_t));
+      }
 	}
 
 	~AtomicProposition() {
 	   if (node_array != NULL) {
 	      delete[] node_array;
 	   }
-	}
-
-	void initialize(uint_fast32_t nodeCount) {
-	   if (node_array == NULL) {
-	      node_count = nodeCount;
-	      int n = (int) std::ceil(nodeCount / 64.0);
-	      node_array = new uint_fast64_t[n];
-	      //Initialization with 0 is crucial!
-	      memset(node_array, 0, n*sizeof(uint_fast64_t));
-	   }
-
 	}
 
 	bool hasNodeLabel(uint_fast32_t nodeId) {

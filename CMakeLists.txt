@@ -7,9 +7,13 @@ set (MRMC_CPP_VERSION_MAJOR 1)
 set (MRMC_CPP_VERSION_MINOR 0)
  
 #Configurations for GCC
-if(CMAKE_COMPILER_IS_GNUCC)
+if(CMAKE_COMPILER_IS_GNUCC) 
+        
+    #Using C++11        
+    set (CMAKE_CXX_FLAGS "-std=c++0x")
+    
     #Debug symbols
-    set (CMAKE_CXX_FLAGS "-g")
+    set (CMAKE_CXX_FLAGS_DEBUG "-g")
 endif()
  
 # configure a header file to pass some of the CMake settings
