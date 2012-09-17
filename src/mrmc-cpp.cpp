@@ -15,6 +15,8 @@
 #include <iostream>
 #include <cstdio>
 
+#include <ctime>
+
 #include <pantheios/pantheios.hpp>
 #include <pantheios/backends/bec.file.h>
 PANTHEIOS_EXTERN_C PAN_CHAR_T const PANTHEIOS_FE_PROCESS_IDENTITY[] = "mrmc-cpp";
@@ -23,12 +25,26 @@ PANTHEIOS_EXTERN_C PAN_CHAR_T const PANTHEIOS_FE_PROCESS_IDENTITY[] = "mrmc-cpp"
 
 #include "src/sparse/static_sparse_matrix.h"
 #include "src/dtmc/atomic_proposition.h"
+#include "src/parser/read_lab_file.h"
  
 int main(int argc, char* argv[]) {
 	// Logging init
 	pantheios_be_file_setFilePath("log.all");
 	pantheios::log_INFORMATIONAL("MRMC-Cpp started.");
 
+	mrmc::dtmc::labelling *lab;
+
+	time_t start = std::clock();
+
+	lab = mrmc::parser::read_lab_file(20302, "csl_unbounded_until_sim_06.lab");
+
+	time_t end = std::clock();
+
+	printf("Time needed was %f", ((float)end-start)/CLOCKS_PER_SEC);
+
+	delete lab;
+
+	/*
 	std::cout << "Hello, World." << std::endl;
 	std::cout << "This is MRMC-Cpp Version " << MRMC_CPP_VERSION_MAJOR << "." << MRMC_CPP_VERSION_MINOR << std::endl;
 
@@ -63,6 +79,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	delete ssm;
+	*/
 
 	return 0;
 }

@@ -10,7 +10,15 @@
 
 #include "atomic_proposition.h"
 
+#define UNORDERED_MAP
+
+#ifdef UNORDERED_MAP
 #include "boost/unordered_map.hpp"
+#define MAP boost::unordered_map
+#else
+#include <map>
+#define MAP std::map
+#endif
 
 #include <stdexcept>
 
@@ -29,7 +37,7 @@ class labelling {
 
       virtual ~labelling() {
          //deleting all the labelling vectors in the map.
-         boost::unordered_map<std::string, AtomicProposition*>::iterator it;
+         MAP<std::string, AtomicProposition*>::iterator it;
          for (it = proposition_map.begin(); it != proposition_map.end(); ++it) {
             if (it->second != NULL) {
                delete (it->second);
@@ -75,7 +83,8 @@ class labelling {
 
    private:
       uint_fast32_t nodes;
-      boost::unordered_map<std::string, AtomicProposition*> proposition_map;
+      MAP<std::string, AtomicProposition*> proposition_map;
+      //boost::unordered_map<std::string, AtomicProposition*> proposition_map;
 };
 
 } //namespace dtmc
