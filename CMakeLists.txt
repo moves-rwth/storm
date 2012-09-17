@@ -111,6 +111,17 @@ if(Boost_FOUND)
 	link_directories(${Boost_LIBRARY_DIRS})
 endif(Boost_FOUND)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdParty/eigen/cmake)
+
+set(EIGEN3_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdParty/eigen)
+
+find_package(Eigen3 REQUIRED)
+
+if (EIGEN3_FOUND)
+	include_directories(${EIGEN3_INCLUDE_DIR})
+	message(STATUS "FounD Eigen3, Include Path ${EIGEN3_INCLUDE_DIR}")
+endif()
+
 # must be created AFTER Boost was added because of LINK_DIRECTORIES
 add_executable(MRMC-cpp ${MRMCSources} ${MRMCHeaders})
 add_executable(MRMC-tests ${MRMCTestSources} ${MRMCTestHeaders})
