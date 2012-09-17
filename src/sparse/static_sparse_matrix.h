@@ -183,6 +183,15 @@ class StaticSparseMatrix {
 
 		row_indications[row_count] = storage_size;
 	}
+
+	uint_fast32_t getRowCount() const {
+		return row_count;
+	}
+
+	T* getStoragePointer() const {
+		return value_storage;
+	}
+
  private:
 	uint_fast32_t storage_size;
 	uint_fast32_t current_size;

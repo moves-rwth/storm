@@ -14,6 +14,10 @@ endif()
  
 # configure a header file to pass some of the CMake settings
 # to the source code
+
+# Base path for test files
+set(MRMC_CPP_TESTS_BASE_PATH ${PROJECT_SOURCE_DIR}/test)
+
 configure_file (
   "${PROJECT_SOURCE_DIR}/MRMCConfig.h.in"
   "${PROJECT_BINARY_DIR}/MRMCConfig.h"

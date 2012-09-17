@@ -19,6 +19,12 @@
 #include <pantheios/pantheios.hpp>
 #include <pantheios/inserters/integer.hpp>
 
+#ifdef WIN32
+#	define STRTOK_FUNC strtok_s
+#else
+#	define STRTOK_FUNC strtok_r
+#endif
+
 
 namespace mrmc {
 
@@ -115,9 +121,9 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
    mrmc::dtmc::labeling* result = new mrmc::dtmc::labeling(node_count, proposition_count);
 
    //Here, all propositions are to be declared...
-   for (proposition = strtok_r(decl_buffer, sep, &saveptr);
+   for (proposition = STRTOK_FUNC(decl_buffer, sep, &saveptr);
         proposition != NULL;
-        proposition = strtok_r(NULL, sep, &saveptr)) {
+        proposition = STRTOK_FUNC(NULL, sep, &saveptr)) {
       result -> addProposition(proposition);
    }
 
@@ -140,7 +146,7 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
       /* First token has to be a number identifying the node,
        * hence it is treated differently from the other tokens.
        */
-      token = strtok_r(s, sep, &saveptr);
+      token = STRTOK_FUNC(s, sep, &saveptr);
       if (sscanf(token, "%u", &node) == 0) {
          fclose(P);
          delete result;
@@ -148,7 +154,7 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
          throw mrmc::exceptions::wrong_file_format();
       }
       do {
-         token = strtok_r(NULL, sep, &saveptr);
+         token = STRTOK_FUNC(NULL, sep, &saveptr);
          if (token == NULL) {
             break;
          }

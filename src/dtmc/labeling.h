@@ -44,7 +44,7 @@ class labeling {
          proposition_count = propositionCount;
          propositions_current = 0;
          propositions = new AtomicProposition*[proposition_count];
-         for (int i = 0; i < proposition_count; ++i) {
+		 for (uint_fast32_t i = 0; i < proposition_count; ++i) {
             propositions[i] = new AtomicProposition(node_count);
          }
       }
@@ -52,7 +52,7 @@ class labeling {
       virtual ~labeling() {
          //deleting all the labeling vectors in the map.
          MAP<std::string, AtomicProposition*>::iterator it;
-         for (int i = 0; i < proposition_count; ++i) {
+         for (uint_fast32_t i = 0; i < proposition_count; ++i) {
             delete propositions[i];
             propositions[i] = NULL;
          }
@@ -95,7 +95,7 @@ class labeling {
       }
 
       uint_fast32_t getNumberOfPropositions() {
-         return proposition_map.size();
+		  return proposition_count;
       }
 
       AtomicProposition* getProposition(std::string proposition) {
