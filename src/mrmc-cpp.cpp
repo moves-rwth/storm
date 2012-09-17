@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 	pantheios_be_file_setFilePath("log.all");
 	pantheios::log_INFORMATIONAL("MRMC-Cpp started.");
 
-	mrmc::dtmc::labelling *lab;
+	mrmc::dtmc::labeling *lab;
 
 	time_t start = std::clock();
 

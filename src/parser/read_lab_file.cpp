@@ -9,8 +9,6 @@
 
 #include "read_lab_file.h"
 
-#include "src/dtmc/labelling.h"
-
 #include "src/exceptions/wrong_file_format.h"
 #include "src/exceptions/file_IO_exception.h"
 
@@ -30,7 +28,7 @@ namespace parser {
  * @param filename   input .lab file's name.
  * @return returns a pointer to a labelling object.
  */
-mrmc::dtmc::labelling * read_lab_file(int node_count, const char * filename)
+mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
 {
    /* Note that this function uses strtok_r on char-array s.
     * This function will modify this string.
@@ -57,7 +55,7 @@ mrmc::dtmc::labelling * read_lab_file(int node_count, const char * filename)
    }
 
 
-   mrmc::dtmc::labelling* result = new mrmc::dtmc::labelling(node_count);
+   mrmc::dtmc::labeling* result = new mrmc::dtmc::labeling(node_count);
 
    //Here, all propositions are to be declared...
    if (fgets(s, BUFFER_SIZE, P)) {

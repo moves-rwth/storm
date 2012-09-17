@@ -6,7 +6,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "src/dtmc/labelling.h"
+#include "src/dtmc/labeling.h"
 #include "src/parser/read_lab_file.h"
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
@@ -17,8 +17,8 @@ TEST(ReadLabFileTest, NonExistingFileTest) {
 }
 
 TEST(ReadLabFileTest, ParseTest) {
-   //This test is based on a testcase from the original MRMC.
-   mrmc::dtmc::labelling* labelling;
+   //This test is based on a test case from the original MRMC.
+   mrmc::dtmc::labeling* labelling;
 
    //Parsing the file
    ASSERT_NO_THROW(labelling = mrmc::parser::read_lab_file(12,"test/parser/lab_files/pctl_general_input_01.lab"));

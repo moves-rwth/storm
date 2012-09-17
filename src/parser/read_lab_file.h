@@ -8,14 +8,14 @@
 #ifndef READ_LAB_FILE_H_
 #define READ_LAB_FILE_H_
 
-#include "src/dtmc/labelling.h"
+#include "src/dtmc/labeling.h"
 
 
 namespace mrmc {
 
 namespace parser {
 
-mrmc::dtmc::labelling * read_lab_file(int node_count, const char * filename);
+mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename);
 
 }
 }

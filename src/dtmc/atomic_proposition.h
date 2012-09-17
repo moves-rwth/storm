@@ -54,9 +54,7 @@ class AtomicProposition {
 	      int n = (int) std::ceil(nodeCount / 64.0);
 	      node_array = new uint_fast64_t[n];
 	      //Initialization with 0 is crucial!
-	      for (int i = 0; i < n; i++) {
-	         node_array[i] = 0L;
-	      }
+	      memset(node_array, 0, n*sizeof(uint_fast64_t));
 	   }
 
 	}

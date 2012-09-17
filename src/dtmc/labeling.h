@@ -5,19 +5,23 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_DTMC_LABELLING_H_
-#define MRMC_DTMC_LABELLING_H_
+#ifndef MRMC_DTMC_LABELING_H_
+#define MRMC_DTMC_LABELING_H_
 
 #include "atomic_proposition.h"
 
-#define UNORDERED_MAP
 
-#ifdef UNORDERED_MAP
-#include "boost/unordered_map.hpp"
-#define MAP boost::unordered_map
-#else
+
+/* Map types: By default, the boost hash map is used.
+ * When the macro DEFAULT_MAP is defined, the default C++ class (std::map)
+ * is used instead.
+ */
+#ifdef DEFAULT_MAP
 #include <map>
 #define MAP std::map
+#else
+#include "boost/unordered_map.hpp"
+#define MAP boost::unordered_map
 #endif
 
 #include <stdexcept>
@@ -27,16 +31,16 @@ namespace mrmc {
 namespace dtmc {
 
 
-class labelling {
+class labeling {
    public:
 
 
-      labelling(const uint_fast32_t p_nodes) {
+      labeling(const uint_fast32_t p_nodes) {
          nodes = p_nodes;
       }
 
-      virtual ~labelling() {
-         //deleting all the labelling vectors in the map.
+      virtual ~labeling() {
+         //deleting all the labeling vectors in the map.
          MAP<std::string, AtomicProposition*>::iterator it;
          for (it = proposition_map.begin(); it != proposition_map.end(); ++it) {
             if (it->second != NULL) {
@@ -84,6 +88,7 @@ class labelling {
    private:
       uint_fast32_t nodes;
       MAP<std::string, AtomicProposition*> proposition_map;
+      //AtomicProposition** propositions;
       //boost::unordered_map<std::string, AtomicProposition*> proposition_map;
 };
 
@@ -91,4 +96,4 @@ class labelling {
 
 } //namespace mrmc
 
-#endif /* MRMC_DTMC_LABELLING_H_ */
+#endif /* MRMC_DTMC_LABELING_H_ */
