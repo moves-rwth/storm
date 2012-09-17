@@ -16,6 +16,9 @@
 #include <cstdlib>
 #include <cstdio>
 
+#include <pantheios/pantheios.hpp>
+#include <pantheios/inserters/integer.hpp>
+
 
 namespace mrmc {
 
@@ -37,6 +40,10 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
     * Thread-safety is ensured by using strtok_r instead of strtok.
     */
    FILE *P;
+
+   //TODO (Thomas Heinemann): handle files with lines that are longer than BUFFER_SIZE
+   //TODO (Thomas Heinemann): Throw errors if fgets return NULL in the declaration.
+
    char s[BUFFER_SIZE];              //String buffer
    char *saveptr = NULL;             //Buffer for strtok_r
    char sep[] = " \n\t";             //Separators for the tokens
@@ -44,32 +51,77 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
    P = fopen(filename, "r");
 
    if (P == NULL) {
+      pantheios::log_ERROR("File could not be opened.");
       throw mrmc::exceptions::file_IO_exception();
    }
 
    if (fgets(s, BUFFER_SIZE, P)) {
       if (strcmp(s, "#DECLARATION\n")) {
          fclose(P);
+         pantheios::log_ERROR("Wrong declaration section (\"#DECLARATION\" missing).");
          throw mrmc::exceptions::wrong_file_format();
       }
    }
 
 
-   mrmc::dtmc::labeling* result = new mrmc::dtmc::labeling(node_count);
+
+   uint_fast32_t buffer_size_count = 1;
+   uint_fast32_t buffer_start = 0;
+   char* decl_buffer = new char[buffer_size_count*BUFFER_SIZE];
+   bool need_next_iteration = true;
+
+   do {
+      decl_buffer[buffer_size_count*BUFFER_SIZE - 1] = '\xff';
+      if (fgets(decl_buffer + buffer_start, buffer_size_count*BUFFER_SIZE - buffer_start, P)) {
+         if ((decl_buffer[buffer_size_count*BUFFER_SIZE - 1] != '\xff') &&
+             (decl_buffer[buffer_size_count*BUFFER_SIZE - 2] != '\n')) {
+            //fgets changed the last bit -> read string has maximum length
+            //AND line is longer than size of decl_buffer
+            char* temp_buffer = decl_buffer;
+            decl_buffer = NULL;
+
+            buffer_size_count++;
+            decl_buffer = new char[buffer_size_count*BUFFER_SIZE];
+
+            buffer_start = (buffer_size_count - 1) * BUFFER_SIZE;
+
+            memcpy(decl_buffer, temp_buffer, buffer_start - 1);
+            delete[] temp_buffer;
+         } else {
+            need_next_iteration = false;
+         }
+      } else {
+         pantheios::log_ERROR("EOF in the declaration section");
+         throw mrmc::exceptions::wrong_file_format();
+      }
+   } while (need_next_iteration);
+
+   uint_fast32_t proposition_count = 0;
+   char * proposition;
+   int pos = 0;
+
+   if (decl_buffer[pos] != ' ' && decl_buffer[pos] != '\t' && decl_buffer[pos] != '\0') {
+      proposition_count++;
+   }
+
+   while (decl_buffer[pos] != '\0') {
+      if ((decl_buffer[pos] == ' ' || decl_buffer[pos] == '\t') &&
+          (decl_buffer[pos + 1] != ' ' && decl_buffer[pos + 1] != '\t' && decl_buffer[pos + 1] != '\0')) {
+         proposition_count++;
+      }
+      pos++;
+   }
+
+   mrmc::dtmc::labeling* result = new mrmc::dtmc::labeling(node_count, proposition_count);
 
    //Here, all propositions are to be declared...
-   if (fgets(s, BUFFER_SIZE, P)) {
-      char * proposition;
-      for (proposition = strtok_r(s, sep, &saveptr);
-           proposition != NULL;
-           proposition = strtok_r(NULL, sep, &saveptr)) {
-         result -> addProposition(proposition);
-      }
-   } else {
-      fclose(P);
-      delete result;
-      throw mrmc::exceptions::wrong_file_format();
+   for (proposition = strtok_r(decl_buffer, sep, &saveptr);
+        proposition != NULL;
+        proposition = strtok_r(NULL, sep, &saveptr)) {
+      result -> addProposition(proposition);
    }
+
+
 
    saveptr = NULL;                        //resetting save pointer for strtok_r
 
@@ -77,6 +129,7 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
       if (strcmp(s, "#END\n")) {
          fclose(P);
          delete result;
+         pantheios::log_ERROR("Wrong declaration section (\"#END\" missing).");
          throw mrmc::exceptions::wrong_file_format();
       }
    }
@@ -91,6 +144,7 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
       if (sscanf(token, "%u", &node) == 0) {
          fclose(P);
          delete result;
+         pantheios::log_ERROR("Line assigning propositions does not start with a node number.");
          throw mrmc::exceptions::wrong_file_format();
       }
       do {

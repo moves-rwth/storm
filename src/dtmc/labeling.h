@@ -26,6 +26,9 @@
 
 #include <stdexcept>
 
+#include <pantheios/pantheios.hpp>
+#include <pantheios/inserters/integer.hpp>
+
 namespace mrmc {
 
 namespace dtmc {
@@ -35,25 +38,40 @@ class labeling {
    public:
 
 
-      labeling(const uint_fast32_t p_nodes) {
-         nodes = p_nodes;
+      labeling(const uint_fast32_t nodeCount,
+               const uint_fast32_t propositionCount) {
+         node_count = nodeCount;
+         proposition_count = propositionCount;
+         propositions_current = 0;
+         propositions = new AtomicProposition*[proposition_count];
+         for (int i = 0; i < proposition_count; ++i) {
+            propositions[i] = new AtomicProposition(node_count);
+         }
       }
 
       virtual ~labeling() {
          //deleting all the labeling vectors in the map.
          MAP<std::string, AtomicProposition*>::iterator it;
-         for (it = proposition_map.begin(); it != proposition_map.end(); ++it) {
-            if (it->second != NULL) {
-               delete (it->second);
-            }
+         for (int i = 0; i < proposition_count; ++i) {
+            delete propositions[i];
+            propositions[i] = NULL;
          }
+         delete[] propositions;
+         propositions = NULL;
       }
 
-      void addProposition(std::string proposition) {
+      uint_fast32_t addProposition(std::string proposition) {
          if (proposition_map.count(proposition) != 0) {
             throw std::out_of_range("Proposition does already exist.");
          }
-         proposition_map[proposition] = new AtomicProposition(nodes);
+         if (propositions_current >= proposition_count) {
+            throw std::out_of_range("Added more propositions than initialized for");
+         }
+         proposition_map[proposition] = propositions_current;
+
+         uint_fast32_t returnValue = propositions_current++;
+         //pantheios::log_INFO("returning ", pantheios::integer(returnValue), " for position ");
+         return returnValue;
       }
 
       bool containsProposition(std::string proposition) {
@@ -66,15 +84,14 @@ class labeling {
          if (proposition_map.count(proposition) == 0) {
             throw std::out_of_range("Proposition does not exist.");
          }
-         if (node >= nodes) {
+         if (node >= node_count) {
             throw std::out_of_range("Node number out of range");
          }
-         AtomicProposition* prop = (proposition_map[proposition]);
-         prop->addLabelToNode(node);
+         propositions[proposition_map[proposition]]->addLabelToNode(node);
       }
 
       bool nodeHasProposition(std::string proposition, const uint_fast32_t node) {
-         return proposition_map[proposition]->hasNodeLabel(node);
+         return propositions[proposition_map[proposition]]->hasNodeLabel(node);
       }
 
       uint_fast32_t getNumberOfPropositions() {
@@ -82,14 +99,13 @@ class labeling {
       }
 
       AtomicProposition* getProposition(std::string proposition) {
-         return (proposition_map[proposition]);
+         return (propositions[proposition_map[proposition]]);
       }
 
    private:
-      uint_fast32_t nodes;
-      MAP<std::string, AtomicProposition*> proposition_map;
-      //AtomicProposition** propositions;
-      //boost::unordered_map<std::string, AtomicProposition*> proposition_map;
+      uint_fast32_t node_count, proposition_count, propositions_current;
+      MAP<std::string, uint_fast32_t> proposition_map;
+      AtomicProposition** propositions;
 };
 
 } //namespace dtmc
