@@ -86,8 +86,10 @@ static uint_fast32_t make_first_pass(FILE* p) {
 
 
 /*!Reads a .tra file and produces a sparse matrix representing the described Markov Chain.
- * @param *filename input .tra file's name.
- * @return a pointer to a sparse matrix.
+ *
+ * Matrices created with this method have to be freed with the delete operator.
+ * @param filename input .tra file's name.
+ * @return a pointer to the created sparse matrix.
  */
 
 sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {

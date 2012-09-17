@@ -7,9 +7,13 @@ set (MRMC_CPP_VERSION_MAJOR 1)
 set (MRMC_CPP_VERSION_MINOR 0)
  
 #Configurations for GCC
-if(CMAKE_COMPILER_IS_GNUCC)
+if(CMAKE_COMPILER_IS_GNUCC) 
+        
+    #Using C++11        
+    set (CMAKE_CXX_FLAGS "-std=c++0x")
+    
     #Debug symbols
-    set (CMAKE_CXX_FLAGS "-g")
+    set (CMAKE_CXX_FLAGS_DEBUG "-g")
 endif()
  
 # configure a header file to pass some of the CMake settings
@@ -60,7 +64,7 @@ endif()
 
 message(STATUS "GTEST Include Dir is: ${GTEST_INCLUDE_DIR}")
 #message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}")
 #list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0)
 #list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdparty/pantheios-1.0.1-beta214)
 #list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdparty/gteststlsoft-1.9.116)
@@ -111,15 +115,14 @@ if(Boost_FOUND)
 	link_directories(${Boost_LIBRARY_DIRS})
 endif(Boost_FOUND)
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdParty/eigen/cmake)
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen/cmake/")
 
-set(EIGEN3_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdParty/eigen)
+set(EIGEN3_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen)
 
 find_package(Eigen3 REQUIRED)
 
 if (EIGEN3_FOUND)
 	include_directories(${EIGEN3_INCLUDE_DIR})
-	message(STATUS "FounD Eigen3, Include Path ${EIGEN3_INCLUDE_DIR}")
 endif()
 
 # must be created AFTER Boost was added because of LINK_DIRECTORIES
