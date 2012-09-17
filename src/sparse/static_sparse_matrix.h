@@ -197,7 +197,7 @@ class StaticSparseMatrix {
 	Eigen::SparseMatrix<T> toEigenSparseMatrix() {
 		typedef Eigen::Triplet<double> ETd;
 		std::vector<ETd> tripletList;
-		triplets.reserve(non_zero_entry_count + row_count);
+		tripletList.reserve(non_zero_entry_count + row_count);
 
 		uint_fast32_t row_start;
 		uint_fast32_t row_end;
@@ -210,10 +210,10 @@ class StaticSparseMatrix {
 			}
 		}
 		for (uint_fast32_t i = 1; i <= row_count; ++i) {
-			tripletList .push_back(ETd(i, i, diagonal_storage[i]));
+			tripletList.push_back(ETd(i, i, diagonal_storage[i]));
 		}
 
-		SparseMatrixType mat(row_count, row_count);
+		Eigen::SparseMatrix<T> mat(row_count, row_count);
 		mat.setFromTriplets(tripletList.begin(), tripletList.end());
 		mat.makeCompressed();
 
