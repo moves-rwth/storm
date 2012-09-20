@@ -76,6 +76,8 @@ TEST(ReadLabFileTest, ParseTest) {
 
 		//Deleting the labeling
 		delete labeling;
+	} else {
+		FAIL();
 	}
 }
 
