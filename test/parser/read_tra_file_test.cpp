@@ -22,45 +22,47 @@ TEST(ReadTraFileTest, NonExistingFileTest) {
 /* The following test case is based on one of the original MRMC test cases
  */
 TEST(ReadTraFileTest, ParseFileTest1) {
-   pantheios::log_INFORMATIONAL("Started ParseFileTest1");
-   mrmc::sparse::StaticSparseMatrix<double> *result;
-   ASSERT_NO_THROW(result = mrmc::parser::read_tra_file(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
+	pantheios::log_INFORMATIONAL("Started ParseFileTest1");
+	mrmc::sparse::StaticSparseMatrix<double> *result = NULL;
+	ASSERT_NO_THROW(result = mrmc::parser::read_tra_file(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
 
-   double val = 0;
-   ASSERT_TRUE(result->getValue(1,1,&val));
-   ASSERT_EQ(val,0.080645161290322580645161290322581);
+	if (result != NULL) {
+		double val = 0;
+		ASSERT_TRUE(result->getValue(1,1,&val));
+		ASSERT_EQ(val,0.080645161290322580645161290322581);
 
-   ASSERT_TRUE(result->getValue(1,2,&val));
-   ASSERT_EQ(val,0.080645161290322580645161290322581);
+		ASSERT_TRUE(result->getValue(1,2,&val));
+		ASSERT_EQ(val,0.080645161290322580645161290322581);
 
-   //Transition 1->3 was not set in the file, so it is not to appear in the matrix!
-   ASSERT_FALSE(result->getValue(1,3,&val));
-   ASSERT_EQ(val,0);
+		//Transition 1->3 was not set in the file, so it is not to appear in the matrix!
+		ASSERT_FALSE(result->getValue(1,3,&val));
+		ASSERT_EQ(val,0);
 
-   ASSERT_TRUE(result->getValue(2,1,&val));
-   ASSERT_EQ(val,0.04032258064516129032258064516129);
+		ASSERT_TRUE(result->getValue(2,1,&val));
+		ASSERT_EQ(val,0.04032258064516129032258064516129);
 
-   ASSERT_TRUE(result->getValue(2,2,&val));
-   ASSERT_EQ(val,0.04032258064516129032258064516129);
+		ASSERT_TRUE(result->getValue(2,2,&val));
+		ASSERT_EQ(val,0.04032258064516129032258064516129);
 
-   ASSERT_TRUE(result->getValue(2,3,&val));
-   ASSERT_EQ(val,0.04032258064516129032258064516129);
+		ASSERT_TRUE(result->getValue(2,3,&val));
+		ASSERT_EQ(val,0.04032258064516129032258064516129);
 
-   ASSERT_TRUE(result->getValue(2,4,&val));
-   ASSERT_EQ(val,0.04032258064516129032258064516129);
+		ASSERT_TRUE(result->getValue(2,4,&val));
+		ASSERT_EQ(val,0.04032258064516129032258064516129);
 
-   ASSERT_TRUE(result->getValue(3,2,&val));
-   ASSERT_EQ(val,0.0806451612903225806451612903225812);
+		ASSERT_TRUE(result->getValue(3,2,&val));
+		ASSERT_EQ(val,0.0806451612903225806451612903225812);
 
-   ASSERT_TRUE(result->getValue(3,3,&val));
-   ASSERT_EQ(val,0);
+		ASSERT_TRUE(result->getValue(3,3,&val));
+		ASSERT_EQ(val,0);
 
-   ASSERT_TRUE(result->getValue(3,4,&val));
-   ASSERT_EQ(val,0.080645161290322580645161290322581);
+		ASSERT_TRUE(result->getValue(3,4,&val));
+		ASSERT_EQ(val,0.080645161290322580645161290322581);
 
-   ASSERT_TRUE(result->getValue(4,4,&val));
-   ASSERT_EQ(val,0);
-   delete result;
+		ASSERT_TRUE(result->getValue(4,4,&val));
+		ASSERT_EQ(val,0);
+		delete result;
+	}
 }
 
 TEST(ReadTraFileTest, WrongFormatTestHeader1) {

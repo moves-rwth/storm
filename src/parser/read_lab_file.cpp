@@ -53,7 +53,7 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
    FILE *P;
 
    //TODO (Thomas Heinemann): handle files with lines that are longer than BUFFER_SIZE
-   //TODO (Thomas Heinemann): Throw errors if fgets return NULL in the declaration.
+   //TODO (Thomas Heinemann): Throw errors if fgets return NULL in the declaration. (fixed by Philipp. Or?)
 
    char s[BUFFER_SIZE];              //String buffer
    char *saveptr = NULL;             //Buffer for strtok_r
@@ -64,14 +64,14 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
    if (P == NULL) {
       pantheios::log_ERROR("File could not be opened.");
       throw mrmc::exceptions::file_IO_exception();
+	  return NULL;
    }
 
-   if (fgets(s, BUFFER_SIZE, P)) {
-      if (strcmp(s, "#DECLARATION\n")) {
-         fclose(P);
-         pantheios::log_ERROR("Wrong declaration section (\"#DECLARATION\" missing).");
-         throw mrmc::exceptions::wrong_file_format();
-      }
+   if (!fgets(s, BUFFER_SIZE, P) || strcmp(s, "#DECLARATION\n")) {
+		fclose(P);
+		pantheios::log_ERROR("Wrong declaration section (\"#DECLARATION\" missing).");
+		throw mrmc::exceptions::wrong_file_format();
+		return NULL;
    }
 
 
@@ -104,6 +104,8 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
       } else {
          pantheios::log_ERROR("EOF in the declaration section");
          throw mrmc::exceptions::wrong_file_format();
+		 delete[] decl_buffer;
+		 return NULL;
       }
    } while (need_next_iteration);
 
@@ -132,17 +134,18 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
       result -> addProposition(proposition);
    }
 
+   // Free decl_buffer
+   delete[] decl_buffer;
 
 
    saveptr = NULL;                        //resetting save pointer for strtok_r
 
-   if (fgets(s, BUFFER_SIZE, P)) {
-      if (strcmp(s, "#END\n")) {
-         fclose(P);
-         delete result;
-         pantheios::log_ERROR("Wrong declaration section (\"#END\" missing).");
-         throw mrmc::exceptions::wrong_file_format();
-      }
+   if (!fgets(s, BUFFER_SIZE, P) || strcmp(s, "#END\n")) {
+		fclose(P);
+		delete result;
+		pantheios::log_ERROR("Wrong declaration section (\"#END\" missing).");
+		throw mrmc::exceptions::wrong_file_format();
+		return NULL;
    }
 
    while (fgets(s, BUFFER_SIZE, P)) {
@@ -157,6 +160,7 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
          delete result;
          pantheios::log_ERROR("Line assigning propositions does not start with a node number.");
          throw mrmc::exceptions::wrong_file_format();
+		 return NULL;
       }
       do {
          token = STRTOK_FUNC(NULL, sep, &saveptr);
@@ -169,9 +173,7 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
    }
 
    fclose(P);
-
    return result;
-
 }
 
 } //namespace parser

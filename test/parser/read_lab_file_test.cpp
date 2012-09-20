@@ -18,63 +18,65 @@ TEST(ReadLabFileTest, NonExistingFileTest) {
 }
 
 TEST(ReadLabFileTest, ParseTest) {
-   //This test is based on a test case from the original MRMC.
-   mrmc::dtmc::labeling* labeling;
+	//This test is based on a test case from the original MRMC.
+	mrmc::dtmc::labeling* labeling = NULL;
 
-   //Parsing the file
-   ASSERT_NO_THROW(labeling = mrmc::parser::read_lab_file(12, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
+	//Parsing the file
+	ASSERT_NO_THROW(labeling = mrmc::parser::read_lab_file(12, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
 
-   //Checking whether all propositions are in the labelling
+	//Checking whether all propositions are in the labelling
 
-   char phi[] = "phi", psi[] = "psi", smth[] = "smth";
+	char phi[] = "phi", psi[] = "psi", smth[] = "smth";
 
-   ASSERT_TRUE(labeling->containsProposition(phi));
-   ASSERT_TRUE(labeling->containsProposition(psi));
-   ASSERT_TRUE(labeling->containsProposition(smth));
+	if (labeling != NULL) {
+		ASSERT_TRUE(labeling->containsProposition(phi));
+		ASSERT_TRUE(labeling->containsProposition(psi));
+		ASSERT_TRUE(labeling->containsProposition(smth));
 
-   //Testing whether all and only the correct nodes are labeled with "phi"
-   ASSERT_TRUE(labeling->nodeHasProposition(phi,1));
-   ASSERT_TRUE(labeling->nodeHasProposition(phi,2));
-   ASSERT_TRUE(labeling->nodeHasProposition(phi,3));
-   ASSERT_TRUE(labeling->nodeHasProposition(phi,5));
-   ASSERT_TRUE(labeling->nodeHasProposition(phi,7));
-   ASSERT_TRUE(labeling->nodeHasProposition(phi,9));
-   ASSERT_TRUE(labeling->nodeHasProposition(phi,10));
-   ASSERT_TRUE(labeling->nodeHasProposition(phi,11));
+		//Testing whether all and only the correct nodes are labeled with "phi"
+		ASSERT_TRUE(labeling->nodeHasProposition(phi,1));
+		ASSERT_TRUE(labeling->nodeHasProposition(phi,2));
+		ASSERT_TRUE(labeling->nodeHasProposition(phi,3));
+		ASSERT_TRUE(labeling->nodeHasProposition(phi,5));
+		ASSERT_TRUE(labeling->nodeHasProposition(phi,7));
+		ASSERT_TRUE(labeling->nodeHasProposition(phi,9));
+		ASSERT_TRUE(labeling->nodeHasProposition(phi,10));
+		ASSERT_TRUE(labeling->nodeHasProposition(phi,11));
 
-   ASSERT_FALSE(labeling->nodeHasProposition(phi,4));
-   ASSERT_FALSE(labeling->nodeHasProposition(phi,6));
+		ASSERT_FALSE(labeling->nodeHasProposition(phi,4));
+		ASSERT_FALSE(labeling->nodeHasProposition(phi,6));
 
-   //Testing whether all and only the correct nodes are labeled with "psi"
-   ASSERT_TRUE(labeling->nodeHasProposition(psi,6));
-   ASSERT_TRUE(labeling->nodeHasProposition(psi,7));
-   ASSERT_TRUE(labeling->nodeHasProposition(psi,8));
+		//Testing whether all and only the correct nodes are labeled with "psi"
+		ASSERT_TRUE(labeling->nodeHasProposition(psi,6));
+		ASSERT_TRUE(labeling->nodeHasProposition(psi,7));
+		ASSERT_TRUE(labeling->nodeHasProposition(psi,8));
 
-   ASSERT_FALSE(labeling->nodeHasProposition(psi,1));
-   ASSERT_FALSE(labeling->nodeHasProposition(psi,2));
-   ASSERT_FALSE(labeling->nodeHasProposition(psi,3));
-   ASSERT_FALSE(labeling->nodeHasProposition(psi,4));
-   ASSERT_FALSE(labeling->nodeHasProposition(psi,5));
-   ASSERT_FALSE(labeling->nodeHasProposition(psi,9));
-   ASSERT_FALSE(labeling->nodeHasProposition(psi,10));
-   ASSERT_FALSE(labeling->nodeHasProposition(psi,11));
+		ASSERT_FALSE(labeling->nodeHasProposition(psi,1));
+		ASSERT_FALSE(labeling->nodeHasProposition(psi,2));
+		ASSERT_FALSE(labeling->nodeHasProposition(psi,3));
+		ASSERT_FALSE(labeling->nodeHasProposition(psi,4));
+		ASSERT_FALSE(labeling->nodeHasProposition(psi,5));
+		ASSERT_FALSE(labeling->nodeHasProposition(psi,9));
+		ASSERT_FALSE(labeling->nodeHasProposition(psi,10));
+		ASSERT_FALSE(labeling->nodeHasProposition(psi,11));
 
-   //Testing whether all and only the correct nodes are labeled with "smth"
-   ASSERT_TRUE(labeling->nodeHasProposition(smth,4));
-   ASSERT_TRUE(labeling->nodeHasProposition(smth,5));
+		//Testing whether all and only the correct nodes are labeled with "smth"
+		ASSERT_TRUE(labeling->nodeHasProposition(smth,4));
+		ASSERT_TRUE(labeling->nodeHasProposition(smth,5));
 
-   ASSERT_FALSE(labeling->nodeHasProposition(smth,1));
-   ASSERT_FALSE(labeling->nodeHasProposition(smth,2));
-   ASSERT_FALSE(labeling->nodeHasProposition(smth,3));
-   ASSERT_FALSE(labeling->nodeHasProposition(smth,6));
-   ASSERT_FALSE(labeling->nodeHasProposition(smth,7));
-   ASSERT_FALSE(labeling->nodeHasProposition(smth,8));
-   ASSERT_FALSE(labeling->nodeHasProposition(smth,9));
-   ASSERT_FALSE(labeling->nodeHasProposition(smth,10));
-   ASSERT_FALSE(labeling->nodeHasProposition(smth,11));
+		ASSERT_FALSE(labeling->nodeHasProposition(smth,1));
+		ASSERT_FALSE(labeling->nodeHasProposition(smth,2));
+		ASSERT_FALSE(labeling->nodeHasProposition(smth,3));
+		ASSERT_FALSE(labeling->nodeHasProposition(smth,6));
+		ASSERT_FALSE(labeling->nodeHasProposition(smth,7));
+		ASSERT_FALSE(labeling->nodeHasProposition(smth,8));
+		ASSERT_FALSE(labeling->nodeHasProposition(smth,9));
+		ASSERT_FALSE(labeling->nodeHasProposition(smth,10));
+		ASSERT_FALSE(labeling->nodeHasProposition(smth,11));
 
-   //Deleting the labeling
-   delete labeling;
+		//Deleting the labeling
+		delete labeling;
+	}
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest1) {

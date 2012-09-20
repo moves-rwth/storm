@@ -93,79 +93,79 @@ static uint_fast32_t make_first_pass(FILE* p) {
  */
 
 sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
-   FILE *p = NULL;
-   char s[BUFFER_SIZE];
-   uint_fast32_t rows, non_zero;
-   sparse::StaticSparseMatrix<double> *sp = NULL;
+	FILE *p = NULL;
+	char s[BUFFER_SIZE];
+	uint_fast32_t rows, non_zero;
+	sparse::StaticSparseMatrix<double> *sp = NULL;
 
-   p = fopen(filename, "r");
-   if(p==NULL) {
-      pantheios::log_ERROR("File ", filename, " was not readable (Does it exist?)");
-      throw exceptions::file_IO_exception("mrmc::read_tra_file: Error opening file! (Does it exist?)");
-   }
-   non_zero = make_first_pass(p);
+	p = fopen(filename, "r");
+	if(p == NULL) {
+		pantheios::log_ERROR("File ", filename, " was not readable (Does it exist?)");
+		throw exceptions::file_IO_exception("mrmc::read_tra_file: Error opening file! (Does it exist?)");
+		return NULL;
+	}
+	non_zero = make_first_pass(p);
 
-   //Set file reader back to the beginning
-   rewind(p);
+	//Set file reader back to the beginning
+	rewind(p);
 
-   //Reading No. of states
-   if (fgets(s, BUFFER_SIZE, p) != NULL) {
-      if (sscanf( s, "STATES %d", &rows) == 0) {
-         pantheios::log_WARNING(pantheios::integer(rows));
-         (void)fclose(p);
-         throw mrmc::exceptions::wrong_file_format();
-      }
-   }
+	//Reading No. of states
+	if ((fgets(s, BUFFER_SIZE, p) == NULL) || (sscanf(s, "STATES %d", &rows) == 0)) {
+		pantheios::log_WARNING(pantheios::integer(rows));
+		(void)fclose(p);
+		throw mrmc::exceptions::wrong_file_format();
+		return NULL;
+	}
 
-   /* Reading No. of transitions
-    * Note that the result is not used in this function as make_first_pass()
-    * computes the relevant number (non_zero)
-    */
-   if (fgets(s, BUFFER_SIZE, p) != NULL) {
-      uint_fast32_t nnz=0;
-      if (sscanf( s, "TRANSITIONS %d", &nnz) == 0) {
-         (void)fclose(p);
-         throw mrmc::exceptions::wrong_file_format();
-      }
-   }
+	/* Reading No. of transitions
+	 * Note that the result is not used in this function as make_first_pass()
+	 * computes the relevant number (non_zero)
+	 */
+	uint_fast32_t nnz=0;
+	if ((fgets(s, BUFFER_SIZE, p) == NULL) || (sscanf(s, "TRANSITIONS %d", &nnz) == 0)) {
+		(void)fclose(p);
+		throw mrmc::exceptions::wrong_file_format();
+		return NULL;
+	}
 
    pantheios::log_DEBUG("Creating matrix with ",
                         pantheios::integer(rows), " rows and ",
                         pantheios::integer(non_zero), " Non-Zero-Elements");
-   /* Creating matrix
-    * Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
-    * non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
-    */
-   sp = new sparse::StaticSparseMatrix<double>(rows,non_zero);
-   sp->initialize();
-   if ( NULL == sp ) {
-      throw std::bad_alloc();
-      return NULL;
-      }
+	/* Creating matrix
+	 * Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
+	 * non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
+	 */
+	sp = new sparse::StaticSparseMatrix<double>(rows,non_zero);
+	if ( NULL == sp ) {
+		throw std::bad_alloc();
+		return NULL;
+	}
+	sp->initialize();
 
-   //Reading transitions (one per line) and saving the results in the matrix
-   while (NULL != fgets( s, BUFFER_SIZE, p ))
-   {
-      uint_fast32_t row=0, col=0;
-      double val = 0.0;
-      if (sscanf( s, "%d%d%lf", &row, &col, &val) != 3) {
-         delete sp;
-         (void)fclose(p);
-         throw mrmc::exceptions::wrong_file_format();
-      }
-      pantheios::log_DEBUG("Write value ",
-                           pantheios::real(val),
-                           " to position ",
-                           pantheios::integer(row), " x ",
-                           pantheios::integer(col));
-      sp->addNextValue(row,col,val);
-   }
+	//Reading transitions (one per line) and saving the results in the matrix
+	while (NULL != fgets(s, BUFFER_SIZE, p )) {
+		uint_fast32_t row=0, col=0;
+		double val = 0.0;
+		if (sscanf(s, "%d%d%lf", &row, &col, &val) != 3) {
+			(void)fclose(p);
+			throw mrmc::exceptions::wrong_file_format();
+			// Delete Matrix to free allocated memory
+			delete sp;
+			return NULL;
+		}
+		pantheios::log_DEBUG("Write value ",
+							pantheios::real(val),
+							" to position ",
+							pantheios::integer(row), " x ",
+							pantheios::integer(col));
+		sp->addNextValue(row,col,val);
+	}
 
-   (void)fclose(p);
+	(void)fclose(p);
 
-   pantheios::log_DEBUG("Finalizing Matrix");
-   sp->finalize();
-   return sp;
+	pantheios::log_DEBUG("Finalizing Matrix");
+	sp->finalize();
+	return sp;
 }
 
 } //namespace parser
