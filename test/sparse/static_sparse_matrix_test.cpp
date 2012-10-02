@@ -3,52 +3,70 @@
 #include "src/exceptions/invalid_argument.h"
 
 TEST(StaticSparseMatrixTest, ZeroRowsTest) {
-	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(0, 50);
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(0);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::UnInitialized);
 
-	ASSERT_THROW(ssm->initialize(), mrmc::exceptions::invalid_argument);
+	ASSERT_THROW(ssm->initialize(50), mrmc::exceptions::invalid_argument);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
 }
 
 TEST(StaticSparseMatrixTest, TooManyEntriesTest) {
-	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(2, 10);
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(2);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::UnInitialized);
 
-	ASSERT_THROW(ssm->initialize(), mrmc::exceptions::invalid_argument);
+	ASSERT_THROW(ssm->initialize(10), mrmc::exceptions::invalid_argument);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
 }
 
 TEST(StaticSparseMatrixTest, addNextValueTest) {
-	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(5, 1);
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(5);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::UnInitialized);
 
-	ASSERT_NO_THROW(ssm->initialize());
+	ASSERT_NO_THROW(ssm->initialize(1));
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);
 
 	ASSERT_THROW(ssm->addNextValue(0, 1, 1), mrmc::exceptions::out_of_range);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Error);
+
 	ASSERT_THROW(ssm->addNextValue(1, 0, 1), mrmc::exceptions::out_of_range);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Error);
+
 	ASSERT_THROW(ssm->addNextValue(6, 1, 1), mrmc::exceptions::out_of_range);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Error);
+
 	ASSERT_THROW(ssm->addNextValue(1, 6, 1), mrmc::exceptions::out_of_range);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
 }
 
 TEST(StaticSparseMatrixTest, finalizeTest) {
-	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(5, 5);
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(5);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::UnInitialized);
 
-	ASSERT_NO_THROW(ssm->initialize());
+	ASSERT_NO_THROW(ssm->initialize(5));
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);
 
 	ASSERT_NO_THROW(ssm->addNextValue(1, 2, 1));
 	ASSERT_NO_THROW(ssm->addNextValue(1, 3, 1));
 	ASSERT_NO_THROW(ssm->addNextValue(1, 4, 1));
 	ASSERT_NO_THROW(ssm->addNextValue(1, 5, 1));
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);
 
 	ASSERT_THROW(ssm->finalize(), mrmc::exceptions::invalid_state);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
 }
 
 TEST(StaticSparseMatrixTest, Test) {
 	// 25 rows, 50 non zero entries
-	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(25, 50);
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(25);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::UnInitialized);
 
 	int values[50] = {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -76,13 +94,16 @@ TEST(StaticSparseMatrixTest, Test) {
 		14, 15, 16, 17, 18, 19, 20, 21, 22, 23 /* second to last row */
 	};
 
-	ASSERT_NO_THROW(ssm->initialize());
+	ASSERT_NO_THROW(ssm->initialize(50));
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);
 
 	for (int i = 0; i < 50; ++i) {
 		ASSERT_NO_THROW(ssm->addNextValue(position_row[i], position_col[i], values[i]));
 	}
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);
 
 	ASSERT_NO_THROW(ssm->finalize());
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	int target;
 	for (int i = 0; i < 50; ++i) {
@@ -103,6 +124,161 @@ TEST(StaticSparseMatrixTest, Test) {
 		   ASSERT_EQ(0, target);
 		}
 	}
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	delete ssm;
+}
+
+TEST(StaticSparseMatrixTest, ConversionFromDenseEigen_ColMajor_SparseMatrixTest) {
+	// 10 rows, 100 non zero entries
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(10);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::UnInitialized);
+
+	Eigen::SparseMatrix<int> esm(10, 10);
+	for (int row = 0; row < 10; ++row) {
+		for (int col = 0; col < 10; ++col) {
+			esm.insert(row, col) = row * 10 + col;
+		}
+	}
+
+	// make compressed, important for initialize()
+	esm.makeCompressed();
+
+	ASSERT_NO_THROW(ssm->initialize(esm));
+
+	ASSERT_NO_THROW(ssm->finalize());
+
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::ReadReady);
+
+	int target = -1;
+	for (int row = 1; row <= 10; ++row) {
+		for (int col = 1; col <= 10; ++col) {
+			ASSERT_TRUE(ssm->getValue(row, col, &target));
+			ASSERT_EQ(target, (row - 1) * 10 + col - 1);
+		}
+	}
+}
+
+TEST(StaticSparseMatrixTest, ConversionFromDenseEigen_RowMajor_SparseMatrixTest) {
+	// 10 rows, 100 non zero entries
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(10);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::UnInitialized);
+
+	Eigen::SparseMatrix<int, Eigen::RowMajor> esm(10, 10);
+	for (int row = 0; row < 10; ++row) {
+		for (int col = 0; col < 10; ++col) {
+			esm.insert(row, col) = row * 10 + col;
+		}
+	}
+
+	// make compressed, important for initialize()
+	esm.makeCompressed();
+
+	ASSERT_NO_THROW(ssm->initialize(esm));
+
+	ASSERT_NO_THROW(ssm->finalize());
+
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::ReadReady);
+
+	int target = -1;
+	for (int row = 1; row <= 10; ++row) {
+		for (int col = 1; col <= 10; ++col) {
+			ASSERT_TRUE(ssm->getValue(row, col, &target));
+			ASSERT_EQ(target, (row - 1) * 10 + col - 1);
+		}
+	}
+}
+
+TEST(StaticSparseMatrixTest, ConversionFromSparseEigen_ColMajor_SparseMatrixTest) {
+	// 10 rows, 15 non zero entries
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(10);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::UnInitialized);
+
+	Eigen::SparseMatrix<int> esm(10, 10);
+	
+	typedef Eigen::Triplet<int> IntTriplet;
+	std::vector<IntTriplet> tripletList;
+	tripletList.reserve(15);
+	tripletList.push_back(IntTriplet(1, 0, 0));
+	tripletList.push_back(IntTriplet(1, 1, 1));
+	tripletList.push_back(IntTriplet(1, 2, 2));
+	tripletList.push_back(IntTriplet(1, 3, 3));
+	tripletList.push_back(IntTriplet(1, 4, 4));
+	tripletList.push_back(IntTriplet(1, 5, 5));
+	tripletList.push_back(IntTriplet(1, 6, 6));
+	tripletList.push_back(IntTriplet(1, 7, 7));
+	tripletList.push_back(IntTriplet(1, 8, 8));
+	tripletList.push_back(IntTriplet(1, 9, 9));
+
+	tripletList.push_back(IntTriplet(4, 3, 10));
+	tripletList.push_back(IntTriplet(4, 6, 11));
+	tripletList.push_back(IntTriplet(4, 9, 12));
+
+	tripletList.push_back(IntTriplet(6, 0, 13));
+	tripletList.push_back(IntTriplet(8, 9, 14));
+	
+	esm.setFromTriplets(tripletList.begin(), tripletList.end());
+
+	// make compressed, important for initialize()
+	esm.makeCompressed();
+
+	ASSERT_NO_THROW(ssm->initialize(esm));
+
+	ASSERT_NO_THROW(ssm->finalize());
+
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::ReadReady);
+
+	int target = -1;
+
+	for (auto &coeff: tripletList) {
+		ASSERT_TRUE(ssm->getValue(coeff.row() + 1, coeff.col() + 1, &target));
+		ASSERT_EQ(target, coeff.value());
+	}
+}
+
+TEST(StaticSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest) {
+	// 10 rows, 15 non zero entries
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(10);
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::UnInitialized);
+
+	Eigen::SparseMatrix<int, Eigen::RowMajor> esm(10, 10);
+	
+	typedef Eigen::Triplet<int> IntTriplet;
+	std::vector<IntTriplet> tripletList;
+	tripletList.reserve(15);
+	tripletList.push_back(IntTriplet(1, 0, 0));
+	tripletList.push_back(IntTriplet(1, 1, 1));
+	tripletList.push_back(IntTriplet(1, 2, 2));
+	tripletList.push_back(IntTriplet(1, 3, 3));
+	tripletList.push_back(IntTriplet(1, 4, 4));
+	tripletList.push_back(IntTriplet(1, 5, 5));
+	tripletList.push_back(IntTriplet(1, 6, 6));
+	tripletList.push_back(IntTriplet(1, 7, 7));
+	tripletList.push_back(IntTriplet(1, 8, 8));
+	tripletList.push_back(IntTriplet(1, 9, 9));
+
+	tripletList.push_back(IntTriplet(4, 3, 10));
+	tripletList.push_back(IntTriplet(4, 6, 11));
+	tripletList.push_back(IntTriplet(4, 9, 12));
+
+	tripletList.push_back(IntTriplet(6, 0, 13));
+	tripletList.push_back(IntTriplet(8, 9, 14));
+	
+	esm.setFromTriplets(tripletList.begin(), tripletList.end());
+
+	// make compressed, important for initialize()
+	esm.makeCompressed();
+
+	ASSERT_NO_THROW(ssm->initialize(esm));
+
+	ASSERT_NO_THROW(ssm->finalize());
+
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::ReadReady);
+
+	int target = -1;
+
+	for (auto &coeff: tripletList) {
+		ASSERT_TRUE(ssm->getValue(coeff.row() + 1, coeff.col() + 1, &target));
+		ASSERT_EQ(target, coeff.value());
+	}
 }

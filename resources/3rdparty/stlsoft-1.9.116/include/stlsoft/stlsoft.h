@@ -554,8 +554,10 @@
 #  define STLSOFT_COMPILER_VERSION_STRING       "Intel C/C++ 11.0"
 # elif (__INTEL_COMPILER >= 1200) && (__INTEL_COMPILER < 1300)
 #  define STLSOFT_COMPILER_VERSION_STRING       "Intel C/C++ 12.x"
+# elif (__INTEL_COMPILER >= 1300) && (__INTEL_COMPILER < 1400)
+#  define STLSOFT_COMPILER_VERSION_STRING       "Intel C/C++ 13.x"
 # else /* ? __INTEL_COMPILER */
-#  error Only Intel C++ Compiler versions 6.0, 7.0(/7.1), 8.0, 9.0, 10.0, 11.0 and 12.x currently supported by the STLSoft libraries
+#  error Only Intel C++ Compiler versions 6.0, 7.0(/7.1), 8.0, 9.0, 10.0, 11.0, 12.x and 13.x currently supported by the STLSoft libraries
 # endif /* __INTEL_COMPILER */
 
 #elif defined(__MWERKS__)

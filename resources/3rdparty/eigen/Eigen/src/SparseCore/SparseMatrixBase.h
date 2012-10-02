@@ -164,7 +164,11 @@ template<typename Derived> class SparseMatrixBase : public EigenBase<Derived>
     /** \returns the size of the inner dimension according to the storage order,
       * i.e., the number of rows for a columns major matrix, and the number of cols otherwise */
     Index innerSize() const { return (int(Flags)&RowMajorBit) ? this->cols() : this->rows(); }
-
+	
+	bool isRowMajorMatrix() const { 
+		return (int(Flags)&RowMajorBit); 
+	}
+	
     bool isRValue() const { return m_isRValue; }
     Derived& markAsRValue() { m_isRValue = true; return derived(); }
 
