@@ -13,7 +13,6 @@
 #include "src/exceptions/out_of_range.h"
 
 #include "Eigen/Sparse"
-#include "src/sparse/eigen_sparse_additions.h"
 
 namespace mrmc {
 
@@ -49,7 +48,7 @@ class StaticSparseMatrix {
 	 /*!
 		\param rows Row-Count and therefore column-count of the square matrix
 	 */
-	StaticSparseMatrix(uint_fast32_t rows) {
+	StaticSparseMatrix(uint_fast64_t rows) {
 		// Using direct access instead of setState() because of undefined initialization value
 		// setState() stays in Error should Error be the current value
 		internal_status = MatrixStatus::UnInitialized;
@@ -64,6 +63,37 @@ class StaticSparseMatrix {
 		non_zero_entry_count = 0;
 
 		//initialize(rows, non_zero_entries);
+	}
+
+	//! Copy Constructor
+	/*!
+		Copy Constructor. Creates an exact copy of the source sparse matrix ssm. Modification of either matrix does not affect the other.
+		@param ssm A reference to the matrix that should be copied from
+	 */
+	StaticSparseMatrix(const StaticSparseMatrix<T> &ssm) : internal_status(ssm.internal_status), current_size(ssm.current_size), row_count(ssm.row_count), non_zero_entry_count(ssm.non_zero_entry_count)
+	{
+		pantheios::log_DEBUG("StaticSparseMatrix::CopyCTor: Using Copy() Ctor.");
+		if (!ssm.hasError()) {
+			pantheios::log_ERROR("StaticSparseMatrix::CopyCtor: Throwing invalid_argument: Can not Copy from matrix in Error state.");
+			throw mrmc::exceptions::invalid_argument();
+		} else {
+			if (!prepareInternalStorage()) {
+				pantheios::log_ERROR("StaticSparseMatrix::CopyCtor: Throwing bad_alloc: memory allocation failed.");
+				throw std::bad_alloc();
+			} else {
+				for (uint_fast64_t i = 0; i < non_zero_entry_count; ++i) {
+					// use T() to force use of the copy constructor for complex T types
+					value_storage[i] = T(ssm.value_storage[i]);
+				}
+				for (uint_fast64_t i = 0; i <= row_count; ++i) {
+					// same here
+					diagonal_storage[i] = T(ssm.diagonal_storage[i]);
+				}
+
+				memcpy(column_indications, ssm.column_indications, sizeof(column_indications[0]) * non_zero_entry_count);
+				memcpy(row_indications, ssm.row_indications, sizeof(row_indications[0]) * (row_count + 1));
+			}
+		}
 	}
 
 	~StaticSparseMatrix() {
@@ -93,7 +123,7 @@ class StaticSparseMatrix {
 		For initialization from a Eigen SparseMatrix, use initialize(Eigen::SparseMatrix<T> &).
 		\param non_zero_entries The exact count of entries that will be submitted through addNextValue *excluding* those on the diagonal (A_{i,j} with i = j)
 	 */
-	void initialize(uint_fast32_t non_zero_entries) {
+	void initialize(uint_fast64_t non_zero_entries) {
 		if (internal_status != MatrixStatus::UnInitialized) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid state for status flag != 0 (is ", pantheios::integer(internal_status)," - Already initialized?");
@@ -126,8 +156,8 @@ class StaticSparseMatrix {
 		This version is to be used for initialization from a Eigen SparseMatrix, use initialize(uint_fast32_t) for addNextValue.
 		\param eigen_sparse_matrix The Eigen Sparse Matrix to be copied/ initialized from. MUST BE in compressed form!
 	 */
-	template<typename _Scalar, int _Options, typename _Index>
-	void initialize(const Eigen::SparseMatrix<_Scalar, _Options, _Index> &eigen_sparse_matrix) {
+	template<int _Options, typename _Index>
+	void initialize(const Eigen::SparseMatrix<T, _Options, _Index> &eigen_sparse_matrix) {
 		if (!eigen_sparse_matrix.isCompressed()) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid_argument: eigen_sparse_matrix is not in Compressed form.");
@@ -145,28 +175,28 @@ class StaticSparseMatrix {
 			// easy case, we can simply copy the data
 			// RowMajor: Easy, ColMajor: Hmm. But how to detect?
 			const T* valuePtr = eigen_sparse_matrix.valuePtr();
-			const int_fast32_t* indexPtr = eigen_sparse_matrix.innerIndexPtr();
-			const int_fast32_t* outerPtr = eigen_sparse_matrix.outerIndexPtr();
+			const _Index* indexPtr = eigen_sparse_matrix.innerIndexPtr();
+			const _Index* outerPtr = eigen_sparse_matrix.outerIndexPtr();
 
 
-			const int_fast32_t entryCount = eigen_sparse_matrix.nonZeros();
-			const int_fast32_t outerCount = eigen_sparse_matrix.outerSize();
+			const _Index entryCount = eigen_sparse_matrix.nonZeros();
+			const _Index outerCount = eigen_sparse_matrix.outerSize();
 			if (isEigenRowMajor(eigen_sparse_matrix)) {
 				// Easy case, all data can be copied with some minor changes.
 				// We have to separate diagonal entries from others
-				for (int row = 1; row <= outerCount; ++row) {
-					for (int col = outerPtr[row - 1]; col < outerPtr[row]; ++col) {
+				for (_Index row = 1; row <= outerCount; ++row) {
+					for (_Index col = outerPtr[row - 1]; col < outerPtr[row]; ++col) {
 						addNextValue(row, indexPtr[col] + 1, valuePtr[col]);
 					}
 				}
 			} else {
 				// temp copies, anyone?
-				const int eigen_col_count = eigen_sparse_matrix.cols();
-				const int eigen_row_count = eigen_sparse_matrix.rows();
+				const _Index eigen_col_count = eigen_sparse_matrix.cols();
+				const _Index eigen_row_count = eigen_sparse_matrix.rows();
 				
 				// initialise all column-start positions to known lower boundarys
-				int_fast32_t* positions = new int_fast32_t[eigen_col_count]();
-				for (int i = 0; i < eigen_col_count; ++i) {
+				_Index* positions = new _Index[eigen_col_count]();
+				for (_Index i = 0; i < eigen_col_count; ++i) {
 					positions[i] = outerPtr[i];
 				}
 
@@ -188,6 +218,7 @@ class StaticSparseMatrix {
 						++currentRow;
 					}
 				}
+				delete[] positions;
 			}
 			setState(MatrixStatus::Initialized);
 		}
@@ -198,7 +229,7 @@ class StaticSparseMatrix {
 		Linear Setter function for matrix entry A_{row, col} to value. Must be called consecutively for each element in a row in ascending order of columns AND in ascending order of rows.
 		Diagonal entries may be set at any time.
 	 */
-	void addNextValue(const uint_fast32_t row, const uint_fast32_t col, const T &value) {
+	void addNextValue(const uint_fast64_t row, const uint_fast64_t col, const T &value) {
 		if ((row > row_count) || (col > row_count) || (row == 0) || (col == 0)) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::addNextValue: Throwing out_of_range: row or col not in 1 .. rows (is ", pantheios::integer(row), " x ", pantheios::integer(col), ", max is ", pantheios::integer(row_count), " x ", pantheios::integer(row_count), ").");
@@ -209,7 +240,7 @@ class StaticSparseMatrix {
 			diagonal_storage[row] = value;
 		} else {
 			if (row != last_row) {
-				for (uint_fast32_t i = last_row; i < row; ++i) {
+				for (uint_fast64_t i = last_row; i < row; ++i) {
 					row_indications[i] = current_size;
 				}
 				last_row = row;
@@ -234,7 +265,7 @@ class StaticSparseMatrix {
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::finalize: Wrong call count for addNextValue");
 		} else {
 			if (last_row != row_count) {
-				for (uint_fast32_t i = last_row; i < row_count; ++i) {
+				for (uint_fast64_t i = last_row; i < row_count; ++i) {
 					row_indications[i] = current_size;
 				}
 			}
@@ -253,7 +284,7 @@ class StaticSparseMatrix {
 		\param target pointer to where the result will be stored
 		\return True iff the value was set, false otherwise. On false, 0 will be written to *target.
 	*/
-	inline bool getValue(uint_fast32_t row, uint_fast32_t col, T* const target) {
+	inline bool getValue(uint_fast64_t row, uint_fast64_t col, T* const target) {
 		
 		if (row == col) {
 			// storage is row_count + 1 large for direct access without the -1
@@ -267,8 +298,8 @@ class StaticSparseMatrix {
 			return false;
 		}
 
-		uint_fast32_t row_start = row_indications[row - 1];
-		uint_fast32_t row_end = row_indications[row];
+		uint_fast64_t row_start = row_indications[row - 1];
+		uint_fast64_t row_end = row_indications[row];
 
 		while (row_start < row_end) {
 			if (column_indications[row_start] == col) {
@@ -285,7 +316,7 @@ class StaticSparseMatrix {
 		return false;
 	}
 
-	uint_fast32_t getRowCount() const {
+	uint_fast64_t getRowCount() const {
 		return row_count;
 	}
 
@@ -317,21 +348,24 @@ class StaticSparseMatrix {
 		@return The Eigen SparseMatrix
 
 	 */
-	Eigen::SparseMatrix<T> toEigenSparseMatrix() {
-		Eigen::SparseMatrix<T> mat(row_count, row_count);
+	Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>* toEigenSparseMatrix() {
+		int_fast32_t eigenRows = static_cast<int_fast32_t>(row_count);
+		Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>* mat = new Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>(eigenRows, eigenRows);
 
 		if (!isReadReady()) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::toEigenSparseMatrix: Throwing invalid state for internal state not ReadReady (is ", pantheios::integer(internal_status),").");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::toEigenSparseMatrix: Invalid state for internal state not ReadReady.");
 		} else {
-			typedef Eigen::Triplet<int> IntTriplet;
+
+#			ifdef MRMC_USE_TRIPLETCONVERT
+			typedef Eigen::Triplet<T> IntTriplet;
 			std::vector<IntTriplet> tripletList;
 			tripletList.reserve(non_zero_entry_count + row_count);
 
-			uint_fast32_t row_start;
-			uint_fast32_t row_end;
-			for (uint_fast32_t row = 1; row <= row_count; ++row) {
+			uint_fast64_t row_start;
+			uint_fast64_t row_end;
+			for (uint_fast64_t row = 1; row <= row_count; ++row) {
 				row_start	= row_indications[row - 1];
 				row_end		= row_indications[row];
 				while (row_start < row_end) {
@@ -339,88 +373,78 @@ class StaticSparseMatrix {
 					++row_start;
 				}
 			}
-			for (uint_fast32_t i = 1; i <= row_count; ++i) {
-				tripletList.push_back(IntTriplet(i, i, diagonal_storage[i]));
+
+			for (uint_fast64_t i = 1; i <= row_count; ++i) {
+				tripletList.push_back(IntTriplet(i - 1, i - 1, diagonal_storage[i]));
 			}
 
-			mat.setFromTriplets(tripletList.begin(), tripletList.end());
-			mat.makeCompressed();
+			mat->setFromTriplets(tripletList.begin(), tripletList.end());
+
+#			else // NOT MRMC_USE_TRIPLETCONVERT
+
+			// In most cases, this is faster (about 1/2 of the above). But if there are "heavy" rows that are several times larger than an average row, the other solution might be faster.
+
+			mat->reserve(Eigen::VectorXi::Constant(static_cast<int_fast32_t>(mat->outerSize()), static_cast<int_fast32_t>((non_zero_entry_count + row_count) / mat->outerSize())));
+
+			uint_fast64_t row_start;
+			uint_fast64_t row_end;
+			for (uint_fast64_t row = 1; row <= row_count; ++row) {
+				row_start	= row_indications[row - 1];
+				row_end		= row_indications[row];
+				while (row_start < row_end) {
+					//tripletList.push_back(IntTriplet(row - 1, column_indications[row_start] - 1, value_storage[row_start]));
+					mat->insert(row - 1, column_indications[row_start] - 1) = value_storage[row_start];
+					++row_start;
+				}
+			}
+#			endif // MRMC_USE_TRIPLETCONVERT
+
+			mat->makeCompressed();
 		}
 		
 		return mat;
 	}
 
-	//! Alternative way to initialize this matrix instead of using initialize(), addNextValue() and finalize().
+	//! Returns the exact count of explicit entries in the sparse matrix.
 	/*!
-		Initializes the matrix from the given eigen_sparse_matrix. Replaces the calls to initialize(), addNextValue() and finalize().
-		Requires eigen_sparse_matrix to have at most a size of rows x rows and not more than non_zero_entries on non-diagonal fields.
-		To calculate the non-zero-entry count on only non-diagonal fields, you may use getEigenSparseMatrixCorrectNonZeroEntryCount().
-		In most cases, it may be easier to use the alternative constructor StaticSparseMatrix(const Eigen::SparseMatrix<T> eigen_sparse_matrix).
-		@param eigen_sparse_matrix the Eigen Sparse Matrix from which this matrix should be initalized.
-		@see getEigenSparseMatrixCorrectNonZeroEntryCount()
-		@see StaticSparseMatrix(const Eigen::SparseMatrix<T>)
+		Retuns the exact count of explicit entries in the sparse matrix. While it is called "nonZero" count, the fields may of course be 0 (the 0-value of T).
+		@returns explicit entry count in the matrix
 	 */
-	bool fromEigenSparseMatrix(const Eigen::SparseMatrix<T> eigen_sparse_matrix) {
-		if (getState() != MatrixStatus::UnInitialized) {
-			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::fromEigenSparseMatrix: Throwing invalid state for internal state not UnInitialized (is ", pantheios::integer(internal_status),").");
-			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::fromEigenSparseMatrix: Invalid state for internal state not UnInitialized.");
+	uint_fast64_t getNonZeroEntryCount() const {
+		return non_zero_entry_count;
+	}
+
+	//! Converts a state into a final state.
+	/*!
+		This function allows for states to be made final. This means that all entries in row "state" will be changed to 0 but for the one on the diagonal, which will be set to 1 to create a loop on itself.
+		@param state The number of the state to be converted. Must be in 1 <= state <= rows.
+		@returns Whether the conversion was successful.
+	 */
+	bool makeStateFinal(const uint_fast64_t state) {
+		if ((state > row_count) || (state == 0)) {
+			pantheios::log_ERROR("StaticSparseMatrix::makeStateFinal: state not in 1 .. rows (is ", pantheios::integer(state), ", max is ", pantheios::integer(row_count), ").");
+			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::makeStateFinal: state not in 1 .. rows");
 			return false;
 		}
 
-		int_fast32_t eigen_row_count = eigen_sparse_matrix.rows();
-		int_fast32_t eigen_col_count = eigen_sparse_matrix.cols();
+		uint_fast64_t row_start = row_indications[state - 1];
+		uint_fast64_t row_end = row_indications[state];
 
-		if ((eigen_row_count > row_count) || (eigen_col_count > row_count)) {
-			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::fromEigenSparseMatrix: Throwing invalid argument for eigenSparseMatrix is too big to fit (is ", pantheios::integer(eigen_row_count)," x ", pantheios::integer(eigen_col_count), ", max is ", pantheios::integer(row_count)," x ", pantheios::integer(row_count), ").");
-			throw mrmc::exceptions::invalid_argument("StaticSparseMatrix::fromEigenSparseMatrix: Invalid argument for eigenSparseMatrix is too big to fit.");
-			return false;
+		while (row_start < row_end) {
+			value_storage[row_start] = getConstZero();
+			row_start++;
 		}
 
-		uint_fast32_t eigen_non_zero_entries = mrmc::sparse::getEigenSparseMatrixCorrectNonZeroEntryCount(eigen_sparse_matrix);
-
-		if (eigen_non_zero_entries > non_zero_entry_count) {
-			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::fromEigenSparseMatrix: Throwing invalid argument for eigenSparseMatrix has too many non-zero entries to fit (is ", pantheios::integer(eigen_non_zero_entries),", max is ", pantheios::integer(non_zero_entry_count),").");
-			throw mrmc::exceptions::invalid_argument("StaticSparseMatrix::fromEigenSparseMatrix: Invalid argument for eigenSparseMatrix has too many non-zero entries to fit.");
-			return false;
-		}
-
-		// make compressed
-		eigen_sparse_matrix.makeCompressed();
-
-		if (eigen_sparse_matrix.IsRowMajor()) {
-			// inner Index
-			int_fast32_t* eigenInnerIndex = eigen_sparse_matrix.innerIndexPtr();
-			T* eigenValuePtr = eigen_sparse_matrix.valuePtr();
-		}
-		
-
-
-		for (int k = 0; k < tempESM.outerSize(); ++k) {
-			for (SparseMatrix<T>::InnerIterator it(tempESM, k); it; ++it) {
-				if (eigen_non_zero_entries >= non_zero_entry_count) {
-					// too many non zero entries for us.
-				}
-				addNextValue(it.row() - 1, it.col() - 1, it.value());
-				if (it.row() != it.col()) {
-					++eigen_non_zero_entries;
-				}
-				/*it.value();
-				it.row();   // row index
-				it.col();   // col index (here it is equal to k)
-				it.index(); // inner index, here it is equal to it.row()*/
-			}
-		}
+		diagonal_storage[state] = getConstOne();
+		return true;
 	}
 
  private:
-	uint_fast32_t current_size;
+	uint_fast64_t current_size;
 
-	uint_fast32_t row_count;
-	uint_fast32_t non_zero_entry_count;
-	uint_fast32_t last_row;
+	uint_fast64_t row_count;
+	uint_fast64_t non_zero_entry_count;
+	uint_fast64_t last_row;
 
 	/*! Array containing all non-zero values, apart from the diagonal entries */
 	T* value_storage;
@@ -428,9 +452,9 @@ class StaticSparseMatrix {
 	T* diagonal_storage;
 
 	/*! Array containing the column number of the corresponding value_storage entry */
-	uint_fast32_t* column_indications;
+	uint_fast64_t* column_indications;
 	/*! Array containing the row boundaries of valueStorage */
-	uint_fast32_t* row_indications;
+	uint_fast64_t* row_indications;
 
 	/*! Internal status enum, 0 for constructed, 1 for initialized and 2 for finalized, -1 on errors */
 	MatrixStatus internal_status;
@@ -456,14 +480,46 @@ class StaticSparseMatrix {
 	bool prepareInternalStorage() {
 		value_storage = new (std::nothrow) T[non_zero_entry_count]();
 
-		column_indications = new (std::nothrow) uint_fast32_t[non_zero_entry_count]();
+		column_indications = new (std::nothrow) uint_fast64_t[non_zero_entry_count]();
 
-		row_indications = new (std::nothrow) uint_fast32_t[row_count + 1]();
+		row_indications = new (std::nothrow) uint_fast64_t[row_count + 1]();
 
 		// row_count + 1 so that access with 1-based indices can be direct without the overhead of a -1 each time
 		diagonal_storage = new (std::nothrow) T[row_count + 1]();
 
 		return ((value_storage != NULL) && (column_indications != NULL) && (row_indications != NULL) && (diagonal_storage != NULL));
+	}
+
+	//! 
+
+	template<typename _Scalar>
+	_Scalar constGetZero() const {
+		return _Scalar(0);
+	}
+
+	template <>
+	int_fast32_t constGetZero() const {
+		return 0;	
+	}
+
+	template <>
+	double constGetZero() const {
+		return 0.0;	
+	}
+
+	template<typename _Scalar>
+	_Scalar constGetOne() const {
+		return _Scalar(1);
+	}
+
+	template<>
+	int_fast32_t constGetOne() const {
+		return 1;
+	}
+
+	template<>
+	double constGetOne() const {
+		return 1.0;
 	}
 
 	template <typename _Scalar, typename _Index>
@@ -477,21 +533,21 @@ class StaticSparseMatrix {
 	}
 
 	template<typename _Scalar, int _Options, typename _Index>
-	uint_fast32_t getEigenSparseMatrixCorrectNonZeroEntryCount(const Eigen::SparseMatrix<_Scalar, _Options, _Index> &eigen_sparse_matrix) {
-		const int_fast32_t* indexPtr = eigen_sparse_matrix.innerIndexPtr();
-		const int_fast32_t* outerPtr = eigen_sparse_matrix.outerIndexPtr();
+	_Index getEigenSparseMatrixCorrectNonZeroEntryCount(const Eigen::SparseMatrix<_Scalar, _Options, _Index> &eigen_sparse_matrix) {
+		const _Index* indexPtr = eigen_sparse_matrix.innerIndexPtr();
+		const _Index* outerPtr = eigen_sparse_matrix.outerIndexPtr();
 
-		const int_fast32_t entryCount = eigen_sparse_matrix.nonZeros();
-		const int_fast32_t outerCount = eigen_sparse_matrix.outerSize();
+		const _Index entryCount = eigen_sparse_matrix.nonZeros();
+		const _Index outerCount = eigen_sparse_matrix.outerSize();
 		
-		uint_fast32_t diag_non_zeros = 0;
+		uint_fast64_t diag_non_zeros = 0;
 		
 		// for RowMajor, row is the current Row and col the column
 		// for ColMajor, row is the current Col and col the row
-		int_fast32_t innerStart = 0;
-		int_fast32_t innerEnd   = 0;
-		int_fast32_t innerMid   = 0;
-		for (int row = 0; row < outerCount; ++row) {
+		_Index innerStart = 0;
+		_Index innerEnd   = 0;
+		_Index innerMid   = 0;
+		for (_Index row = 0; row < outerCount; ++row) {
 			innerStart = outerPtr[row];
 			innerEnd   = outerPtr[row + 1] - 1;
 			
@@ -512,7 +568,7 @@ class StaticSparseMatrix {
 			}
 		}
 
-		return static_cast<uint_fast32_t>(entryCount - diag_non_zeros);
+		return static_cast<_Index>(entryCount - diag_non_zeros);
 	}
 
 };

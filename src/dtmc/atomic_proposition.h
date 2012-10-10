@@ -8,10 +8,7 @@
 #include <pantheios/pantheios.hpp>
 #include <pantheios/inserters/integer.hpp>
 
-#include "src/exceptions/invalid_state.h"
-#include "src/exceptions/invalid_argument.h"
-#include "src/exceptions/out_of_range.h"
-
+#include "src/vector/bitvector.h"
 
 
 namespace mrmc {
@@ -29,47 +26,25 @@ class AtomicProposition {
 	 /*!
 		\param nodeCount Amount of nodes that the DTMC has to label
 	 */
-	AtomicProposition(uint_fast32_t nodeCount) {
-	   node_array = NULL;
-      if (node_array == NULL) {
-          node_count = nodeCount;
-          int n = (int) std::ceil(nodeCount / 64.0);
-          node_array = new uint_fast64_t[n];
-          //Initialization with 0 is crucial!
-          memset(node_array, 0, n*sizeof(uint_fast64_t));
-      }
+	AtomicProposition(uint_fast32_t nodeCount) : nodes(nodeCount) {
+		//
 	}
 
 	~AtomicProposition() {
-	   if (node_array != NULL) {
-	      delete[] node_array;
-	   }
+		//
 	}
 
 	bool hasNodeLabel(uint_fast32_t nodeId) {
-		int bucket = static_cast<int>(std::floor(nodeId / 64));
-		int bucket_place = nodeId % 64;
-		// Taking the step with mask is crucial as we NEED a 64bit shift, not a 32bit one.
-		uint_fast64_t mask = 1;
-		mask = mask << bucket_place;
-		return ((mask & node_array[bucket]) == mask);
+		return nodes.get(nodeId);
 	}
 
 	void addLabelToNode(uint_fast32_t nodeId) {
-		int bucket = static_cast<int>(std::floor(nodeId / 64));
-		// Taking the step with mask is crucial as we NEED a 64bit shift, not a 32bit one.
-		// MSVC: C4334, use 1i64 or cast to __int64.
-		// result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
-		uint_fast64_t mask = 1;
-		mask = mask << (nodeId % 64);
-		node_array[bucket] |= mask;
+		nodes.set(nodeId, true);
 	}
 	
  private:
-	uint_fast32_t node_count;
-
-	/*! Array containing the boolean bits for each node, 64bits/64nodes per element */
-	uint_fast64_t* node_array;
+	/*! BitVector containing the boolean bits for each node */
+	mrmc::vector::BitVector nodes;
 };
 
 } // namespace dtmc

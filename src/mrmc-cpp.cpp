@@ -15,7 +15,8 @@
 #include <iostream>
 #include <cstdio>
 
-#include <ctime>
+/* PlatformSTL Header Files */
+#include <platformstl/performance/performance_counter.hpp>
 
 #include <pantheios/pantheios.hpp>
 #include <pantheios/backends/bec.file.h>
@@ -26,60 +27,88 @@ PANTHEIOS_EXTERN_C PAN_CHAR_T const PANTHEIOS_FE_PROCESS_IDENTITY[] = "mrmc-cpp"
 #include "src/sparse/static_sparse_matrix.h"
 #include "src/dtmc/atomic_proposition.h"
 #include "src/parser/read_lab_file.h"
+#include "src/parser/read_tra_file.h"
+#include "Eigen/Sparse"
  
 int main(int argc, char* argv[]) {
 	// Logging init
 	pantheios_be_file_setFilePath("log.all");
 	pantheios::log_INFORMATIONAL("MRMC-Cpp started.");
 
-	mrmc::dtmc::labeling *lab;
-
-	time_t start = std::clock();
-
-	lab = mrmc::parser::read_lab_file(20302, "csl_unbounded_until_sim_06.lab");
-
-	time_t end = std::clock();
-
-	printf("Time needed was %f", ((float)end-start)/CLOCKS_PER_SEC);
-
-	delete lab;
-
-	/*
-	std::cout << "Hello, World." << std::endl;
-	std::cout << "This is MRMC-Cpp Version " << MRMC_CPP_VERSION_MAJOR << "." << MRMC_CPP_VERSION_MINOR << std::endl;
-
-	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(10, 10);
-
-	ssm->initialize();
-	ssm->addNextValue(2, 3, 1);
-	ssm->addNextValue(2, 4, 2);
-	ssm->addNextValue(2, 5, 3);
-	ssm->addNextValue(2, 6, 4);
-	ssm->addNextValue(2, 7, 5);
-
-	ssm->addNextValue(3, 4, 6);
-	ssm->addNextValue(3, 5, 7);
-	ssm->addNextValue(3, 6, 8);
-	ssm->addNextValue(3, 7, 9);
-	ssm->addNextValue(3, 8, 10);
-
-	ssm->finalize();
-
-	int target;
-
-	for (int row = 1; row <= 10; ++row) {
-		for (int col = 1; col <= 10; ++col) {
-			if (ssm->getValue(row, col, &target)) {
-				printf(" T%i", target);
-			} else {
-				printf(" _%i", target);
-			}
-		}
-		printf("\n");
+	if (argc < 2) {
+		std::cout << "Required argument #1 inputTraFile.tra not found!" << std::endl;
+		exit(-1);
 	}
 
+	mrmc::sparse::StaticSparseMatrix<double> *ssm;
+	mrmc::sparse::StaticSparseMatrix<double> *ssmBack;
+
+	// 1. Create an instance of the platformstl::performance_counter. (On
+    // UNIX this will resolve to unixstl::performance_counter; on Win32 it
+    // will resolve to winstl::performance_counter.)
+    platformstl::performance_counter    counter;
+
+	std::cout << "Building Matrix from File..." << std::endl;
+
+	// 2. Begin the measurement
+    counter.start();
+
+	ssm = mrmc::parser::read_tra_file(argv[1]);
+	//lab = mrmc::parser::read_lab_file(20302, "csl_unbounded_until_sim_06.lab");
+
+	counter.stop();
+
+	std::cout << "Loaded " << ssm->getNonZeroEntryCount() << " entries into (" << ssm->getRowCount() << " x " << ssm->getRowCount() << ")." << std::endl;
+	std::cout << "Time needed was " << (unsigned long long)counter.get_microseconds() << std::endl;
+
+
+
+	counter.start();
+	auto esm = ssm->toEigenSparseMatrix();
+	counter.stop();
+
+	std::cout << "Loaded " << esm->nonZeros() << " entries into (" << esm->rows() << " x " << esm->cols() << ")." << std::endl;
+	std::cout << "Time needed was " << (unsigned long long)counter.get_microseconds() << std::endl;
+
+	ssmBack = new mrmc::sparse::StaticSparseMatrix<double>(esm->rows());
+
+	counter.start();
+	ssmBack->initialize(*esm);
+	counter.stop();
+
+	std::cout << "Loaded " << ssmBack->getNonZeroEntryCount() << " entries into (" << ssmBack->getRowCount() << " x " << ssmBack->getRowCount() << ")." << std::endl;
+	std::cout << "Time needed was " << (unsigned long long)counter.get_microseconds() << std::endl;
+
 	delete ssm;
-	*/
+	delete ssmBack;
+
+	std::cout << std::endl;
+	std::cout << ":: C-style vs. C++ Style Array init Showdown ::" << std::endl;
+
+	uint_fast64_t *iArray = NULL;
+	uint_fast32_t i = 0;
+	uint_fast32_t j = 0;
+
+	counter.start();
+	for (i = 0; i < 10000; ++i) {
+		iArray = (uint_fast64_t*)malloc(2097152 * sizeof(uint_fast64_t));
+		for (j = 0; j < 2097152; ++j) {
+			iArray[j] = 0;
+		}
+		free(iArray);
+	}
+	counter.stop();
+
+	std::cout << "C-style:   " << (unsigned long long)counter.get_microseconds() << std::endl;
+
+	counter.start();
+	for (i = 0; i < 10000; ++i) {
+		iArray = new uint_fast64_t[2097152]();
+		delete[] iArray;
+	}
+	counter.stop();
+
+	std::cout << "Cpp-style: " << (unsigned long long)counter.get_microseconds() << std::endl;
 
 	return 0;
 }
