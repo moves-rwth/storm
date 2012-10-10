@@ -511,6 +511,7 @@ template<typename Derived1, typename Derived2, bool ClearOpposite>
 struct triangular_assignment_selector<Derived1, Derived2, StrictlyUpper, Dynamic, ClearOpposite>
 {
   typedef typename Derived1::Index Index;
+  typedef typename Derived1::Scalar Scalar;
   static inline void run(Derived1 &dst, const Derived2 &src)
   {
     for(Index j = 0; j < dst.cols(); ++j)
@@ -520,7 +521,7 @@ struct triangular_assignment_selector<Derived1, Derived2, StrictlyUpper, Dynamic
         dst.copyCoeff(i, j, src);
       if (ClearOpposite)
         for(Index i = maxi; i < dst.rows(); ++i)
-          dst.coeffRef(i, j) = 0;
+          dst.coeffRef(i, j) = Scalar(0);
     }
   }
 };
@@ -778,7 +779,7 @@ MatrixBase<Derived>::triangularView() const
   * \sa isLowerTriangular()
   */
 template<typename Derived>
-bool MatrixBase<Derived>::isUpperTriangular(RealScalar prec) const
+bool MatrixBase<Derived>::isUpperTriangular(const RealScalar& prec) const
 {
   RealScalar maxAbsOnUpperPart = static_cast<RealScalar>(-1);
   for(Index j = 0; j < cols(); ++j)
@@ -803,7 +804,7 @@ bool MatrixBase<Derived>::isUpperTriangular(RealScalar prec) const
   * \sa isUpperTriangular()
   */
 template<typename Derived>
-bool MatrixBase<Derived>::isLowerTriangular(RealScalar prec) const
+bool MatrixBase<Derived>::isLowerTriangular(const RealScalar& prec) const
 {
   RealScalar maxAbsOnLowerPart = static_cast<RealScalar>(-1);
   for(Index j = 0; j < cols(); ++j)

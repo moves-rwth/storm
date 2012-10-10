@@ -82,6 +82,11 @@ class NoAlias
     { return m_expression.derived() -= CoeffBasedProduct<Lhs,Rhs,NestByRefBit>(other.lhs(), other.rhs()); }
 #endif
 
+    ExpressionType& expression() const
+    {
+      return m_expression;
+    }
+
   protected:
     ExpressionType& m_expression;
 };

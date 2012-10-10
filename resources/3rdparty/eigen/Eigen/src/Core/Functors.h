@@ -204,20 +204,27 @@ struct functor_traits<scalar_difference_op<Scalar> > {
   *
   * \sa class CwiseBinaryOp, Cwise::operator/()
   */
-template<typename Scalar> struct scalar_quotient_op {
+template<typename LhsScalar,typename RhsScalar> struct scalar_quotient_op {
+  enum {
+    // TODO vectorize mixed product
+    Vectorizable = is_same<LhsScalar,RhsScalar>::value && packet_traits<LhsScalar>::HasDiv && packet_traits<RhsScalar>::HasDiv
+  };
+  typedef typename scalar_product_traits<LhsScalar,RhsScalar>::ReturnType result_type;
   EIGEN_EMPTY_STRUCT_CTOR(scalar_quotient_op)
-  EIGEN_STRONG_INLINE const Scalar operator() (const Scalar& a, const Scalar& b) const { return a / b; }
+  EIGEN_STRONG_INLINE const result_type operator() (const LhsScalar& a, const RhsScalar& b) const { return a / b; }
   template<typename Packet>
   EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a, const Packet& b) const
   { return internal::pdiv(a,b); }
 };
-template<typename Scalar>
-struct functor_traits<scalar_quotient_op<Scalar> > {
+template<typename LhsScalar,typename RhsScalar>
+struct functor_traits<scalar_quotient_op<LhsScalar,RhsScalar> > {
   enum {
-    Cost = 2 * NumTraits<Scalar>::MulCost,
-    PacketAccess = packet_traits<Scalar>::HasDiv
+    Cost = (NumTraits<LhsScalar>::MulCost + NumTraits<RhsScalar>::MulCost), // rough estimate!
+    PacketAccess = scalar_quotient_op<LhsScalar,RhsScalar>::Vectorizable
   };
 };
+
+
 
 /** \internal
   * \brief Template functor to compute the and of two booleans
@@ -447,7 +454,7 @@ struct functor_traits<scalar_log_op<Scalar> >
  * indeed it seems better to declare m_other as a Packet and do the pset1() once
  * in the constructor. However, in practice:
  *  - GCC does not like m_other as a Packet and generate a load every time it needs it
- *  - on the other hand GCC is able to moves the pset1() away the loop :)
+ *  - on the other hand GCC is able to moves the pset1() outside the loop :)
  *  - simpler code ;)
  * (ICC and gcc 4.4 seems to perform well in both cases, the issue is visible with y = a*x + b*y)
  */
@@ -478,33 +485,6 @@ template<typename Scalar1,typename Scalar2>
 struct functor_traits<scalar_multiple2_op<Scalar1,Scalar2> >
 { enum { Cost = NumTraits<Scalar1>::MulCost, PacketAccess = false }; };
 
-template<typename Scalar, bool IsInteger>
-struct scalar_quotient1_impl {
-  typedef typename packet_traits<Scalar>::type Packet;
-  // FIXME default copy constructors seems bugged with std::complex<>
-  EIGEN_STRONG_INLINE scalar_quotient1_impl(const scalar_quotient1_impl& other) : m_other(other.m_other) { }
-  EIGEN_STRONG_INLINE scalar_quotient1_impl(const Scalar& other) : m_other(static_cast<Scalar>(1) / other) {}
-  EIGEN_STRONG_INLINE Scalar operator() (const Scalar& a) const { return a * m_other; }
-  EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const
-  { return internal::pmul(a, pset1<Packet>(m_other)); }
-  const Scalar m_other;
-};
-template<typename Scalar>
-struct functor_traits<scalar_quotient1_impl<Scalar,false> >
-{ enum { Cost = NumTraits<Scalar>::MulCost, PacketAccess = packet_traits<Scalar>::HasMul }; };
-
-template<typename Scalar>
-struct scalar_quotient1_impl<Scalar,true> {
-  // FIXME default copy constructors seems bugged with std::complex<>
-  EIGEN_STRONG_INLINE scalar_quotient1_impl(const scalar_quotient1_impl& other) : m_other(other.m_other) { }
-  EIGEN_STRONG_INLINE scalar_quotient1_impl(const Scalar& other) : m_other(other) {}
-  EIGEN_STRONG_INLINE Scalar operator() (const Scalar& a) const { return a / m_other; }
-  typename add_const_on_value_type<typename NumTraits<Scalar>::Nested>::type m_other;
-};
-template<typename Scalar>
-struct functor_traits<scalar_quotient1_impl<Scalar,true> >
-{ enum { Cost = 2 * NumTraits<Scalar>::MulCost, PacketAccess = false }; };
-
 /** \internal
   * \brief Template functor to divide a scalar by a fixed other one
   *
@@ -514,14 +494,19 @@ struct functor_traits<scalar_quotient1_impl<Scalar,true> >
   * \sa class CwiseUnaryOp, MatrixBase::operator/
   */
 template<typename Scalar>
-struct scalar_quotient1_op : scalar_quotient1_impl<Scalar, NumTraits<Scalar>::IsInteger > {
-  EIGEN_STRONG_INLINE scalar_quotient1_op(const Scalar& other)
-    : scalar_quotient1_impl<Scalar, NumTraits<Scalar>::IsInteger >(other) {}
+struct scalar_quotient1_op {
+  typedef typename packet_traits<Scalar>::type Packet;
+  // FIXME default copy constructors seems bugged with std::complex<>
+  EIGEN_STRONG_INLINE scalar_quotient1_op(const scalar_quotient1_op& other) : m_other(other.m_other) { }
+  EIGEN_STRONG_INLINE scalar_quotient1_op(const Scalar& other) : m_other(other) {}
+  EIGEN_STRONG_INLINE Scalar operator() (const Scalar& a) const { return a / m_other; }
+  EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const
+  { return internal::pdiv(a, pset1<Packet>(m_other)); }
+  typename add_const_on_value_type<typename NumTraits<Scalar>::Nested>::type m_other;
 };
 template<typename Scalar>
 struct functor_traits<scalar_quotient1_op<Scalar> >
-: functor_traits<scalar_quotient1_impl<Scalar, NumTraits<Scalar>::IsInteger> >
-{};
+{ enum { Cost = 2 * NumTraits<Scalar>::MulCost, PacketAccess = packet_traits<Scalar>::HasDiv }; };
 
 // nullary functors
 
@@ -660,6 +645,7 @@ template<typename Scalar> struct functor_has_linear_access<scalar_identity_op<Sc
 template<typename Functor> struct functor_allows_mixing_real_and_complex { enum { ret = 0 }; };
 template<typename LhsScalar,typename RhsScalar> struct functor_allows_mixing_real_and_complex<scalar_product_op<LhsScalar,RhsScalar> > { enum { ret = 1 }; };
 template<typename LhsScalar,typename RhsScalar> struct functor_allows_mixing_real_and_complex<scalar_conj_product_op<LhsScalar,RhsScalar> > { enum { ret = 1 }; };
+template<typename LhsScalar,typename RhsScalar> struct functor_allows_mixing_real_and_complex<scalar_quotient_op<LhsScalar,RhsScalar> > { enum { ret = 1 }; };
 
 
 /** \internal

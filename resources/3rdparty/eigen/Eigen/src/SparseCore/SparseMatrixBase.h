@@ -164,11 +164,7 @@ template<typename Derived> class SparseMatrixBase : public EigenBase<Derived>
     /** \returns the size of the inner dimension according to the storage order,
       * i.e., the number of rows for a columns major matrix, and the number of cols otherwise */
     Index innerSize() const { return (int(Flags)&RowMajorBit) ? this->cols() : this->rows(); }
-	
-	bool isRowMajorMatrix() const { 
-		return (int(Flags)&RowMajorBit); 
-	}
-	
+
     bool isRValue() const { return m_isRValue; }
     Derived& markAsRValue() { m_isRValue = true; return derived(); }
 
@@ -434,12 +430,12 @@ template<typename Derived> class SparseMatrixBase : public EigenBase<Derived>
 
     template<typename OtherDerived>
     bool isApprox(const SparseMatrixBase<OtherDerived>& other,
-                  RealScalar prec = NumTraits<Scalar>::dummy_precision()) const
+                  const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const
     { return toDense().isApprox(other.toDense(),prec); }
 
     template<typename OtherDerived>
     bool isApprox(const MatrixBase<OtherDerived>& other,
-                  RealScalar prec = NumTraits<Scalar>::dummy_precision()) const
+                  const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const
     { return toDense().isApprox(other,prec); }
 
     /** \returns the matrix or vector obtained by evaluating this expression.

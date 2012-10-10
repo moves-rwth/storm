@@ -496,8 +496,8 @@ class SuperLU : public SuperLUBase<_MatrixType,SuperLU<_MatrixType> >
 
     SuperLU(const MatrixType& matrix) : Base()
     {
-      Base::init();
-      compute(matrix);
+      init();
+      Base::compute(matrix);
     }
 
     ~SuperLU()
@@ -612,6 +612,7 @@ void SuperLU<MatrixType>::factorize(const MatrixType& a)
   
   this->initFactorization(a);
   
+  m_sluOptions.ColPerm = COLAMD;
   int info = 0;
   RealScalar recip_pivot_growth, rcond;
   RealScalar ferr, berr;
@@ -833,7 +834,7 @@ class SuperILU : public SuperLUBase<_MatrixType,SuperILU<_MatrixType> >
     SuperILU(const MatrixType& matrix) : Base()
     {
       init();
-      compute(matrix);
+      Base::compute(matrix);
     }
 
     ~SuperILU()
