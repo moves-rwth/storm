@@ -20,6 +20,7 @@ class DiagonalBase : public EigenBase<Derived>
   public:
     typedef typename internal::traits<Derived>::DiagonalVectorType DiagonalVectorType;
     typedef typename DiagonalVectorType::Scalar Scalar;
+    typedef typename DiagonalVectorType::RealScalar RealScalar;
     typedef typename internal::traits<Derived>::StorageKind StorageKind;
     typedef typename internal::traits<Derived>::Index Index;
 
@@ -63,6 +64,17 @@ class DiagonalBase : public EigenBase<Derived>
     inverse() const
     {
       return diagonal().cwiseInverse();
+    }
+    
+    inline const DiagonalWrapper<const CwiseUnaryOp<internal::scalar_multiple_op<Scalar>, const DiagonalVectorType> >
+    operator*(const Scalar& scalar) const
+    {
+      return diagonal() * scalar;
+    }
+    friend inline const DiagonalWrapper<const CwiseUnaryOp<internal::scalar_multiple_op<Scalar>, const DiagonalVectorType> >
+    operator*(const Scalar& scalar, const DiagonalBase& other)
+    {
+      return other.diagonal() * scalar;
     }
     
     #ifdef EIGEN2_SUPPORT
@@ -238,7 +250,7 @@ class DiagonalWrapper
     #endif
 
     /** Constructor from expression of diagonal coefficients to wrap. */
-    inline DiagonalWrapper(DiagonalVectorType& diagonal) : m_diagonal(diagonal) {}
+    inline DiagonalWrapper(DiagonalVectorType& a_diagonal) : m_diagonal(a_diagonal) {}
 
     /** \returns a const reference to the wrapped expression of diagonal coefficients. */
     const DiagonalVectorType& diagonal() const { return m_diagonal; }
@@ -272,7 +284,7 @@ MatrixBase<Derived>::asDiagonal() const
   * \sa asDiagonal()
   */
 template<typename Derived>
-bool MatrixBase<Derived>::isDiagonal(RealScalar prec) const
+bool MatrixBase<Derived>::isDiagonal(const RealScalar& prec) const
 {
   if(cols() != rows()) return false;
   RealScalar maxAbsOnDiagonal = static_cast<RealScalar>(-1);

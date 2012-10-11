@@ -51,7 +51,6 @@ private:
 
   void compute2x2(const MatrixType& A, MatrixType& result);
   void computeBig(const MatrixType& A, MatrixType& result);
-  static Scalar atanh(Scalar x);
   int getPadeDegree(float normTminusI);
   int getPadeDegree(double normTminusI);
   int getPadeDegree(long double normTminusI);
@@ -67,10 +66,11 @@ private:
   void computePade11(MatrixType& result, const MatrixType& T);
 
   static const int minPadeDegree = 3;
-  static const int maxPadeDegree = std::numeric_limits<RealScalar>::digits<= 24?  5:      // single precision
-                                   std::numeric_limits<RealScalar>::digits<= 53?  7:      // double precision
-                                   std::numeric_limits<RealScalar>::digits<= 64?  8:      // extended precision
-                                   std::numeric_limits<RealScalar>::digits<=106? 10: 11;  // double-double or quadruple precision
+  static const int maxPadeDegree = std::numeric_limits<RealScalar>::digits<= 24?  5:  // single precision
+                                   std::numeric_limits<RealScalar>::digits<= 53?  7:  // double precision
+                                   std::numeric_limits<RealScalar>::digits<= 64?  8:  // extended precision
+                                   std::numeric_limits<RealScalar>::digits<=106? 10:  // double-double
+                                                                                 11;  // quadruple precision
 
   // Prevent copying
   MatrixLogarithmAtomic(const MatrixLogarithmAtomic&);
@@ -90,18 +90,6 @@ MatrixType MatrixLogarithmAtomic<MatrixType>::compute(const MatrixType& A)
   else
     computeBig(A, result);
   return result;
-}
-
-/** \brief Compute atanh (inverse hyperbolic tangent). */
-template <typename MatrixType>
-typename MatrixType::Scalar MatrixLogarithmAtomic<MatrixType>::atanh(typename MatrixType::Scalar x)
-{
-  using std::abs;
-  using std::sqrt;
-  if (abs(x) > sqrt(NumTraits<Scalar>::epsilon()))
-    return Scalar(0.5) * log((Scalar(1) + x) / (Scalar(1) - x));
-  else
-    return x + x*x*x / Scalar(3);
 }
 
 /** \brief Compute logarithm of 2x2 triangular matrix. */
@@ -127,8 +115,8 @@ void MatrixLogarithmAtomic<MatrixType>::compute2x2(const MatrixType& A, MatrixTy
   } else {
     // computation in previous branch is inaccurate if A(1,1) \approx A(0,0)
     int unwindingNumber = static_cast<int>(ceil((imag(logA11 - logA00) - M_PI) / (2*M_PI)));
-    Scalar z = (A(1,1) - A(0,0)) / (A(1,1) + A(0,0));
-    result(0,1) = A(0,1) * (Scalar(2) * atanh(z) + Scalar(0,2*M_PI*unwindingNumber)) / (A(1,1) - A(0,0));
+    Scalar y = A(1,1) - A(0,0), x = A(1,1) + A(0,0);
+    result(0,1) = A(0,1) * (Scalar(2) * internal::atanh2(y,x) + Scalar(0,2*M_PI*unwindingNumber)) / y;
   }
 }
 
@@ -172,10 +160,11 @@ int MatrixLogarithmAtomic<MatrixType>::getPadeDegree(float normTminusI)
 {
   const float maxNormForPade[] = { 2.5111573934555054e-1 /* degree = 3 */ , 4.0535837411880493e-1,
             5.3149729967117310e-1 };
-  for (int degree = 3; degree <= maxPadeDegree; ++degree) 
+  int degree = 3;
+  for (; degree <= maxPadeDegree; ++degree) 
     if (normTminusI <= maxNormForPade[degree - minPadeDegree])
-      return degree;
-  assert(false); // this line should never be reached
+      break;
+  return degree;
 }
 
 /* \brief Get suitable degree for Pade approximation. (specialized for RealScalar = double) */
@@ -184,10 +173,11 @@ int MatrixLogarithmAtomic<MatrixType>::getPadeDegree(double normTminusI)
 {
   const double maxNormForPade[] = { 1.6206284795015624e-2 /* degree = 3 */ , 5.3873532631381171e-2,
             1.1352802267628681e-1, 1.8662860613541288e-1, 2.642960831111435e-1 };
-  for (int degree = 3; degree <= maxPadeDegree; ++degree)
+  int degree = 3;
+  for (; degree <= maxPadeDegree; ++degree)
     if (normTminusI <= maxNormForPade[degree - minPadeDegree])
-      return degree;
-  assert(false); // this line should never be reached
+      break;
+  return degree;
 }
 
 /* \brief Get suitable degree for Pade approximation. (specialized for RealScalar = long double) */
@@ -195,29 +185,30 @@ template <typename MatrixType>
 int MatrixLogarithmAtomic<MatrixType>::getPadeDegree(long double normTminusI)
 {
 #if   LDBL_MANT_DIG == 53         // double precision
-  const double maxNormForPade[] = { 1.6206284795015624e-2 /* degree = 3 */ , 5.3873532631381171e-2,
-            1.1352802267628681e-1, 1.8662860613541288e-1, 2.642960831111435e-1 };
+  const long double maxNormForPade[] = { 1.6206284795015624e-2L /* degree = 3 */ , 5.3873532631381171e-2L,
+            1.1352802267628681e-1L, 1.8662860613541288e-1L, 2.642960831111435e-1L };
 #elif LDBL_MANT_DIG <= 64         // extended precision
-  const double maxNormForPade[] = { 5.48256690357782863103e-3 /* degree = 3 */, 2.34559162387971167321e-2,
-            5.84603923897347449857e-2, 1.08486423756725170223e-1, 1.68385767881294446649e-1,
-            2.32777776523703892094e-1 };
+  const long double maxNormForPade[] = { 5.48256690357782863103e-3L /* degree = 3 */, 2.34559162387971167321e-2L,
+            5.84603923897347449857e-2L, 1.08486423756725170223e-1L, 1.68385767881294446649e-1L,
+            2.32777776523703892094e-1L };
 #elif LDBL_MANT_DIG <= 106        // double-double
-  const double maxNormForPade[] = { 8.58970550342939562202529664318890e-5 /* degree = 3 */,
-            9.34074328446359654039446552677759e-4, 4.26117194647672175773064114582860e-3,
-            1.21546224740281848743149666560464e-2, 2.61100544998339436713088248557444e-2,
-            4.66170074627052749243018566390567e-2, 7.32585144444135027565872014932387e-2,
-            1.05026503471351080481093652651105e-1 };
+  const long double maxNormForPade[] = { 8.58970550342939562202529664318890e-5L /* degree = 3 */,
+            9.34074328446359654039446552677759e-4L, 4.26117194647672175773064114582860e-3L,
+            1.21546224740281848743149666560464e-2L, 2.61100544998339436713088248557444e-2L,
+            4.66170074627052749243018566390567e-2L, 7.32585144444135027565872014932387e-2L,
+            1.05026503471351080481093652651105e-1L };
 #else                             // quadruple precision
-  const double maxNormForPade[] = { 4.7419931187193005048501568167858103e-5 /* degree = 3 */,
-            5.8853168473544560470387769480192666e-4, 2.9216120366601315391789493628113520e-3,
-            8.8415758124319434347116734705174308e-3, 1.9850836029449446668518049562565291e-2,
-            3.6688019729653446926585242192447447e-2, 5.9290962294020186998954055264528393e-2,
-            8.6998436081634343903250580992127677e-2, 1.1880960220216759245467951592883642e-1 };
+  const long double maxNormForPade[] = { 4.7419931187193005048501568167858103e-5L /* degree = 3 */,
+            5.8853168473544560470387769480192666e-4L, 2.9216120366601315391789493628113520e-3L,
+            8.8415758124319434347116734705174308e-3L, 1.9850836029449446668518049562565291e-2L,
+            3.6688019729653446926585242192447447e-2L, 5.9290962294020186998954055264528393e-2L,
+            8.6998436081634343903250580992127677e-2L, 1.1880960220216759245467951592883642e-1L };
 #endif
-  for (int degree = 3; degree <= maxPadeDegree; ++degree)
+  int degree = 3;
+  for (; degree <= maxPadeDegree; ++degree)
     if (normTminusI <= maxNormForPade[degree - minPadeDegree])
-      return degree;
-  assert(false); // this line should never be reached
+      break;
+  return degree;
 }
 
 /* \brief Compute Pade approximation to matrix logarithm */
@@ -294,10 +285,10 @@ void MatrixLogarithmAtomic<MatrixType>::computePade6(MatrixType& result, const M
   const int degree = 6;
   const RealScalar nodes[]   = { 0.0337652428984239860938492227530027L, 0.1693953067668677431693002024900473L,
             0.3806904069584015456847491391596440L, 0.6193095930415984543152508608403560L,
-		        0.8306046932331322568306997975099527L, 0.9662347571015760139061507772469973L };
+            0.8306046932331322568306997975099527L, 0.9662347571015760139061507772469973L };
   const RealScalar weights[] = { 0.0856622461895851725201480710863665L, 0.1803807865240693037849167569188581L,
             0.2339569672863455236949351719947755L, 0.2339569672863455236949351719947755L,
- 		        0.1803807865240693037849167569188581L, 0.0856622461895851725201480710863665L };
+            0.1803807865240693037849167569188581L, 0.0856622461895851725201480710863665L };
   assert(degree <= maxPadeDegree);
   MatrixType TminusI = T - MatrixType::Identity(T.rows(), T.rows());
   result.setZero(T.rows(), T.rows());
@@ -423,8 +414,8 @@ void MatrixLogarithmAtomic<MatrixType>::computePade11(MatrixType& result, const 
   * This class holds the argument to the matrix function until it is
   * assigned or evaluated for some other reason (so the argument
   * should not be changed in the meantime). It is the return type of
-  * matrixBase::matrixLogarithm() and most of the time this is the
-  * only way it is used.
+  * MatrixBase::log() and most of the time this is the only way it
+  * is used.
   */
 template<typename Derived> class MatrixLogarithmReturnValue
 : public ReturnByValue<MatrixLogarithmReturnValue<Derived> >
