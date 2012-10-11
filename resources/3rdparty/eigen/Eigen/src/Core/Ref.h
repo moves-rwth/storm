@@ -10,7 +10,7 @@
 #ifndef EIGEN_REF_H
 #define EIGEN_REF_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Derived> class RefBase;
 template<typename PlainObjectType, int Options = 0,
