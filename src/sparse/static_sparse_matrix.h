@@ -11,6 +11,9 @@
 #include "src/exceptions/invalid_state.h"
 #include "src/exceptions/invalid_argument.h"
 #include "src/exceptions/out_of_range.h"
+#include "src/exceptions/file_IO_exception.h"
+
+#include "src/misc/const_templates.h"
 
 #include "Eigen/Sparse"
 
@@ -430,14 +433,57 @@ class StaticSparseMatrix {
 		uint_fast64_t row_start = row_indications[state - 1];
 		uint_fast64_t row_end = row_indications[state];
 
+
 		while (row_start < row_end) {
-			value_storage[row_start] = getConstZero();
+			value_storage[row_start] = mrmc::misc::constGetZero(value_storage);
 			row_start++;
 		}
 
-		diagonal_storage[state] = getConstOne();
+		diagonal_storage[state] = mrmc::misc::constGetOne(diagonal_storage);
 		return true;
 	}
+
+   /*!
+       Creates a DOT file which provides the graph of the transition structure
+       represented by the matrix.
+
+       @param  filename The Name of the file to write in. If the file already exists,
+                        it will be overwritten.
+
+    */
+   void toDOTFile(const char* filename) {
+      FILE *P;
+
+      P = fopen(filename, "w");
+
+      if (P == NULL) {
+         pantheios::log_ERROR("File could not be opened.");
+         throw mrmc::exceptions::file_IO_exception();
+      }
+
+      fprintf(P, "digraph dtmc {\n");
+
+      uint_fast64_t row = 0;
+
+      for (uint_fast64_t i = 0; i < non_zero_entry_count; i++ ) {
+         //Check whether we have to switch to the new row
+         while (row_indications[row] <= i) {
+            ++row;
+            //write diagonal entry/self loop first
+            if (diagonal_storage[row] != 0) {
+               fprintf(P, "\t%Lu -> %Lu [label=%f]\n",
+                     row, row, diagonal_storage[row]);
+            }
+         }
+         fprintf(P, "\t%Lu -> %Lu [label=%f]\n",
+               row, column_indications[i], value_storage[i]);
+      }
+
+      fprintf(P, "}\n");
+
+      fclose(P);
+   }
+
 
  private:
 	uint_fast64_t current_size;
@@ -492,35 +538,6 @@ class StaticSparseMatrix {
 
 	//! 
 
-	template<typename _Scalar>
-	_Scalar constGetZero() const {
-		return _Scalar(0);
-	}
-
-	template <>
-	int_fast32_t constGetZero() const {
-		return 0;	
-	}
-
-	template <>
-	double constGetZero() const {
-		return 0.0;	
-	}
-
-	template<typename _Scalar>
-	_Scalar constGetOne() const {
-		return _Scalar(1);
-	}
-
-	template<>
-	int_fast32_t constGetOne() const {
-		return 1;
-	}
-
-	template<>
-	double constGetOne() const {
-		return 1.0;
-	}
 
 	template <typename _Scalar, typename _Index>
 	bool isEigenRowMajor(Eigen::SparseMatrix<_Scalar, Eigen::RowMajor, _Index>) {
