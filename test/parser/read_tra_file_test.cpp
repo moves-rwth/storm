@@ -61,6 +61,8 @@ TEST(ReadTraFileTest, ParseFileTest1) {
 
 		ASSERT_TRUE(result->getValue(4,4,&val));
 		ASSERT_EQ(val,0);
+
+		result->toDOTFile("output.dot");
 		delete result;
 	} else {
 		FAIL();

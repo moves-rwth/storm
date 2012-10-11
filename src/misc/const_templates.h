@@ -76,6 +76,7 @@ inline double constGetOne(double*) {
 /*! @endcond */
 
 } //namespace misc
+
 } //namespace mrmc
 
 
