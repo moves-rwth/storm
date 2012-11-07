@@ -1,5 +1,5 @@
 /*
- * labelling.h
+ * labeling.h
  *
  *  Created on: 10.09.2012
  *      Author: Thomas Heinemann
