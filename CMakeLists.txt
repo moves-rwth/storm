@@ -5,7 +5,9 @@ project (MRMC-cpp CXX C)
 # The version number.
 set (MRMC_CPP_VERSION_MAJOR 1)
 set (MRMC_CPP_VERSION_MINOR 0)
- 
+
+option(DEFINE_UNIX "Defines the UNIX flag for compilation." OFF)
+
 #Configurations for GCC
 if(CMAKE_COMPILER_IS_GNUCC) 
 	set(MRMC_GCC_NO_DEBUG_SYMBOLS OFF CACHE BOOL "Whether debug symbols should be included in MRMC with GCC, set ON for better performance")
@@ -174,3 +176,7 @@ if (THREADS_FOUND)
 	target_link_libraries (MRMC-tests ${CMAKE_THREAD_LIBS_INIT})
 	target_link_libraries (MRMC-cpp ${CMAKE_THREAD_LIBS_INIT})
 endif(THREADS_FOUND)
+
+if (DEFINE_UNIX)
+	add_definitions(-DUNIX)
+endif(DEFINE_UNIX)
