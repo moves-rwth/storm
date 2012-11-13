@@ -394,6 +394,10 @@ class StaticSparseMatrix {
 			for (uint_fast64_t row = 1; row <= row_count; ++row) {
 				row_start	= row_indications[row - 1];
 				row_end		= row_indications[row];
+
+				// insert the diagonal entry
+				mat->insert(row - 1, row - 1) = diagonal_storage[row];
+
 				while (row_start < row_end) {
 					//tripletList.push_back(IntTriplet(row - 1, column_indications[row_start] - 1, value_storage[row_start]));
 					mat->insert(row - 1, column_indications[row_start] - 1) = value_storage[row_start];

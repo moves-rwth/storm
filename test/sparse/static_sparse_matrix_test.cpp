@@ -282,3 +282,33 @@ TEST(StaticSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest
 		ASSERT_EQ(target, coeff.value());
 	}
 }
+
+TEST(StaticSparseMatrixTest, ConversionToSparseEigen_RowMajor_SparseMatrixTest) {
+	int values[100];
+	mrmc::sparse::StaticSparseMatrix<int> *ssm = new mrmc::sparse::StaticSparseMatrix<int>(10);
+
+	for (uint_fast32_t i = 0; i < 100; ++i) {
+		values[i] = i;
+	}
+
+	ASSERT_NO_THROW(ssm->initialize(100 - 10));
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);
+
+	for (uint_fast32_t row = 1; row <= 10; ++row) {
+		for (uint_fast32_t col = 1; col <= 10; ++col) {
+			ASSERT_NO_THROW(ssm->addNextValue(row, col, values[(row - 1) * 10 + (col - 1)]));
+		}
+	}
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);
+
+	ASSERT_NO_THROW(ssm->finalize());
+	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::ReadReady);
+
+	Eigen::SparseMatrix<int, Eigen::RowMajor, int_fast32_t>* esm = ssm->toEigenSparseMatrix();
+
+	for (uint_fast32_t row = 0; row < 10; ++row) {
+		for (uint_fast32_t col = 0; col < 10; ++col) {
+			ASSERT_EQ(values[row * 10 + col], esm->coeff(row, col));
+		}
+	}
+}
