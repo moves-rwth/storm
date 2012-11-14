@@ -44,6 +44,18 @@ class SingleAtomicPropositionLabeling {
 		nodes.set(nodeId, true);
 	}
 	
+	uint_fast64_t getNumberOfLabeledStates() {
+		return nodes.getNumberOfSetBits();
+	}
+
+	/*!
+	 * Returns the size of the single atomic proposition labeling in memory measured in bytes.
+	 * @return The size of the single atomic proposition labeling in memory measured in bytes.
+	 */
+	uint_fast64_t getSizeInMemory() {
+		return sizeof(*this) + nodes.getSizeInMemory();
+	}
+
  private:
 	/*! BitVector containing the boolean bits for each node */
 	mrmc::vector::BitVector nodes;

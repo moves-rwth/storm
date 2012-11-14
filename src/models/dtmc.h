@@ -11,6 +11,8 @@
 #include <pantheios/pantheios.hpp>
 #include <pantheios/inserters/integer.hpp>
 
+#include <iostream>
+
 #include "atomic_propositions_labeling.h"
 #include "src/sparse/static_sparse_matrix.h"
 
@@ -73,10 +75,13 @@ public:
 
 	void printModelInformation() {
 		std::cout << "------------------------------------------------------- " << std::endl;
-		std::cout << "Model type: DTMC" << std::endl;
-		std::cout << "States: " << this->getStateSpaceSize() << std::endl;
-		std::cout << "Transitions: " << this->getNumberOfTransitions() << std::endl;
-		std::cout << "Size in memory: " << sizeof(this->probability_matrix) + sizeof(this->state_labeling) << std::endl;
+		std::cout << "Model type: \t\tDTMC" << std::endl;
+		std::cout << "States: \t\t" << this->getStateSpaceSize() << std::endl;
+		std::cout << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
+		this->state_labeling->printAtomicPropositionsInformation();
+		std::cout << "Size in memory: \t" << (this->probability_matrix->getSizeInMemory() +
+											this->state_labeling->getSizeInMemory() +
+											sizeof(*this))/1024 << " kbytes" << std::endl;
 		std::cout << "------------------------------------------------------- " << std::endl;
 	}
 

@@ -137,6 +137,36 @@ class BitVector {
 
 		return result;
 	}
+
+	/*!
+	 * Returns the number of bits that are set (to one) in this bit vector.
+	 * @return The number of bits that are set (to one) in this bit vector.
+	 */
+	uint_fast64_t getNumberOfSetBits() {
+		uint_fast64_t set_bits = 0;
+		for (uint_fast64_t i = 0; i < bucket_count; i++) {
+#ifdef __GNUG__ // check if we are using g++ and use built-in function if available
+			set_bits += __builtin_popcount (this->bucket_array[i]);
+#else
+			uint_fast32_t cnt;
+			uint_fast64_t bitset = this->bucket_array[i];
+			for (cnt = 0; bitset; cnt++) {
+				bitset &= bitset - 1;
+			}
+			set_bits += cnt;
+#endif
+		}
+		return set_bits;
+	}
+
+	/*!
+	 * Returns the size of the bit vector in memory measured in bytes.
+	 * @return The size of the bit vector in memory measured in bytes.
+	 */
+	uint_fast64_t getSizeInMemory() {
+		return sizeof(*this) + sizeof(uint_fast64_t) * bucket_count;
+	}
+
  private:
 	uint_fast64_t bucket_count;
 

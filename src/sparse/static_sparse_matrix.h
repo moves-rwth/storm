@@ -488,6 +488,18 @@ class StaticSparseMatrix {
       fclose(P);
    }
 
+   /*!
+    * Returns the size of the matrix in memory measured in bytes.
+    * @return The size of the matrix in memory measured in bytes.
+    */
+   uint_fast64_t getSizeInMemory() {
+	   uint_fast64_t size = sizeof(*this);
+	   size += sizeof(T) * non_zero_entry_count; // add value_storage size
+	   size += sizeof(T) * (row_count + 1); // add diagonal_storage size
+	   size += sizeof(uint_fast64_t) * non_zero_entry_count; // add column_indications size
+	   size += sizeof(uint_fast64_t) * (row_count + 1); // add row_indications size
+	   return size;
+   }
 
  private:
 	uint_fast64_t current_size;

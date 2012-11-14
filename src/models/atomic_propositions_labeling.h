@@ -8,6 +8,11 @@
 #ifndef MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_
 #define MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_
 
+#include <pantheios/pantheios.hpp>
+#include <pantheios/inserters/integer.hpp>
+
+#include <iostream>
+
 #include "single_atomic_proposition_labeling.h"
 
 #define USE_STD_UNORDERED_MAP
@@ -143,7 +148,7 @@ public:
 	/*! Returns the number of propositions managed by this object (which was set in the initialization)
 	 * @return The number of propositions.
 	 */
-	uint_fast32_t getNumberOfPropositions() {
+	uint_fast32_t getNumberOfAtomicPropositions() {
 		return proposition_count;
 	}
 
@@ -153,8 +158,28 @@ public:
 	 * @param proposition The name of the proposition.
 	 * @return A pointer to the atomic_proposition object of the proposition.
 	 */
-	SingleAtomicPropositionLabeling* getProposition(std::string proposition) {
+	SingleAtomicPropositionLabeling* getAtomicProposition(std::string proposition) {
 		return (propositions[proposition_map[proposition]]);
+	}
+
+   /*!
+    * Returns the size of the labeling in memory measured in bytes.
+    * @return The size of the labeling in memory measured in bytes.
+    */
+	uint_fast64_t getSizeInMemory() {
+		uint_fast64_t size = sizeof(*this);
+		for (uint_fast32_t i = 0; i < proposition_count; i++) {
+			size += propositions[i]->getSizeInMemory(); // count sizes of bit vectors
+		}
+		return size;
+	}
+
+	void printAtomicPropositionsInformation() {
+		std::cout << "Atomic Propositions: \t" << this->getNumberOfAtomicPropositions() << std::endl;
+		for(auto ap : this->proposition_map) {
+			std::cout << "\t * " << ap.first << " -> " << propositions[ap.second]->getNumberOfLabeledStates();
+			std::cout << " state(s)" << std::endl;
+		}
 	}
 
 private:
