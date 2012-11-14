@@ -7,7 +7,7 @@
 
 #include "gtest/gtest.h"
 #include "MRMCConfig.h"
-#include "src/models/labeling.h"
+#include "src/models/atomic_propositions_labeling.h"
 #include "src/parser/read_lab_file.h"
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
@@ -19,7 +19,7 @@ TEST(ReadLabFileTest, NonExistingFileTest) {
 
 TEST(ReadLabFileTest, ParseTest) {
 	//This test is based on a test case from the original MRMC.
-	mrmc::models::Labeling* labeling = NULL;
+	mrmc::models::AtomicPropositionsLabeling* labeling = NULL;
 
 	//Parsing the file
 	ASSERT_NO_THROW(labeling = mrmc::parser::read_lab_file(12, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));

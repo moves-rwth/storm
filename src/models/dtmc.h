@@ -8,6 +8,9 @@
 #ifndef DTMC_H_
 #define DTMC_H_
 
+#include <pantheios/pantheios.hpp>
+#include <pantheios/inserters/integer.hpp>
+
 #include "labeling.h"
 #include "src/sparse/static_sparse_matrix.h"
 
@@ -18,33 +21,63 @@ namespace models {
 /*! This class represents a discrete-time Markov chain (DTMC) whose states are
  * labeled with atomic propositions.
  */
+template <class T>
 class Dtmc {
 
 public:
 	//! Constructor
 	/*!
+	 * Constructs a DTMC object from the given transition probability matrix and the given labeling of the states.
 		\param probability_matrix The transition probability function of the DTMC given by a matrix.
 		\param state_labeling The labeling that assigns a set of atomic propositions to each state.
 	*/
-	Dtmc(mrmc::sparse::StaticSparseMatrix* probability_matrix,
-			mrmc::models::Labeling* state_labeling) {
+	Dtmc(mrmc::sparse::StaticSparseMatrix<T>* probability_matrix,
+			mrmc::models::AtomicPropositionsLabeling* state_labeling) {
+		pantheios::log_DEBUG("Creating a DTMC ");
 		this->probability_matrix = probability_matrix;
 		this->state_labeling = state_labeling;
 	}
 
 	//! Copy Constructor
 	/*!
-		Copy Constructor. Creates an exact copy of the source DTMC. Modification of either DTMC does not affect the other.
+		Copy Constructor. Performs a deep copy of the given DTMC.
 		@param dtmc A reference to the DTMC that is to be copied.
 	 */
-	Dtmc(const Dtmc &dtmc) : probability_matrix(dtmc.probability_matrix), state_labeling(dtmc.state_labeling) {
+	Dtmc(const Dtmc<T> &dtmc) : probability_matrix(dtmc.probability_matrix), state_labeling(dtmc.state_labeling) {
 		// intentionally left empty
+	}
+
+	/*!
+	 * Returns the state space size of the DTMC.
+	 * @return The size of the state space of the DTMC.
+	 */
+	uint_fast64_t getStateSpaceSize() {
+		return this->probability_matrix->getRowCount();
+	}
+
+	/*!
+	 * Returns the number of (non-zero) transitions of the DTMC.
+	 * @return The number of (non-zero) transitions of the DTMC.
+	 */
+	uint_fast64_t getNumberOfTransitions() {
+		return this->probability_matrix->getNonZeroEntryCount();
+	}
+
+	/*!
+	 * Returns a pointer to the matrix representing the transition probability function.
+	 * @return A pointer to the matrix representing the transition probability function.
+	 */
+	mrmc::sparse::StaticSparseMatrix<T>* getTransitionProbabilityMatrix() {
+		return this->probability_matrix;
 	}
 
 private:
 
-	mrmc::sparse::StaticSparseMatrix* probability_matrix;
-	mrmc::models::Labeling* state_labeling;
+	/*! A matrix representing the transition probability function of the DTMC. */
+	mrmc::sparse::StaticSparseMatrix<T>* probability_matrix;
+
+	/*! The labeling of the states of the DTMC. */
+	mrmc::models::AtomicPropositionsLabeling* state_labeling;
 
 };
 
