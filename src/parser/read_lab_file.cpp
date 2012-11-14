@@ -42,7 +42,7 @@ namespace parser {
  * @param filename   input .lab file's name.
  * @return The pointer to the created labeling object.
  */
-mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
+mrmc::models::Labeling * read_lab_file(int node_count, const char * filename)
 {
    /* Note that this function uses strtok_r on char-array s.
     * This function will modify this string.
@@ -125,7 +125,7 @@ mrmc::dtmc::labeling * read_lab_file(int node_count, const char * filename)
       pos++;
    }
 
-   mrmc::dtmc::labeling* result = new mrmc::dtmc::labeling(node_count, proposition_count);
+   mrmc::models::Labeling* result = new mrmc::models::Labeling(node_count, proposition_count);
 
    //Here, all propositions are to be declared...
    for (proposition = STRTOK_FUNC(decl_buffer, sep, &saveptr);

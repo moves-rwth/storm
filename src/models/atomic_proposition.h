@@ -13,7 +13,7 @@
 
 namespace mrmc {
 
-namespace dtmc {
+namespace models {
 
 //! An atomic proposition for DTMCs with a constant number of nodes
 /*! 
@@ -27,11 +27,19 @@ class AtomicProposition {
 		\param nodeCount Amount of nodes that the DTMC has to label
 	 */
 	AtomicProposition(uint_fast32_t nodeCount) : nodes(nodeCount) {
-		//
+		// intentionally left empty
+	}
+
+	//! Copy Constructor
+	/*!
+	 * Copy constructor. Performs a deep copy of this AtomicProposition object.
+	 */
+	AtomicProposition(const AtomicProposition& atomic_proposition) : nodes(atomic_proposition.nodes) {
+		// intentionally left empty
 	}
 
 	~AtomicProposition() {
-		//
+		// intentionally left empty
 	}
 
 	bool hasNodeLabel(uint_fast32_t nodeId) {
@@ -47,7 +55,7 @@ class AtomicProposition {
 	mrmc::vector::BitVector nodes;
 };
 
-} // namespace dtmc
+} // namespace models
 
 } // namespace mrmc
 

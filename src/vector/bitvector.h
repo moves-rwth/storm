@@ -26,7 +26,7 @@ class BitVector {
  public:
 	//! Constructor
 	 /*!
-		\param initial_length The initial size of the boolean Array. Can be changed later on via @resize()
+		\param initial_length The initial size of the boolean Array. Can be changed later on via BitVector::resize()
 	 */
 	BitVector(uint_fast64_t initial_length) {
 		bucket_count = initial_length / 64;
@@ -43,8 +43,8 @@ class BitVector {
 
 	//! Copy Constructor
 	/*!
-		Copy Constructor. Creates an exact copy of the source sparse matrix ssm. Modification of either matrix does not affect the other.
-		@param ssm A reference to the matrix that should be copied from
+		Copy Constructor. Creates an exact copy of the source bit vector bv. Modification of either bit vector does not affect the other.
+		@param bv A reference to the bit vector that should be copied from
 	 */
 	BitVector(const BitVector &bv) : bucket_count(bv.bucket_count)
 	{

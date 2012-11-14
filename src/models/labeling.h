@@ -37,12 +37,12 @@
 
 namespace mrmc {
 
-namespace dtmc {
+namespace models {
 
 /*! This class manages the objects of class atomic_proposition. Access is possible with the
  * string identifiers which are used in the input.
  */
-class labeling {
+class Labeling {
    public:
 
 
@@ -50,7 +50,7 @@ class labeling {
        * @param nodeCount The number of nodes; necessary for class AtomicProposition.
        * @param propositionCount The number of atomic propositions.
        */
-      labeling(const uint_fast32_t nodeCount,
+      Labeling(const uint_fast32_t nodeCount,
                const uint_fast32_t propositionCount) {
          node_count = nodeCount;
          proposition_count = propositionCount;
@@ -61,7 +61,18 @@ class labeling {
          }
       }
 
-      virtual ~labeling() {
+      //! Copy Constructor
+      /*! Copy Constructor. Performs a deep copy of this Labeling object.
+       *
+       */
+      Labeling(const Labeling& labeling) : node_count(labeling.node_count), proposition_count(labeling.proposition_count), propositions_current(labeling.propositions_current), proposition_map(labeling.proposition_map) {
+    	  propositions = new AtomicProposition*[proposition_count];
+    	  for (uint_fast32_t i = 0; i < proposition_count; ++i) {
+    		  propositions[i] = new AtomicProposition(*labeling.propositions[i]);
+    	  }
+      }
+
+      virtual ~Labeling() {
          //deleting all the labeling vectors in the map.
          MAP<std::string, AtomicProposition*>::iterator it;
          for (uint_fast32_t i = 0; i < proposition_count; ++i) {
@@ -146,7 +157,7 @@ class labeling {
       AtomicProposition** propositions;
 };
 
-} //namespace dtmc
+} //namespace models
 
 } //namespace mrmc
 
