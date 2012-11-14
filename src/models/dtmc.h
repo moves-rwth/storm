@@ -32,9 +32,9 @@ public:
 	/*!
 	 * Constructs a DTMC object from the given transition probability matrix and
 	 * the given labeling of the states.
-	 * \param probability_matrix The transition probability function of the
+	 * @param probability_matrix The transition probability function of the
 	 * DTMC given by a matrix.
-	 * \param state_labeling The labeling that assigns a set of atomic
+	 * @param state_labeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
 	Dtmc(mrmc::sparse::StaticSparseMatrix<T>* probability_matrix,
