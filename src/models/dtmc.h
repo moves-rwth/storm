@@ -11,14 +11,15 @@
 #include <pantheios/pantheios.hpp>
 #include <pantheios/inserters/integer.hpp>
 
-#include "labeling.h"
+#include "atomic_propositions_labeling.h"
 #include "src/sparse/static_sparse_matrix.h"
 
 namespace mrmc {
 
 namespace models {
 
-/*! This class represents a discrete-time Markov chain (DTMC) whose states are
+/*!
+ * This class represents a discrete-time Markov chain (DTMC) whose states are
  * labeled with atomic propositions.
  */
 template <class T>
@@ -33,7 +34,6 @@ public:
 	*/
 	Dtmc(mrmc::sparse::StaticSparseMatrix<T>* probability_matrix,
 			mrmc::models::AtomicPropositionsLabeling* state_labeling) {
-		pantheios::log_DEBUG("Creating a DTMC ");
 		this->probability_matrix = probability_matrix;
 		this->state_labeling = state_labeling;
 	}
@@ -44,7 +44,7 @@ public:
 		@param dtmc A reference to the DTMC that is to be copied.
 	 */
 	Dtmc(const Dtmc<T> &dtmc) : probability_matrix(dtmc.probability_matrix), state_labeling(dtmc.state_labeling) {
-		// intentionally left empty
+		pantheios::log_DEBUG("Copy constructor of DTMC invoked.");
 	}
 
 	/*!
@@ -69,6 +69,15 @@ public:
 	 */
 	mrmc::sparse::StaticSparseMatrix<T>* getTransitionProbabilityMatrix() {
 		return this->probability_matrix;
+	}
+
+	void printModelInformation() {
+		std::cout << "------------------------------------------------------- " << std::endl;
+		std::cout << "Model type: DTMC" << std::endl;
+		std::cout << "States: " << this->getStateSpaceSize() << std::endl;
+		std::cout << "Transitions: " << this->getNumberOfTransitions() << std::endl;
+		std::cout << "Size in memory: " << sizeof(this->probability_matrix) + sizeof(this->state_labeling) << std::endl;
+		std::cout << "------------------------------------------------------- " << std::endl;
 	}
 
 private:

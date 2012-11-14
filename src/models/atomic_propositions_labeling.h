@@ -52,7 +52,8 @@ public:
 	 */
 	AtomicPropositionsLabeling(const uint_fast32_t nodeCount,
 			const uint_fast32_t propositionCount) {
-		node_count = nodeCount;
+		// add one for 1-bound indices
+		node_count = nodeCount + 1;
 		proposition_count = propositionCount;
 		propositions_current = 0;
 		propositions = new SingleAtomicPropositionLabeling*[proposition_count];

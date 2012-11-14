@@ -17,7 +17,7 @@ class SingleAtomicPropositionLabeling {
  public:
 
 	//! Constructor
-	 /*!
+	/*!
 		\param nodeCount Amount of nodes that the DTMC has to label
 	 */
 	SingleAtomicPropositionLabeling(uint_fast32_t nodeCount) : nodes(nodeCount) {
