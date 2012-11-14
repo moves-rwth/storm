@@ -21,12 +21,11 @@ namespace models {
 class Dtmc {
 
 public:
-
 	//! Constructor
-	 /*!
+	/*!
 		\param probability_matrix The transition probability function of the DTMC given by a matrix.
 		\param state_labeling The labeling that assigns a set of atomic propositions to each state.
-	 */
+	*/
 	Dtmc(mrmc::sparse::StaticSparseMatrix* probability_matrix,
 			mrmc::models::Labeling* state_labeling) {
 		this->probability_matrix = probability_matrix;
@@ -36,12 +35,11 @@ public:
 	//! Copy Constructor
 	/*!
 		Copy Constructor. Creates an exact copy of the source DTMC. Modification of either DTMC does not affect the other.
-		@param dtmc A reference to the matrix that should be copied from
+		@param dtmc A reference to the DTMC that is to be copied.
 	 */
 	Dtmc(const Dtmc &dtmc) : probability_matrix(dtmc.probability_matrix), state_labeling(dtmc.state_labeling) {
 		// intentionally left empty
 	}
-
 
 private:
 
