@@ -131,7 +131,7 @@ mrmc::models::AtomicPropositionsLabeling * read_lab_file(int node_count, const c
    for (proposition = STRTOK_FUNC(decl_buffer, sep, &saveptr);
         proposition != NULL;
         proposition = STRTOK_FUNC(NULL, sep, &saveptr)) {
-      result -> addProposition(proposition);
+      result -> addAtomicProposition(proposition);
    }
 
    // Free decl_buffer
@@ -167,7 +167,7 @@ mrmc::models::AtomicPropositionsLabeling * read_lab_file(int node_count, const c
          if (token == NULL) {
             break;
          }
-         result->addLabelToNode(token, node);
+         result->addAtomicPropositionToState(token, node);
       } while (token != NULL);
 
    }

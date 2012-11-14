@@ -11,7 +11,7 @@
 #include <pantheios/pantheios.hpp>
 #include <pantheios/inserters/integer.hpp>
 
-#include <iostream>
+#include <ostream>
 
 #include "atomic_propositions_labeling.h"
 #include "src/sparse/static_sparse_matrix.h"
@@ -30,10 +30,13 @@ class Dtmc {
 public:
 	//! Constructor
 	/*!
-	 * Constructs a DTMC object from the given transition probability matrix and the given labeling of the states.
-		\param probability_matrix The transition probability function of the DTMC given by a matrix.
-		\param state_labeling The labeling that assigns a set of atomic propositions to each state.
-	*/
+	 * Constructs a DTMC object from the given transition probability matrix and
+	 * the given labeling of the states.
+	 * \param probability_matrix The transition probability function of the
+	 * DTMC given by a matrix.
+	 * \param state_labeling The labeling that assigns a set of atomic
+	 * propositions to each state.
+	 */
 	Dtmc(mrmc::sparse::StaticSparseMatrix<T>* probability_matrix,
 			mrmc::models::AtomicPropositionsLabeling* state_labeling) {
 		this->probability_matrix = probability_matrix;
@@ -42,10 +45,11 @@ public:
 
 	//! Copy Constructor
 	/*!
-		Copy Constructor. Performs a deep copy of the given DTMC.
-		@param dtmc A reference to the DTMC that is to be copied.
+	 * Copy Constructor. Performs a deep copy of the given DTMC.
+	 * @param dtmc A reference to the DTMC that is to be copied.
 	 */
-	Dtmc(const Dtmc<T> &dtmc) : probability_matrix(dtmc.probability_matrix), state_labeling(dtmc.state_labeling) {
+	Dtmc(const Dtmc<T> &dtmc) : probability_matrix(dtmc.probability_matrix),
+			state_labeling(dtmc.state_labeling) {
 		pantheios::log_DEBUG("Copy constructor of DTMC invoked.");
 	}
 
@@ -66,23 +70,33 @@ public:
 	}
 
 	/*!
-	 * Returns a pointer to the matrix representing the transition probability function.
-	 * @return A pointer to the matrix representing the transition probability function.
+	 * Returns a pointer to the matrix representing the transition probability
+	 * function.
+	 * @return A pointer to the matrix representing the transition probability
+	 * function.
 	 */
 	mrmc::sparse::StaticSparseMatrix<T>* getTransitionProbabilityMatrix() {
 		return this->probability_matrix;
 	}
 
-	void printModelInformation() {
-		std::cout << "------------------------------------------------------- " << std::endl;
-		std::cout << "Model type: \t\tDTMC" << std::endl;
-		std::cout << "States: \t\t" << this->getStateSpaceSize() << std::endl;
-		std::cout << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
-		this->state_labeling->printAtomicPropositionsInformation();
-		std::cout << "Size in memory: \t" << (this->probability_matrix->getSizeInMemory() +
-											this->state_labeling->getSizeInMemory() +
-											sizeof(*this))/1024 << " kbytes" << std::endl;
-		std::cout << "------------------------------------------------------- " << std::endl;
+	/*!
+	 * Prints information about the model to the specified stream.
+	 * @param out The stream the information is to be printed to.
+	 */
+	void printModelInformationToStream(std::ostream& out) {
+		out << "-------------------------------------------------------------- "
+			<< std::endl;
+		out << "Model type: \t\tDTMC" << std::endl;
+		out << "States: \t\t" << this->getStateSpaceSize() << std::endl;
+		out << "Transitions: \t\t" << this->getNumberOfTransitions()
+			<< std::endl;
+		this->state_labeling->printAtomicPropositionsInformationToStream(out);
+		out << "Size in memory: \t"
+			<< (this->probability_matrix->getSizeInMemory() +
+				this->state_labeling->getSizeInMemory() +
+				sizeof(*this))/1024 << " kbytes" << std::endl;
+		out << "-------------------------------------------------------------- "
+			<< std::endl;
 	}
 
 private:
@@ -95,8 +109,8 @@ private:
 
 };
 
-} //namespace models
+} // namespace models
 
-} //namespace mrmc
+} // namespace mrmc
 
 #endif /* DTMC_H_ */

@@ -8,57 +8,74 @@ namespace mrmc {
 namespace models {
 
 /*! 
- * This class represents the labeling of a state space with a single atomic proposition.
- * Internally, this is done by keeping a dense bit vector such that the i-th bit
- * in the vector is set to true if and only if the i-th state satisfies the
- * atomic proposition
+ * This class represents the labeling of a state space with a single atomic
+ * proposition.
  */
 class SingleAtomicPropositionLabeling {
  public:
 
 	//! Constructor
 	/*!
-		\param nodeCount Amount of nodes that the DTMC has to label
+	 * Constructs a labeling for the given number of states.
+	 * @param state_count Amount of states for which this objects manages the
+	 * labeling with one particular atomic proposition.
 	 */
-	SingleAtomicPropositionLabeling(uint_fast32_t nodeCount) : nodes(nodeCount) {
+	SingleAtomicPropositionLabeling(uint_fast32_t state_count) : label_vector(state_count) {
 		// intentionally left empty
 	}
 
 	//! Copy Constructor
 	/*!
-	 * Copy constructor. Performs a deep copy of this AtomicProposition object.
+	 * Copy constructor. Performs a deep copy of the given
+	 * SingleAtomicPropositionLabeling object.
+	 * @param single_atomic_proposition_labeling The object to copy.
 	 */
-	SingleAtomicPropositionLabeling(const SingleAtomicPropositionLabeling& single_atomic_proposition_labeling) : nodes(single_atomic_proposition_labeling.nodes) {
+	SingleAtomicPropositionLabeling(const SingleAtomicPropositionLabeling& single_atomic_proposition_labeling)
+		: label_vector(single_atomic_proposition_labeling.label_vector) {
 		// intentionally left empty
-	}
-
-	~SingleAtomicPropositionLabeling() {
-		// intentionally left empty
-	}
-
-	bool hasNodeLabel(uint_fast32_t nodeId) {
-		return nodes.get(nodeId);
-	}
-
-	void addLabelToNode(uint_fast32_t nodeId) {
-		nodes.set(nodeId, true);
-	}
-	
-	uint_fast64_t getNumberOfLabeledStates() {
-		return nodes.getNumberOfSetBits();
 	}
 
 	/*!
-	 * Returns the size of the single atomic proposition labeling in memory measured in bytes.
-	 * @return The size of the single atomic proposition labeling in memory measured in bytes.
+	 * Checks whether the given state possesses the label.
+	 * @param state_index The index of the state to check.
+	 */
+	bool hasLabel(uint_fast32_t state_index) {
+		return label_vector.get(state_index);
+	}
+
+	/*!
+	 * Adds the label to the given state.
+	 * @param state_index The index of the state to label.
+	 */
+	void addLabelToState(uint_fast32_t state_index) {
+		label_vector.set(state_index, true);
+	}
+	
+	/*!
+	 * Returns the number of states that are labeled.
+	 * @return The number of states that are labeled.
+	 */
+	uint_fast64_t getNumberOfLabeledStates() {
+		return label_vector.getNumberOfSetBits();
+	}
+
+	/*!
+	 * Returns the size of the single atomic proposition labeling in memory
+	 * measured in bytes.
+	 * @return The size of the single atomic proposition labeling in memory
+	 * measured in bytes.
 	 */
 	uint_fast64_t getSizeInMemory() {
-		return sizeof(*this) + nodes.getSizeInMemory();
+		return sizeof(*this) + label_vector.getSizeInMemory();
 	}
 
  private:
-	/*! BitVector containing the boolean bits for each node */
-	mrmc::vector::BitVector nodes;
+
+	/*!
+	 * A bit vector storing for every state whether or not that state is
+	 * labeled.
+	 */
+	mrmc::vector::BitVector label_vector;
 };
 
 } // namespace models

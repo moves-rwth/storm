@@ -29,50 +29,50 @@ TEST(ReadLabFileTest, ParseTest) {
 	char phi[] = "phi", psi[] = "psi", smth[] = "smth";
 
 	if (labeling != NULL) {
-		ASSERT_TRUE(labeling->containsProposition(phi));
-		ASSERT_TRUE(labeling->containsProposition(psi));
-		ASSERT_TRUE(labeling->containsProposition(smth));
+		ASSERT_TRUE(labeling->containsAtomicProposition(phi));
+		ASSERT_TRUE(labeling->containsAtomicProposition(psi));
+		ASSERT_TRUE(labeling->containsAtomicProposition(smth));
 
 		//Testing whether all and only the correct nodes are labeled with "phi"
-		ASSERT_TRUE(labeling->nodeHasProposition(phi,1));
-		ASSERT_TRUE(labeling->nodeHasProposition(phi,2));
-		ASSERT_TRUE(labeling->nodeHasProposition(phi,3));
-		ASSERT_TRUE(labeling->nodeHasProposition(phi,5));
-		ASSERT_TRUE(labeling->nodeHasProposition(phi,7));
-		ASSERT_TRUE(labeling->nodeHasProposition(phi,9));
-		ASSERT_TRUE(labeling->nodeHasProposition(phi,10));
-		ASSERT_TRUE(labeling->nodeHasProposition(phi,11));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,1));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,2));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,3));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,5));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,7));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,9));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,10));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,11));
 
-		ASSERT_FALSE(labeling->nodeHasProposition(phi,4));
-		ASSERT_FALSE(labeling->nodeHasProposition(phi,6));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,4));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,6));
 
 		//Testing whether all and only the correct nodes are labeled with "psi"
-		ASSERT_TRUE(labeling->nodeHasProposition(psi,6));
-		ASSERT_TRUE(labeling->nodeHasProposition(psi,7));
-		ASSERT_TRUE(labeling->nodeHasProposition(psi,8));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(psi,6));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(psi,7));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(psi,8));
 
-		ASSERT_FALSE(labeling->nodeHasProposition(psi,1));
-		ASSERT_FALSE(labeling->nodeHasProposition(psi,2));
-		ASSERT_FALSE(labeling->nodeHasProposition(psi,3));
-		ASSERT_FALSE(labeling->nodeHasProposition(psi,4));
-		ASSERT_FALSE(labeling->nodeHasProposition(psi,5));
-		ASSERT_FALSE(labeling->nodeHasProposition(psi,9));
-		ASSERT_FALSE(labeling->nodeHasProposition(psi,10));
-		ASSERT_FALSE(labeling->nodeHasProposition(psi,11));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,1));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,2));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,3));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,4));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,5));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,9));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,10));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,11));
 
 		//Testing whether all and only the correct nodes are labeled with "smth"
-		ASSERT_TRUE(labeling->nodeHasProposition(smth,4));
-		ASSERT_TRUE(labeling->nodeHasProposition(smth,5));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(smth,4));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(smth,5));
 
-		ASSERT_FALSE(labeling->nodeHasProposition(smth,1));
-		ASSERT_FALSE(labeling->nodeHasProposition(smth,2));
-		ASSERT_FALSE(labeling->nodeHasProposition(smth,3));
-		ASSERT_FALSE(labeling->nodeHasProposition(smth,6));
-		ASSERT_FALSE(labeling->nodeHasProposition(smth,7));
-		ASSERT_FALSE(labeling->nodeHasProposition(smth,8));
-		ASSERT_FALSE(labeling->nodeHasProposition(smth,9));
-		ASSERT_FALSE(labeling->nodeHasProposition(smth,10));
-		ASSERT_FALSE(labeling->nodeHasProposition(smth,11));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,1));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,2));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,3));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,6));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,7));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,8));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,9));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,10));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,11));
 
 		//Deleting the labeling
 		delete labeling;
