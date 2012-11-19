@@ -448,47 +448,6 @@ class StaticSparseMatrix {
 	}
 
    /*!
-       Creates a DOT file which provides the graph of the transition structure
-       represented by the matrix.
-
-       @param  filename The Name of the file to write in. If the file already exists,
-                        it will be overwritten.
-
-    */
-   void toDOTFile(const char* filename) {
-      FILE *P;
-
-      P = fopen(filename, "w");
-
-      if (P == NULL) {
-         pantheios::log_ERROR("File could not be opened.");
-         throw mrmc::exceptions::file_IO_exception();
-      }
-
-      fprintf(P, "digraph dtmc {\n");
-
-      uint_fast64_t row = 0;
-
-      for (uint_fast64_t i = 0; i < non_zero_entry_count; i++ ) {
-         //Check whether we have to switch to the new row
-         while (row_indications[row] <= i) {
-            ++row;
-            //write diagonal entry/self loop first
-            if (diagonal_storage[row] != 0) {
-               fprintf(P, "\t%Lu -> %Lu [label=%f]\n",
-                     row, row, diagonal_storage[row]);
-            }
-         }
-         fprintf(P, "\t%Lu -> %Lu [label=%f]\n",
-               row, column_indications[i], value_storage[i]);
-      }
-
-      fprintf(P, "}\n");
-
-      fclose(P);
-   }
-
-   /*!
     * Returns the size of the matrix in memory measured in bytes.
     * @return The size of the matrix in memory measured in bytes.
     */
