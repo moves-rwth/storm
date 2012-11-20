@@ -5,8 +5,8 @@
  *
  * Reuses code from the file "read_tra_file.c" from the old MRMC project.
  *
- *  Created on: 15.08.2012
- *      Author: Thomas Heinemann
+ * Created on: 20.11.2012
+ *      Author: Gereon Kremer
  */
 
 #include "parser.h"
@@ -35,12 +35,11 @@ namespace parser{
 
 char* skipWS(char* buf)
 {
-   unsigned int i = 0;
-   while (1)
-   {
-      if ((buf[i] != ' ') && (buf[i] != '\t') && (buf[i] != '\n') && (buf[i] != '\r')) return buf+i;
-      i++;
-   }
+	while(1)
+	{
+		if ((buf[0] != ' ') && (buf[0] != '\t') && (buf[0] != '\n') && (buf[0] != '\r')) return buf;
+		buf++;
+	}
 }
 
 // Disable C4996 - This function or variable may be unsafe.
@@ -54,13 +53,15 @@ char* skipWS(char* buf)
 * (Diagonal elements are treated in a special way).
 *
 * @return The number of non-zero elements that are not on the diagonal
-* @param p File stream to scan. Is expected to be opened, a NULL pointer will
-*          be rejected!
+* @param buf Data to scan. Is expected to be some char array.
 */
 static uint_fast32_t make_first_pass(char* buf)
 {
 	uint_fast32_t non_zero = 0;
-   
+	
+	/*
+		check file header and extract number of transitions
+	*/
 	if (strncmp(buf, "STATES ", 7) != 0) return 0;
 	buf += 7; // skip "STATES "
 	if (strtol(buf, &buf, 10) == 0) return 0;
@@ -69,6 +70,9 @@ static uint_fast32_t make_first_pass(char* buf)
 	buf += 12; // skip "TRANSITIONS "
 	if ((non_zero = strtol(buf, &buf, 10)) == 0) return 0;
 	
+	/*
+		check all transitions for non-zero diagonal entrys
+	*/
 	unsigned int row, col;
 	double val;
 	while (1)  
@@ -116,7 +120,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 		perform first pass
 	*/
 	uint_fast32_t non_zero = make_first_pass(data);
-	if (non_zero = 0)
+	if (non_zero == 0)
 	{
 		close(f);
 		munmap(data, st.st_size);
@@ -127,14 +131,18 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 	/*
 		perform second pass
 		
-		from here on, we already know that the file format is correct
+		from here on, we already know that the file header is correct
 	*/
 	char* buf = data;
 	uint_fast32_t rows;
 	sparse::StaticSparseMatrix<double> *sp = NULL;
 
+	/*
+		read file header, extract number of states
+	*/
 	buf += 7; // skip "STATES "
 	rows = strtol(buf, &buf, 10);
+	buf = skipWS(buf);
 	buf += 12; // skip "TRANSITIONS "
 	strtol(buf, &buf, 10);
 	
@@ -147,7 +155,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 	 * non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
 	sp = new sparse::StaticSparseMatrix<double>(rows);
-	if ( NULL == sp )
+	if (sp == NULL)
 	{
 		close(f);
 		munmap(data, st.st_size);
@@ -156,12 +164,10 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 	}
 	sp->initialize(non_zero);
 
-	uint_fast32_t row, col;
+	uint_fast64_t row, col;
 	double val;
 	/*
 		read all transitions from file
-		
-		note: the parser will also stop, if a transition with a value of 0.0 occurs
 	*/
 	while (1)
 	{
@@ -169,7 +175,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 		col = strtol(buf, &buf, 10);
 		val = strtod(buf, &buf);
 		if (val == 0.0) break;
-		pantheios::log_WARNING("Write value ",
+		pantheios::log_DEBUG("Write value ",
 							pantheios::real(val),
 							" to position ",
 							pantheios::integer(row), " x ",
@@ -177,6 +183,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 		sp->addNextValue(row,col,val);	
 	}
 	
+	// clean up
 	close(f);
 	munmap(data, st.st_size);
 
