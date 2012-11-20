@@ -92,9 +92,7 @@ int main(int argc, char* argv[]) {
 	counter.start();
 	for (i = 0; i < 10000; ++i) {
 		iArray = (uint_fast64_t*)malloc(2097152 * sizeof(uint_fast64_t));
-		for (j = 0; j < 2097152; ++j) {
-			iArray[j] = 0;
-		}
+		memset(iArray, 0, 2097152 * sizeof(uint_fast64_t));
 		free(iArray);
 	}
 	counter.stop();

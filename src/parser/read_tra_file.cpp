@@ -17,6 +17,13 @@
 #include "boost/integer/integer_mask.hpp"
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <errno.h>
+#include <time.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 #include <pantheios/pantheios.hpp>
 #include <pantheios/inserters/integer.hpp>
@@ -25,6 +32,16 @@
 namespace mrmc {
 
 namespace parser{
+
+char* skipWS(char* buf)
+{
+   unsigned int i = 0;
+   while (1)
+   {
+      if ((buf[i] != ' ') && (buf[i] != '\t') && (buf[i] != '\n') && (buf[i] != '\r')) return buf+i;
+      i++;
+   }
+}
 
 // Disable C4996 - This function or variable may be unsafe.
 #pragma warning(disable:4996)
@@ -40,47 +57,30 @@ namespace parser{
 * @param p File stream to scan. Is expected to be opened, a NULL pointer will
 *          be rejected!
 */
-static uint_fast32_t make_first_pass(FILE* p) {
-   if(p==NULL) {
-      pantheios::log_ERROR("make_first_pass was called with NULL! (SHOULD NEVER HAPPEN)");
-      throw exceptions::file_IO_exception ("make_first_pass: File not readable (this should be checked before calling this function!)");
-   }
-   char s[BUFFER_SIZE];                 //String buffer
-   uint_fast32_t rows=0, non_zero=0;
+static uint_fast32_t make_first_pass(char* buf)
+{
+	uint_fast32_t non_zero = 0;
+   
+	if (strncmp(buf, "STATES ", 7) != 0) return 0;
+	buf += 7; // skip "STATES "
+	if (strtol(buf, &buf, 10) == 0) return 0;
+	buf = skipWS(buf);
+	if (strncmp(buf, "TRANSITIONS ", 12) != 0) return 0;
+	buf += 12; // skip "TRANSITIONS "
+	if ((non_zero = strtol(buf, &buf, 10)) == 0) return 0;
+	
+	unsigned int row, col;
+	double val;
+	while (1)  
+	{
+		row = strtol(buf, &buf, 10);
+		col = strtol(buf, &buf, 10);
+		val = strtod(buf, &buf);
+		if (val == 0.0) break;
+		if (row == col) non_zero--;
+	}
 
-   //Reading No. of states
-   if (fgets(s, BUFFER_SIZE, p) != NULL) {
-      if (sscanf( s, "STATES %d", &rows) == 0) {
-         pantheios::log_WARNING(pantheios::integer(rows));
-         (void)fclose(p);
-         throw mrmc::exceptions::wrong_file_format();
-      }
-   }
-
-   //Reading No. of transitions
-   if (fgets(s, BUFFER_SIZE, p) != NULL) {
-      if (sscanf( s, "TRANSITIONS %d", &non_zero) == 0) {
-         (void)fclose(p);
-         throw mrmc::exceptions::wrong_file_format();
-      }
-   }
-
-   //Reading transitions (one per line)
-   //And increase number of transitions
-   while (NULL != fgets( s, BUFFER_SIZE, p ))
-   {
-      uint_fast32_t row=0, col=0;
-      double val=0.0;
-      if (sscanf( s, "%d%d%lf", &row, &col, &val ) != 3) {
-         (void)fclose(p);
-         throw mrmc::exceptions::wrong_file_format();
-      }
-      //Diagonal elements are not counted into the result!
-      if(row == col) {
-         --non_zero;
-      }
-   }
-   return non_zero;
+	return non_zero;
 }
 
 
@@ -93,75 +93,92 @@ static uint_fast32_t make_first_pass(FILE* p) {
  */
 
 sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
-	FILE *p = NULL;
-	char s[BUFFER_SIZE];
-	uint_fast32_t rows, non_zero;
-	sparse::StaticSparseMatrix<double> *sp = NULL;
-
-	p = fopen(filename, "r");
-	if(p == NULL) {
+	/*
+		open file and map to memory
+	*/
+	struct stat st;
+	int f = open(filename, O_RDONLY);
+	if((f < 0) || (stat(filename, &st) != 0)) {
 		pantheios::log_ERROR("File ", filename, " was not readable (Does it exist?)");
 		throw exceptions::file_IO_exception("mrmc::read_tra_file: Error opening file! (Does it exist?)");
 		return NULL;
 	}
-	non_zero = make_first_pass(p);
-
-	//Set file reader back to the beginning
-	rewind(p);
-
-	//Reading No. of states
-	if ((fgets(s, BUFFER_SIZE, p) == NULL) || (sscanf(s, "STATES %d", &rows) == 0)) {
-		pantheios::log_WARNING(pantheios::integer(rows));
-		(void)fclose(p);
+	char *data = (char*)mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, f, 0);
+	if (data == (char*)-1)
+	{
+		pantheios::log_ERROR("Could not map the file to memory. Something went wrong with mmap.");
+		throw exceptions::file_IO_exception("mrmc::read_tra_file: Error mapping file to memory");
+		close(f);
+		return NULL;
+	}
+	
+	/*
+		perform first pass
+	*/
+	uint_fast32_t non_zero = make_first_pass(data);
+	if (non_zero = 0)
+	{
+		close(f);
+		munmap(data, st.st_size);
 		throw mrmc::exceptions::wrong_file_format();
 		return NULL;
 	}
+	
+	/*
+		perform second pass
+		
+		from here on, we already know that the file format is correct
+	*/
+	char* buf = data;
+	uint_fast32_t rows;
+	sparse::StaticSparseMatrix<double> *sp = NULL;
 
-	/* Reading No. of transitions
-	 * Note that the result is not used in this function as make_first_pass()
-	 * computes the relevant number (non_zero)
-	 */
-	uint_fast32_t nnz=0;
-	if ((fgets(s, BUFFER_SIZE, p) == NULL) || (sscanf(s, "TRANSITIONS %d", &nnz) == 0)) {
-		(void)fclose(p);
-		throw mrmc::exceptions::wrong_file_format();
-		return NULL;
-	}
-
-   pantheios::log_DEBUG("Creating matrix with ",
+	buf += 7; // skip "STATES "
+	rows = strtol(buf, &buf, 10);
+	buf += 12; // skip "TRANSITIONS "
+	strtol(buf, &buf, 10);
+	
+	pantheios::log_DEBUG("Creating matrix with ",
                         pantheios::integer(rows), " rows and ",
                         pantheios::integer(non_zero), " Non-Zero-Elements");
+                        
 	/* Creating matrix
 	 * Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
 	 * non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
 	sp = new sparse::StaticSparseMatrix<double>(rows);
-	if ( NULL == sp ) {
+	if ( NULL == sp )
+	{
+		close(f);
+		munmap(data, st.st_size);
 		throw std::bad_alloc();
 		return NULL;
 	}
 	sp->initialize(non_zero);
 
-	//Reading transitions (one per line) and saving the results in the matrix
-	while (NULL != fgets(s, BUFFER_SIZE, p )) {
-		uint_fast32_t row=0, col=0;
-		double val = 0.0;
-		if (sscanf(s, "%d%d%lf", &row, &col, &val) != 3) {
-			(void)fclose(p);
-			throw mrmc::exceptions::wrong_file_format();
-			// Delete Matrix to free allocated memory
-			delete sp;
-			return NULL;
-		}
-		pantheios::log_DEBUG("Write value ",
+	uint_fast32_t row, col;
+	double val;
+	/*
+		read all transitions from file
+		
+		note: the parser will also stop, if a transition with a value of 0.0 occurs
+	*/
+	while (1)
+	{
+		row = strtol(buf, &buf, 10);
+		col = strtol(buf, &buf, 10);
+		val = strtod(buf, &buf);
+		if (val == 0.0) break;
+		pantheios::log_WARNING("Write value ",
 							pantheios::real(val),
 							" to position ",
 							pantheios::integer(row), " x ",
 							pantheios::integer(col));
-		sp->addNextValue(row,col,val);
+		sp->addNextValue(row,col,val);	
 	}
-
-	(void)fclose(p);
+	
+	close(f);
+	munmap(data, st.st_size);
 
 	pantheios::log_DEBUG("Finalizing Matrix");
 	sp->finalize();
