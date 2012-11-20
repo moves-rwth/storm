@@ -25,7 +25,7 @@ PANTHEIOS_EXTERN_C PAN_CHAR_T const PANTHEIOS_FE_PROCESS_IDENTITY[] = "mrmc-cpp"
 #include "MRMCConfig.h"
 
 #include "src/sparse/static_sparse_matrix.h"
-#include "src/dtmc/atomic_proposition.h"
+#include "src/models/atomic_propositions_labeling.h"
 #include "src/parser/read_lab_file.h"
 #include "src/parser/read_tra_file.h"
 #include "Eigen/Sparse"
