@@ -14,6 +14,7 @@
 #include <ostream>
 
 #include "atomic_propositions_labeling.h"
+#include "backward_transitions.h"
 #include "src/sparse/static_sparse_matrix.h"
 
 namespace mrmc {
@@ -38,7 +39,8 @@ public:
 	 * propositions to each state.
 	 */
 	Dtmc(mrmc::sparse::StaticSparseMatrix<T>* probability_matrix,
-			mrmc::models::AtomicPropositionsLabeling* state_labeling) {
+			mrmc::models::AtomicPropositionsLabeling* state_labeling) :
+				backward_transitions(probability_matrix) {
 		this->probability_matrix = probability_matrix;
 		this->state_labeling = state_labeling;
 	}
@@ -99,6 +101,15 @@ public:
 			<< std::endl;
 	}
 
+	mrmc::vector::BitVector* findStatesExistsPath(mrmc::vector::BitVector target_states) {
+		mrmc::vector::BitVector visited_states(target_states);
+		mrmc::vector::BitVector* result = new mrmc::vector::BitVector(target_states);
+
+
+
+		return result;
+	}
+
 private:
 
 	/*! A matrix representing the transition probability function of the DTMC. */
@@ -107,6 +118,11 @@ private:
 	/*! The labeling of the states of the DTMC. */
 	mrmc::models::AtomicPropositionsLabeling* state_labeling;
 
+	/*!
+	 * A data structure that stores the predecessors for all states. This is
+	 * needed for a backwards search.
+	 */
+	mrmc::models::BackwardTransitions<T> backward_transitions;
 };
 
 } // namespace models

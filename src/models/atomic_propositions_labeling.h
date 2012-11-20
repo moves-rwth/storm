@@ -135,28 +135,28 @@ public:
 	/*!
 	 * Adds an atomic proposition to a given state.
 	 * @param ap The name of the atomic proposition.
-	 * @param node The index of the state to label.
+	 * @param state The index of the state to label.
 	 */
-	void addAtomicPropositionToState(std::string ap, const uint_fast32_t state_index) {
+	void addAtomicPropositionToState(std::string ap, const uint_fast32_t state) {
 		if (name_to_labeling_map.count(ap) == 0) {
 			throw std::out_of_range("Atomic Proposition '" + ap + "' unknown.");
 		}
-		if (state_index >= state_count) {
+		if (state >= state_count) {
 			throw std::out_of_range("State index out of range.");
 		}
-		this->single_labelings[name_to_labeling_map[ap]]->addLabelToState(state_index);
+		this->single_labelings[name_to_labeling_map[ap]]->addLabelToState(state);
 	}
 
 	/*!
 	 * Checks whether a given state is labeled with the given atomic proposition.
 	 * @param ap The name of the atomic proposition.
-	 * @param state_index The index of the state to check.
+	 * @param state The index of the state to check.
 	 * @return True if the node is labeled with the atomic proposition, false
 	 * otherwise.
 	 */
 	bool stateHasAtomicProposition(std::string ap,
-			const uint_fast32_t state_index) {
-		return this->single_labelings[name_to_labeling_map[ap]]->hasLabel(state_index);
+			const uint_fast32_t state) {
+		return this->single_labelings[name_to_labeling_map[ap]]->hasLabel(state);
 	}
 
 	/*!

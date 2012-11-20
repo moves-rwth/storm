@@ -327,6 +327,18 @@ class StaticSparseMatrix {
 		return value_storage;
 	}
 
+	T* getDiagonalStoragePointer() const {
+		return diagonal_storage;
+	}
+
+	uint_fast64_t* getRowIndicationsPointer() const {
+		return row_indications;
+	}
+
+	uint_fast64_t* getColumnIndicationsPointer() const {
+		return column_indications;
+	}
+
 	bool isReadReady() {
 		return (internal_status == MatrixStatus::ReadReady);
 	}

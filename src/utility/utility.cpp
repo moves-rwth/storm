@@ -16,8 +16,10 @@ namespace mrmc {
 
 namespace utility {
 
-void dtmcToDot(mrmc::models::DTMC<double>* dtmc, const char* filename) {
-   FILE *P;
+void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, const char* filename) {
+	//FIXME: adapt this to the refactored names
+	//FIXME: use C++-style for file output here, as performance is not critical here
+/*   FILE *P;
    mrmc::sparse::StaticSparseMatrix<double>* matrix = dtmc->getTransitions();
    mrmc::dtmc::Labeling* labels = dtmc->getLabels();
 
@@ -71,11 +73,11 @@ void dtmcToDot(mrmc::models::DTMC<double>* dtmc, const char* filename) {
 
    fprintf(P, "}\n");
 
-   fclose(P);
+   fclose(P); */
 }
 
 mrmc::models::Dtmc<double>* parseDTMC(const char* tra_file, const char* lab_file) {
-   mrmc::sparse::StaticSparseMatrix<double>* transition_matrix =
+/*   mrmc::sparse::StaticSparseMatrix<double>* transition_matrix =
          mrmc::parser::read_tra_file(tra_file);
    uint_fast64_t node_count = transition_matrix->getRowCount();
 
@@ -84,7 +86,7 @@ mrmc::models::Dtmc<double>* parseDTMC(const char* tra_file, const char* lab_file
 
    mrmc::models::Dtmc<double>* result =
          new mrmc::models::Dtmc<double>(transition_matrix, labeling);
-   return result;
+   return result; */
 }
 
 }
