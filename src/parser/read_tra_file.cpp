@@ -18,12 +18,14 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <clocale>
 #include <iostream>
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <locale.h>
 
 #include <pantheios/pantheios.hpp>
 #include <pantheios/inserters/integer.hpp>
@@ -97,6 +99,10 @@ static uint_fast32_t make_first_pass(char* buf)
  */
 
 sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
+	if (setlocale( LC_NUMERIC, "de_DE" ) == 0)
+	{
+		fprintf(stderr, "could not set locale\n");
+	}
 	/*
 		open file and map to memory
 	*/
