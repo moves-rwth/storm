@@ -23,7 +23,7 @@ namespace sparse {
 
 /*!
  * A sparse matrix class with a constant number of non-zero entries on the non-diagonal fields
- * and a seperate dense storage for the diagonal elements.
+ * and a separate dense storage for the diagonal elements.
  * NOTE: Addressing *is* zero-based, so the valid range for getValue and addNextValue is 0..(rows - 1)
  * where rows is the first argument to the constructor.
  */
@@ -49,10 +49,10 @@ public:
 	 * @param rows The number of rows of the matrix
 	 */
 	StaticSparseMatrix(uint_fast64_t rows)
-			: internal_status(MatrixStatus::UnInitialized),
-			  current_size(0), last_row(0), value_storage(nullptr),
-			  diagonal_storage(nullptr), column_indications(nullptr),
-			  row_indications(nullptr), row_count(rows), non_zero_entry_count(0) { }
+			: internalStatus(MatrixStatus::UnInitialized),
+			  currentSize(0), lastRow(0), valueStorage(nullptr),
+			  diagonalStorage(nullptr), columnIndications(nullptr),
+			  rowIndications(nullptr), rowCount(rows), nonZeroEntryCount(0) { }
 
 	//! Copy Constructor
 	/*!
@@ -60,14 +60,14 @@ public:
 	 * @param ssm A reference to the matrix to be copied.
 	 */
 	StaticSparseMatrix(const StaticSparseMatrix<T> &ssm)
-			: internal_status(ssm.internal_status),
-			  current_size(ssm.current_size), last_row(ssm.last_row),
-			  row_count(ssm.row_count),
-			  non_zero_entry_count(ssm.non_zero_entry_count) {
+			: internalStatus(ssm.internalStatus),
+			  currentSize(ssm.currentSize), lastRow(ssm.lastRow),
+			  rowCount(ssm.rowCount),
+			  nonZeroEntryCount(ssm.nonZeroEntryCount) {
 		pantheios::log_DEBUG("StaticSparseMatrix::CopyConstructor: Using copy constructor.");
 		// Check whether copying the matrix is safe.
 		if (!ssm.hasError()) {
-			pantheios::log_ERROR("StaticSparseMatrix::CopyCtor: Throwing invalid_argument: Can not Copy from matrix in error state.");
+			pantheios::log_ERROR("StaticSparseMatrix::CopyConstructor: Throwing invalid_argument: Can not copy from matrix in error state.");
 			throw mrmc::exceptions::invalid_argument();
 		} else {
 			// Try to prepare the internal storage and throw an error in case
@@ -81,19 +81,19 @@ public:
 				// copy them seperately in order to invoke copy their copy
 				// constructor. This may not be necessary, but it is safer to
 				// do so in any case.
-				for (uint_fast64_t i = 0; i < non_zero_entry_count; ++i) {
+				for (uint_fast64_t i = 0; i < nonZeroEntryCount; ++i) {
 					// use T() to force use of the copy constructor for complex T types
-					value_storage[i] = T(ssm.value_storage[i]);
+					valueStorage[i] = T(ssm.valueStorage[i]);
 				}
-				for (uint_fast64_t i = 0; i <= row_count; ++i) {
+				for (uint_fast64_t i = 0; i <= rowCount; ++i) {
 					// use T() to force use of the copy constructor for complex T types
-					diagonal_storage[i] = T(ssm.diagonal_storage[i]);
+					diagonalStorage[i] = T(ssm.diagonalStorage[i]);
 				}
 
 				// The elements that are not of the value type but rather the
 				// index type may be copied with memcpy.
-				memcpy(column_indications, ssm.column_indications, sizeof(column_indications[0]) * non_zero_entry_count);
-				memcpy(row_indications, ssm.row_indications, sizeof(row_indications[0]) * (row_count + 1));
+				memcpy(columnIndications, ssm.columnIndications, sizeof(columnIndications[0]) * nonZeroEntryCount);
+				memcpy(rowIndications, ssm.rowIndications, sizeof(rowIndications[0]) * (rowCount + 1));
 			}
 		}
 	}
@@ -104,21 +104,21 @@ public:
 	 */
 	~StaticSparseMatrix() {
 		setState(MatrixStatus::UnInitialized);
-		if (value_storage != NULL) {
+		if (valueStorage != NULL) {
 			//free(value_storage);
-			delete[] value_storage;
+			delete[] valueStorage;
 		}
-		if (column_indications != NULL) {
+		if (columnIndications != NULL) {
 			//free(column_indications);
-			delete[] column_indications;
+			delete[] columnIndications;
 		}
-		if (row_indications != NULL) {
+		if (rowIndications != NULL) {
 			//free(row_indications);
-			delete[] row_indications;
+			delete[] rowIndications;
 		}
-		if (diagonal_storage != NULL) {
+		if (diagonalStorage != NULL) {
 			//free(diagonal_storage);
-			delete[] diagonal_storage;
+			delete[] diagonalStorage;
 		}
 	}
 
@@ -128,27 +128,28 @@ public:
 	 * NOTE: Calling this method before any other member function is mandatory.
 	 * This version is to be used together with addNextValue(). For
 	 * initialization from an Eigen SparseMatrix, use initialize(Eigen::SparseMatrix<T> &).
-	 * @param non_zero_entries
+	 * @param nonZeroEntries The number of non-zero entries that are not on the
+	 * diagonal.
 	 */
-	void initialize(uint_fast64_t non_zero_entries) {
+	void initialize(uint_fast64_t nonZeroEntries) {
 		// Check whether initializing the matrix is safe.
-		if (internal_status != MatrixStatus::UnInitialized) {
+		if (internalStatus != MatrixStatus::UnInitialized) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid state for status flag != 0 (is ", pantheios::integer(internal_status), " - Already initialized?");
+			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid state for status flag != 0 (is ", pantheios::integer(internalStatus), " - Already initialized?");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::initialize: Invalid state for status flag != 0 - Already initialized?");
-		} else if (row_count == 0) {
+		} else if (rowCount == 0) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid_argument for row_count = 0");
 			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: Matrix with 0 rows is not reasonable");
-		} else if (((row_count * row_count) - row_count) < non_zero_entries) {
+		} else if (((rowCount * rowCount) - rowCount) < nonZeroEntries) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid_argument: More non-zero entries than entries in target matrix");
 			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: More non-zero entries than entries in target matrix");
 		} else {
 			// If it is safe, initialize necessary members and prepare the
 			// internal storage.
-			non_zero_entry_count = non_zero_entries;
-			last_row = 0;
+			nonZeroEntryCount = nonZeroEntries;
+			lastRow = 0;
 
 			if (!prepareInternalStorage()) {
 				triggerErrorState();
@@ -166,21 +167,21 @@ public:
 	 * This version is only to be used when copying an Eigen sparse matrix. For
 	 * initialization with addNextValue() and finalize() use initialize(uint_fast32_t)
 	 * instead.
-	 * @param eigen_sparse_matrix The Eigen sparse matrix to be copied.
+	 * @param eigenSparseMatrix The Eigen sparse matrix to be copied.
 	 * *NOTE* Has to be in compressed form!
 	 */
 	template<int _Options, typename _Index>
-	void initialize(const Eigen::SparseMatrix<T, _Options, _Index> &eigen_sparse_matrix) {
+	void initialize(const Eigen::SparseMatrix<T, _Options, _Index>& eigenSparseMatrix) {
 		// Throw an error in case the matrix is not in compressed format.
-		if (!eigen_sparse_matrix.isCompressed()) {
+		if (!eigenSparseMatrix.isCompressed()) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid_argument: eigen_sparse_matrix is not in Compressed form.");
 			throw mrmc::exceptions::invalid_argument("StaticSparseMatrix::initialize: Throwing invalid_argument: eigen_sparse_matrix is not in Compressed form.");
 		}
 
 		// Compute the actual (i.e. non-diagonal) number of non-zero entries.
-		non_zero_entry_count = getEigenSparseMatrixCorrectNonZeroEntryCount(eigen_sparse_matrix);
-		last_row = 0;
+		nonZeroEntryCount = getEigenSparseMatrixCorrectNonZeroEntryCount(eigenSparseMatrix);
+		lastRow = 0;
 
 		// Try to prepare the internal storage and throw an error in case of
 		// failure.
@@ -191,29 +192,28 @@ public:
 			throw std::bad_alloc();
 		} else {
 			// Get necessary pointers to the contents of the Eigen matrix.
-			const T* valuePtr = eigen_sparse_matrix.valuePtr();
-			const _Index* indexPtr = eigen_sparse_matrix.innerIndexPtr();
-			const _Index* outerPtr = eigen_sparse_matrix.outerIndexPtr();
+			const T* valuePtr = eigenSparseMatrix.valuePtr();
+			const _Index* indexPtr = eigenSparseMatrix.innerIndexPtr();
+			const _Index* outerPtr = eigenSparseMatrix.outerIndexPtr();
 
 			// If the given matrix is in RowMajor format, copying can simply
 			// be done by adding all values in order.
 			// Direct copying is, however, prevented because we have to
 			// separate the diagonal entries from others.
-			if (isEigenRowMajor(eigen_sparse_matrix)) {
+			if (isEigenRowMajor(eigenSparseMatrix)) {
 				// Because of the RowMajor format outerSize evaluates to the
 				// number of rows.
-				const _Index rowCount = eigen_sparse_matrix.outerSize();
+				const _Index rowCount = eigenSparseMatrix.outerSize();
 				for (_Index row = 0; row < rowCount; ++row) {
-					for (_Index col = outerPtr[row]; col < outerPtr[row + 1];
-							++col) {
+					for (_Index col = outerPtr[row]; col < outerPtr[row + 1]; ++col) {
 						addNextValue(row, indexPtr[col], valuePtr[col]);
 					}
 				}
 			} else {
-				const _Index entryCount = eigen_sparse_matrix.nonZeros();
+				const _Index entryCount = eigenSparseMatrix.nonZeros();
 				// Because of the ColMajor format outerSize evaluates to the
 				// number of columns.
-				const _Index colCount = eigen_sparse_matrix.outerSize();
+				const _Index colCount = eigenSparseMatrix.outerSize();
 
 				// Create an array to remember which elements have to still
 				// be searched in each column and initialize it with the starting
@@ -237,17 +237,17 @@ public:
 						addNextValue(currentRow, currentColumn,
 								valuePtr[positions[currentColumn]]);
 						// Remember that we found one more non-zero element.
-						i++;
+						++i;
 						// Mark this position as "used".
-						positions[currentColumn]++;
+						++positions[currentColumn];
 					}
 
 					// Now we can advance to the next column and also row,
 					// in case we just iterated through the last column.
-					currentColumn++;
+					++currentColumn;
 					if (currentColumn == colCount) {
 						currentColumn = 0;
-						currentRow++;
+						++currentRow;
 					}
 				}
 				delete[] positions;
@@ -267,31 +267,31 @@ public:
 	void addNextValue(const uint_fast64_t row, const uint_fast64_t col,	const T& value) {
 		// Check whether the given row and column positions are valid and throw
 		// error otherwise.
-		if ((row > row_count) || (col > row_count)) {
+		if ((row > rowCount) || (col > rowCount)) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::addNextValue: Throwing out_of_range: row or col not in 0 .. rows (is ",
 					pantheios::integer(row), " x ", pantheios::integer(col), ", max is ",
-					pantheios::integer(row_count), " x ", pantheios::integer(row_count), ").");
+					pantheios::integer(rowCount), " x ", pantheios::integer(rowCount), ").");
 			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::addNextValue: row or col not in 0 .. rows");
 		}
 
 		if (row == col) { // Set a diagonal element.
-			diagonal_storage[row] = value;
+			diagonalStorage[row] = value;
 		} else { // Set a non-diagonal element.
 			// If we switched to another row, we have to adjust the missing
 			// entries in the row_indications array.
-			if (row != last_row) {
-				for (uint_fast64_t i = last_row + 1; i <= row; ++i) {
-					row_indications[i] = current_size;
+			if (row != lastRow) {
+				for (uint_fast64_t i = lastRow + 1; i <= row; ++i) {
+					rowIndications[i] = currentSize;
 				}
-				last_row = row;
+				lastRow = row;
 			}
 
 			// Finally, set the element and increase the current size.
-			value_storage[current_size] = value;
-			column_indications[current_size] = col;
+			valueStorage[currentSize] = value;
+			columnIndications[currentSize] = col;
 
-			current_size++;
+			++currentSize;
 		}
 	}
 
@@ -305,18 +305,18 @@ public:
 		if (!isInitialized()) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::finalize: Throwing invalid state for internal state not Initialized (is ",
-					pantheios::integer(internal_status), " - Already finalized?");
+					pantheios::integer(internalStatus), " - Already finalized?");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::finalize: Invalid state for internal state not Initialized - Already finalized?");
-		} else if (current_size != non_zero_entry_count) {
+		} else if (currentSize != nonZeroEntryCount) {
 			triggerErrorState();
 			pantheios::log_ERROR("StaticSparseMatrix::finalize: Throwing invalid_state: Wrong call count for addNextValue");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::finalize: Wrong call count for addNextValue");
 		} else {
 			// Fill in the missing entries in the row_indications array.
 			// (Can happen because of empty rows at the end.)
-			if (last_row != row_count) {
-				for (uint_fast64_t i = last_row + 1; i <= row_count; ++i) {
-					row_indications[i] = current_size;
+			if (lastRow != rowCount) {
+				for (uint_fast64_t i = lastRow + 1; i <= rowCount; ++i) {
+					rowIndications[i] = currentSize;
 				}
 			}
 
@@ -324,7 +324,7 @@ public:
 			// array. This eases iteration work, as now the indices of row i
 			// are always between row_indications[i] and row_indications[i + 1],
 			// also for the first and last row.
-			row_indications[row_count + 1] = non_zero_entry_count;
+			rowIndications[rowCount + 1] = nonZeroEntryCount;
 
 			setState(MatrixStatus::ReadReady);
 		}
@@ -342,37 +342,37 @@ public:
 	 */
 	inline bool getValue(uint_fast64_t row, uint_fast64_t col, T* const target) {
 		// Check for illegal access indices.
-		if ((row > row_count) || (col > row_count)) {
+		if ((row > rowCount) || (col > rowCount)) {
 			pantheios::log_ERROR("StaticSparseMatrix::getValue: row or col not in 0 .. rows (is ", pantheios::integer(row), " x ",
-					pantheios::integer(col), ", max is ", pantheios::integer(row_count), " x ",	pantheios::integer(row_count), ").");
+					pantheios::integer(col), ", max is ", pantheios::integer(rowCount), " x ",	pantheios::integer(rowCount), ").");
 			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::getValue: row or col not in 0 .. rows");
 			return false;
 		}
 
 		// Read elements on the diagonal directly.
 		if (row == col) {
-			*target = diagonal_storage[row];
+			*target = diagonalStorage[row];
 			return true;
 		}
 
 		// In case the element is not on the diagonal, we have to iterate
 		// over the accessed row to find the element.
-		uint_fast64_t row_start = row_indications[row];
-		uint_fast64_t row_end = row_indications[row + 1];
-		while (row_start < row_end) {
+		uint_fast64_t rowStart = rowIndications[row];
+		uint_fast64_t rowEnd = rowIndications[row + 1];
+		while (rowStart < rowEnd) {
 			// If the lement is found, write the content to the specified
 			// position and return true.
-			if (column_indications[row_start] == col) {
-				*target = value_storage[row_start];
+			if (columnIndications[rowStart] == col) {
+				*target = valueStorage[rowStart];
 				return true;
 			}
 			// If the column of the current element is already larger than the
 			// requested column, the requested element cannot be contained
 			// in the matrix and we may therefore stop searching.
-			if (column_indications[row_start] > col) {
+			if (columnIndications[rowStart] > col) {
 				break;
 			}
-			row_start++;
+			++rowStart;
 		}
 
 		// Set 0 as the content and return false in case the element was not found.
@@ -384,7 +384,7 @@ public:
 	 * Returns the number of rows of the matrix.
 	 */
 	uint_fast64_t getRowCount() const {
-		return row_count;
+		return rowCount;
 	}
 
 	/*!
@@ -393,7 +393,7 @@ public:
 	 * @return A pointer to the value storage of the matrix.
 	 */
 	T* getStoragePointer() const {
-		return value_storage;
+		return valueStorage;
 	}
 
 	/*!
@@ -401,7 +401,7 @@ public:
 	 * @return A pointer to the storage of elements on the diagonal.
 	 */
 	T* getDiagonalStoragePointer() const {
-		return diagonal_storage;
+		return diagonalStorage;
 	}
 
 	/*!
@@ -411,7 +411,7 @@ public:
 	 * entries in the value storage for each row.
 	 */
 	uint_fast64_t* getRowIndicationsPointer() const {
-		return row_indications;
+		return rowIndications;
 	}
 
 	/*!
@@ -421,7 +421,7 @@ public:
 	 * element that is not on the diagonal.
 	 */
 	uint_fast64_t* getColumnIndicationsPointer() const {
-		return column_indications;
+		return columnIndications;
 	}
 
 	/*!
@@ -431,7 +431,7 @@ public:
 	 * reading access.
 	 */
 	bool isReadReady() {
-		return (internal_status == MatrixStatus::ReadReady);
+		return (internalStatus == MatrixStatus::ReadReady);
 	}
 
 	/*!
@@ -440,7 +440,7 @@ public:
 	 * @return True iff the matrix was initialized previously.
 	 */
 	bool isInitialized() {
-		return (internal_status == MatrixStatus::Initialized || internal_status == MatrixStatus::ReadReady);
+		return (internalStatus == MatrixStatus::Initialized || internalStatus == MatrixStatus::ReadReady);
 	}
 
 	/*!
@@ -448,7 +448,7 @@ public:
 	 * @return The internal state of the matrix.
 	 */
 	MatrixStatus getState() {
-		return internal_status;
+		return internalStatus;
 	}
 
 	/*!
@@ -456,7 +456,7 @@ public:
 	 * @return True iff the internal state of the matrix signals an error.
 	 */
 	bool hasError() {
-		return (internal_status == MatrixStatus::Error);
+		return (internalStatus == MatrixStatus::Error);
 	}
 
 	/*!
@@ -468,11 +468,11 @@ public:
 		// Check whether it is safe to export this matrix.
 		if (!isReadReady()) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::toEigenSparseMatrix: Throwing invalid state for internal state not ReadReady (is ", pantheios::integer(internal_status), ").");
+			pantheios::log_ERROR("StaticSparseMatrix::toEigenSparseMatrix: Throwing invalid state for internal state not ReadReady (is ", pantheios::integer(internalStatus), ").");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::toEigenSparseMatrix: Invalid state for internal state not ReadReady.");
 		} else {
 			// Create a
-			int_fast32_t eigenRows = static_cast<int_fast32_t>(row_count);
+			int_fast32_t eigenRows = static_cast<int_fast32_t>(rowCount);
 			Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>* mat = new Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>(eigenRows, eigenRows);
 
 			// There are two ways of converting this matrix to Eigen's format.
@@ -497,24 +497,24 @@ public:
 			// Prepare the triplet storage.
 			typedef Eigen::Triplet<T> IntTriplet;
 			std::vector<IntTriplet> tripletList;
-			tripletList.reserve(non_zero_entry_count + row_count);
+			tripletList.reserve(nonZeroEntryCount + rowCount);
 
 			// First, iterate over all elements that are not on the diagonal
 			// and add the corresponding triplet.
-			uint_fast64_t row_start;
-			uint_fast64_t row_end;
-			for (uint_fast64_t row = 0; row <= row_count; ++row) {
-				row_start = row_indications[row];
-				row_end = row_indications[row + 1];
-				while (row_start < row_end) {
-					tripletList.push_back(IntTriplet(row, column_indications[row_start], value_storage[row_start]));
-					++row_start;
+			uint_fast64_t rowStart;
+			uint_fast64_t rowEnd;
+			for (uint_fast64_t row = 0; row <= rowCount; ++row) {
+				rowStart = rowIndications[row];
+				rowEnd = rowIndications[row + 1];
+				while (rowStart < rowEnd) {
+					tripletList.push_back(IntTriplet(row, columnIndications[rowStart], valueStorage[rowStart]));
+					++rowStart;
 				}
 			}
 
 			// Then add the elements on the diagonal.
-			for (uint_fast64_t i = 0; i <= row_count; ++i) {
-				tripletList.push_back(IntTriplet(i, i, diagonal_storage[i]));
+			for (uint_fast64_t i = 0; i <= rowCount; ++i) {
+				tripletList.push_back(IntTriplet(i, i, diagonalStorage[i]));
 			}
 
 			// Let Eigen create a matrix from the given list of triplets.
@@ -524,23 +524,23 @@ public:
 
 			// Reserve the average number of non-zero elements per row for each
 			// row.
-			mat->reserve(Eigen::VectorXi::Constant(eigenRows, static_cast<int_fast32_t>((non_zero_entry_count + row_count) / eigenRows)));
+			mat->reserve(Eigen::VectorXi::Constant(eigenRows, static_cast<int_fast32_t>((nonZeroEntryCount + rowCount) / eigenRows)));
 
 			// Iterate over the all non-zero elements in this matrix and add
 			// them to the matrix individually.
-			uint_fast64_t row_start;
-			uint_fast64_t row_end;
-			for (uint_fast64_t row = 0; row <= row_count; ++row) {
-				row_start = row_indications[row];
-				row_end = row_indications[row + 1];
+			uint_fast64_t rowStart;
+			uint_fast64_t rowEnd;
+			for (uint_fast64_t row = 0; row <= rowCount; ++row) {
+				rowStart = rowIndications[row];
+				rowEnd = rowIndications[row + 1];
 
 				// Insert the element on the diagonal.
-				mat->insert(row, row) = diagonal_storage[row];
+				mat->insert(row, row) = diagonalStorage[row];
 
 				// Insert the elements that are not on the diagonal
-				while (row_start < row_end) {
-					mat->insert(row, column_indications[row_start]) = value_storage[row_start];
-					++row_start;
+				while (rowStart < rowEnd) {
+					mat->insert(row, columnIndications[rowStart]) = valueStorage[rowStart];
+					++rowStart;
 				}
 			}
 #			endif // MRMC_USE_TRIPLETCONVERT
@@ -561,7 +561,7 @@ public:
 	 * @returns The number of non-zero entries that are not on the diagonal.
 	 */
 	uint_fast64_t getNonZeroEntryCount() const {
-		return non_zero_entry_count;
+		return nonZeroEntryCount;
 	}
 
 	/*!
@@ -573,24 +573,24 @@ public:
 	 */
 	bool makeStateAbsorbing(const uint_fast64_t state) {
 		// Check whether the accessed state exists.
-		if (state > row_count) {
-			pantheios::log_ERROR("StaticSparseMatrix::makeStateFinal: state not in 0 .. rows (is ",	pantheios::integer(state), ", max is ",	pantheios::integer(row_count), ").");
+		if (state > rowCount) {
+			pantheios::log_ERROR("StaticSparseMatrix::makeStateFinal: state not in 0 .. rows (is ",	pantheios::integer(state), ", max is ",	pantheios::integer(rowCount), ").");
 			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::makeStateFinal: state not in 0 .. rows");
 			return false;
 		}
 
 		// Iterate over the elements in the row that are not on the diagonal
 		// and set them to zero.
-		uint_fast64_t row_start = row_indications[state];
-		uint_fast64_t row_end = row_indications[state + 1];
+		uint_fast64_t rowStart = rowIndications[state];
+		uint_fast64_t rowEnd = rowIndications[state + 1];
 
-		while (row_start < row_end) {
-			value_storage[row_start] = mrmc::misc::constGetZero(value_storage);
-			row_start++;
+		while (rowStart < rowEnd) {
+			valueStorage[rowStart] = mrmc::misc::constGetZero(valueStorage);
+			++rowStart;
 		}
 
 		// Set the element on the diagonal to one.
-		diagonal_storage[state] = mrmc::misc::constGetOne(diagonal_storage);
+		diagonalStorage[state] = mrmc::misc::constGetOne(diagonalStorage);
 		return true;
 	}
 
@@ -600,10 +600,14 @@ public:
 	 */
 	uint_fast64_t getSizeInMemory() {
 		uint_fast64_t size = sizeof(*this);
-		size += sizeof(T) * non_zero_entry_count; // add value_storage size
-		size += sizeof(T) * (row_count + 1); // add diagonal_storage size
-		size += sizeof(uint_fast64_t) * non_zero_entry_count; // add column_indications size
-		size += sizeof(uint_fast64_t) * (row_count + 1); // add row_indications size
+		// Add value_storage size.
+		size += sizeof(T) * nonZeroEntryCount;
+		// Add diagonal_storage size.
+		size += sizeof(T) * (rowCount + 1);
+		// Add column_indications size.
+		size += sizeof(uint_fast64_t) * nonZeroEntryCount;
+		// Add row_indications size.
+		size += sizeof(uint_fast64_t) * (rowCount + 1);
 		return size;
 	}
 
@@ -612,51 +616,51 @@ private:
 	/*!
 	 * The number of rows of the matrix.
 	 */
-	uint_fast64_t row_count;
+	uint_fast64_t rowCount;
 
 	/*!
 	 * The number of non-zero elements that are not on the diagonal.
 	 */
-	uint_fast64_t non_zero_entry_count;
+	uint_fast64_t nonZeroEntryCount;
 
 	/*!
 	 * Stores all non-zero values that are not on the diagonal.
 	 */
-	T* value_storage;
+	T* valueStorage;
 
 	/*!
 	 * Stores all elements on the diagonal, even the ones that are zero.
 	 */
-	T* diagonal_storage;
+	T* diagonalStorage;
 
 	/*!
 	 * Stores the column for each non-zero element that is not on the diagonal.
 	 */
-	uint_fast64_t* column_indications;
+	uint_fast64_t* columnIndications;
 
 	/*!
 	 * Array containing the boundaries (indices) in the value_storage array
 	 * for each row. All elements of value_storage with indices between the
 	 * i-th and the (i+1)-st element of this array belong to row i.
 	 */
-	uint_fast64_t* row_indications;
+	uint_fast64_t* rowIndications;
 
 	/*!
 	 * The internal status of the matrix.
 	 */
-	MatrixStatus internal_status;
+	MatrixStatus internalStatus;
 
 	/*!
 	 * Stores the current number of non-zero elements that have been added to
 	 * the matrix. Used for correctly inserting elements in the matrix.
 	 */
-	uint_fast64_t current_size;
+	uint_fast64_t currentSize;
 
 	/*!
 	 * Stores the row in which the last element was inserted. Used for correctly
 	 * inserting elements in the matrix .
 	 */
-	uint_fast64_t last_row;
+	uint_fast64_t lastRow;
 
 	/*!
 	 * Sets the internal status to signal an error.
@@ -671,7 +675,7 @@ private:
 	 * @param new_state The new state to be switched to.
 	 */
 	void setState(const MatrixStatus new_state) {
-		internal_status = (internal_status == MatrixStatus::Error) ? internal_status : new_state;
+		internalStatus = (internalStatus == MatrixStatus::Error) ? internalStatus : new_state;
 	}
 
 	/*!
@@ -681,20 +685,20 @@ private:
 	 */
 	bool prepareInternalStorage() {
 		// Set up the arrays for the elements that are not on the diagonal.
-		value_storage = new (std::nothrow) T[non_zero_entry_count]();
-		column_indications = new (std::nothrow) uint_fast64_t[non_zero_entry_count]();
+		valueStorage = new (std::nothrow) T[nonZeroEntryCount]();
+		columnIndications = new (std::nothrow) uint_fast64_t[nonZeroEntryCount]();
 
 		// Set up the row_indications array and reserve one element more than
 		// there are rows in order to put a sentinel element at the end,
 		// which eases iteration process.
-		row_indications = new (std::nothrow) uint_fast64_t[row_count + 1]();
+		rowIndications = new (std::nothrow) uint_fast64_t[rowCount + 1]();
 
 		// Set up the array for the elements on the diagonal.
-		diagonal_storage = new (std::nothrow) T[row_count]();
+		diagonalStorage = new (std::nothrow) T[rowCount]();
 
 		// Return whether all the allocations could be made without error.
-		return ((value_storage != NULL) && (column_indications != NULL)
-				&& (row_indications != NULL) && (diagonal_storage != NULL));
+		return ((valueStorage != NULL) && (columnIndications != NULL)
+				&& (rowIndications != NULL) && (diagonalStorage != NULL));
 	}
 
 	/*!
@@ -728,17 +732,16 @@ private:
 	 * the given Eigen matrix.
 	 */
 	template<typename _Scalar, int _Options, typename _Index>
-	_Index getEigenSparseMatrixCorrectNonZeroEntryCount(
-			const Eigen::SparseMatrix<_Scalar, _Options, _Index>& eigen_sparse_matrix) {
+	_Index getEigenSparseMatrixCorrectNonZeroEntryCount(const Eigen::SparseMatrix<_Scalar, _Options, _Index>& eigen_sparse_matrix) {
 		const _Index* indexPtr = eigen_sparse_matrix.innerIndexPtr();
 		const _Index* outerPtr = eigen_sparse_matrix.outerIndexPtr();
 
 		const _Index entryCount = eigen_sparse_matrix.nonZeros();
 		const _Index outerCount = eigen_sparse_matrix.outerSize();
 
-		uint_fast64_t diag_non_zeros = 0;
+		uint_fast64_t diagNonZeros = 0;
 
-		// For RowMajor, row is the current Row and col the column and for
+		// For RowMajor, row is the current row and col the column and for
 		// ColMajor, row is the current column and col the row, but this is
 		// not important as we are only looking for elements on the diagonal.
 		_Index innerStart = 0;
@@ -761,11 +764,11 @@ private:
 
 			// Check whether we have found an element on the diagonal.
 			if ((innerStart == innerEnd) && (indexPtr[innerStart] == row)) {
-				++diag_non_zeros;
+				++diagNonZeros;
 			}
 		}
 
-		return static_cast<_Index>(entryCount - diag_non_zeros);
+		return static_cast<_Index>(entryCount - diagNonZeros);
 	}
 
 };
