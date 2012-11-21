@@ -15,20 +15,47 @@
 #include <pantheios/pantheios.hpp>
 #include "src/exceptions/file_IO_exception.h"
 
-namespace mrmc
-{
-namespace parser
-{
-
+namespace mrmc {
+namespace parser {
+	
+	/*!
+	 *	@brief Opens a file and maps it to memory providing a char*
+	 *	containing the file content.
+	 * 
+	 *	This class is a very simple interface to read files efficiently.
+	 *	The given file is opened and mapped to memory using mmap().
+	 *	The public member data is a pointer to the actual file content.
+	 *	Using this method, the kernel will take care of all buffering. This is
+	 *	most probably much more efficient than doing this manually.
+	 */
+	 
 	class MappedFile
 	{
 		private:
+			/*!
+			 *	@brief file descriptor obtained by open().
+			 */
 			int file;
+			
+			/*!
+			 *	@brief stat information about the file.
+			 */
 			struct stat st;
 			
 		public:
-			 char* data;
-
+			/*!
+			 *	@brief pointer to actual file content.
+			 */
+			char* data;
+		
+		/*!
+		 *	@brief Constructor of MappedFile.
+		 *	
+		 *	Will stat the given file, open it and map it to memory.
+		 *	If anything of this fails, an appropriate exception is raised
+		 *	and a log entry is written.
+		 *	@filename file to be opened
+		 */
 		MappedFile(const char* filename)
 		{
 			if (stat(filename, &(this->st)) != 0)
@@ -53,6 +80,11 @@ namespace parser
 			}
 		}
 		
+		/*!
+		 *	@brief Destructor of MappedFile.
+		 *	
+		 *	Will unmap the data and close the file.
+		 */
 		~MappedFile()
 		{
 			munmap(this->data, this->st.st_size);
@@ -60,5 +92,5 @@ namespace parser
 		}
 	};
 
-}
-}
+} // namespace parser
+} // namespace mrmc
