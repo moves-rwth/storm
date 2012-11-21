@@ -44,8 +44,6 @@ public:
 		// First, we need to count how many backward transitions each state has.
 		// NOTE: We disregard the diagonal here, as we only consider "true"
 		// predecessors.
-		uint_fast64_t* row_indications = transitionMatrix->getRowIndicationsPointer();
-		uint_fast64_t* column_indications = transitionMatrix->getColumnIndicationsPointer();
 		for (uint_fast64_t i = 0; i <= numberOfStates; i++) {
 			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
 				this->state_indices_list[*rowIt + 1]++;
