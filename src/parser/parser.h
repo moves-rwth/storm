@@ -7,8 +7,14 @@
 
 #pragma once
 
+#include "src/utility/osDetection.h"
+
+#if defined LINUX || defined MACOSX
+	#include <sys/mman.h>
+#elif defined WINDOWS
+#endif
+
 #include <sys/stat.h>
-#include <sys/mman.h>
 #include <fcntl.h>
 #include <errno.h>
 
@@ -28,6 +34,10 @@ namespace parser {
 	 *	Using this method, the kernel will take care of all buffering. This is
 	 *	most probably much more efficient than doing this manually.
 	 */
+
+#if !defined LINUX && !defined MACOSX && !defined WINDOWS
+	#error Platform not supported
+#endif
 	 
 	class MappedFile
 	{
@@ -35,12 +45,21 @@ namespace parser {
 			/*!
 			 *	@brief file descriptor obtained by open().
 			 */
+#if defined LINUX || defined MACOSX
 			int file;
+#elif defined WINDOWS
+			HFILE file;
+			HANDLE mapping;
+#endif
 			
 			/*!
 			 *	@brief stat information about the file.
 			 */
-			struct stat st;
+#if defined LINUX || defined MACOSX
+			struct stat64 st;
+#elif defined WINDOWS
+			struct __stat64 st;
+#endif
 			
 		public:
 			/*!
@@ -58,12 +77,17 @@ namespace parser {
 		 */
 		MappedFile(const char* filename)
 		{
-			if (stat(filename, &(this->st)) != 0)
+#if defined LINUX || defined MACOSX
+			/*
+			 *	Do file mapping for reasonable systems.
+			 *	stat64(), open(), mmap()
+			 */
+			if (stat64(filename, &(this->st)) != 0)
 			{
 				pantheios::log_ERROR("Could not stat ", filename, ". Does it exist? Is it readable?");
 				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in stat()");
 			}
-			
+
 			this->file = open(filename, O_RDONLY);
 			if (this->file < 0)
 			{
@@ -78,6 +102,42 @@ namespace parser {
 				pantheios::log_ERROR("Could not mmap ", filename, ".");
 				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in mmap()");
 			}
+#elif defined WINDOWS
+#warning Windows support is implemented but has not been compiled yet...
+			/*
+			 *	Do file mapping for windows.
+			 *	_stat64(), CreateFile(), CreateFileMapping(), MapViewOfFile()
+			 */
+			if (_stat64(filename, &(this->st)) != 0)
+			{
+				pantheios::log_ERROR("Could not stat ", filename, ". Does it exist? Is it readable?");
+				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in stat()");
+			}
+			
+			this->file = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (this->file == INVALID_HANDLE_VALUE)
+			{
+				pantheios::log_ERROR("Could not open ", filename, ". Does it exist? Is it readable?");
+				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in CreateFile()");
+			}
+			
+			this->mapping = CreateFileMapping(this->file, NULL, PAGE_READONLY, (DWORD)(st.st_size >> 32), (DWORD)st.st_size, NULL);
+			if (this->mapping == NULL)
+			{
+				CloseHandle(this->file);
+				pantheios::log_ERROR("Could not create file mapping for ", filename, ".");
+				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in CreateFileMapping()");
+			}
+			
+			this->data = MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, st.st_size);
+			if (this->data == NULL)
+			{
+				CloseHandle(this->mapping);
+				CloseHandle(this->file);
+				pantheios::log_ERROR("Could not create file map view for ", filename, ".");
+				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in MapViewOfFile()");
+			}
+#endif
 		}
 		
 		/*!
@@ -87,8 +147,13 @@ namespace parser {
 		 */
 		~MappedFile()
 		{
+#if defined LINUX || defined MACOSX
 			munmap(this->data, this->st.st_size);
 			close(this->file);
+#elif defined WINDOWS
+			CloseHandle(this->mapping);
+			CloseHandle(this->file);
+#endif
 		}
 	};
 
