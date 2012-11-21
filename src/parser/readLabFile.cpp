@@ -42,30 +42,9 @@ namespace parser {
  */
 mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const char * filename)
 {
-	/*!
-	 *	open file and map to memory
-	 */
-	struct stat st;
-	int f = open(filename, O_RDONLY);
-	if ((f < 0) || (stat(filename, &st) != 0)) {
-		/*!
-		 * 
-		 */
-		pantheios::log_ERROR("File could not be opened.");
-		throw mrmc::exceptions::file_IO_exception();
-		return NULL;
-	}
-	
-	char* data = (char*) mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, f, 0);
-	if (data == (char*)-1)
-	{
-		pantheios::log_ERROR("File could not be mapped. Something went wrong with mmap.");
-		close(f);
-		throw mrmc::exceptions::file_IO_exception();
-		return NULL;
-	}
+	MappedFile file(filename);
 
-	char* buf = data;
+	char* buf = file.data;
 	char sep[] = " \n\t";
 	uint_fast32_t proposition_count = 0;
 	size_t cnt = 0;
@@ -83,7 +62,7 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const cha
 	
 	mrmc::models::AtomicPropositionsLabeling* result = new mrmc::models::AtomicPropositionsLabeling(node_count, proposition_count);
 	char proposition[128];
-	buf = data;
+	buf = file.data;
 	cnt = 0;
 	do {
 		buf += cnt;
@@ -113,8 +92,6 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const cha
 		buf += cnt;
 	}
 	
-	munmap(data, st.st_size);
-	close(f);	
 	return result;
 }
 

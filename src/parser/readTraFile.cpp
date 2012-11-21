@@ -99,42 +99,17 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	*/
 	setlocale( LC_NUMERIC, "C" );
 	
-	/*!
-	 *	open file and map to memory
-	 */
-	struct stat st;
-	int f = open(filename, O_RDONLY);
-	if((f < 0) || (stat(filename, &st) != 0)) {
-		/*!
-		 *	stat() or open() failed
-		 */
-		pantheios::log_ERROR("File ", filename, " was not readable (Does it exist?)");
-		throw exceptions::file_IO_exception("mrmc::read_tra_file: Error opening file! (Does it exist?)");
-		return NULL;
-	}
-	char *data = (char*)mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, f, 0);
-	if (data == (char*)-1)
-	{
-		/*!
-		 *	mmap() failed
-		 */
-		pantheios::log_ERROR("Could not map the file to memory. Something went wrong with mmap.");
-		throw exceptions::file_IO_exception("mrmc::read_tra_file: Error mapping file to memory");
-		close(f);
-		return NULL;
-	}
+	MappedFile file(filename);
 	
 	/*!
 	 *	perform first pass, i.e. count entries that are not zero and not on the diagonal
 	 */
-	uint_fast32_t non_zero = makeFirstPass(data);
+	uint_fast32_t non_zero = makeFirstPass(file.data);
 	if (non_zero == 0)
 	{
 		/*!
 		 *	first pass returned zero, this means the file format was wrong
 		 */
-		close(f);
-		munmap(data, st.st_size);
 		throw mrmc::exceptions::wrong_file_format();
 		return NULL;
 	}
@@ -144,7 +119,7 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	
 	 *	from here on, we already know that the file header is correct
 	 */
-	char* buf = data;
+	char* buf = file.data;
 	uint_fast32_t rows;
 	sparse::StaticSparseMatrix<double> *sp = NULL;
 
@@ -172,8 +147,6 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 		/*!
 		 *	creating the matrix failed
 		 */
-		close(f);
-		munmap(data, st.st_size);
 		throw std::bad_alloc();
 		return NULL;
 	}
@@ -201,9 +174,6 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	/*!
 	 * clean up
 	 */	
-	close(f);
-	munmap(data, st.st_size);
-
 	pantheios::log_DEBUG("Finalizing Matrix");
 	sp->finalize();
 	return sp;
