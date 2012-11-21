@@ -60,6 +60,7 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const cha
 		else cnt = 1;
 	} while (cnt > 0);
 	
+	printf("node count %d\n", node_count);
 	mrmc::models::AtomicPropositionsLabeling* result = new mrmc::models::AtomicPropositionsLabeling(node_count, proposition_count);
 	char proposition[128];
 	buf = file.data;
@@ -79,18 +80,20 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const cha
 	buf += 4;
 	
 	uint_fast32_t node;
-	while (1) {
+	do {
 		node = strtol(buf, &buf, 10);
 		while (*buf != '\0') {
 			cnt = strcspn(buf, sep);
 			if (cnt == 0) buf++;
 			else break;
 		}
-		strncpy(proposition, buf, cnt);
-		proposition[cnt] = '\0';
-		result->addAtomicPropositionToState(proposition, node);
+		if (cnt > 0) {
+			strncpy(proposition, buf, cnt);
+			proposition[cnt] = '\0';
+			result->addAtomicPropositionToState(proposition, node);
+		}
 		buf += cnt;
-	}
+	} while (cnt > 0);
 	
 	return result;
 }

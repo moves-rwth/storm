@@ -52,7 +52,7 @@ char* skipWS(char* buf)
  * @return The number of non-zero elements that are not on the diagonal
  * @param buf Data to scan. Is expected to be some char array.
  */
-static uint_fast32_t makeFirstPass(char* buf)
+static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
 {
 	uint_fast32_t non_zero = 0;
 	
@@ -70,12 +70,15 @@ static uint_fast32_t makeFirstPass(char* buf)
 	/*!
 	 *	check all transitions for non-zero diagonal entrys
 	 */
-	unsigned int row, col;
+	uint_fast32_t row, col;
 	double val;
+	maxnode = 0;
 	while (1)  
 	{
 		row = strtol(buf, &buf, 10);
+		if (row > maxnode) maxnode = row;
 		col = strtol(buf, &buf, 10);
+		if (col > maxnode) maxnode = col;
 		val = strtod(buf, &buf);
 		if (val == 0.0) break;
 		if (row == col) non_zero--;
@@ -104,7 +107,8 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	/*!
 	 *	perform first pass, i.e. count entries that are not zero and not on the diagonal
 	 */
-	uint_fast32_t non_zero = makeFirstPass(file.data);
+	uint_fast32_t maxnode;
+	uint_fast32_t non_zero = makeFirstPass(file.data, maxnode);
 	if (non_zero == 0)
 	{
 		/*!
@@ -120,20 +124,19 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	from here on, we already know that the file header is correct
 	 */
 	char* buf = file.data;
-	uint_fast32_t rows;
 	sparse::StaticSparseMatrix<double> *sp = NULL;
 
 	/*!
 	 *	read file header, extract number of states
 	 */
 	buf += 7; // skip "STATES "
-	rows = strtol(buf, &buf, 10);
+	strtol(buf, &buf, 10);
 	buf = skipWS(buf);
 	buf += 12; // skip "TRANSITIONS "
 	strtol(buf, &buf, 10);
 	
 	pantheios::log_DEBUG("Creating matrix with ",
-                        pantheios::integer(rows), " rows and ",
+                        pantheios::integer(maxnode + 1), " maxnodes and ",
                         pantheios::integer(non_zero), " Non-Zero-Elements");
                         
 	/*!	
@@ -141,7 +144,7 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
 	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
-	sp = new sparse::StaticSparseMatrix<double>(rows);
+	sp = new sparse::StaticSparseMatrix<double>(maxnode + 1);
 	if (sp == NULL)
 	{
 		/*!
