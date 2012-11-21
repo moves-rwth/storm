@@ -30,6 +30,13 @@ namespace sparse {
 template<class T>
 class StaticSparseMatrix {
 public:
+
+	/*!
+	 * If we only want to iterate over the columns of the non-zero entries of
+	 * a row, we can simply iterate over the array (part) itself.
+	 */
+	typedef const uint_fast64_t * const constIndexIterator;
+
 	/*!
 	 * An enum representing the internal state of the Matrix.
 	 * After creating the Matrix using the Constructor, the Object is in state UnInitialized. After calling initialize(), that state changes to Initialized and after all entries have been entered and finalize() has been called, to ReadReady.
@@ -609,6 +616,26 @@ public:
 		// Add row_indications size.
 		size += sizeof(uint_fast64_t) * (rowCount + 1);
 		return size;
+	}
+
+	/*!
+	 * Returns an iterator to the columns of the non-zero entries of the given
+	 * row that are not on the diagonal.
+	 * @param row The row whose columns the iterator will return.
+	 * @return An iterator to the columns of the non-zero entries of the given
+	 * row that are not on the diagonal.
+	 */
+	constIndexIterator beginConstColumnNoDiagIterator(uint_fast64_t row) const {
+		return this->columnIndications + this->rowIndications[row];
+	}
+
+	/*!
+	 * Returns an iterator referring to the element after the given row.
+	 * @param row The row for which the iterator should point to the past-the-end
+	 * element.
+	 */
+	constIndexIterator endConstColumnNoDiagIterator(uint_fast64_t row) const {
+		return this->columnIndications + this->rowIndications[row + 1];
 	}
 
 private:

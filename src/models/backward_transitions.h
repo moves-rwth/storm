@@ -47,8 +47,8 @@ public:
 		uint_fast64_t* row_indications = transitionMatrix->getRowIndicationsPointer();
 		uint_fast64_t* column_indications = transitionMatrix->getColumnIndicationsPointer();
 		for (uint_fast64_t i = 0; i <= numberOfStates; i++) {
-			for (uint_fast64_t j = row_indications[i]; j < row_indications[i + 1]; j++) {
-				this->state_indices_list[column_indications[j] + 1]++;
+			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
+				this->state_indices_list[*rowIt + 1]++;
 			}
 		}
 
@@ -70,16 +70,9 @@ public:
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i <= numberOfStates; i++) {
-			for (uint_fast64_t j = row_indications[i]; j < row_indications[i + 1]; j++) {
-				this->predecessor_list[next_state_index_list[column_indications[j]]++] = i;
+			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
+				this->predecessor_list[next_state_index_list[*rowIt]++] = i;
 			}
-		}
-
-		for (auto it = beginStatePredecessorIterator(0); it < endStatePredecessorIterator(0); it++) {
-			std::cout << "state 0 pred " << *it << std::endl;
-		}
-		for (auto it = beginStatePredecessorIterator(1); it < endStatePredecessorIterator(1); it++) {
-			std::cout << "state 1 pred " << *it << std::endl;
 		}
 	}
 
@@ -92,10 +85,23 @@ public:
 		}
 	}
 
+	/*!
+	 * Returns an iterator to the predecessors of the given states.
+	 * @param state The state for which to get the predecessor iterator.
+	 * @return An iterator to the predecessors of the given states.
+	 */
 	state_predecessor_iterator beginStatePredecessorIterator(uint_fast64_t state) const {
 		return this->predecessor_list + this->state_indices_list[state];
 	}
 
+
+	/*!
+	 * Returns an iterator referring to the element after the predecessors of
+	 * the given state.
+	 * @param row The state for which to get the iterator.
+	 * @return An iterator referring to the element after the predecessors of
+	 * the given state.
+	 */
 	state_predecessor_iterator endStatePredecessorIterator(uint_fast64_t state) const {
 		return this->predecessor_list + this->state_indices_list[state + 1];
 	}
