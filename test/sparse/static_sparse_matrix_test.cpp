@@ -29,10 +29,10 @@ TEST(StaticSparseMatrixTest, addNextValueTest) {
 	ASSERT_NO_THROW(ssm->initialize(1));
 	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);
 
-	ASSERT_THROW(ssm->addNextValue(0, 1, 1), mrmc::exceptions::out_of_range);
+	ASSERT_THROW(ssm->addNextValue(-1, 1, 1), mrmc::exceptions::out_of_range);
 	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Error);
 
-	ASSERT_THROW(ssm->addNextValue(1, 0, 1), mrmc::exceptions::out_of_range);
+	ASSERT_THROW(ssm->addNextValue(1, -1, 1), mrmc::exceptions::out_of_range);
 	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Error);
 
 	ASSERT_THROW(ssm->addNextValue(6, 1, 1), mrmc::exceptions::out_of_range);
@@ -78,7 +78,7 @@ TEST(StaticSparseMatrixTest, Test) {
 	int position_row[50] = {
 		2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
 		2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-		2, 2, 2, 2, /* first row empty, one full row � 25 minus the diagonal entry */
+		2, 2, 2, 2, /* first row empty, one full row ��� 25 minus the diagonal entry */
 		4, 4, /* one empty row, then first and last column */
 		13, 13, 13, 13, /* a few empty rows, middle columns */
 		24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
@@ -151,10 +151,10 @@ TEST(StaticSparseMatrixTest, ConversionFromDenseEigen_ColMajor_SparseMatrixTest)
 	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	int target = -1;
-	for (int row = 1; row <= 10; ++row) {
-		for (int col = 1; col <= 10; ++col) {
+	for (int row = 0; row < 10; ++row) {
+		for (int col = 0; col < 10; ++col) {
 			ASSERT_TRUE(ssm->getValue(row, col, &target));
-			ASSERT_EQ(target, (row - 1) * 10 + col - 1);
+			ASSERT_EQ(target, row * 10 + col);
 		}
 	}
 }
@@ -181,10 +181,10 @@ TEST(StaticSparseMatrixTest, ConversionFromDenseEigen_RowMajor_SparseMatrixTest)
 	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	int target = -1;
-	for (int row = 1; row <= 10; ++row) {
-		for (int col = 1; col <= 10; ++col) {
+	for (int row = 0; row < 10; ++row) {
+		for (int col = 0; col < 10; ++col) {
 			ASSERT_TRUE(ssm->getValue(row, col, &target));
-			ASSERT_EQ(target, (row - 1) * 10 + col - 1);
+			ASSERT_EQ(target, row * 10 + col);
 		}
 	}
 }
@@ -231,7 +231,7 @@ TEST(StaticSparseMatrixTest, ConversionFromSparseEigen_ColMajor_SparseMatrixTest
 	int target = -1;
 
 	for (auto &coeff: tripletList) {
-		ASSERT_TRUE(ssm->getValue(coeff.row() + 1, coeff.col() + 1, &target));
+		ASSERT_TRUE(ssm->getValue(coeff.row(), coeff.col(), &target));
 		ASSERT_EQ(target, coeff.value());
 	}
 }
@@ -278,7 +278,7 @@ TEST(StaticSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest
 	int target = -1;
 
 	for (auto &coeff: tripletList) {
-		ASSERT_TRUE(ssm->getValue(coeff.row() + 1, coeff.col() + 1, &target));
+		ASSERT_TRUE(ssm->getValue(coeff.row(), coeff.col(), &target));
 		ASSERT_EQ(target, coeff.value());
 	}
 }
@@ -294,9 +294,9 @@ TEST(StaticSparseMatrixTest, ConversionToSparseEigen_RowMajor_SparseMatrixTest) 
 	ASSERT_NO_THROW(ssm->initialize(100 - 10));
 	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);
 
-	for (uint_fast32_t row = 1; row <= 10; ++row) {
-		for (uint_fast32_t col = 1; col <= 10; ++col) {
-			ASSERT_NO_THROW(ssm->addNextValue(row, col, values[(row - 1) * 10 + (col - 1)]));
+	for (uint_fast32_t row = 0; row < 10; ++row) {
+		for (uint_fast32_t col = 0; col < 10; ++col) {
+			ASSERT_NO_THROW(ssm->addNextValue(row, col, values[row * 10 + col]));
 		}
 	}
 	ASSERT_EQ(ssm->getState(), mrmc::sparse::StaticSparseMatrix<int>::MatrixStatus::Initialized);

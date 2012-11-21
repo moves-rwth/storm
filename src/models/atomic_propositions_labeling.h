@@ -58,12 +58,8 @@ public:
 	 * @param state_count The number of states of the model.
 	 * @param ap_count The number of atomic propositions.
 	 */
-	AtomicPropositionsLabeling(const uint_fast32_t state_count,
-			const uint_fast32_t ap_count) {
-		// add one for 1-bound indices
-		this->state_count = state_count + 1;
-		this->ap_count = ap_count;
-		this->aps_current = 0;
+	AtomicPropositionsLabeling(const uint_fast32_t state_count,	const uint_fast32_t ap_count)
+			: state_count(state_count), ap_count(ap_count), aps_current(0) {
 		this->single_labelings = new SingleAtomicPropositionLabeling*[ap_count];
 		for (uint_fast32_t i = 0; i < ap_count; ++i) {
 			this->single_labelings[i] = new SingleAtomicPropositionLabeling(state_count);
@@ -75,11 +71,11 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given atomic proposition
 	 * labeling.
 	 */
-	AtomicPropositionsLabeling(const AtomicPropositionsLabeling& atomic_propositions_labeling) :
-			state_count(atomic_propositions_labeling.state_count),
-			ap_count(atomic_propositions_labeling.ap_count),
-			aps_current(atomic_propositions_labeling.aps_current),
-			name_to_labeling_map(atomic_propositions_labeling.name_to_labeling_map) {
+	AtomicPropositionsLabeling(const AtomicPropositionsLabeling& atomic_propositions_labeling)
+			: state_count(atomic_propositions_labeling.state_count),
+			  ap_count(atomic_propositions_labeling.ap_count),
+			  aps_current(atomic_propositions_labeling.aps_current),
+			  name_to_labeling_map(atomic_propositions_labeling.name_to_labeling_map) {
 		this->single_labelings = new SingleAtomicPropositionLabeling*[ap_count];
 		for (uint_fast32_t i = 0; i < ap_count; ++i) {
 			this->single_labelings[i] = new SingleAtomicPropositionLabeling(

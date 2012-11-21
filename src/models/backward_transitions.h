@@ -26,7 +26,7 @@ public:
 	/*!
 	 * Just typedef the iterator as a pointer to the index type.
 	 */
-	typedef uint_fast64_t* state_predecessor_iterator;
+	typedef const uint_fast64_t * const state_predecessor_iterator;
 
 	//! Constructor
 	/*!
@@ -37,36 +37,30 @@ public:
 	 */
 	BackwardTransitions(mrmc::sparse::StaticSparseMatrix<T>* transitionMatrix)
 			: numberOfStates(transitionMatrix->getRowCount()),
-			  numberOfNonZeroEntries(transitionMatrix->getNonZeroEntryCount()) {
+			  numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
 		this->state_indices_list = new uint_fast64_t[numberOfStates + 1];
-		this->predecessor_list = new uint_fast64_t[numberOfNonZeroEntries];
+		this->predecessor_list = new uint_fast64_t[numberOfNonZeroTransitions];
 
 		// First, we need to count how many backward transitions each state has.
 		// NOTE: We disregard the diagonal here, as we only consider "true"
 		// predecessors.
-		// Start by counting all but the last row.
 		uint_fast64_t* row_indications = transitionMatrix->getRowIndicationsPointer();
 		uint_fast64_t* column_indications = transitionMatrix->getColumnIndicationsPointer();
-		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
+		for (uint_fast64_t i = 0; i <= numberOfStates; i++) {
 			for (uint_fast64_t j = row_indications[i]; j < row_indications[i + 1]; j++) {
 				this->state_indices_list[column_indications[j] + 1]++;
 			}
 		}
-		// Add the last row individually, as the comparison bound in the for-loop
-		// is different in this case.
-		for (uint_fast64_t j = row_indications[numberOfStates]; j < numberOfNonZeroEntries + 1; j++) {
-			this->state_indices_list[column_indications[j] + 1]++;
-		}
 
 		// Now compute the accumulated offsets.
-		for (uint_fast64_t i = 1; i < numberOfStates + 1; i++) {
+		for (uint_fast64_t i = 1; i <= numberOfStates; i++) {
 			this->state_indices_list[i] = this->state_indices_list[i - 1] + this->state_indices_list[i];
 		}
 
 		// Put a sentinel element at the end of the indices list. This way,
 		// for each state i the range of indices can be read off between
 		// state_indices_list[i] and state_indices_list[i + 1].
-		this->state_indices_list[numberOfStates + 1] = numberOfNonZeroEntries;
+		this->state_indices_list[numberOfStates + 1] = numberOfNonZeroTransitions;
 
 		// Create an array that stores the next index for each state. Initially
 		// this corresponds to the previously computed accumulated offsets.
@@ -75,15 +69,17 @@ public:
 
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
-		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
+		for (uint_fast64_t i = 0; i <= numberOfStates; i++) {
 			for (uint_fast64_t j = row_indications[i]; j < row_indications[i + 1]; j++) {
 				this->predecessor_list[next_state_index_list[column_indications[j]]++] = i;
 			}
 		}
-		// Add the last row individually, as the comparison bound in the for-loop
-		// is different in this case.
-		for (uint_fast64_t j = row_indications[numberOfStates]; j < numberOfNonZeroEntries; j++) {
-			this->predecessor_list[next_state_index_list[transitionMatrix->getRowCount()]++] = column_indications[j];
+
+		for (auto it = beginStatePredecessorIterator(0); it < endStatePredecessorIterator(0); it++) {
+			std::cout << "state 0 pred " << *it << std::endl;
+		}
+		for (auto it = beginStatePredecessorIterator(1); it < endStatePredecessorIterator(1); it++) {
+			std::cout << "state 1 pred " << *it << std::endl;
 		}
 	}
 
@@ -121,10 +117,10 @@ private:
 	uint_fast64_t numberOfStates;
 
 	/*!
-	 * Store the number of non-zero entries to determine the highest index at
-	 * which the predecessor_list may be accessed.
+	 * Store the number of non-zero transition entries to determine the highest
+	 * index at which the predecessor_list may be accessed.
 	 */
-	uint_fast64_t numberOfNonZeroEntries;
+	uint_fast64_t numberOfNonZeroTransitions;
 };
 
 } // namespace models

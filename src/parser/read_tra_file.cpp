@@ -135,7 +135,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 	 * Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
 	 * non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
-	sp = new sparse::StaticSparseMatrix<double>(rows);
+	sp = new sparse::StaticSparseMatrix<double>(rows + 1);
 	if ( NULL == sp ) {
 		throw std::bad_alloc();
 		return NULL;
