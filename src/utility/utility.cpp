@@ -6,8 +6,8 @@
  */
 
 #include "src/utility/utility.h"
-#include "src/parser/read_tra_file.h"
-#include "src/parser/read_lab_file.h"
+#include "src/parser/readTraFile.h"
+#include "src/parser/readLabFile.h"
 
 #include "src/sparse/static_sparse_matrix.h"
 #include "src/models/dtmc.h"
@@ -79,11 +79,11 @@ void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, const char* filename) {
 
 mrmc::models::Dtmc<double>* parseDTMC(const char* tra_file, const char* lab_file) {
    mrmc::sparse::StaticSparseMatrix<double>* transition_matrix =
-         mrmc::parser::read_tra_file(tra_file);
+         mrmc::parser::readTraFile(tra_file);
    uint_fast64_t node_count = transition_matrix->getRowCount();
 
    mrmc::models::AtomicPropositionsLabeling* labeling =
-         mrmc::parser::read_lab_file(node_count, lab_file);
+         mrmc::parser::readLabFile(node_count, lab_file);
 
    mrmc::models::Dtmc<double>* result =
          new mrmc::models::Dtmc<double>(transition_matrix, labeling);

@@ -26,8 +26,8 @@ PANTHEIOS_EXTERN_C PAN_CHAR_T const PANTHEIOS_FE_PROCESS_IDENTITY[] = "mrmc-cpp"
 #include "src/models/dtmc.h"
 #include "src/sparse/static_sparse_matrix.h"
 #include "src/models/atomic_propositions_labeling.h"
-#include "src/parser/read_lab_file.h"
-#include "src/parser/read_tra_file.h"
+#include "src/parser/readLabFile.h"
+#include "src/parser/readTraFile.h"
 #include "Eigen/Sparse"
  
 int main(int argc, char* argv[]) {
@@ -39,9 +39,11 @@ int main(int argc, char* argv[]) {
 		std::cout << "Required argument #1 inputTraFile.tra not found!" << std::endl;
 		exit(-1);
 	}
-
-	mrmc::sparse::StaticSparseMatrix<double>* probMatrix = mrmc::parser::read_tra_file(argv[1]);
-	mrmc::models::AtomicPropositionsLabeling* labeling = mrmc::parser::read_lab_file(probMatrix->getRowCount(), argv[2]);
+	
+	printf("read tra...\n");
+	mrmc::sparse::StaticSparseMatrix<double>* probMatrix = mrmc::parser::readTraFile(argv[1]);
+	printf("read lab...\n");
+	mrmc::models::AtomicPropositionsLabeling* labeling = mrmc::parser::readLabFile(probMatrix->getRowCount(), argv[2]);
 	mrmc::models::Dtmc<double> dtmc(probMatrix, labeling);
 
 	return 0;
