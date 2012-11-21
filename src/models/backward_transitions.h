@@ -74,6 +74,10 @@ public:
 		}
 	}
 
+	//! Destructor
+	/*!
+	 * Destructor. Frees the internal storage.
+	 */
 	~BackwardTransitions() {
 		if (this->predecessor_list != NULL) {
 			delete[] this->predecessor_list;
