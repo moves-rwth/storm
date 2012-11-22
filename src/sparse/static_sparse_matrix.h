@@ -47,7 +47,7 @@ public:
 	 * @see hasError()
 	 */
 	enum MatrixStatus {
-		Error = -1, UnInitialized = 0, Initialized = 1, ReadReady = 2,
+		Error = -1, UnInitialized = 0, Initialized = 1, ReadReady = 2
 	};
 
 	//! Constructor
