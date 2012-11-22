@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <boost/program_options.hpp>
+#include "src/exceptions/InvalidSettings.h"
 
 namespace mrmc {
 namespace settings {
@@ -95,7 +96,11 @@ namespace settings {
 			}
 			catch (bpo::required_option e)
 			{
-				std::cout << e.what() << std::endl;
+				if (! (this->vm.count("help") || this->vm.count("help-config")))
+				{
+					std::cout << e.what() << std::endl;
+					throw mrmc::exceptions::InvalidSettings();
+				}
 			}
 			catch (bpo::error e)
 			{
