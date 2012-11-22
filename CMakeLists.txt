@@ -117,12 +117,15 @@ else()
 endif()
     
 if(Boost_FOUND)
-	set(BOOST_PROGRAM_OPTIONS_LIBRARY "boost_program_options")
+	if (NOT BOOST_PROGRAM_OPTIONS_LIBRARY)
+		set(BOOST_PROGRAM_OPTIONS_LIBRARY "boost_program_options")
+	endif()
 	include_directories(${Boost_INCLUDE_DIRS})
 
 	if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
 		set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 	endif ()
+	
 	link_directories(${Boost_LIBRARY_DIRS})
 endif(Boost_FOUND)
 
