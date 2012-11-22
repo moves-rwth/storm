@@ -5,7 +5,8 @@
  *      Author: Gereon Kremer
  */
 
-#pragma once
+#ifndef SETTINGS_H_
+#define SETTINGS_H_
 
 #include <iostream>
 #include <boost/program_options.hpp>
@@ -22,29 +23,6 @@ namespace settings {
 	 */
 	class Settings
 	{
-		private:
-			/*!
-			 *	@brief option descriptions
-			 */
-			bpo::options_description configfile;
-			bpo::options_description generic;
-			bpo::options_description commandline;
-			bpo::positional_options_description positional;
-			
-			/*!
-			 *	@brief collecing option descriptions
-			 *
-			 *	The options for command line and config file are collected
-			 *	here
-			 */
-			bpo::options_description cli;
-			bpo::options_description conf;
-			
-			/*!
-			 *	@brief	option mapping
-			 */
-			bpo::variables_map vm;
-		
 		public:
 		
 		/*!
@@ -151,9 +129,35 @@ namespace settings {
 		
 		const bool isSet(const std::string &name) const
 		{
-			return this->vm.count(name);
+			return this->vm.count(name) > 0;
 		}
+
+		private:
+			/*!
+			 *	@brief option descriptions
+			 */
+			bpo::options_description configfile;
+			bpo::options_description generic;
+			bpo::options_description commandline;
+			bpo::positional_options_description positional;
+			
+			/*!
+			 *	@brief collecing option descriptions
+			 *
+			 *	The options for command line and config file are collected
+			 *	here
+			 */
+			bpo::options_description cli;
+			bpo::options_description conf;
+			
+			/*!
+			 *	@brief	option mapping
+			 */
+			bpo::variables_map vm;
+		
 	};
 
 } // namespace parser
 } // namespace mrmc
+
+#endif // SETTINGS_H_
