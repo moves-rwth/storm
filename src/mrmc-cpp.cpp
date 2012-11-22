@@ -42,22 +42,23 @@ int main(const int argc, const char* argv[]) {
 	
 	try
 	{
-		s = new mrmc::settings::Settings(argc, argv, NULL);
+		s = mrmc::settings::Settings::instance(argc, argv, NULL);
 	}
 	catch (mrmc::exceptions::InvalidSettings)
 	{
-		std::cout << "Could not recover from settings error, terminating." << std::endl;
+		std::cout << "Could not recover from settings error, terminating." << std::endl << std::endl;
+		std::cout << mrmc::settings::help << std::endl;
 		return 1;
 	}
 	
 	if (s->isSet("help"))
 	{
-		std::cout << s->getHelpForCommandline() << std::endl;
+		std::cout << mrmc::settings::help << std::endl;
 		return 0;
 	}
 	if (s->isSet("help-config"))
 	{
-		std::cout << s->getHelpForConfigfile() << std::endl;
+		std::cout << mrmc::settings::helpConfigfile << std::endl;
 		return 0;
 	}
 
