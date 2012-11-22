@@ -148,7 +148,7 @@ add_executable(MRMC-tests ${MRMCTestSources} ${MRMCTestHeaders})
 
 # Add target link deps for Pantheios
 target_link_libraries(MRMC-cpp ${PANTHEIOS_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(MRMC-tests ${PANTHEIOS_LIBRARIES})
+target_link_libraries(MRMC-tests ${PANTHEIOS_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
 
 # add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
