@@ -29,6 +29,7 @@ namespace settings {
 			bpo::options_description configfile;
 			bpo::options_description generic;
 			bpo::options_description commandline;
+			bpo::positional_options_description positional;
 			
 			/*!
 			 *	@brief collecing option descriptions
@@ -72,6 +73,15 @@ namespace settings {
 				("help-config", "produce help message about config file")
 				("configfile", bpo::value<std::string>(), "name of config file")
 			;
+			this->generic.add_options()
+				("trafile", bpo::value<std::string>()->required(), "name of the .tra file")
+				("labfile", bpo::value<std::string>()->required(), "name of the .lab file")
+			;
+			this->configfile.add_options()
+			;
+			
+			this->positional.add("trafile", 1);
+			this->positional.add("labfile", 1);
 			
 			/*
 			 *	construct option descriptions for commandline and config file
@@ -84,7 +94,7 @@ namespace settings {
 				/*
 				 *	load command line
 				 */
-				bpo::store(bpo::parse_command_line(argc, argv, this->cli), this->vm);
+				bpo::store(bpo::command_line_parser(argc, argv).options(this->cli).positional(this->positional).run(), this->vm);
 				/*
 				 *	load config file if specified
 				 */
@@ -96,6 +106,7 @@ namespace settings {
 				{
 					bpo::store(bpo::parse_config_file<char>(filename, this->conf), this->vm, true);
 				}
+				bpo::notify(this->vm);
 			}
 			/*
 			 *	catch errors...
@@ -104,17 +115,20 @@ namespace settings {
 			{
 				std::cout << "Could not read config file " << filename << std::endl;
 			}
+			catch (bpo::required_option e)
+			{
+				std::cout << e.what() << std::endl;
+			}
 			catch (bpo::error e)
 			{
 				std::cout << "Some error occurred: " << e.what() << std::endl;
 			}
-			bpo::notify(this->vm);
 		}
 		
 		/*!
 		 *	@brief Get option descriptions for commandline options
 		 */
-		bpo::options_description getHelpForCommandline()
+		bpo::options_description& getHelpForCommandline()
 		{
 			return this->cli;
 		}
@@ -122,9 +136,22 @@ namespace settings {
 		/*!
 		 *	@brief Get option descriptions for config file options
 		 */
-		bpo::options_description getHelpForConfigfile()
+		bpo::options_description& getHelpForConfigfile()
 		{
 			return this->conf;
+		}
+		
+		/*!
+		 *	@brief Get value of string argument
+		 */
+		const std::string& getString(const std::string &name) const
+		{
+			return this->vm[name].as<std::string>();
+		}
+		
+		const bool isSet(const std::string &name) const
+		{
+			return this->vm.count(name);
 		}
 	};
 
