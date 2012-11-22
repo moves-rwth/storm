@@ -117,6 +117,7 @@ else()
 endif()
     
 if(Boost_FOUND)
+	set(BOOST_PROGRAM_OPTIONS_LIBRARY "boost_program_options")
 	include_directories(${Boost_INCLUDE_DIRS})
 
 	if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
@@ -140,7 +141,7 @@ add_executable(MRMC-cpp ${MRMCSources} ${MRMCHeaders})
 add_executable(MRMC-tests ${MRMCTestSources} ${MRMCTestHeaders})
 
 # Add target link deps for Pantheios
-target_link_libraries(MRMC-cpp ${PANTHEIOS_LIBRARIES})
+target_link_libraries(MRMC-cpp ${PANTHEIOS_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
 target_link_libraries(MRMC-tests ${PANTHEIOS_LIBRARIES})
 
 # add a target to generate API documentation with Doxygen
