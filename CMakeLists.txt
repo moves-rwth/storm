@@ -6,6 +6,12 @@ project (MRMC-cpp CXX C)
 set (MRMC_CPP_VERSION_MAJOR 1)
 set (MRMC_CPP_VERSION_MINOR 0)
 
+set (GTEST_INCLUDE_DIR resources/3rdparty/gtest-1.6.0/include)
+set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.a)
+set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.a)
+set (STLSOFT_INCLUDE_DIR resources/3rdparty/stlsoft-1.9.116/include)
+set (PANTHEIOS_INCLUDE_DIR resources/3rdparty/pantheios-1.0.1-beta214/include)
+
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(DEFINE_UNIX "Defines the UNIX flag for compilation." OFF)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." OFF)
@@ -152,7 +158,7 @@ string(REGEX REPLACE ";" " " CMAKE_DOXYGEN_INPUT_LIST "${PROJECT_SOURCE_DIR}/src
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 
-add_custom_target(doc ALL
+add_custom_target(doc
 ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
 DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
 COMMENT "Generating API documentation with Doxygen" VERBATIM
@@ -186,3 +192,4 @@ endif(THREADS_FOUND)
 if (DEFINE_UNIX)
 	add_definitions(-DUNIX)
 endif(DEFINE_UNIX)
+
