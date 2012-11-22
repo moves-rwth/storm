@@ -6,19 +6,24 @@ project (MRMC-cpp CXX C)
 set (MRMC_CPP_VERSION_MAJOR 1)
 set (MRMC_CPP_VERSION_MINOR 0)
 
+option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(DEFINE_UNIX "Defines the UNIX flag for compilation." OFF)
+option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." OFF)
+
+if (DEBUG)
+    set (CMAKE_BUILD_TYPE "DEBUG")
+else()
+    set (CMAKE_BUILD_TYPE "RELEASE")
+endif()
 
 #Configurations for GCC
 if(CMAKE_COMPILER_IS_GNUCC) 
-	set(MRMC_GCC_NO_DEBUG_SYMBOLS OFF CACHE BOOL "Whether debug symbols should be included in MRMC with GCC, set ON for better performance")
-    #Using C++11        
-    set (CMAKE_CXX_FLAGS "-std=c++0x")
+    set (CMAKE_CXX_FLAGS "-std=c++0x -Wall -pedantic")
     
-    #Debug symbols
-	if (NOT MRMC_GCC_NO_DEBUG_SYMBOLS)
-		set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-		message(STATUS "Using Debug Symbols for GCC")
-	endif()
+    # Turn on popcnt instruction if possible
+    if (USE_POPCNT)
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2")
+    endif(USE_POPCNT)
 endif()
  
 # configure a header file to pass some of the CMake settings
