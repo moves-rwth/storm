@@ -42,11 +42,12 @@ int main(const int argc, const char* argv[]) {
 	
 	try
 	{
-		s = new mrmc::settings::Settings(argc, argv, NULL);
+		s = new mrmc::settings::Settings(argc, argv, nullptr);
 	}
 	catch (mrmc::exceptions::InvalidSettings)
 	{
 		std::cout << "Could not recover from settings error, terminating." << std::endl;
+		delete s;
 		return 1;
 	}
 	
@@ -65,7 +66,9 @@ int main(const int argc, const char* argv[]) {
 	mrmc::models::AtomicPropositionsLabeling* labeling = mrmc::parser::read_lab_file(probMatrix->getRowCount(), s->getString("labfile").c_str());
 	mrmc::models::Dtmc<double> dtmc(probMatrix, labeling);
 
-
+	if (s != nullptr) {
+		delete s;
+	}
 
 	return 0;
 }

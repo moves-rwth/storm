@@ -25,9 +25,12 @@
 #	define STRTOK_FUNC strtok_r
 #endif
 
+// Only disable the warning if we are not using GCC, because
+// GCC does not know this pragma and raises a warning 
+#ifndef __GNUG__
 // Disable C4996 - This function or variable may be unsafe.
 #pragma warning(disable:4996)
-
+#endif
 
 namespace mrmc {
 
@@ -150,7 +153,7 @@ mrmc::models::AtomicPropositionsLabeling * read_lab_file(int node_count, const c
 
    while (fgets(s, BUFFER_SIZE, P)) {
       char * token = NULL;
-      uint_fast32_t node = 0;
+      unsigned int node = 0;
       /* First token has to be a number identifying the node,
        * hence it is treated differently from the other tokens.
        */
@@ -167,7 +170,7 @@ mrmc::models::AtomicPropositionsLabeling * read_lab_file(int node_count, const c
          if (token == NULL) {
             break;
          }
-         result->addAtomicPropositionToState(token, node);
+         result->addAtomicPropositionToState(token, static_cast<uint_fast64_t>(node));
       } while (token != NULL);
 
    }

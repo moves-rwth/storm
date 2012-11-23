@@ -24,7 +24,7 @@ endif()
 
 #Configurations for GCC
 if(CMAKE_COMPILER_IS_GNUCC) 
-    set (CMAKE_CXX_FLAGS "-std=c++0x -Wall -pedantic")
+    set (CMAKE_CXX_FLAGS "-std=c++0x -Wall -Werror -pedantic")
     
     # Turn on popcnt instruction if possible
     if (USE_POPCNT)

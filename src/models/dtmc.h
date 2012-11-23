@@ -55,6 +55,20 @@ public:
 		pantheios::log_DEBUG("Copy constructor of DTMC invoked.");
 	}
 
+	//! Destructor
+	/*!
+	 * Destructor. Frees the matrix and labeling associated with this DTMC.
+	 *
+	 */
+	~Dtmc() {
+		if (this->probability_matrix != nullptr) {
+			delete this->probability_matrix;
+		}
+		if (this->state_labeling != nullptr) {
+			delete this->state_labeling;
+		}
+	}
+
 	/*!
 	 * Returns the state space size of the DTMC.
 	 * @return The size of the state space of the DTMC.

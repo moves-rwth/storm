@@ -58,7 +58,7 @@ public:
 	 * @param state_count The number of states of the model.
 	 * @param ap_count The number of atomic propositions.
 	 */
-	AtomicPropositionsLabeling(const uint_fast32_t state_count,	const uint_fast32_t ap_count)
+	AtomicPropositionsLabeling(const uint_fast32_t state_count, const uint_fast32_t ap_count)
 			: state_count(state_count), ap_count(ap_count), aps_current(0) {
 		this->single_labelings = new SingleAtomicPropositionLabeling*[ap_count];
 		for (uint_fast32_t i = 0; i < ap_count; ++i) {
@@ -78,8 +78,7 @@ public:
 			  name_to_labeling_map(atomic_propositions_labeling.name_to_labeling_map) {
 		this->single_labelings = new SingleAtomicPropositionLabeling*[ap_count];
 		for (uint_fast32_t i = 0; i < ap_count; ++i) {
-			this->single_labelings[i] = new SingleAtomicPropositionLabeling(
-					*atomic_propositions_labeling.single_labelings[i]);
+			this->single_labelings[i] = new SingleAtomicPropositionLabeling(*atomic_propositions_labeling.single_labelings[i]);
 		}
 	}
 
@@ -89,7 +88,6 @@ public:
 	 */
 	virtual ~AtomicPropositionsLabeling() {
 		// delete all the single atomic proposition labelings in the map
-		MAP<std::string, SingleAtomicPropositionLabeling*>::iterator it;
 		for (uint_fast32_t i = 0; i < ap_count; ++i) {
 			delete this->single_labelings[i];
 			this->single_labelings[i] = NULL;
