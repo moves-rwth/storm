@@ -38,9 +38,8 @@ public:
 	 * @param state_labeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
-	Dtmc(mrmc::sparse::StaticSparseMatrix<T>* probability_matrix,
-			mrmc::models::AtomicPropositionsLabeling* state_labeling) :
-				backward_transitions(probability_matrix) {
+	Dtmc(mrmc::sparse::StaticSparseMatrix<T>* probability_matrix, mrmc::models::AtomicPropositionsLabeling* state_labeling)
+			: backward_transitions(probability_matrix) {
 		this->probability_matrix = probability_matrix;
 		this->state_labeling = state_labeling;
 	}
@@ -58,7 +57,6 @@ public:
 	//! Destructor
 	/*!
 	 * Destructor. Frees the matrix and labeling associated with this DTMC.
-	 *
 	 */
 	~Dtmc() {
 		if (this->probability_matrix != nullptr) {

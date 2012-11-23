@@ -100,7 +100,6 @@ public:
 		return this->predecessor_list + this->state_indices_list[state];
 	}
 
-
 	/*!
 	 * Returns an iterator referring to the element after the predecessors of
 	 * the given state.

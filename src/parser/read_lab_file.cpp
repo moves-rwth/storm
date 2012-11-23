@@ -19,6 +19,8 @@
 #include <pantheios/pantheios.hpp>
 #include <pantheios/inserters/integer.hpp>
 
+#include <iostream>
+
 #ifdef WIN32
 #	define STRTOK_FUNC strtok_s
 #else
@@ -172,7 +174,6 @@ mrmc::models::AtomicPropositionsLabeling * read_lab_file(int node_count, const c
          }
          result->addAtomicPropositionToState(token, static_cast<uint_fast64_t>(node));
       } while (token != NULL);
-
    }
 
    fclose(P);
