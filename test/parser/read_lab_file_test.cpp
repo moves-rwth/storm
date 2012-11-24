@@ -6,7 +6,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "MRMCConfig.h"
+#include "mrmc-config.h"
 #include "src/models/atomic_propositions_labeling.h"
 #include "src/parser/read_lab_file.h"
 #include "src/exceptions/file_IO_exception.h"

@@ -11,8 +11,6 @@
 #include <stdexcept>
 
 #include "boost/integer/integer_mask.hpp"
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
 
 namespace mrmc {
 

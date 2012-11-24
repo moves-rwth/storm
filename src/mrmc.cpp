@@ -15,14 +15,7 @@
 #include <iostream>
 #include <cstdio>
 
-/* PlatformSTL Header Files */
-#include <platformstl/performance/performance_counter.hpp>
-
-#include <pantheios/pantheios.hpp>
-#include <pantheios/backends/bec.file.h>
-PANTHEIOS_EXTERN_C PAN_CHAR_T const PANTHEIOS_FE_PROCESS_IDENTITY[] = "mrmc-cpp";
-
-#include "MRMCConfig.h"
+#include "mrmc-config.h"
 #include "src/models/dtmc.h"
 #include "src/sparse/static_sparse_matrix.h"
 #include "src/models/atomic_propositions_labeling.h"
@@ -31,20 +24,24 @@ PANTHEIOS_EXTERN_C PAN_CHAR_T const PANTHEIOS_FE_PROCESS_IDENTITY[] = "mrmc-cpp"
 #include "src/utility/settings.h"
 #include "Eigen/Sparse"
 
+#include <log4cplus/logger.h>
+#include <log4cplus/loggingmacros.h>
+#include <log4cplus/configurator.h>
+
 #include "src/exceptions/InvalidSettings.h"
  
 int main(const int argc, const char* argv[]) {
-	// Logging init
-	pantheios_be_file_setFilePath("log.all");
-	pantheios::log_INFORMATIONAL("MRMC-Cpp started.");
-	
 	mrmc::settings::Settings* s = NULL;
+	log4cplus::BasicConfigurator loggingConfig;
+	loggingConfig.configure();
+	log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
+	LOG4CPLUS_INFO(logger, "This is the Markov Reward Model Checker (MRMC) by i2 of RWTH Aachen university.");
 	
 	try
 	{
 		s = new mrmc::settings::Settings(argc, argv, nullptr);
 	}
-	catch (mrmc::exceptions::InvalidSettings)
+	catch (mrmc::exceptions::InvalidSettings&)
 	{
 		std::cout << "Could not recover from settings error, terminating." << std::endl;
 		delete s;

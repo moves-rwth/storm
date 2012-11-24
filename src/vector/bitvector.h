@@ -6,9 +6,6 @@
 #include <cmath>
 #include "boost/integer/integer_mask.hpp"
 
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
-
 #include "src/exceptions/invalid_state.h"
 #include "src/exceptions/invalid_argument.h"
 #include "src/exceptions/out_of_range.h"
@@ -75,7 +72,6 @@ public:
 	 */
 	BitVector(const BitVector &bv) :
 			bucket_count(bv.bucket_count) {
-		pantheios::log_DEBUG("BitVector::CopyCTor: Using Copy() Ctor.");
 		bucket_array = new uint_fast64_t[bucket_count]();
 		memcpy(bucket_array, bv.bucket_array,
 				sizeof(uint_fast64_t) * bucket_count);
@@ -176,8 +172,6 @@ public:
 
 	BitVector implies(BitVector& other) {
 		if (other.getSize() != this->getSize()) {
-			pantheios::log_ERROR(
-					"BitVector::implies: Throwing invalid argument exception for connecting bit vectors of different size.");
 			throw mrmc::exceptions::invalid_argument();
 		}
 		BitVector result(this->bucket_count << 6);
@@ -196,7 +190,7 @@ public:
 	uint_fast64_t getNumberOfSetBits() {
 		uint_fast64_t set_bits = 0;
 		for (uint_fast64_t i = 0; i < bucket_count; ++i) {
-#ifdef __GNUG__ // check if we are using g++ and use built-in function if available
+#if defined __GNUG__ || __clang__ // check if we are using g++ or clang++ and use built-in function if available
 			set_bits += __builtin_popcountll(this->bucket_array[i]);
 #else
 			uint_fast32_t cnt;

@@ -16,9 +16,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
-
 #include <iostream>
 
 #ifdef WIN32
@@ -67,14 +64,12 @@ mrmc::models::AtomicPropositionsLabeling * read_lab_file(int node_count, const c
    P = fopen(filename, "r");
 
    if (P == NULL) {
-      pantheios::log_ERROR("File could not be opened.");
       throw mrmc::exceptions::file_IO_exception();
 	  return NULL;
    }
 
    if (!fgets(s, BUFFER_SIZE, P) || strcmp(s, "#DECLARATION\n")) {
 		fclose(P);
-		pantheios::log_ERROR("Wrong declaration section (\"#DECLARATION\" missing).");
 		throw mrmc::exceptions::wrong_file_format();
 		return NULL;
    }
@@ -107,7 +102,6 @@ mrmc::models::AtomicPropositionsLabeling * read_lab_file(int node_count, const c
             need_next_iteration = false;
          }
       } else {
-         pantheios::log_ERROR("EOF in the declaration section");
          throw mrmc::exceptions::wrong_file_format();
 		 delete[] decl_buffer;
 		 return NULL;
@@ -148,7 +142,6 @@ mrmc::models::AtomicPropositionsLabeling * read_lab_file(int node_count, const c
    if (!fgets(s, BUFFER_SIZE, P) || strcmp(s, "#END\n")) {
 		fclose(P);
 		delete result;
-		pantheios::log_ERROR("Wrong declaration section (\"#END\" missing).");
 		throw mrmc::exceptions::wrong_file_format();
 		return NULL;
    }
@@ -163,7 +156,6 @@ mrmc::models::AtomicPropositionsLabeling * read_lab_file(int node_count, const c
       if (sscanf(token, "%u", &node) == 0) {
          fclose(P);
          delete result;
-         pantheios::log_ERROR("Line assigning propositions does not start with a node number.");
          throw mrmc::exceptions::wrong_file_format();
 		 return NULL;
       }

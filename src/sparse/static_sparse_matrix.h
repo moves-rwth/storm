@@ -5,9 +5,6 @@
 #include <new>
 #include "boost/integer/integer_mask.hpp"
 
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
-
 #include "src/exceptions/invalid_state.h"
 #include "src/exceptions/invalid_argument.h"
 #include "src/exceptions/out_of_range.h"
@@ -67,16 +64,13 @@ public:
 			  currentSize(ssm.currentSize), lastRow(ssm.lastRow),
 			  rowCount(ssm.rowCount),
 			  nonZeroEntryCount(ssm.nonZeroEntryCount) {
-		pantheios::log_DEBUG("StaticSparseMatrix::CopyConstructor: Using copy constructor.");
 		// Check whether copying the matrix is safe.
 		if (!ssm.hasError()) {
-			pantheios::log_ERROR("StaticSparseMatrix::CopyConstructor: Throwing invalid_argument: Can not copy from matrix in error state.");
 			throw mrmc::exceptions::invalid_argument();
 		} else {
 			// Try to prepare the internal storage and throw an error in case
 			// of a failure.
 			if (!prepareInternalStorage()) {
-				pantheios::log_ERROR("StaticSparseMatrix::CopyConstructor: Throwing bad_alloc: memory allocation failed.");
 				throw std::bad_alloc();
 			} else {
 				// Now that all storages have been prepared, copy over all
@@ -138,15 +132,12 @@ public:
 		// Check whether initializing the matrix is safe.
 		if (internalStatus != MatrixStatus::UnInitialized) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid state for status flag != 0 (is ", pantheios::integer(internalStatus), " - Already initialized?");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::initialize: Invalid state for status flag != 0 - Already initialized?");
 		} else if (rowCount == 0) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid_argument for row_count = 0");
 			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: Matrix with 0 rows is not reasonable");
 		} else if (((rowCount * rowCount) - rowCount) < nonZeroEntries) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid_argument: More non-zero entries than entries in target matrix");
 			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: More non-zero entries than entries in target matrix");
 		} else {
 			// If it is safe, initialize necessary members and prepare the
@@ -156,7 +147,6 @@ public:
 
 			if (!prepareInternalStorage()) {
 				triggerErrorState();
-				pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing bad_alloc: memory allocation failed");
 				throw std::bad_alloc();
 			} else {
 				setState(MatrixStatus::Initialized);
@@ -178,7 +168,6 @@ public:
 		// Throw an error in case the matrix is not in compressed format.
 		if (!eigenSparseMatrix.isCompressed()) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::initialize: Throwing invalid_argument: eigen_sparse_matrix is not in Compressed form.");
 			throw mrmc::exceptions::invalid_argument("StaticSparseMatrix::initialize: Throwing invalid_argument: eigen_sparse_matrix is not in Compressed form.");
 		}
 
@@ -190,8 +179,6 @@ public:
 		// failure.
 		if (!prepareInternalStorage()) {
 			triggerErrorState();
-			pantheios::log_ERROR(
-					"StaticSparseMatrix::initialize: Throwing bad_alloc: memory allocation failed");
 			throw std::bad_alloc();
 		} else {
 			// Get necessary pointers to the contents of the Eigen matrix.
@@ -272,9 +259,6 @@ public:
 		// error otherwise.
 		if ((row > rowCount) || (col > rowCount)) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::addNextValue: Throwing out_of_range: row or col not in 0 .. rows (is ",
-					pantheios::integer(row), " x ", pantheios::integer(col), ", max is ",
-					pantheios::integer(rowCount), " x ", pantheios::integer(rowCount), ").");
 			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::addNextValue: row or col not in 0 .. rows");
 		}
 
@@ -307,12 +291,9 @@ public:
 		// otherwise.
 		if (!isInitialized()) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::finalize: Throwing invalid state for internal state not Initialized (is ",
-					pantheios::integer(internalStatus), " - Already finalized?");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::finalize: Invalid state for internal state not Initialized - Already finalized?");
 		} else if (currentSize != nonZeroEntryCount) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::finalize: Throwing invalid_state: Wrong call count for addNextValue");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::finalize: Wrong call count for addNextValue");
 		} else {
 			// Fill in the missing entries in the row_indications array.
@@ -346,8 +327,6 @@ public:
 	inline bool getValue(uint_fast64_t row, uint_fast64_t col, T* const target) {
 		// Check for illegal access indices.
 		if ((row > rowCount) || (col > rowCount)) {
-			pantheios::log_ERROR("StaticSparseMatrix::getValue: row or col not in 0 .. rows (is ", pantheios::integer(row), " x ",
-					pantheios::integer(col), ", max is ", pantheios::integer(rowCount), " x ",	pantheios::integer(rowCount), ").");
 			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::getValue: row or col not in 0 .. rows");
 			return false;
 		}
@@ -471,7 +450,6 @@ public:
 		// Check whether it is safe to export this matrix.
 		if (!isReadReady()) {
 			triggerErrorState();
-			pantheios::log_ERROR("StaticSparseMatrix::toEigenSparseMatrix: Throwing invalid state for internal state not ReadReady (is ", pantheios::integer(internalStatus), ").");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::toEigenSparseMatrix: Invalid state for internal state not ReadReady.");
 		} else {
 			// Create a
@@ -577,7 +555,6 @@ public:
 	bool makeStateAbsorbing(const uint_fast64_t state) {
 		// Check whether the accessed state exists.
 		if (state > rowCount) {
-			pantheios::log_ERROR("StaticSparseMatrix::makeStateFinal: state not in 0 .. rows (is ",	pantheios::integer(state), ", max is ",	pantheios::integer(rowCount), ").");
 			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::makeStateFinal: state not in 0 .. rows");
 			return false;
 		}
