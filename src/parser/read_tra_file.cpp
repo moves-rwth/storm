@@ -26,8 +26,12 @@ namespace mrmc {
 
 namespace parser{
 
+// Only disable the warning if we are not using GCC, because
+// GCC does not know this pragma and raises a warning 
+#ifndef __GNUG__
 // Disable C4996 - This function or variable may be unsafe.
 #pragma warning(disable:4996)
+#endif
 
 /*!
 * This method does the first pass through the .tra file and computes
@@ -46,7 +50,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
       throw exceptions::file_IO_exception ("make_first_pass: File not readable (this should be checked before calling this function!)");
    }
    char s[BUFFER_SIZE];                 //String buffer
-   uint_fast32_t rows=0, non_zero=0;
+   int rows=0, non_zero=0;
 
    //Reading No. of states
    if (fgets(s, BUFFER_SIZE, p) != NULL) {
@@ -69,7 +73,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
    //And increase number of transitions
    while (NULL != fgets( s, BUFFER_SIZE, p ))
    {
-      uint_fast32_t row=0, col=0;
+      int row=0, col=0;
       double val=0.0;
       if (sscanf( s, "%d%d%lf", &row, &col, &val ) != 3) {
          (void)fclose(p);
@@ -80,7 +84,7 @@ static uint_fast32_t make_first_pass(FILE* p) {
          --non_zero;
       }
    }
-   return non_zero;
+   return static_cast<uint_fast64_t>(non_zero);
 }
 
 
@@ -95,7 +99,8 @@ static uint_fast32_t make_first_pass(FILE* p) {
 sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 	FILE *p = NULL;
 	char s[BUFFER_SIZE];
-	uint_fast32_t rows, non_zero;
+	uint_fast64_t non_zero = 0;
+	int rows = 0;
 	sparse::StaticSparseMatrix<double> *sp = NULL;
 
 	p = fopen(filename, "r");
@@ -121,7 +126,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 	 * Note that the result is not used in this function as make_first_pass()
 	 * computes the relevant number (non_zero)
 	 */
-	uint_fast32_t nnz=0;
+	int nnz = 0;
 	if ((fgets(s, BUFFER_SIZE, p) == NULL) || (sscanf(s, "TRANSITIONS %d", &nnz) == 0)) {
 		(void)fclose(p);
 		throw mrmc::exceptions::wrong_file_format();
@@ -135,7 +140,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 	 * Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
 	 * non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
-	sp = new sparse::StaticSparseMatrix<double>(rows + 1);
+	sp = new sparse::StaticSparseMatrix<double>(static_cast<uint_fast64_t>(rows) + 1);
 	if ( NULL == sp ) {
 		throw std::bad_alloc();
 		return NULL;
@@ -144,7 +149,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 
 	//Reading transitions (one per line) and saving the results in the matrix
 	while (NULL != fgets(s, BUFFER_SIZE, p )) {
-		uint_fast32_t row=0, col=0;
+		int row=0, col=0;
 		double val = 0.0;
 		if (sscanf(s, "%d%d%lf", &row, &col, &val) != 3) {
 			(void)fclose(p);
@@ -158,7 +163,7 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 							" to position ",
 							pantheios::integer(row), " x ",
 							pantheios::integer(col));
-		sp->addNextValue(row,col,val);
+		sp->addNextValue(static_cast<uint_fast64_t>(row),static_cast<uint_fast64_t>(col),static_cast<uint_fast64_t>(val));
 	}
 
 	(void)fclose(p);

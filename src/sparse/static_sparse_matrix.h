@@ -56,11 +56,7 @@ public:
 	 * @param rows The number of rows of the matrix
 	 */
 	StaticSparseMatrix(uint_fast64_t rows)
-			: internalStatus(MatrixStatus::UnInitialized),
-			  currentSize(0), lastRow(0), valueStorage(nullptr),
-			  diagonalStorage(nullptr), columnIndications(nullptr),
-			  rowIndications(nullptr), rowCount(rows), nonZeroEntryCount(0) { }
-
+			: rowCount(rows), nonZeroEntryCount(0), valueStorage(nullptr), diagonalStorage(nullptr), columnIndications(nullptr), rowIndications(nullptr), internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
 	//! Copy Constructor
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given sparse matrix.
@@ -322,7 +318,7 @@ public:
 			// Fill in the missing entries in the row_indications array.
 			// (Can happen because of empty rows at the end.)
 			if (lastRow != rowCount) {
-				for (uint_fast64_t i = lastRow + 1; i <= rowCount; ++i) {
+				for (uint_fast64_t i = lastRow + 1; i < rowCount; ++i) {
 					rowIndications[i] = currentSize;
 				}
 			}
@@ -331,7 +327,7 @@ public:
 			// array. This eases iteration work, as now the indices of row i
 			// are always between row_indications[i] and row_indications[i + 1],
 			// also for the first and last row.
-			rowIndications[rowCount + 1] = nonZeroEntryCount;
+			rowIndications[rowCount] = nonZeroEntryCount;
 
 			setState(MatrixStatus::ReadReady);
 		}

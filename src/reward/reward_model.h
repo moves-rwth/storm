@@ -27,7 +27,7 @@ class RewardModel {
 	typedef const DataClass& crDataClass;
 
 	public:
-		RewardModel(const uint_fast32_t state_count, const DataClass& null_value) : null_value(null_value), state_count(state_count) {
+		RewardModel(const uint_fast32_t state_count, const DataClass& null_value) : state_count(state_count), null_value(null_value) {
 
 			this->reward_vector = new VectorImpl<DataClass, std::allocator<DataClass>>(this->state_count);
 			// init everything to zero

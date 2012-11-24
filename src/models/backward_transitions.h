@@ -35,43 +35,47 @@ public:
 	 * @param transition_matrix The (0-based) matrix representing the transition
 	 * relation.
 	 */
-	BackwardTransitions(mrmc::sparse::StaticSparseMatrix<T>* transitionMatrix)
-			: numberOfStates(transitionMatrix->getRowCount()),
-			  numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
-		this->state_indices_list = new uint_fast64_t[numberOfStates + 1];
+	BackwardTransitions(mrmc::sparse::StaticSparseMatrix<T>* transitionMatrix) {
+		numberOfNonZeroTransitions = transitionMatrix->getNonZeroEntryCount();
 		this->predecessor_list = new uint_fast64_t[numberOfNonZeroTransitions];
+		
+		numberOfStates = transitionMatrix->getRowCount();
+		this->state_indices_list = new uint_fast64_t[numberOfStates + 1];
 
 		// First, we need to count how many backward transitions each state has.
 		// NOTE: We disregard the diagonal here, as we only consider "true"
 		// predecessors.
-		for (uint_fast64_t i = 0; i <= numberOfStates; i++) {
+		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
 			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
 				this->state_indices_list[*rowIt + 1]++;
 			}
 		}
 
 		// Now compute the accumulated offsets.
-		for (uint_fast64_t i = 1; i <= numberOfStates; i++) {
+		for (uint_fast64_t i = 1; i < numberOfStates; i++) {
 			this->state_indices_list[i] = this->state_indices_list[i - 1] + this->state_indices_list[i];
 		}
 
 		// Put a sentinel element at the end of the indices list. This way,
 		// for each state i the range of indices can be read off between
 		// state_indices_list[i] and state_indices_list[i + 1].
-		this->state_indices_list[numberOfStates + 1] = numberOfNonZeroTransitions;
+		this->state_indices_list[numberOfStates] = numberOfNonZeroTransitions;
 
 		// Create an array that stores the next index for each state. Initially
 		// this corresponds to the previously computed accumulated offsets.
-		uint_fast64_t* next_state_index_list = new uint_fast64_t[numberOfStates + 1];
-		memcpy(next_state_index_list, state_indices_list, (numberOfStates + 1) * sizeof(uint_fast64_t));
+		uint_fast64_t* next_state_index_list = new uint_fast64_t[numberOfStates];
+		memcpy(next_state_index_list, state_indices_list, numberOfStates * sizeof(uint_fast64_t));
 
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
-		for (uint_fast64_t i = 0; i <= numberOfStates; i++) {
+		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
 			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
 				this->predecessor_list[next_state_index_list[*rowIt]++] = i;
 			}
 		}
+
+		// Now we can dispose of the auxiliary array.
+		delete[] next_state_index_list;
 	}
 
 	//! Destructor
@@ -79,10 +83,10 @@ public:
 	 * Destructor. Frees the internal storage.
 	 */
 	~BackwardTransitions() {
-		if (this->predecessor_list != NULL) {
+		if (this->predecessor_list != nullptr) {
 			delete[] this->predecessor_list;
 		}
-		if (this->state_indices_list != NULL) {
+		if (this->state_indices_list != nullptr) {
 			delete[] this->state_indices_list;
 		}
 	}
@@ -95,7 +99,6 @@ public:
 	state_predecessor_iterator beginStatePredecessorIterator(uint_fast64_t state) const {
 		return this->predecessor_list + this->state_indices_list[state];
 	}
-
 
 	/*!
 	 * Returns an iterator referring to the element after the predecessors of
