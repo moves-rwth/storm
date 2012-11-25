@@ -6,13 +6,14 @@ set (log4cplus_version_minor 1)
 set (log4cplus_version_patch 0)
 set (log4cplus_soversion 0)
 set (log4cplus_postfix "")
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++0x)
 
 option(LOG4CPLUS_BUILD_TESTING "Build the test suite." ON)
 
 find_package (Threads)
 message (STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
 
-set(BUILD_SHARED_LIBS TRUE CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+set(BUILD_SHARED_LIBS FALSE CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
 
 if (WIN32)
   set (UNICODE_DEFAULT ON)

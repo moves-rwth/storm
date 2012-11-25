@@ -10,7 +10,7 @@
 #include "src/exceptions/invalid_argument.h"
 #include "src/exceptions/out_of_range.h"
 
-#include <iostream>
+#include <string.h>
 
 namespace mrmc {
 

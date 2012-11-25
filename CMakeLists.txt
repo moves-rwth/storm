@@ -164,6 +164,11 @@ if (LOG4CPLUS_INCLUDE_DIR)
     include_directories(${LOG4CPLUS_INCLUDE_DIR})
     target_link_libraries(mrmc ${LOG4CPLUS_LIBRARY}) 
     target_link_libraries(mrmc-tests ${LOG4CPLUS_LIBRARY})
+    # On Linux, we have to link against librt
+    if (UNIX)
+	target_link_libraries(mrmc rt)
+	target_link_libraries(mrmc-tests rt)
+    endif(UNIX)
 endif(LOG4CPLUS_INCLUDE_DIR)
 
 if (THREADS_FOUND)
