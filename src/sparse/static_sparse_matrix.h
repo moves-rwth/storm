@@ -11,11 +11,10 @@
 #include "src/exceptions/file_IO_exception.h"
 
 #include "src/misc/const_templates.h"
+#include "Eigen/Sparse"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
-
-#include "Eigen/Sparse"
 
 extern log4cplus::Logger logger;
 

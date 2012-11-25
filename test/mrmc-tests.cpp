@@ -14,7 +14,7 @@ log4cplus::Logger logger;
 void setUpLogging() {
 	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender("mrmc-tests.log"));
 	fileLogAppender->setName("mainFileAppender");
-	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%s} (%r ms) - %F:%L : %m%n")));
+	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M} (%r ms) - %F:%L : %m%n")));
 	logger = log4cplus::Logger::getInstance("mainLogger");
 	logger.addAppender(fileLogAppender);
 
