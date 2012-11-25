@@ -163,6 +163,7 @@ endif(GTEST_INCLUDE_DIR)
 if (LOG4CPLUS_INCLUDE_DIR)
     include_directories(${LOG4CPLUS_INCLUDE_DIR})
     target_link_libraries(mrmc ${LOG4CPLUS_LIBRARY}) 
+    target_link_libraries(mrmc-tests ${LOG4CPLUS_LIBRARY})
 endif(LOG4CPLUS_INCLUDE_DIR)
 
 if (THREADS_FOUND)
