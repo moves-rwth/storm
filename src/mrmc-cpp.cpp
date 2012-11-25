@@ -47,6 +47,7 @@ int main(const int argc, const char* argv[]) {
 	catch (mrmc::exceptions::InvalidSettings)
 	{
 		std::cout << "Could not recover from settings error, terminating." << std::endl;
+		std::cout << std::endl << mrmc::settings::help << std::endl;
 		delete s;
 		return 1;
 	}
