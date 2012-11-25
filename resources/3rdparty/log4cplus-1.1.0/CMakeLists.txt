@@ -6,7 +6,12 @@ set (log4cplus_version_minor 1)
 set (log4cplus_version_patch 0)
 set (log4cplus_soversion 0)
 set (log4cplus_postfix "")
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++0x)
+
+if(CMAKE_COMPILER_IS_GNUCC)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else(CLANG)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+endif()
 
 option(LOG4CPLUS_BUILD_TESTING "Build the test suite." ON)
 
