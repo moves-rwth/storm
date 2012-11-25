@@ -10,7 +10,7 @@
 
 #include <ostream>
 
-#include "single_atomic_proposition_labeling.h"
+#include "src/models/single_atomic_proposition_labeling.h"
 
 /* Map types: By default, the boost hash map is used.
  * If the macro USE_STD_MAP is defined, the default C++ class (std::map)
@@ -140,8 +140,7 @@ public:
 	 * @return True if the node is labeled with the atomic proposition, false
 	 * otherwise.
 	 */
-	bool stateHasAtomicProposition(std::string ap,
-			const uint_fast32_t state) {
+	bool stateHasAtomicProposition(std::string ap, const uint_fast32_t state) {
 		return this->single_labelings[name_to_labeling_map[ap]]->hasLabel(state);
 	}
 

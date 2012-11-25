@@ -3,8 +3,8 @@
 #include "src/exceptions/invalid_argument.h"
 
 TEST(BitVectorTest, GetSetTest) {
-	mrmc::vector::BitVector *bv = NULL;
-	ASSERT_NO_THROW(bv = new mrmc::vector::BitVector(32));
+	mrmc::storage::BitVector *bv = NULL;
+	ASSERT_NO_THROW(bv = new mrmc::storage::BitVector(32));
 
 	for (int i = 0; i < 32; ++i) {
 		bv->set(i, i % 2 == 0);
@@ -17,7 +17,7 @@ TEST(BitVectorTest, GetSetTest) {
 }
 
 TEST(BitVectorTest, InitialZeroTest) {
-	mrmc::vector::BitVector bvA(32);
+	mrmc::storage::BitVector bvA(32);
 
 	for (int i = 0; i < 32; ++i) {
 		ASSERT_FALSE(bvA.get(i));
@@ -25,7 +25,7 @@ TEST(BitVectorTest, InitialZeroTest) {
 }
 
 TEST(BitVectorTest, ResizeTest) {
-	mrmc::vector::BitVector bvA(32);
+	mrmc::storage::BitVector bvA(32);
 	
 	for (int i = 0; i < 32; ++i) {
 		bvA.set(i, true);
@@ -46,15 +46,15 @@ TEST(BitVectorTest, ResizeTest) {
 }
 
 TEST(BitVectorTest, OperatorNotTest) {
-	mrmc::vector::BitVector bvA(32);
-	mrmc::vector::BitVector bvB(32);
+	mrmc::storage::BitVector bvA(32);
+	mrmc::storage::BitVector bvB(32);
 
 	for (int i = 0; i < 32; ++i) {
 		bvA.set(i, i % 2 == 0);
 		bvB.set(i, i % 2 == 1);
 	}
 
-	mrmc::vector::BitVector bvN = ~bvB;
+	mrmc::storage::BitVector bvN = ~bvB;
 
 	for (int i = 0; i < 32; ++i) {
 		ASSERT_EQ(bvA.get(i), bvN.get(i));
@@ -62,15 +62,15 @@ TEST(BitVectorTest, OperatorNotTest) {
 }
 
 TEST(BitVectorTest, OperatorAndTest) {
-	mrmc::vector::BitVector bvA(32);
-	mrmc::vector::BitVector bvB(32);
+	mrmc::storage::BitVector bvA(32);
+	mrmc::storage::BitVector bvB(32);
 
 	for (int i = 0; i < 32; ++i) {
 		bvA.set(i, i % 2 == 0);
 		bvB.set(i, i % 2 == 1);
 	}
 
-	mrmc::vector::BitVector bvN = bvA & bvB;
+	mrmc::storage::BitVector bvN = bvA & bvB;
 
 	for (int i = 0; i < 32; ++i) {
 		ASSERT_FALSE(bvN.get(i));
@@ -78,15 +78,15 @@ TEST(BitVectorTest, OperatorAndTest) {
 }
 
 TEST(BitVectorTest, OperatorOrTest) {
-	mrmc::vector::BitVector bvA(32);
-	mrmc::vector::BitVector bvB(32);
+	mrmc::storage::BitVector bvA(32);
+	mrmc::storage::BitVector bvB(32);
 
 	for (int i = 0; i < 32; ++i) {
 		bvA.set(i, i % 2 == 0);
 		bvB.set(i, i % 2 == 1);
 	}
 
-	mrmc::vector::BitVector bvN = bvA | bvB;
+	mrmc::storage::BitVector bvN = bvA | bvB;
 
 	for (int i = 0; i < 32; ++i) {
 		ASSERT_TRUE(bvN.get(i));
@@ -94,17 +94,17 @@ TEST(BitVectorTest, OperatorOrTest) {
 }
 
 TEST(BitVectorTest, OperatorXorTest) {
-	mrmc::vector::BitVector bvA(32);
-	mrmc::vector::BitVector bvB(32);
+	mrmc::storage::BitVector bvA(32);
+	mrmc::storage::BitVector bvB(32);
 
 	for (int i = 0; i < 32; ++i) {
 		bvA.set(i, true);
 		bvB.set(i, i % 2 == 1);
 	}
 
-	mrmc::vector::BitVector bvN = bvA ^ bvB;
-	mrmc::vector::BitVector bvO = ~bvB;
-	mrmc::vector::BitVector bvP = bvA ^ bvA;
+	mrmc::storage::BitVector bvN = bvA ^ bvB;
+	mrmc::storage::BitVector bvO = ~bvB;
+	mrmc::storage::BitVector bvP = bvA ^ bvA;
 
 	for (int i = 0; i < 32; ++i) {
 		ASSERT_EQ(bvN.get(i), bvO.get(i));

@@ -18,7 +18,7 @@ extern log4cplus::Logger logger;
 
 namespace mrmc {
 
-namespace vector {
+namespace storage {
 
 /*!
  * A bit vector that is internally represented by an array of 64-bit values.
@@ -27,6 +27,7 @@ class BitVector {
 
 public:
 	class constIndexIterator {
+	public:
 		constIndexIterator(uint_fast64_t* bucketPtr, uint_fast64_t* endBucketPtr) : bucketPtr(bucketPtr), endBucketPtr(endBucketPtr), offset(0), currentBitInByte(0) { }
 		constIndexIterator& operator++() {
 			do {
@@ -63,15 +64,15 @@ public:
 		}
 
 		// Compute the correct number of buckets needed to store the given number of bits
-		bucket_count = initialLength >> 6;
+		bucketCount = initialLength >> 6;
 		if ((initialLength & mod64mask) != 0) {
-			++bucket_count;
+			++bucketCount;
 		}
 
 		// Finally, create the full bucket array. This should initialize the array
 		// with 0s (notice the parentheses at the end) for standard conforming
 		// compilers.
-		bucket_array = new uint_fast64_t[bucket_count]();
+		bucketArray = new uint_fast64_t[bucketCount]();
 	}
 
 	//! Copy Constructor
@@ -79,10 +80,10 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given bit vector.
 	 * @param bv A reference to the bit vector to be copied.
 	 */
-	BitVector(const BitVector &bv) : bucket_count(bv.bucket_count) {
+	BitVector(const BitVector &bv) : bucketCount(bv.bucketCount) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
-		bucket_array = new uint_fast64_t[bucket_count];
-		memcpy(bucket_array, bv.bucket_array, sizeof(uint_fast64_t) * bucket_count);
+		bucketArray = new uint_fast64_t[bucketCount];
+		memcpy(bucketArray, bv.bucketArray, sizeof(uint_fast64_t) * bucketCount);
 	}
 
 	//! Destructor
@@ -90,8 +91,8 @@ public:
 	 * Destructor. Frees the underlying bucket array.
 	 */
 	~BitVector() {
-		if (bucket_array != nullptr) {
-			delete[] bucket_array;
+		if (bucketArray != nullptr) {
+			delete[] bucketArray;
 		}
 	}
 
@@ -102,24 +103,24 @@ public:
 	void resize(uint_fast64_t newLength) {
 		uint_fast64_t newBucketCount = newLength >> 6;
 		if ((newLength & mod64mask) != 0) {
-			++bucket_count;
+			++bucketCount;
 		}
 
 		// Reserve a temporary array for copying.
 		uint_fast64_t* tempArray = new uint_fast64_t[newBucketCount];
 
 		// Copy over the elements from the old bit vector.
-		uint_fast64_t copySize = (newBucketCount <= bucket_count) ? newBucketCount : bucket_count;
-		memcpy(tempArray, bucket_array, sizeof(uint_fast64_t) * copySize);
+		uint_fast64_t copySize = (newBucketCount <= bucketCount) ? newBucketCount : bucketCount;
+		memcpy(tempArray, bucketArray, sizeof(uint_fast64_t) * copySize);
 
 		// Initialize missing values in the new bit vector.
-		for (uint_fast64_t i = copySize; i < bucket_count; ++i) {
-			bucket_array[i] = 0;
+		for (uint_fast64_t i = copySize; i < bucketCount; ++i) {
+			bucketArray[i] = 0;
 		}
 
 		// Dispose of the old bit vector and set the new one.
-		delete[] bucket_array;
-		bucket_array = tempArray;
+		delete[] bucketArray;
+		bucketArray = tempArray;
 	}
 
 	/*!
@@ -131,9 +132,9 @@ public:
 		uint_fast64_t bucket = index >> 6;
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		if (value) {
-			bucket_array[bucket] |= mask;
+			bucketArray[bucket] |= mask;
 		} else {
-			bucket_array[bucket] &= ~mask;
+			bucketArray[bucket] &= ~mask;
 		}
 	}
 
@@ -144,7 +145,7 @@ public:
 	bool get(const uint_fast64_t index) {
 		uint_fast64_t bucket = index >> 6;
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
-		return ((bucket_array[bucket] & mask) == mask);
+		return ((bucketArray[bucket] & mask) == mask);
 	}
 
 	/*!
@@ -155,12 +156,12 @@ public:
 	 * @return A bit vector corresponding to the logical "and" of the two bit vectors.
 	 */
 	BitVector operator &(BitVector const &bv) {
-		uint_fast64_t minSize =	(bv.bucket_count < this->bucket_count) ? bv.bucket_count : this->bucket_count;
+		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		// Create resulting bit vector and perform the operation on the individual elements.
 		BitVector result(minSize << 6);
 		for (uint_fast64_t i = 0; i < minSize; ++i) {
-			result.bucket_array[i] = this->bucket_array[i] & bv.bucket_array[i];
+			result.bucketArray[i] = this->bucketArray[i] & bv.bucketArray[i];
 		}
 
 		return result;
@@ -174,12 +175,12 @@ public:
 	 * @return A bit vector corresponding to the logical "or" of the two bit vectors.
 	 */
 	BitVector operator |(BitVector const &bv) {
-		uint_fast64_t minSize =	(bv.bucket_count < this->bucket_count) ? bv.bucket_count : this->bucket_count;
+		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		// Create resulting bit vector and perform the operation on the individual elements.
 		BitVector result(minSize << 6);
 		for (uint_fast64_t i = 0; i < minSize; ++i) {
-			result.bucket_array[i] = this->bucket_array[i] | bv.bucket_array[i];
+			result.bucketArray[i] = this->bucketArray[i] | bv.bucketArray[i];
 		}
 
 		return result;
@@ -193,12 +194,12 @@ public:
 	 * @return A bit vector corresponding to the logical "xor" of the two bit vectors.
 	 */
 	BitVector operator ^(BitVector const &bv) {
-		uint_fast64_t minSize =	(bv.bucket_count < this->bucket_count) ? bv.bucket_count : this->bucket_count;
+		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		// Create resulting bit vector and perform the operation on the individual elements.
 		BitVector result(minSize << 6);
 		for (uint_fast64_t i = 0; i < minSize; ++i) {
-			result.bucket_array[i] = this->bucket_array[i] ^ bv.bucket_array[i];
+			result.bucketArray[i] = this->bucketArray[i] ^ bv.bucketArray[i];
 		}
 
 		return result;
@@ -210,9 +211,9 @@ public:
 	 */
 	BitVector operator ~() {
 		// Create resulting bit vector and perform the operation on the individual elements.
-		BitVector result(this->bucket_count << 6);
-		for (uint_fast64_t i = 0; i < this->bucket_count; ++i) {
-			result.bucket_array[i] = ~this->bucket_array[i];
+		BitVector result(this->bucketCount << 6);
+		for (uint_fast64_t i = 0; i < this->bucketCount; ++i) {
+			result.bucketArray[i] = ~this->bucketArray[i];
 		}
 
 		return result;
@@ -226,12 +227,12 @@ public:
 	 * @return A bit vector corresponding to the logical "implies" of the two bit vectors.
 	 */
 	BitVector implies(BitVector& bv) {
-		uint_fast64_t minSize =	(bv.bucket_count < this->bucket_count) ? bv.bucket_count : this->bucket_count;
+		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		// Create resulting bit vector and perform the operation on the individual elements.
 		BitVector result(minSize << 6);
-		for (uint_fast64_t i = 0; i < this->bucket_count; ++i) {
-			result.bucket_array[i] = ~this->bucket_array[i]	| bv.bucket_array[i];
+		for (uint_fast64_t i = 0; i < this->bucketCount; ++i) {
+			result.bucketArray[i] = ~this->bucketArray[i]	| bv.bucketArray[i];
 		}
 
 		return result;
@@ -243,13 +244,13 @@ public:
 	 */
 	uint_fast64_t getNumberOfSetBits() {
 		uint_fast64_t set_bits = 0;
-		for (uint_fast64_t i = 0; i < bucket_count; ++i) {
+		for (uint_fast64_t i = 0; i < bucketCount; ++i) {
 			// Check if we are using g++ or clang++ and, if so, use the built-in function
 #if (defined (__GNUG__) || defined(__clang__))
-			set_bits += __builtin_popcountll(this->bucket_array[i]);
+			set_bits += __builtin_popcountll(this->bucketArray[i]);
 #else
 			uint_fast32_t cnt;
-			uint_fast64_t bitset = this->bucket_array[i];
+			uint_fast64_t bitset = this->bucketArray[i];
 			for (cnt = 0; bitset; cnt++) {
 				bitset &= bitset - 1;
 			}
@@ -263,7 +264,7 @@ public:
 	 * Retrieves the number of bits this bit vector can store.
 	 */
 	uint_fast64_t getSize() {
-		return bucket_count << 6;
+		return bucketCount << 6;
 	}
 
 	/*!
@@ -271,15 +272,29 @@ public:
 	 * @return The size of the bit vector in memory measured in bytes.
 	 */
 	uint_fast64_t getSizeInMemory() {
-		return sizeof(*this) + sizeof(uint_fast64_t) * bucket_count;
+		return sizeof(*this) + sizeof(uint_fast64_t) * bucketCount;
+	}
+
+	/*!
+	 * Returns an iterator to the indices of the set bits in the bit vector.
+	 */
+	constIndexIterator begin() const {
+		return constIndexIterator(this->bucketArray, this->bucketArray + bucketCount);
+	}
+
+	/*!
+	 * Returns an iterator pointing at the element past the bit vector.
+	 */
+	constIndexIterator end() const {
+		return constIndexIterator(this->bucketArray + bucketCount, 0);
 	}
 
 private:
 	/*! The number of 64-bit buckets we use as internal storage. */
-	uint_fast64_t bucket_count;
+	uint_fast64_t bucketCount;
 
 	/*! Array of 64-bit buckets to store the bits. */
-	uint64_t* bucket_array;
+	uint64_t* bucketArray;
 
 	/*! A bit mask that can be used to reduce a modulo operation to a logical "and".  */
 	static const uint_fast64_t mod64mask = (1 << 6) - 1;

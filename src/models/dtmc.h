@@ -35,7 +35,7 @@ public:
 	 * @param state_labeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
-	Dtmc(mrmc::sparse::SquareSparseMatrix<T>* probability_matrix, mrmc::models::AtomicPropositionsLabeling* state_labeling)
+	Dtmc(mrmc::storage::SquareSparseMatrix<T>* probability_matrix, mrmc::models::AtomicPropositionsLabeling* state_labeling)
 			: backward_transitions(probability_matrix) {
 		this->probability_matrix = probability_matrix;
 		this->state_labeling = state_labeling;
@@ -84,7 +84,7 @@ public:
 	 * @return A pointer to the matrix representing the transition probability
 	 * function.
 	 */
-	mrmc::sparse::SquareSparseMatrix<T>* getTransitionProbabilityMatrix() {
+	mrmc::storage::SquareSparseMatrix<T>* getTransitionProbabilityMatrix() {
 		return this->probability_matrix;
 	}
 
@@ -111,7 +111,7 @@ public:
 private:
 
 	/*! A matrix representing the transition probability function of the DTMC. */
-	mrmc::sparse::SquareSparseMatrix<T>* probability_matrix;
+	mrmc::storage::SquareSparseMatrix<T>* probability_matrix;
 
 	/*! The labeling of the states of the DTMC. */
 	mrmc::models::AtomicPropositionsLabeling* state_labeling;

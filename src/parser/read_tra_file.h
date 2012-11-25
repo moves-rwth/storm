@@ -11,7 +11,7 @@
 namespace mrmc{
 namespace parser {
 
-mrmc::sparse::SquareSparseMatrix<double> * read_tra_file(const char * filename);
+mrmc::storage::SquareSparseMatrix<double> * read_tra_file(const char * filename);
 
 }
 }

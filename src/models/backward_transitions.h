@@ -35,11 +35,9 @@ public:
 	 * @param transition_matrix The (0-based) matrix representing the transition
 	 * relation.
 	 */
-	BackwardTransitions(mrmc::sparse::SquareSparseMatrix<T>* transitionMatrix) {
-		numberOfNonZeroTransitions = transitionMatrix->getNonZeroEntryCount();
+	BackwardTransitions(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix)
+			: numberOfStates(transitionMatrix->getRowCount()), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
 		this->predecessor_list = new uint_fast64_t[numberOfNonZeroTransitions];
-		
-		numberOfStates = transitionMatrix->getRowCount();
 		this->state_indices_list = new uint_fast64_t[numberOfStates + 1];
 
 		// First, we need to count how many backward transitions each state has.

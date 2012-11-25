@@ -39,11 +39,11 @@ class DtmcPrctlModelChecker {
       explicit DtmcPrctlModelChecker(mrmc::models::Dtmc<T>* DTMC);
       ~DtmcPrctlModelChecker();
 
-      virtual void makeAbsorbing(mrmc::vector::BitVector*) = 0;
-      virtual mrmc::vector::BitVector getStatesSatisying(mrmc::models::SingleAtomicPropositionLabeling*) = 0;
+      virtual void makeAbsorbing(mrmc::storage::BitVector*) = 0;
+      virtual mrmc::storage::BitVector getStatesSatisying(mrmc::models::SingleAtomicPropositionLabeling*) = 0;
       virtual std::vector<T> multiplyMatrixVector(std::vector<T>*) = 0;
 
-      virtual mrmc::vector::BitVector checkStateFormula(mrmc::formula::PCTLStateFormula* formula) {
+      virtual mrmc::storage::BitVector checkStateFormula(mrmc::formula::PCTLStateFormula* formula) {
          if (formula->type() == AND) {
             return checkAnd(static_cast<mrmc::formula::And*>(formula));
          }
@@ -63,11 +63,11 @@ class DtmcPrctlModelChecker {
       }
 
 
-      virtual mrmc::vector::BitVector checkAnd(mrmc::formula::And*) = 0;
-      virtual mrmc::vector::BitVector checkAP(mrmc::formula::AP*) = 0;
-      virtual mrmc::vector::BitVector checkNot(mrmc::formula::Not*) = 0;
-      virtual mrmc::vector::BitVector checkOr(mrmc::formula::Or*) = 0;
-      virtual mrmc::vector::BitVector checkProbabilisticOperator(mrmc::formula::ProbabilisticOperator<T>*) = 0;
+      virtual mrmc::storage::BitVector checkAnd(mrmc::formula::And*) = 0;
+      virtual mrmc::storage::BitVector checkAP(mrmc::formula::AP*) = 0;
+      virtual mrmc::storage::BitVector checkNot(mrmc::formula::Not*) = 0;
+      virtual mrmc::storage::BitVector checkOr(mrmc::formula::Or*) = 0;
+      virtual mrmc::storage::BitVector checkProbabilisticOperator(mrmc::formula::ProbabilisticOperator<T>*) = 0;
 
       virtual std::vector<T> checkPathFormula(mrmc::formula::PCTLPathFormula* formula) {
          if (formula->type() == NEXT) {

@@ -20,7 +20,7 @@ extern log4cplus::Logger logger;
 
 namespace mrmc {
 
-namespace sparse {
+namespace storage {
 
 /*!
  * A sparse matrix class with a constant number of non-zero entries on the non-diagonal fields

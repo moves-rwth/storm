@@ -20,7 +20,7 @@ TEST(ReadTraFileTest, NonExistingFileTest) {
 /* The following test case is based on one of the original MRMC test cases
  */
 TEST(ReadTraFileTest, ParseFileTest1) {
-	mrmc::sparse::SquareSparseMatrix<double> *result = NULL;
+	mrmc::storage::SquareSparseMatrix<double> *result = NULL;
 	ASSERT_NO_THROW(result = mrmc::parser::read_tra_file(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
 
 	if (result != NULL) {

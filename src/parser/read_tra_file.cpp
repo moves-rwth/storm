@@ -90,12 +90,12 @@ static uint_fast32_t make_first_pass(FILE* p) {
  * @return a pointer to the created sparse matrix.
  */
 
-sparse::SquareSparseMatrix<double> * read_tra_file(const char * filename) {
+storage::SquareSparseMatrix<double> * read_tra_file(const char * filename) {
 	FILE *p = NULL;
 	char s[BUFFER_SIZE];
 	uint_fast64_t non_zero = 0;
 	int rows = 0;
-	sparse::SquareSparseMatrix<double> *sp = NULL;
+	storage::SquareSparseMatrix<double> *sp = NULL;
 
 	p = fopen(filename, "r");
 	if(p == NULL) {
@@ -129,7 +129,7 @@ sparse::SquareSparseMatrix<double> * read_tra_file(const char * filename) {
 	 * Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
 	 * non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
-	sp = new sparse::SquareSparseMatrix<double>(static_cast<uint_fast64_t>(rows) + 1);
+	sp = new storage::SquareSparseMatrix<double>(static_cast<uint_fast64_t>(rows) + 1);
 	if ( NULL == sp ) {
 		throw std::bad_alloc();
 		return NULL;

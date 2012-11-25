@@ -75,7 +75,7 @@ class SingleAtomicPropositionLabeling {
 	 * A bit vector storing for every state whether or not that state is
 	 * labeled.
 	 */
-	mrmc::vector::BitVector label_vector;
+	mrmc::storage::BitVector label_vector;
 };
 
 } // namespace models

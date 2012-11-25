@@ -77,7 +77,7 @@ int main(const int argc, const char* argv[]) {
 		return 0;
 	}
 
-	mrmc::sparse::SquareSparseMatrix<double>* probMatrix = mrmc::parser::read_tra_file(s->getString("trafile").c_str());
+	mrmc::storage::SquareSparseMatrix<double>* probMatrix = mrmc::parser::read_tra_file(s->getString("trafile").c_str());
 	mrmc::models::AtomicPropositionsLabeling* labeling = mrmc::parser::read_lab_file(probMatrix->getRowCount(), s->getString("labfile").c_str());
 	mrmc::models::Dtmc<double> dtmc(probMatrix, labeling);
 
