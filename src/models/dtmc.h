@@ -8,9 +8,6 @@
 #ifndef DTMC_H_
 #define DTMC_H_
 
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
-
 #include <ostream>
 
 #include "atomic_propositions_labeling.h"
@@ -50,9 +47,7 @@ public:
 	 * @param dtmc A reference to the DTMC that is to be copied.
 	 */
 	Dtmc(const Dtmc<T> &dtmc) : probability_matrix(dtmc.probability_matrix),
-			state_labeling(dtmc.state_labeling) {
-		pantheios::log_DEBUG("Copy constructor of DTMC invoked.");
-	}
+			state_labeling(dtmc.state_labeling) { }
 
 	//! Destructor
 	/*!
@@ -111,15 +106,6 @@ public:
 				sizeof(*this))/1024 << " kbytes" << std::endl;
 		out << "-------------------------------------------------------------- "
 			<< std::endl;
-	}
-
-	mrmc::vector::BitVector* findStatesExistsPath(mrmc::vector::BitVector target_states) {
-		mrmc::vector::BitVector visited_states(target_states);
-		mrmc::vector::BitVector* result = new mrmc::vector::BitVector(target_states);
-
-
-
-		return result;
 	}
 
 private:

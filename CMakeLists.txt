@@ -1,198 +1,186 @@
 cmake_minimum_required (VERSION 2.6)
 
-project (MRMC-cpp CXX C)
+# Set project name
+project (mrmc CXX C)
 
-# The version number.
+# Set the version number
 set (MRMC_CPP_VERSION_MAJOR 1)
 set (MRMC_CPP_VERSION_MINOR 0)
 
+# Set all GTest references to the version in the repository and show it as output
 set (GTEST_INCLUDE_DIR resources/3rdparty/gtest-1.6.0/include)
 set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.a)
 set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.a)
-set (STLSOFT_INCLUDE_DIR resources/3rdparty/stlsoft-1.9.116/include)
-set (PANTHEIOS_INCLUDE_DIR resources/3rdparty/pantheios-1.0.1-beta214/include)
+message(STATUS "GTEST_INCLUDE_DIR is ${GTEST_INCLUDE_DIR}")
+message(STATUS "GTEST_LIBRARY is ${GTEST_LIBRARY}")
+message(STATUS "GTEST_MAIN_LIBRARY is ${GTEST_MAIN_LIBRARY}")
 
+# Set all log4cplus references the version in the repository
+set (LOG4CPLUS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/include)
+set (LOG4CPLUS_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/src/liblog4cplus.a)
+message(STATUS "LOG4CPLUS_INCLUDE_DIR is ${LOG4CPLUS_INCLUDE_DIR}")
+message(STATUS "LOG4CPLUS_LIBRARY is ${LOG4CPLUS_LIBRARY}")
+
+# Set all Eigen references the version in the repository
+set(EIGEN3_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen)
+message(STATUS "EIGEN3_INCLUDE_DIR is ${EIGEN3_INCLUDE_DIR}")
+
+# Now define all available custom options
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
-option(DEFINE_UNIX "Defines the UNIX flag for compilation." OFF)
-option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." OFF)
+option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
+option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
+option(USE_BOOST_MT_SUFFIX "Sets whether the the Boost libraries have the suffix mt." OFF)
 
+# If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (DEBUG)
     set (CMAKE_BUILD_TYPE "DEBUG")
+    message(STATUS "Building DEBUG version.")
 else()
     set (CMAKE_BUILD_TYPE "RELEASE")
+    message(STATUS "Building RELEASE version.")
 endif()
 
-#Configurations for GCC
-if(CMAKE_COMPILER_IS_GNUCC) 
+if(CMAKE_COMPILER_IS_GNUCC)
+    # Set standard flags for GCC
     set (CMAKE_CXX_FLAGS "-std=c++0x -Wall -Werror -pedantic")
     
-    # Turn on popcnt instruction if possible
+    # Turn on popcnt instruction if possible (yes by default)
     if (USE_POPCNT)
-        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2")
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
     endif(USE_POPCNT)
+elseif(MSVC)
+
+else(CLANG)
+    # Set standard flags for GCC
+    set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic")
+    
+    # Turn on popcnt instruction if desired (yes by default)
+    if (USE_POPCNT)
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
+    endif(USE_POPCNT)    
 endif()
- 
-# configure a header file to pass some of the CMake settings
-# to the source code
+
+# Add the binary folder to the search path for include files so that we will find mrmc-config.h
+include_directories("${PROJECT_BINARY_DIR}")
 
 # Base path for test files
 set(MRMC_CPP_TESTS_BASE_PATH ${PROJECT_SOURCE_DIR}/test)
-
-configure_file (
-  "${PROJECT_SOURCE_DIR}/MRMCConfig.h.in"
-  "${PROJECT_BINARY_DIR}/MRMCConfig.h"
-  )
- 
-# add the binary tree to the search path for include files
-# so that we will find TutorialConfig.h
-include_directories("${PROJECT_BINARY_DIR}")
+message(STATUS "MRMC_CPP_TESTS_BASE_PATH is ${MRMC_CPP_TESTS_BASE_PATH}")
 
 # Main Sources
-file(GLOB_RECURSE MRMCHeaders ${PROJECT_SOURCE_DIR}/src/*.h)
-file(GLOB_RECURSE MRMCSources ${PROJECT_SOURCE_DIR}/src/*.cpp)
-# Test Sources
-# Note that the tests also need the source files, except the main file!
-file(GLOB_RECURSE MRMCTestHeaders ${PROJECT_SOURCE_DIR}/test/*.h)
-file(GLOB_RECURSE MRMCTestSources ${PROJECT_SOURCE_DIR}/test/*.cpp ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
-# Main Grouping
-source_group(Headers FILES ${MRMCHeaders})
-source_group(Sources FILES ${MRMCSources})
-# Test Grouping
-source_group(Headers FILES ${MRMCTestHeaders})
-source_group(Sources FILES ${MRMCTestSources})
+file(GLOB_RECURSE MRMC_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
+file(GLOB_RECURSE MRMC_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
-# Add base folder for better inclusion pathes
-include_directories("${PROJECT_SOURCE_DIR}")
+# Test Sources
+# Note that the tests also need the source files, except for the main file
+file(GLOB_RECURSE MRMC_TEST_HEADERS ${PROJECT_SOURCE_DIR}/test/*.h)
+file(GLOB_RECURSE MRMC_TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/*.cpp ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
+
+# Main Grouping
+source_group(Headers FILES ${MRMC_HEADERS})
+source_group(Sources FILES ${MRMC_SOURCES})
+
+# Test Grouping
+source_group(Headers FILES ${MRMC_TEST_HEADERS})
+source_group(Sources FILES ${MRMC_TEST_SOURCES})
+
+# Add base folder for better inclusion paths
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
-# temp search path for Pantheios/STLSoft
-if (NOT GTEST_INCLUDE_DIR)
-	set(GTEST_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/include)
-endif()
-
-if (NOT STLSOFT_INCLUDE_DIR)
-	set(STLSOFT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/stlsoft-1.9.116/include)
-endif()
-
-if (NOT PANTHEIOS_INCLUDE_DIR)
-	set(PANTHEIOS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/pantheios-1.0.1-beta214/include)
-endif()
-
-message(STATUS "GTEST Include Dir is: ${GTEST_INCLUDE_DIR}")
-#message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}")
-#list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0)
-#list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdparty/pantheios-1.0.1-beta214)
-#list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/resources/3rdparty/gteststlsoft-1.9.116)
-#message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
-
-# external packages
-find_package(GTest REQUIRED)
+# Set required external packages
 find_package(Threads REQUIRED)
-set(Boost_USE_STATIC_LIBS        ON)
+find_package(Doxygen REQUIRED)
+#set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED)
-find_package(Doxygen REQUIRED)
-find_package(STLSoft REQUIRED)
 
-# STLsoft headers
-# include_directories("${PROJECT_SRC_DIR}/resources/3rdParty/stlsoft-1.9.114")
-# Pantheios Logging library
-# include_directories("${PROJECT_SRC_DIR}/resources/3rdParty/pantheios-1.0.1-beta213")
-
-if (STLSOFT_FOUND)
-    include_directories(${STLSOFT_INCLUDE_DIR})
-endif()
-find_package(STLSoft REQUIRED)
-
-#Dynamic runtime for Pantheios is configured for dll-files, hence only usable under Windows...
-if (WIN32)
-    set(PANTHEIOS_USE_DYNAMIC_RUNTIME ON)
-else()
-    set(PANTHEIOS_USE_DYNAMIC_RUNTIME OFF)
-endif()
-find_package(Pantheios REQUIRED COMPONENTS SimpleFrontEnd File)
-
-    
-if (PANTHEIOS_FOUND)
-    include_directories(${PANTHEIOS_INCLUDE_DIR})
-    link_directories(${PANTHEIOS_LIBRARY_DIRS})
-else()
-    message(STATUS "NO PANTHEIOS!")
-endif()
-    
 if(Boost_FOUND)
-	if (NOT BOOST_PROGRAM_OPTIONS_LIBRARY)
-		set(BOOST_PROGRAM_OPTIONS_LIBRARY "boost_program_options")
+	if (NOT USE_BOOST_MT_SUFFIX)
+        set(BOOST_PROGRAM_OPTIONS_LIBRARY "boost_program_options")
+	else()
+        set(BOOST_PROGRAM_OPTIONS_LIBRARY "boost_program_options-mt")
 	endif()
-	include_directories(${Boost_INCLUDE_DIRS})
 
-	if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
-		set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
-	endif ()
+    if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
+        set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
+    endif ()
 	
+    message(STATUS "BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
+    message(STATUS "BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
+	message(STATUS "BOOST_PROGRAM_OPTIONS_LIBRARY is ${BOOST_PROGRAM_OPTIONS_LIBRARY}")
+	
+    include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
+	
+	# Prepare the static boost libraries in case they were requested
+    if (USE_BOOST_STATIC_LIBRARIES)
+        add_library(boost_program_options STATIC IMPORTED)
+        set_property(TARGET boost_program_options PROPERTY IMPORTED_LOCATION "${Boost_LIBRARY_DIRS}/lib${BOOST_PROGRAM_OPTIONS_LIBRARY}.a")
+        set_target_properties(boost_program_options PROPERTIES LINKER_LANGUAGE CXX)
+    endif(USE_BOOST_STATIC_LIBRARIES)
 endif(Boost_FOUND)
 
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen/cmake/")
+# Add Eigen to the included directories
+include_directories(${EIGEN3_INCLUDE_DIR})
 
-set(EIGEN3_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen)
+# Add the executables
+# Must be created *after* Boost was added because of LINK_DIRECTORIES
+add_executable(mrmc ${MRMC_SOURCES} ${MRMC_HEADERS})
+add_executable(mrmc-tests ${MRMC_TEST_SOURCES} ${MRMC_TEST_HEADERS})
 
-find_package(Eigen3 REQUIRED)
+# Add target link deps for Boost program options
+if (USE_BOOST_STATIC_LIBRARIES)
+    target_link_libraries(mrmc ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+    target_link_libraries(mrmc-tests ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+else()
+    target_link_libraries(mrmc boost_program_options)
+    target_link_libraries(mrmc-tests boost_program_options)
+endif(USE_BOOST_STATIC_LIBRARIES)
 
-if (EIGEN3_FOUND)
-	include_directories(${EIGEN3_INCLUDE_DIR})
-endif()
-
-# must be created AFTER Boost was added because of LINK_DIRECTORIES
-add_executable(MRMC-cpp ${MRMCSources} ${MRMCHeaders})
-add_executable(MRMC-tests ${MRMCTestSources} ${MRMCTestHeaders})
-
-# Add target link deps for Pantheios
-target_link_libraries(MRMC-cpp ${PANTHEIOS_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(MRMC-tests ${PANTHEIOS_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-
-# add a target to generate API documentation with Doxygen
+# Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
+    set(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
+    string(REGEX REPLACE ";" " " CMAKE_DOXYGEN_INPUT_LIST "${PROJECT_SOURCE_DIR}/src")
 
-set(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
-string(REGEX REPLACE ";" " " CMAKE_DOXYGEN_INPUT_LIST "${PROJECT_SOURCE_DIR}/src")
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-
-add_custom_target(doc
-${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-COMMENT "Generating API documentation with Doxygen" VERBATIM
-)
+    add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile COMMENT "Generating API documentation with Doxygen" VERBATIM)
 endif(DOXYGEN_FOUND)
 
-if (GTEST_FOUND)
+if (GTEST_INCLUDE_DIR)
 	# For make-based builds, defines make target named test.
 	# For Visual Studio builds, defines Visual Studio project named RUN_TESTS.
 	enable_testing()
 
-	include_directories(${GTEST_INCLUDE_DIRS})
-	target_link_libraries(MRMC-tests ${GTEST_LIBRARIES})
+	include_directories(${GTEST_INCLUDE_DIR})
+	target_link_libraries(mrmc-tests ${GTEST_LIBRARY} ${GTEST_MAIN_LIBRARY})
 
-	add_test(
-		NAME MRMC-tests
-		COMMAND MRMC-tests
-	)
-	if( MSVC ) # VS2012 doesn't support correctly the tuples yet
+	add_test(NAME mrmc-tests COMMAND mrmc-tests)
+	if(MSVC) # VS2012 doesn't support correctly the tuples yet
 		add_definitions( /D _VARIADIC_MAX=10 )
 	endif()
-endif(GTEST_FOUND)
+endif(GTEST_INCLUDE_DIR)
 
+if (LOG4CPLUS_INCLUDE_DIR)
+    include_directories(${LOG4CPLUS_INCLUDE_DIR})
+    target_link_libraries(mrmc ${LOG4CPLUS_LIBRARY}) 
+    target_link_libraries(mrmc-tests ${LOG4CPLUS_LIBRARY})
+    # On Linux, we have to link against librt
+    if (UNIX AND NOT APPLE)
+	   target_link_libraries(mrmc rt)
+	   target_link_libraries(mrmc-tests rt)
+    endif(UNIX AND NOT APPLE)
+endif(LOG4CPLUS_INCLUDE_DIR)
 
 if (THREADS_FOUND)
 	include_directories(${THREADS_INCLUDE_DIRS})
-	target_link_libraries (MRMC-tests ${CMAKE_THREAD_LIBS_INIT})
-	target_link_libraries (MRMC-cpp ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries (mrmc ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries (mrmc-tests ${CMAKE_THREAD_LIBS_INIT})
 endif(THREADS_FOUND)
 
-if (DEFINE_UNIX)
-	add_definitions(-DUNIX)
-endif(DEFINE_UNIX)
-
+# Configure a header file to pass some of the CMake settings to the source code
+configure_file (
+  "${PROJECT_SOURCE_DIR}/mrmc-config.h.in"
+  "${PROJECT_BINARY_DIR}/mrmc-config.h"
+)

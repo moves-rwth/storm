@@ -11,7 +11,6 @@
 #include "src/exceptions/out_of_range.h"
 
 #include <string.h>
-
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 
