@@ -12,7 +12,12 @@
 
 #include "src/misc/const_templates.h"
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+
 #include "Eigen/Sparse"
+
+extern log4cplus::Logger logger;
 
 namespace mrmc {
 
@@ -54,6 +59,7 @@ public:
 	 */
 	StaticSparseMatrix(uint_fast64_t rows)
 			: rowCount(rows), nonZeroEntryCount(0), valueStorage(nullptr), diagonalStorage(nullptr), columnIndications(nullptr), rowIndications(nullptr), internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
+
 	//! Copy Constructor
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given sparse matrix.
@@ -64,13 +70,16 @@ public:
 			  currentSize(ssm.currentSize), lastRow(ssm.lastRow),
 			  rowCount(ssm.rowCount),
 			  nonZeroEntryCount(ssm.nonZeroEntryCount) {
+		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		// Check whether copying the matrix is safe.
 		if (!ssm.hasError()) {
+			LOG4CPLUS_ERROR(logger, "Trying to copy sparse matrix in error state.");
 			throw mrmc::exceptions::invalid_argument();
 		} else {
 			// Try to prepare the internal storage and throw an error in case
 			// of a failure.
 			if (!prepareInternalStorage()) {
+				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
 				throw std::bad_alloc();
 			} else {
 				// Now that all storages have been prepared, copy over all
@@ -132,12 +141,15 @@ public:
 		// Check whether initializing the matrix is safe.
 		if (internalStatus != MatrixStatus::UnInitialized) {
 			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to initialize matrix that is not uninitialized.");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::initialize: Invalid state for status flag != 0 - Already initialized?");
 		} else if (rowCount == 0) {
 			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to create initialize a matrix with 0 rows.");
 			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: Matrix with 0 rows is not reasonable");
 		} else if (((rowCount * rowCount) - rowCount) < nonZeroEntries) {
 			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to initialize a matrix with more non-zero entries than there can be.");
 			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: More non-zero entries than entries in target matrix");
 		} else {
 			// If it is safe, initialize necessary members and prepare the
@@ -168,6 +180,7 @@ public:
 		// Throw an error in case the matrix is not in compressed format.
 		if (!eigenSparseMatrix.isCompressed()) {
 			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that is not in compressed form.");
 			throw mrmc::exceptions::invalid_argument("StaticSparseMatrix::initialize: Throwing invalid_argument: eigen_sparse_matrix is not in Compressed form.");
 		}
 
@@ -179,6 +192,7 @@ public:
 		// failure.
 		if (!prepareInternalStorage()) {
 			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
 			throw std::bad_alloc();
 		} else {
 			// Get necessary pointers to the contents of the Eigen matrix.
@@ -259,6 +273,7 @@ public:
 		// error otherwise.
 		if ((row > rowCount) || (col > rowCount)) {
 			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ").");
 			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::addNextValue: row or col not in 0 .. rows");
 		}
 
@@ -291,9 +306,11 @@ public:
 		// otherwise.
 		if (!isInitialized()) {
 			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to finalize an uninitialized matrix.");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::finalize: Invalid state for internal state not Initialized - Already finalized?");
 		} else if (currentSize != nonZeroEntryCount) {
 			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to finalize a matrix that was initialized with more non-zero entries than given.");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::finalize: Wrong call count for addNextValue");
 		} else {
 			// Fill in the missing entries in the row_indications array.
@@ -327,6 +344,7 @@ public:
 	inline bool getValue(uint_fast64_t row, uint_fast64_t col, T* const target) {
 		// Check for illegal access indices.
 		if ((row > rowCount) || (col > rowCount)) {
+			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
 			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::getValue: row or col not in 0 .. rows");
 			return false;
 		}
@@ -450,6 +468,7 @@ public:
 		// Check whether it is safe to export this matrix.
 		if (!isReadReady()) {
 			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
 			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::toEigenSparseMatrix: Invalid state for internal state not ReadReady.");
 		} else {
 			// Create a
@@ -546,23 +565,24 @@ public:
 	}
 
 	/*!
-	 * This function makes the given state absorbing. This means that all
-	 * entries in its row will be changed to 0 and the value 1 will be written
+	 * This function makes the given row absorbing. This means that all
+	 * entries in will be set to 0 and the value 1 will be written
 	 * to the element on the diagonal.
-	 * @param state The state to be made absorbing.
+	 * @param row The row to be made absorbing.
 	 * @returns True iff the operation was successful.
 	 */
-	bool makeStateAbsorbing(const uint_fast64_t state) {
+	bool makeRowAbsorbing(const uint_fast64_t row) {
 		// Check whether the accessed state exists.
-		if (state > rowCount) {
+		if (row > rowCount) {
+			LOG4CPLUS_ERROR(logger, "Trying to make an illegal row " << row << " absorbing.");
 			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::makeStateFinal: state not in 0 .. rows");
 			return false;
 		}
 
 		// Iterate over the elements in the row that are not on the diagonal
 		// and set them to zero.
-		uint_fast64_t rowStart = rowIndications[state];
-		uint_fast64_t rowEnd = rowIndications[state + 1];
+		uint_fast64_t rowStart = rowIndications[row];
+		uint_fast64_t rowEnd = rowIndications[row + 1];
 
 		while (rowStart < rowEnd) {
 			valueStorage[rowStart] = mrmc::misc::constGetZero(valueStorage);
@@ -570,7 +590,7 @@ public:
 		}
 
 		// Set the element on the diagonal to one.
-		diagonalStorage[state] = mrmc::misc::constGetOne(diagonalStorage);
+		diagonalStorage[row] = mrmc::misc::constGetOne(diagonalStorage);
 		return true;
 	}
 
