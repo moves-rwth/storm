@@ -11,7 +11,7 @@
 #include <ostream>
 
 #include "AtomicPropositionsLabeling.h"
-#include "backward_transitions.h"
+#include "BackwardTransitions.h"
 #include "src/storage/SquareSparseMatrix.h"
 
 namespace mrmc {

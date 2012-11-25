@@ -16,7 +16,7 @@
 #include <cstdio>
 
 #include "mrmc-config.h"
-#include "src/models/dtmc.h"
+#include "src/models/Dtmc.h"
 #include "src/storage/SquareSparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/read_lab_file.h"

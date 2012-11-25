@@ -17,7 +17,7 @@
 #include "src/formula/ProbabilisticOperator.h"
 #include "src/formula/Until.h"
 
-#include "src/models/dtmc.h"
+#include "src/models/Dtmc.h"
 #include "src/storage/BitVector.h"
 #include <vector>
 
