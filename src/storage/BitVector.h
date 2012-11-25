@@ -58,6 +58,7 @@ public:
 	BitVector(uint_fast64_t initialLength) {
 		// Check whether the given length is valid.
 		if (initialLength == 0) {
+			LOG4CPLUS_ERROR(logger, "Trying to create bit vector of size 0.");
 			throw mrmc::exceptions::invalid_argument("Trying to create a bit vector of size 0.");
 		}
 
@@ -66,6 +67,7 @@ public:
 		if ((initialLength & mod64mask) != 0) {
 			++bucket_count;
 		}
+
 		// Finally, create the full bucket array. This should initialize the array
 		// with 0s (notice the parentheses at the end) for standard conforming
 		// compilers.
@@ -78,6 +80,7 @@ public:
 	 * @param bv A reference to the bit vector to be copied.
 	 */
 	BitVector(const BitVector &bv) : bucket_count(bv.bucket_count) {
+		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		bucket_array = new uint_fast64_t[bucket_count];
 		memcpy(bucket_array, bv.bucket_array, sizeof(uint_fast64_t) * bucket_count);
 	}
@@ -220,13 +223,15 @@ public:
 	 * do not match, only the matching portion is considered and the overlapping bits
 	 * are set to 0.
 	 * @param bv A reference to the bit vector to use for the operation.
-	 * @return A bit vector corresponding to the logical "xor" of the two bit vectors.
+	 * @return A bit vector corresponding to the logical "implies" of the two bit vectors.
 	 */
-	BitVector implies(BitVector& other) {
+	BitVector implies(BitVector& bv) {
+		uint_fast64_t minSize =	(bv.bucket_count < this->bucket_count) ? bv.bucket_count : this->bucket_count;
+
 		// Create resulting bit vector and perform the operation on the individual elements.
-		BitVector result(this->bucket_count << 6);
+		BitVector result(minSize << 6);
 		for (uint_fast64_t i = 0; i < this->bucket_count; ++i) {
-			result.bucket_array[i] = ~this->bucket_array[i]	| other.bucket_array[i];
+			result.bucket_array[i] = ~this->bucket_array[i]	| bv.bucket_array[i];
 		}
 
 		return result;

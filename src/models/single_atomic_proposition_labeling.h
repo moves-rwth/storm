@@ -1,7 +1,7 @@
 #ifndef MRMC_MODELS_SINGLE_ATOMIC_PROPOSITION_LABELING_H_
 #define MRMC_MODELS_SINGLE_ATOMIC_PROPOSITION_LABELING_H_
 
-#include "src/vector/bitvector.h"
+#include "src/storage/BitVector.h"
 
 namespace mrmc {
 

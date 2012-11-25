@@ -18,7 +18,7 @@
 #include "src/formula/Until.h"
 
 #include "src/models/dtmc.h"
-#include "src/vector/bitvector.h"
+#include "src/storage/BitVector.h"
 #include <vector>
 
 namespace mrmc {

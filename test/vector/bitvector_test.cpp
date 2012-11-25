@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "src/vector/bitvector.h"
+#include "src/storage/BitVector.h"
 #include "src/exceptions/invalid_argument.h"
 
 TEST(BitVectorTest, GetSetTest) {
