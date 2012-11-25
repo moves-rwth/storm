@@ -18,7 +18,7 @@ TEST(EigenSparseMatrixTest, BasicReadWriteTest) {
 	int position_row[50] = {
 		2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
 		2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-		2, 2, 2, 2, /* first row empty, one full row � 25 minus the diagonal entry */
+		2, 2, 2, 2, /* first row empty, one full row ��� 25 minus the diagonal entry */
 		4, 4, /* one empty row, then first and last column */
 		13, 13, 13, 13, /* a few empty rows, middle columns */
 		24, 24, 24, 24, 24, 24, 24, 24, 24, 24,

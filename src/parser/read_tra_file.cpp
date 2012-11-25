@@ -18,10 +18,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
-#include <pantheios/inserters/real.hpp>
-
 namespace mrmc {
 
 namespace parser{
@@ -46,7 +42,6 @@ namespace parser{
 */
 static uint_fast32_t make_first_pass(FILE* p) {
    if(p==NULL) {
-      pantheios::log_ERROR("make_first_pass was called with NULL! (SHOULD NEVER HAPPEN)");
       throw exceptions::file_IO_exception ("make_first_pass: File not readable (this should be checked before calling this function!)");
    }
    char s[BUFFER_SIZE];                 //String buffer
@@ -55,7 +50,6 @@ static uint_fast32_t make_first_pass(FILE* p) {
    //Reading No. of states
    if (fgets(s, BUFFER_SIZE, p) != NULL) {
       if (sscanf( s, "STATES %d", &rows) == 0) {
-         pantheios::log_WARNING(pantheios::integer(rows));
          (void)fclose(p);
          throw mrmc::exceptions::wrong_file_format();
       }
@@ -105,7 +99,6 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 
 	p = fopen(filename, "r");
 	if(p == NULL) {
-		pantheios::log_ERROR("File ", filename, " was not readable (Does it exist?)");
 		throw exceptions::file_IO_exception("mrmc::read_tra_file: Error opening file! (Does it exist?)");
 		return NULL;
 	}
@@ -116,7 +109,6 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 
 	//Reading No. of states
 	if ((fgets(s, BUFFER_SIZE, p) == NULL) || (sscanf(s, "STATES %d", &rows) == 0)) {
-		pantheios::log_WARNING(pantheios::integer(rows));
 		(void)fclose(p);
 		throw mrmc::exceptions::wrong_file_format();
 		return NULL;
@@ -133,9 +125,6 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 		return NULL;
 	}
 
-   pantheios::log_DEBUG("Creating matrix with ",
-                        pantheios::integer(rows), " rows and ",
-                        pantheios::integer(non_zero), " Non-Zero-Elements");
 	/* Creating matrix
 	 * Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
 	 * non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
@@ -158,17 +147,11 @@ sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename) {
 			delete sp;
 			return NULL;
 		}
-		pantheios::log_DEBUG("Write value ",
-							pantheios::real(val),
-							" to position ",
-							pantheios::integer(row), " x ",
-							pantheios::integer(col));
 		sp->addNextValue(static_cast<uint_fast64_t>(row),static_cast<uint_fast64_t>(col),static_cast<uint_fast64_t>(val));
 	}
 
 	(void)fclose(p);
 
-	pantheios::log_DEBUG("Finalizing Matrix");
 	sp->finalize();
 	return sp;
 }

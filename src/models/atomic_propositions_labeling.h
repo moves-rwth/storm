@@ -8,14 +8,9 @@
 #ifndef MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_
 #define MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_
 
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
-
 #include <ostream>
 
 #include "single_atomic_proposition_labeling.h"
-
-#define USE_STD_UNORDERED_MAP
 
 /* Map types: By default, the boost hash map is used.
  * If the macro USE_STD_MAP is defined, the default C++ class (std::map)
@@ -35,9 +30,6 @@
 #endif
 
 #include <stdexcept>
-
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
 
 namespace mrmc {
 

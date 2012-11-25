@@ -176,4 +176,5 @@ Settings* instance()
 }
     
 } // namespace settings
+
 } // namespace mrmc
