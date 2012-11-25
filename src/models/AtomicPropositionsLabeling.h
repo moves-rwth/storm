@@ -8,9 +8,8 @@
 #ifndef MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_
 #define MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_
 
+#include "src/storage/BitVector.h"
 #include <ostream>
-
-#include "src/models/single_atomic_proposition_labeling.h"
 
 /* Map types: By default, the boost hash map is used.
  * If the macro USE_STD_MAP is defined, the default C++ class (std::map)
@@ -47,14 +46,14 @@ public:
 	/*!
 	 * Constructs an empty atomic propositions labeling for the given number
 	 * of states and amount of atomic propositions.
-	 * @param state_count The number of states of the model.
-	 * @param ap_count The number of atomic propositions.
+	 * @param stateCount The number of states of the model.
+	 * @param apCountMax The number of atomic propositions.
 	 */
-	AtomicPropositionsLabeling(const uint_fast32_t state_count, const uint_fast32_t ap_count)
-			: state_count(state_count), ap_count(ap_count), aps_current(0) {
-		this->single_labelings = new SingleAtomicPropositionLabeling*[ap_count];
-		for (uint_fast32_t i = 0; i < ap_count; ++i) {
-			this->single_labelings[i] = new SingleAtomicPropositionLabeling(state_count);
+	AtomicPropositionsLabeling(const uint_fast32_t stateCount, const uint_fast32_t apCountMax)
+			: stateCount(stateCount), apCountMax(apCountMax), apsCurrent(0) {
+		this->singleLabelings = new mrmc::storage::BitVector*[apCountMax];
+		for (uint_fast32_t i = 0; i < apCountMax; ++i) {
+			this->singleLabelings[i] = new mrmc::storage::BitVector(stateCount);
 		}
 	}
 
@@ -62,15 +61,16 @@ public:
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given atomic proposition
 	 * labeling.
+	 * @param atomicPropositionsLabeling The atomic propositions labeling to copy.
 	 */
-	AtomicPropositionsLabeling(const AtomicPropositionsLabeling& atomic_propositions_labeling)
-			: state_count(atomic_propositions_labeling.state_count),
-			  ap_count(atomic_propositions_labeling.ap_count),
-			  aps_current(atomic_propositions_labeling.aps_current),
-			  name_to_labeling_map(atomic_propositions_labeling.name_to_labeling_map) {
-		this->single_labelings = new SingleAtomicPropositionLabeling*[ap_count];
-		for (uint_fast32_t i = 0; i < ap_count; ++i) {
-			this->single_labelings[i] = new SingleAtomicPropositionLabeling(*atomic_propositions_labeling.single_labelings[i]);
+	AtomicPropositionsLabeling(const AtomicPropositionsLabeling& atomicPropositionsLabeling)
+			: stateCount(atomicPropositionsLabeling.stateCount),
+			  apCountMax(atomicPropositionsLabeling.apCountMax),
+			  apsCurrent(atomicPropositionsLabeling.apsCurrent),
+			  nameToLabelingMap(atomicPropositionsLabeling.nameToLabelingMap) {
+		this->singleLabelings = new mrmc::storage::BitVector*[apCountMax];
+		for (uint_fast32_t i = 0; i < apCountMax; ++i) {
+			this->singleLabelings[i] = new mrmc::storage::BitVector(*atomicPropositionsLabeling.singleLabelings[i]);
 		}
 	}
 
@@ -80,12 +80,12 @@ public:
 	 */
 	virtual ~AtomicPropositionsLabeling() {
 		// delete all the single atomic proposition labelings in the map
-		for (uint_fast32_t i = 0; i < ap_count; ++i) {
-			delete this->single_labelings[i];
-			this->single_labelings[i] = NULL;
+		for (uint_fast32_t i = 0; i < apCountMax; ++i) {
+			delete this->singleLabelings[i];
+			this->singleLabelings[i] = NULL;
 		}
-		delete[] this->single_labelings;
-		this->single_labelings = NULL;
+		delete[] this->singleLabelings;
+		this->singleLabelings = NULL;
 	}
 
 	/*!
@@ -96,16 +96,16 @@ public:
 	 * @return The index of the new proposition.
 	 */
 	uint_fast32_t addAtomicProposition(std::string ap) {
-		if (name_to_labeling_map.count(ap) != 0) {
+		if (nameToLabelingMap.count(ap) != 0) {
 			throw std::out_of_range("Atomic Proposition already exists.");
 		}
-		if (aps_current >= ap_count) {
+		if (apsCurrent >= apCountMax) {
 			throw std::out_of_range("Added more atomic propositions than"
 					"previously declared.");
 		}
-		name_to_labeling_map[ap] = aps_current;
+		nameToLabelingMap[ap] = apsCurrent;
 
-		uint_fast32_t returnValue = aps_current++;
+		uint_fast32_t returnValue = apsCurrent++;
 		return returnValue;
 	}
 
@@ -115,7 +115,7 @@ public:
 	 * @return True if the proposition was added to the labeling, false otherwise.
 	 */
 	bool containsAtomicProposition(std::string proposition) {
-		return (name_to_labeling_map.count(proposition) != 0);
+		return (nameToLabelingMap.count(proposition) != 0);
 	}
 
 	/*!
@@ -124,13 +124,13 @@ public:
 	 * @param state The index of the state to label.
 	 */
 	void addAtomicPropositionToState(std::string ap, const uint_fast32_t state) {
-		if (name_to_labeling_map.count(ap) == 0) {
+		if (nameToLabelingMap.count(ap) == 0) {
 			throw std::out_of_range("Atomic Proposition '" + ap + "' unknown.");
 		}
-		if (state >= state_count) {
+		if (state >= stateCount) {
 			throw std::out_of_range("State index out of range.");
 		}
-		this->single_labelings[name_to_labeling_map[ap]]->addLabelToState(state);
+		this->singleLabelings[nameToLabelingMap[ap]]->set(state, true);
 	}
 
 	/*!
@@ -141,7 +141,7 @@ public:
 	 * otherwise.
 	 */
 	bool stateHasAtomicProposition(std::string ap, const uint_fast32_t state) {
-		return this->single_labelings[name_to_labeling_map[ap]]->hasLabel(state);
+		return this->singleLabelings[nameToLabelingMap[ap]]->get(state);
 	}
 
 	/*!
@@ -150,7 +150,7 @@ public:
 	 * @return The number of atomic propositions.
 	 */
 	uint_fast32_t getNumberOfAtomicPropositions() {
-		return ap_count;
+		return apCountMax;
 	}
 
 	/*!
@@ -159,8 +159,8 @@ public:
 	 * @return A pointer to an instance of SingleAtomicPropositionLabeling that
 	 * represents the labeling of the states with the given atomic proposition.
 	 */
-	SingleAtomicPropositionLabeling* getAtomicProposition(std::string ap) {
-		return (this->single_labelings[name_to_labeling_map[ap]]);
+	mrmc::storage::BitVector* getAtomicProposition(std::string ap) {
+		return (this->singleLabelings[nameToLabelingMap[ap]]);
 	}
 
    /*!
@@ -170,8 +170,8 @@ public:
 	uint_fast64_t getSizeInMemory() {
 		uint_fast64_t size = sizeof(*this);
 		// add sizes of all single  labelings
-		for (uint_fast32_t i = 0; i < ap_count; i++) {
-			size += this->single_labelings[i]->getSizeInMemory();
+		for (uint_fast32_t i = 0; i < apCountMax; i++) {
+			size += this->singleLabelings[i]->getSizeInMemory();
 		}
 		return size;
 	}
@@ -183,9 +183,9 @@ public:
 	void printAtomicPropositionsInformationToStream(std::ostream& out) {
 		out << "Atomic Propositions: \t" << this->getNumberOfAtomicPropositions()
 			<< std::endl;
-		for(auto ap : this->name_to_labeling_map) {
+		for(auto ap : this->nameToLabelingMap) {
 			out << "\t * " << ap.first << " -> "
-				<< this->single_labelings[ap.second]->getNumberOfLabeledStates();
+				<< this->singleLabelings[ap.second]->getNumberOfSetBits();
 			out << " state(s)" << std::endl;
 		}
 	}
@@ -193,31 +193,31 @@ public:
 private:
 
 	/*! The number of states whose labels are to be stored by this object. */
-	uint_fast32_t state_count;
+	uint_fast32_t stateCount;
 
 	/*! The number of different atomic propositions this object can store. */
-	uint_fast32_t ap_count;
+	uint_fast32_t apCountMax;
 
 	/*!
 	 * The number of different atomic propositions currently associated with
 	 * this labeling. Used to prevent too many atomic propositions from being
 	 * added to this object.
 	 */
-	uint_fast32_t aps_current;
+	uint_fast32_t apsCurrent;
 
 	/*!
 	 * Associates a name of an atomic proposition to its corresponding labeling
 	 * by mapping the name to a specific index in the array of all
 	 * individual labelings.
 	 */
-	MAP<std::string, uint_fast32_t> name_to_labeling_map;
+	MAP<std::string, uint_fast32_t> nameToLabelingMap;
 
 	/*!
 	 * Stores all individual labelings. To find the labeling associated with
 	 * a particular atomic proposition, the map from names to indices in this
 	 * array has to be used.
 	 */
-	SingleAtomicPropositionLabeling** single_labelings;
+	mrmc::storage::BitVector** singleLabelings;
 };
 
 } // namespace models

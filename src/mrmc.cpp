@@ -18,7 +18,7 @@
 #include "mrmc-config.h"
 #include "src/models/dtmc.h"
 #include "src/storage/SquareSparseMatrix.h"
-#include "src/models/atomic_propositions_labeling.h"
+#include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/read_lab_file.h"
 #include "src/parser/read_tra_file.h"
 #include "src/utility/settings.h"

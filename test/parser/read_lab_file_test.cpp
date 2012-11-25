@@ -7,7 +7,7 @@
 
 #include "gtest/gtest.h"
 #include "mrmc-config.h"
-#include "src/models/atomic_propositions_labeling.h"
+#include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/read_lab_file.h"
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"

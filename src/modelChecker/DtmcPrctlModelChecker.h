@@ -40,7 +40,7 @@ class DtmcPrctlModelChecker {
       ~DtmcPrctlModelChecker();
 
       virtual void makeAbsorbing(mrmc::storage::BitVector*) = 0;
-      virtual mrmc::storage::BitVector getStatesSatisying(mrmc::models::SingleAtomicPropositionLabeling*) = 0;
+      virtual mrmc::storage::BitVector& getStatesSatisying(std::string) = 0;
       virtual std::vector<T> multiplyMatrixVector(std::vector<T>*) = 0;
 
       virtual mrmc::storage::BitVector checkStateFormula(mrmc::formula::PCTLStateFormula* formula) {

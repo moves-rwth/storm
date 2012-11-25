@@ -8,7 +8,7 @@
 #ifndef READ_LAB_FILE_H_
 #define READ_LAB_FILE_H_
 
-#include "src/models/atomic_propositions_labeling.h"
+#include "src/models/AtomicPropositionsLabeling.h"
 
 
 namespace mrmc {

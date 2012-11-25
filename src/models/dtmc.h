@@ -10,7 +10,7 @@
 
 #include <ostream>
 
-#include "atomic_propositions_labeling.h"
+#include "AtomicPropositionsLabeling.h"
 #include "backward_transitions.h"
 #include "src/storage/SquareSparseMatrix.h"
 
