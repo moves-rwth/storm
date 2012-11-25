@@ -29,7 +29,7 @@ namespace sparse {
  * where rows is the first argument to the constructor.
  */
 template<class T>
-class StaticSparseMatrix {
+class SquareSparseMatrix {
 public:
 
 	/*!
@@ -56,24 +56,24 @@ public:
 	 * Constructs a sparse matrix object with the given number of rows.
 	 * @param rows The number of rows of the matrix
 	 */
-	StaticSparseMatrix(uint_fast64_t rows)
-			: rowCount(rows), nonZeroEntryCount(0), valueStorage(nullptr), diagonalStorage(nullptr), columnIndications(nullptr), rowIndications(nullptr), internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
+	SquareSparseMatrix(uint_fast64_t rows)
+			: rowCount(rows), nonZeroEntryCount(0), valueStorage(nullptr),
+			  diagonalStorage(nullptr),columnIndications(nullptr), rowIndications(nullptr),
+			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
 
 	//! Copy Constructor
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given sparse matrix.
 	 * @param ssm A reference to the matrix to be copied.
 	 */
-	StaticSparseMatrix(const StaticSparseMatrix<T> &ssm)
-			: internalStatus(ssm.internalStatus),
-			  currentSize(ssm.currentSize), lastRow(ssm.lastRow),
-			  rowCount(ssm.rowCount),
-			  nonZeroEntryCount(ssm.nonZeroEntryCount) {
+	SquareSparseMatrix(const SquareSparseMatrix<T> &ssm)
+			: internalStatus(ssm.internalStatus), currentSize(ssm.currentSize), lastRow(ssm.lastRow),
+			  rowCount(ssm.rowCount), nonZeroEntryCount(ssm.nonZeroEntryCount) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		// Check whether copying the matrix is safe.
 		if (!ssm.hasError()) {
 			LOG4CPLUS_ERROR(logger, "Trying to copy sparse matrix in error state.");
-			throw mrmc::exceptions::invalid_argument();
+			throw mrmc::exceptions::invalid_argument("Trying to copy sparse matrix in error state.");
 		} else {
 			// Try to prepare the internal storage and throw an error in case
 			// of a failure.
@@ -107,7 +107,7 @@ public:
 	/*!
 	 * Destructor. Performs deletion of the reserved storage arrays.
 	 */
-	~StaticSparseMatrix() {
+	~SquareSparseMatrix() {
 		setState(MatrixStatus::UnInitialized);
 		if (valueStorage != NULL) {
 			//free(value_storage);
@@ -141,15 +141,15 @@ public:
 		if (internalStatus != MatrixStatus::UnInitialized) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize matrix that is not uninitialized.");
-			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::initialize: Invalid state for status flag != 0 - Already initialized?");
+			throw mrmc::exceptions::invalid_state("Trying to initialize matrix that is not uninitialized.");
 		} else if (rowCount == 0) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to create initialize a matrix with 0 rows.");
-			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: Matrix with 0 rows is not reasonable");
+			throw mrmc::exceptions::invalid_argument("Trying to create initialize a matrix with 0 rows.");
 		} else if (((rowCount * rowCount) - rowCount) < nonZeroEntries) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize a matrix with more non-zero entries than there can be.");
-			throw mrmc::exceptions::invalid_argument("mrmc::StaticSparseMatrix::initialize: More non-zero entries than entries in target matrix");
+			throw mrmc::exceptions::invalid_argument("Trying to initialize a matrix with more non-zero entries than there can be.");
 		} else {
 			// If it is safe, initialize necessary members and prepare the
 			// internal storage.
@@ -180,7 +180,7 @@ public:
 		if (!eigenSparseMatrix.isCompressed()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that is not in compressed form.");
-			throw mrmc::exceptions::invalid_argument("StaticSparseMatrix::initialize: Throwing invalid_argument: eigen_sparse_matrix is not in Compressed form.");
+			throw mrmc::exceptions::invalid_argument("Trying to initialize from an Eigen matrix that is not in compressed form.");
 		}
 
 		// Compute the actual (i.e. non-diagonal) number of non-zero entries.
@@ -273,7 +273,7 @@ public:
 		if ((row > rowCount) || (col > rowCount)) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ").");
-			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::addNextValue: row or col not in 0 .. rows");
+			throw mrmc::exceptions::out_of_range("Trying to add a value at illegal position.");
 		}
 
 		if (row == col) { // Set a diagonal element.
@@ -306,11 +306,11 @@ public:
 		if (!isInitialized()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to finalize an uninitialized matrix.");
-			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::finalize: Invalid state for internal state not Initialized - Already finalized?");
+			throw mrmc::exceptions::invalid_state("Trying to finalize an uninitialized matrix.");
 		} else if (currentSize != nonZeroEntryCount) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to finalize a matrix that was initialized with more non-zero entries than given.");
-			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::finalize: Wrong call count for addNextValue");
+			throw mrmc::exceptions::invalid_state("Trying to finalize a matrix that was initialized with more non-zero entries than given.");
 		} else {
 			// Fill in the missing entries in the row_indications array.
 			// (Can happen because of empty rows at the end.)
@@ -344,7 +344,7 @@ public:
 		// Check for illegal access indices.
 		if ((row > rowCount) || (col > rowCount)) {
 			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
-			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::getValue: row or col not in 0 .. rows");
+			throw mrmc::exceptions::out_of_range("Trying to read a value from illegal position.");
 			return false;
 		}
 
@@ -468,7 +468,7 @@ public:
 		if (!isReadReady()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
-			throw mrmc::exceptions::invalid_state("StaticSparseMatrix::toEigenSparseMatrix: Invalid state for internal state not ReadReady.");
+			throw mrmc::exceptions::invalid_state("Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
 		} else {
 			// Create a
 			int_fast32_t eigenRows = static_cast<int_fast32_t>(rowCount);
@@ -574,7 +574,7 @@ public:
 		// Check whether the accessed state exists.
 		if (row > rowCount) {
 			LOG4CPLUS_ERROR(logger, "Trying to make an illegal row " << row << " absorbing.");
-			throw mrmc::exceptions::out_of_range("StaticSparseMatrix::makeStateFinal: state not in 0 .. rows");
+			throw mrmc::exceptions::out_of_range("Trying to make an illegal row absorbing.");
 			return false;
 		}
 

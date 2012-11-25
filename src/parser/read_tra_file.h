@@ -7,11 +7,11 @@
 
 #ifndef READ_TRA_FILE_H_
 #define READ_TRA_FILE_H_
-#include "src/sparse/static_sparse_matrix.h"
+#include "src/storage/SquareSparseMatrix.h"
 namespace mrmc{
 namespace parser {
 
-mrmc::sparse::StaticSparseMatrix<double> * read_tra_file(const char * filename);
+mrmc::sparse::SquareSparseMatrix<double> * read_tra_file(const char * filename);
 
 }
 }

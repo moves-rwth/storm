@@ -7,7 +7,7 @@
 
 #include "gtest/gtest.h"
 #include "mrmc-config.h"
-#include "src/sparse/static_sparse_matrix.h"
+#include "src/storage/SquareSparseMatrix.h"
 #include "src/parser/read_tra_file.h"
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
@@ -20,7 +20,7 @@ TEST(ReadTraFileTest, NonExistingFileTest) {
 /* The following test case is based on one of the original MRMC test cases
  */
 TEST(ReadTraFileTest, ParseFileTest1) {
-	mrmc::sparse::StaticSparseMatrix<double> *result = NULL;
+	mrmc::sparse::SquareSparseMatrix<double> *result = NULL;
 	ASSERT_NO_THROW(result = mrmc::parser::read_tra_file(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
 
 	if (result != NULL) {

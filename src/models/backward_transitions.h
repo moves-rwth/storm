@@ -9,7 +9,7 @@
 #define BACKWARD_TRANSITIONS_H_
 
 #include <iostream>
-#include "src/sparse/static_sparse_matrix.h"
+#include "src/storage/SquareSparseMatrix.h"
 
 namespace mrmc {
 
@@ -35,7 +35,7 @@ public:
 	 * @param transition_matrix The (0-based) matrix representing the transition
 	 * relation.
 	 */
-	BackwardTransitions(mrmc::sparse::StaticSparseMatrix<T>* transitionMatrix) {
+	BackwardTransitions(mrmc::sparse::SquareSparseMatrix<T>* transitionMatrix) {
 		numberOfNonZeroTransitions = transitionMatrix->getNonZeroEntryCount();
 		this->predecessor_list = new uint_fast64_t[numberOfNonZeroTransitions];
 		
