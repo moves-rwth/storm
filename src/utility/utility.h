@@ -8,7 +8,7 @@
 #ifndef UTILITY_H_
 #define UTILITY_H_
 
-#include "src/models/dtmc.h"
+#include "src/models/Dtmc.h"
 
 namespace mrmc  {
 
