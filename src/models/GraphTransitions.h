@@ -39,7 +39,7 @@ public:
 	 * of the backwards transition relation.
 	 */
 	GraphTransitions(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix, bool forward)
-			: numberOfStates(transitionMatrix->getRowCount()), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()), predecessor_list(nullptr), state_indices_list(nullptr) {
+			: predecessor_list(nullptr), state_indices_list(nullptr), numberOfStates(transitionMatrix->getRowCount()), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
 		if (forward) {
 			this->initializeForward(transitionMatrix);
 		} else {
