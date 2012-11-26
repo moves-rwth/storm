@@ -5,11 +5,12 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef BACKWARD_TRANSITIONS_H_
-#define BACKWARD_TRANSITIONS_H_
+#ifndef GRAPHTRANSITIONS_H_
+#define BACKWARDTRANSITIONS_H_
 
-#include <iostream>
 #include "src/storage/SquareSparseMatrix.h"
+
+#include <string.h>
 
 namespace mrmc {
 
@@ -20,7 +21,7 @@ namespace models {
  * given size.
  */
 template <class T>
-class BackwardTransitions {
+class GraphTransitions {
 
 public:
 	/*!
@@ -30,13 +31,84 @@ public:
 
 	//! Constructor
 	/*!
-	 * Constructs a backward transitions object from the given sparse matrix
-	 * representing the (forward) transition relation.
-	 * @param transition_matrix The (0-based) matrix representing the transition
+	 * Constructs an object representing the graph structure of the given
+	 * transition relation, which is given by a sparse matrix.
+	 * @param transitionMatrix The (0-based) matrix representing the transition
 	 * relation.
+	 * @param forward If set to true, this objects will store the graph structure
+	 * of the backwards transition relation.
 	 */
-	BackwardTransitions(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix)
-			: numberOfStates(transitionMatrix->getRowCount()), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
+	GraphTransitions(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix, bool forward)
+			: numberOfStates(transitionMatrix->getRowCount()), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()), predecessor_list(nullptr), state_indices_list(nullptr) {
+		if (forward) {
+			this->initializeForward(transitionMatrix);
+		} else {
+			this->initializeBackward(transitionMatrix);
+		}
+	}
+
+	//! Destructor
+	/*!
+	 * Destructor. Frees the internal storage.
+	 */
+	~GraphTransitions() {
+		if (this->predecessor_list != nullptr) {
+			delete[] this->predecessor_list;
+		}
+		if (this->state_indices_list != nullptr) {
+			delete[] this->state_indices_list;
+		}
+	}
+
+	/*!
+	 * Returns an iterator to the predecessors of the given states.
+	 * @param state The state for which to get the predecessor iterator.
+	 * @return An iterator to the predecessors of the given states.
+	 */
+	state_predecessor_iterator beginStatePredecessorIterator(uint_fast64_t state) const {
+		return this->predecessor_list + this->state_indices_list[state];
+	}
+
+	/*!
+	 * Returns an iterator referring to the element after the predecessors of
+	 * the given state.
+	 * @param row The state for which to get the iterator.
+	 * @return An iterator referring to the element after the predecessors of
+	 * the given state.
+	 */
+	state_predecessor_iterator endStatePredecessorIterator(uint_fast64_t state) const {
+		return this->predecessor_list + this->state_indices_list[state + 1];
+	}
+
+private:
+
+	/*!
+	 * Initializes this graph transitions object using the forward transition
+	 * relation given by means of a sparse matrix.
+	 */
+	void initializeForward(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix) {
+		this->predecessor_list = new uint_fast64_t[numberOfNonZeroTransitions];
+		this->state_indices_list = new uint_fast64_t[numberOfStates + 1];
+
+		// First, we copy the index list from the sparse matrix as this will
+		// stay the same.
+		memcpy(this->state_indices_list, transitionMatrix->getRowIndicationsPointer(), numberOfStates + 1);
+
+		// Now we can iterate over all rows of the transition matrix and record
+		// the target state.
+		for (uint_fast64_t i = 0, currentNonZeroElement = 0; i < numberOfStates; i++) {
+			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
+				this->state_indices_list[currentNonZeroElement++] = *rowIt;
+			}
+		}
+	}
+
+	/*!
+	 * Initializes this graph transitions object using the backwards transition
+	 * relation, whose forward transition relation is given by means of a sparse
+	 * matrix.
+	 */
+	void initializeBackward(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix) {
 		this->predecessor_list = new uint_fast64_t[numberOfNonZeroTransitions];
 		this->state_indices_list = new uint_fast64_t[numberOfStates + 1];
 
@@ -76,40 +148,6 @@ public:
 		delete[] next_state_index_list;
 	}
 
-	//! Destructor
-	/*!
-	 * Destructor. Frees the internal storage.
-	 */
-	~BackwardTransitions() {
-		if (this->predecessor_list != nullptr) {
-			delete[] this->predecessor_list;
-		}
-		if (this->state_indices_list != nullptr) {
-			delete[] this->state_indices_list;
-		}
-	}
-
-	/*!
-	 * Returns an iterator to the predecessors of the given states.
-	 * @param state The state for which to get the predecessor iterator.
-	 * @return An iterator to the predecessors of the given states.
-	 */
-	state_predecessor_iterator beginStatePredecessorIterator(uint_fast64_t state) const {
-		return this->predecessor_list + this->state_indices_list[state];
-	}
-
-	/*!
-	 * Returns an iterator referring to the element after the predecessors of
-	 * the given state.
-	 * @param row The state for which to get the iterator.
-	 * @return An iterator referring to the element after the predecessors of
-	 * the given state.
-	 */
-	state_predecessor_iterator endStatePredecessorIterator(uint_fast64_t state) const {
-		return this->predecessor_list + this->state_indices_list[state + 1];
-	}
-
-private:
 	/*! A list of predecessors for *all* states. */
 	uint_fast64_t* predecessor_list;
 
@@ -136,4 +174,4 @@ private:
 
 } // namespace mrmc
 
-#endif /* BACKWARD_TRANSITIONS_H_ */
+#endif /* GRAPHTRANSITIONS_H_ */

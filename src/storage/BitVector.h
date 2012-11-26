@@ -16,6 +16,8 @@
 
 extern log4cplus::Logger logger;
 
+#include <iostream>
+
 namespace mrmc {
 
 namespace storage {
@@ -26,28 +28,85 @@ namespace storage {
 class BitVector {
 
 public:
+	/*!
+	 * A class that enables iterating over the indices of the bit vector whose
+	 * bits are set to true. Note that this is a const iterator, which cannot
+	 * alter the bit vector.
+	 */
 	class constIndexIterator {
 	public:
-		constIndexIterator(uint_fast64_t* bucketPtr, uint_fast64_t* endBucketPtr) : bucketPtr(bucketPtr), endBucketPtr(endBucketPtr), offset(0), currentBitInByte(0) { }
+		/*!
+		 * Constructs a const iterator using the given pointer to the first bucket
+		 * as well as the given pointer to the element past the bucket array.
+		 * @param bucketPtr A pointer to the first bucket of the bucket array.
+		 * @param endBucketPtr A pointer to the element past the bucket array.
+		 * This is needed to ensure iteration is stopped properly.
+		 */
+		constIndexIterator(uint64_t* bucketPtr, uint64_t* endBucketPtr) : bucketPtr(bucketPtr), endBucketPtr(endBucketPtr), offset(0), currentBitInByte(0) {
+			// If the first bit is not set, then we actually need to find the
+			// position of the first bit that is set.
+			if ((*bucketPtr & 1) == 0) {
+				++(*this);
+			}
+		}
+
+		/*!
+		 * Constructs a const iterator from the given bucketPtr. As the other members
+		 * are initialized to zero, this should only be used for constructing iterators
+		 * that are to be compared with a fully initialized iterator, not for creating
+		 * a iterator to be used for actually iterating.
+		 */
+		constIndexIterator(uint64_t* bucketPtr) : bucketPtr(bucketPtr), endBucketPtr(nullptr), offset(0), currentBitInByte(0) { }
+
+		/*!
+		 * Increases the position of the iterator to the position of the next bit that
+		 * is set to true.
+		 * @return A reference to this iterator.
+		 */
 		constIndexIterator& operator++() {
 			do {
-				uint_fast64_t remainingInBucket = *bucketPtr >> ++currentBitInByte;
+				// Compute the remaining bucket content by a right shift
+				// to the current bit.
+				uint_fast64_t remainingInBucket = *bucketPtr >> currentBitInByte++;
+				// Check if there is at least one bit in the remainder of the bucket
+				// that is set to true.
 				if (remainingInBucket != 0) {
+					// Find that bit.
 					while ((remainingInBucket & 1) == 0) {
 						remainingInBucket >>= 1;
 						++currentBitInByte;
 					}
+					return *this;
 				}
-				offset <<= 6; ++bucketPtr; currentBitInByte = 0;
+
+				// Advance to the next bucket.
+				offset += 64; ++bucketPtr; currentBitInByte = 0;
 			} while (bucketPtr != endBucketPtr);
 			return *this;
 		}
-		uint_fast64_t operator*() { return offset + currentBitInByte; }
-		bool operator!=(constIndexIterator& rhs) { return bucketPtr != rhs.bucketPtr; }
+
+		/*!
+		 * Returns the index of the current bit that is set to true.
+		 * @return The index of the current bit that is set to true.
+		 */
+		uint_fast64_t operator*() const { return offset + currentBitInByte; }
+
+		/*!
+		 * Compares the iterator with another iterator to determine whether
+		 * the iteration process has reached the end.
+		 */
+		bool operator!=(const constIndexIterator& rhs) const { return bucketPtr != rhs.bucketPtr; }
 	private:
-		uint_fast64_t* bucketPtr;
-		uint_fast64_t* endBucketPtr;
+		/*! A pointer to the current bucket. */
+		uint64_t* bucketPtr;
+
+		/*! A pointer to the element after the last bucket. */
+		uint64_t* endBucketPtr;
+
+		/*! The number of bits in this bit vector before the current bucket. */
 		uint_fast64_t offset;
+
+		/*! The index of the current bit in the current bucket. */
 		uint_fast8_t currentBitInByte;
 	};
 
@@ -286,7 +345,7 @@ public:
 	 * Returns an iterator pointing at the element past the bit vector.
 	 */
 	constIndexIterator end() const {
-		return constIndexIterator(this->bucketArray + bucketCount, 0);
+		return constIndexIterator(this->bucketArray + bucketCount);
 	}
 
 private:

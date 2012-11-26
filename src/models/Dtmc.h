@@ -11,7 +11,7 @@
 #include <ostream>
 
 #include "AtomicPropositionsLabeling.h"
-#include "BackwardTransitions.h"
+#include "GraphTransitions.h"
 #include "src/storage/SquareSparseMatrix.h"
 
 namespace mrmc {
@@ -36,7 +36,7 @@ public:
 	 * propositions to each state.
 	 */
 	Dtmc(mrmc::storage::SquareSparseMatrix<T>* probability_matrix, mrmc::models::AtomicPropositionsLabeling* state_labeling)
-			: backward_transitions(probability_matrix) {
+			: backward_transitions(probability_matrix, false) {
 		this->probability_matrix = probability_matrix;
 		this->state_labeling = state_labeling;
 	}
@@ -118,9 +118,9 @@ private:
 
 	/*!
 	 * A data structure that stores the predecessors for all states. This is
-	 * needed for a backwards search.
+	 * needed for backwards directed searches.
 	 */
-	mrmc::models::BackwardTransitions<T> backward_transitions;
+	mrmc::models::GraphTransitions<T> backward_transitions;
 };
 
 } // namespace models
