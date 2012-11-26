@@ -30,15 +30,15 @@ public:
 	/*!
 	 * Constructs a DTMC object from the given transition probability matrix and
 	 * the given labeling of the states.
-	 * @param probability_matrix The transition probability function of the
+	 * @param probabilityMatrix The transition probability function of the
 	 * DTMC given by a matrix.
-	 * @param state_labeling The labeling that assigns a set of atomic
+	 * @param stateLabeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
-	Dtmc(mrmc::storage::SquareSparseMatrix<T>* probability_matrix, mrmc::models::AtomicPropositionsLabeling* state_labeling)
-			: backward_transitions(probability_matrix, false) {
-		this->probability_matrix = probability_matrix;
-		this->state_labeling = state_labeling;
+	Dtmc(mrmc::storage::SquareSparseMatrix<T>* probabilityMatrix, mrmc::models::AtomicPropositionsLabeling* stateLabeling)
+			: backwardTransitions(probabilityMatrix, false) {
+		this->probabilityMatrix = probabilityMatrix;
+		this->stateLabeling = stateLabeling;
 	}
 
 	//! Copy Constructor
@@ -46,19 +46,19 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given DTMC.
 	 * @param dtmc A reference to the DTMC that is to be copied.
 	 */
-	Dtmc(const Dtmc<T> &dtmc) : probability_matrix(dtmc.probability_matrix),
-			state_labeling(dtmc.state_labeling) { }
+	Dtmc(const Dtmc<T> &dtmc) : probabilityMatrix(dtmc.probabilityMatrix),
+			stateLabeling(dtmc.stateLabeling) { }
 
 	//! Destructor
 	/*!
 	 * Destructor. Frees the matrix and labeling associated with this DTMC.
 	 */
 	~Dtmc() {
-		if (this->probability_matrix != nullptr) {
-			delete this->probability_matrix;
+		if (this->probabilityMatrix != nullptr) {
+			delete this->probabilityMatrix;
 		}
-		if (this->state_labeling != nullptr) {
-			delete this->state_labeling;
+		if (this->stateLabeling != nullptr) {
+			delete this->stateLabeling;
 		}
 	}
 
@@ -67,7 +67,7 @@ public:
 	 * @return The size of the state space of the DTMC.
 	 */
 	uint_fast64_t getStateSpaceSize() {
-		return this->probability_matrix->getRowCount();
+		return this->probabilityMatrix->getRowCount();
 	}
 
 	/*!
@@ -75,7 +75,7 @@ public:
 	 * @return The number of (non-zero) transitions of the DTMC.
 	 */
 	uint_fast64_t getNumberOfTransitions() {
-		return this->probability_matrix->getNonZeroEntryCount();
+		return this->probabilityMatrix->getNonZeroEntryCount();
 	}
 
 	/*!
@@ -85,7 +85,7 @@ public:
 	 * function.
 	 */
 	mrmc::storage::SquareSparseMatrix<T>* getTransitionProbabilityMatrix() {
-		return this->probability_matrix;
+		return this->probabilityMatrix;
 	}
 
 	/*!
@@ -97,12 +97,11 @@ public:
 			<< std::endl;
 		out << "Model type: \t\tDTMC" << std::endl;
 		out << "States: \t\t" << this->getStateSpaceSize() << std::endl;
-		out << "Transitions: \t\t" << this->getNumberOfTransitions()
-			<< std::endl;
-		this->state_labeling->printAtomicPropositionsInformationToStream(out);
+		out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
+		this->stateLabeling->printAtomicPropositionsInformationToStream(out);
 		out << "Size in memory: \t"
-			<< (this->probability_matrix->getSizeInMemory() +
-				this->state_labeling->getSizeInMemory() +
+			<< (this->probabilityMatrix->getSizeInMemory() +
+				this->stateLabeling->getSizeInMemory() +
 				sizeof(*this))/1024 << " kbytes" << std::endl;
 		out << "-------------------------------------------------------------- "
 			<< std::endl;
@@ -111,16 +110,16 @@ public:
 private:
 
 	/*! A matrix representing the transition probability function of the DTMC. */
-	mrmc::storage::SquareSparseMatrix<T>* probability_matrix;
+	mrmc::storage::SquareSparseMatrix<T>* probabilityMatrix;
 
 	/*! The labeling of the states of the DTMC. */
-	mrmc::models::AtomicPropositionsLabeling* state_labeling;
+	mrmc::models::AtomicPropositionsLabeling* stateLabeling;
 
 	/*!
 	 * A data structure that stores the predecessors for all states. This is
 	 * needed for backwards directed searches.
 	 */
-	mrmc::models::GraphTransitions<T> backward_transitions;
+	mrmc::models::GraphTransitions<T> backwardTransitions;
 };
 
 } // namespace models

@@ -27,7 +27,7 @@ public:
 	/*!
 	 * Just typedef the iterator as a pointer to the index type.
 	 */
-	typedef const uint_fast64_t * const state_predecessor_iterator;
+	typedef const uint_fast64_t * const statePredecessorIterator;
 
 	//! Constructor
 	/*!
@@ -39,7 +39,7 @@ public:
 	 * of the backwards transition relation.
 	 */
 	GraphTransitions(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix, bool forward)
-			: predecessor_list(nullptr), state_indices_list(nullptr), numberOfStates(transitionMatrix->getRowCount()), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
+			: successorList(nullptr), stateIndications(nullptr), numberOfStates(transitionMatrix->getRowCount()), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
 		if (forward) {
 			this->initializeForward(transitionMatrix);
 		} else {
@@ -52,11 +52,11 @@ public:
 	 * Destructor. Frees the internal storage.
 	 */
 	~GraphTransitions() {
-		if (this->predecessor_list != nullptr) {
-			delete[] this->predecessor_list;
+		if (this->successorList != nullptr) {
+			delete[] this->successorList;
 		}
-		if (this->state_indices_list != nullptr) {
-			delete[] this->state_indices_list;
+		if (this->stateIndications != nullptr) {
+			delete[] this->stateIndications;
 		}
 	}
 
@@ -65,8 +65,8 @@ public:
 	 * @param state The state for which to get the predecessor iterator.
 	 * @return An iterator to the predecessors of the given states.
 	 */
-	state_predecessor_iterator beginStatePredecessorIterator(uint_fast64_t state) const {
-		return this->predecessor_list + this->state_indices_list[state];
+	statePredecessorIterator beginStatePredecessorIterator(uint_fast64_t state) const {
+		return this->successorList + this->stateIndications[state];
 	}
 
 	/*!
@@ -76,8 +76,8 @@ public:
 	 * @return An iterator referring to the element after the predecessors of
 	 * the given state.
 	 */
-	state_predecessor_iterator endStatePredecessorIterator(uint_fast64_t state) const {
-		return this->predecessor_list + this->state_indices_list[state + 1];
+	statePredecessorIterator endStatePredecessorIterator(uint_fast64_t state) const {
+		return this->successorList + this->stateIndications[state + 1];
 	}
 
 private:
@@ -87,18 +87,18 @@ private:
 	 * relation given by means of a sparse matrix.
 	 */
 	void initializeForward(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix) {
-		this->predecessor_list = new uint_fast64_t[numberOfNonZeroTransitions];
-		this->state_indices_list = new uint_fast64_t[numberOfStates + 1];
+		this->successorList = new uint_fast64_t[numberOfNonZeroTransitions];
+		this->stateIndications = new uint_fast64_t[numberOfStates + 1];
 
 		// First, we copy the index list from the sparse matrix as this will
 		// stay the same.
-		memcpy(this->state_indices_list, transitionMatrix->getRowIndicationsPointer(), numberOfStates + 1);
+		memcpy(this->stateIndications, transitionMatrix->getRowIndicationsPointer(), numberOfStates + 1);
 
 		// Now we can iterate over all rows of the transition matrix and record
 		// the target state.
 		for (uint_fast64_t i = 0, currentNonZeroElement = 0; i < numberOfStates; i++) {
 			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
-				this->state_indices_list[currentNonZeroElement++] = *rowIt;
+				this->stateIndications[currentNonZeroElement++] = *rowIt;
 			}
 		}
 	}
@@ -109,53 +109,53 @@ private:
 	 * matrix.
 	 */
 	void initializeBackward(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix) {
-		this->predecessor_list = new uint_fast64_t[numberOfNonZeroTransitions];
-		this->state_indices_list = new uint_fast64_t[numberOfStates + 1];
+		this->successorList = new uint_fast64_t[numberOfNonZeroTransitions];
+		this->stateIndications = new uint_fast64_t[numberOfStates + 1];
 
 		// First, we need to count how many backward transitions each state has.
 		// NOTE: We disregard the diagonal here, as we only consider "true"
 		// predecessors.
 		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
 			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
-				this->state_indices_list[*rowIt + 1]++;
+				this->stateIndications[*rowIt + 1]++;
 			}
 		}
 
 		// Now compute the accumulated offsets.
 		for (uint_fast64_t i = 1; i < numberOfStates; i++) {
-			this->state_indices_list[i] = this->state_indices_list[i - 1] + this->state_indices_list[i];
+			this->stateIndications[i] = this->stateIndications[i - 1] + this->stateIndications[i];
 		}
 
 		// Put a sentinel element at the end of the indices list. This way,
 		// for each state i the range of indices can be read off between
 		// state_indices_list[i] and state_indices_list[i + 1].
-		this->state_indices_list[numberOfStates] = numberOfNonZeroTransitions;
+		this->stateIndications[numberOfStates] = numberOfNonZeroTransitions;
 
 		// Create an array that stores the next index for each state. Initially
 		// this corresponds to the previously computed accumulated offsets.
-		uint_fast64_t* next_state_index_list = new uint_fast64_t[numberOfStates];
-		memcpy(next_state_index_list, state_indices_list, numberOfStates * sizeof(uint_fast64_t));
+		uint_fast64_t* nextIndicesList = new uint_fast64_t[numberOfStates];
+		memcpy(nextIndicesList, stateIndications, numberOfStates * sizeof(uint_fast64_t));
 
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
 			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
-				this->predecessor_list[next_state_index_list[*rowIt]++] = i;
+				this->successorList[nextIndicesList[*rowIt]++] = i;
 			}
 		}
 
 		// Now we can dispose of the auxiliary array.
-		delete[] next_state_index_list;
+		delete[] nextIndicesList;
 	}
 
-	/*! A list of predecessors for *all* states. */
-	uint_fast64_t* predecessor_list;
+	/*! A list of successors for *all* states. */
+	uint_fast64_t* successorList;
 
 	/*!
 	 * A list of indices indicating at which position in the global array the
-	 * predecessors of a state can be found.
+	 * successors of a state can be found.
 	 */
-	uint_fast64_t* state_indices_list;
+	uint_fast64_t* stateIndications;
 
 	/*!
 	 * Store the number of states to determine the highest index at which the
