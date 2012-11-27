@@ -188,12 +188,6 @@ public:
 				<< this->singleLabelings[ap.second]->getNumberOfSetBits();
 			out << " state(s)" << std::endl;
 		}
-		for(unsigned int i = 0; i < apCountMax; ++i) {
-			std::cout << "iterator " << i << std::endl;
-			for(auto it = this->singleLabelings[i]->begin(); it != this->singleLabelings[i]->end(); ++it) {
-				out << "next value: " << *it << std::endl;
-			}
-		}
 	}
 
 private:
