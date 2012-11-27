@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <new>
+#include <algorithm>
 #include "boost/integer/integer_mask.hpp"
 
 #include "src/exceptions/invalid_state.h"
@@ -96,9 +97,9 @@ public:
 				}
 
 				// The elements that are not of the value type but rather the
-				// index type may be copied with memcpy.
-				memcpy(columnIndications, ssm.columnIndications, sizeof(columnIndications[0]) * nonZeroEntryCount);
-				memcpy(rowIndications, ssm.rowIndications, sizeof(rowIndications[0]) * (rowCount + 1));
+				// index type may be copied directly.
+				std::copy(ssm.columnIndications, ssm.columnIndications + nonZeroEntryCount, columnIndications);
+				std::copy(ssm.rowIndications, ssm.rowIndications + rowCount + 1, rowIndications);
 			}
 		}
 	}

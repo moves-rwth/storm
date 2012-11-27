@@ -10,7 +10,7 @@
 
 #include "src/storage/SquareSparseMatrix.h"
 
-#include <string.h>
+#include <algorithm>
 
 namespace mrmc {
 
@@ -92,7 +92,7 @@ private:
 
 		// First, we copy the index list from the sparse matrix as this will
 		// stay the same.
-		memcpy(this->stateIndications, transitionMatrix->getRowIndicationsPointer(), numberOfStates + 1);
+		std::copy(transitionMatrix->getRowIndicationsPointer(), transitionMatrix->getRowIndicationsPointer() + numberOfStates + 1, this->stateIndications);
 
 		// Now we can iterate over all rows of the transition matrix and record
 		// the target state.
@@ -134,7 +134,7 @@ private:
 		// Create an array that stores the next index for each state. Initially
 		// this corresponds to the previously computed accumulated offsets.
 		uint_fast64_t* nextIndicesList = new uint_fast64_t[numberOfStates];
-		memcpy(nextIndicesList, stateIndications, numberOfStates * sizeof(uint_fast64_t));
+		std::copy(stateIndications, stateIndications + numberOfStates, nextIndicesList);
 
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.

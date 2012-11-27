@@ -10,7 +10,6 @@
 #include "src/exceptions/invalid_argument.h"
 #include "src/exceptions/out_of_range.h"
 
-#include <string.h>
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 
@@ -142,7 +141,7 @@ public:
 	BitVector(const BitVector &bv) : bucketCount(bv.bucketCount) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		bucketArray = new uint_fast64_t[bucketCount];
-		memcpy(bucketArray, bv.bucketArray, sizeof(uint_fast64_t) * bucketCount);
+		std::copy(bv.bucketArray, bv.bucketArray + bucketCount, bucketArray);
 	}
 
 	//! Destructor
@@ -170,7 +169,7 @@ public:
 
 		// Copy over the elements from the old bit vector.
 		uint_fast64_t copySize = (newBucketCount <= bucketCount) ? newBucketCount : bucketCount;
-		memcpy(tempArray, bucketArray, sizeof(uint_fast64_t) * copySize);
+		std::copy(bucketArray, bucketArray + copySize, tempArray);
 
 		// Initialize missing values in the new bit vector.
 		for (uint_fast64_t i = copySize; i < bucketCount; ++i) {
