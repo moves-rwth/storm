@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <cstdio>
+#include <sstream>
 
 #include "mrmc-config.h"
 #include "src/models/Dtmc.h"
@@ -55,7 +56,14 @@ int main(const int argc, const char* argv[]) {
 
 	mrmc::settings::Settings* s = NULL;
 	
-	LOG4CPLUS_INFO(logger, "This is the Markov Reward Model Checker (MRMC) by i2 of RWTH Aachen university.");
+	LOG4CPLUS_INFO(logger, "This is the Markov Reward Model Checker (MRMC) by i2 of RWTH Aachen University.");
+
+	// "Compute" the command line argument string with which MRMC was invoked and log as diagnostic information.
+	std::stringstream commandStream;
+	for (int i = 0; i < argc; ++i) {
+		commandStream << argv[i] << " ";
+	}
+	LOG4CPLUS_INFO(logger, "MRMC command invoked " << commandStream.str());
 
 	try {
 		s = mrmc::settings::Settings::instance(argc, argv, nullptr);
@@ -66,13 +74,11 @@ int main(const int argc, const char* argv[]) {
 		return 1;
 	}
 	
-	if (s->isSet("help"))
-	{
+	if (s->isSet("help")) {
 		std::cout << mrmc::settings::help << std::endl;
 		return 0;
 	}
-	if (s->isSet("help-config"))
-	{
+	if (s->isSet("help-config")) {
 		std::cout << mrmc::settings::helpConfigfile << std::endl;
 		return 0;
 	}
