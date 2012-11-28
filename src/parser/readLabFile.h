@@ -1,4 +1,5 @@
-#pragma once
+#ifndef READLABFILE_H_
+#define READLABFILE_H_
 
 #include "src/models/atomic_propositions_labeling.h"
 
@@ -13,3 +14,5 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const cha
 
 } // namespace parser
 } // namespace mrmc
+
+#endif /* READLABFILE_H_ */

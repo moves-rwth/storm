@@ -1,4 +1,5 @@
-#pragma once
+#ifndef READTRAFILE_H_
+#define READTRAFILE_H_
 
 #include "src/sparse/static_sparse_matrix.h"
 
@@ -14,3 +15,4 @@ mrmc::sparse::StaticSparseMatrix<double> * readTraFile(const char * filename);
 } // namespace parser
 } // namespace mrmc
 
+#endif /* READTRAFILE_H_ */

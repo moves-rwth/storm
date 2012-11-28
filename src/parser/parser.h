@@ -5,7 +5,8 @@
  *      Author: Gereon Kremer
  */
 
-#pragma once
+#ifndef PARSER_H_
+#define PARSER_H_
 
 #include "src/utility/osDetection.h"
 
@@ -66,6 +67,11 @@ namespace parser {
 			 *	@brief pointer to actual file content.
 			 */
 			char* data;
+			
+			/*!
+			 *	@brief pointer to end of file content.
+			 */
+			char* dataend;
 		
 		/*!
 		 *	@brief Constructor of MappedFile.
@@ -102,6 +108,7 @@ namespace parser {
 				pantheios::log_ERROR("Could not mmap ", filename, ".");
 				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in mmap()");
 			}
+			this->dataend = this->data + this->st.st_size;
 #elif defined WINDOWS
 #warning Windows support is implemented but has not been compiled yet...
 			/*
@@ -129,7 +136,7 @@ namespace parser {
 				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in CreateFileMapping()");
 			}
 			
-			this->data = MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, st.st_size);
+			this->data = MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, this->st.st_size);
 			if (this->data == NULL)
 			{
 				CloseHandle(this->mapping);
@@ -137,6 +144,7 @@ namespace parser {
 				pantheios::log_ERROR("Could not create file map view for ", filename, ".");
 				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in MapViewOfFile()");
 			}
+			this->dataend = this->data + this->st.st_size;
 #endif
 		}
 		
@@ -159,3 +167,5 @@ namespace parser {
 
 } // namespace parser
 } // namespace mrmc
+
+#endif /* PARSER_H_ */
