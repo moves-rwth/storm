@@ -7,6 +7,9 @@ set (MRMC_CPP_VERSION_MAJOR 1)
 set (MRMC_CPP_VERSION_MINOR 0)
 
 option(DEFINE_UNIX "Defines the UNIX flag for compilation." OFF)
+set (GTEST_INCLUDE_DIR resources/3rdparty/gtest-1.6.0/include)
+set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.a)
+set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.a)
 
 #Configurations for GCC
 if(CMAKE_COMPILER_IS_GNUCC) 
