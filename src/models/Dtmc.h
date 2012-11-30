@@ -36,7 +36,7 @@ public:
 	 * propositions to each state.
 	 */
 	Dtmc(mrmc::storage::SquareSparseMatrix<T>* probabilityMatrix, mrmc::models::AtomicPropositionsLabeling* stateLabeling)
-			: backwardTransitions(probabilityMatrix, false) {
+			: backwardTransitions(nullptr) {
 		this->probabilityMatrix = probabilityMatrix;
 		this->stateLabeling = stateLabeling;
 	}
@@ -47,7 +47,11 @@ public:
 	 * @param dtmc A reference to the DTMC that is to be copied.
 	 */
 	Dtmc(const Dtmc<T> &dtmc) : probabilityMatrix(dtmc.probabilityMatrix),
-			stateLabeling(dtmc.stateLabeling) { }
+			stateLabeling(dtmc.stateLabeling) {
+		if (dtmc.backardTransitions != nullptr) {
+			this->backwardTransitions = new mrmc::models::GraphTransitions<T>(*dtmc.backwardTransitions);
+		}
+	}
 
 	//! Destructor
 	/*!
@@ -60,13 +64,16 @@ public:
 		if (this->stateLabeling != nullptr) {
 			delete this->stateLabeling;
 		}
+		if (this->backwardTransitions != nullptr) {
+			delete this->backwardTransitions;
+		}
 	}
 
 	/*!
 	 * Returns the state space size of the DTMC.
 	 * @return The size of the state space of the DTMC.
 	 */
-	uint_fast64_t getStateSpaceSize() {
+	uint_fast64_t getNumberOfStates() const {
 		return this->probabilityMatrix->getRowCount();
 	}
 
@@ -74,8 +81,19 @@ public:
 	 * Returns the number of (non-zero) transitions of the DTMC.
 	 * @return The number of (non-zero) transitions of the DTMC.
 	 */
-	uint_fast64_t getNumberOfTransitions() {
+	uint_fast64_t getNumberOfTransitions() const {
 		return this->probabilityMatrix->getNonZeroEntryCount();
+	}
+
+	/*!
+	 * Returns a bit vector in which exactly those bits are set to true that
+	 * correspond to a state labeled with the given atomic proposition.
+	 * @param ap The atomic proposition for which to get the bit vector.
+	 * @return A bit vector in which exactly those bits are set to true that
+	 * correspond to a state labeled with the given atomic proposition.
+	 */
+	mrmc::storage::BitVector* getLabeledStates(std::string ap) const {
+		return this->stateLabeling->getAtomicProposition(ap);
 	}
 
 	/*!
@@ -84,19 +102,30 @@ public:
 	 * @return A pointer to the matrix representing the transition probability
 	 * function.
 	 */
-	mrmc::storage::SquareSparseMatrix<T>* getTransitionProbabilityMatrix() {
+	mrmc::storage::SquareSparseMatrix<T>* getTransitionProbabilityMatrix() const {
 		return this->probabilityMatrix;
+	}
+
+	/*!
+	 * Retrieves a reference to the backwards transition relation.
+	 * @return A reference to the backwards transition relation.
+	 */
+	mrmc::models::GraphTransitions<T>& getBackwardTransitions() {
+		if (this->backwardTransitions == nullptr) {
+			this->backwardTransitions = new mrmc::models::GraphTransitions<T>(this->probabilityMatrix, false);
+		}
+		return *this->backwardTransitions;
 	}
 
 	/*!
 	 * Prints information about the model to the specified stream.
 	 * @param out The stream the information is to be printed to.
 	 */
-	void printModelInformationToStream(std::ostream& out) {
+	void printModelInformationToStream(std::ostream& out) const {
 		out << "-------------------------------------------------------------- "
 			<< std::endl;
 		out << "Model type: \t\tDTMC" << std::endl;
-		out << "States: \t\t" << this->getStateSpaceSize() << std::endl;
+		out << "States: \t\t" << this->getNumberOfStates() << std::endl;
 		out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
 		this->stateLabeling->printAtomicPropositionsInformationToStream(out);
 		out << "Size in memory: \t"
@@ -119,7 +148,7 @@ private:
 	 * A data structure that stores the predecessors for all states. This is
 	 * needed for backwards directed searches.
 	 */
-	mrmc::models::GraphTransitions<T> backwardTransitions;
+	mrmc::models::GraphTransitions<T>* backwardTransitions;
 };
 
 } // namespace models

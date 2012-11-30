@@ -169,7 +169,7 @@ public:
     */
 	uint_fast64_t getSizeInMemory() {
 		uint_fast64_t size = sizeof(*this);
-		// add sizes of all single  labelings
+		// Add sizes of all single labelings.
 		for (uint_fast32_t i = 0; i < apCountMax; i++) {
 			size += this->singleLabelings[i]->getSizeInMemory();
 		}
@@ -183,7 +183,7 @@ public:
 	void printAtomicPropositionsInformationToStream(std::ostream& out) {
 		out << "Atomic Propositions: \t" << this->getNumberOfAtomicPropositions()
 			<< std::endl;
-		for(auto ap : this->nameToLabelingMap) {
+		for (auto ap : this->nameToLabelingMap) {
 			out << "\t * " << ap.first << " -> "
 				<< this->singleLabelings[ap.second]->getNumberOfSetBits();
 			out << " state(s)" << std::endl;

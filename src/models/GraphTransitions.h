@@ -61,22 +61,22 @@ public:
 	}
 
 	/*!
-	 * Returns an iterator to the predecessors of the given states.
-	 * @param state The state for which to get the predecessor iterator.
+	 * Returns an iterator to the successors of the given state.
+	 * @param state The state for which to get the successor iterator.
 	 * @return An iterator to the predecessors of the given states.
 	 */
-	statePredecessorIterator beginStatePredecessorIterator(uint_fast64_t state) const {
+	statePredecessorIterator beginStateSuccessorsIterator(uint_fast64_t state) const {
 		return this->successorList + this->stateIndications[state];
 	}
 
 	/*!
-	 * Returns an iterator referring to the element after the predecessors of
+	 * Returns an iterator referring to the element after the successors of
 	 * the given state.
 	 * @param row The state for which to get the iterator.
-	 * @return An iterator referring to the element after the predecessors of
+	 * @return An iterator referring to the element after the successors of
 	 * the given state.
 	 */
-	statePredecessorIterator endStatePredecessorIterator(uint_fast64_t state) const {
+	statePredecessorIterator endStateSuccessorsIterator(uint_fast64_t state) const {
 		return this->successorList + this->stateIndications[state + 1];
 	}
 
@@ -109,8 +109,8 @@ private:
 	 * matrix.
 	 */
 	void initializeBackward(mrmc::storage::SquareSparseMatrix<T>* transitionMatrix) {
-		this->successorList = new uint_fast64_t[numberOfNonZeroTransitions];
-		this->stateIndications = new uint_fast64_t[numberOfStates + 1];
+		this->successorList = new uint_fast64_t[numberOfNonZeroTransitions]();
+		this->stateIndications = new uint_fast64_t[numberOfStates + 1]();
 
 		// First, we need to count how many backward transitions each state has.
 		// NOTE: We disregard the diagonal here, as we only consider "true"
