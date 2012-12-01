@@ -20,7 +20,6 @@
 #include <errno.h>
 #include <iostream>
 
-#include <pantheios/pantheios.hpp>
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
 

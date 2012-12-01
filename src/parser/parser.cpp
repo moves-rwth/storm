@@ -10,7 +10,6 @@
 #include <errno.h>
 #include <iostream>
 
-#include <pantheios/pantheios.hpp>
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
 
@@ -56,14 +55,12 @@ mrmc::parser::MappedFile::MappedFile(const char* filename)
 	 */
 	if (stat64(filename, &(this->st)) != 0)
 	{
-		pantheios::log_ERROR("Could not stat ", filename, ". Does it exist? Is it readable?");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in stat()");
 	}
 	this->file = open(filename, O_RDONLY);
 
 	if (this->file < 0)
 	{
-		pantheios::log_ERROR("Could not open ", filename, ". Does it exist? Is it readable?");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in open()");
 	}
 			
@@ -71,7 +68,6 @@ mrmc::parser::MappedFile::MappedFile(const char* filename)
 	if (this->data == (char*)-1)
 	{
 		close(this->file);
-		pantheios::log_ERROR("Could not mmap ", filename, ".");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in mmap()");
 	}
 	this->dataend = this->data + this->st.st_size;
@@ -82,14 +78,12 @@ mrmc::parser::MappedFile::MappedFile(const char* filename)
 	 */
 	if (_stat64(filename, &(this->st)) != 0)
 	{
-		pantheios::log_ERROR("Could not stat ", filename, ". Does it exist? Is it readable?");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in stat()");
 	}
 		
 	this->file = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (this->file == INVALID_HANDLE_VALUE)
 	{
-		pantheios::log_ERROR("Could not open ", filename, ". Does it exist? Is it readable?");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in CreateFile()");
 	}
 			
@@ -97,7 +91,6 @@ mrmc::parser::MappedFile::MappedFile(const char* filename)
 	if (this->mapping == NULL)
 	{
 		CloseHandle(this->file);
-		pantheios::log_ERROR("Could not create file mapping for ", filename, ".");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in CreateFileMapping()");
 	}
 			
@@ -106,7 +99,6 @@ mrmc::parser::MappedFile::MappedFile(const char* filename)
 	{
 		CloseHandle(this->mapping);
 		CloseHandle(this->file);
-		pantheios::log_ERROR("Could not create file map view for ", filename, ".");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in MapViewOfFile()");
 	}
 	this->dataend = this->data + this->st.st_size;

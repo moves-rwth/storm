@@ -28,9 +28,6 @@
 #include <fcntl.h>
 #include <locale.h>
 
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
-
 namespace mrmc {
 namespace parser {
 
@@ -144,7 +141,6 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(uint_fast64_t node_count,
 		 */
 		uint_fast32_t node;
 		char proposition[128];
-		char* tmp;
 		size_t cnt;
 		/*
 		 *	iterate over nodes

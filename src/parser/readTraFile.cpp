@@ -26,10 +26,6 @@
 #include <fcntl.h>
 #include <locale.h>
 
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters/integer.hpp>
-#include <pantheios/inserters/real.hpp>
-
 namespace mrmc {
 namespace parser{
 
@@ -104,7 +100,7 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
  *	@return a pointer to the created sparse matrix.
  */
 
-sparse::SquareSparseMatrix<double> * readTraFile(const char * filename) {
+mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	/*
 	*	enforce locale where decimal point is '.'
 	*/
@@ -131,7 +127,7 @@ sparse::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	
 	 *	from here on, we already know that the file header is correct
 	 */
-	sparse::SquareSparseMatrix<double> *sp = NULL;
+	mrmc::storage::SquareSparseMatrix<double> *sp = NULL;
 
 	/*
 	 *	read file header, extract number of states
@@ -142,16 +138,12 @@ sparse::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	buf += 12; // skip "TRANSITIONS "
 	checked_strtol(buf, &buf);
 	
-	pantheios::log_DEBUG("Creating matrix with ",
-                        pantheios::integer(maxnode + 1), " maxnodes and ",
-                        pantheios::integer(non_zero), " Non-Zero-Elements");
-                        
 	/*
 	 *	Creating matrix
 	 *	Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
 	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
-	sp = new sparse::SquareSparseMatrix<double>(maxnode + 1);
+	sp = new mrmc::storage::SquareSparseMatrix<double>(maxnode + 1);
 	if (sp == NULL)	throw std::bad_alloc();
 	sp->initialize(non_zero);
 
@@ -174,11 +166,6 @@ sparse::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 		 *	only values in (0, 1] are meaningful
 		 */
 		if ((val <= 0.0) || (val > 1.0)) throw mrmc::exceptions::wrong_file_format();
-		pantheios::log_DEBUG("Write value ",
-							pantheios::real(val),
-							" to position ",
-							pantheios::integer(row), " x ",
-							pantheios::integer(col));
 		sp->addNextValue(row,col,val);
 		buf = skipWS(buf);
 	}
@@ -186,7 +173,6 @@ sparse::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	/*
 	 * clean up
 	 */	
-	pantheios::log_DEBUG("Finalizing Matrix");
 	sp->finalize();
 	return sp;
 }
