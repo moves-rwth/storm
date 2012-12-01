@@ -45,7 +45,7 @@ public:
 		 * set to the first set bit in the bit vector.
 		 * @param endIndex The number of elements to iterate over.
 		 */
-		constIndexIterator(const BitVector& bitVector, uint_fast64_t startIndex, uint_fast64_t endIndex, bool setOnFirstBit) : bitVector(bitVector), endIndex(endIndex) {
+		constIndexIterator(const BitVector& bitVector, uint_fast64_t startIndex, uint_fast64_t endIndex, bool setOnFirstBit = true) : bitVector(bitVector), endIndex(endIndex) {
 			if (setOnFirstBit) {
 				currentIndex = bitVector.getNextSetIndex(startIndex, endIndex);
 			} else {
@@ -59,7 +59,7 @@ public:
 		 * @param bitVector The bit vector to iterate over.
 		 * @param endIndex The number of elements to iterate over.
 		 */
-		constIndexIterator(const BitVector& bitVector, uint_fast64_t endIndex) : constIndexIterator(bitVector, 0, endIndex, true) { }
+//		constIndexIterator(const BitVector& bitVector, uint_fast64_t endIndex) : constIndexIterator(bitVector, 0, endIndex, true) { }
 
 		/*!
 		 * Increases the position of the iterator to the position of the next bit that
@@ -103,7 +103,7 @@ public:
 	 * initializes all bits to false.
 	 * @param length The number of bits the bit vector should be able to hold.
 	 */
-	BitVector(uint_fast64_t length) : BitVector(length, false) { }
+//	BitVector(uint_fast64_t length) : BitVector(length, false) { }
 
 	//! Constructor
 	/*!
@@ -112,7 +112,7 @@ public:
 	 * @param length The number of bits the bit vector should be able to hold.
 	 * @param initTrue The initial value of the first |length| bits.
 	 */
-	BitVector(uint_fast64_t length, bool initTrue) {
+	BitVector(uint_fast64_t length, bool initTrue = false) {
 		// Check whether the given length is valid.
 		if (length == 0) {
 			LOG4CPLUS_ERROR(logger, "Trying to create bit vector of size 0.");
@@ -432,7 +432,7 @@ public:
 	 * Returns an iterator to the indices of the set bits in the bit vector.
 	 */
 	constIndexIterator begin() const {
-		return constIndexIterator(*this, bitCount);
+		return constIndexIterator(*this, 0, bitCount);
 	}
 
 	/*!
