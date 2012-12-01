@@ -2,6 +2,7 @@
 #define READLABFILE_H_
 
 #include "src/models/atomic_propositions_labeling.h"
+#include "boost/integer/integer_mask.hpp"
 
 
 namespace mrmc {
