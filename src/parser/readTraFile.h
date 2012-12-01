@@ -1,7 +1,7 @@
 #ifndef READTRAFILE_H_
 #define READTRAFILE_H_
 
-#include "src/sparse/static_sparse_matrix.h"
+#include "src/storage/SquareSparseMatrix.h"
 
 namespace mrmc {
 namespace parser {
@@ -10,7 +10,7 @@ namespace parser {
  *	@brief	Load transition system from file and return initialized
  *	StaticSparseMatrix object.
  */
-mrmc::sparse::StaticSparseMatrix<double> * readTraFile(const char * filename);
+mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename);
 		
 } // namespace parser
 } // namespace mrmc

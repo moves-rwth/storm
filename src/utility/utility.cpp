@@ -74,7 +74,7 @@ void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, const char* filename) {
 }
 
 mrmc::models::Dtmc<double>* parseDTMC(const char* tra_file, const char* lab_file) {
-   mrmc::sparse::StaticSparseMatrix<double>* transition_matrix =
+   mrmc::storage::SquareSparseMatrix<double>* transition_matrix =
          mrmc::parser::readTraFile(tra_file);
    uint_fast64_t node_count = transition_matrix->getRowCount();
 

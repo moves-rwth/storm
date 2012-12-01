@@ -104,7 +104,7 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
  *	@return a pointer to the created sparse matrix.
  */
 
-sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
+sparse::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	/*
 	*	enforce locale where decimal point is '.'
 	*/
@@ -131,7 +131,7 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	
 	 *	from here on, we already know that the file header is correct
 	 */
-	sparse::StaticSparseMatrix<double> *sp = NULL;
+	sparse::SquareSparseMatrix<double> *sp = NULL;
 
 	/*
 	 *	read file header, extract number of states
@@ -151,7 +151,7 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
 	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
-	sp = new sparse::StaticSparseMatrix<double>(maxnode + 1);
+	sp = new sparse::SquareSparseMatrix<double>(maxnode + 1);
 	if (sp == NULL)	throw std::bad_alloc();
 	sp->initialize(non_zero);
 
