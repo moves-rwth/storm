@@ -9,6 +9,8 @@
 #define BOUNDEDUNTIL_H_
 
 #include "PCTLPathFormula.h"
+#include "PCTLStateFormula.h"
+#include "boost/integer/integer_mask.hpp"
 
 namespace mrmc {
 
@@ -62,7 +64,7 @@ class BoundedUntil : public PCTLPathFormula {
          std::string result = "(";
          result += left->toString();
          result += " U<=";
-         result += bound;
+         result +=  std::to_string(bound);
          result += " ";
          result += right->toString();
          result += ")";

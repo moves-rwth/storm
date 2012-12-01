@@ -20,7 +20,11 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
+#if defined LINUX || defined MACOSX
+	#include <sys/mman.h>
+#elif defined WINDOWS
+#define strncpy strncpy_s
+#endif
 #include <fcntl.h>
 #include <locale.h>
 
