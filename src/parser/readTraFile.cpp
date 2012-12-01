@@ -135,7 +135,7 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	uint_fast32_t maxnode;
 	uint_fast32_t non_zero = makeFirstPass(file.data, maxnode);
 	/*
-	 *	if first pass returned zer, the file format was wrong
+	 *	if first pass returned zero, the file format was wrong
 	 */
 	if (non_zero == 0) throw mrmc::exceptions::wrong_file_format();
 	
@@ -174,22 +174,29 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	/*
 	 *	read all transitions from file
 	 */
-	while (1)
+	while (buf[0] != '\0')
 	{
 		/*
 		 *	read row, col and value. if value == 0.0, we have reached the
 		 *	end of the file.
 		 */
 		row = strtol(buf, &buf, 10);
+		if ((buf[0] != ' ') && (buf[0] != '\t')) throw mrmc::exceptions::wrong_file_format();
+		
 		col = strtol(buf, &buf, 10);
+		if ((buf[0] != ' ') && (buf[0] != '\t')) throw mrmc::exceptions::wrong_file_format();
+		
 		val = strtod(buf, &buf);
+		if ((buf[0] != '\n') && (buf[0] != '\r')) throw mrmc::exceptions::wrong_file_format();
+		
 		if (val == 0.0) break;
 		pantheios::log_DEBUG("Write value ",
 							pantheios::real(val),
 							" to position ",
 							pantheios::integer(row), " x ",
 							pantheios::integer(col));
-		sp->addNextValue(row,col,val);	
+		sp->addNextValue(row,col,val);
+		buf = skipWS(buf);
 	}
 	
 	/*
