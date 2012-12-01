@@ -49,7 +49,7 @@ namespace parser {
 #if defined LINUX || defined MACOSX
 			int file;
 #elif defined WINDOWS
-			HFILE file;
+			HANDLE file;
 			HANDLE mapping;
 #endif
 			
@@ -110,7 +110,6 @@ namespace parser {
 			}
 			this->dataend = this->data + this->st.st_size;
 #elif defined WINDOWS
-#warning Windows support is implemented but has not been compiled yet...
 			/*
 			 *	Do file mapping for windows.
 			 *	_stat64(), CreateFile(), CreateFileMapping(), MapViewOfFile()
@@ -121,14 +120,14 @@ namespace parser {
 				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in stat()");
 			}
 			
-			this->file = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			this->file = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (this->file == INVALID_HANDLE_VALUE)
 			{
 				pantheios::log_ERROR("Could not open ", filename, ". Does it exist? Is it readable?");
 				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in CreateFile()");
 			}
 			
-			this->mapping = CreateFileMapping(this->file, NULL, PAGE_READONLY, (DWORD)(st.st_size >> 32), (DWORD)st.st_size, NULL);
+			this->mapping = CreateFileMappingA(this->file, NULL, PAGE_READONLY, (DWORD)(st.st_size >> 32), (DWORD)st.st_size, NULL);
 			if (this->mapping == NULL)
 			{
 				CloseHandle(this->file);
@@ -136,7 +135,7 @@ namespace parser {
 				throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in CreateFileMapping()");
 			}
 			
-			this->data = MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, this->st.st_size);
+			this->data = static_cast<char*>(MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, this->st.st_size));
 			if (this->data == NULL)
 			{
 				CloseHandle(this->mapping);
