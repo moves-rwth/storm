@@ -20,8 +20,8 @@
 #include "src/models/Dtmc.h"
 #include "src/storage/SquareSparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
-#include "src/parser/read_lab_file.h"
-#include "src/parser/read_tra_file.h"
+#include "src/parser/readLabFile.h"
+#include "src/parser/readTraFile.h"
 #include "src/utility/settings.h"
 #include "Eigen/Sparse"
 
@@ -83,8 +83,8 @@ int main(const int argc, const char* argv[]) {
 		return 0;
 	}
 
-	mrmc::storage::SquareSparseMatrix<double>* probMatrix = mrmc::parser::read_tra_file(s->getString("trafile").c_str());
-	mrmc::models::AtomicPropositionsLabeling* labeling = mrmc::parser::read_lab_file(probMatrix->getRowCount(), s->getString("labfile").c_str());
+	mrmc::storage::SquareSparseMatrix<double>* probMatrix = mrmc::parser::readTraFile(s->getString("trafile").c_str());
+	mrmc::models::AtomicPropositionsLabeling* labeling = mrmc::parser::readLabFile(probMatrix->getRowCount(), s->getString("labfile").c_str());
 	mrmc::models::Dtmc<double> dtmc(probMatrix, labeling);
 
 	dtmc.printModelInformationToStream(std::cout);
