@@ -10,7 +10,7 @@ namespace parser {
 /*!
  *	@brief Load label file and return initialized AtomicPropositionsLabeling object.
  */
-mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const char * filename);
+mrmc::models::AtomicPropositionsLabeling * readLabFile(uint_fast64_t node_count, const char * filename);
 
 } // namespace parser
 } // namespace mrmc

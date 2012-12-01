@@ -34,20 +34,6 @@ namespace mrmc {
 namespace parser{
 
 /*!
- *	Skips all whitespaces and returns new pointer.
- *
- *	@todo	should probably be replaced by strspn et.al.
- */
-char* skipWS(char* buf)
-{
-	while(1)
-	{
-		if ((buf[0] != ' ') && (buf[0] != '\t') && (buf[0] != '\n') && (buf[0] != '\r')) return buf;
-		buf++;
-	}
-}
-
-/*!
  *	@brief	Perform first pass through the file and obtain number of
  *	non-zero cells and maximum node id.
  *
@@ -83,13 +69,13 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
 	uint_fast32_t row, col;
 	double val;
 	maxnode = 0;
-	while (1)  
+	while (buf[0] != '\0')
 	{
 		/*
 		 *	read row and column
 		 */
-		row = strtol(buf, &buf, 10);
-		col = strtol(buf, &buf, 10);
+		row = checked_strtol(buf, &buf);
+		col = checked_strtol(buf, &buf);
 		/*
 		 *	check if one is larger than the current maximum id
 		 */
@@ -102,6 +88,7 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
 		val = strtod(buf, &buf);
 		if (val == 0.0) break;
 		if (row == col) non_zero--;
+		buf = skipWS(buf);
 	}
 
 	return non_zero;
@@ -150,10 +137,10 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	read file header, extract number of states
 	 */
 	buf += 7; // skip "STATES "
-	strtol(buf, &buf, 10);
+	checked_strtol(buf, &buf);
 	buf = skipWS(buf);
 	buf += 12; // skip "TRANSITIONS "
-	strtol(buf, &buf, 10);
+	checked_strtol(buf, &buf);
 	
 	pantheios::log_DEBUG("Creating matrix with ",
                         pantheios::integer(maxnode + 1), " maxnodes and ",
@@ -177,19 +164,16 @@ sparse::StaticSparseMatrix<double> * readTraFile(const char * filename) {
 	while (buf[0] != '\0')
 	{
 		/*
-		 *	read row, col and value. if value == 0.0, we have reached the
-		 *	end of the file.
+		 *	read row, col and value.
 		 */
-		row = strtol(buf, &buf, 10);
-		if ((buf[0] != ' ') && (buf[0] != '\t')) throw mrmc::exceptions::wrong_file_format();
-		
-		col = strtol(buf, &buf, 10);
-		if ((buf[0] != ' ') && (buf[0] != '\t')) throw mrmc::exceptions::wrong_file_format();
-		
+		row = checked_strtol(buf, &buf);
+		col = checked_strtol(buf, &buf);
 		val = strtod(buf, &buf);
-		if ((buf[0] != '\n') && (buf[0] != '\r')) throw mrmc::exceptions::wrong_file_format();
 		
-		if (val == 0.0) break;
+		/*
+		 *	only values in (0, 1] are meaningful
+		 */
+		if ((val <= 0.0) || (val > 1.0)) throw mrmc::exceptions::wrong_file_format();
 		pantheios::log_DEBUG("Write value ",
 							pantheios::real(val),
 							" to position ",

@@ -18,12 +18,45 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <iostream>
 
 #include <pantheios/pantheios.hpp>
 #include "src/exceptions/file_IO_exception.h"
+#include "src/exceptions/wrong_file_format.h"
 
 namespace mrmc {
 namespace parser {
+	
+	/*!
+	 *	@brief Parses integer and checks, if something has been parsed.
+	 *
+	 *	Calls strtol() internally and checks if the new pointer is different
+	 *	from the original one, i.e. if str != *end. If they are the same, a
+	 *	mrmc::exceptions::wrong_file_format will be thrown.
+	 *	@param str String to parse
+	 *	@param end New pointer will be written there
+	 *	@return Result of strtol()
+	 */
+	inline uint_fast64_t checked_strtol(const char* str, char** end)
+	{
+		uint_fast64_t res = strtol(str, end, 10);
+		if (str == *end) throw mrmc::exceptions::wrong_file_format();
+		return res;
+	}
+	
+	/*!
+	 *	@brief Skips common whitespaces in a string.
+	 *
+	 *	Skips spaces, tabs, newlines and carriage returns. Returns pointer
+	 *	to first char that is not a whitespace.
+	 *	@param buf String buffer
+	 *	@return	pointer to first non-whitespace character
+	 */
+	inline char* skipWS(char* buf)
+	{
+		while ((*buf == ' ') || (*buf == '\t') || (*buf == '\n') || (*buf == '\r')) buf++;
+		return buf;
+	}
 	
 	/*!
 	 *	@brief Opens a file and maps it to memory providing a char*
@@ -79,7 +112,7 @@ namespace parser {
 		 *	Will stat the given file, open it and map it to memory.
 		 *	If anything of this fails, an appropriate exception is raised
 		 *	and a log entry is written.
-		 *	@filename file to be opened
+		 *	@param filename file to be opened
 		 */
 		MappedFile(const char* filename)
 		{

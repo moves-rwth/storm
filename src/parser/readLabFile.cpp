@@ -43,7 +43,7 @@ namespace parser {
  *	@param filename   input .lab file's name.
  *	@return The pointer to the created labeling object.
  */
-mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const char * filename)
+mrmc::models::AtomicPropositionsLabeling * readLabFile(uint_fast64_t node_count, const char * filename)
 {
 	/*
 	 *	open file
@@ -55,10 +55,14 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const cha
 	 *	first run: obtain number of propositions
 	 */
 	char separator[] = " \n\t";
+	bool foundDecl = false, foundEnd = false;
 	uint_fast32_t proposition_count = 0;
 	{
 		size_t cnt = 0;
-		do
+		/*
+		 *	iterate over tokens while not at end of file
+		 */
+		while(buf[0] != '\0')
 		{
 			buf += cnt;
 			cnt = strcspn(buf, separator); // position of next separator
@@ -69,12 +73,25 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const cha
 				 *	next token is #END: stop search
 				 *	otherwise increase proposition_count
 				 */
-				if (strncmp(buf, "#DECLARATION", cnt) == 0) continue;
-				if (strncmp(buf, "#END", cnt) == 0) break;
+				if (strncmp(buf, "#DECLARATION", cnt) == 0)
+				{
+					foundDecl = true;
+					continue;
+				}
+				if (strncmp(buf, "#END", cnt) == 0)
+				{
+					foundEnd = true;
+					break;
+				}
 				proposition_count++;
 			}
-			else cnt = 1; // next char is separator, one step forward
-		} while (cnt > 0);
+			else buf++; // next char is separator, one step forward
+		}
+		
+		/*
+		 *	If #DECLARATION or #END were not found, the file format is wrong
+		 */
+		if (! (foundDecl && foundEnd)) throw mrmc::exceptions::wrong_file_format();
 	}
 	
 	/*
@@ -91,6 +108,7 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const cha
 	{
 		/*
 		 *	load propositions
+		 *	As we already checked the file format, we can be a bit sloppy here...
 		 */
 		char proposition[128]; // buffer for proposition names
 		size_t cnt = 0;
@@ -126,40 +144,43 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(int node_count, const cha
 		 */
 		uint_fast32_t node;
 		char proposition[128];
+		char* tmp;
 		size_t cnt;
-		do
+		/*
+		 *	iterate over nodes
+		 */
+		while (buf[0] != '\0')
 		{
-			node = strtol(buf, &buf, 10); // parse node number
-			while (*buf != '\0') // while not at end of file
-			{
-				cnt = strcspn(buf, separator); // position of next separator
-				if (cnt == 0) buf++; // next char is separator, one step forward
-				else break;
-			}
 			/*
-			 *	if cnt > 0, buf points to the next proposition
-			 *	otherwise, we have reached the end of the file
+			 *	parse node number, then iterate over propositions
 			 */
-			if (cnt > 0)
+			node = checked_strtol(buf, &buf);
+			while (buf[0] != '\n') 
 			{
-				/*
-				 *	copy proposition to buffer, add assignment to labeling
-				 */
-				strncpy(proposition, buf, cnt);
-				proposition[cnt] = '\0';
-				result->addAtomicPropositionToState(proposition, node);
+				cnt = strcspn(buf, separator);
+				if (cnt == 0)
+				{
+					/*
+					 *	next char is a separator
+					 *	if it's a newline, we continue with next node
+					 *	otherwise we skip it and try again
+					 */
+					if (buf[0] == '\n') break;
+					buf++;
+				}
+				else
+				{
+					/*
+					 *	copy proposition to buffer and add it to result
+					 */
+					strncpy(proposition, buf, cnt);
+					proposition[cnt] = '\0';
+					result->addAtomicPropositionToState(proposition, node);
+					buf += cnt;
+				}
 			}
-			else if (node == 0)
-			{
-				/*
-				 *	If this is executed, we could read a number but there
-				 *	was no proposition after that. This strongly suggests a
-				 *	broken file, but it's not fatal...
-				 */
-				 pantheios::log_WARNING("The label file ended on a node number. Is the file malformated?");
-			}
-			buf += cnt;
-		} while (cnt > 0);
+			buf = skipWS(buf);
+		}
 	}
 	
 	return result;
