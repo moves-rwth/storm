@@ -26,6 +26,10 @@
 #include <fcntl.h>
 #include <locale.h>
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
+
 namespace mrmc {
 namespace parser{
 
@@ -51,11 +55,19 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
 	/*
 	 *	check file header and extract number of transitions
 	 */
-	if (strncmp(buf, "STATES ", 7) != 0) return 0;
+	if (strncmp(buf, "STATES ", 7) != 0)
+	{
+		LOG4CPLUS_ERROR(logger, "Error: expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
+		return 0;
+	}
 	buf += 7; // skip "STATES "
 	if (strtol(buf, &buf, 10) == 0) return 0;
 	buf = skipWS(buf);
-	if (strncmp(buf, "TRANSITIONS ", 12) != 0) return 0;
+	if (strncmp(buf, "TRANSITIONS ", 12) != 0)
+	{
+		LOG4CPLUS_ERROR(logger, "Error: expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
+		return 0;
+	}
 	buf += 12; // skip "TRANSITIONS "
 	if ((non_zero = strtol(buf, &buf, 10)) == 0) return 0;
 	
@@ -120,7 +132,11 @@ mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	/*
 	 *	if first pass returned zero, the file format was wrong
 	 */
-	if (non_zero == 0) throw mrmc::exceptions::wrong_file_format();
+	if (non_zero == 0)
+	{
+		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
+		throw mrmc::exceptions::wrong_file_format();
+	}
 	
 	/*
 	 *	perform second pass
@@ -144,7 +160,11 @@ mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
 	sp = new mrmc::storage::SquareSparseMatrix<double>(maxnode + 1);
-	if (sp == NULL)	throw std::bad_alloc();
+	if (sp == NULL)
+	{
+		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
+		throw std::bad_alloc();
+	}
 	sp->initialize(non_zero);
 
 	uint_fast64_t row, col;
@@ -165,7 +185,11 @@ mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 		/*
 		 *	only values in (0, 1] are meaningful
 		 */
-		if ((val <= 0.0) || (val > 1.0)) throw mrmc::exceptions::wrong_file_format();
+		if ((val <= 0.0) || (val > 1.0))
+		{
+			LOG4CPLUS_ERROR(logger, "Found transition probability of " << val << ", but we think probabilities should be from (0,1].");
+			throw mrmc::exceptions::wrong_file_format();
+		}
 		sp->addNextValue(row,col,val);
 		buf = skipWS(buf);
 	}

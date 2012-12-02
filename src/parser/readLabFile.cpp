@@ -20,13 +20,18 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <locale.h>
+
 #if defined LINUX || defined MACOSX
 	#include <sys/mman.h>
 #elif defined WINDOWS
-#define strncpy strncpy_s
+	#define strncpy strncpy_s
 #endif
-#include <fcntl.h>
-#include <locale.h>
+
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
 
 namespace mrmc {
 namespace parser {
@@ -88,7 +93,13 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(uint_fast64_t node_count,
 		/*
 		 *	If #DECLARATION or #END were not found, the file format is wrong
 		 */
-		if (! (foundDecl && foundEnd)) throw mrmc::exceptions::wrong_file_format();
+		if (! (foundDecl && foundEnd))
+		{
+			LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). File header is corrupted.");
+			if (! foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
+			if (! foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
+			throw mrmc::exceptions::wrong_file_format();
+		}
 	}
 	
 	/*
