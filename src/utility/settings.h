@@ -15,8 +15,9 @@
 namespace mrmc {
 
 /*!
- *	The settings namespace contains the Settings class and all associated
- *	methods.
+ *	@brief Contains Settings class and associated methods.
+ *
+ *	The settings namespace contains the Settings class some friend methods like instance().
  */
 namespace settings {
 	
