@@ -38,20 +38,6 @@ namespace settings {
 		public:
 		
 		/*!
-		 *	@brief Get option descriptions for commandline options
-		 */
-		bpo::options_description& getHelpForCommandline() const {
-			return this->cli;
-		}
-
-		/*!
-		 *	@brief Get option descriptions for config file options
-		 */
-		bpo::options_description& getHelpForConfigfile() const {
-			return this->conf;
-		}
-		
-		/*!
 		 *	@brief Get value of string option
 		 */
 		const std::string& getString(const std::string &name) const {
