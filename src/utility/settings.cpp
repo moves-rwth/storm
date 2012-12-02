@@ -110,9 +110,10 @@ Settings* Settings::instance(const int argc, const char* argv[], const char* fil
 		 *	fill option descriptions
 		 */
 		Settings::commandline.add_options()
-			("help", "produce help message")
+			("help,h", "produce help message")
+			("verbose,v", "be verbose")
 			("help-config", "produce help message about config file")
-			("configfile", bpo::value<std::string>(), "name of config file")
+			("configfile,c", bpo::value<std::string>(), "name of config file")
 		;
 		Settings::generic.add_options()
 			("trafile", bpo::value<std::string>()->required(), "name of the .tra file")
