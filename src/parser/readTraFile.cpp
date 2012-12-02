@@ -57,7 +57,7 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
 	 */
 	if (strncmp(buf, "STATES ", 7) != 0)
 	{
-		LOG4CPLUS_ERROR(logger, "Error: expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
+		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
 	}
 	buf += 7; // skip "STATES "
@@ -65,7 +65,7 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
 	buf = skipWS(buf);
 	if (strncmp(buf, "TRANSITIONS ", 12) != 0)
 	{
-		LOG4CPLUS_ERROR(logger, "Error: expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
+		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
 	}
 	buf += 12; // skip "TRANSITIONS "
@@ -77,6 +77,7 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
 	uint_fast32_t row, col;
 	double val;
 	maxnode = 0;
+	char* tmp;
 	while (buf[0] != '\0')
 	{
 		/*
@@ -90,13 +91,17 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
 		if (row > maxnode) maxnode = row;
 		if (col > maxnode) maxnode = col;
 		/*
-		 *	read value. if value is zero, we have reached the end of the file.
+		 *	read value. if value is 0.0, either strtod could not read a number or we encountered a probability of zero.
 		 *	if row == col, we have a diagonal element which is treated seperately and this non_zero must be decreased.
 		 */
-		val = strtod(buf, &buf);
-		if (val == 0.0) break;
+		val = strtod(buf, &tmp);
+		if (val == 0.0)
+		{
+			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
+			return 0;
+		}
 		if (row == col) non_zero--;
-		buf = skipWS(buf);
+		buf = skipWS(tmp);
 	}
 
 	return non_zero;
@@ -159,6 +164,7 @@ mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
 	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
+	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
 	sp = new mrmc::storage::SquareSparseMatrix<double>(maxnode + 1);
 	if (sp == NULL)
 	{
