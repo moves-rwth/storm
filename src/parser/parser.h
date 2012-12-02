@@ -24,6 +24,14 @@
 #include "src/exceptions/wrong_file_format.h"
 
 namespace mrmc {
+
+/*!
+ *	@brief Contains all file parser and helper classes.
+ *
+ *	This namespace contains everything needed to load data files (like
+ *	atomic propositions, transition systems, formulas, ...) including
+ *	methods for efficient file access (see MappedFile).
+ */
 namespace parser {
 	
 	/*!
