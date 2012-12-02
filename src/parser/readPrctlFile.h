@@ -2,6 +2,7 @@
 #define READPRCTLFILE_H_
 
 #include "src/formula/PCTLformula.h"
+#include "src/parser/parser.h"
 
 namespace mrmc {
 namespace parser {
@@ -9,7 +10,22 @@ namespace parser {
 /*!
  *	@brief Load PRCTL file
  */
-mrmc::formula::PCTLFormula* readPrctlFile(const char * filename);
+class PRCTLParser : Parser
+{
+	public:
+		PRCTLParser(const char * filename);
+		 
+		/*!
+		 *	@brief return formula object parsed from file.
+		 */
+		mrmc::formula::PCTLFormula* getFormula()
+		{
+			return this->formula;
+		}
+	
+	private:
+		mrmc::formula::PCTLFormula* formula;
+};
 
 } // namespace parser
 } // namespace mrmc
