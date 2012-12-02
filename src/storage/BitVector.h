@@ -266,7 +266,7 @@ public:
 	 * of the two bit vectors.
 	 */
 	BitVector operator &=(const BitVector bv) {
-		uint_fast64_t minSize =	((bv.bitCount < this->bitCount) ? bv.bitCount : this->bitCount) >> 6;
+		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		for (uint_fast64_t i = 0; i < minSize; ++i) {
 			this->bucketArray[i] &= bv.bucketArray[i];
@@ -305,7 +305,7 @@ public:
 	 * of the two bit vectors.
 	 */
 	BitVector& operator |=(const BitVector bv) {
-		uint_fast64_t minSize =	((bv.bitCount < this->bitCount) ? bv.bitCount : this->bitCount) >> 6;
+		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		for (uint_fast64_t i = 0; i < minSize; ++i) {
 			this->bucketArray[i] |= bv.bucketArray[i];
