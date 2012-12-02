@@ -54,20 +54,20 @@ namespace parser {
 	class MappedFile
 	{
 		private:
+#if defined LINUX || defined MACOSX
 			/*!
 			 *	@brief file descriptor obtained by open().
 			 */
-#if defined LINUX || defined MACOSX
 			int file;
 #elif defined WINDOWS
 			HANDLE file;
 			HANDLE mapping;
 #endif
 			
+#if defined LINUX || defined MACOSX
 			/*!
 			 *	@brief stat information about the file.
 			 */
-#if defined LINUX || defined MACOSX
 			struct stat64 st;
 #elif defined WINDOWS
 			struct __stat64 st;
