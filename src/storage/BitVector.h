@@ -201,7 +201,7 @@ public:
 
 		// Initialize missing values in the new bit vector.
 		for (uint_fast64_t i = copySize; i < bucketCount; ++i) {
-			bucketArray[i] = 0;
+			tempArray[i] = 0;
 		}
 
 		// Dispose of the old bit vector and set the new one.
