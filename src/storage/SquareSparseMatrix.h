@@ -530,7 +530,7 @@ public:
 			// them to the matrix individually.
 			uint_fast64_t rowStart;
 			uint_fast64_t rowEnd;
-			for (uint_fast64_t row = 0; row <= rowCount; ++row) {
+			for (uint_fast64_t row = 0; row < rowCount; ++row) {
 				rowStart = rowIndications[row];
 				rowEnd = rowIndications[row + 1];
 
