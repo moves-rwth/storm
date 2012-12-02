@@ -37,22 +37,23 @@ log4cplus::Logger logger;
 /*!
  * Initializes the logging framework.
  */
-void setUpLogging() {
+void setUpFileLogging() {
 	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender("mrmc.log"));
 	fileLogAppender->setName("mainFileAppender");
-	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M} (%r ms) - %F:%L : %m%n")));
+	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %F:%L : %m%n")));
 	logger = log4cplus::Logger::getInstance("mainLogger");
 	logger.addAppender(fileLogAppender);
+}
 
-	// Uncomment these lines to enable console logging output
-	// log4cplus::SharedAppenderPtr consoleLogAppender(new log4cplus::ConsoleAppender());
-	// consoleLogAppender->setName("mainConsoleAppender");
-	// consoleLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%s} (%r ms) - %F:%L : %m%n")));
-	// logger.addAppender(consoleLogAppender);
+void setUpConsoleLogging() {
+	log4cplus::SharedAppenderPtr consoleLogAppender(new log4cplus::ConsoleAppender());
+	consoleLogAppender->setName("mainConsoleAppender");
+	consoleLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} - %b:%L : %m%n")));
+	logger.addAppender(consoleLogAppender);
 }
 
 int main(const int argc, const char* argv[]) {
-	setUpLogging();
+	setUpFileLogging();
 
 	mrmc::settings::Settings* s = NULL;
 	
@@ -81,6 +82,12 @@ int main(const int argc, const char* argv[]) {
 	if (s->isSet("help-config")) {
 		std::cout << mrmc::settings::helpConfigfile << std::endl;
 		return 0;
+	}
+	
+	if (s->isSet("verbose"))
+	{
+		setUpConsoleLogging();
+		LOG4CPLUS_INFO(logger, "Enable verbose mode, log output gets printed to console.");
 	}
 
 	mrmc::storage::SquareSparseMatrix<double>* probMatrix = mrmc::parser::readTraFile(s->getString("trafile").c_str());
