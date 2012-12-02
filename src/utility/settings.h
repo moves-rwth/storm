@@ -38,10 +38,18 @@ namespace settings {
 		public:
 		
 		/*!
+		 *	@brief Get value of a generic option.
+		 */
+		template <typename T>
+		const T& get(const std::string &name) const {
+			return this->vm[name].as<T>();
+		}
+		
+		/*!
 		 *	@brief Get value of string option
 		 */
 		const std::string& getString(const std::string &name) const {
-			return this->vm[name].as<std::string>();
+			return this->get<std::string>(name);
 		}
 		
 		/*!
