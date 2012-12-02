@@ -22,6 +22,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/readLabFile.h"
 #include "src/parser/readTraFile.h"
+#include "src/parser/readPrctlFile.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/settings.h"
 #include "Eigen/Sparse"
@@ -82,6 +83,10 @@ int main(const int argc, const char* argv[]) {
 	}
 	if (s->isSet("help-config")) {
 		std::cout << mrmc::settings::helpConfigfile << std::endl;
+		return 0;
+	}
+	if (s->isSet("test-prctl")) {
+		mrmc::parser::PRCTLParser parser(s->getString("test-prctl").c_str());
 		return 0;
 	}
 	
