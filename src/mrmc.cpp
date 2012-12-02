@@ -22,6 +22,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/readLabFile.h"
 #include "src/parser/readTraFile.h"
+#include "src/solver/GraphAnalyzer.h"
 #include "src/utility/settings.h"
 #include "Eigen/Sparse"
 
@@ -96,6 +97,9 @@ int main(const int argc, const char* argv[]) {
 
 	dtmc.printModelInformationToStream(std::cout);
 
+	// mrmc::storage::BitVector AU(dtmc.getNumberOfStates());
+	// mrmc::solver::GraphAnalyzer::getUniversalReachabilityStates(dtmc, mrmc::storage::BitVector(dtmc.getNumberOfStates(), true), *dtmc.getLabeledStates("elected"), AU);
+
 	if (s != nullptr) {
 		delete s;
 	}
@@ -104,4 +108,3 @@ int main(const int argc, const char* argv[]) {
 
 	return 0;
 }
-

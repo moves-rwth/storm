@@ -7,6 +7,9 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
+#if defined MACOSX
+	#include <unistd.h>
+#endif
 #include <errno.h>
 #include <iostream>
 #include <cstring>
@@ -63,7 +66,11 @@ mrmc::parser::MappedFile::MappedFile(const char* filename)
 	 *	Do file mapping for reasonable systems.
 	 *	stat64(), open(), mmap()
 	 */
+#ifdef MACOSX
+	if (stat(filename, &(this->st)) != 0)
+#else
 	if (stat64(filename, &(this->st)) != 0)
+#endif
 	{
 		LOG4CPLUS_ERROR(logger, "Error in stat(" << filename << ").");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in stat()");
@@ -76,7 +83,7 @@ mrmc::parser::MappedFile::MappedFile(const char* filename)
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in open()");
 	}
 			
-	this->data = (char*) mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, this->file, 0);
+	this->data = (char*) mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0);
 	if (this->data == (char*)-1)
 	{
 		close(this->file);

@@ -72,12 +72,20 @@ namespace parser {
 			HANDLE mapping;
 #endif
 			
-#if defined LINUX || defined MACOSX
+#if defined LINUX
 			/*!
 			 *	@brief stat information about the file.
 			 */
 			struct stat64 st;
+#elif defined MACOSX
+			/*!
+			 *	@brief stat information about the file.
+			 */
+			struct stat st;
 #elif defined WINDOWS
+			/*!
+			 *	@brief stat information about the file.
+			 */
 			struct __stat64 st;
 #endif
 			
