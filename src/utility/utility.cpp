@@ -74,16 +74,13 @@ void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, const char* filename) {
 }
 
 mrmc::models::Dtmc<double>* parseDTMC(const char* tra_file, const char* lab_file) {
-   mrmc::storage::SquareSparseMatrix<double>* transition_matrix =
-         mrmc::parser::readTraFile(tra_file);
-   uint_fast64_t node_count = transition_matrix->getRowCount();
+	mrmc::parser::TraParser tp(tra_file);
+	uint_fast64_t node_count = tp.getMatrix()->getRowCount();
 
-   mrmc::models::AtomicPropositionsLabeling* labeling =
-         mrmc::parser::readLabFile(node_count, lab_file);
+	mrmc::parser::LabParser lp(node_count, lab_file);
 
-   mrmc::models::Dtmc<double>* result =
-         new mrmc::models::Dtmc<double>(transition_matrix, labeling);
-   return result;
+	mrmc::models::Dtmc<double>* result = new mrmc::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling());
+	return result;
 }
 
 }

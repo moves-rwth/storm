@@ -35,16 +35,6 @@ namespace mrmc {
 namespace parser {
 	
 	/*!
-	 *	@brief Parses integer and checks, if something has been parsed.
-	 */
-	uint_fast64_t checked_strtol(const char* str, char** end);
-	
-	/*!
-	 *	@brief Skips common whitespaces in a string.
-	 */
-	char* skipWS(char* buf);
-	
-	/*!
 	 *	@brief Opens a file and maps it to memory providing a char*
 	 *	containing the file content.
 	 * 
@@ -109,6 +99,20 @@ namespace parser {
 		 *	@brief Destructor of MappedFile.
 		 */
 		~MappedFile();
+	};
+	
+	class Parser
+	{
+		protected:
+			/*!
+			 *	@brief Parses integer and checks, if something has been parsed.
+			 */
+			uint_fast64_t checked_strtol(const char* str, char** end);
+	
+			/*!
+			 *	@brief Skips common whitespaces in a string.
+			 */
+			char* skipWS(char* buf);
 	};
 
 } // namespace parser

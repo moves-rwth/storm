@@ -3,6 +3,8 @@
 
 #include "src/storage/SquareSparseMatrix.h"
 
+#include "src/parser/parser.h"
+
 namespace mrmc {
 namespace parser {
 	
@@ -10,7 +12,22 @@ namespace parser {
  *	@brief	Load transition system from file and return initialized
  *	StaticSparseMatrix object.
  */
-mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename);
+class TraParser : Parser
+{
+	public:
+		TraParser(const char* filename);
+	
+		mrmc::storage::SquareSparseMatrix<double>* getMatrix()
+		{
+			return this->matrix;
+		}
+	
+	private:
+		mrmc::storage::SquareSparseMatrix<double>* matrix;
+		
+		uint_fast32_t firstPass(char* buf, uint_fast32_t &maxnode);
+	
+};
 		
 } // namespace parser
 } // namespace mrmc

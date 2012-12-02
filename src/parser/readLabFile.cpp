@@ -45,7 +45,7 @@ namespace parser {
  *	@param filename   input .lab file's name.
  *	@return The pointer to the created labeling object.
  */
-mrmc::models::AtomicPropositionsLabeling * readLabFile(uint_fast64_t node_count, const char * filename)
+LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 {
 	/*
 	 *	open file
@@ -105,7 +105,7 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(uint_fast64_t node_count,
 	/*
 	 *	create labeling object with given node and proposition count
 	 */
-	mrmc::models::AtomicPropositionsLabeling* result = new mrmc::models::AtomicPropositionsLabeling(node_count, proposition_count);
+	this->labeling = new mrmc::models::AtomicPropositionsLabeling(node_count, proposition_count);
 	
 	/*
 	 *	second run: add propositions and node labels to labeling
@@ -135,7 +135,7 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(uint_fast64_t node_count,
 				if (strncmp(buf, "#END", cnt) == 0) break;
 				strncpy(proposition, buf, cnt);
 				proposition[cnt] = '\0';
-				result->addAtomicProposition(proposition);
+				this->labeling->addAtomicProposition(proposition);
 			}
 			else cnt = 1; // next char is separator, one step forward
 		} while (cnt > 0);
@@ -178,19 +178,17 @@ mrmc::models::AtomicPropositionsLabeling * readLabFile(uint_fast64_t node_count,
 				else
 				{
 					/*
-					 *	copy proposition to buffer and add it to result
+					 *	copy proposition to buffer and add it to labeling
 					 */
 					strncpy(proposition, buf, cnt);
 					proposition[cnt] = '\0';
-					result->addAtomicPropositionToState(proposition, node);
+					this->labeling->addAtomicPropositionToState(proposition, node);
 					buf += cnt;
 				}
 			}
 			buf = skipWS(buf);
 		}
 	}
-	
-	return result;
 }
 
 } //namespace parser

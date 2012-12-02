@@ -29,7 +29,7 @@ extern log4cplus::Logger logger;
  *	@param end New pointer will be written there
  *	@return Result of strtol()
  */
-uint_fast64_t mrmc::parser::checked_strtol(const char* str, char** end)
+uint_fast64_t mrmc::parser::Parser::checked_strtol(const char* str, char** end)
 {
 	uint_fast64_t res = strtol(str, end, 10);
 	if (str == *end)
@@ -47,7 +47,7 @@ uint_fast64_t mrmc::parser::checked_strtol(const char* str, char** end)
  *	@param buf String buffer
  *	@return	pointer to first non-whitespace character
  */
-char* mrmc::parser::skipWS(char* buf)
+char* mrmc::parser::Parser::skipWS(char* buf)
 {
 	while ((*buf == ' ') || (*buf == '\t') || (*buf == '\n') || (*buf == '\r')) buf++;
 	return buf;

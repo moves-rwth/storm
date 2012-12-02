@@ -14,15 +14,17 @@
 
 TEST(ReadLabFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
-   ASSERT_THROW(mrmc::parser::readLabFile(0,MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::file_IO_exception);
+   ASSERT_THROW(mrmc::parser::LabParser(0,MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::file_IO_exception);
 }
 
 TEST(ReadLabFileTest, ParseTest) {
 	//This test is based on a test case from the original MRMC.
 	mrmc::models::AtomicPropositionsLabeling* labeling = NULL;
-
+	
+	mrmc::parser::LabParser* parser;
 	//Parsing the file
-	ASSERT_NO_THROW(labeling = mrmc::parser::readLabFile(12, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
+	ASSERT_NO_THROW(parser = new mrmc::parser::LabParser(12, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
+	labeling = parser->getLabeling();
 
 	//Checking whether all propositions are in the labelling
 
@@ -76,20 +78,21 @@ TEST(ReadLabFileTest, ParseTest) {
 
 		//Deleting the labeling
 		delete labeling;
+		delete parser;
 	} else {
 		FAIL();
 	}
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest1) {
-   ASSERT_THROW(mrmc::parser::readLabFile(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::LabParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), mrmc::exceptions::wrong_file_format);
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest2) {
-   ASSERT_THROW(mrmc::parser::readLabFile(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::LabParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), mrmc::exceptions::wrong_file_format);
 }
 
 TEST(ReadLabFileTest, WrongPropositionTest) {
-   ASSERT_THROW(mrmc::parser::readLabFile(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::LabParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), mrmc::exceptions::wrong_file_format);
 }
 

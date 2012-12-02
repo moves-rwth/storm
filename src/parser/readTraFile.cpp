@@ -48,7 +48,7 @@ namespace parser{
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
+uint_fast32_t TraParser::firstPass(char* buf, uint_fast32_t &maxnode)
 {
 	uint_fast32_t non_zero = 0;
 	
@@ -117,7 +117,8 @@ static uint_fast32_t makeFirstPass(char* buf, uint_fast32_t &maxnode)
  *	@return a pointer to the created sparse matrix.
  */
 
-mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
+TraParser::TraParser(const char * filename)
+{
 	/*
 	*	enforce locale where decimal point is '.'
 	*/
@@ -133,7 +134,7 @@ mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	perform first pass, i.e. count entries that are not zero and not on the diagonal
 	 */
 	uint_fast32_t maxnode;
-	uint_fast32_t non_zero = makeFirstPass(file.data, maxnode);
+	uint_fast32_t non_zero = this->firstPass(file.data, maxnode);
 	/*
 	 *	if first pass returned zero, the file format was wrong
 	 */
@@ -148,7 +149,6 @@ mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	
 	 *	from here on, we already know that the file header is correct
 	 */
-	mrmc::storage::SquareSparseMatrix<double> *sp = NULL;
 
 	/*
 	 *	read file header, extract number of states
@@ -165,13 +165,13 @@ mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
-	sp = new mrmc::storage::SquareSparseMatrix<double>(maxnode + 1);
-	if (sp == NULL)
+	this->matrix = new mrmc::storage::SquareSparseMatrix<double>(maxnode + 1);
+	if (this->matrix == NULL)
 	{
 		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
 		throw std::bad_alloc();
 	}
-	sp->initialize(non_zero);
+	this->matrix->initialize(non_zero);
 
 	uint_fast64_t row, col;
 	double val;
@@ -196,15 +196,14 @@ mrmc::storage::SquareSparseMatrix<double> * readTraFile(const char * filename) {
 			LOG4CPLUS_ERROR(logger, "Found transition probability of " << val << ", but we think probabilities should be from (0,1].");
 			throw mrmc::exceptions::wrong_file_format();
 		}
-		sp->addNextValue(row,col,val);
+		this->matrix->addNextValue(row,col,val);
 		buf = skipWS(buf);
 	}
 	
 	/*
 	 * clean up
 	 */	
-	sp->finalize();
-	return sp;
+	this->matrix->finalize();
 }
 
 } //namespace parser

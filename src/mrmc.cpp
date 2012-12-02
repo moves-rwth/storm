@@ -91,9 +91,9 @@ int main(const int argc, const char* argv[]) {
 		LOG4CPLUS_INFO(logger, "Enable verbose mode, log output gets printed to console.");
 	}
 
-	mrmc::storage::SquareSparseMatrix<double>* probMatrix = mrmc::parser::readTraFile(s->getString("trafile").c_str());
-	mrmc::models::AtomicPropositionsLabeling* labeling = mrmc::parser::readLabFile(probMatrix->getRowCount(), s->getString("labfile").c_str());
-	mrmc::models::Dtmc<double> dtmc(probMatrix, labeling);
+	mrmc::parser::TraParser traparser(s->getString("trafile").c_str());	
+	mrmc::parser::LabParser labparser(traparser.getMatrix()->getRowCount(), s->getString("labfile").c_str());
+	mrmc::models::Dtmc<double> dtmc(traparser.getMatrix(), labparser.getLabeling());
 
 	dtmc.printModelInformationToStream(std::cout);
 

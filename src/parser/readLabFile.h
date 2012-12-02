@@ -4,6 +4,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "boost/integer/integer_mask.hpp"
 
+#include "src/parser/parser.h"
 
 namespace mrmc {
 namespace parser {
@@ -11,7 +12,18 @@ namespace parser {
 /*!
  *	@brief Load label file and return initialized AtomicPropositionsLabeling object.
  */
-mrmc::models::AtomicPropositionsLabeling * readLabFile(uint_fast64_t node_count, const char * filename);
+class LabParser : Parser
+{
+	public:
+		LabParser(uint_fast64_t node_count, const char* filename);
+		mrmc::models::AtomicPropositionsLabeling* getLabeling()
+		{
+			return this->labeling;
+		}
+	
+	private:
+		mrmc::models::AtomicPropositionsLabeling* labeling;
+};
 
 } // namespace parser
 } // namespace mrmc

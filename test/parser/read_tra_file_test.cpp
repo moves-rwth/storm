@@ -14,14 +14,16 @@
 
 TEST(ReadTraFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
-   ASSERT_THROW(mrmc::parser::readTraFile(MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::file_IO_exception);
+   ASSERT_THROW(mrmc::parser::TraParser(MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::file_IO_exception);
 }
 
 /* The following test case is based on one of the original MRMC test cases
  */
 TEST(ReadTraFileTest, ParseFileTest1) {
 	mrmc::storage::SquareSparseMatrix<double> *result = NULL;
-	ASSERT_NO_THROW(result = mrmc::parser::readTraFile(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
+	mrmc::parser::TraParser* parser;
+	ASSERT_NO_THROW(parser = new mrmc::parser::TraParser(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
+	result = parser->getMatrix();
 
 	if (result != NULL) {
 		double val = 0;
@@ -62,19 +64,20 @@ TEST(ReadTraFileTest, ParseFileTest1) {
 		// FIXME: adapt this test case to the new dot-output routines
 		/* result->toDOTFile("output.dot"); */
 		delete result;
+		delete parser;
 	} else {
 		FAIL();
 	}
 }
 
 TEST(ReadTraFileTest, WrongFormatTestHeader1) {
-   ASSERT_THROW(mrmc::parser::readTraFile(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header1.tra"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::TraParser(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header1.tra"), mrmc::exceptions::wrong_file_format);
 }
 
 TEST(ReadTraFileTest, WrongFormatTestHeader2) {
-   ASSERT_THROW(mrmc::parser::readTraFile(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header2.tra"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::TraParser(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header2.tra"), mrmc::exceptions::wrong_file_format);
 }
 
 TEST(ReadTraFileTest, WrongFormatTestTransition) {
-   ASSERT_THROW(mrmc::parser::readTraFile(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_transition.tra"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::TraParser(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_transition.tra"), mrmc::exceptions::wrong_file_format);
 }
