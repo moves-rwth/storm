@@ -15,7 +15,9 @@ namespace mrmc {
 namespace formula {
 
 /*!
+ * @brief
  * Class for a PCTL formula tree with NOT node as root.
+ *
  * Has one PCTL state formula as sub formula/tree.
  *
  * The subtree is seen as part of the object and deleted with the object

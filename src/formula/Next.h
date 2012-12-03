@@ -16,10 +16,12 @@ namespace mrmc {
 namespace formula {
 
 /*!
+ * @brief
  * Class for a PCTL (path) formula tree with a Next node as root.
+ *
  * Has two PCTL state formulas as sub formulas/trees.
  *
- * \par Semantics
+ * @par Semantics
  * The formula holds iff in the next step, \e child holds
  *
  * The subtree is seen as part of the object and deleted with the object

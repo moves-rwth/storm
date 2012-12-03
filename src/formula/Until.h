@@ -16,10 +16,12 @@ namespace mrmc {
 namespace formula {
 
 /*!
- * Class for a PCTL (path) formula tree with a BoundedUntil node as root.
+ * @brief
+ * Class for a PCTL (path) formula tree with an Until node as root.
+ *
  * Has two PCTL state formulas as sub formulas/trees.
  *
- * \par Semantics
+ * @par Semantics
  * The formula holds iff eventually, formula \e right (the right subtree) holds, and before,
  * \e left holds always.
  *

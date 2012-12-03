@@ -17,9 +17,11 @@ namespace mrmc {
 namespace formula {
 
 /*!
+ * @brief
  * Abstract base class for PCTL path formulas.
+ *
  * @attention This class is abstract.
-  * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
+ * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
  * 	   the syntax conflicts with copy constructors for unary operators. To produce an identical object, use the method
  * 	   clone().
  */

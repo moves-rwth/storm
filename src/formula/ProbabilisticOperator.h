@@ -17,10 +17,12 @@ namespace mrmc {
 namespace formula {
 
 /*!
+ * @brief
  * Class for a PCTL formula tree with a P (probablistic) operator node as root.
+ *
  * Has one PCTL path formula as sub formula/tree.
  *
- * \par Semantics
+ * @par Semantics
  * 	  The formula holds iff the probability that the path formula holds is inside the bounds specified in this operator
  *
  * The subtree is seen as part of the object and deleted with it

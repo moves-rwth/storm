@@ -15,7 +15,9 @@ namespace mrmc {
 namespace formula {
 
 /*!
+ * @brief
  * Class for a PCTL formula tree with atomic proposition as root.
+ *
  * This class represents the leaves in the formula tree.
  *
  * @see PCTLStateFormula

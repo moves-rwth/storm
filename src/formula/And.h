@@ -16,7 +16,9 @@ namespace mrmc {
 namespace formula {
 
 /*!
+ * @brief
  * Class for a PCTL formula tree with AND node as root.
+ *
  * Has two PCTL state formulas as sub formulas/trees.
  *
  * As AND is commutative, the order is \e theoretically not important, but will influence the order in which
