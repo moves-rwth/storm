@@ -69,7 +69,7 @@ public:
 	 * @param universalReachabilityStates The result of the search.
 	 */
 	template <class T>
-	static void getUniversalReachabilityStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, const mrmc::storage::BitVector& existsPhiUntilPsiStates, mrmc::storage::BitVector& alwaysPhiUntilPsiStates) {
+	static void getAlwaysPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, const mrmc::storage::BitVector& existsPhiUntilPsiStates, mrmc::storage::BitVector& alwaysPhiUntilPsiStates) {
 		GraphAnalyzer::getExistsPhiUntilPsiStates(model, ~psiStates, ~existsPhiUntilPsiStates, alwaysPhiUntilPsiStates);
 		alwaysPhiUntilPsiStates.complement();
 	}
@@ -84,10 +84,10 @@ public:
 	 * @param universalReachabilityStates The result of the search.
 	 */
 	template <class T>
-	static void getUniversalReachabilityStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, mrmc::storage::BitVector& alwaysPhiUntilPsiStates) {
+	static void getAlwaysPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, mrmc::storage::BitVector& alwaysPhiUntilPsiStates) {
 		mrmc::storage::BitVector existsPhiUntilPsiStates(model.getNumberOfStates());
 		GraphAnalyzer::getExistsPhiUntilPsiStates(model, phiStates, psiStates, existsPhiUntilPsiStates);
-		GraphAnalyzer::getUniversalReachabilityStates(model, phiStates, psiStates, existsPhiUntilPsiStates, alwaysPhiUntilPsiStates);
+		GraphAnalyzer::getAlwaysPhiUntilPsiStates(model, phiStates, psiStates, existsPhiUntilPsiStates, alwaysPhiUntilPsiStates);
 	}
 
 };

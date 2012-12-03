@@ -33,6 +33,7 @@ public:
 	 * alter the bit vector.
 	 */
 	class constIndexIterator {
+		friend class BitVector;
 	public:
 
 		/*!
@@ -52,14 +53,6 @@ public:
 				currentIndex = startIndex;
 			}
 		}
-
-		/*!
-		 * Constructs a const iterator over the indices of the set bits in the
-		 * given bit vector, stopping at the given end index.
-		 * @param bitVector The bit vector to iterate over.
-		 * @param endIndex The number of elements to iterate over.
-		 */
-//		constIndexIterator(const BitVector& bitVector, uint_fast64_t endIndex) : constIndexIterator(bitVector, 0, endIndex, true) { }
 
 		/*!
 		 * Increases the position of the iterator to the position of the next bit that
@@ -100,19 +93,11 @@ public:
 	//! Constructor
 	/*!
 	 * Constructs a bit vector which can hold the given number of bits and
-	 * initializes all bits to false.
-	 * @param length The number of bits the bit vector should be able to hold.
-	 */
-//	BitVector(uint_fast64_t length) : BitVector(length, false) { }
-
-	//! Constructor
-	/*!
-	 * Constructs a bit vector which can hold the given number of bits and
 	 * initializes all bits to the provided truth value.
 	 * @param length The number of bits the bit vector should be able to hold.
 	 * @param initTrue The initial value of the first |length| bits.
 	 */
-	BitVector(uint_fast64_t length, bool initTrue = false) {
+	BitVector(uint_fast64_t length, bool initTrue = false) : endIterator(*this, length, length, false) {
 		// Check whether the given length is valid.
 		if (length == 0) {
 			LOG4CPLUS_ERROR(logger, "Trying to create bit vector of size 0.");
@@ -147,7 +132,7 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given bit vector.
 	 * @param bv A reference to the bit vector to be copied.
 	 */
-	BitVector(const BitVector &bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount) {
+	BitVector(const BitVector &bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		bucketArray = new uint64_t[bucketCount];
 		std::copy(bv.bucketArray, bv.bucketArray + bucketCount, bucketArray);
@@ -178,6 +163,7 @@ public:
 		bitCount = bv.bitCount;
 		bucketArray = new uint64_t[bucketCount];
 		std::copy(bv.bucketArray, bv.bucketArray + bucketCount, bucketArray);
+		updateEndIterator();
 		return *this;
 	}
 
@@ -203,6 +189,8 @@ public:
 		for (uint_fast64_t i = copySize; i < bucketCount; ++i) {
 			tempArray[i] = 0;
 		}
+
+		updateEndIterator();
 
 		// Dispose of the old bit vector and set the new one.
 		delete[] bucketArray;
@@ -395,22 +383,46 @@ public:
 	 * @return The number of bits that are set (to one) in this bit vector.
 	 */
 	uint_fast64_t getNumberOfSetBits() {
-		uint_fast64_t set_bits = 0;
-		for (uint_fast64_t i = 0; i < bucketCount; ++i) {
+		return getNumberOfSetBitsBeforeIndex(bucketCount << 6);
+	}
+
+	uint_fast64_t getNumberOfSetBitsBeforeIndex(uint_fast64_t index) {
+		uint_fast64_t result = 0;
+		// First, count all full buckets.
+		uint_fast64_t bucket = index >> 6;
+		for (uint_fast64_t i = 0; i < bucket; ++i) {
 			// Check if we are using g++ or clang++ and, if so, use the built-in function
 #if (defined (__GNUG__) || defined(__clang__))
-			set_bits += __builtin_popcountll(this->bucketArray[i]);
+			result += __builtin_popcountll(this->bucketArray[i]);
 #else
 			uint_fast32_t cnt;
 			uint_fast64_t bitset = this->bucketArray[i];
 			for (cnt = 0; bitset; cnt++) {
 				bitset &= bitset - 1;
 			}
-			set_bits += cnt;
+			result += cnt;
 #endif
 		}
 
-		return set_bits;
+		// Now check if we have to count part of a bucket.
+		uint64_t tmp = index & mod64mask;
+		if (tmp != 0) {
+			tmp = ((1ll << (tmp & mod64mask)) - 1ll);
+			tmp &= bucketArray[bucket];
+			// Check if we are using g++ or clang++ and, if so, use the built-in function
+#if (defined (__GNUG__) || defined(__clang__))
+			result += __builtin_popcountll(tmp);
+#else
+			uint_fast32_t cnt;
+			uint64_t bitset = tmp;
+			for (cnt = 0; bitset; cnt++) {
+				bitset &= bitset - 1;
+			}
+			result += cnt;
+#endif
+		}
+
+		return result;
 	}
 
 	/*!
@@ -438,8 +450,8 @@ public:
 	/*!
 	 * Returns an iterator pointing at the element past the bit vector.
 	 */
-	constIndexIterator end() const {
-		return constIndexIterator(*this, bitCount, bitCount, false);
+	const constIndexIterator& end() const {
+		return endIterator;
 	}
 
 private:
@@ -497,6 +509,14 @@ private:
 		}
 	}
 
+	/*!
+	 * Updates the end iterator to the correct past-the-end position. Needs
+	 * to be called whenever the size of the bit vector changed.
+	 */
+	void updateEndIterator() {
+		endIterator.currentIndex = bitCount;
+	}
+
 	/*! The number of 64-bit buckets we use as internal storage. */
 	uint_fast64_t bucketCount;
 
@@ -505,6 +525,9 @@ private:
 
 	/*! Array of 64-bit buckets to store the bits. */
 	uint64_t* bucketArray;
+
+	/*! An iterator marking the end of the bit vector. */
+	constIndexIterator endIterator;
 
 	/*! A bit mask that can be used to reduce a modulo operation to a logical "and".  */
 	static const uint_fast64_t mod64mask = (1 << 6) - 1;
