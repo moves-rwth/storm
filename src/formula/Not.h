@@ -28,87 +28,89 @@ namespace formula {
  */
 template <class T>
 class Not : public PCTLStateFormula<T> {
-   private:
-      PCTLStateFormula<T>* child;
-   public:
-      /*!
-       * Empty constructor
-       */
-      Not() {
-         this->child = NULL;
-      }
 
-      /*!
-       * Constructor
-       * @param child The child node
-       */
-      Not(PCTLStateFormula<T>* child) {
-         this->child = child;
-      }
+public:
+	/*!
+	 * Empty constructor
+	 */
+	Not() {
+		this->child = NULL;
+	}
 
-      /*!
-       * Destructor
-       *
-       * Also deletes the subtree
-       * (this behavior can be prevented by setting them to NULL before deletion)
-       */
-      virtual ~Not() {
-    	  if (child != NULL) {
-    		  delete child;
-    	  }
-      }
+	/*!
+	 * Constructor
+	 * @param child The child node
+	 */
+	Not(PCTLStateFormula<T>* child) {
+		this->child = child;
+	}
 
-      /*!
-       * @returns The child node
-       */
-      PCTLStateFormula<T>* getChild() {
-         return child;
-      }
+	/*!
+	 * Destructor
+	 *
+	 * Also deletes the subtree
+	 * (this behavior can be prevented by setting them to NULL before deletion)
+	 */
+	virtual ~Not() {
+	  if (child != NULL) {
+		  delete child;
+	  }
+	}
 
-      /*!
-       * Sets the subtree
-       * @param child the new child node
-       */
-      void setChild(PCTLStateFormula<T>* child) {
-         this->child = child;
-      }
+	/*!
+	 * @returns The child node
+	 */
+	PCTLStateFormula<T>* getChild() {
+		return child;
+	}
 
-      /*!
-       * @returns a string representation of the formula
-       */
-      virtual std::string toString() {
-         std::string result = "!";
-         result += child->toString();
-         return result;
-      }
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(PCTLStateFormula<T>* child) {
+		this->child = child;
+	}
 
-      /*!
-       * Clones the called object.
-       *
-       * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-       *
-       * @returns a new AND-object that is identical the called object.
-       */
-      virtual PCTLStateFormula<T>* clone() {
-      	Not<T>* result = new Not<T>();
-      	if (child != NULL) {
-      		result->setChild(child);
-      	}
-      	return result;
-      }
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() {
+		std::string result = "!";
+		result += child->toString();
+		return result;
+	}
 
-      /*!
-       * Calls the model checker to check this formula.
-       * Needed to infer the correct type of formula class.
-       *
-       * @note This function should only be called in a generic check function of a model checker class. For other uses,
-       *       the methods of the model checker should be used.
-       *
-       * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
-       */
-      virtual mrmc::storage::BitVector *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
-    	  return modelChecker->checkNot(this);
-      }
+	/*!
+	 * Clones the called object.
+	 *
+	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 *
+	 * @returns a new AND-object that is identical the called object.
+	 */
+	virtual PCTLStateFormula<T>* clone() {
+		Not<T>* result = new Not<T>();
+		if (child != NULL) {
+			result->setChild(child);
+		}
+		return result;
+	}
+
+	/*!
+	 * Calls the model checker to check this formula.
+	 * Needed to infer the correct type of formula class.
+	 *
+	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
+	 *       the methods of the model checker should be used.
+	 *
+	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
+	 */
+	virtual mrmc::storage::BitVector *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
+	  return modelChecker->checkNot(this);
+	}
+
+private:
+	PCTLStateFormula<T>* child;
 };
 
 } //namespace formula

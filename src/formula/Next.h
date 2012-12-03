@@ -32,90 +32,92 @@ namespace formula {
  */
 template <class T>
 class Next : public PCTLPathFormula<T> {
-   private:
-      PCTLStateFormula<T>* child;
-   public:
-      /*!
-       * Empty constructor
-       */
-      Next() {
-         this->child = NULL;
-      }
 
-      /*!
-       * Constructor
-       *
-       * @param child The child node
-       */
-      Next(PCTLStateFormula<T>* child) {
-         this->child = child;
-      }
+public:
+	/*!
+	 * Empty constructor
+	 */
+	Next() {
+		this->child = NULL;
+	}
 
-      /*!
-       * Constructor.
-       *
-       * Also deletes the subtree.
-       * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
-       */
-      virtual ~Next() {
-    	  if (child != NULL) {
-    		  delete child;
-    	  }
-      }
+	/*!
+	 * Constructor
+	 *
+	 * @param child The child node
+	 */
+	Next(PCTLStateFormula<T>* child) {
+		this->child = child;
+	}
 
-      /*!
-       * @returns the child node
-       */
-      PCTLStateFormula<T>* getChild() {
-         return child;
-      }
+	/*!
+	 * Constructor.
+	 *
+	 * Also deletes the subtree.
+	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
+	 */
+	virtual ~Next() {
+	  if (child != NULL) {
+		  delete child;
+	  }
+	}
 
-      /*!
-       * Sets the subtree
-       * @param child the new child node
-       */
-      void setChild(PCTLStateFormula<T>* child) {
-         this->child = child;
-      }
+	/*!
+	 * @returns the child node
+	 */
+	PCTLStateFormula<T>* getChild() {
+		return child;
+	}
 
-      /*!
-       * @returns a string representation of the formula
-       */
-      virtual std::string toString() {
-         std::string result = "(";
-         result += " X ";
-         result += child->toString();
-         result += ")";
-         return result;
-      }
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(PCTLStateFormula<T>* child) {
+		this->child = child;
+	}
 
-      /*!
-       * Clones the called object.
-       *
-       * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-       *
-       * @returns a new BoundedUntil-object that is identical the called object.
-       */
-      virtual PCTLPathFormula<T>* clone() {
-      	Next<T>* result = new Next<T>();
-      	if (child != NULL) {
-      		result->setChild(child);
-      	}
-      	return result;
-      }
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() {
+		std::string result = "(";
+		result += " X ";
+		result += child->toString();
+		result += ")";
+		return result;
+	}
 
-      /*!
-       * Calls the model checker to check this formula.
-       * Needed to infer the correct type of formula class.
-       *
-       * @note This function should only be called in a generic check function of a model checker class. For other uses,
-       *       the methods of the model checker should be used.
-       *
-       * @returns A vector indicating the probability that the formula holds for each state.
-       */
-      virtual std::vector<T> *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
-    	  return modelChecker->checkNext(this);
-      }
+	/*!
+	 * Clones the called object.
+	 *
+	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 *
+	 * @returns a new BoundedUntil-object that is identical the called object.
+	 */
+	virtual PCTLPathFormula<T>* clone() {
+		Next<T>* result = new Next<T>();
+		if (child != NULL) {
+			result->setChild(child);
+		}
+		return result;
+	}
+
+	/*!
+	 * Calls the model checker to check this formula.
+	 * Needed to infer the correct type of formula class.
+	 *
+	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
+	 *       the methods of the model checker should be used.
+	 *
+	 * @returns A vector indicating the probability that the formula holds for each state.
+	 */
+	virtual std::vector<T> *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
+	  return modelChecker->checkNext(this);
+	}
+
+private:
+	PCTLStateFormula<T>* child;
 };
 
 } //namespace formula

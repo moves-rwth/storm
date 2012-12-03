@@ -27,17 +27,18 @@ namespace formula {
  */
 template <class T>
 class PCTLFormula {
-   public:
-		/*!
-		 * virtual destructor
-		 */
-	   virtual ~PCTLFormula() { }
 
-	   /*!
-	    * @note This function is not implemented in this class.
-	    * @returns a string representation of the formula
-	    */
-      virtual std::string toString() = 0;
+public:
+	/*!
+	 * virtual destructor
+	 */
+	virtual ~PCTLFormula() { }
+
+	/*!
+	 * @note This function is not implemented in this class.
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() = 0;
 };
 
 } //namespace formula
