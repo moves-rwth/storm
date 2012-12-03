@@ -73,21 +73,21 @@ public:
 	/*!
 	 * @returns the child node (representation of a PCTL path formula)
 	 */
-	PCTLPathFormula<T>* getPathFormula () {
-		return pathFormula;
+	PCTLPathFormula<T>& getPathFormula () {
+		return *pathFormula;
 	}
 
 	/*!
 	 * @returns the lower bound for the probability
 	 */
-	T getLowerBound() {
+	const T& getLowerBound() {
 		return lower;
 	}
 
 	/*!
 	 * @returns the upper bound for the probability
 	 */
-	T getUpperBound() {
+	const T& getUpperBound() {
 		return upper;
 	}
 

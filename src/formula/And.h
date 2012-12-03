@@ -91,15 +91,15 @@ public:
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	PCTLStateFormula<T>* getLeft() {
-		return left;
+	PCTLStateFormula<T>& getLeft() {
+		return *left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	PCTLStateFormula<T>* getRight() {
-		return right;
+	PCTLStateFormula<T>& getRight() {
+		return *right;
 	}
 
 	/*!

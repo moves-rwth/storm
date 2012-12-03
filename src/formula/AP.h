@@ -59,7 +59,7 @@ public:
 	/*!
 	 * @returns the name of the atomic proposition
 	 */
-	std::string getAP() {
+	const std::string& getAP() {
 		return ap;
 	}
 
