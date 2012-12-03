@@ -54,27 +54,32 @@ namespace modelChecker {
  */
 template<class T>
 class DtmcPrctlModelChecker {
-   private:
-      mrmc::models::Dtmc<T>* dtmc;
+   public:
+      /*!
+       * Constructor
+       *
+       * @parameter Dtmc The dtmc model which is checked.
+       */
+      explicit DtmcPrctlModelChecker(mrmc::models::Dtmc<T>* Dtmc);
 
-   protected:
+      /*!
+       * Copy constructor
+       *
+       * @parameter modelChecker The model checker that is copied.
+       */
+      explicit DtmcPrctlModelChecker(mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker);
+
+      /*!
+       * Destructor
+       */
+      virtual ~DtmcPrctlModelChecker();
+
       /*!
        * @returns A reference to the dtmc of the model checker.
        */
       mrmc::models::Dtmc<T>* getDtmc() const {
          return this->dtmc;
       }
-
-   public:
-      /*!
-       * Constructor
-       */
-      explicit DtmcPrctlModelChecker(mrmc::models::Dtmc<T>* DTMC);
-
-      /*!
-       * Destructor
-       */
-      virtual ~DtmcPrctlModelChecker();
 
       /*!
        * Makes all states in a given set absorbing (i.e. adds self loops with probability 1 and removes all
@@ -185,6 +190,9 @@ class DtmcPrctlModelChecker {
        * @returns for each state the probability that the path formula holds.
        */
       virtual std::vector<T> checkUntil(mrmc::formula::Until<T>*) = 0;
+
+   private:
+      mrmc::models::Dtmc<T>* dtmc;
 };
 
 } //namespace modelChecker
