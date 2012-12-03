@@ -12,6 +12,8 @@
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
 
+#include "src/utility/utility.h"
+
 TEST(ReadTraFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
    ASSERT_THROW(mrmc::parser::TraParser(MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::file_IO_exception);
@@ -61,8 +63,6 @@ TEST(ReadTraFileTest, ParseFileTest1) {
 		ASSERT_TRUE(result->getValue(4,4,&val));
 		ASSERT_EQ(val,0);
 
-		// FIXME: adapt this test case to the new dot-output routines
-		/* result->toDOTFile("output.dot"); */
 		delete result;
 		delete parser;
 	} else {

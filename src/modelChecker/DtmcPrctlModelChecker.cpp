@@ -12,8 +12,8 @@ namespace mrmc {
 namespace modelChecker {
 
 template<class T>
-DtmcPrctlModelChecker<T>::DtmcPrctlModelChecker(mrmc::models::Dtmc<T>* DTMC) {
-   this->DTMC = DTMC;
+DtmcPrctlModelChecker<T>::DtmcPrctlModelChecker(mrmc::models::Dtmc<T>* dtmc) {
+   this->dtmc = dtmc;
 }
 
 template<class T>

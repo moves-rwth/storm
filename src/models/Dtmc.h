@@ -107,6 +107,13 @@ public:
 	}
 
 	/*!
+	 *
+	 */
+	std::set<std::string> getPropositionsForState(uint_fast32_t state) {
+		return stateLabeling->getPropositionsForState(state - 1);
+	}
+
+	/*!
 	 * Retrieves a reference to the backwards transition relation.
 	 * @return A reference to the backwards transition relation.
 	 */

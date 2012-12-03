@@ -61,7 +61,7 @@ namespace
 		/*!
 		 *	@brief Resulting formula.
 		 */
-		mrmc::formula::PCTLFormula* result;
+		mrmc::formula::PCTLFormula<double>* result;
 		
 		struct dump
 		{
@@ -106,7 +106,7 @@ namespace
 	};
 }
 
-mrmc::formula::PCTLFormula* mrmc::parser::readPrctlFile(const char* filename)
+mrmc::formula::PCTLFormula<double>* mrmc::parser::readPrctlFile(const char* filename)
 {
 	PRCTLParser p;
 	mrmc::parser::MappedFile file(filename);
