@@ -9,7 +9,7 @@ namespace parser {
 /*!
  *	@brief Load PRCTL file
  */
-mrmc::formula::PCTLFormula* readPrctlFile(const char * filename);
+mrmc::formula::PCTLFormula<double>* readPrctlFile(const char * filename);
 
 } // namespace parser
 } // namespace mrmc

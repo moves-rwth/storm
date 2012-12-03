@@ -7,9 +7,9 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
-#if defined MACOSX
+//#if defined MACOSX
 	#include <unistd.h>
-#endif
+//#endif
 #include <errno.h>
 #include <iostream>
 #include <cstring>

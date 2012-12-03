@@ -9,70 +9,57 @@
 #include "src/parser/readTraFile.h"
 #include "src/parser/readLabFile.h"
 
+#include <fstream>
+
 namespace mrmc {
 
 namespace utility {
 
-void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, const char* filename) {
-	//FIXME: adapt this to the refactored names
-	//FIXME: use C++-style for file output here, as performance is not critical here
-/*   FILE *P;
-   mrmc::sparse::StaticSparseMatrix<double>* matrix = dtmc->getTransitions();
-   mrmc::dtmc::Labeling* labels = dtmc->getLabels();
+void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, std::string filename) {
+   mrmc::storage::SquareSparseMatrix<double>* matrix = dtmc->getTransitionProbabilityMatrix();
+   double* diagonal_storage = matrix->getDiagonalStoragePointer();
 
-   uint_fast64_t* row_indications = matrix->getRowIndications();
-   uint_fast64_t* column_indications = matrix->getColumnIndications();
-   double* value_storage = matrix->getStoragePointer();
-   double* diagonal_storage = matrix->getDiagonalStorage();
+   std::ofstream file;
+   file.open(filename);
 
-   P = fopen(filename, "w");
-
-   if (P == NULL) {
-      pantheios::log_ERROR("File could not be opened.");
-      throw mrmc::exceptions::file_IO_exception();
-   }
-
-   fprintf(P, "digraph dtmc {\n");
+   file << "digraph dtmc {\n";
 
    //Specify the nodes and their labels
-   for (uint_fast64_t i = 1; i <= dtmc->getNodeCount(); i++) {
-      fprintf(P, "\t%Lu[label=\"%Lu\\n{", i, i);
+   for (uint_fast64_t i = 1; i < dtmc->getNumberOfStates(); i++) {
+      file << "\t" << i << "[label=\"" << i << "\\n{";
       char komma=' ';
-      for(auto it = labels->getPropositionMap()->begin();
-               it != labels->getPropositionMap()->end();
+      std::set<std::string> propositions = dtmc->getPropositionsForState(i);
+      for(auto it = propositions.begin();
+               it != propositions.end();
                it++) {
-         if(labels->nodeHasProposition(it->first, i)) {
-            fprintf(P, "%c%s", komma, (it->first).c_str());
-         }
-         char komma=',';
+      	file << komma << *it;
+         komma=',';
       }
 
-      fprintf(P, " }\"];\n");
+      file << " }\"];\n";
+
    }
 
-   uint_fast64_t row = 0;
-
-   for (uint_fast64_t i = 0; i < matrix->getNonZeroEntryCount(); i++ ) {
-      //Check whether we have to switch to the new row
-      while (row_indications[row] <= i) {
-         ++row;
-         //write diagonal entry/self loop first
-         if (diagonal_storage[row] != 0) {
-            fprintf(P, "\t%Lu -> %Lu [label=%f]\n",
-                  row, row, diagonal_storage[row]);
-         }
-      }
-      fprintf(P, "\t%Lu -> %Lu [label=%f]\n",
-            row, column_indications[i], value_storage[i]);
+   for (uint_fast64_t row = 0; row < dtmc->getNumberOfStates(); row++ ) {
+   	//write diagonal entry/self loop first
+   	if (diagonal_storage[row] != 0) {
+   	            file << "\t" << row << " -> " << row << " [label=" << diagonal_storage[row] <<"]\n";
+   	         }
+   	//Then, iterate through the row and write each non-diagonal value into the file
+   	for (	auto it = matrix->beginConstColumnNoDiagIterator(row);
+   			it !=  matrix->endConstColumnNoDiagIterator(row);
+   			it++) {
+   		double value = 0;
+   		matrix->getValue(row,*it,&value);
+   		file << "\t" << row << " -> " << *it << " [label=" << value << "]\n";
+   	}
    }
 
-
-
-   fprintf(P, "}\n");
-
-   fclose(P); */
+   file << "}\n";
+   file.close();
 }
 
+//TODO: Should this stay here or be integrated in the new parser structure?
 mrmc::models::Dtmc<double>* parseDTMC(const char* tra_file, const char* lab_file) {
 	mrmc::parser::TraParser tp(tra_file);
 	uint_fast64_t node_count = tp.getMatrix()->getRowCount();

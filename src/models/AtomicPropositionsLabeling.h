@@ -134,6 +134,26 @@ public:
 	}
 
 	/*!
+	 * Creates a list of atomic propositions for a given state
+	 * @param state The index of a state
+	 * @returns The list of propositions for the given state
+	 */
+	std::set<std::string> getPropositionsForState(uint_fast32_t state) {
+		if (state >= stateCount) {
+			throw std::out_of_range("State index out of range.");
+		}
+		std::set<std::string> result;
+		for (auto it = nameToLabelingMap.begin();
+					 it != nameToLabelingMap.end();
+					 it++) {
+			if (stateHasAtomicProposition(it->first, state)) {
+				result.insert(it->first);
+			}
+		}
+		return result;
+	}
+
+	/*!
 	 * Checks whether a given state is labeled with the given atomic proposition.
 	 * @param ap The name of the atomic proposition.
 	 * @param state The index of the state to check.

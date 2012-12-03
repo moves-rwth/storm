@@ -25,7 +25,7 @@ namespace utility {
                      it will be overwritten.
 
  */
-void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, const char* filename);
+void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, std::string filename);
 
 /*!
     Parses a transition file and a labeling file and produces a DTMC out of them.
