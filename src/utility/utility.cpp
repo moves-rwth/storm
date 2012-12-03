@@ -25,7 +25,7 @@ void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, std::string filename) {
    file << "digraph dtmc {\n";
 
    //Specify the nodes and their labels
-   for (uint_fast64_t i = 1; i <= dtmc->getNumberOfStates(); i++) {
+   for (uint_fast64_t i = 1; i < dtmc->getNumberOfStates(); i++) {
       file << "\t" << i << "[label=\"" << i << "\\n{";
       char komma=' ';
       std::set<std::string> propositions = dtmc->getPropositionsForState(i);
