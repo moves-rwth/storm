@@ -97,14 +97,13 @@ public:
 	 * @param length The number of bits the bit vector should be able to hold.
 	 * @param initTrue The initial value of the first |length| bits.
 	 */
-	BitVector(uint_fast64_t length, bool initTrue = false) : endIterator(*this, length, length, false) {
+	BitVector(uint_fast64_t length, bool initTrue = false) : bitCount(length), endIterator(*this, length, length, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
 		// Check whether the given length is valid.
 		if (length == 0) {
 			LOG4CPLUS_ERROR(logger, "Trying to create bit vector of size 0.");
 			throw mrmc::exceptions::invalid_argument("Trying to create a bit vector of size 0.");
 		}
 
-		bitCount = length;
 		// Compute the correct number of buckets needed to store the given number of bits
 		bucketCount = length >> 6;
 		if ((length & mod64mask) != 0) {
@@ -132,7 +131,7 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given bit vector.
 	 * @param bv A reference to the bit vector to be copied.
 	 */
-	BitVector(const BitVector &bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false) {
+	BitVector(const BitVector &bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		bucketArray = new uint64_t[bucketCount];
 		std::copy(bv.bucketArray, bv.bucketArray + bucketCount, bucketArray);
@@ -161,9 +160,9 @@ public:
 		}
 		bucketCount = bv.bucketCount;
 		bitCount = bv.bitCount;
-		this->bucketArray = new uint64_t[bucketCount];
-		std::copy(bv.bucketArray, bv.bucketArray + bucketCount, this->bucketArray);
-		updateEndIterator();
+		bucketArray = new uint64_t[bucketCount];
+		std::copy(bv.bucketArray, bv.bucketArray + bucketCount, bucketArray);
+		updateSizeChange();
 		return *this;
 	}
 
@@ -190,7 +189,7 @@ public:
 			tempArray[i] = 0;
 		}
 
-		updateEndIterator();
+		updateSizeChange();
 
 		// Dispose of the old bit vector and set the new one.
 		delete[] this->bucketArray;
@@ -244,7 +243,6 @@ public:
 			result.bucketArray[i] = this->bucketArray[i] & bv.bucketArray[i];
 		}
 
-		result.truncateLastBucket();
 		return result;
 	}
 
@@ -263,7 +261,6 @@ public:
 			this->bucketArray[i] &= bv.bucketArray[i];
 		}
 
-		truncateLastBucket();
 		return *this;
 	}
 
@@ -507,17 +504,17 @@ private:
 	 */
 	void truncateLastBucket() {
 		if ((bitCount & mod64mask) != 0) {
-			uint64_t mask = ((1ll << (bitCount & mod64mask)) - 1ll);
-			bucketArray[bucketCount - 1] = bucketArray[bucketCount - 1] & mask;
+			bucketArray[bucketCount - 1] = bucketArray[bucketCount - 1] & truncateMask;
 		}
 	}
 
 	/*!
-	 * Updates the end iterator to the correct past-the-end position. Needs
-	 * to be called whenever the size of the bit vector changed.
+	 * Updates internal structures in case the size of the bit vector changed. Needs to be called
+	 * after the size of the bit vector changed.
 	 */
-	void updateEndIterator() {
+	void updateSizeChange() {
 		endIterator.currentIndex = bitCount;
+		truncateMask = (1ll << (bitCount & mod64mask)) - 1ll;
 	}
 
 	/*! The number of 64-bit buckets we use as internal storage. */
@@ -534,6 +531,8 @@ private:
 
 	/*! A bit mask that can be used to reduce a modulo operation to a logical "and".  */
 	static const uint_fast64_t mod64mask = (1 << 6) - 1;
+
+	uint64_t truncateMask;
 };
 
 } // namespace storage
