@@ -18,13 +18,13 @@ class PRCTLParser : Parser
 		/*!
 		 *	@brief return formula object parsed from file.
 		 */
-		mrmc::formula::PCTLFormula* getFormula()
+		mrmc::formula::PCTLFormula<double>* getFormula()
 		{
 			return this->formula;
 		}
 	
 	private:
-		mrmc::formula::PCTLFormula* formula;
+		mrmc::formula::PCTLFormula<double>* formula;
 };
 
 } // namespace parser
