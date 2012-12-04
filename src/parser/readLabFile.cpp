@@ -124,7 +124,15 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 		{
 			buf += cnt;
 			cnt = strcspn(buf, separator); // position of next separator
-			if (cnt > 0)
+			if (cnt >= sizeof(proposition))
+			{
+				/*
+				 *	if token is longer than our buffer, the following strncpy code might get risky...
+				 */
+				LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition with length > " << (sizeof(proposition)-1) << " was found.");
+				throw mrmc::exceptions::wrong_file_format();
+			}
+			else if (cnt > 0)
 			{
 				/*
 				 *	next token is: #DECLARATION: just skip it

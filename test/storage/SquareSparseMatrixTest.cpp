@@ -157,6 +157,8 @@ TEST(SquareSparseMatrixTest, ConversionFromDenseEigen_ColMajor_SparseMatrixTest)
 			ASSERT_EQ(target, row * 10 + col);
 		}
 	}
+	
+	delete ssm;
 }
 
 TEST(SquareSparseMatrixTest, ConversionFromDenseEigen_RowMajor_SparseMatrixTest) {
@@ -187,6 +189,8 @@ TEST(SquareSparseMatrixTest, ConversionFromDenseEigen_RowMajor_SparseMatrixTest)
 			ASSERT_EQ(target, row * 10 + col);
 		}
 	}
+	
+	delete ssm;
 }
 
 TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_ColMajor_SparseMatrixTest) {
@@ -234,6 +238,8 @@ TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_ColMajor_SparseMatrixTest
 		ASSERT_TRUE(ssm->getValue(coeff.row(), coeff.col(), &target));
 		ASSERT_EQ(target, coeff.value());
 	}
+	
+	delete ssm;
 }
 
 TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest) {
@@ -281,6 +287,8 @@ TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest
 		ASSERT_TRUE(ssm->getValue(coeff.row(), coeff.col(), &target));
 		ASSERT_EQ(target, coeff.value());
 	}
+	
+	delete ssm;
 }
 
 TEST(SquareSparseMatrixTest, ConversionToSparseEigen_RowMajor_SparseMatrixTest) {
@@ -311,4 +319,7 @@ TEST(SquareSparseMatrixTest, ConversionToSparseEigen_RowMajor_SparseMatrixTest) 
 			ASSERT_EQ(values[row * 10 + col], esm->coeff(row, col));
 		}
 	}
+	
+	delete esm;
+	delete ssm;
 }
