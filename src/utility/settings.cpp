@@ -114,6 +114,7 @@ Settings* Settings::instance(const int argc, const char* argv[], const char* fil
 			("verbose,v", "be verbose")
 			("help-config", "produce help message about config file")
 			("configfile,c", bpo::value<std::string>(), "name of config file")
+			("test-prctl", bpo::value<std::string>(), "name of prctl file")
 		;
 		Settings::generic.add_options()
 			("trafile", bpo::value<std::string>()->required(), "name of the .tra file")

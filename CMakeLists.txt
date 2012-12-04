@@ -25,11 +25,14 @@ message(STATUS "LOG4CPLUS_LIBRARY is ${LOG4CPLUS_LIBRARY}")
 set(EIGEN3_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen)
 message(STATUS "EIGEN3_INCLUDE_DIR is ${EIGEN3_INCLUDE_DIR}")
 
+# Set all Eigen references the version in the repository
+set(GMMXX_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-4.2/include)
+message(STATUS "GMMXX_INCLUDE_DIR is ${GMMXX_INCLUDE_DIR}")
+
 # Now define all available custom options
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
-option(USE_BOOST_MT_SUFFIX "Sets whether the the Boost libraries have the suffix mt." OFF)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (DEBUG)
@@ -52,7 +55,7 @@ elseif(MSVC)
 
 else(CLANG)
     # Set standard flags for GCC
-    set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic")
+    set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic -Wno-unused-variable")
     
     # Turn on popcnt instruction if desired (yes by default)
     if (USE_POPCNT)
@@ -93,36 +96,25 @@ find_package(Doxygen REQUIRED)
 #set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options)
 
 if(Boost_FOUND)
-	if (NOT USE_BOOST_MT_SUFFIX)
-        set(BOOST_PROGRAM_OPTIONS_LIBRARY "boost_program_options")
-	else()
-        set(BOOST_PROGRAM_OPTIONS_LIBRARY "boost_program_options-mt")
-	endif()
-
     if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
         set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
     endif ()
 	
     message(STATUS "BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
     message(STATUS "BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
-	message(STATUS "BOOST_PROGRAM_OPTIONS_LIBRARY is ${BOOST_PROGRAM_OPTIONS_LIBRARY}")
 	
     include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
-	
-	# Prepare the static boost libraries in case they were requested
-    if (USE_BOOST_STATIC_LIBRARIES)
-        add_library(boost_program_options STATIC IMPORTED)
-        set_property(TARGET boost_program_options PROPERTY IMPORTED_LOCATION "${Boost_LIBRARY_DIRS}/lib${BOOST_PROGRAM_OPTIONS_LIBRARY}.a")
-        set_target_properties(boost_program_options PROPERTIES LINKER_LANGUAGE CXX)
-    endif(USE_BOOST_STATIC_LIBRARIES)
 endif(Boost_FOUND)
 
 # Add Eigen to the included directories
 include_directories(${EIGEN3_INCLUDE_DIR})
+
+# Add GMMXX to the included directories
+include_directories(${GMMXX_INCLUDE_DIR})
 
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
@@ -130,13 +122,8 @@ add_executable(mrmc ${MRMC_SOURCES} ${MRMC_HEADERS})
 add_executable(mrmc-tests ${MRMC_TEST_SOURCES} ${MRMC_TEST_HEADERS})
 
 # Add target link deps for Boost program options
-if (USE_BOOST_STATIC_LIBRARIES)
-    target_link_libraries(mrmc ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-    target_link_libraries(mrmc-tests ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-else()
-    target_link_libraries(mrmc boost_program_options)
-    target_link_libraries(mrmc-tests boost_program_options)
-endif(USE_BOOST_STATIC_LIBRARIES)
+target_link_libraries(mrmc ${Boost_LIBRARIES})   
+target_link_libraries(mrmc-tests ${Boost_LIBRARIES})
 
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
@@ -184,3 +171,6 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/mrmc-config.h.in"
   "${PROJECT_BINARY_DIR}/mrmc-config.h"
 )
+
+add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ./mrmc examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab)
+add_custom_target(memcheck-tests valgrind --leak-check=full --show-reachable=yes ./mrmc-tests)

@@ -22,9 +22,11 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/readLabFile.h"
 #include "src/parser/readTraFile.h"
+#include "src/parser/readPrctlFile.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/settings.h"
 #include "Eigen/Sparse"
+#include "gmm/gmm_matrix.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -49,7 +51,7 @@ void setUpFileLogging() {
 void setUpConsoleLogging() {
 	log4cplus::SharedAppenderPtr consoleLogAppender(new log4cplus::ConsoleAppender());
 	consoleLogAppender->setName("mainConsoleAppender");
-	consoleLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} - %b:%L : %m%n")));
+	consoleLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %b:%L : %m%n")));
 	logger.addAppender(consoleLogAppender);
 }
 
@@ -84,6 +86,10 @@ int main(const int argc, const char* argv[]) {
 		std::cout << mrmc::settings::helpConfigfile << std::endl;
 		return 0;
 	}
+	if (s->isSet("test-prctl")) {
+		mrmc::parser::PRCTLParser parser(s->getString("test-prctl").c_str());
+		return 0;
+	}
 	
 	if (s->isSet("verbose"))
 	{
@@ -97,12 +103,12 @@ int main(const int argc, const char* argv[]) {
 
 	dtmc.printModelInformationToStream(std::cout);
 
-	// mrmc::storage::BitVector AU(dtmc.getNumberOfStates());
-	// mrmc::solver::GraphAnalyzer::getUniversalReachabilityStates(dtmc, mrmc::storage::BitVector(dtmc.getNumberOfStates(), true), *dtmc.getLabeledStates("elected"), AU);
-
 	if (s != nullptr) {
 		delete s;
 	}
+	
+	delete labparser.getLabeling();
+	delete traparser.getMatrix();
 
 	LOG4CPLUS_INFO(logger, "Nothing more to do, exiting.");
 

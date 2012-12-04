@@ -10,9 +10,11 @@
 #include "src/exceptions/invalid_argument.h"
 #include "src/exceptions/out_of_range.h"
 #include "src/exceptions/file_IO_exception.h"
+#include "src/storage/BitVector.h"
 
 #include "src/misc/const_templates.h"
 #include "Eigen/Sparse"
+#include "gmm/gmm_matrix.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -110,19 +112,19 @@ public:
 	 */
 	~SquareSparseMatrix() {
 		setState(MatrixStatus::UnInitialized);
-		if (valueStorage != NULL) {
+		if (valueStorage != nullptr) {
 			//free(value_storage);
 			delete[] valueStorage;
 		}
-		if (columnIndications != NULL) {
+		if (columnIndications != nullptr) {
 			//free(column_indications);
 			delete[] columnIndications;
 		}
-		if (rowIndications != NULL) {
+		if (rowIndications != nullptr) {
 			//free(row_indications);
 			delete[] rowIndications;
 		}
-		if (diagonalStorage != NULL) {
+		if (diagonalStorage != nullptr) {
 			//free(diagonal_storage);
 			delete[] diagonalStorage;
 		}
@@ -471,7 +473,7 @@ public:
 			LOG4CPLUS_ERROR(logger, "Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
 			throw mrmc::exceptions::invalid_state("Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
 		} else {
-			// Create a
+			// Create the resulting matrix.
 			int_fast32_t eigenRows = static_cast<int_fast32_t>(rowCount);
 			Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>* mat = new Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>(eigenRows, eigenRows);
 
@@ -488,6 +490,7 @@ public:
 			// than an average row, the other solution might be faster.
 			// The desired conversion method may be set by an appropriate define.
 
+#define MRMC_USE_TRIPLETCONVERT
 #			ifdef MRMC_USE_TRIPLETCONVERT
 
 			// FIXME: Wouldn't it be more efficient to add the elements in
@@ -503,18 +506,21 @@ public:
 			// and add the corresponding triplet.
 			uint_fast64_t rowStart;
 			uint_fast64_t rowEnd;
-			for (uint_fast64_t row = 0; row <= rowCount; ++row) {
+			uint_fast64_t zeroCount = 0;
+			for (uint_fast64_t row = 0; row < rowCount; ++row) {
 				rowStart = rowIndications[row];
 				rowEnd = rowIndications[row + 1];
 				while (rowStart < rowEnd) {
+					if (valueStorage[rowStart] == 0) zeroCount++;
 					tripletList.push_back(IntTriplet(row, columnIndications[rowStart], valueStorage[rowStart]));
 					++rowStart;
 				}
 			}
 
 			// Then add the elements on the diagonal.
-			for (uint_fast64_t i = 0; i <= rowCount; ++i) {
-				tripletList.push_back(IntTriplet(i, i, diagonalStorage[i]));
+			for (uint_fast64_t i = 0; i < rowCount; ++i) {
+				if (diagonalStorage[i] == 0) zeroCount++;
+				// tripletList.push_back(IntTriplet(i, i, diagonalStorage[i]));
 			}
 
 			// Let Eigen create a matrix from the given list of triplets.
@@ -530,16 +536,19 @@ public:
 			// them to the matrix individually.
 			uint_fast64_t rowStart;
 			uint_fast64_t rowEnd;
+			uint_fast64_t count = 0;
 			for (uint_fast64_t row = 0; row < rowCount; ++row) {
 				rowStart = rowIndications[row];
 				rowEnd = rowIndications[row + 1];
 
 				// Insert the element on the diagonal.
 				mat->insert(row, row) = diagonalStorage[row];
+				count++;
 
 				// Insert the elements that are not on the diagonal
 				while (rowStart < rowEnd) {
 					mat->insert(row, columnIndications[rowStart]) = valueStorage[rowStart];
+					count++;
 					++rowStart;
 				}
 			}
@@ -557,11 +566,75 @@ public:
 	}
 
 	/*!
+	 * Converts the matrix into a sparse matrix in the GMMXX format.
+	 * @return A pointer to a column-major sparse matrix in GMMXX format.
+	 */
+	gmm::csr_matrix<T>* toGMMXXSparseMatrix() {
+		// Prepare the resulting matrix.
+		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(rowCount, rowCount);
+
+		LOG4CPLUS_INFO(logger, "Starting copy1.");
+		// Copy over the row indications as GMMXX uses the very same internal format.
+		result->jc.reserve(rowCount + 1);
+		std::copy(rowIndications, rowIndications + (rowCount + 1), result->jc.begin());
+		LOG4CPLUS_INFO(logger, "Done copy1.");
+
+		// For the column indications and the actual values, we have to gather
+		// the values in a temporary array first, as we have to integrate
+		// the values from the diagonal.
+		uint_fast64_t realNonZeros = getNonZeroEntryCount() + getDiagonalNonZeroEntryCount();
+		uint_fast64_t* tmpColumnIndicationsArray = new uint_fast64_t[realNonZeros];
+		uint_fast64_t* tmpValueArray = new uint_fast64_t[realNonZeros];
+		T zero(0);
+		uint_fast64_t currentPosition = 0;
+		for (uint_fast64_t i = 0; i < rowCount; ++i) {
+			bool includedDiagonal = false;
+			for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
+				if (diagonalStorage[i] != zero && !includedDiagonal && columnIndications[j] > i) {
+					includedDiagonal = true;
+					tmpColumnIndicationsArray[currentPosition] = i;
+					tmpValueArray[currentPosition] = diagonalStorage[i];
+					++currentPosition;
+				}
+				tmpColumnIndicationsArray[currentPosition] = columnIndications[j];
+				tmpValueArray[currentPosition] = valueStorage[j];
+			}
+		}
+
+		LOG4CPLUS_INFO(logger, "Starting copy2.");
+		// Now, we can copy the temporary array to the GMMXX format.
+		result->ir.reserve(realNonZeros);
+		std::copy(tmpColumnIndicationsArray, tmpColumnIndicationsArray + realNonZeros, result->ir.begin());
+		delete[] tmpColumnIndicationsArray;
+
+		// And do the same thing with the actual values.
+		result->pr.resize(realNonZeros);
+		std::copy(tmpValueArray, tmpValueArray + realNonZeros, result->pr.begin());
+		delete[] tmpValueArray;
+		LOG4CPLUS_INFO(logger, "Done copy2.");
+
+		return result;
+	}
+
+	/*!
 	 * Returns the number of non-zero entries that are not on the diagonal.
 	 * @returns The number of non-zero entries that are not on the diagonal.
 	 */
 	uint_fast64_t getNonZeroEntryCount() const {
 		return nonZeroEntryCount;
+	}
+
+	/*!
+	 * Returns the number of non-zero entries on the diagonal.
+	 * @return The number of non-zero entries on the diagonal.
+	 */
+	uint_fast64_t getDiagonalNonZeroEntryCount() const {
+		uint_fast64_t result = 0;
+		T zero(0);
+		for (uint_fast64_t i = 0; i < rowCount; ++i) {
+			if (diagonalStorage[i] != zero) ++result;
+		}
+		return result;
 	}
 
 	/*!
@@ -592,6 +665,104 @@ public:
 		// Set the element on the diagonal to one.
 		diagonalStorage[row] = mrmc::misc::constGetOne(diagonalStorage);
 		return true;
+	}
+
+	/*
+	 * Computes the sum of the elements in the given row whose column bits
+	 * are set to one on the given constraint.
+	 * @param row The row whose elements to add.
+	 * @param constraint A bit vector that indicates which columns to add.
+	 * @return The sum of the elements in the given row whose column bits
+	 * are set to one on the given constraint.
+	 */
+	T getConstrainedRowSum(const uint_fast64_t row, const mrmc::storage::BitVector& constraint) {
+		T result(0);
+		for (uint_fast64_t i = rowIndications[row]; i < rowIndications[row + 1]; ++i) {
+			if (constraint.get(columnIndications[i])) {
+				result += valueStorage[i];
+			}
+		}
+		return result;
+	}
+
+	/*!
+	 * Computes a vector in which each element is the sum of those elements in the
+	 * corresponding row whose column bits are set to one in the given constraint.
+	 * @param constraint A bit vector that indicates which columns to add.
+	 * @param resultVector A pointer to the resulting vector that has at least
+	 * as many elements as there are bits set to true in the constraint.
+	 */
+	void getConstrainedRowCountVector(const mrmc::storage::BitVector& constraint, T* resultVector) {
+		for (uint_fast64_t row = 0; row < rowCount; ++row) {
+			resultVector[row] = getConstrainedRowSum(row, constraint);
+		}
+	}
+
+	/*!
+	 * Creates a sub-matrix of the current matrix by dropping all rows and
+	 * columns whose bits are not set to one in the given bit vector.
+	 * @param constraint A bit vector indicating which rows and columns to drop.
+	 * @return A pointer to a sparse matrix that is a sub-matrix of the current one.
+	 */
+	SquareSparseMatrix* getSubmatrix(mrmc::storage::BitVector& constraint) {
+		LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix with " << constraint.getNumberOfSetBits() << " rows.");
+
+		// Check for valid constraint.
+		if (constraint.getNumberOfSetBits() == 0) {
+			LOG4CPLUS_ERROR(logger, "Trying to create a sub-matrix of size 0.");
+			throw mrmc::exceptions::invalid_argument("Trying to create a sub-matrix of size 0.");
+		}
+
+		// First, we need to determine the number of non-zero entries of the
+		// sub-matrix.
+		uint_fast64_t subNonZeroEntries = 0;
+		for (auto rowIndex : constraint) {
+			for (uint_fast64_t i = rowIndications[rowIndex]; i < rowIndications[rowIndex + 1]; ++i) {
+				if (constraint.get(columnIndications[i])) {
+					++subNonZeroEntries;
+				}
+			}
+		}
+
+		LOG4CPLUS_DEBUG(logger, "Done counting non-zeros.");
+
+		// Create and initialize resulting matrix.
+		SquareSparseMatrix* result = new SquareSparseMatrix(constraint.getNumberOfSetBits());
+		result->initialize(subNonZeroEntries);
+
+		// Create a temporary array that stores for each index whose bit is set
+		// to true the number of bits that were set before that particular index.
+		uint_fast64_t* bitsSetBeforeIndex = new uint_fast64_t[rowCount];
+		uint_fast64_t lastIndex = 0;
+		uint_fast64_t currentNumberOfSetBits = 0;
+		for (auto index : constraint) {
+			while (lastIndex <= index) {
+				bitsSetBeforeIndex[lastIndex++] = currentNumberOfSetBits;
+			}
+			++currentNumberOfSetBits;
+		}
+
+		// Copy over selected entries.
+		uint_fast64_t rowCount = 0;
+		for (auto rowIndex : constraint) {
+			result->addNextValue(rowCount, rowCount, diagonalStorage[rowIndex]);
+
+			for (uint_fast64_t i = rowIndications[rowIndex]; i < rowIndications[rowIndex + 1]; ++i) {
+				if (constraint.get(columnIndications[i])) {
+					result->addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[i]], valueStorage[i]);
+				}
+			}
+
+			++rowCount;
+		}
+
+		// Dispose of the temporary array.
+		delete[] bitsSetBeforeIndex;
+
+		// Finalize sub-matrix and return result.
+		result->finalize();
+		LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
+		return result;
 	}
 
 	/*!

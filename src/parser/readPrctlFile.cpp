@@ -24,7 +24,7 @@ namespace
 	using namespace bs::qi;
 	using namespace bs::standard;
 	
-	struct PRCTLParser : public grammar< char const* >
+	struct SpiritParser : public grammar< char const* >
 	{
 		typedef rule< char const* > rule_none;
 		typedef rule< char const*, double() > rule_double;
@@ -83,7 +83,7 @@ namespace
 			}
 		};
 	
-		PRCTLParser() : PRCTLParser::base_type(file, "PRCTL parser")
+		SpiritParser() : SpiritParser::base_type(file, "PRCTL parser")
 		{
 			variable %= alnum;
 			ws = *( space );
@@ -106,9 +106,9 @@ namespace
 	};
 }
 
-mrmc::formula::PCTLFormula<double>* mrmc::parser::readPrctlFile(const char* filename)
+mrmc::parser::PRCTLParser::PRCTLParser(const char* filename)
 {
-	PRCTLParser p;
+	SpiritParser p;
 	mrmc::parser::MappedFile file(filename);
 	
 	char* data = file.data;
@@ -117,7 +117,7 @@ mrmc::formula::PCTLFormula<double>* mrmc::parser::readPrctlFile(const char* file
 		std::cout << "File was parsed" << std::endl;
 		std::string rest(data, file.dataend);
 		std::cout << "Rest: " << rest << std::endl;
-		return p.result;
+		this->formula = p.result;
 	}
-	else return NULL;
+	else this->formula = NULL;
 }

@@ -118,6 +118,7 @@ uint_fast32_t TraParser::firstPass(char* buf, uint_fast32_t &maxnode)
  */
 
 TraParser::TraParser(const char * filename)
+	: matrix(nullptr)
 {
 	/*
 	*	enforce locale where decimal point is '.'
