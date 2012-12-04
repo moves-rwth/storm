@@ -46,6 +46,7 @@ namespace parser {
  *	@return The pointer to the created labeling object.
  */
 LabParser::LabParser(uint_fast64_t node_count, const char * filename)
+	: labeling(nullptr)
 {
 	/*
 	 *	open file

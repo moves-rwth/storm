@@ -106,6 +106,9 @@ int main(const int argc, const char* argv[]) {
 	if (s != nullptr) {
 		delete s;
 	}
+	
+	delete labparser.getLabeling();
+	delete traparser.getMatrix();
 
 	LOG4CPLUS_INFO(logger, "Nothing more to do, exiting.");
 
