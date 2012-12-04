@@ -156,13 +156,13 @@ public:
 	 * given bit vector by means of a deep copy.
 	 */
 	BitVector& operator=(const BitVector& bv) {
-		if (bucketArray != nullptr) {
-			delete[] bucketArray;
+		if (this->bucketArray != nullptr) {
+			delete[] this->bucketArray;
 		}
 		bucketCount = bv.bucketCount;
 		bitCount = bv.bitCount;
-		bucketArray = new uint64_t[bucketCount];
-		std::copy(bv.bucketArray, bv.bucketArray + bucketCount, bucketArray);
+		this->bucketArray = new uint64_t[bucketCount];
+		std::copy(bv.bucketArray, bv.bucketArray + bucketCount, this->bucketArray);
 		updateEndIterator();
 		return *this;
 	}
@@ -175,26 +175,27 @@ public:
 		bitCount = newLength;
 		uint_fast64_t newBucketCount = newLength >> 6;
 		if ((newLength & mod64mask) != 0) {
-			++bucketCount;
+			++newBucketCount;
 		}
 
 		// Reserve a temporary array for copying.
-		uint_fast64_t* tempArray = new uint64_t[newBucketCount];
+		uint_fast64_t* tempArray = new uint_fast64_t[newBucketCount];
 
 		// Copy over the elements from the old bit vector.
 		uint_fast64_t copySize = (newBucketCount <= bucketCount) ? newBucketCount : bucketCount;
-		std::copy(bucketArray, bucketArray + copySize, tempArray);
+		std::copy(this->bucketArray, this->bucketArray + copySize, tempArray);
 
 		// Initialize missing values in the new bit vector.
-		for (uint_fast64_t i = copySize; i < bucketCount; ++i) {
+		for (uint_fast64_t i = copySize; i < newBucketCount; ++i) {
 			tempArray[i] = 0;
 		}
 
 		updateEndIterator();
 
 		// Dispose of the old bit vector and set the new one.
-		delete[] bucketArray;
-		bucketArray = tempArray;
+		delete[] this->bucketArray;
+		this->bucketArray = tempArray;
+		this->bucketCount = newBucketCount;
 	}
 
 	/*!
@@ -204,13 +205,14 @@ public:
 	 */
 	void set(const uint_fast64_t index, const bool value) {
 		uint_fast64_t bucket = index >> 6;
+		if (bucket >= this->bucketCount) throw mrmc::exceptions::out_of_range();
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		if (value) {
-			bucketArray[bucket] |= mask;
+			this->bucketArray[bucket] |= mask;
 		} else {
-			bucketArray[bucket] &= ~mask;
+			this->bucketArray[bucket] &= ~mask;
 		}
-		if (bucket == bucketCount - 1) {
+		if (bucket == this->bucketCount - 1) {
 			truncateLastBucket();
 		}
 	}
@@ -221,8 +223,9 @@ public:
 	 */
 	bool get(const uint_fast64_t index) const {
 		uint_fast64_t bucket = index >> 6;
+		if (bucket >= this->bucketCount) throw mrmc::exceptions::out_of_range();
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
-		return ((bucketArray[bucket] & mask) == mask);
+		return ((this->bucketArray[bucket] & mask) == mask);
 	}
 
 	/*!
