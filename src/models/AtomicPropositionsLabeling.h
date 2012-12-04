@@ -10,25 +10,9 @@
 
 #include "src/storage/BitVector.h"
 #include <ostream>
-
-/* Map types: By default, the boost hash map is used.
- * If the macro USE_STD_MAP is defined, the default C++ class (std::map)
- * is used instead.
- */
-#ifdef USE_STD_MAP
-#  include <map>
-#  define MAP std::map
-#else
-#  ifdef USE_STD_UNORDERED_MAP
-#     include <unordered_map>
-#     define MAP std::unordered_map
-#  else
-#     include "boost/unordered_map.hpp"
-#     define MAP boost::unordered_map
-#  endif
-#endif
-
 #include <stdexcept>
+#include <unordered_map>
+#include <set>
 
 namespace mrmc {
 
@@ -230,7 +214,7 @@ private:
 	 * by mapping the name to a specific index in the array of all
 	 * individual labelings.
 	 */
-	MAP<std::string, uint_fast32_t> nameToLabelingMap;
+	std::unordered_map<std::string, uint_fast32_t> nameToLabelingMap;
 
 	/*!
 	 * Stores all individual labelings. To find the labeling associated with
