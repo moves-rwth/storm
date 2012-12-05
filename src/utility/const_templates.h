@@ -10,7 +10,7 @@
 
 namespace mrmc {
 
-namespace misc {
+namespace utility {
 
 /*!
  * Returns a constant value of 0 that is fit to the type it is being written to.
@@ -19,20 +19,19 @@ namespace misc {
  *
  * <b>Parameter</b>
  *
- * The parameter is a pointer which is used to infer the return type (So, if you want
- * the return value to be of type double, the parameter has to be of type double*).
- * In most cases, it is a good choice to use the address of the variable that is to be
- * set.
+ * The parameter is a reference which is used to infer the return type (So, if you want
+ * the return value to be of type double, the parameter has to be a double variable).
+ * In most cases, it is a good choice to use the the variable that is to be set.
  */
 template<typename _Scalar>
-static inline _Scalar constGetZero(_Scalar*) {
+static inline _Scalar constGetZero(_Scalar&) {
    return _Scalar(0);
 }
 
 /*! @cond TEMPLATE_SPECIALIZATION
  * (exclude the specializations from the documentation) */
 template <>
-inline int_fast32_t constGetZero(int_fast32_t*) {
+inline int_fast32_t constGetZero(int_fast32_t&) {
    return 0;
 }
 
@@ -40,7 +39,7 @@ inline int_fast32_t constGetZero(int_fast32_t*) {
  * Specialization of constGetZero for int_fast32_t
  */
 template <>
-inline double constGetZero(double*) {
+inline double constGetZero(double&) {
    return 0.0;
 }
 /*! @endcond */
@@ -52,30 +51,28 @@ inline double constGetZero(double*) {
  *
  * <b>Parameter</b>
  *
- * The parameter is a pointer which is used to infer the return type (So, if you want
- * the return value to be of type double, the parameter has to be of type double*).
- * In most cases, it is a good choice to use the address of the variable that is to be
- * set.
- */
+ * The parameter is a reference which is used to infer the return type (So, if you want
+ * the return value to be of type double, the parameter has to be a double variable).
+ * In most cases, it is a good choice to use the the variable that is to be set. */
 template<typename _Scalar>
-static inline _Scalar constGetOne(_Scalar*) {
+static inline _Scalar constGetOne(_Scalar&) {
    return _Scalar(1);
 }
 
 /*! @cond TEMPLATE_SPECIALIZATION
  * (exclude the specializations from the documentation) */
 template<>
-inline int_fast32_t constGetOne(int_fast32_t*) {
+inline int_fast32_t constGetOne(int_fast32_t&) {
    return 1;
 }
 
 template<>
-inline double constGetOne(double*) {
+inline double constGetOne(double&) {
    return 1.0;
 }
 /*! @endcond */
 
-} //namespace misc
+} //namespace utility
 
 } //namespace mrmc
 

@@ -10,7 +10,7 @@
 
 #include "PCTLStateFormula.h"
 #include "PCTLPathFormula.h"
-#include "misc/const_templates.h"
+#include "utility/const_templates.h"
 
 namespace mrmc {
 
@@ -40,8 +40,8 @@ public:
 	 * Empty constructor
 	 */
 	ProbabilisticOperator() {
-		upper = mrmc::misc::constGetZero(&upper);
-		lower = mrmc::misc::constGetZero(&lower);
+		upper = mrmc::utility::constGetZero(upper);
+		lower = mrmc::utility::constGetZero(lower);
 		pathFormula = NULL;
 	}
 

@@ -8,7 +8,7 @@
 
 #include "gtest/gtest.h"
 #include "mrmc-config.h"
-#include "src/utility/utility.h"
+#include "src/utility/ioUtility.h"
 
 TEST(ParseDtmcTest, parseAndOutput) {
 	mrmc::models::Dtmc<double>* myDtmc;
