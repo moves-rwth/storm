@@ -60,8 +60,8 @@ public:
 	/*!
 	 * @returns The child node
 	 */
-	PCTLStateFormula<T>* getChild() {
-		return child;
+	PCTLStateFormula<T>& getChild() {
+		return *child;
 	}
 
 	/*!

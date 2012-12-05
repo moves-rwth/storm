@@ -112,19 +112,19 @@ public:
 	 */
 	~SquareSparseMatrix() {
 		setState(MatrixStatus::UnInitialized);
-		if (valueStorage != NULL) {
+		if (valueStorage != nullptr) {
 			//free(value_storage);
 			delete[] valueStorage;
 		}
-		if (columnIndications != NULL) {
+		if (columnIndications != nullptr) {
 			//free(column_indications);
 			delete[] columnIndications;
 		}
-		if (rowIndications != NULL) {
+		if (rowIndications != nullptr) {
 			//free(row_indications);
 			delete[] rowIndications;
 		}
-		if (diagonalStorage != NULL) {
+		if (diagonalStorage != nullptr) {
 			//free(diagonal_storage);
 			delete[] diagonalStorage;
 		}
@@ -507,7 +507,7 @@ public:
 			uint_fast64_t rowStart;
 			uint_fast64_t rowEnd;
 			uint_fast64_t zeroCount = 0;
-			for (uint_fast64_t row = 0; row <= rowCount; ++row) {
+			for (uint_fast64_t row = 0; row < rowCount; ++row) {
 				rowStart = rowIndications[row];
 				rowEnd = rowIndications[row + 1];
 				while (rowStart < rowEnd) {
@@ -518,7 +518,7 @@ public:
 			}
 
 			// Then add the elements on the diagonal.
-			for (uint_fast64_t i = 0; i <= rowCount; ++i) {
+			for (uint_fast64_t i = 0; i < rowCount; ++i) {
 				if (diagonalStorage[i] == 0) zeroCount++;
 				// tripletList.push_back(IntTriplet(i, i, diagonalStorage[i]));
 			}

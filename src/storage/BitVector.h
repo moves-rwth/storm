@@ -112,17 +112,17 @@ public:
 
 		if (initTrue) {
 			// Finally, create the full bucket array.
-			bucketArray = new uint64_t[bucketCount];
+			this->bucketArray = new uint64_t[bucketCount];
 
 			// Now initialize the values.
 			for (uint_fast64_t i = 0; i < bucketCount; ++i) {
-				bucketArray[i] = -1ll;
+				this->bucketArray[i] = -1ll;
 			}
 
 			truncateLastBucket();
 		} else {
 			// Finally, create the full bucket array.
-			bucketArray = new uint64_t[bucketCount]();
+			this->bucketArray = new uint64_t[bucketCount]();
 		}
 	}
 
@@ -134,7 +134,7 @@ public:
 	BitVector(const BitVector &bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		bucketArray = new uint64_t[bucketCount];
-		std::copy(bv.bucketArray, bv.bucketArray + bucketCount, bucketArray);
+		std::copy(bv.bucketArray, bv.bucketArray + this->bucketCount, this->bucketArray);
 	}
 
 	//! Destructor
@@ -142,8 +142,8 @@ public:
 	 * Destructor. Frees the underlying bucket array.
 	 */
 	~BitVector() {
-		if (bucketArray != nullptr) {
-			delete[] bucketArray;
+		if (this->bucketArray != nullptr) {
+			delete[] this->bucketArray;
 		}
 	}
 
@@ -178,7 +178,7 @@ public:
 		}
 
 		// Reserve a temporary array for copying.
-		uint_fast64_t* tempArray = new uint_fast64_t[newBucketCount];
+		uint64_t* tempArray = new uint64_t[newBucketCount];
 
 		// Copy over the elements from the old bit vector.
 		uint_fast64_t copySize = (newBucketCount <= bucketCount) ? newBucketCount : bucketCount;

@@ -11,12 +11,15 @@ namespace parser {
 /*!
  *	@brief	Load transition system from file and return initialized
  *	StaticSparseMatrix object.
+ *
+ *	Note that this class creates a new StaticSparseMatrix object that can be
+ *	accessed via getMatrix(). However, it does not delete this object!
  */
 class TraParser : Parser
 {
 	public:
 		TraParser(const char* filename);
-	
+		
 		mrmc::storage::SquareSparseMatrix<double>* getMatrix()
 		{
 			return this->matrix;
