@@ -63,7 +63,7 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 	{
 		size_t cnt = 0;
 		/*
-		 *	iterate over tokens while not at end of file
+		 *	iterate over tokens until we hit #END or end of file
 		 */
 		while(buf[0] != '\0')
 		{
@@ -81,7 +81,7 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 					foundDecl = true;
 					continue;
 				}
-				if (strncmp(buf, "#END", cnt) == 0)
+				else if (strncmp(buf, "#END", cnt) == 0)
 				{
 					foundEnd = true;
 					break;
@@ -171,7 +171,7 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 			 *	parse node number, then iterate over propositions
 			 */
 			node = checked_strtol(buf, &buf);
-			while (buf[0] != '\n') 
+			while ((buf[0] != '\n') && (buf[0] != '\0'))
 			{
 				cnt = strcspn(buf, separator);
 				if (cnt == 0)
