@@ -112,8 +112,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
-	  return modelChecker->checkNext(this);
+	virtual std::vector<T> *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) {
+	  return modelChecker.checkNext(this);
 	}
 
 private:
