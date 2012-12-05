@@ -6,27 +6,3 @@
  */
 
 #include "DtmcPrctlModelChecker.h"
-
-namespace mrmc {
-
-namespace modelChecker {
-
-template<class T>
-DtmcPrctlModelChecker<T>::DtmcPrctlModelChecker(mrmc::models::Dtmc<T>* dtmc) {
-   this->dtmc = dtmc;
-}
-
-template<class T>
-DtmcPrctlModelChecker<T>::~DtmcPrctlModelChecker() {
-   delete this->dtmc;
-}
-
-template<class T>
-DtmcPrctlModelChecker<T>::DtmcPrctlModelChecker(mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
-	this->dtmc = new mrmc::models::Dtmc<T>(modelChecker->getDtmc());
-}
-
-
-} //namespace modelChecker
-
-} //namespace mrmc

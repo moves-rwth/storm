@@ -12,7 +12,7 @@
 #include "src/exceptions/file_IO_exception.h"
 #include "src/storage/BitVector.h"
 
-#include "src/misc/const_templates.h"
+#include "src/utility/const_templates.h"
 #include "Eigen/Sparse"
 #include "gmm/gmm_matrix.h"
 
@@ -658,12 +658,12 @@ public:
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 
 		while (rowStart < rowEnd) {
-			valueStorage[rowStart] = mrmc::misc::constGetZero(valueStorage);
+			valueStorage[rowStart] = mrmc::utility::constGetZero(valueStorage[rowStart]);
 			++rowStart;
 		}
 
 		// Set the element on the diagonal to one.
-		diagonalStorage[row] = mrmc::misc::constGetOne(diagonalStorage);
+		diagonalStorage[row] = mrmc::utility::constGetOne(diagonalStorage[row]);
 		return true;
 	}
 

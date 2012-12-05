@@ -1,5 +1,5 @@
 /*
- * utility.h
+ * ioUtility.h
  *
  *  Created on: 17.10.2012
  *      Author: Thomas Heinemann

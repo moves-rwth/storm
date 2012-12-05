@@ -12,7 +12,7 @@
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
 
-#include "src/utility/utility.h"
+#include "src/utility/ioUtility.h"
 
 TEST(ReadTraFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)

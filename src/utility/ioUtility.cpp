@@ -1,11 +1,11 @@
 /*
- * utility.cpp
+ * ioUtility.cpp
  *
  *  Created on: 17.10.2012
  *      Author: Thomas Heinemann
  */
 
-#include "src/utility/utility.h"
+#include "src/utility/ioUtility.h"
 #include "src/parser/readTraFile.h"
 #include "src/parser/readLabFile.h"
 
