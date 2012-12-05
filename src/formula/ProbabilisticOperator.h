@@ -151,8 +151,8 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual mrmc::storage::BitVector *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
-	  return modelChecker->checkProbabilisticOperator(this);
+	virtual mrmc::storage::BitVector *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) {
+	  return modelChecker.checkProbabilisticOperator(this);
 	}
 
 private:
