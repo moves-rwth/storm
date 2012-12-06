@@ -517,7 +517,7 @@ public:
 			// Then add the elements on the diagonal.
 			for (uint_fast64_t i = 0; i < rowCount; ++i) {
 				if (diagonalStorage[i] == 0) zeroCount++;
-				// tripletList.push_back(IntTriplet(i, i, diagonalStorage[i]));
+				tripletList.push_back(IntTriplet(i, i, diagonalStorage[i]));
 			}
 
 			// Let Eigen create a matrix from the given list of triplets.
