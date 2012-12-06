@@ -103,8 +103,8 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkStateFormula(const mrmc::formula::PCTLStateFormula<T>& formula) {
-		return formula.check(this);
+	virtual mrmc::storage::BitVector* checkStateFormula(const mrmc::formula::PCTLStateFormula<T>& formula) const {
+		return formula.check(*this);
 	}
 
 	/*!
@@ -113,9 +113,9 @@ public:
 	 * @param formula The And formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkAnd(const mrmc::formula::And<T>& formula) {
-		mrmc::storage::BitVector* result = check(formula.getLeft());
-		mrmc::storage::BitVector* right = check(formula.getRight());
+	virtual mrmc::storage::BitVector* checkAnd(const mrmc::formula::And<T>& formula) const {
+		mrmc::storage::BitVector* result = checkStateFormula(formula.getLeft());
+		mrmc::storage::BitVector* right = checkStateFormula(formula.getRight());
 		(*result) &= (*right);
 		delete right;
 		return result;
@@ -127,7 +127,12 @@ public:
 	 * @param formula The AP state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkAP(const mrmc::formula::AP<T>& formula) {
+	virtual mrmc::storage::BitVector* checkAP(const mrmc::formula::AP<T>& formula) const {
+		if (formula.getAP().compare("true") == 0) {
+			return new mrmc::storage::BitVector(model->getNumberOfStates(), 1);
+		} else if (formula.getAP().compare("false") == 0) {
+			return new mrmc::storage::BitVector(model->getNumberOfStates());
+		}
 		return new mrmc::storage::BitVector(*model->getLabeledStates(formula.getAP()));
 	}
 
@@ -137,8 +142,8 @@ public:
 	 * @param formula The Not state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkNot(const mrmc::formula::Not<T>& formula) {
-		mrmc::storage::BitVector* result = check(formula.getChild());
+	virtual mrmc::storage::BitVector* checkNot(const mrmc::formula::Not<T>& formula) const {
+		mrmc::storage::BitVector* result = checkStateFormula(formula.getChild());
 		result->complement();
 		return result;
 	}
@@ -149,9 +154,9 @@ public:
 	 * @param formula The Or state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkOr(const mrmc::formula::Or<T>& formula) {
-		mrmc::storage::BitVector* result = check(formula.getLeft());
-		mrmc::storage::BitVector* right = check(formula.getRight());
+	virtual mrmc::storage::BitVector* checkOr(const mrmc::formula::Or<T>& formula) const {
+		mrmc::storage::BitVector* result = checkStateFormula(formula.getLeft());
+		mrmc::storage::BitVector* right = checkStateFormula(formula.getRight());
 		(*result) |= (*right);
 		delete right;
 		return result;
@@ -163,7 +168,7 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector checkProbabilisticOperator(const mrmc::formula::ProbabilisticOperator<T>& formula);
+	virtual mrmc::storage::BitVector* checkProbabilisticOperator(const mrmc::formula::ProbabilisticOperator<T>& formula) const = 0;
 
 	/*!
 	 * The check method for a path formula; Will infer the actual type of formula and delegate it
@@ -172,8 +177,8 @@ public:
 	 * @param formula The path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<T>* checkPathFormula(const mrmc::formula::PCTLPathFormula<T>& formula) {
-		return formula.check(this);
+	virtual std::vector<T>* checkPathFormula(const mrmc::formula::PCTLPathFormula<T>& formula) const {
+		return formula.check(*this);
 	}
 
 	/*!
@@ -182,7 +187,7 @@ public:
 	 * @param formula The Bounded Until path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<T>* checkBoundedUntil(const mrmc::formula::BoundedUntil<T>& formula) = 0;
+	virtual std::vector<T>* checkBoundedUntil(const mrmc::formula::BoundedUntil<T>& formula) const = 0;
 
 	/*!
 	 * The check method for a path formula with a Next operator node as root in its formula tree
@@ -190,7 +195,7 @@ public:
 	 * @param formula The Next path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<T>* checkNext(const mrmc::formula::Next<T>& formula) = 0;
+	virtual std::vector<T>* checkNext(const mrmc::formula::Next<T>& formula) const = 0;
 
 	/*!
 	 * The check method for a path formula with an Until operator node as root in its formula tree
@@ -198,7 +203,7 @@ public:
 	 * @param formula The Until path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<T>* checkUntil(const mrmc::formula::Until<T>& formula) = 0;
+	virtual std::vector<T>* checkUntil(const mrmc::formula::Until<T>& formula) const = 0;
 
 private:
 	mrmc::models::Dtmc<T>* model;

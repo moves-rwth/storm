@@ -11,6 +11,7 @@
 #include "src/utility/vector.h"
 
 #include "src/models/dtmc.h"
+#include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
 
 #include "gmm/gmm_matrix.h"
@@ -19,7 +20,7 @@
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 
-log4cplus::Logger logger;
+extern log4cplus::Logger logger;
 
 namespace mrmc {
 
@@ -28,31 +29,46 @@ namespace modelChecker {
 /*
  * A model checking engine that makes use of the gmm++ backend.
  */
-template <class T>
-class GmmxxDtmcPrctlModelChecker : public DtmcPrctlModelChecker<T> {
+template <class Type>
+class GmmxxDtmcPrctlModelChecker : public DtmcPrctlModelChecker<Type> {
 
 public:
-	explicit GmmxxDtmcPrctlModelChecker(const mrmc::models::Dtmc<T>* dtmc) : DtmcPrctlModelChecker(dtmc) { }
+	explicit GmmxxDtmcPrctlModelChecker(mrmc::models::Dtmc<Type>& dtmc) : DtmcPrctlModelChecker<Type>(dtmc) { }
 
 	virtual ~GmmxxDtmcPrctlModelChecker() { }
 
-	virtual std::vector<T>* checkBoundedUntil(mrmc::formula::BoundedUntil<T>& formula) {
+	virtual mrmc::storage::BitVector* checkProbabilisticOperator(const mrmc::formula::ProbabilisticOperator<Type>& formula) const {
+		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
+
+		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
+		Type lower = formula.getLowerBound();
+		Type upper = formula.getUpperBound();
+		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
+			if ((*probabilisticResult)[i] >= lower && (*probabilisticResult)[i] <= upper) result->set(i, true);
+		}
+
+		delete probabilisticResult;
+
+		return result;
+	}
+
+	virtual std::vector<Type>* checkBoundedUntil(const mrmc::formula::BoundedUntil<Type>& formula) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-		mrmc::storage::BitVector* leftStates = this->check(formula.getLeft());
-		mrmc::storage::BitVector* rightStates = this->check(formula.getRight());
+		mrmc::storage::BitVector* leftStates = this->checkStateFormula(formula.getLeft());
+		mrmc::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
 
 		// Copy the matrix before we make any changes.
-		mrmc::storage::SquareSparseMatrix<T>* tmpMatrix(dtmc.getTransitionProbabilityMatrix());
+		mrmc::storage::SquareSparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
-		tmpMatrix.makeRowsAbsorbing((~leftStates & rightStates) | rightStates);
+		tmpMatrix.makeRowsAbsorbing((~*leftStates & *rightStates) | *rightStates);
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
 		gmm::csr_matrix<double>* gmmxxMatrix = tmpMatrix.toGMMXXSparseMatrix();
 
 		// Create the vector with which to multiply.
-		std::vector<T>* result = new st::vector<T>(dtmc.getNumberOfStates());
-		mrmc::utility::setVectorValue(result, *rightStates, 1);
+		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		mrmc::utility::setVectorValues(result, *rightStates, static_cast<double>(1.0));
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
 		for (uint_fast64_t i = 0; i < formula.getBound(); ++i) {
@@ -66,22 +82,22 @@ public:
 		return result;
 	}
 
-	virtual std::vector<T>* checkNext(const mrmc::formula::Next<T>& formula) {
+	virtual std::vector<Type>* checkNext(const mrmc::formula::Next<Type>& formula) const {
 		// First, we need to compute the states that satisfy the sub-formula of the next-formula.
-		mrmc::storage::BitVector* nextStates = this->check(formula.getChild());
+		mrmc::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<double>* gmmxxMatrix = dtmc.getTransitionProbabilityMatrix()->toGMMXXSparseMatrix();
+		gmm::csr_matrix<double>* gmmxxMatrix = this->getModel().getTransitionProbabilityMatrix()->toGMMXXSparseMatrix();
 
 		// Create the vector with which to multiply and initialize it correctly.
-		std::vector<T> x(dtmc.getNumberOfStates());
-		mrmc::utility::setVectorValue(x, nextStates, 1);
+		std::vector<Type> x(this->getModel().getNumberOfStates());
+		mrmc::utility::setVectorValues(&x, *nextStates, static_cast<double>(1.0));
 
 		// Delete not needed next states bit vector.
 		delete nextStates;
 
 		// Create resulting vector.
-		std::vector<T>* result = new std::vector<T>(dtmc.getNumberOfStates());
+		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
 		// Perform the actual computation.
 		gmm::mult(*gmmxxMatrix, x, *result);
@@ -91,17 +107,17 @@ public:
 		return result;
 	}
 
-	virtual std::vector<T>* checkUntil(const mrmc::formula::Until<T>& formula) {
+	virtual std::vector<Type>* checkUntil(const mrmc::formula::Until<Type>& formula) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-		mrmc::storage::BitVector* leftStates = this->check(formula.getLeft());
-		mrmc::storage::BitVector* rightStates = this->check(formula.getRight());
+		mrmc::storage::BitVector* leftStates = this->checkStateFormula(formula.getLeft());
+		mrmc::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
 
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-		mrmc::storage::BitVector notExistsPhiUntilPsiStates(dtmc.getNumberOfStates());
-		mrmc::storage::BitVector alwaysPhiUntilPsiStates(dtmc.getNumberOfStates());
-		mrmc::solver::GraphAnalyzer::getPhiUntilPsiStates<double>(dtmc, *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
-		notExistsPhiUntilPsiStates->complement();
+		mrmc::storage::BitVector notExistsPhiUntilPsiStates(this->getModel().getNumberOfStates());
+		mrmc::storage::BitVector alwaysPhiUntilPsiStates(this->getModel().getNumberOfStates());
+		mrmc::solver::GraphAnalyzer::getPhiUntilPsiStates<double>(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
+		notExistsPhiUntilPsiStates.complement();
 
 		delete leftStates;
 		delete rightStates;
@@ -109,12 +125,15 @@ public:
 		LOG4CPLUS_INFO(logger, "Found " << notExistsPhiUntilPsiStates.getNumberOfSetBits() << " 'no' states.");
 		LOG4CPLUS_INFO(logger, "Found " << alwaysPhiUntilPsiStates.getNumberOfSetBits() << " 'yes' states.");
 		mrmc::storage::BitVector maybeStates = ~(notExistsPhiUntilPsiStates | alwaysPhiUntilPsiStates);
-		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " maybe states.");
+		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+
+		// Create resulting vector and set values accordingly.
+		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
 		// Only try to solve system if there are states for which the probability is unknown.
 		if (maybeStates.getNumberOfSetBits() > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			mrmc::storage::SquareSparseMatrix<double>* submatrix = dtmc.getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
+			mrmc::storage::SquareSparseMatrix<double>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix to the form needed for the equation system. That is, we go from
 			// x = A*x + b to (I-A)x = b.
 			submatrix->convertToEquationSystem();
@@ -125,12 +144,12 @@ public:
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
 			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
 			// probability is strictly larger than 0.
-			std::vector<T>* x = new std::vector<T>(maybeStates.getNumberOfSetBits(), 0.5);
+			std::vector<Type> x(maybeStates.getNumberOfSetBits(), Type(0.5));
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
 			std::vector<double> b(maybeStates.getNumberOfSetBits());
-			dtmc.getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &x);
+			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &x);
 
 			// Set up the precondition of the iterative solver.
 			gmm::ilu_precond<gmm::csr_matrix<double>> P(*gmmxxMatrix);
@@ -139,24 +158,26 @@ public:
 			gmm::iteration iter(0.000001);
 
 			// Now do the actual solving.
-			LOG4CPLUS_INFO(logger, "Starting iterations...");
+			LOG4CPLUS_INFO(logger, "Starting iterative solver.");
 			gmm::bicgstab(*gmmxxMatrix, x, b, P, iter);
-			LOG4CPLUS_INFO(logger, "Done with iterations.");
+			LOG4CPLUS_INFO(logger, "Iterative solver converged.");
 
-			// Create resulting vector and set values accordingly.
-			std::vector<T>* result = new std::vector<T>(dtmc.getNumberOfStates());
-			mrmc::utility::setVectorValues<std::vector<T>>(result, maybeStates, x);
+			// Set values of resulting vector according to result.
+			mrmc::utility::setVectorValues<Type>(result, maybeStates, x);
 
-			// Delete temporary matrix and return result.
-			delete x;
+			// Delete temporary matrix.
 			delete gmmxxMatrix;
 		}
 
-		mrmc::utility::setVectorValue<std::vector<T>>(result, notExistsPhiUntilPsiStates, 0);
-		mrmc::utility::setVectorValue<std::vector<T>>(result, alwaysPhiUntilPsiStates, 1);
+		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, static_cast<double>(0));
+		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, static_cast<double>(1.0));
 
 		return result;
 	}
 };
+
+} //namespace modelChecker
+
+} //namespace mrmc
 
 #endif /* GMMXXDTMCPRCTLMODELCHECKER_H_ */

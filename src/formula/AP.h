@@ -39,18 +39,6 @@ public:
 	}
 
 	/*!
-	 * Constructor
-	 *
-	 * Creates a new atomic proposition leaf, with the label AP
-	 *
-	 * @param ap The string representing the atomic proposition
-	 */
-	AP(char* ap) {
-	 //TODO: Does that really work?
-		this->ap = ap;
-	}
-
-	/*!
 	 * Destructor.
 	 * At this time, empty...
 	 */
@@ -90,7 +78,7 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkAP(this);
+	  return modelChecker.checkAP(*this);
 	}
 
 private:
