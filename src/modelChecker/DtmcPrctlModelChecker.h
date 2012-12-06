@@ -128,7 +128,7 @@ public:
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
 	virtual mrmc::storage::BitVector* checkAP(const mrmc::formula::AP<T>& formula) {
-		return model->getLabeledStates(formula.getAP());
+		return new mrmc::storage::BitVector(*model->getLabeledStates(formula.getAP()));
 	}
 
 	/*!
