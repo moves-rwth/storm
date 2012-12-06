@@ -10,7 +10,7 @@
 
 #include "src/utility/vector.h"
 
-#include "src/models/dtmc.h"
+#include "src/models/Dtmc.h"
 #include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
 
