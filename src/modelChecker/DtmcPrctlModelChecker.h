@@ -166,7 +166,7 @@ public:
 	 * @param formula The Or state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector checkOr(mrmc::formula::Or<T>& formula) {
+	virtual mrmc::storage::BitVector* checkOr(mrmc::formula::Or<T>& formula) {
 		mrmc::storage::BitVector* result = check(formula.getLeft());
 		mrmc::storage::BitVector* right = check(formula.getRight());
 		(*result) |= (*right);

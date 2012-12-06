@@ -15,6 +15,7 @@
 #include <iostream>
 #include <cstdio>
 #include <sstream>
+#include <vector>
 
 #include "mrmc-config.h"
 #include "src/models/Dtmc.h"
@@ -25,8 +26,6 @@
 #include "src/parser/readPrctlFile.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/settings.h"
-#include "Eigen/Sparse"
-#include "gmm/gmm_matrix.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -107,9 +106,6 @@ int main(const int argc, const char* argv[]) {
 		delete s;
 	}
 	
-	delete labparser.getLabeling();
-	delete traparser.getMatrix();
-
 	LOG4CPLUS_INFO(logger, "Nothing more to do, exiting.");
 
 	return 0;
