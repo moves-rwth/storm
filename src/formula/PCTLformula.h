@@ -38,7 +38,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() = 0;
+	virtual std::string toString() const = 0;
 };
 
 } //namespace formula

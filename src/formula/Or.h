@@ -90,21 +90,21 @@ public:
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	PCTLStateFormula<T>& getLeft() {
+	const PCTLStateFormula<T>& getLeft() const {
 		return *left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	PCTLStateFormula<T>& getRight() {
+	const PCTLStateFormula<T>& getRight() const {
 		return *right;
 	}
 
 	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() {
+	virtual std::string toString() const {
 		std::string result = "(";
 		result += left->toString();
 		result += " || ";
@@ -120,7 +120,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PCTLStateFormula<T>* clone() {
+	virtual PCTLStateFormula<T>* clone() const {
 		Or<T>* result = new Or();
 		if (this->left != NULL) {
 		  result->setLeft(left->clone());
@@ -140,7 +140,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual mrmc::storage::BitVector *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) {
+	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkOr(this);
 	}
 

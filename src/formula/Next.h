@@ -65,7 +65,7 @@ public:
 	/*!
 	 * @returns the child node
 	 */
-	PCTLStateFormula<T>& getChild() {
+	const PCTLStateFormula<T>& getChild() const {
 		return *child;
 	}
 
@@ -80,7 +80,7 @@ public:
 	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() {
+	virtual std::string toString() const {
 		std::string result = "(";
 		result += " X ";
 		result += child->toString();
@@ -95,7 +95,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual PCTLPathFormula<T>* clone() {
+	virtual PCTLPathFormula<T>* clone() const {
 		Next<T>* result = new Next<T>();
 		if (child != NULL) {
 			result->setChild(child);
@@ -112,7 +112,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) {
+	virtual std::vector<T> *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkNext(this);
 	}
 

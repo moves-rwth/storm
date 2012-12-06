@@ -90,21 +90,21 @@ public:
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	PCTLStateFormula<T>& getLeft() {
+	const PCTLStateFormula<T>& getLeft() const {
 		return *left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	PCTLStateFormula<T>& getRight() {
+	const PCTLStateFormula<T>& getRight() const {
 		return *right;
 	}
 
 	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() {
+	virtual std::string toString() const {
 		std::string result = "(";
 		result += left->toString();
 		result += " U ";
@@ -120,7 +120,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual PCTLPathFormula<T>* clone() {
+	virtual PCTLPathFormula<T>* clone() const {
 		Until<T>* result = new Until();
 		if (left != NULL) {
 			result->setLeft(left->clone());
@@ -140,7 +140,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) {
+	virtual std::vector<T> *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkUntil(this);
 	}
 

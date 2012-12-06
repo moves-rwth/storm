@@ -59,7 +59,7 @@ public:
 	/*!
 	 * @returns the name of the atomic proposition
 	 */
-	const std::string& getAP() {
+	const std::string& getAP() const {
 		return ap;
 	}
 
@@ -67,7 +67,7 @@ public:
 	 * @returns a string representation of the leaf.
 	 *
 	 */
-	virtual std::string toString() {
+	virtual std::string toString() const {
 		return getAP();
 	}
 
@@ -76,7 +76,7 @@ public:
 	 *
 	 * @returns a new AP-object that is identical the called object.
 	 */
-	virtual PCTLStateFormula<T>* clone() {
+	virtual PCTLStateFormula<T>* clone() const {
 	  return new AP(ap);
 	}
 
@@ -89,7 +89,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual mrmc::storage::BitVector *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) {
+	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkAP(this);
 	}
 

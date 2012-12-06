@@ -60,7 +60,7 @@ public:
 	/*!
 	 * @returns The child node
 	 */
-	PCTLStateFormula<T>& getChild() {
+	const PCTLStateFormula<T>& getChild() const {
 		return *child;
 	}
 
@@ -75,7 +75,7 @@ public:
 	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() {
+	virtual std::string toString() const {
 		std::string result = "!";
 		result += child->toString();
 		return result;
@@ -88,7 +88,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PCTLStateFormula<T>* clone() {
+	virtual PCTLStateFormula<T>* clone() const {
 		Not<T>* result = new Not<T>();
 		if (child != NULL) {
 			result->setChild(child);
@@ -105,7 +105,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual mrmc::storage::BitVector *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) {
+	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkNot(this);
 	}
 
