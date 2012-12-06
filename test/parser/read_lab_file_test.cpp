@@ -12,6 +12,8 @@
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
 
+#include <memory>
+
 TEST(ReadLabFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
    ASSERT_THROW(mrmc::parser::LabParser(0,MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::file_IO_exception);
@@ -19,12 +21,12 @@ TEST(ReadLabFileTest, NonExistingFileTest) {
 
 TEST(ReadLabFileTest, ParseTest) {
 	//This test is based on a test case from the original MRMC.
-	mrmc::models::AtomicPropositionsLabeling* labeling = NULL;
+	
 	
 	mrmc::parser::LabParser* parser;
 	//Parsing the file
 	ASSERT_NO_THROW(parser = new mrmc::parser::LabParser(12, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
-	labeling = parser->getLabeling();
+	std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> labeling(parser->getLabeling());
 
 	//Checking whether all propositions are in the labelling
 
@@ -77,7 +79,6 @@ TEST(ReadLabFileTest, ParseTest) {
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,11));
 
 		//Deleting the labeling
-		delete labeling;
 		delete parser;
 	} else {
 		FAIL();

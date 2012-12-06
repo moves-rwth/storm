@@ -22,10 +22,9 @@ TEST(ReadTraFileTest, NonExistingFileTest) {
 /* The following test case is based on one of the original MRMC test cases
  */
 TEST(ReadTraFileTest, ParseFileTest1) {
-	mrmc::storage::SquareSparseMatrix<double> *result = NULL;
 	mrmc::parser::TraParser* parser;
 	ASSERT_NO_THROW(parser = new mrmc::parser::TraParser(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
-	result = parser->getMatrix();
+	std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> result = parser->getMatrix();
 
 	if (result != NULL) {
 		double val = 0;
@@ -63,7 +62,6 @@ TEST(ReadTraFileTest, ParseFileTest1) {
 		ASSERT_TRUE(result->getValue(4,4,&val));
 		ASSERT_EQ(val,0);
 
-		delete result;
 		delete parser;
 	} else {
 		FAIL();

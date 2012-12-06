@@ -6,6 +6,8 @@
 
 #include "src/parser/parser.h"
 
+#include <memory>
+
 namespace mrmc {
 namespace parser {
 
@@ -20,13 +22,13 @@ class LabParser : Parser
 	public:
 		LabParser(uint_fast64_t node_count, const char* filename);
 
-		mrmc::models::AtomicPropositionsLabeling* getLabeling()
+		std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> getLabeling()
 		{
 			return this->labeling;
 		}
 	
 	private:
-		mrmc::models::AtomicPropositionsLabeling* labeling;
+		std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> labeling;
 };
 
 } // namespace parser

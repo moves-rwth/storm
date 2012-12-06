@@ -16,7 +16,7 @@ namespace mrmc {
 namespace utility {
 
 void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, std::string filename) {
-   mrmc::storage::SquareSparseMatrix<double>* matrix = dtmc->getTransitionProbabilityMatrix();
+   std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> matrix(dtmc->getTransitionProbabilityMatrix());
    double* diagonal_storage = matrix->getDiagonalStoragePointer();
 
    std::ofstream file;

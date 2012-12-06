@@ -166,7 +166,7 @@ TraParser::TraParser(const char * filename)
 	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
-	this->matrix = new mrmc::storage::SquareSparseMatrix<double>(maxnode + 1);
+	this->matrix = std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>>(new mrmc::storage::SquareSparseMatrix<double>(maxnode + 1));
 	if (this->matrix == NULL)
 	{
 		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
