@@ -9,8 +9,12 @@
 #define GRAPHANALYZER_H_
 
 #include "src/models/Dtmc.h"
+#include "src/exceptions/invalid_argument.h"
 
-#include <iostream>
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+
+extern log4cplus::Logger logger;
 
 namespace mrmc {
 
@@ -24,17 +28,24 @@ public:
 	 * of the given target states whilst always staying in the set of filter states
 	 * before. The resulting states are written to the given bit vector.
 	 * @param model The model whose graph structure to search.
-	 * @param targetStates The target states of the search.
-	 * @param filterStates A set of states constraining the search.
-	 * @param existentialReachabilityStates The result of the search.
+	 * @param phiStates A bit vector of all states satisfying phi.
+	 * @param psiStates A bit vector of all states satisfying psi.
+	 * @param existsPhiUntilPsiStates A pointer to the result of the search for states that possess
+	 * a paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getExistsPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, mrmc::storage::BitVector& existsPhiUntilPsiStates) {
+	static void getExistsPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, mrmc::storage::BitVector* existsPhiUntilPsiStates) {
+		// Check for valid parameter.
+		if (existsPhiUntilPsiStates == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Parameter 'existsPhiUntilPhiStates' must not be null.");
+			throw mrmc::exceptions::invalid_argument("Parameter 'existsPhiUntilPhiStates' must not be null.");
+		}
+
 		// Get the backwards transition relation from the model to ease the search.
 		mrmc::models::GraphTransitions<T>& backwardTransitions = model.getBackwardTransitions();
 
 		// Add all psi states as the already satisfy the condition.
-		existsPhiUntilPsiStates |= psiStates;
+		*existsPhiUntilPsiStates |= psiStates;
 
 		// Initialize the stack used for the DFS with the states
 		std::vector<uint_fast64_t> stack;
@@ -47,8 +58,8 @@ public:
 			stack.pop_back();
 
 			for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
-				if (phiStates.get(*it) && !existsPhiUntilPsiStates.get(*it)) {
-					existsPhiUntilPsiStates.set(*it, true);
+				if (phiStates.get(*it) && !existsPhiUntilPsiStates->get(*it)) {
+					existsPhiUntilPsiStates->set(*it, true);
 					stack.push_back(*it);
 				}
 			}
@@ -62,16 +73,23 @@ public:
 	 * characterizes the states that possess at least one path to a target state.
 	 * The results are written to the given bit vector.
 	 * @param model The model whose graph structure to search.
-	 * @param targetStates The target states of the search.
-	 * @param filterStates A set of states constraining the search.
-	 * @param existentialReachabilityStates The set of states that possess at
-	 * least one path to a target state.
-	 * @param universalReachabilityStates The result of the search.
+	 * @param phiStates A bit vector of all states satisfying phi.
+	 * @param psiStates A bit vector of all states satisfying psi.
+	 * @param existsPhiUntilPsiStates A reference to a bit vector of states that possess a path
+	 * satisfying phi until psi.
+	 * @param alwaysPhiUntilPsiStates A pointer to the result of the search for states that only
+	 * have paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getAlwaysPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, const mrmc::storage::BitVector& existsPhiUntilPsiStates, mrmc::storage::BitVector& alwaysPhiUntilPsiStates) {
+	static void getAlwaysPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, const mrmc::storage::BitVector& existsPhiUntilPsiStates, mrmc::storage::BitVector* alwaysPhiUntilPsiStates) {
+		// Check for valid parameter.
+		if (alwaysPhiUntilPsiStates == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+			throw mrmc::exceptions::invalid_argument("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+		}
+
 		GraphAnalyzer::getExistsPhiUntilPsiStates(model, ~psiStates, ~existsPhiUntilPsiStates, alwaysPhiUntilPsiStates);
-		alwaysPhiUntilPsiStates.complement();
+		alwaysPhiUntilPsiStates->complement();
 	}
 
 	/*!
@@ -79,15 +97,28 @@ public:
 	 * the given set of target states and only visit states from the filter set
 	 * before.
 	 * @param model The model whose graph structure to search.
-	 * @param targetStates The target states of the search.
-	 * @param filterStates A set of states constraining the search.
-	 * @param universalReachabilityStates The result of the search.
+	 * @param phiStates A bit vector of all states satisfying phi.
+	 * @param psiStates A bit vector of all states satisfying psi.
+	 * @param existsPhiUntilPsiStates A pointer to the result of the search for states that possess
+	 * a path satisfying phi until psi.
+	 * @param alwaysPhiUntilPsiStates A pointer to the result of the search for states that only
+	 * have paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getAlwaysPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, mrmc::storage::BitVector& alwaysPhiUntilPsiStates) {
-		mrmc::storage::BitVector existsPhiUntilPsiStates(model.getNumberOfStates());
+	static void getPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, mrmc::storage::BitVector* existsPhiUntilPsiStates, mrmc::storage::BitVector* alwaysPhiUntilPsiStates) {
+		// Check for valid parameters.
+		if (existsPhiUntilPsiStates == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Parameter 'existsPhiUntilPhiStates' must not be null.");
+			throw mrmc::exceptions::invalid_argument("Parameter 'existsPhiUntilPhiStates' must not be null.");
+		}
+		if (alwaysPhiUntilPsiStates == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+			throw mrmc::exceptions::invalid_argument("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+		}
+
+		// Perform search.
 		GraphAnalyzer::getExistsPhiUntilPsiStates(model, phiStates, psiStates, existsPhiUntilPsiStates);
-		GraphAnalyzer::getAlwaysPhiUntilPsiStates(model, phiStates, psiStates, existsPhiUntilPsiStates, alwaysPhiUntilPsiStates);
+		GraphAnalyzer::getAlwaysPhiUntilPsiStates(model, phiStates, psiStates, *existsPhiUntilPsiStates, alwaysPhiUntilPsiStates);
 	}
 
 };

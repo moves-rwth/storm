@@ -4,6 +4,7 @@
 #include <exception>
 #include <new>
 #include <algorithm>
+#include <iostream>
 #include "boost/integer/integer_mask.hpp"
 
 #include "src/exceptions/invalid_state.h"
@@ -113,19 +114,15 @@ public:
 	~SquareSparseMatrix() {
 		setState(MatrixStatus::UnInitialized);
 		if (valueStorage != nullptr) {
-			//free(value_storage);
 			delete[] valueStorage;
 		}
 		if (columnIndications != nullptr) {
-			//free(column_indications);
 			delete[] columnIndications;
 		}
 		if (rowIndications != nullptr) {
-			//free(row_indications);
 			delete[] rowIndications;
 		}
 		if (diagonalStorage != nullptr) {
-			//free(diagonal_storage);
 			delete[] diagonalStorage;
 		}
 	}
@@ -570,40 +567,66 @@ public:
 	 * @return A pointer to a column-major sparse matrix in GMMXX format.
 	 */
 	gmm::csr_matrix<T>* toGMMXXSparseMatrix() {
+		uint_fast64_t realNonZeros = getNonZeroEntryCount() + getDiagonalNonZeroEntryCount();
+		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
+
 		// Prepare the resulting matrix.
 		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(rowCount, rowCount);
 
-		LOG4CPLUS_INFO(logger, "Starting copy1.");
-		// Copy over the row indications as GMMXX uses the very same internal format.
+		// Reserve enough elements for the row indications.
 		result->jc.reserve(rowCount + 1);
-		std::copy(rowIndications, rowIndications + (rowCount + 1), result->jc.begin());
-		LOG4CPLUS_INFO(logger, "Done copy1.");
 
 		// For the column indications and the actual values, we have to gather
 		// the values in a temporary array first, as we have to integrate
-		// the values from the diagonal.
-		uint_fast64_t realNonZeros = getNonZeroEntryCount() + getDiagonalNonZeroEntryCount();
+		// the values from the diagonal. For the row indications, we can just count the number of
+		// inserted diagonal elements and add it to the previous value.
 		uint_fast64_t* tmpColumnIndicationsArray = new uint_fast64_t[realNonZeros];
-		uint_fast64_t* tmpValueArray = new uint_fast64_t[realNonZeros];
+		T* tmpValueArray = new T[realNonZeros];
 		T zero(0);
 		uint_fast64_t currentPosition = 0;
+		uint_fast64_t insertedDiagonalElements = 0;
 		for (uint_fast64_t i = 0; i < rowCount; ++i) {
-			bool includedDiagonal = false;
-			for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
-				if (diagonalStorage[i] != zero && !includedDiagonal && columnIndications[j] > i) {
-					includedDiagonal = true;
+			// Compute correct start index of row.
+			result->jc[i] = rowIndications[i] + insertedDiagonalElements;
+
+			// If the current row has no non-zero which is not on the diagonal, we have to check the
+			// diagonal element explicitly.
+			if (rowIndications[i + 1] - rowIndications[i] == 0) {
+				if (diagonalStorage[i] != zero) {
 					tmpColumnIndicationsArray[currentPosition] = i;
 					tmpValueArray[currentPosition] = diagonalStorage[i];
+					++currentPosition; ++insertedDiagonalElements;
+				}
+			} else {
+				// Otherwise, we can just enumerate the non-zeros which are not on the diagonal
+				// and fit in the diagonal element where appropriate.
+				bool includedDiagonal = false;
+				for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
+					if (diagonalStorage[i] != zero && !includedDiagonal && columnIndications[j] > i) {
+						includedDiagonal = true;
+						tmpColumnIndicationsArray[currentPosition] = i;
+						tmpValueArray[currentPosition] = diagonalStorage[i];
+						++currentPosition; ++insertedDiagonalElements;
+					}
+					tmpColumnIndicationsArray[currentPosition] = columnIndications[j];
+					tmpValueArray[currentPosition] = valueStorage[j];
 					++currentPosition;
 				}
-				tmpColumnIndicationsArray[currentPosition] = columnIndications[j];
-				tmpValueArray[currentPosition] = valueStorage[j];
+
+				// If the diagonal element is non-zero and was not inserted until now (i.e. all
+				// off-diagonal elements in the row are before the diagonal element.
+				if (!includedDiagonal && diagonalStorage[i] != zero) {
+					tmpColumnIndicationsArray[currentPosition] = i;
+					tmpValueArray[currentPosition] = diagonalStorage[i];
+					++currentPosition; ++insertedDiagonalElements;
+				}
 			}
 		}
+		// Fill in sentinel element at the end.
+		result->jc[rowCount] = realNonZeros;
 
-		LOG4CPLUS_INFO(logger, "Starting copy2.");
 		// Now, we can copy the temporary array to the GMMXX format.
-		result->ir.reserve(realNonZeros);
+		result->ir.resize(realNonZeros);
 		std::copy(tmpColumnIndicationsArray, tmpColumnIndicationsArray + realNonZeros, result->ir.begin());
 		delete[] tmpColumnIndicationsArray;
 
@@ -611,7 +634,8 @@ public:
 		result->pr.resize(realNonZeros);
 		std::copy(tmpValueArray, tmpValueArray + realNonZeros, result->pr.begin());
 		delete[] tmpValueArray;
-		LOG4CPLUS_INFO(logger, "Done copy2.");
+
+		LOG4CPLUS_DEBUG(logger, "Done converting matrix to gmm++ format.");
 
 		return result;
 	}
@@ -635,6 +659,19 @@ public:
 			if (diagonalStorage[i] != zero) ++result;
 		}
 		return result;
+	}
+
+	/*!
+	 * This function makes the rows given by the bit vector absorbing.
+	 */
+	bool makeRowsAbsorbing(const mrmc::storage::BitVector rows) {
+		for (auto row : rows) {
+			makeRowAbsorbing(row);
+		}
+
+		//FIXME: Had no return value; as I compile with -Werror ATM, build did not work so I added:
+		return false;
+		//(Thomas Heinemann, 06.12.2012)
 	}
 
 	/*!
@@ -688,13 +725,15 @@ public:
 	/*!
 	 * Computes a vector in which each element is the sum of those elements in the
 	 * corresponding row whose column bits are set to one in the given constraint.
-	 * @param constraint A bit vector that indicates which columns to add.
+	 * @param rowConstraint A bit vector that indicates for which rows to perform summation.
+	 * @param columnConstraint A bit vector that indicates which columns to add.
 	 * @param resultVector A pointer to the resulting vector that has at least
 	 * as many elements as there are bits set to true in the constraint.
 	 */
-	void getConstrainedRowCountVector(const mrmc::storage::BitVector& constraint, T* resultVector) {
-		for (uint_fast64_t row = 0; row < rowCount; ++row) {
-			resultVector[row] = getConstrainedRowSum(row, constraint);
+	void getConstrainedRowCountVector(const mrmc::storage::BitVector& rowConstraint, const mrmc::storage::BitVector& columnConstraint, std::vector<T>* resultVector) {
+		uint_fast64_t currentRowCount = 0;
+		for (auto row : rowConstraint) {
+			resultVector[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
 		}
 	}
 
@@ -723,8 +762,6 @@ public:
 				}
 			}
 		}
-
-		LOG4CPLUS_DEBUG(logger, "Done counting non-zeros.");
 
 		// Create and initialize resulting matrix.
 		SquareSparseMatrix* result = new SquareSparseMatrix(constraint.getNumberOfSetBits());
@@ -765,6 +802,31 @@ public:
 		return result;
 	}
 
+	void convertToEquationSystem() {
+		invertDiagonal();
+		negateAllNonDiagonalElements();
+	}
+
+	/*!
+	 * Inverts all elements on the diagonal, i.e. sets the diagonal values to 1 minus their previous
+	 * value.
+	 */
+	void invertDiagonal() {
+		T one(1);
+		for (uint_fast64_t i = 0; i < rowCount; ++i) {
+			diagonalStorage[i] = one - diagonalStorage[i];
+		}
+	}
+
+	/*!
+	 * Negates all non-zero elements that are not on the diagonal.
+	 */
+	void negateAllNonDiagonalElements() {
+		for (uint_fast64_t i = 0; i < nonZeroEntryCount; ++i) {
+			valueStorage[i] = - valueStorage[i];
+		}
+	}
+
 	/*!
 	 * Returns the size of the matrix in memory measured in bytes.
 	 * @return The size of the matrix in memory measured in bytes.
@@ -800,6 +862,19 @@ public:
 	 */
 	constIndexIterator endConstColumnNoDiagIterator(uint_fast64_t row) const {
 		return this->columnIndications + this->rowIndications[row + 1];
+	}
+
+	void print() {
+		std::cout << "diag: --------------------------------" << std::endl;
+		for (uint_fast64_t i = 0; i < rowCount; ++i) {
+			std::cout << "(" << i << "," << i << ") = " << diagonalStorage[i] << std::endl;
+		}
+		std::cout << "non diag: ----------------------------" << std::endl;
+		for (uint_fast64_t i = 0; i < rowCount; ++i) {
+			for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
+				std::cout << "(" << i << "," << columnIndications[j] << ") = " << valueStorage[j] << std::endl;
+			}
+		}
 	}
 
 private:
