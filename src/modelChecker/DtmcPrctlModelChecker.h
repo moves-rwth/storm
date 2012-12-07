@@ -26,14 +26,7 @@ class DtmcPrctlModelChecker;
 #include "src/formula/PCTLPathFormula.h"
 #include "src/formula/PCTLStateFormula.h"
 
-#include "src/formula/And.h"
-#include "src/formula/AP.h"
-#include "src/formula/BoundedUntil.h"
-#include "src/formula/Next.h"
-#include "src/formula/Not.h"
-#include "src/formula/Or.h"
-#include "src/formula/ProbabilisticOperator.h"
-#include "src/formula/Until.h"
+#include "src/formula/Formulas.h"
 
 #include "src/models/Dtmc.h"
 #include "src/storage/BitVector.h"
@@ -163,12 +156,24 @@ public:
 	}
 
 	/*!
-	 * The check method for a state formula with a probabilistic operator node as root in its formula tree
+	 * The check method for a state formula with a probabilistic operator node as root in its
+	 * formula tree
 	 *
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkProbabilisticOperator(const mrmc::formula::ProbabilisticOperator<T>& formula) const = 0;
+	virtual mrmc::storage::BitVector* checkProbabilisticOperator(
+			const mrmc::formula::ProbabilisticOperator<T>& formula) const = 0;
+
+	/*!
+	 * The check method for a state formula with a probabilistic interval operator node as root in
+	 * its formula tree
+	 *
+	 * @param formula The state formula to check
+	 * @returns The set of states satisfying the formula, represented by a bit vector
+	 */
+	virtual mrmc::storage::BitVector* checkProbabilisticIntervalOperator(
+			const mrmc::formula::ProbabilisticIntervalOperator<T>& formula) const = 0;
 
 	/*!
 	 * The check method for a path formula; Will infer the actual type of formula and delegate it
