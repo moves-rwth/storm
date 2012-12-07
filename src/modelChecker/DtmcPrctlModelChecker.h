@@ -69,7 +69,7 @@ public:
 	 *
 	 * @param modelChecker The model checker that is copied.
 	 */
-	explicit DtmcPrctlModelChecker(mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
+	explicit DtmcPrctlModelChecker(const mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
 		this->model = new mrmc::models::Dtmc<T>(modelChecker->getModel());
 	}
 
