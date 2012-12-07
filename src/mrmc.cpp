@@ -30,6 +30,7 @@
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/settings.h"
 #include "src/formula/Formulas.h"
+#include "src/exceptions/NoConvergence.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -111,7 +112,15 @@ int main(const int argc, const char* argv[]) {
 	mrmc::formula::AP<double>* trueFormula = new mrmc::formula::AP<double>(std::string("true"));
 	mrmc::formula::AP<double>* ap = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
 	mrmc::formula::Until<double>* until = new mrmc::formula::Until<double>(trueFormula, ap);
-	std::vector<double>* eigenResult = mc.checkPathFormula(*until);
+	
+	std::vector<double>* eigenResult = NULL;
+	try {
+		eigenResult = mc.checkPathFormula(*until);
+	} catch (mrmc::exceptions::NoConvergence& nce) {
+		// solver did not converge
+		LOG4CPLUS_ERROR(logger, "EigenDtmcPrctlModelChecker did not converge with " << nce.getIterationCount() << " of max. " << nce.getMaxIterationCount() << "Iterations!");
+		return -1;
+	}
 	delete until;
 
 	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> mcG(dtmc);
@@ -128,6 +137,9 @@ int main(const int argc, const char* argv[]) {
 		for (int i = 0; i < eigenResult->size(); ++i) {
 			if (std::abs((eigenResult->at(i) - gmmResult->at(i))) > 0) {
 				LOG4CPLUS_ERROR(logger, "Warning: Eigen and GMM produced different results in entry " << i << " (Eigen: " << eigenResult->at(i) << ", Gmm: " << gmmResult->at(i) << ")!");
+			}
+			if (eigenResult->at(i) != 0.0) {
+				LOG4CPLUS_INFO(logger, "Non zero entry " << eigenResult->at(i) << " at " << i);
 			}
 		}
 	}
