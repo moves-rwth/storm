@@ -18,6 +18,7 @@
 #include "PCTLPathFormula.h"
 #include "PCTLStateFormula.h"
 #include "ProbabilisticOperator.h"
+#include "ProbabilisticIntervalOperator.h"
 #include "Until.h"
 
 #endif /* FORMULAS_H_ */
