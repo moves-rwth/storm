@@ -163,7 +163,7 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 		/*
 		 *	now parse node label assignments
 		 */
-		uint_fast32_t node;
+		uint_fast64_t node;
 		char proposition[128];
 		size_t cnt;
 		/*

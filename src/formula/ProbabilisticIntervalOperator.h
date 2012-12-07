@@ -125,9 +125,9 @@ public:
 	virtual std::string toString() const {
 		std::string result = "(";
 		result += " P[";
-		result += lower;
+		result += std::to_string(lower);
 		result += ";";
-		result += upper;
+		result += std::to_string(upper);
 		result += "] ";
 		result += pathFormula->toString();
 		result += ")";
@@ -160,7 +160,7 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkProbabilisticIntervalOperator(this);
+	  return modelChecker.checkProbabilisticIntervalOperator(*this);
 	}
 
 private:

@@ -509,7 +509,7 @@ public:
 				rowEnd = rowIndications[row + 1];
 				while (rowStart < rowEnd) {
 					if (valueStorage[rowStart] == 0) zeroCount++;
-					tripletList.push_back(IntTriplet(row, columnIndications[rowStart], valueStorage[rowStart]));
+					tripletList.push_back(IntTriplet(static_cast<int_fast32_t>(row), static_cast<int_fast32_t>(columnIndications[rowStart]), valueStorage[rowStart]));
 					++rowStart;
 				}
 			}
@@ -517,7 +517,7 @@ public:
 			// Then add the elements on the diagonal.
 			for (uint_fast64_t i = 0; i < rowCount; ++i) {
 				if (diagonalStorage[i] == 0) zeroCount++;
-				tripletList.push_back(IntTriplet(i, i, diagonalStorage[i]));
+				tripletList.push_back(IntTriplet(static_cast<int_fast32_t>(i), static_cast<int_fast32_t>(i), diagonalStorage[i]));
 			}
 
 			// Let Eigen create a matrix from the given list of triplets.

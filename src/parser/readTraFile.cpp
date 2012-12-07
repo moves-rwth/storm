@@ -48,9 +48,9 @@ namespace parser{
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast32_t TraParser::firstPass(char* buf, uint_fast32_t &maxnode)
+uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode)
 {
-	uint_fast32_t non_zero = 0;
+	uint_fast64_t non_zero = 0;
 	
 	/*
 	 *	check file header and extract number of transitions
@@ -74,7 +74,7 @@ uint_fast32_t TraParser::firstPass(char* buf, uint_fast32_t &maxnode)
 	/*
 	 *	check all transitions for non-zero diagonal entrys
 	 */
-	uint_fast32_t row, col;
+	uint_fast64_t row, col;
 	double val;
 	maxnode = 0;
 	char* tmp;
@@ -134,8 +134,8 @@ TraParser::TraParser(const char * filename)
 	/*
 	 *	perform first pass, i.e. count entries that are not zero and not on the diagonal
 	 */
-	uint_fast32_t maxnode;
-	uint_fast32_t non_zero = this->firstPass(file.data, maxnode);
+	uint_fast64_t maxnode;
+	uint_fast64_t non_zero = this->firstPass(file.data, maxnode);
 	/*
 	 *	if first pass returned zero, the file format was wrong
 	 */

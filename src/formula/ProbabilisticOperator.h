@@ -77,9 +77,9 @@ public:
 	}
 
 	/*!
-	 * @returns the lower bound for the probability
+	 * @returns the bound for the probability
 	 */
-	const T& getLowerBound() const {
+	const T& getBound() const {
 		return bound;
 	}
 
@@ -97,7 +97,7 @@ public:
 	 *
 	 * @param bound The bound for the probability
 	 */
-	void setInterval(T bound) {
+	void setBound(T bound) {
 		this->bound = bound;
 	}
 
@@ -129,9 +129,18 @@ public:
 	 */
 	virtual mrmc::storage::BitVector *check(
 			const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkProbabilisticOperator(this);
+	  return modelChecker.checkProbabilisticOperator(*this);
 	}
 
+	/*!
+	 *	Returns a string representation of this PCTLStateFormula
+	 * 
+	 * @returns a string representation of this PCTLStateFormula
+	 */
+	virtual std::string toString() const {
+		// TODO
+		return "";
+	}
 private:
 	T bound;
 	PCTLPathFormula<T>* pathFormula;

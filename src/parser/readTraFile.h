@@ -30,7 +30,7 @@ class TraParser : Parser
 	private:
 		std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> matrix;
 		
-		uint_fast32_t firstPass(char* buf, uint_fast32_t &maxnode);
+		uint_fast64_t firstPass(char* buf, uint_fast64_t &maxnode);
 	
 };
 		

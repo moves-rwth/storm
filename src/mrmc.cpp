@@ -22,6 +22,7 @@
 #include "src/models/Dtmc.h"
 #include "src/storage/SquareSparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
+#include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
 #include "src/parser/readLabFile.h"
 #include "src/parser/readTraFile.h"
@@ -106,14 +107,37 @@ int main(const int argc, const char* argv[]) {
 	dtmc.printModelInformationToStream(std::cout);
 
 	// Uncomment this if you want to see the first model checking procedure in action. :)
-	/*
-	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(dtmc);
+	mrmc::modelChecker::EigenDtmcPrctlModelChecker<double> mc(dtmc);
 	mrmc::formula::AP<double>* trueFormula = new mrmc::formula::AP<double>(std::string("true"));
 	mrmc::formula::AP<double>* ap = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
 	mrmc::formula::Until<double>* until = new mrmc::formula::Until<double>(trueFormula, ap);
-	mc.checkPathFormula(*until);
+	std::vector<double>* eigenResult = mc.checkPathFormula(*until);
 	delete until;
-	*/
+
+	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> mcG(dtmc);
+	mrmc::formula::AP<double>* trueFormulaG = new mrmc::formula::AP<double>(std::string("true"));
+	mrmc::formula::AP<double>* apG = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
+	mrmc::formula::Until<double>* untilG = new mrmc::formula::Until<double>(trueFormulaG, apG);
+	std::vector<double>* gmmResult = mcG.checkPathFormula(*untilG);
+	delete untilG;
+
+	if (eigenResult->size() != gmmResult->size()) {
+		LOG4CPLUS_ERROR(logger, "Warning: Eigen and GMM produced different results (Eigen: " << eigenResult->size() << ", Gmm: " << gmmResult->size() << ") in size!");
+	} else {
+		LOG4CPLUS_INFO(logger, "Testing for different entries");
+		for (int i = 0; i < eigenResult->size(); ++i) {
+			if (std::abs((eigenResult->at(i) - gmmResult->at(i))) > 0) {
+				LOG4CPLUS_ERROR(logger, "Warning: Eigen and GMM produced different results in entry " << i << " (Eigen: " << eigenResult->at(i) << ", Gmm: " << gmmResult->at(i) << ")!");
+			}
+		}
+	}
+
+	/*
+	LOG4CPLUS_INFO(logger, "Result: ");
+	LOG4CPLUS_INFO(logger, "Entry : EigenResult at Entry : GmmResult at Entry");
+	for (int i = 0; i < eigenResult->size(); ++i) {
+		LOG4CPLUS_INFO(logger, i << " : " << eigenResult->at(i) << " : " << gmmResult->at(i));
+	}*/
 
 	if (s != nullptr) {
 		delete s;

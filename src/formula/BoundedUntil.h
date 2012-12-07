@@ -11,7 +11,6 @@
 #include "PCTLPathFormula.h"
 #include "PCTLStateFormula.h"
 #include "boost/integer/integer_mask.hpp"
-#include "boost/lexical_cast.hpp"
 #include <string>
 
 namespace mrmc {
@@ -131,7 +130,7 @@ public:
 		std::string result = "(";
 		result += left->toString();
 		result += " U<=";
-		result +=  boost::lexical_cast<std::string>(bound);
+		result += std::to_string(bound);
 		result += " ";
 		result += right->toString();
 		result += ")";
@@ -168,7 +167,7 @@ public:
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
 	virtual std::vector<T> *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkBoundedUntil(this);
+	  return modelChecker.checkBoundedUntil(*this);
 	}
 
 private:
