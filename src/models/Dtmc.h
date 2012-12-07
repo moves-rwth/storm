@@ -9,6 +9,7 @@
 #define DTMC_H_
 
 #include <ostream>
+#include <memory>
 
 #include "AtomicPropositionsLabeling.h"
 #include "GraphTransitions.h"
@@ -35,10 +36,8 @@ public:
 	 * @param stateLabeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
-	Dtmc(mrmc::storage::SquareSparseMatrix<T>* probabilityMatrix, mrmc::models::AtomicPropositionsLabeling* stateLabeling)
-			: backwardTransitions(nullptr) {
-		this->probabilityMatrix = probabilityMatrix;
-		this->stateLabeling = stateLabeling;
+	Dtmc(std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> probabilityMatrix, std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> stateLabeling)
+			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling), backwardTransitions(nullptr) {
 	}
 
 	//! Copy Constructor
@@ -58,12 +57,6 @@ public:
 	 * Destructor. Frees the matrix and labeling associated with this DTMC.
 	 */
 	~Dtmc() {
-		if (this->probabilityMatrix != nullptr) {
-			delete this->probabilityMatrix;
-		}
-		if (this->stateLabeling != nullptr) {
-			delete this->stateLabeling;
-		}
 		if (this->backwardTransitions != nullptr) {
 			delete this->backwardTransitions;
 		}
@@ -102,7 +95,7 @@ public:
 	 * @return A pointer to the matrix representing the transition probability
 	 * function.
 	 */
-	mrmc::storage::SquareSparseMatrix<T>* getTransitionProbabilityMatrix() const {
+	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> getTransitionProbabilityMatrix() const {
 		return this->probabilityMatrix;
 	}
 
@@ -146,10 +139,10 @@ public:
 private:
 
 	/*! A matrix representing the transition probability function of the DTMC. */
-	mrmc::storage::SquareSparseMatrix<T>* probabilityMatrix;
+	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> probabilityMatrix;
 
 	/*! The labeling of the states of the DTMC. */
-	mrmc::models::AtomicPropositionsLabeling* stateLabeling;
+	std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> stateLabeling;
 
 	/*!
 	 * A data structure that stores the predecessors for all states. This is

@@ -71,8 +71,8 @@ public:
 	 * @param ssm A reference to the matrix to be copied.
 	 */
 	SquareSparseMatrix(const SquareSparseMatrix<T> &ssm)
-			: internalStatus(ssm.internalStatus), currentSize(ssm.currentSize), lastRow(ssm.lastRow),
-			  rowCount(ssm.rowCount), nonZeroEntryCount(ssm.nonZeroEntryCount) {
+			: rowCount(ssm.rowCount), nonZeroEntryCount(ssm.nonZeroEntryCount),
+			  internalStatus(ssm.internalStatus), currentSize(ssm.currentSize), lastRow(ssm.lastRow) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		// Check whether copying the matrix is safe.
 		if (!ssm.hasError()) {
@@ -454,7 +454,7 @@ public:
 	 * Checks whether the internal state of the matrix signals an error.
 	 * @return True iff the internal state of the matrix signals an error.
 	 */
-	bool hasError() {
+	bool hasError() const {
 		return (internalStatus == MatrixStatus::Error);
 	}
 
@@ -517,7 +517,7 @@ public:
 			// Then add the elements on the diagonal.
 			for (uint_fast64_t i = 0; i < rowCount; ++i) {
 				if (diagonalStorage[i] == 0) zeroCount++;
-				// tripletList.push_back(IntTriplet(i, i, diagonalStorage[i]));
+				tripletList.push_back(IntTriplet(i, i, diagonalStorage[i]));
 			}
 
 			// Let Eigen create a matrix from the given list of triplets.
@@ -663,11 +663,13 @@ public:
 
 	/*!
 	 * This function makes the rows given by the bit vector absorbing.
+	 * @param rows A bit vector indicating which rows to make absorbing.
+	 * @return True iff the operation was successful.
 	 */
 	bool makeRowsAbsorbing(const mrmc::storage::BitVector rows) {
 		bool result = true;
 		for (auto row : rows) {
-			result = result && makeRowAbsorbing(row);
+			result &= makeRowAbsorbing(row);
 		}
 
 		return result;
@@ -732,7 +734,7 @@ public:
 	void getConstrainedRowCountVector(const mrmc::storage::BitVector& rowConstraint, const mrmc::storage::BitVector& columnConstraint, std::vector<T>* resultVector) {
 		uint_fast64_t currentRowCount = 0;
 		for (auto row : rowConstraint) {
-			resultVector[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
+			(*resultVector)[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
 		}
 	}
 

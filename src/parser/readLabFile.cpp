@@ -106,7 +106,7 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 	/*
 	 *	create labeling object with given node and proposition count
 	 */
-	this->labeling = new mrmc::models::AtomicPropositionsLabeling(node_count, proposition_count);
+	this->labeling = std::shared_ptr<mrmc::models::AtomicPropositionsLabeling>(new mrmc::models::AtomicPropositionsLabeling(node_count, proposition_count));
 	
 	/*
 	 *	second run: add propositions and node labels to labeling

@@ -73,21 +73,21 @@ public:
 	/*!
 	 * @returns the child node (representation of a PCTL path formula)
 	 */
-	PCTLPathFormula<T>& getPathFormula () {
+	const PCTLPathFormula<T>& getPathFormula () const {
 		return *pathFormula;
 	}
 
 	/*!
 	 * @returns the lower bound for the probability
 	 */
-	const T& getLowerBound() {
+	const T& getLowerBound() const {
 		return lower;
 	}
 
 	/*!
 	 * @returns the upper bound for the probability
 	 */
-	const T& getUpperBound() {
+	const T& getUpperBound() const {
 		return upper;
 	}
 
@@ -114,7 +114,7 @@ public:
 	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() {
+	virtual std::string toString() const {
 		std::string result = "(";
 		result += " P[";
 		result += lower;
@@ -133,7 +133,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PCTLStateFormula<T>* clone() {
+	virtual PCTLStateFormula<T>* clone() const {
 		ProbabilisticOperator<T>* result = new ProbabilisticOperator<T>();
 		result->setInterval(lower, upper);
 		if (pathFormula != NULL) {
@@ -151,7 +151,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual mrmc::storage::BitVector *check(mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) {
+	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkProbabilisticOperator(this);
 	}
 

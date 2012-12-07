@@ -42,7 +42,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PCTLPathFormula<T>* clone() = 0;
+	virtual PCTLPathFormula<T>* clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -55,7 +55,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) = 0;
+	virtual std::vector<T>* check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const = 0;
 };
 
 } //namespace formula

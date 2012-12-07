@@ -21,11 +21,13 @@
 #include "src/models/Dtmc.h"
 #include "src/storage/SquareSparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
+#include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
 #include "src/parser/readLabFile.h"
 #include "src/parser/readTraFile.h"
 #include "src/parser/readPrctlFile.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/settings.h"
+#include "src/formula/Formulas.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -101,6 +103,16 @@ int main(const int argc, const char* argv[]) {
 	mrmc::models::Dtmc<double> dtmc(traparser.getMatrix(), labparser.getLabeling());
 
 	dtmc.printModelInformationToStream(std::cout);
+
+	// Uncomment this if you want to see the first model checking procedure in action. :)
+	/*
+	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(dtmc);
+	mrmc::formula::AP<double>* trueFormula = new mrmc::formula::AP<double>(std::string("true"));
+	mrmc::formula::AP<double>* ap = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
+	mrmc::formula::Until<double>* until = new mrmc::formula::Until<double>(trueFormula, ap);
+	mc.checkPathFormula(*until);
+	delete until;
+	*/
 
 	if (s != nullptr) {
 		delete s;

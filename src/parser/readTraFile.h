@@ -5,6 +5,8 @@
 
 #include "src/parser/parser.h"
 
+#include <memory>
+
 namespace mrmc {
 namespace parser {
 	
@@ -20,13 +22,13 @@ class TraParser : Parser
 	public:
 		TraParser(const char* filename);
 		
-		mrmc::storage::SquareSparseMatrix<double>* getMatrix()
+		std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> getMatrix()
 		{
 			return this->matrix;
 		}
 	
 	private:
-		mrmc::storage::SquareSparseMatrix<double>* matrix;
+		std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> matrix;
 		
 		uint_fast32_t firstPass(char* buf, uint_fast32_t &maxnode);
 	

@@ -12,18 +12,18 @@ namespace mrmc {
 
 namespace utility {
 
-template<T>
-void setVectorValues(std::vector<T>* vector, const mrmc::storage::BitVector& positions, std::vector<T>* values) {
+template<class T>
+void setVectorValues(std::vector<T>* vector, const mrmc::storage::BitVector& positions, const std::vector<T> values) {
 	uint_fast64_t oldPosition = 0;
 	for (auto position : positions) {
-		vector[position] = values[oldPosition++];
+		(*vector)[position] = values[oldPosition++];
 	}
 }
 
-template<T>
-void setVectorValue(std::vector<T>* vector, const mrmc::storage::BitVector& positions, T value) {
+template<class T>
+void setVectorValues(std::vector<T>* vector, const mrmc::storage::BitVector& positions, T value) {
 	for (auto position : positions) {
-		vector[position] = value;
+		(*vector)[position] = value;
 	}
 }
 
