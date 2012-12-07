@@ -665,13 +665,12 @@ public:
 	 * This function makes the rows given by the bit vector absorbing.
 	 */
 	bool makeRowsAbsorbing(const mrmc::storage::BitVector rows) {
+		bool result = true;
 		for (auto row : rows) {
-			makeRowAbsorbing(row);
+			result = result && makeRowAbsorbing(row);
 		}
 
-		//FIXME: Had no return value; as I compile with -Werror ATM, build did not work so I added:
-		return false;
-		//(Thomas Heinemann, 06.12.2012)
+		return result;
 	}
 
 	/*!
