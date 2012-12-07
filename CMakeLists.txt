@@ -189,5 +189,8 @@ configure_file (
   "${PROJECT_BINARY_DIR}/mrmc-config.h"
 )
 
-add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ./mrmc examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab)
-add_custom_target(memcheck-tests valgrind --leak-check=full --show-reachable=yes ./mrmc-tests)
+add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/mrmc ${PROJECT_SOURCE_DIR}/examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab
+						DEPENDS mrmc)
+add_custom_target(memcheck-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/mrmc-tests
+						DEPENDS mrmc-tests)
+
