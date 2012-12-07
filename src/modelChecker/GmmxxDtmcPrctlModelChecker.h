@@ -37,7 +37,12 @@ public:
 
 	virtual ~GmmxxDtmcPrctlModelChecker() { }
 
-	virtual mrmc::storage::BitVector* checkProbabilisticOperator(const mrmc::formula::ProbabilisticIntervalOperator<Type>& formula) const {
+	virtual mrmc::storage::BitVector* checkProbabilisticOperator(const mrmc::formula::ProbabilisticOperator<Type>& formula) const {
+		//FIXME: Implementation needed
+		return NULL;
+	}
+
+	virtual mrmc::storage::BitVector* checkProbabilisticIntervalOperator(const mrmc::formula::ProbabilisticIntervalOperator<Type>& formula) const {
 		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
 
 		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
