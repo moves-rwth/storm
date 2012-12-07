@@ -9,17 +9,32 @@ set (MRMC_CPP_VERSION_MINOR 0)
 
 # Set all GTest references to the version in the repository and show it as output
 set (GTEST_INCLUDE_DIR resources/3rdparty/gtest-1.6.0/include)
-set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.a)
-set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.a)
+if(MSVC)
+	set (MRMC_LIB_SUFFIX lib)
+	set (GTEST_LIBRARY_DEBUG ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Debug/gtest.${MRMC_LIB_SUFFIX})
+	set (GTEST_MAIN_LIBRARY_DEBUG ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Debug/gtest_main.${MRMC_LIB_SUFFIX})
+	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Release/gtest.${MRMC_LIB_SUFFIX})
+	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Release/gtest_main.${MRMC_LIB_SUFFIX})
+	set (GTEST_LIBRARIES optimized ${GTEST_LIBRARY} debug ${GTEST_LIBRARY_DEBUG})
+else()
+	set (MRMC_LIB_SUFFIX a)
+	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.${MRMC_LIB_SUFFIX})
+	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.${MRMC_LIB_SUFFIX})
+	set (GTEST_LIBRARIES ${GTEST_LIBRARY}) # as we dont use FindGTest anymore
+endif()
 message(STATUS "GTEST_INCLUDE_DIR is ${GTEST_INCLUDE_DIR}")
 message(STATUS "GTEST_LIBRARY is ${GTEST_LIBRARY}")
 message(STATUS "GTEST_MAIN_LIBRARY is ${GTEST_MAIN_LIBRARY}")
 
 # Set all log4cplus references the version in the repository
 set (LOG4CPLUS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/include)
-set (LOG4CPLUS_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/src/liblog4cplus.a)
+if (MSVC)
+	set (LOG4CPLUS_LIBRARIES optimized ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/msvc10/x64/bin.Release/log4cplusS.${MRMC_LIB_SUFFIX} debug ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/msvc10/x64/bin.Debug/log4cplusSD.${MRMC_LIB_SUFFIX})
+else()
+	set (LOG4CPLUS_LIBRARIES ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/src/liblog4cplus.${MRMC_LIB_SUFFIX})
+endif()
 message(STATUS "LOG4CPLUS_INCLUDE_DIR is ${LOG4CPLUS_INCLUDE_DIR}")
-message(STATUS "LOG4CPLUS_LIBRARY is ${LOG4CPLUS_LIBRARY}")
+message(STATUS "LOG4CPLUS_LIBRARY is ${LOG4CPLUS_LIBRARIES}")
 
 # Set all Eigen references the version in the repository
 set(EIGEN3_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen)
@@ -52,7 +67,8 @@ if(CMAKE_COMPILER_IS_GNUCC)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
     endif(USE_POPCNT)
 elseif(MSVC)
-
+	# required for GMM to compile, ugly error directive in their code
+	add_definitions(/D_SCL_SECURE_NO_DEPRECATE)
 else(CLANG)
     # Set standard flags for GCC
     set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic -Wno-unused-variable")
@@ -88,12 +104,13 @@ source_group(Headers FILES ${MRMC_TEST_HEADERS})
 source_group(Sources FILES ${MRMC_TEST_SOURCES})
 
 # Add base folder for better inclusion paths
+include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
 # Set required external packages
 find_package(Threads REQUIRED)
 find_package(Doxygen REQUIRED)
-#set(Boost_USE_STATIC_LIBS        ON)
+set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED COMPONENTS program_options)
@@ -141,7 +158,7 @@ if (GTEST_INCLUDE_DIR)
 	enable_testing()
 
 	include_directories(${GTEST_INCLUDE_DIR})
-	target_link_libraries(mrmc-tests ${GTEST_LIBRARY} ${GTEST_MAIN_LIBRARY})
+	target_link_libraries(mrmc-tests ${GTEST_LIBRARIES})
 
 	add_test(NAME mrmc-tests COMMAND mrmc-tests)
 	if(MSVC) # VS2012 doesn't support correctly the tuples yet
@@ -151,8 +168,8 @@ endif(GTEST_INCLUDE_DIR)
 
 if (LOG4CPLUS_INCLUDE_DIR)
     include_directories(${LOG4CPLUS_INCLUDE_DIR})
-    target_link_libraries(mrmc ${LOG4CPLUS_LIBRARY}) 
-    target_link_libraries(mrmc-tests ${LOG4CPLUS_LIBRARY})
+    target_link_libraries(mrmc ${LOG4CPLUS_LIBRARIES}) 
+    target_link_libraries(mrmc-tests ${LOG4CPLUS_LIBRARIES})
     # On Linux, we have to link against librt
     if (UNIX AND NOT APPLE)
 	   target_link_libraries(mrmc rt)

@@ -12,6 +12,7 @@
  *  Description: Central part of the application containing the main() Method
  */
 
+#include "src/utility/osDetection.h"
 #include <iostream>
 #include <cstdio>
 #include <sstream>
