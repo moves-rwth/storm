@@ -26,11 +26,11 @@ class NoConvergence : public std::exception
 	   this->maxIterations = maxIterations;
    }
 #else
-   InvalidSettings() : exception() {
+   NoConvergence() : exception() {
 	   iterations = -1;
 	   maxIterations = -1;
    }
-   InvalidSettings(const char * const s, int iterations, int maxIterations): exception() {
+   NoConvergence(const char * const s, int iterations, int maxIterations): exception() {
 	   this->iterations = iterations;
 	   this->maxIterations = maxIterations;
    }

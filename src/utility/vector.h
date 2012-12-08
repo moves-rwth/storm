@@ -32,7 +32,7 @@ void setVectorValues(std::vector<T>* vector, const mrmc::storage::BitVector& pos
 template<class T>
 void setVectorValues(Eigen::Matrix<T, -1, 1, 0, -1, 1>* eigenVector, const mrmc::storage::BitVector& positions, T value) {
 	for (auto position : positions) {
-		(*vector)(position, 0) = value;
+		(*eigenVector)(position, 0) = value;
 	}
 }
 
