@@ -7,7 +7,7 @@
 
 #include "src/utility/settings.h"
 
-//#include <iostream>
+#include <iostream>
 //#include <boost/program_options.hpp>
 //#include "src/exceptions/InvalidSettings.h"
 
@@ -58,26 +58,46 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		{
 			bpo::store(bpo::parse_config_file<char>(filename, this->conf), this->vm, true);
 		}
+		/*
+		 *	If a required option is missing, this will throw a bpo::required_option.
+		 *	This exception is catched below.
+		 */
 		bpo::notify(this->vm);
+		
+		/*
+		 *	Call custom option checker.
+		 */
+		Callbacks* cb = mrmc::settings::Callbacks::getInstance();
+		while (cb->checkerList.size() > 0)
+		{
+			CheckerCallback fptr = cb->checkerList.front();
+			cb->checkerList.pop_front();
+			
+			if (! (*fptr)(this->vm))
+			{
+				std::cerr << "Custom option checker failed." << std::endl;
+				throw mrmc::exceptions::InvalidSettings();
+			}
+		}
 	}
 	/*
 	 *	catch errors...
 	 */
 	catch (bpo::reading_file e)
 	{
-		std::cout << "Could not read config file " << filename << std::endl;
+		std::cerr << "Could not read config file " << filename << std::endl;
 	}
 	catch (bpo::required_option e)
 	{
 		if (! (this->vm.count("help") || this->vm.count("help-config")))
 		{
-			std::cout << e.what() << std::endl;
+			std::cerr << e.what() << std::endl;
 			throw mrmc::exceptions::InvalidSettings();
 		}
 	}
 	catch (bpo::error e)
 	{
-		std::cout << "Some error occurred: " << e.what() << std::endl;
+		std::cerr << "Some error occurred: " << e.what() << std::endl;
 	}
 }
 
@@ -92,7 +112,8 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
  *
  *	The constructor fills the option descriptions, parses the
  *	command line and the config file and puts the option values to
- *	our option mapping.
+ *	our option mapping. It also calls all register callbacks that were
+ *	registered via Callbacks and Register classes.
  *
  *	If a configfile is set in the commandline, we load this one.
  *	Otherwise, if filename is not NULL, we load this one. Otherwise,
@@ -122,6 +143,36 @@ Settings* Settings::instance(const int argc, const char* argv[], const char* fil
 		;
 		Settings::configfile.add_options()
 		;
+		
+		/*
+		 *	Call all custom register callbacks.
+		 */
+		Callbacks* cb = mrmc::settings::Callbacks::getInstance();
+		while (cb->registerList.size() > 0)
+		{
+			CallbackType type = cb->registerList.front().first;
+			RegisterCallback fptr = cb->registerList.front().second;
+			cb->registerList.pop_front();
+			
+			/*
+			 *	Allow modules to specify the type of an option.
+			 */
+			switch (type)
+			{
+				case CB_CONFIG:
+					(*fptr)(Settings::configfile);
+					break;
+				case CB_CLI:
+					(*fptr)(Settings::commandline);
+					break;
+				case CB_GENERIC:
+					(*fptr)(Settings::generic);
+					break;
+				default:
+					// hm. is this an error? can this actually happen with an enum?
+					break;
+			}
+		}
 
 		/*
 		 *	construct option descriptions for commandline and config file
@@ -176,7 +227,6 @@ Settings* instance()
 {
 	return Settings::inst;
 }
-    
-} // namespace settings
 
+} // namespace settings
 } // namespace mrmc

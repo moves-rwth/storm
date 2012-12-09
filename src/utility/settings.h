@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <list>
+#include <utility>
 #include <boost/program_options.hpp>
 #include "src/exceptions/InvalidSettings.h"
 
@@ -123,13 +124,14 @@ namespace settings {
 	/*!
 	 *	@brief	Function type for functions registering new options.
 	 */
-	typedef void(*fptr_regOption)(bpo::options_description&);
+	typedef void(*RegisterCallback)(bpo::options_description&);
 	
 	/*!
 	 *	@brief	Function type for function checking constraints on settings.
 	 */
-	typedef bool(*fptr_checkOption)(bpo::variables_map&);
+	typedef bool(*CheckerCallback)(bpo::variables_map&);
 	
+	enum CallbackType { CB_CONFIG, CB_CLI, CB_GENERIC };
 	
 	/*!
 	 *	@brief This class handles callbacks for registering new options and
@@ -144,11 +146,11 @@ namespace settings {
 			/*!
 			 *	@brief Stores register callbacks.
 			 */
-			std::list<fptr_regOption> reg_list;
+			std::list<std::pair<CallbackType, RegisterCallback>> registerList;
 			/*!
 			 *	@brief Stores check callbacks.
 			 */
-			std::list<fptr_checkOption> check_list;
+			std::list<CheckerCallback> checkerList;
 			
 			/*!
 			 *	@brief Private constructor.
@@ -167,16 +169,21 @@ namespace settings {
 			 *	@brief Returns current instance to create singleton.
 			 *	@return current instance
 			 */
-			static Callbacks& getInstance()
+			static Callbacks* getInstance()
 			{
 				static Callbacks instance;
-				return instance;
+				return &instance;
 			}
 		
 		/*!
 		 *	@brief Register class needs access to lists.
 		 */
 		friend class Register;
+		
+		/*!
+		 *	@brief Settings class need access to lists.
+		 */
+		friend class Settings;
 	};
 	
 	/*!
@@ -189,17 +196,17 @@ namespace settings {
 			/*!
 			 *	@brief Registers given function as register callback.
 			 */
-			Register(const fptr_regOption ptr)
+			Register(const CallbackType type, const RegisterCallback ptr)
 			{
-				mrmc::settings::Callbacks::getInstance().reg_list.push_back(ptr);
+				mrmc::settings::Callbacks::getInstance()->registerList.push_back(std::pair<CallbackType, RegisterCallback>(type, ptr));
 			}
 			
 			/*!
 			 *	@brief Registers given function as check callback.
 			 */
-			Register(const fptr_checkOption ptr)
+			Register(const CheckerCallback ptr)
 			{
-				mrmc::settings::Callbacks::getInstance().check_list.push_back(ptr);
+				mrmc::settings::Callbacks::getInstance()->checkerList.push_back(ptr);
 			}
 	};
 	
