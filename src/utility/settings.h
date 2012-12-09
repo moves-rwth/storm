@@ -131,7 +131,17 @@ namespace settings {
 	 */
 	typedef bool(*CheckerCallback)(bpo::variables_map&);
 	
-	enum CallbackType { CB_CONFIG, CB_CLI, CB_GENERIC };
+	/*!
+	 *	@brief	This enums specifies the three types of options.
+	 */
+	enum CallbackType {
+		//! Option can be set in config file
+		CB_CONFIG,
+		//! Option can be set on command line
+		CB_CLI, 
+		//! Option can be set in config file and command line
+		CB_GENERIC
+	};
 	
 	/*!
 	 *	@brief This class handles callbacks for registering new options and
