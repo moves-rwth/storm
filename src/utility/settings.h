@@ -147,6 +147,9 @@ namespace settings {
 	 *	@brief This class handles callbacks for registering new options and
 	 *	checking constraints on them afterwards.
 	 *
+	 *	As it should never be used directly, but only through the Register
+	 *	class, it does not provide any public methods.
+	 *
 	 *	This class is also a singleton (like Settings) and is implemented much
 	 *	simpler as we don't need any custom initialization code.
 	 */
@@ -174,7 +177,7 @@ namespace settings {
 			 *	@brief Private destructor.
 			 */
 			~Callbacks() {}			
-		public:
+
 			/*!
 			 *	@brief Returns current instance to create singleton.
 			 *	@return current instance
