@@ -134,7 +134,7 @@ int main(const int argc, const char* argv[]) {
 		LOG4CPLUS_ERROR(logger, "Warning: Eigen and GMM produced different results (Eigen: " << eigenResult->size() << ", Gmm: " << gmmResult->size() << ") in size!");
 	} else {
 		LOG4CPLUS_INFO(logger, "Testing for different entries");
-		for (int i = 0; i < eigenResult->size(); ++i) {
+		for (unsigned int i = 0; i < eigenResult->size(); ++i) {
 			if (std::abs((eigenResult->at(i) - gmmResult->at(i))) > 0) {
 				LOG4CPLUS_ERROR(logger, "Warning: Eigen and GMM produced different results in entry " << i << " (Eigen: " << eigenResult->at(i) << ", Gmm: " << gmmResult->at(i) << ")!");
 			}
