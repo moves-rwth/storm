@@ -19,8 +19,8 @@ namespace bpo = boost::program_options;
 /*
  * static initializers
  */
-bpo::options_description* mrmc::settings::Settings::cli = nullptr;
-bpo::options_description* mrmc::settings::Settings::conf = nullptr;
+std::unique_ptr<bpo::options_description> mrmc::settings::Settings::cli;
+std::unique_ptr<bpo::options_description> mrmc::settings::Settings::conf = nullptr;
 std::string mrmc::settings::Settings::binaryName = "";
 mrmc::settings::Settings* mrmc::settings::Settings::inst = nullptr;
 
@@ -51,21 +51,19 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		Settings::positional.add("labfile", 1);
 		
 		//! Create and fill collecting options descriptions
-		Settings::cli = new bpo::options_description();
+		Settings::cli = std::unique_ptr<bpo::options_description>(new bpo::options_description());
 		Settings::cli->add(Settings::commandline).add(generic);
-		Settings::conf = new bpo::options_description();
+		Settings::conf = std::unique_ptr<bpo::options_description>(new bpo::options_description());
 		Settings::conf->add(Settings::configfile).add(generic);
 		
 		//! Perform first parse run and call intermediate callbacks
 		this->firstRun(argc, argv, filename);
 		
 		//! Rebuild collecting options descriptions
-		delete Settings::cli;
-		Settings::cli = new bpo::options_description();
+		Settings::cli = std::unique_ptr<bpo::options_description>(new bpo::options_description());
 		Settings::cli->add(Settings::commandline).add(generic);
 
-		delete Settings::conf;
-		Settings::conf = new bpo::options_description();
+		Settings::conf = std::unique_ptr<bpo::options_description>(new bpo::options_description());
 		Settings::conf->add(Settings::configfile).add(generic);
 		
 		//! Stop if help is set

@@ -84,14 +84,17 @@ int main(const int argc, const char* argv[]) {
 	
 	if (s->isSet("help")) {
 		std::cout << mrmc::settings::help;
+		delete s;
 		return 0;
 	}
 	if (s->isSet("help-config")) {
 		std::cout << mrmc::settings::helpConfigfile;
+		delete s;
 		return 0;
 	}
 	if (s->isSet("test-prctl")) {
 		mrmc::parser::PRCTLParser parser(s->getString("test-prctl").c_str());
+		delete s;
 		return 0;
 	}
 	

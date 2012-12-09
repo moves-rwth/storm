@@ -11,6 +11,7 @@
 #include <iostream>
 #include <list>
 #include <utility>
+#include <memory>
 #include <boost/program_options.hpp>
 #include "src/exceptions/InvalidSettings.h"
 
@@ -76,7 +77,6 @@ namespace settings {
 			 */
 			template <typename T>
 			const T& get(const std::string &name) const {
-				std::cerr << "get(" << name << ")" << std::endl;
 				if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettings();
 				return this->vm[name].as<T>();
 			}
@@ -141,11 +141,11 @@ namespace settings {
 			/*!
 			 *	@brief	Collecting option descriptions for command line.
 			 */
-			static bpo::options_description* cli;
+			static std::unique_ptr<bpo::options_description> cli;
 			/*!
 			 *	@brief	Collecting option descriptions for config file.
 			 */
-			static bpo::options_description* conf;
+			static std::unique_ptr<bpo::options_description> conf;
 			
 			/*!
 			 *	@brief	option mapping.
@@ -199,8 +199,7 @@ namespace settings {
 		Settings::inst = new Settings(argc, argv, filename);
 		return Settings::inst;
 	}
-
-
+	
 	/*!
 	 *	@brief	Function type for functions registering new options.
 	 */
