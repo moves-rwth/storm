@@ -77,17 +77,17 @@ int main(const int argc, const char* argv[]) {
 		s = mrmc::settings::newInstance(argc, argv, nullptr);
 	} catch (mrmc::exceptions::InvalidSettings&) {
 		LOG4CPLUS_FATAL(logger, "Could not recover from settings error, terminating.");
-		std::cout << std::endl << mrmc::settings::help << std::endl;
+		std::cout << std::endl << mrmc::settings::help;
 		delete s;
 		return 1;
 	}
 	
 	if (s->isSet("help")) {
-		std::cout << mrmc::settings::help << std::endl;
+		std::cout << mrmc::settings::help;
 		return 0;
 	}
 	if (s->isSet("help-config")) {
-		std::cout << mrmc::settings::helpConfigfile << std::endl;
+		std::cout << mrmc::settings::helpConfigfile;
 		return 0;
 	}
 	if (s->isSet("test-prctl")) {
