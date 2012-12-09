@@ -24,6 +24,12 @@ namespace mrmc {
 namespace settings {
 	
 	namespace bpo = boost::program_options;
+	/*
+	 *	Sorry for very long comment at this point (for the class), but all
+	 *	methods are private, hence there is no other place to explain the
+	 *	inner workings of this class that are necessary to understand the
+	 *	callback concept...
+	 */
 	/*!
 	 *	@brief	Simple wrapper around boost::program_options to handle configuration options.
 	 *
@@ -31,43 +37,68 @@ namespace settings {
 	 *	commandline and additionally load options from a file.
 	 *
 	 *	It is meant to be used as a singleton. Call 
-	 *	@code mrmc::settings::Settings::instance(argc, argv, filename) @endcode
+	 *	@code mrmc::settings::newInstance(argc, argv, filename) @endcode
 	 *	to initialize it and obtain an instance for the first time.
-	 *	Afterwards, it is possible to use
+	 *	Afterwards, use
 	 *	@code mrmc::settings::instance() @endcode
+	 *
+	 *	This class can be customized by other parts of the software using
+	 *	callbacks. There are three types of callbacks: register,
+	 *	intermediate and checker.
+	 *
+	 *	The (private) constructor will start with filling the internal
+	 *	options_description object. There are a few generic options like
+	 *	--help or --verbose. Then if calls all register callbacks that may
+	 *	add more options.
+	 *
+	 *	Then, it will start with a sloppy parsing run, allowing unregistered 
+	 *	options and ignoring further constraints from the options_description 
+	 *	objects.
+	 *
+	 *	After that, it will call all intermediate callbacks. They can
+	 *	inspect the options from the first run and add more options, e.g.
+	 *	enable more options for a specific component that has been enabled.
+	 *
+	 *	Using the new options_description objects, the constructor performs
+	 *	a second run. This time, it will not allow unregistered options and
+	 *	will check for required and positional arguments.
+	 *
+	 *	Finally, all checker callbacks will be called. They can check the
+	 *	final options for more complex requirements. If any of those checker
+	 *	callbacks returns false, a InvalidSettings exception will be thrown.
 	 */
 	class Settings
 	{
 		public:
 		
-		/*!
-		 *	@brief Get value of a generic option.
-		 */
-		template <typename T>
-		const T& get(const std::string &name) const {
-			std::cerr << "get(" << name << ")" << std::endl;
-			if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettings();
-			return this->vm[name].as<T>();
-		}
+			/*!
+			 *	@brief Get value of a generic option.
+			 */
+			template <typename T>
+			const T& get(const std::string &name) const {
+				std::cerr << "get(" << name << ")" << std::endl;
+				if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettings();
+				return this->vm[name].as<T>();
+			}
 		
-		/*!
-		 *	@brief Get value of string option
-		 */
-		const std::string& getString(const std::string &name) const {
-			return this->get<std::string>(name);
-		}
+			/*!
+			 *	@brief Get value of string option
+			 */
+			const std::string& getString(const std::string &name) const {
+				return this->get<std::string>(name);
+			}
 		
-		/*!
-		 *	@brief Check if an option is set
-		 */
-		const bool isSet(const std::string &name) const {
-			return this->vm.count(name) > 0;
-		}
+			/*!
+			 *	@brief Check if an option is set
+			 */
+			const bool isSet(const std::string &name) const {
+				return this->vm.count(name) > 0;
+			}
 	
-		friend std::ostream& help(std::ostream& os);
-		friend std::ostream& helpConfigfile(std::ostream& os);
-		friend Settings* instance();
-		friend Settings* newInstance(const int argc, const char* argv[], const char* filename);
+			friend std::ostream& help(std::ostream& os);
+			friend std::ostream& helpConfigfile(std::ostream& os);
+			friend Settings* instance();
+			friend Settings* newInstance(const int argc, const char* argv[], const char* filename);
 
 		private:
 			/*!
@@ -120,6 +151,11 @@ namespace settings {
 			 *	@brief	option mapping.
 			 */
 			bpo::variables_map vm;
+			
+			/*!
+			 *	@brief name of binary
+			 */
+			static std::string binaryName;
 			
 			/*!
 			 *	@brief	actual instance of this class.

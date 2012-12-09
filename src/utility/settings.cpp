@@ -7,6 +7,10 @@
 
 #include "src/utility/settings.h"
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
+
 namespace mrmc {
 namespace settings {
 
@@ -17,6 +21,7 @@ namespace bpo = boost::program_options;
  */
 bpo::options_description* mrmc::settings::Settings::cli = nullptr;
 bpo::options_description* mrmc::settings::Settings::conf = nullptr;
+std::string mrmc::settings::Settings::binaryName = "";
 mrmc::settings::Settings* mrmc::settings::Settings::inst = nullptr;
 
 /*!
@@ -35,6 +40,7 @@ mrmc::settings::Settings* mrmc::settings::Settings::inst = nullptr;
 Settings::Settings(const int argc, const char* argv[], const char* filename)
 	: configfile("Config Options"), generic("Generic Options"), commandline("Commandline Options")
 {
+	Settings::binaryName = std::string(argv[0]);
 	try
 	{
 		//! Initially fill description objects and call register callbacks
@@ -73,29 +79,35 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		
 		//! Finalize parsed options, check for specified requirements
 		bpo::notify(this->vm);
+		LOG4CPLUS_DEBUG(logger, "Finished loading config.");
 	}
 	catch (bpo::reading_file e)
 	{
 		std::cerr << "Could not read config file " << filename << std::endl;
+		LOG4CPLUS_ERROR(logger, "Could not read config file");
 	}
 	catch (bpo::required_option e)
 	{
-		std::cerr << "required option: " << e.what() << std::endl;
+		std::cerr << "Required option: " << e.what() << std::endl;
+		LOG4CPLUS_ERROR(logger, "Required option: " << e.what());
 		throw mrmc::exceptions::InvalidSettings();
 	}
 	catch (bpo::validation_error e)
 	{
 		std::cerr << "Validation failed: " << e.what() << std::endl;
+		LOG4CPLUS_ERROR(logger, "Validation failed: " << e.what());
 		throw mrmc::exceptions::InvalidSettings();
 	}
 	catch (bpo::invalid_command_line_syntax e)
 	{
 		std::cerr << "Invalid command line syntax: " << e.what() << std::endl;
+		LOG4CPLUS_ERROR(logger, "Invalid command line syntax: " << e.what());
 		throw mrmc::exceptions::InvalidSettings();
 	}
 	catch (bpo::error e)
 	{
 		std::cerr << e.what() << std::endl;
+		LOG4CPLUS_ERROR(logger, "Unknown error: " << e.what());
 		throw mrmc::exceptions::InvalidSettings();
 	}
 }
@@ -106,6 +118,7 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
  */
 void Settings::initDescriptions()
 {
+	LOG4CPLUS_DEBUG(logger, "Initializing descriptions.");
 	this->commandline.add_options()
 		("help,h", "produce help message")
 		("verbose,v", "be verbose")
@@ -154,6 +167,7 @@ void Settings::initDescriptions()
  */
 void Settings::firstRun(const int argc, const char* argv[], const char* filename)
 {
+	LOG4CPLUS_DEBUG(logger, "Performing first run.");
 	//! parse command line
 	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::cli)).allow_unregistered().run(), this->vm);
 
@@ -197,7 +211,7 @@ void Settings::firstRun(const int argc, const char* argv[], const char* filename
 		catch (boost::bad_any_cast e)
 		{
 			std::cerr << "An intermediate callback failed." << std::endl;
-			std::cerr << e.what() << std::endl;
+			LOG4CPLUS_ERROR(logger, "An intermediate callback failed.\n" << e.what());
 		}
 	}
 }
@@ -211,6 +225,7 @@ void Settings::firstRun(const int argc, const char* argv[], const char* filename
  */
 void Settings::secondRun(const int argc, const char* argv[], const char* filename)
 {
+	LOG4CPLUS_DEBUG(logger, "Performing second run.");
 	//! Parse command line
 	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::cli)).positional(this->positional).run(), this->vm);
 	/*
@@ -238,6 +253,7 @@ void Settings::secondRun(const int argc, const char* argv[], const char* filenam
 		if (! (*fptr)(this->vm))
 		{
 			std::cerr << "Custom option checker failed." << std::endl;
+			LOG4CPLUS_ERROR(logger, "A checker callback returned false.");
 			throw mrmc::exceptions::InvalidSettings();
 		}
 	}
@@ -253,8 +269,8 @@ void Settings::secondRun(const int argc, const char* argv[], const char* filenam
  */
 std::ostream& help(std::ostream& os)
 {
-	os << "Usage: <binary> [options] <transition file> <label file>" << std::endl;
-	os << *(mrmc::settings::Settings::cli) << std::endl;;
+	os << "Usage: " << mrmc::settings::Settings::binaryName << " [options] <transition file> <label file>" << std::endl;
+	os << *(mrmc::settings::Settings::cli) << std::endl;
 	return os;
 }
 
