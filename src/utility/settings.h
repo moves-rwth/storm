@@ -45,6 +45,8 @@ namespace settings {
 		 */
 		template <typename T>
 		const T& get(const std::string &name) const {
+			std::cerr << "get(" << name << ")" << std::endl;
+			if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettings();
 			return this->vm[name].as<T>();
 		}
 		
@@ -65,34 +67,54 @@ namespace settings {
 		friend std::ostream& help(std::ostream& os);
 		friend std::ostream& helpConfigfile(std::ostream& os);
 		friend Settings* instance();
-
-		/*!
-		 *	@brief Creates a new instance.
-		 */
-		static Settings* instance(const int argc, const char* argv[], const char* filename);
+		friend Settings* newInstance(const int argc, const char* argv[], const char* filename);
 
 		private:
 			/*!
 			 *	@brief	Constructor.
 			 */
 			Settings(const int argc, const char* argv[], const char* filename);
-		
-			/*!
-			 *	@brief Option descriptions.
-			 */
-			static bpo::options_description configfile;
-			static bpo::options_description generic;
-			static bpo::options_description commandline;
-			static bpo::positional_options_description positional;
 			
 			/*!
-			 *	@brief Collecting option descriptions.
-			 *
-			 *	The options for command line and config file are collected
-			 *	here.
+			 *	@brief	Initialize options_description object.
 			 */
-			static bpo::options_description cli;
-			static bpo::options_description conf;
+			void initDescriptions();
+			
+			/*!
+			 *	@brief	Perform first parser run
+			 */
+			void firstRun(const int argc, const char* argv[], const char* filename);
+			
+			/*!
+			 *	@brief	Perform second parser run.
+			 */
+			void secondRun(const int argc, const char* argv[], const char* filename);
+			
+			/*!
+			 *	@brief	Option descriptions for config file.
+			 */
+			bpo::options_description configfile;
+			/*!
+			 *	@brief	Option descriptions for config file and command line.
+			 */
+			bpo::options_description generic;
+			/*!
+			 *	@brief	Option descriptions for command line.
+			 */
+			bpo::options_description commandline;
+			/*!
+			 *	@brief	Option description for positional arguments on command line.
+			 */
+			bpo::positional_options_description positional;
+			
+			/*!
+			 *	@brief	Collecting option descriptions for command line.
+			 */
+			static bpo::options_description* cli;
+			/*!
+			 *	@brief	Collecting option descriptions for config file.
+			 */
+			static bpo::options_description* conf;
 			
 			/*!
 			 *	@brief	option mapping.
@@ -117,8 +139,30 @@ namespace settings {
 	
 	/*!
 	 *	@brief	Return current instance.
+	 *
+	 *	@return The current instance of Settings created by newInstance().
 	 */
-	Settings* instance();
+	inline Settings* instance()
+	{
+		return Settings::inst;
+	}
+	
+	/*!
+	 *	@brief	Create new instance.
+	 *
+	 *	Creates a new Settings instance and passes the arguments to the constructor of Settings.
+	 *
+	 *	@param argc should be argc passed to main function
+	 *	@param argv should be argv passed to main function
+	 *  @param filename either NULL or name of config file
+	 *	@return The new instance of Settings.
+	 */
+	inline Settings* newInstance(const int argc, const char* argv[], const char* filename)
+	{
+		if (Settings::inst != nullptr) delete Settings::inst;
+		Settings::inst = new Settings(argc, argv, filename);
+		return Settings::inst;
+	}
 
 
 	/*!
@@ -130,7 +174,7 @@ namespace settings {
 	 *	@brief	Function type for functions changing the parser state
 	 *	between the first and second run.
 	 */
-	typedef void(*IntermediateCallback)(bpo::options_description&, bpo::variables_map&);
+	typedef void(*IntermediateCallback)(bpo::options_description*, bpo::variables_map&);
 	
 	/*!
 	 *	@brief	Function type for function checking constraints on settings.
@@ -194,7 +238,7 @@ namespace settings {
 			 *	@brief Returns current instance to create singleton.
 			 *	@return current instance
 			 */
-			static Callbacks* getInstance()
+			inline static Callbacks* getInstance()
 			{
 				static Callbacks instance;
 				return &instance;

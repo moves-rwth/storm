@@ -74,7 +74,7 @@ int main(const int argc, const char* argv[]) {
 	LOG4CPLUS_INFO(logger, "MRMC command invoked " << commandStream.str());
 
 	try {
-		s = mrmc::settings::Settings::instance(argc, argv, nullptr);
+		s = mrmc::settings::newInstance(argc, argv, nullptr);
 	} catch (mrmc::exceptions::InvalidSettings&) {
 		LOG4CPLUS_FATAL(logger, "Could not recover from settings error, terminating.");
 		std::cout << std::endl << mrmc::settings::help << std::endl;
