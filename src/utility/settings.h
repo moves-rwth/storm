@@ -127,6 +127,12 @@ namespace settings {
 	typedef void(*RegisterCallback)(bpo::options_description&);
 	
 	/*!
+	 *	@brief	Function type for functions changing the parser state
+	 *	between the first and second run.
+	 */
+	typedef void(*IntermediateCallback)(bpo::options_description&, bpo::variables_map&);
+	
+	/*!
 	 *	@brief	Function type for function checking constraints on settings.
 	 */
 	typedef bool(*CheckerCallback)(bpo::variables_map&);
@@ -160,6 +166,12 @@ namespace settings {
 			 *	@brief Stores register callbacks.
 			 */
 			std::list<std::pair<CallbackType, RegisterCallback>> registerList;
+			
+			/*!
+			 *	@brief Stores intermediate callbacks.
+			 */
+			std::list<std::pair<CallbackType, IntermediateCallback>> intermediateList;
+			
 			/*!
 			 *	@brief Stores check callbacks.
 			 */
@@ -233,6 +245,27 @@ namespace settings {
 				mrmc::settings::Callbacks::getInstance()->registerList.push_back(std::pair<CallbackType, RegisterCallback>(type, ptr));
 			}
 			
+			/*!
+			 *	@brief Registers given function as intermediate callback.
+			 * 
+			 *	This constructor registers a callback routine that can check
+			 *	the option assignment after the first run and change the
+			 *	options description before the second run.
+			 *	It should be used like this:
+			 *	@code
+			 *	void intermediate(bpo::options_description& desc, bpo::variables_map& map) {
+			 *		// check contents of map and maybe change desc
+			 *	}
+			 *	mrmc::settings::Register reg(mrmc::settings::CB_CLI, &intermediate);
+			 *	@endcode
+			 *	This code should be executed during static initialization, i.e.
+			 *	it should be somewhere in the cpp-file.
+			 */
+			Register(const CallbackType type, const IntermediateCallback ptr)
+			{
+				mrmc::settings::Callbacks::getInstance()->intermediateList.push_back(std::pair<CallbackType, IntermediateCallback>(type, ptr));
+			}
+
 			/*!
 			 *	@brief Registers given function as check callback.
 			 * 
