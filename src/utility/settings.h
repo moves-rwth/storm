@@ -189,12 +189,31 @@ namespace settings {
 	/*!
 	 *	@brief Wrapper class to allow for registering callbacks during
 	 *	static initialization.
+	 *
+	 *	To use this class, use the following includes:
+	 *	@code
+	 *	#include "src/utility/settings.h"
+	 *	#include <boost/program_options.hpp>
+	 *	namespace bpo = boost::program_options;	
+	 *	@endcode
 	 */
 	class Register
 	{
 		public:
 			/*!
 			 *	@brief Registers given function as register callback.
+			 *
+			 *	This constructor registers a callback routine that might add
+			 *	new options for the Settings class. It should be used like
+			 *	this:
+			 *	@code
+			 *	void register(bpo::options_description& desc) {
+			 *		// do something with desc here
+			 *	}
+			 *	mrmc::settings::Register reg(mrmc::settings::CB_CLI, &register);
+			 *	@endcode
+			 *	This code should be executed during static initialization, i.e.
+			 *	it should be somewhere in the cpp-file.
 			 */
 			Register(const CallbackType type, const RegisterCallback ptr)
 			{
@@ -203,6 +222,18 @@ namespace settings {
 			
 			/*!
 			 *	@brief Registers given function as check callback.
+			 * 
+			 *	This constructor registers a callback routine that can check
+			 *	the option assignment after the Settings class has loaded
+			 *	them. It should be used like this:
+			 *	@code
+			 *	void check(bpo::variables_map& map) {
+			 *		// check contents of map
+			 *	}
+			 *	mrmc::settings::Register reg(&check);
+			 *	@endcode
+			 *	This code should be executed during static initialization, i.e.
+			 *	it should be somewhere in the cpp-file.
 			 */
 			Register(const CheckerCallback ptr)
 			{
