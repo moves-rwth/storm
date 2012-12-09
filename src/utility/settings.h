@@ -9,6 +9,7 @@
 #define SETTINGS_H_
 
 #include <iostream>
+#include <list>
 #include <boost/program_options.hpp>
 #include "src/exceptions/InvalidSettings.h"
 
@@ -118,7 +119,91 @@ namespace settings {
 	 */
 	Settings* instance();
 
-} // namespace parser
+
+	/*!
+	 *	@brief	Function type for functions registering new options.
+	 */
+	typedef void(*fptr_regOption)(bpo::options_description&);
+	
+	/*!
+	 *	@brief	Function type for function checking constraints on settings.
+	 */
+	typedef bool(*fptr_checkOption)(bpo::variables_map&);
+	
+	
+	/*!
+	 *	@brief This class handles callbacks for registering new options and
+	 *	checking constraints on them afterwards.
+	 *
+	 *	This class is also a singleton (like Settings) and is implemented much
+	 *	simpler as we don't need any custom initialization code.
+	 */
+	class Callbacks
+	{
+		private:
+			/*!
+			 *	@brief Stores register callbacks.
+			 */
+			std::list<fptr_regOption> reg_list;
+			/*!
+			 *	@brief Stores check callbacks.
+			 */
+			std::list<fptr_checkOption> check_list;
+			
+			/*!
+			 *	@brief Private constructor.
+			 */
+			Callbacks() {}
+			/*!
+			 *	@brief Private copy constructor.
+			 */
+			Callbacks(const Callbacks&) {}
+			/*!
+			 *	@brief Private destructor.
+			 */
+			~Callbacks() {}			
+		public:
+			/*!
+			 *	@brief Returns current instance to create singleton.
+			 *	@return current instance
+			 */
+			static Callbacks& getInstance()
+			{
+				static Callbacks instance;
+				return instance;
+			}
+		
+		/*!
+		 *	@brief Register class needs access to lists.
+		 */
+		friend class Register;
+	};
+	
+	/*!
+	 *	@brief Wrapper class to allow for registering callbacks during
+	 *	static initialization.
+	 */
+	class Register
+	{
+		public:
+			/*!
+			 *	@brief Registers given function as register callback.
+			 */
+			Register(const fptr_regOption ptr)
+			{
+				mrmc::settings::Callbacks::getInstance().reg_list.push_back(ptr);
+			}
+			
+			/*!
+			 *	@brief Registers given function as check callback.
+			 */
+			Register(const fptr_checkOption ptr)
+			{
+				mrmc::settings::Callbacks::getInstance().check_list.push_back(ptr);
+			}
+	};
+	
+} // namespace settings
 } // namespace mrmc
 
 #endif // SETTINGS_H_
