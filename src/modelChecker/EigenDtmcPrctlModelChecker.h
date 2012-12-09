@@ -218,17 +218,7 @@ public:
 			
 			solver.setTolerance(0.000001);
 			
-			bool hasConverged = false;
-			int turns = 6;
-			while (!hasConverged) {
-				vectorX = solver.solve(vectorB);
-				hasConverged = (solver.info() != Eigen::ComputationInfo::NoConvergence) || (turns <= 0);
-				if (!hasConverged) {
-					LOG4CPLUS_INFO(logger, "EigenDtmcPrctlModelChecker did not converge with " << solver.iterations() << " of max. " << solver.maxIterations() << "Iterations, restarting ");
-					solver.setMaxIterations(solver.maxIterations() * 2);
-				}
-				--turns;
-			}
+			vectorX = solver.solveWithGuess(vectorB, vectorX);
 
 			if(solver.info() == Eigen::ComputationInfo::InvalidInput) {
 				// solving failed
