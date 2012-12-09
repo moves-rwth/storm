@@ -142,7 +142,7 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-		return modelChecker.checkAnd(this);
+		return modelChecker.checkAnd(*this);
 	}
 
 private:

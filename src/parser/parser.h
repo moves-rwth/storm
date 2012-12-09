@@ -11,8 +11,10 @@
 #include "src/utility/osDetection.h"
 
 #if defined LINUX || defined MACOSX
-	#include <sys/mman.h>
+#	include <sys/mman.h>
 #elif defined WINDOWS
+#	include <Windows.h>
+#	include <winnt.h>
 #endif
 
 #include <sys/stat.h>
@@ -20,6 +22,7 @@
 #include <errno.h>
 #include <iostream>
 
+#include <boost/integer/integer_mask.hpp>
 #include "src/exceptions/file_IO_exception.h"
 #include "src/exceptions/wrong_file_format.h"
 

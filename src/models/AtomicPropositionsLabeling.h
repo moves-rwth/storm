@@ -33,10 +33,10 @@ public:
 	 * @param stateCount The number of states of the model.
 	 * @param apCountMax The number of atomic propositions.
 	 */
-	AtomicPropositionsLabeling(const uint_fast32_t stateCount, const uint_fast32_t apCountMax)
+	AtomicPropositionsLabeling(const uint_fast64_t stateCount, const uint_fast64_t apCountMax)
 			: stateCount(stateCount), apCountMax(apCountMax), apsCurrent(0) {
 		this->singleLabelings = new mrmc::storage::BitVector*[apCountMax];
-		for (uint_fast32_t i = 0; i < apCountMax; ++i) {
+		for (uint_fast64_t i = 0; i < apCountMax; ++i) {
 			this->singleLabelings[i] = new mrmc::storage::BitVector(stateCount);
 		}
 	}
@@ -53,7 +53,7 @@ public:
 			  apsCurrent(atomicPropositionsLabeling.apsCurrent),
 			  nameToLabelingMap(atomicPropositionsLabeling.nameToLabelingMap) {
 		this->singleLabelings = new mrmc::storage::BitVector*[apCountMax];
-		for (uint_fast32_t i = 0; i < apCountMax; ++i) {
+		for (uint_fast64_t i = 0; i < apCountMax; ++i) {
 			this->singleLabelings[i] = new mrmc::storage::BitVector(*atomicPropositionsLabeling.singleLabelings[i]);
 		}
 	}
@@ -64,7 +64,7 @@ public:
 	 */
 	virtual ~AtomicPropositionsLabeling() {
 		// delete all the single atomic proposition labelings in the map
-		for (uint_fast32_t i = 0; i < apCountMax; ++i) {
+		for (uint_fast64_t i = 0; i < apCountMax; ++i) {
 			delete this->singleLabelings[i];
 			this->singleLabelings[i] = NULL;
 		}
@@ -79,7 +79,7 @@ public:
 	 * @param ap The name of the atomic proposition to add.
 	 * @return The index of the new proposition.
 	 */
-	uint_fast32_t addAtomicProposition(std::string ap) {
+	uint_fast64_t addAtomicProposition(std::string ap) {
 		if (nameToLabelingMap.count(ap) != 0) {
 			throw std::out_of_range("Atomic Proposition already exists.");
 		}
@@ -89,7 +89,7 @@ public:
 		}
 		nameToLabelingMap[ap] = apsCurrent;
 
-		uint_fast32_t returnValue = apsCurrent++;
+		uint_fast64_t returnValue = apsCurrent++;
 		return returnValue;
 	}
 
@@ -107,7 +107,7 @@ public:
 	 * @param ap The name of the atomic proposition.
 	 * @param state The index of the state to label.
 	 */
-	void addAtomicPropositionToState(std::string ap, const uint_fast32_t state) {
+	void addAtomicPropositionToState(std::string ap, const uint_fast64_t state) {
 		if (nameToLabelingMap.count(ap) == 0) {
 			throw std::out_of_range("Atomic Proposition '" + ap + "' unknown.");
 		}
@@ -122,7 +122,7 @@ public:
 	 * @param state The index of a state
 	 * @returns The list of propositions for the given state
 	 */
-	std::set<std::string> getPropositionsForState(uint_fast32_t state) {
+	std::set<std::string> getPropositionsForState(uint_fast64_t state) {
 		if (state >= stateCount) {
 			throw std::out_of_range("State index out of range.");
 		}
@@ -144,7 +144,7 @@ public:
 	 * @return True if the node is labeled with the atomic proposition, false
 	 * otherwise.
 	 */
-	bool stateHasAtomicProposition(std::string ap, const uint_fast32_t state) {
+	bool stateHasAtomicProposition(std::string ap, const uint_fast64_t state) {
 		return this->singleLabelings[nameToLabelingMap[ap]]->get(state);
 	}
 
@@ -153,7 +153,7 @@ public:
 	 * the initialization).
 	 * @return The number of atomic propositions.
 	 */
-	uint_fast32_t getNumberOfAtomicPropositions() {
+	uint_fast64_t getNumberOfAtomicPropositions() {
 		return apCountMax;
 	}
 
@@ -174,7 +174,7 @@ public:
 	uint_fast64_t getSizeInMemory() {
 		uint_fast64_t size = sizeof(*this);
 		// Add sizes of all single labelings.
-		for (uint_fast32_t i = 0; i < apCountMax; i++) {
+		for (uint_fast64_t i = 0; i < apCountMax; i++) {
 			size += this->singleLabelings[i]->getSizeInMemory();
 		}
 		return size;
@@ -197,24 +197,24 @@ public:
 private:
 
 	/*! The number of states whose labels are to be stored by this object. */
-	uint_fast32_t stateCount;
+	uint_fast64_t stateCount;
 
 	/*! The number of different atomic propositions this object can store. */
-	uint_fast32_t apCountMax;
+	uint_fast64_t apCountMax;
 
 	/*!
 	 * The number of different atomic propositions currently associated with
 	 * this labeling. Used to prevent too many atomic propositions from being
 	 * added to this object.
 	 */
-	uint_fast32_t apsCurrent;
+	uint_fast64_t apsCurrent;
 
 	/*!
 	 * Associates a name of an atomic proposition to its corresponding labeling
 	 * by mapping the name to a specific index in the array of all
 	 * individual labelings.
 	 */
-	std::unordered_map<std::string, uint_fast32_t> nameToLabelingMap;
+	std::unordered_map<std::string, uint_fast64_t> nameToLabelingMap;
 
 	/*!
 	 * Stores all individual labelings. To find the labeling associated with

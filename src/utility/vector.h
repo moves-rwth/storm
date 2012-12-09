@@ -8,6 +8,8 @@
 #ifndef VECTOR_H_
 #define VECTOR_H_
 
+#include "Eigen/src/Core/Matrix.h"
+
 namespace mrmc {
 
 namespace utility {
@@ -24,6 +26,13 @@ template<class T>
 void setVectorValues(std::vector<T>* vector, const mrmc::storage::BitVector& positions, T value) {
 	for (auto position : positions) {
 		(*vector)[position] = value;
+	}
+}
+
+template<class T>
+void setVectorValues(Eigen::Matrix<T, -1, 1, 0, -1, 1>* eigenVector, const mrmc::storage::BitVector& positions, T value) {
+	for (auto position : positions) {
+		(*eigenVector)(position, 0) = value;
 	}
 }
 

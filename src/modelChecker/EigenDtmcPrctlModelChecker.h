@@ -1,18 +1,23 @@
 /*
- * GmmxxDtmcPrctlModelChecker.h
+ * EigenDtmcPrctlModelChecker.h
  *
- *  Created on: 06.12.2012
- *      Author: Christian Dehnert
+ *  Created on: 07.12.2012
+ *      Author: 
  */
 
-#ifndef GMMXXDTMCPRCTLMODELCHECKER_H_
-#define GMMXXDTMCPRCTLMODELCHECKER_H_
+#ifndef EIGENDTMCPRCTLMODELCHECKER_H_
+#define EIGENDTMCPRCTLMODELCHECKER_H_
 
 #include "src/utility/vector.h"
 
 #include "src/models/Dtmc.h"
 #include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
+#include "src/utility/const_templates.h"
+#include "src/exceptions/NoConvergence.h"
+
+#include "Eigen/Sparse"
+#include "Eigen/src/IterativeLinearSolvers/BiCGSTAB.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
@@ -27,19 +32,28 @@ namespace mrmc {
 namespace modelChecker {
 
 /*
- * A model checking engine that makes use of the gmm++ backend.
+ * A model checking engine that makes use of the eigen backend.
  */
 template <class Type>
-class GmmxxDtmcPrctlModelChecker : public DtmcPrctlModelChecker<Type> {
+class EigenDtmcPrctlModelChecker : public DtmcPrctlModelChecker<Type> {
 
 public:
-	explicit GmmxxDtmcPrctlModelChecker(mrmc::models::Dtmc<Type>& dtmc) : DtmcPrctlModelChecker<Type>(dtmc) { }
+	explicit EigenDtmcPrctlModelChecker(mrmc::models::Dtmc<Type>& dtmc) : DtmcPrctlModelChecker<Type>(dtmc) { }
 
-	virtual ~GmmxxDtmcPrctlModelChecker() { }
+	virtual ~EigenDtmcPrctlModelChecker() { }
 
 	virtual mrmc::storage::BitVector* checkProbabilisticOperator(const mrmc::formula::ProbabilisticOperator<Type>& formula) const {
-		//FIXME: Implementation needed
-		return NULL;
+		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
+
+		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
+		Type bound = formula.getBound();
+		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
+			if ((*probabilisticResult)[i] == bound) result->set(i, true);
+		}
+
+		delete probabilisticResult;
+
+		return result;
 	}
 
 	virtual mrmc::storage::BitVector* checkProbabilisticIntervalOperator(const mrmc::formula::ProbabilisticIntervalOperator<Type>& formula) const {
@@ -68,21 +82,34 @@ public:
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
 		tmpMatrix.makeRowsAbsorbing((~*leftStates & *rightStates) | *rightStates);
 
-		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<double>* gmmxxMatrix = tmpMatrix.toGMMXXSparseMatrix();
+		// Transform the transition probability matrix to the eigen format to use its arithmetic.
+		Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenMatrix = tmpMatrix.toEigenSparseMatrix();
 
 		// Create the vector with which to multiply.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-		mrmc::utility::setVectorValues(result, *rightStates, static_cast<double>(1.0));
+		uint_fast64_t stateCount = this->getModel().getNumberOfStates();
+
+		typedef Eigen::Matrix<Type, -1, 1, 0, -1, 1> VectorType;
+		typedef Eigen::Map<VectorType> MapType;
+
+		std::vector<Type>* result = new std::vector<Type>(stateCount);
+		
+		// Dummy Type variable for const templates
+		Type dummy;
+		mrmc::utility::setVectorValues(result, *rightStates, mrmc::utility::constGetOne(dummy));
+
+		Type *p = &((*result)[0]); // get the address storing the data for result
+		MapType vectorMap(p, result->size()); // vectorMap shares data 
+		
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
-		for (uint_fast64_t i = 0; i < formula.getBound(); ++i) {
-			gmm::mult(*gmmxxMatrix, *result, *result);
+		for (uint_fast64_t i = 0, bound = formula.getBound(); i < bound; ++i) {
+			vectorMap = (*eigenMatrix) * vectorMap;
 		}
 
 		// Delete intermediate results.
 		delete leftStates;
 		delete rightStates;
+		delete eigenMatrix;
 
 		return result;
 	}
@@ -92,23 +119,33 @@ public:
 		mrmc::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<double>* gmmxxMatrix = this->getModel().getTransitionProbabilityMatrix()->toGMMXXSparseMatrix();
+		Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenMatrix = this->getModel().getTransitionProbabilityMatrix()->toEigenSparseMatrix();
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> x(this->getModel().getNumberOfStates());
-		mrmc::utility::setVectorValues(&x, *nextStates, static_cast<double>(1.0));
+		Type dummy;
+		mrmc::utility::setVectorValues(&x, *nextStates, mrmc::utility::constGetOne(dummy));
 
 		// Delete not needed next states bit vector.
 		delete nextStates;
 
+		typedef Eigen::Matrix<Type, -1, 1, 0, -1, 1> VectorType;
+		typedef Eigen::Map<VectorType> MapType;
+
+		Type *px = &(x[0]); // get the address storing the data for x
+		MapType vectorX(px, x.size()); // vectorX shares data 
+
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
+		Type *pr = &((*result)[0]); // get the address storing the data for result
+		MapType vectorResult(px, result->size()); // vectorResult shares data 
+
 		// Perform the actual computation.
-		gmm::mult(*gmmxxMatrix, x, *result);
+		vectorResult = (*eigenMatrix) * vectorX;
 
 		// Delete temporary matrix and return result.
-		delete gmmxxMatrix;
+		delete eigenMatrix;
 		return result;
 	}
 
@@ -133,49 +170,91 @@ public:
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector and set values accordingly.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		uint_fast64_t stateCount = this->getModel().getNumberOfStates();
+		std::vector<Type>* result = new std::vector<Type>(stateCount);
 
 		// Only try to solve system if there are states for which the probability is unknown.
 		if (maybeStates.getNumberOfSetBits() > 0) {
+			typedef Eigen::Matrix<Type, -1, 1, 0, -1, 1> VectorType;
+			typedef Eigen::Map<VectorType> MapType;
+
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
 			mrmc::storage::SquareSparseMatrix<double>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix to the form needed for the equation system. That is, we go from
 			// x = A*x + b to (I-A)x = b.
 			submatrix->convertToEquationSystem();
 
-			// Transform the submatrix to the gmm++ format to use its solvers.
-			gmm::csr_matrix<double>* gmmxxMatrix = submatrix->toGMMXXSparseMatrix();
+			// Transform the submatric matrix to the eigen format to use its solvers
+			Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenSubMatrix = submatrix->toEigenSparseMatrix();
 
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
 			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
 			// probability is strictly larger than 0.
 			std::vector<Type> x(maybeStates.getNumberOfSetBits(), Type(0.5));
 
+			// Map for x
+			Type *px = &(x[0]); // get the address storing the data for x
+			MapType vectorX(px, x.size()); // vectorX shares data 
+
+
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
 			std::vector<double> b(maybeStates.getNumberOfSetBits());
+
+			Type *pb = &(b[0]); // get the address storing the data for b
+			MapType vectorB(pb, b.size()); // vectorB shares data 
+
 			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &x);
 
-			// Set up the precondition of the iterative solver.
-			gmm::ilu_precond<gmm::csr_matrix<double>> P(*gmmxxMatrix);
-			// Prepare an iteration object that determines the accuracy, maximum number of iterations
-			// and the like.
-			gmm::iteration iter(0.000001);
+			Eigen::BiCGSTAB<Eigen::SparseMatrix<Type, 1, int_fast32_t>> solver;
+			solver.compute(*eigenSubMatrix);
+			if(solver.info()!= Eigen::ComputationInfo::Success) {
+				// decomposition failed
+				LOG4CPLUS_ERROR(logger, "Decomposition of Submatrix failed!");
+			}
 
 			// Now do the actual solving.
 			LOG4CPLUS_INFO(logger, "Starting iterative solver.");
-			gmm::bicgstab(*gmmxxMatrix, x, b, P, iter);
-			LOG4CPLUS_INFO(logger, "Iterative solver converged.");
+			
+			solver.setTolerance(0.000001);
+			
+			bool hasConverged = false;
+			int turns = 6;
+			while (!hasConverged) {
+				vectorX = solver.solve(vectorB);
+				hasConverged = (solver.info() != Eigen::ComputationInfo::NoConvergence) || (turns <= 0);
+				if (!hasConverged) {
+					LOG4CPLUS_INFO(logger, "EigenDtmcPrctlModelChecker did not converge with " << solver.iterations() << " of max. " << solver.maxIterations() << "Iterations, restarting ");
+					solver.setMaxIterations(solver.maxIterations() * 2);
+				}
+				--turns;
+			}
+
+			if(solver.info() == Eigen::ComputationInfo::InvalidInput) {
+				// solving failed
+				LOG4CPLUS_ERROR(logger, "Solving of Submatrix failed: InvalidInput");
+			} else if(solver.info() == Eigen::ComputationInfo::NoConvergence) {
+				// NoConvergence
+				throw mrmc::exceptions::NoConvergence("Solving of Submatrix with Eigen failed", solver.iterations(), solver.maxIterations());
+			} else if(solver.info() == Eigen::ComputationInfo::NumericalIssue) {
+				// NumericalIssue
+				LOG4CPLUS_ERROR(logger, "Solving of Submatrix failed: NumericalIssue");
+			} else if(solver.info() == Eigen::ComputationInfo::Success) {
+				// solving Success
+				LOG4CPLUS_INFO(logger, "Solving of Submatrix succeeded: Success");
+			} 
 
 			// Set values of resulting vector according to result.
 			mrmc::utility::setVectorValues<Type>(result, maybeStates, x);
 
 			// Delete temporary matrix.
-			delete gmmxxMatrix;
+			delete eigenSubMatrix;
 		}
 
-		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, static_cast<double>(0));
-		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, static_cast<double>(1.0));
+		// Dummy Type variable for const templates
+		Type dummy;
+		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, mrmc::utility::constGetZero(dummy));
+		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, mrmc::utility::constGetOne(dummy));
 
 		return result;
 	}
@@ -185,4 +264,4 @@ public:
 
 } //namespace mrmc
 
-#endif /* GMMXXDTMCPRCTLMODELCHECKER_H_ */
+#endif /* EIGENDTMCPRCTLMODELCHECKER_H_ */

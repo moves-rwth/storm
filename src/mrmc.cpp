@@ -12,6 +12,7 @@
  *  Description: Central part of the application containing the main() Method
  */
 
+#include "src/utility/osDetection.h"
 #include <iostream>
 #include <cstdio>
 #include <sstream>
@@ -21,6 +22,7 @@
 #include "src/models/Dtmc.h"
 #include "src/storage/SquareSparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
+#include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
 #include "src/parser/readLabFile.h"
 #include "src/parser/readTraFile.h"
@@ -28,6 +30,7 @@
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/settings.h"
 #include "src/formula/Formulas.h"
+#include "src/exceptions/NoConvergence.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -105,14 +108,48 @@ int main(const int argc, const char* argv[]) {
 	dtmc.printModelInformationToStream(std::cout);
 
 	// Uncomment this if you want to see the first model checking procedure in action. :)
-	/*
-	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(dtmc);
+	mrmc::modelChecker::EigenDtmcPrctlModelChecker<double> mc(dtmc);
 	mrmc::formula::AP<double>* trueFormula = new mrmc::formula::AP<double>(std::string("true"));
 	mrmc::formula::AP<double>* ap = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
 	mrmc::formula::Until<double>* until = new mrmc::formula::Until<double>(trueFormula, ap);
-	mc.checkPathFormula(*until);
+	
+	std::vector<double>* eigenResult = NULL;
+	try {
+		eigenResult = mc.checkPathFormula(*until);
+	} catch (mrmc::exceptions::NoConvergence& nce) {
+		// solver did not converge
+		LOG4CPLUS_ERROR(logger, "EigenDtmcPrctlModelChecker did not converge with " << nce.getIterationCount() << " of max. " << nce.getMaxIterationCount() << "Iterations!");
+		return -1;
+	}
 	delete until;
-	*/
+
+	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> mcG(dtmc);
+	mrmc::formula::AP<double>* trueFormulaG = new mrmc::formula::AP<double>(std::string("true"));
+	mrmc::formula::AP<double>* apG = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
+	mrmc::formula::Until<double>* untilG = new mrmc::formula::Until<double>(trueFormulaG, apG);
+	std::vector<double>* gmmResult = mcG.checkPathFormula(*untilG);
+	delete untilG;
+
+	if (eigenResult->size() != gmmResult->size()) {
+		LOG4CPLUS_ERROR(logger, "Warning: Eigen and GMM produced different results (Eigen: " << eigenResult->size() << ", Gmm: " << gmmResult->size() << ") in size!");
+	} else {
+		LOG4CPLUS_INFO(logger, "Testing for different entries");
+		for (int i = 0; i < eigenResult->size(); ++i) {
+			if (std::abs((eigenResult->at(i) - gmmResult->at(i))) > 0) {
+				LOG4CPLUS_ERROR(logger, "Warning: Eigen and GMM produced different results in entry " << i << " (Eigen: " << eigenResult->at(i) << ", Gmm: " << gmmResult->at(i) << ")!");
+			}
+			if (eigenResult->at(i) != 0.0) {
+				LOG4CPLUS_INFO(logger, "Non zero entry " << eigenResult->at(i) << " at " << i);
+			}
+		}
+	}
+
+	/*
+	LOG4CPLUS_INFO(logger, "Result: ");
+	LOG4CPLUS_INFO(logger, "Entry : EigenResult at Entry : GmmResult at Entry");
+	for (int i = 0; i < eigenResult->size(); ++i) {
+		LOG4CPLUS_INFO(logger, i << " : " << eigenResult->at(i) << " : " << gmmResult->at(i));
+	}*/
 
 	if (s != nullptr) {
 		delete s;

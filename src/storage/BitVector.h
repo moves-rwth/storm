@@ -10,6 +10,7 @@
 #include "src/exceptions/invalid_argument.h"
 #include "src/exceptions/out_of_range.h"
 
+#include "src/utility/osDetection.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 
@@ -394,6 +395,10 @@ public:
 			// Check if we are using g++ or clang++ and, if so, use the built-in function
 #if (defined (__GNUG__) || defined(__clang__))
 			result += __builtin_popcountll(this->bucketArray[i]);
+#elif defined WINDOWS
+			#include <nmmintrin.h>
+			// if the target machine does not support SSE4, this will fail.
+			result += _mm_popcnt_u64(this->bucketArray[i]);
 #else
 			uint_fast32_t cnt;
 			uint_fast64_t bitset = this->bucketArray[i];

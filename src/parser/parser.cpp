@@ -1,15 +1,13 @@
 #include "src/parser/parser.h"
 
 #if defined LINUX || defined MACOSX
-	#include <sys/mman.h>
+#	include <sys/mman.h>
+#	include <unistd.h>
 #elif defined WINDOWS
 #endif
 
 #include <sys/stat.h>
 #include <fcntl.h>
-//#if defined MACOSX
-	#include <unistd.h>
-//#endif
 #include <errno.h>
 #include <iostream>
 #include <cstring>
