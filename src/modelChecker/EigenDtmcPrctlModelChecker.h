@@ -138,7 +138,7 @@ public:
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
-		Type *pr = &((*result)[0]); // get the address storing the data for result
+		// Type *pr = &((*result)[0]); // get the address storing the data for result
 		MapType vectorResult(px, result->size()); // vectorResult shares data 
 
 		// Perform the actual computation.
