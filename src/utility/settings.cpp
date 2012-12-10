@@ -77,6 +77,7 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		
 		//! Finalize parsed options, check for specified requirements
 		bpo::notify(this->vm);
+		mrmc::settings::Callbacks::instance()->disabled = true;
 		LOG4CPLUS_DEBUG(logger, "Finished loading config.");
 	}
 	catch (bpo::reading_file e)
@@ -134,7 +135,7 @@ void Settings::initDescriptions()
 	/*
 	 *	Get Callbacks object, then iterate over and call all register callbacks.
 	 */
-	Callbacks* cb = mrmc::settings::Callbacks::getInstance();
+	Callbacks* cb = mrmc::settings::Callbacks::instance();
 	while (cb->registerList.size() > 0)
 	{
 		CallbackType type = cb->registerList.front().first;
@@ -184,7 +185,7 @@ void Settings::firstRun(const int argc, const char* argv[], const char* filename
 	/*
 	 *	Call intermediate callbacks.
 	 */
-	Callbacks* cb = mrmc::settings::Callbacks::getInstance();
+	Callbacks* cb = mrmc::settings::Callbacks::instance();
 	while (cb->intermediateList.size() > 0)
 	{
 		CallbackType type = cb->intermediateList.front().first;
@@ -242,7 +243,7 @@ void Settings::secondRun(const int argc, const char* argv[], const char* filenam
 	/*
 	 *	Call checker callbacks.
 	 */
-	Callbacks* cb = mrmc::settings::Callbacks::getInstance();
+	Callbacks* cb = mrmc::settings::Callbacks::instance();
 	while (cb->checkerList.size() > 0)
 	{
 		CheckerCallback fptr = cb->checkerList.front();

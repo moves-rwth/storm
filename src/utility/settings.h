@@ -240,26 +240,48 @@ namespace settings {
 	 */
 	class Callbacks
 	{
+		public:
+			inline void put(const CallbackType type, const RegisterCallback ptr)
+			{
+				if (this->disabled) throw mrmc::exceptions::InvalidSettings();
+				this->registerList.push_back(std::pair<CallbackType, RegisterCallback>(type, ptr));
+			}
+			inline void put(const CallbackType type, const IntermediateCallback ptr)
+			{
+				if (this->disabled) throw mrmc::exceptions::InvalidSettings();
+				this->intermediateList.push_back(std::pair<CallbackType, IntermediateCallback>(type, ptr));
+			}
+			inline void put(const CheckerCallback ptr)
+			{
+				if (this->disabled) throw mrmc::exceptions::InvalidSettings();
+				this->checkerList.push_back(ptr);
+			}
+			
 		private:
 			/*!
-			 *	@brief Stores register callbacks.
+			 *	@brief	Stores register callbacks.
 			 */
 			std::list<std::pair<CallbackType, RegisterCallback>> registerList;
 			
 			/*!
-			 *	@brief Stores intermediate callbacks.
+			 *	@brief	Stores intermediate callbacks.
 			 */
 			std::list<std::pair<CallbackType, IntermediateCallback>> intermediateList;
 			
 			/*!
-			 *	@brief Stores check callbacks.
+			 *	@brief	Stores check callbacks.
 			 */
 			std::list<CheckerCallback> checkerList;
 			
 			/*!
+			 *	@brief	Stores if we already loaded the settings.
+			 */
+			bool disabled;
+			
+			/*!
 			 *	@brief Private constructor.
 			 */
-			Callbacks() {}
+			Callbacks() : disabled(false) {}
 			/*!
 			 *	@brief Private copy constructor.
 			 */
@@ -273,10 +295,10 @@ namespace settings {
 			 *	@brief Returns current instance to create singleton.
 			 *	@return current instance
 			 */
-			inline static Callbacks* getInstance()
+			inline static Callbacks* instance()
 			{
-				static Callbacks instance;
-				return &instance;
+				static Callbacks inst;
+				return &inst;
 			}
 		
 		/*!
@@ -321,7 +343,7 @@ namespace settings {
 			 */
 			Register(const CallbackType type, const RegisterCallback ptr)
 			{
-				mrmc::settings::Callbacks::getInstance()->registerList.push_back(std::pair<CallbackType, RegisterCallback>(type, ptr));
+				mrmc::settings::Callbacks::instance()->put(type, ptr);
 			}
 			
 			/*!
@@ -342,7 +364,7 @@ namespace settings {
 			 */
 			Register(const CallbackType type, const IntermediateCallback ptr)
 			{
-				mrmc::settings::Callbacks::getInstance()->intermediateList.push_back(std::pair<CallbackType, IntermediateCallback>(type, ptr));
+				mrmc::settings::Callbacks::instance()->put(type, ptr);
 			}
 
 			/*!
@@ -362,7 +384,7 @@ namespace settings {
 			 */
 			Register(const CheckerCallback ptr)
 			{
-				mrmc::settings::Callbacks::getInstance()->checkerList.push_back(ptr);
+				mrmc::settings::Callbacks::instance()->put(ptr);
 			}
 	};
 	
