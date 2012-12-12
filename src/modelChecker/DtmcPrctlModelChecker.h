@@ -17,7 +17,7 @@ namespace modelChecker {
  * so the model checker class is declared here already.
  *
  */
-template <class T>
+template <class Type>
 class DtmcPrctlModelChecker;
 }
 
@@ -45,7 +45,7 @@ namespace modelChecker {
  *
  * @attention This class is abstract.
  */
-template<class T>
+template<class Type>
 class DtmcPrctlModelChecker {
 public:
 	/*!
@@ -53,7 +53,7 @@ public:
 	 *
 	 * @param model The dtmc model which is checked.
 	 */
-	explicit DtmcPrctlModelChecker(mrmc::models::Dtmc<T>& model) {
+	explicit DtmcPrctlModelChecker(mrmc::models::Dtmc<Type>& model) {
 	   this->model = &model;
 	}
 
@@ -62,8 +62,8 @@ public:
 	 *
 	 * @param modelChecker The model checker that is copied.
 	 */
-	explicit DtmcPrctlModelChecker(const mrmc::modelChecker::DtmcPrctlModelChecker<T>* modelChecker) {
-		this->model = new mrmc::models::Dtmc<T>(modelChecker->getModel());
+	explicit DtmcPrctlModelChecker(const mrmc::modelChecker::DtmcPrctlModelChecker<Type>* modelChecker) {
+		this->model = new mrmc::models::Dtmc<Type>(modelChecker->getModel());
 	}
 
 	/*!
@@ -77,7 +77,7 @@ public:
 	/*!
 	 * @returns A reference to the dtmc of the model checker.
 	 */
-	mrmc::models::Dtmc<T>& getModel() const {
+	mrmc::models::Dtmc<Type>& getModel() const {
 		return *(this->model);
 	}
 
@@ -85,7 +85,7 @@ public:
 	 * Sets the DTMC model which is checked
 	 * @param model
 	 */
-	void setModel(mrmc::models::Dtmc<T>& model) {
+	void setModel(mrmc::models::Dtmc<Type>& model) {
 		this->model = &model;
 	}
 
@@ -96,7 +96,7 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkStateFormula(const mrmc::formula::PCTLStateFormula<T>& formula) const {
+	mrmc::storage::BitVector* checkStateFormula(const mrmc::formula::PCTLStateFormula<Type>& formula) const {
 		return formula.check(*this);
 	}
 
@@ -106,7 +106,7 @@ public:
 	 * @param formula The And formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkAnd(const mrmc::formula::And<T>& formula) const {
+	mrmc::storage::BitVector* checkAnd(const mrmc::formula::And<Type>& formula) const {
 		mrmc::storage::BitVector* result = checkStateFormula(formula.getLeft());
 		mrmc::storage::BitVector* right = checkStateFormula(formula.getRight());
 		(*result) &= (*right);
@@ -120,7 +120,7 @@ public:
 	 * @param formula The AP state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkAP(const mrmc::formula::AP<T>& formula) const {
+	mrmc::storage::BitVector* checkAP(const mrmc::formula::AP<Type>& formula) const {
 		if (formula.getAP().compare("true") == 0) {
 			return new mrmc::storage::BitVector(model->getNumberOfStates(), 1);
 		} else if (formula.getAP().compare("false") == 0) {
@@ -135,7 +135,7 @@ public:
 	 * @param formula The Not state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkNot(const mrmc::formula::Not<T>& formula) const {
+	mrmc::storage::BitVector* checkNot(const mrmc::formula::Not<Type>& formula) const {
 		mrmc::storage::BitVector* result = checkStateFormula(formula.getChild());
 		result->complement();
 		return result;
@@ -147,7 +147,7 @@ public:
 	 * @param formula The Or state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkOr(const mrmc::formula::Or<T>& formula) const {
+	mrmc::storage::BitVector* checkOr(const mrmc::formula::Or<Type>& formula) const {
 		mrmc::storage::BitVector* result = checkStateFormula(formula.getLeft());
 		mrmc::storage::BitVector* right = checkStateFormula(formula.getRight());
 		(*result) |= (*right);
@@ -162,8 +162,20 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkProbabilisticOperator(
-			const mrmc::formula::ProbabilisticOperator<T>& formula) const = 0;
+	mrmc::storage::BitVector* checkProbabilisticOperator(
+			const mrmc::formula::ProbabilisticOperator<Type>& formula) const {
+		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
+
+		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
+		Type bound = formula.getBound();
+		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
+			if ((*probabilisticResult)[i] == bound) result->set(i, true);
+		}
+
+		delete probabilisticResult;
+
+		return result;
+	}
 
 	/*!
 	 * The check method for a state formula with a probabilistic interval operator node as root in
@@ -172,8 +184,34 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	virtual mrmc::storage::BitVector* checkProbabilisticIntervalOperator(
-			const mrmc::formula::ProbabilisticIntervalOperator<T>& formula) const = 0;
+	mrmc::storage::BitVector* checkProbabilisticIntervalOperator(
+			const mrmc::formula::ProbabilisticIntervalOperator<Type>& formula) const {
+		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
+
+		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
+		Type lower = formula.getLowerBound();
+		Type upper = formula.getUpperBound();
+		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
+			if ((*probabilisticResult)[i] >= lower && (*probabilisticResult)[i] <= upper) result->set(i, true);
+		}
+
+		delete probabilisticResult;
+
+		return result;
+	}
+
+
+	/*!
+	 * The check method for a state formula with a probabilistic operator node without bounds as root
+	 * in its formula tree
+	 *
+	 * @param formula The state formula to check
+	 * @returns The set of states satisfying the formula, represented by a bit vector
+	 */
+	std::vector<Type>* checkProbabilisticOperator(
+			const mrmc::formula::ProbabilisticNoBoundsOperator<Type>& formula) const {
+		return formula.getPathFormula().check(this);
+	}
 
 	/*!
 	 * The check method for a path formula; Will infer the actual type of formula and delegate it
@@ -182,7 +220,7 @@ public:
 	 * @param formula The path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<T>* checkPathFormula(const mrmc::formula::PCTLPathFormula<T>& formula) const {
+	std::vector<Type>* checkPathFormula(const mrmc::formula::PCTLPathFormula<Type>& formula) const {
 		return formula.check(*this);
 	}
 
@@ -192,7 +230,7 @@ public:
 	 * @param formula The Bounded Until path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<T>* checkBoundedUntil(const mrmc::formula::BoundedUntil<T>& formula) const = 0;
+	virtual std::vector<Type>* checkBoundedUntil(const mrmc::formula::BoundedUntil<Type>& formula) const = 0;
 
 	/*!
 	 * The check method for a path formula with a Next operator node as root in its formula tree
@@ -200,7 +238,7 @@ public:
 	 * @param formula The Next path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<T>* checkNext(const mrmc::formula::Next<T>& formula) const = 0;
+	virtual std::vector<Type>* checkNext(const mrmc::formula::Next<Type>& formula) const = 0;
 
 	/*!
 	 * The check method for a path formula with an Until operator node as root in its formula tree
@@ -208,10 +246,10 @@ public:
 	 * @param formula The Until path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<T>* checkUntil(const mrmc::formula::Until<T>& formula) const = 0;
+	virtual std::vector<Type>* checkUntil(const mrmc::formula::Until<Type>& formula) const = 0;
 
 private:
-	mrmc::models::Dtmc<T>* model;
+	mrmc::models::Dtmc<Type>* model;
 };
 
 } //namespace modelChecker

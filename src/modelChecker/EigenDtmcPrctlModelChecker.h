@@ -42,35 +42,6 @@ public:
 
 	virtual ~EigenDtmcPrctlModelChecker() { }
 
-	virtual mrmc::storage::BitVector* checkProbabilisticOperator(const mrmc::formula::ProbabilisticOperator<Type>& formula) const {
-		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
-
-		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
-		Type bound = formula.getBound();
-		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
-			if ((*probabilisticResult)[i] == bound) result->set(i, true);
-		}
-
-		delete probabilisticResult;
-
-		return result;
-	}
-
-	virtual mrmc::storage::BitVector* checkProbabilisticIntervalOperator(const mrmc::formula::ProbabilisticIntervalOperator<Type>& formula) const {
-		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
-
-		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
-		Type lower = formula.getLowerBound();
-		Type upper = formula.getUpperBound();
-		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
-			if ((*probabilisticResult)[i] >= lower && (*probabilisticResult)[i] <= upper) result->set(i, true);
-		}
-
-		delete probabilisticResult;
-
-		return result;
-	}
-
 	virtual std::vector<Type>* checkBoundedUntil(const mrmc::formula::BoundedUntil<Type>& formula) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
 		mrmc::storage::BitVector* leftStates = this->checkStateFormula(formula.getLeft());

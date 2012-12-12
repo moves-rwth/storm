@@ -34,7 +34,8 @@ namespace formula {
  *
  * @see PCTLStateFormula
  * @see PCTLPathFormula
- * @see ProbabilisticOperator
+ * @see ProbabilisticIntervalOperator
+ * @see ProbabilisticNoBoundsOperator
  * @see PCTLFormula
  */
 template<class T>
