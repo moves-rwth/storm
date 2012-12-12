@@ -139,8 +139,12 @@ public:
 	 * @returns a string representation of this PCTLStateFormula
 	 */
 	virtual std::string toString() const {
-		// TODO
-		return "";
+		std::string result = " P=";
+		result += std::to_string(bound);
+		result += " (";
+		result += pathFormula->toString();
+		result += ")";
+		return result;
 	}
 private:
 	T bound;

@@ -124,12 +124,11 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "(";
-		result += " P[";
+		std::string result = "P[";
 		result += std::to_string(lower);
 		result += ";";
 		result += std::to_string(upper);
-		result += "] ";
+		result += "] (";
 		result += pathFormula->toString();
 		result += ")";
 		return result;
