@@ -8,13 +8,14 @@
 #ifndef GMMXXDTMCPRCTLMODELCHECKER_H_
 #define GMMXXDTMCPRCTLMODELCHECKER_H_
 
+#include <cmath>
+
 #include "src/models/Dtmc.h"
 #include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/vector.h"
 
-#include "src/exceptions/InvalidSettings.h"
-#include <boost/program_options.hpp>
+#include "src/utility/settings.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
@@ -139,17 +140,48 @@ public:
 			std::vector<Type> b(maybeStates.getNumberOfSetBits());
 			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &b);
 
-			LOG4CPLUS_DEBUG(logger, "Computing preconditioner.");
-			// Set up the precondition of the iterative solver.
-			gmm::ilu_precond<gmm::csr_matrix<Type>> P(*gmmxxMatrix);
-			LOG4CPLUS_DEBUG(logger, "Done computing preconditioner.");
+			// Get the settings object to customize linear solving.
+			mrmc::settings::Settings* s = mrmc::settings::instance();
+
 			// Prepare an iteration object that determines the accuracy, maximum number of iterations
 			// and the like.
-			gmm::iteration iter(0.000001);
+			gmm::iteration iter(s->get<double>("precision"), 0, s->get<unsigned>("lemaxiter"));
 
 			// Now do the actual solving.
 			LOG4CPLUS_INFO(logger, "Starting iterative solver.");
-			gmm::bicgstab(*gmmxxMatrix, x, b, P, iter);
+			const std::string& precond = s->getString("precond");
+			if (s->getString("lemethod").compare("bicgstab") == 0) {
+				if (precond.compare("ilu")) {
+					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
+				} else if (precond.compare("diagonal") == 0) {
+					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
+				} else if (precond.compare("ildlt") == 0) {
+					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
+				} else if (precond.compare("none") == 0) {
+					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::identity_matrix(), iter);
+				}
+			// FIXME: gmres has been disabled, because it triggers gmm++ compilation errors
+			/* } else if (s->getString("lemethod").compare("gmres") == 0) {
+				if (precond.compare("ilu")) {
+					gmm::gmres(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), s->get<unsigned>("restart"), iter);
+				} else if (precond.compare("diagonal") == 0) {
+					gmm::gmres(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), s->get<unsigned>("restart"), iter);
+				} else if (precond.compare("ildlt") == 0) {
+					gmm::gmres(*gmmxxMatrix, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), s->get<unsigned>("restart"), iter);
+				} else if (precond.compare("none") == 0) {
+					gmm::gmres(*gmmxxMatrix, x, b, gmm::identity_matrix(), s->get<unsigned>("restart"), iter);
+				} */
+			} else if (s->getString("lemethod").compare("qmr") == 0) {
+				if (precond.compare("ilu")) {
+					gmm::qmr(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
+				} else if (precond.compare("diagonal") == 0) {
+					gmm::qmr(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
+				} else if (precond.compare("ildlt") == 0) {
+					gmm::qmr(*gmmxxMatrix, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
+				} else if (precond.compare("none") == 0) {
+					gmm::qmr(*gmmxxMatrix, x, b, gmm::identity_matrix(), iter);
+				}
+			}
 
 			// Check if the solver converged and issue a warning otherwise.
 			if (iter.converged()) {
@@ -193,10 +225,10 @@ public:
 	 * Registers all options associated with the gmm++ matrix library.
 	 */
 	static void putOptions(boost::program_options::options_description* desc) {
-		desc->add_options()("lemethod", boost::program_options::value<std::string>()->default_value("bicgstab")->notifier(&validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, gmres, qmr}.");
-		desc->add_options()("lemethod", boost::program_options::value<unsigned>()->default_value(10000), "Sets the maximal number of iterations used for linear equation solving.");
-		desc->add_options()("precond", boost::program_options::value<std::string>()->default_value("ilu")->notifier(&validatePreconditioner), "Sets the preconditioner used for linear equation solving. Must be in {ilu, diagonal, ildlt}.");
-		desc->add_options()("restart", boost::program_options::value<unsigned>()->default_value(40), "Sets the number of iterations after which gmres is restarted.");
+		desc->add_options()("lemethod", boost::program_options::value<std::string>()->default_value("bicgstab")->notifier(&validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, qmr}.");
+		desc->add_options()("lemaxiter", boost::program_options::value<unsigned>()->default_value(10000), "Sets the maximal number of iterations for iterative linear equation solving.");
+		desc->add_options()("precision", boost::program_options::value<double>()->default_value(10e-6), "Sets the precision for iterative linear equation solving.");
+		desc->add_options()("precond", boost::program_options::value<std::string>()->default_value("ilu")->notifier(&validatePreconditioner), "Sets the preconditioning technique for linear equation solving. Must be in {ilu, diagonal, ildlt, none}.");
 	}
 
 	/*!
@@ -204,8 +236,8 @@ public:
 	 * Throws an exception of type InvalidSettings in case the selected method is illegal.
 	 */
 	static void validateLeMethod(const std::string& lemethod) {
-		if (lemethod.compare("bicgstab") != 0 && lemethod.compare("qmr") != 0 && lemethod.compare("gmres") != 0) {
-			throw exceptions::InvalidSettings();
+		if (lemethod.compare("bicgstab") != 0 && lemethod.compare("qmr") != 0 != 0) {
+			throw exceptions::InvalidSettings() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
 		}
 	}
 
@@ -214,8 +246,8 @@ public:
 	 * Throws an exception of type InvalidSettings in case the selected preconditioner is illegal.
 	 */
 	static void validatePreconditioner(const std::string& preconditioner) {
-		if (preconditioner.compare("ilu") != 0 && preconditioner.compare("diagonal") != 0 && preconditioner.compare("ildlt") != 0) {
-			throw exceptions::InvalidSettings();
+		if (preconditioner.compare("ilu") != 0 && preconditioner.compare("diagonal") != 0 && preconditioner.compare("ildlt") && preconditioner.compare("none") != 0) {
+			throw exceptions::InvalidSettings() << "Argument " << preconditioner << " for option 'precond' is invalid.";
 		}
 	}
 };
