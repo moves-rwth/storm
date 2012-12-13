@@ -236,7 +236,7 @@ public:
 	 * Throws an exception of type InvalidSettings in case the selected method is illegal.
 	 */
 	static void validateLeMethod(const std::string& lemethod) {
-		if (lemethod.compare("bicgstab") != 0 && lemethod.compare("qmr") != 0 != 0) {
+		if (lemethod.compare("bicgstab") != 0 && lemethod.compare("qmr") != 0) {
 			throw exceptions::InvalidSettings() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
 		}
 	}
