@@ -27,14 +27,8 @@ namespace settings {
 	
 	namespace bpo = boost::program_options;
 	
-	/*
-	 *	Sorry for very long comment at this point (for the class), but all
-	 *	methods are private, hence there is no other place to explain the
-	 *	inner workings of this class that are necessary to understand the
-	 *	callback concept...
-	 */
 	/*!
-	 *	@brief	Simple wrapper around boost::program_options to handle configuration options.
+	 *	@brief	Wrapper around boost::program_options to handle configuration options.
 	 *
 	 *	This class uses boost::program_options to read options from the
 	 *	commandline and additionally load options from a file.
@@ -46,29 +40,8 @@ namespace settings {
 	 *	@code mrmc::settings::instance() @endcode
 	 *
 	 *	This class can be customized by other parts of the software using
-	 *	callbacks. There are three types of callbacks: register,
-	 *	intermediate and checker.
-	 *
-	 *	The (private) constructor will start with filling the internal
-	 *	options_description object. There are a few generic options like
-	 *	--help or --verbose. Then if calls all register callbacks that may
-	 *	add more options.
-	 *
-	 *	Then, it will start with a sloppy parsing run, allowing unregistered 
-	 *	options and ignoring further constraints from the options_description 
-	 *	objects.
-	 *
-	 *	After that, it will call all intermediate callbacks. They can
-	 *	inspect the options from the first run and add more options, e.g.
-	 *	enable more options for a specific component that has been enabled.
-	 *
-	 *	Using the new options_description objects, the constructor performs
-	 *	a second run. This time, it will not allow unregistered options and
-	 *	will check for required and positional arguments.
-	 *
-	 *	Finally, all checker callbacks will be called. They can check the
-	 *	final options for more complex requirements. If any of those checker
-	 *	callbacks returns false, a InvalidSettings exception will be thrown.
+	 *	option modules. An option module can be anything that implements the
+	 *	interface specified by registerModule().
 	 */
 	class Settings
 	{
@@ -98,7 +71,7 @@ namespace settings {
 			}
 			
 			/*!
-			 *	@brief	Register a new module
+			 *	@brief	Register a new module.
 			 *
 			 *	This function implicitly defines the following interface for any SettingsModule:
 			 *	@code
@@ -106,15 +79,27 @@ namespace settings {
 			 *	static std::pair< std::string, std::string > getOptionTrigger();
 			 *	static void putOptions(boost::program_options::options_description*);
 			 *	@endcode
+			 *
+			 *	The semantic is the following:
+			 *	If the trigger <a,b> is true, i.e. if option a is set to b,
+			 *	the options_description object will be added to the internal
+			 *	option object.
+			 *
+			 *	Furthermore, it will generate the option specified by the
+			 *	trigger.
 			 */
 			template <typename T>
 			static void registerModule()
 			{
+				//! get trigger
 				std::pair< std::string, std::string > trigger = T::getOptionTrigger();
+				//! build description name
 				std::stringstream str;
 				str << T::getModuleName() << " (" << trigger.first << " = " << trigger.second << ")";
 				bpo::options_description* desc = new bpo::options_description(str.str());
+				//! but options
 				T::putOptions(desc);
+				//! store
 				Settings::modules[ trigger ] = desc;
 			}
 	
