@@ -73,6 +73,12 @@ namespace settings {
 			/*!
 			 *	@brief	Register a new module.
 			 *
+			 *	A new settings module can be registered via
+			 *	@code
+			 *	mrmc::settings::Settings::registerModule<mrmc::ModuleClass>();
+			 *	@endcode
+			 *	This has to be done before any parsing takes place, i.e. before newInstance() is called.
+			 *
 			 *	This function implicitly defines the following interface for any SettingsModule:
 			 *	@code
 			 *	static std::string getModuleName();
@@ -175,11 +181,6 @@ namespace settings {
 	 *	@brief	Print usage help.
 	 */
 	std::ostream& help(std::ostream& os);
-	
-	/*!
-	 *	@brief	Print help for config file options.
-	 */
-	std::ostream& helpConfigfile(std::ostream& os);
 	
 	/*!
 	 *	@brief	Return current instance.

@@ -88,7 +88,7 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		}
 		
 		// Stop if help is set
-		if ((this->vm.count("help") > 0) || (this->vm.count("help-config") > 0))
+		if (this->vm.count("help") > 0)
 		{
 			return;
 		}
@@ -142,7 +142,6 @@ void Settings::initDescriptions()
 	Settings::desc->add_options()
 		("help,h", "produce help message")
 		("verbose,v", "be verbose")
-		("help-config", "produce help message about config file")
 		("configfile,c", bpo::value<std::string>(), "name of config file")
 		("test-prctl", bpo::value<std::string>(), "name of prctl file")
 		("trafile", bpo::value<std::string>()->required(), "name of the .tra file")
@@ -213,18 +212,6 @@ std::ostream& help(std::ostream& os)
 	{
 		os << *(it.second) << std::endl;
 	}
-	return os;
-}
-
-/*!
- *	Print a list of available options for the config file.
- *
- *	Use it like this:
- *	@code std::cout << mrmc::settings::helpConfigfile; @endcode
- */
-std::ostream& helpConfigfile(std::ostream& os)
-{
-	os << *(mrmc::settings::Settings::desc) << std::endl;;
 	return os;
 }
 
