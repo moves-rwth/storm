@@ -25,6 +25,7 @@ namespace mrmc {
 namespace settings {
 	
 	namespace bpo = boost::program_options;
+	
 	/*
 	 *	Sorry for very long comment at this point (for the class), but all
 	 *	methods are private, hence there is no other place to explain the
@@ -73,7 +74,7 @@ namespace settings {
 		public:
 		
 			/*!
-			 *	@brief Get value of a generic option.
+			 *	@brief	Get value of a generic option.
 			 */
 			template <typename T>
 			const T& get(const std::string &name) const {
@@ -82,17 +83,32 @@ namespace settings {
 			}
 		
 			/*!
-			 *	@brief Get value of string option
+			 *	@brief	Get value of string option
 			 */
 			const std::string& getString(const std::string &name) const {
 				return this->get<std::string>(name);
 			}
 		
 			/*!
-			 *	@brief Check if an option is set
+			 *	@brief	Check if an option is set
 			 */
 			const bool isSet(const std::string &name) const {
 				return this->vm.count(name) > 0;
+			}
+			
+			/*!
+			 *	@brief	Register a new module
+			 *
+			 *	This function implicitly defines the following interface for any SettingsModule:
+			 *	@code
+			 *	static std::pair< std::string, std::string> getSettings(boost::program_options::options_description*);
+			 *	@endcode
+			 */
+			template <typename T>
+			static void registerModule()
+			{
+				bpo::options_description* desc = new bpo::options_description();
+				Settings::modules[ T::getSettings(desc) ] = desc;
 			}
 	
 			friend std::ostream& help(std::ostream& os);
@@ -122,30 +138,19 @@ namespace settings {
 			void secondRun(const int argc, const char* argv[], const char* filename);
 			
 			/*!
-			 *	@brief	Option descriptions for config file.
-			 */
-			bpo::options_description configfile;
-			/*!
-			 *	@brief	Option descriptions for config file and command line.
-			 */
-			bpo::options_description generic;
-			/*!
-			 *	@brief	Option descriptions for command line.
-			 */
-			bpo::options_description commandline;
-			/*!
 			 *	@brief	Option description for positional arguments on command line.
 			 */
 			bpo::positional_options_description positional;
 			
 			/*!
-			 *	@brief	Collecting option descriptions for command line.
+			 *	@brief	Collecting option descriptions.
 			 */
-			static std::unique_ptr<bpo::options_description> cli;
+			static std::unique_ptr<bpo::options_description> desc;
+
 			/*!
-			 *	@brief	Collecting option descriptions for config file.
+			 *	@brief	Contains option descriptions for all modules.
 			 */
-			static std::unique_ptr<bpo::options_description> conf;
+			static std::map< std::pair< std::string, std::string >, bpo::options_description* > modules;
 			
 			/*!
 			 *	@brief	option mapping.
@@ -160,7 +165,7 @@ namespace settings {
 			/*!
 			 *	@brief	actual instance of this class.
 			 */
-			static Settings* inst;
+ 			static Settings* inst;
 	};
 
 	/*!
@@ -199,195 +204,7 @@ namespace settings {
 		Settings::inst = new Settings(argc, argv, filename);
 		return Settings::inst;
 	}
-	
-	/*!
-	 *	@brief	Function type for functions registering new options.
-	 */
-	typedef void(*RegisterCallback)(bpo::options_description&);
-	
-	/*!
-	 *	@brief	Function type for functions changing the parser state
-	 *	between the first and second run.
-	 */
-	typedef void(*IntermediateCallback)(bpo::options_description*, bpo::variables_map&);
-	
-	/*!
-	 *	@brief	Function type for function checking constraints on settings.
-	 */
-	typedef bool(*CheckerCallback)(bpo::variables_map&);
-	
-	/*!
-	 *	@brief	This enums specifies the three types of options.
-	 */
-	enum CallbackType {
-		//! Option can be set in config file
-		CB_CONFIG,
-		//! Option can be set on command line
-		CB_CLI, 
-		//! Option can be set in config file and command line
-		CB_GENERIC
-	};
-	
-	/*!
-	 *	@brief This class handles callbacks for registering new options and
-	 *	checking constraints on them afterwards.
-	 *
-	 *	As it should never be used directly, but only through the Register
-	 *	class, it does not provide any public methods.
-	 *
-	 *	This class is also a singleton (like Settings) and is implemented much
-	 *	simpler as we don't need any custom initialization code.
-	 */
-	class Callbacks
-	{
-		public:
-			inline void put(const CallbackType type, const RegisterCallback ptr)
-			{
-				if (this->disabled) throw mrmc::exceptions::InvalidSettings();
-				this->registerList.push_back(std::pair<CallbackType, RegisterCallback>(type, ptr));
-			}
-			inline void put(const CallbackType type, const IntermediateCallback ptr)
-			{
-				if (this->disabled) throw mrmc::exceptions::InvalidSettings();
-				this->intermediateList.push_back(std::pair<CallbackType, IntermediateCallback>(type, ptr));
-			}
-			inline void put(const CheckerCallback ptr)
-			{
-				if (this->disabled) throw mrmc::exceptions::InvalidSettings();
-				this->checkerList.push_back(ptr);
-			}
-			
-		private:
-			/*!
-			 *	@brief	Stores register callbacks.
-			 */
-			std::list<std::pair<CallbackType, RegisterCallback>> registerList;
-			
-			/*!
-			 *	@brief	Stores intermediate callbacks.
-			 */
-			std::list<std::pair<CallbackType, IntermediateCallback>> intermediateList;
-			
-			/*!
-			 *	@brief	Stores check callbacks.
-			 */
-			std::list<CheckerCallback> checkerList;
-			
-			/*!
-			 *	@brief	Stores if we already loaded the settings.
-			 */
-			bool disabled;
-			
-			/*!
-			 *	@brief Private constructor.
-			 */
-			Callbacks() : disabled(false) {}
-			/*!
-			 *	@brief Private copy constructor.
-			 */
-			Callbacks(const Callbacks&) {}
-			/*!
-			 *	@brief Private destructor.
-			 */
-			~Callbacks() {}			
-
-			/*!
-			 *	@brief Returns current instance to create singleton.
-			 *	@return current instance
-			 */
-			inline static Callbacks* instance()
-			{
-				static Callbacks inst;
-				return &inst;
-			}
 		
-		/*!
-		 *	@brief Register class needs access to lists.
-		 */
-		friend class Register;
-		
-		/*!
-		 *	@brief Settings class need access to lists.
-		 */
-		friend class Settings;
-	};
-	
-	/*!
-	 *	@brief Wrapper class to allow for registering callbacks during
-	 *	static initialization.
-	 *
-	 *	To use this class, use the following includes:
-	 *	@code
-	 *	#include "src/utility/settings.h"
-	 *	#include <boost/program_options.hpp>
-	 *	namespace bpo = boost::program_options;	
-	 *	@endcode
-	 */
-	class Register
-	{
-		public:
-			/*!
-			 *	@brief Registers given function as register callback.
-			 *
-			 *	This constructor registers a callback routine that might add
-			 *	new options for the Settings class. It should be used like
-			 *	this:
-			 *	@code
-			 *	void register(bpo::options_description& desc) {
-			 *		// do something with desc here
-			 *	}
-			 *	mrmc::settings::Register reg(mrmc::settings::CB_CLI, &register);
-			 *	@endcode
-			 *	This code should be executed during static initialization, i.e.
-			 *	it should be somewhere in the cpp-file.
-			 */
-			Register(const CallbackType type, const RegisterCallback ptr)
-			{
-				mrmc::settings::Callbacks::instance()->put(type, ptr);
-			}
-			
-			/*!
-			 *	@brief Registers given function as intermediate callback.
-			 * 
-			 *	This constructor registers a callback routine that can check
-			 *	the option assignment after the first run and change the
-			 *	options description before the second run.
-			 *	It should be used like this:
-			 *	@code
-			 *	void intermediate(bpo::options_description& desc, bpo::variables_map& map) {
-			 *		// check contents of map and maybe change desc
-			 *	}
-			 *	mrmc::settings::Register reg(mrmc::settings::CB_CLI, &intermediate);
-			 *	@endcode
-			 *	This code should be executed during static initialization, i.e.
-			 *	it should be somewhere in the cpp-file.
-			 */
-			Register(const CallbackType type, const IntermediateCallback ptr)
-			{
-				mrmc::settings::Callbacks::instance()->put(type, ptr);
-			}
-
-			/*!
-			 *	@brief Registers given function as check callback.
-			 * 
-			 *	This constructor registers a callback routine that can check
-			 *	the option assignment after the Settings class has loaded
-			 *	them. It should be used like this:
-			 *	@code
-			 *	void check(bpo::variables_map& map) {
-			 *		// check contents of map
-			 *	}
-			 *	mrmc::settings::Register reg(&check);
-			 *	@endcode
-			 *	This code should be executed during static initialization, i.e.
-			 *	it should be somewhere in the cpp-file.
-			 */
-			Register(const CheckerCallback ptr)
-			{
-				mrmc::settings::Callbacks::instance()->put(ptr);
-			}
-	};
-	
 } // namespace settings
 } // namespace mrmc
 
