@@ -6,7 +6,7 @@
 namespace mrmc {
 namespace exceptions {
 
-class InvalidSettings : public BaseException
+class InvalidSettings : public BaseException<InvalidSettings>
 {
 };
 

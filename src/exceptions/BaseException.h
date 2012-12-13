@@ -7,6 +7,7 @@
 namespace mrmc {
 namespace exceptions {
 
+template<typename E>
 class BaseException : public std::exception
 {
 	public:
@@ -19,10 +20,10 @@ class BaseException : public std::exception
 		~BaseException() throw() { }
 		
 		template<class T>
-		BaseException& operator<<(const T& var)
+		E& operator<<(const T& var)
 		{
 			this->stream << var;
-			return *this;
+			return * dynamic_cast<E*>(this);
 		}
 		
 		virtual const char* what() const throw()
