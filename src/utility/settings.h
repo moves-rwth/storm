@@ -52,7 +52,7 @@ namespace settings {
 			 */
 			template <typename T>
 			const T& get(const std::string &name) const {
-				if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettings();
+				if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettings() << "Could not read option " << name << ".";
 				return this->vm[name].as<T>();
 			}
 		
