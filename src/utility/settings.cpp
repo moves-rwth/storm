@@ -7,6 +7,8 @@
 
 #include "src/utility/settings.h"
 
+#include "src/exceptions/BaseException.h"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -107,27 +109,19 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 	}
 	catch (bpo::required_option e)
 	{
-		std::cerr << "Required option: " << e.what() << std::endl;
-		LOG4CPLUS_ERROR(logger, "Required option: " << e.what());
-		throw mrmc::exceptions::InvalidSettings();
+		throw mrmc::exceptions::InvalidSettings() << "Required option missing";
 	}
 	catch (bpo::validation_error e)
 	{
-		std::cerr << "Validation failed: " << e.what() << std::endl;
-		LOG4CPLUS_ERROR(logger, "Validation failed: " << e.what());
-		throw mrmc::exceptions::InvalidSettings();
+		throw mrmc::exceptions::InvalidSettings() << "Validation failed: " << e.what();
 	}
 	catch (bpo::invalid_command_line_syntax e)
 	{
-		std::cerr << "Invalid command line syntax: " << e.what() << std::endl;
-		LOG4CPLUS_ERROR(logger, "Invalid command line syntax: " << e.what());
-		throw mrmc::exceptions::InvalidSettings();
+		throw mrmc::exceptions::InvalidSettings() << e.what();
 	}
 	catch (bpo::error e)
 	{
-		std::cerr << e.what() << std::endl;
-		LOG4CPLUS_ERROR(logger, "Unknown error: " << e.what());
-		throw mrmc::exceptions::InvalidSettings();
+		throw mrmc::exceptions::InvalidSettings() << e.what();
 	}
 }
 
