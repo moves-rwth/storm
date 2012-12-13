@@ -87,19 +87,30 @@ namespace settings {
 			 *
 			 *	Furthermore, it will generate the option specified by the
 			 *	trigger.
+			 *
+			 *	The functions could look like this:
+			 *	@code
+			 *	static std::string getModuleName() { return "Backend A"; }
+			 *	static std::pair<std::string, std::string> getOptionTrigger() {
+			 *		return std::pair<std::string, std::string>("backend", "a");
+			 *	}
+			 *	static void putOptions(boost::program_options::options_description* desc) {
+			 *		desc->add_options()("foo", "bar");
+			 *	}
+			 *	@endcode
 			 */
 			template <typename T>
 			static void registerModule()
 			{
-				//! get trigger
+				// get trigger
 				std::pair< std::string, std::string > trigger = T::getOptionTrigger();
-				//! build description name
+				// build description name
 				std::stringstream str;
 				str << T::getModuleName() << " (" << trigger.first << " = " << trigger.second << ")";
 				bpo::options_description* desc = new bpo::options_description(str.str());
-				//! but options
+				// but options
 				T::putOptions(desc);
-				//! store
+				// store
 				Settings::modules[ trigger ] = desc;
 			}
 	
