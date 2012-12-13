@@ -115,9 +115,10 @@ int main(const int argc, const char* argv[]) {
 	mrmc::formula::AP<double>* ap = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
 	mrmc::formula::Until<double>* until = new mrmc::formula::Until<double>(trueFormula, ap);
 	
-	std::vector<double>* eigenResult = NULL;
+	
 	try {
-		eigenResult = mc.checkPathFormula(*until);
+		std::vector<double>* eigenResult = mc.checkPathFormula(*until);
+		delete eigenResult;
 	} catch (mrmc::exceptions::NoConvergence& nce) {
 		// solver did not converge
 		LOG4CPLUS_ERROR(logger, "EigenDtmcPrctlModelChecker did not converge with " << nce.getIterationCount() << " of max. " << nce.getMaxIterationCount() << "Iterations!");
@@ -130,7 +131,8 @@ int main(const int argc, const char* argv[]) {
 	mrmc::formula::AP<double>* trueFormulaG = new mrmc::formula::AP<double>(std::string("true"));
 	mrmc::formula::AP<double>* apG = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
 	mrmc::formula::Until<double>* untilG = new mrmc::formula::Until<double>(trueFormulaG, apG);
-	std::vector<double>* gmmResult = mcG.checkPathFormula(*untilG);
+	std::vector<double>* vec = mcG.checkPathFormula(*untilG);
+	delete vec;
 	delete untilG;
 
 	/*

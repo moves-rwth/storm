@@ -27,7 +27,7 @@ std::unique_ptr<bpo::options_description> mrmc::settings::Settings::desc = nullp
 std::string mrmc::settings::Settings::binaryName = "";
 mrmc::settings::Settings* mrmc::settings::Settings::inst = nullptr;
 
-std::map< std::pair<std::string, std::string>, bpo::options_description* > mrmc::settings::Settings::modules;
+std::map< std::pair<std::string, std::string>, std::shared_ptr<bpo::options_description> > mrmc::settings::Settings::modules;
 
 /*!
  *	The constructor fills the option descriptions, parses the

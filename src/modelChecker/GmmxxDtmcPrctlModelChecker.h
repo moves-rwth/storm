@@ -127,6 +127,7 @@ public:
 
 			// Transform the submatrix to the gmm++ format to use its solvers.
 			gmm::csr_matrix<Type>* gmmxxMatrix = submatrix->toGMMXXSparseMatrix();
+			delete submatrix;
 
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
 			// the iterative solvers. It should be safe as for all 'maybe' states we know that the

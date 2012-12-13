@@ -157,6 +157,7 @@ public:
 
 			// Transform the submatric matrix to the eigen format to use its solvers
 			Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenSubMatrix = submatrix->toEigenSparseMatrix();
+			delete submatrix;
 
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
 			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
