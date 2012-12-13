@@ -11,6 +11,8 @@
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
+#include <boost/algorithm/string/join.hpp>
+
 namespace mrmc {
 namespace settings {
 
@@ -19,10 +21,11 @@ namespace bpo = boost::program_options;
 /*
  * static initializers
  */
-std::unique_ptr<bpo::options_description> mrmc::settings::Settings::cli;
-std::unique_ptr<bpo::options_description> mrmc::settings::Settings::conf = nullptr;
+std::unique_ptr<bpo::options_description> mrmc::settings::Settings::desc = nullptr;
 std::string mrmc::settings::Settings::binaryName = "";
 mrmc::settings::Settings* mrmc::settings::Settings::inst = nullptr;
+
+std::map< std::pair<std::string, std::string>, bpo::options_description* > mrmc::settings::Settings::modules;
 
 /*!
  *	The constructor fills the option descriptions, parses the
@@ -38,46 +41,63 @@ mrmc::settings::Settings* mrmc::settings::Settings::inst = nullptr;
  *	@param filename	either nullptr or name of config file
  */
 Settings::Settings(const int argc, const char* argv[], const char* filename)
-	: configfile("Config Options"), generic("Generic Options"), commandline("Commandline Options")
 {
 	Settings::binaryName = std::string(argv[0]);
 	try
 	{
-		//! Initially fill description objects and call register callbacks
+		// Initially fill description objects
 		this->initDescriptions();
 
-		//! Take care of positional arguments
+		// Take care of positional arguments
 		Settings::positional.add("trafile", 1);
 		Settings::positional.add("labfile", 1);
+
+		// Check module triggers, add corresponding options
+		std::map< std::string, std::list< std::string > > options;
 		
-		//! Create and fill collecting options descriptions
-		Settings::cli = std::unique_ptr<bpo::options_description>(new bpo::options_description());
-		Settings::cli->add(Settings::commandline).add(generic);
-		Settings::conf = std::unique_ptr<bpo::options_description>(new bpo::options_description());
-		Settings::conf->add(Settings::configfile).add(generic);
+		for (auto it : Settings::modules)
+		{
+			options[it.first.first].push_back(it.first.second);
+		}
+		for (auto it : options)
+		{
+			std::stringstream str;
+			str << "select " << it.first << " module (" << boost::algorithm::join(it.second, ", ") << ")";
+			
+			Settings::desc->add_options()
+				(it.first.c_str(), bpo::value<std::string>(), str.str().c_str())
+			;
+		}
 		
-		//! Perform first parse run and call intermediate callbacks
+		// Perform first parse run
 		this->firstRun(argc, argv, filename);
 		
-		//! Rebuild collecting options descriptions
-		Settings::cli = std::unique_ptr<bpo::options_description>(new bpo::options_description());
-		Settings::cli->add(Settings::commandline).add(generic);
-
-		Settings::conf = std::unique_ptr<bpo::options_description>(new bpo::options_description());
-		Settings::conf->add(Settings::configfile).add(generic);
+		// Check module triggers
+		for (auto it : Settings::modules)
+		{
+			std::pair< std::string, std::string > trigger = it.first;
+			if (this->vm.count(trigger.first))
+			{
+				if (this->vm[trigger.first].as<std::string>().compare(trigger.second) == 0)
+				{
+					Settings::desc->add(*it.second);
+					Settings::modules.erase(trigger);
+				}
+			}
+			
+		}
 		
-		//! Stop if help is set
-		if ((this->vm.count("help") > 0) || (this->vm.count("help-config") > 0))
+		// Stop if help is set
+		if (this->vm.count("help") > 0)
 		{
 			return;
 		}
 		
-		//! Perform second run and call checker callbacks
+		// Perform second run
 		this->secondRun(argc, argv, filename);
 		
-		//! Finalize parsed options, check for specified requirements
+		// Finalize parsed options, check for specified requirements
 		bpo::notify(this->vm);
-		mrmc::settings::Callbacks::instance()->disabled = true;
 		LOG4CPLUS_DEBUG(logger, "Finished loading config.");
 	}
 	catch (bpo::reading_file e)
@@ -118,100 +138,38 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 void Settings::initDescriptions()
 {
 	LOG4CPLUS_DEBUG(logger, "Initializing descriptions.");
-	this->commandline.add_options()
+	Settings::desc = std::unique_ptr<bpo::options_description>(new bpo::options_description("Generic Options"));
+	Settings::desc->add_options()
 		("help,h", "produce help message")
 		("verbose,v", "be verbose")
-		("help-config", "produce help message about config file")
 		("configfile,c", bpo::value<std::string>(), "name of config file")
 		("test-prctl", bpo::value<std::string>(), "name of prctl file")
-	;
-	this->generic.add_options()
 		("trafile", bpo::value<std::string>()->required(), "name of the .tra file")
 		("labfile", bpo::value<std::string>()->required(), "name of the .lab file")
 	;
-	this->configfile.add_options()
-	;
-
-	/*
-	 *	Get Callbacks object, then iterate over and call all register callbacks.
-	 */
-	Callbacks* cb = mrmc::settings::Callbacks::instance();
-	while (cb->registerList.size() > 0)
-	{
-		CallbackType type = cb->registerList.front().first;
-		RegisterCallback fptr = cb->registerList.front().second;
-		cb->registerList.pop_front();
-		
-		switch (type)
-		{
-			case CB_CONFIG:
-				(*fptr)(this->configfile);
-				break;
-			case CB_CLI:
-				(*fptr)(this->commandline);
-				break;
-			case CB_GENERIC:
-				(*fptr)(this->generic);
-				break;
-		}
-	}
 }
 
 /*!
  *	Perform a sloppy parsing run: parse command line and config file (if
  *	given), but allow for unregistered options, do not check requirements
  *	from options_description objects, do not check positional arguments.
- *
- *	Call all intermediate callbacks afterwards.
  */
 void Settings::firstRun(const int argc, const char* argv[], const char* filename)
 {
 	LOG4CPLUS_DEBUG(logger, "Performing first run.");
-	//! parse command line
-	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::cli)).allow_unregistered().run(), this->vm);
+	// parse command line
+	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::desc)).allow_unregistered().run(), this->vm);
 
 	/*
 	 *	load config file if specified
 	 */
 	if (this->vm.count("configfile"))
 	{
-		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::conf)), this->vm, true);
+		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::desc)), this->vm, true);
 	}
 	else if (filename != NULL)
 	{
-		bpo::store(bpo::parse_config_file<char>(filename, *(Settings::conf)), this->vm, true);
-	}
-	
-	/*
-	 *	Call intermediate callbacks.
-	 */
-	Callbacks* cb = mrmc::settings::Callbacks::instance();
-	while (cb->intermediateList.size() > 0)
-	{
-		CallbackType type = cb->intermediateList.front().first;
-		IntermediateCallback fptr = cb->intermediateList.front().second;
-		cb->intermediateList.pop_front();
-		
-		try
-		{
-			switch (type)
-			{
-				case CB_CONFIG:
-					(*fptr)(&this->configfile, this->vm);
-					break;
-				case CB_CLI:
-					(*fptr)(&this->commandline, this->vm);
-					break;
-				case CB_GENERIC:
-					(*fptr)(&this->generic, this->vm);
-					break;
-			}
-		}
-		catch (boost::bad_any_cast e)
-		{
-			std::cerr << "An intermediate callback failed." << std::endl;
-			LOG4CPLUS_ERROR(logger, "An intermediate callback failed.\n" << e.what());
-		}
+		bpo::store(bpo::parse_config_file<char>(filename, *(Settings::desc)), this->vm, true);
 	}
 }
 
@@ -219,42 +177,22 @@ void Settings::firstRun(const int argc, const char* argv[], const char* filename
  *	Perform the second parser run: parse command line and config file (if
  *	given) and check for unregistered options, requirements from
  *	options_description objects and positional arguments.
- *
- *	Call all checker callbacks afterwards.
  */
 void Settings::secondRun(const int argc, const char* argv[], const char* filename)
 {
 	LOG4CPLUS_DEBUG(logger, "Performing second run.");
-	//! Parse command line
-	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::cli)).positional(this->positional).run(), this->vm);
+	// Parse command line
+	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::desc)).positional(this->positional).run(), this->vm);
 	/*
 	 *	load config file if specified
 	 */
 	if (this->vm.count("configfile"))
 	{
-		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::conf)), this->vm, true);
+		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::desc)), this->vm, true);
 	}
 	else if (filename != NULL)
 	{
-		bpo::store(bpo::parse_config_file<char>(filename, *(Settings::conf)), this->vm, true);
-	}
-	
-	
-	/*
-	 *	Call checker callbacks.
-	 */
-	Callbacks* cb = mrmc::settings::Callbacks::instance();
-	while (cb->checkerList.size() > 0)
-	{
-		CheckerCallback fptr = cb->checkerList.front();
-		cb->checkerList.pop_front();
-		
-		if (! (*fptr)(this->vm))
-		{
-			std::cerr << "Custom option checker failed." << std::endl;
-			LOG4CPLUS_ERROR(logger, "A checker callback returned false.");
-			throw mrmc::exceptions::InvalidSettings();
-		}
+		bpo::store(bpo::parse_config_file<char>(filename, *(Settings::desc)), this->vm, true);
 	}
 }
 
@@ -269,19 +207,11 @@ void Settings::secondRun(const int argc, const char* argv[], const char* filenam
 std::ostream& help(std::ostream& os)
 {
 	os << "Usage: " << mrmc::settings::Settings::binaryName << " [options] <transition file> <label file>" << std::endl;
-	os << *(mrmc::settings::Settings::cli) << std::endl;
-	return os;
-}
-
-/*!
- *	Print a list of available options for the config file.
- *
- *	Use it like this:
- *	@code std::cout << mrmc::settings::helpConfigfile; @endcode
- */
-std::ostream& helpConfigfile(std::ostream& os)
-{
-	os << *(mrmc::settings::Settings::conf) << std::endl;;
+	os << *(mrmc::settings::Settings::desc) << std::endl;
+	for (auto it : Settings::modules)
+	{
+		os << *(it.second) << std::endl;
+	}
 	return os;
 }
 
