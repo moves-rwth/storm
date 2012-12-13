@@ -74,6 +74,8 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		// Perform first parse run
 		this->firstRun(argc, argv, filename);
 		
+		// Buffer for items to be deleted
+		std::list< std::pair< std::string, std::string > > deleteQueue;
 		// Check module triggers
 		for (auto it : Settings::modules)
 		{
@@ -83,11 +85,12 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 				if (this->vm[trigger.first].as<std::string>().compare(trigger.second) == 0)
 				{
 					Settings::desc->add(*it.second);
-					Settings::modules.erase(trigger);
+					deleteQueue.push_back(trigger);
 				}
 			}
-			
 		}
+		for (auto it : deleteQueue) Settings::modules.erase(it);
+		
 		
 		// Stop if help is set
 		if (this->vm.count("help") > 0)
