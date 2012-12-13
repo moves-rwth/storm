@@ -11,6 +11,8 @@
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
+#include <boost/algorithm/string/join.hpp>
+
 namespace mrmc {
 namespace settings {
 
@@ -50,12 +52,20 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		Settings::positional.add("trafile", 1);
 		Settings::positional.add("labfile", 1);
 
-		//! Check module triggers
+		//! Check module triggers, add corresponding options
+		std::map< std::string, std::list< std::string > > options;
+		
 		for (auto it : Settings::modules)
 		{
-			std::pair< std::string, std::string > trigger = it.first;
+			options[it.first.first].push_back(it.first.second);
+		}
+		for (auto it : options)
+		{
+			std::stringstream str;
+			str << "select " << it.first << " module (" << boost::algorithm::join(it.second, ", ") << ")";
+			
 			Settings::desc->add_options()
-				(trigger.first.c_str(), bpo::value<std::string>(), trigger.second.c_str())
+				(it.first.c_str(), bpo::value<std::string>(), str.str().c_str())
 			;
 		}
 		
@@ -205,8 +215,6 @@ std::ostream& help(std::ostream& os)
 	os << *(mrmc::settings::Settings::desc) << std::endl;
 	for (auto it : Settings::modules)
 	{
-		std::pair< std::string, std::string > trigger = it.first;
-		os << "If --" << trigger.first << " = " << trigger.second << ":" << std::endl;
 		os << *(it.second) << std::endl;
 	}
 	return os;

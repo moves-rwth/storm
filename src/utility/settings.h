@@ -9,6 +9,7 @@
 #define SETTINGS_H_
 
 #include <iostream>
+#include <sstream>
 #include <list>
 #include <utility>
 #include <memory>
@@ -101,14 +102,20 @@ namespace settings {
 			 *
 			 *	This function implicitly defines the following interface for any SettingsModule:
 			 *	@code
-			 *	static std::pair< std::string, std::string> getSettings(boost::program_options::options_description*);
+			 *	static std::string getModuleName();
+			 *	static std::pair< std::string, std::string > getOptionTrigger();
+			 *	static void putOptions(boost::program_options::options_description*);
 			 *	@endcode
 			 */
 			template <typename T>
 			static void registerModule()
 			{
-				bpo::options_description* desc = new bpo::options_description();
-				Settings::modules[ T::getSettings(desc) ] = desc;
+				std::pair< std::string, std::string > trigger = T::getOptionTrigger();
+				std::stringstream str;
+				str << T::getModuleName() << " (" << trigger.first << " = " << trigger.second << ")";
+				bpo::options_description* desc = new bpo::options_description(str.str());
+				T::putOptions(desc);
+				Settings::modules[ trigger ] = desc;
 			}
 	
 			friend std::ostream& help(std::ostream& os);
