@@ -62,7 +62,7 @@ void setUpConsoleLogging() {
 int main(const int argc, const char* argv[]) {
 	setUpFileLogging();
 
-	mrmc::settings::Settings* s = NULL;
+	mrmc::settings::Settings* s = nullptr;
 	
 	LOG4CPLUS_INFO(logger, "This is the Markov Reward Model Checker (MRMC) by i2 of RWTH Aachen University.");
 
@@ -74,6 +74,7 @@ int main(const int argc, const char* argv[]) {
 	LOG4CPLUS_INFO(logger, "MRMC command invoked " << commandStream.str());
 
 	try {
+		mrmc::settings::Settings::registerModule<mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> >();
 		s = mrmc::settings::newInstance(argc, argv, nullptr);
 	} catch (mrmc::exceptions::InvalidSettings& e) {
 		LOG4CPLUS_FATAL(logger, "InvalidSettings error: " << e.what());

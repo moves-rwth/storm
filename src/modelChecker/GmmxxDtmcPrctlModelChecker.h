@@ -13,6 +13,9 @@
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/vector.h"
 
+#include "src/exceptions/InvalidSettings.h"
+#include <boost/program_options.hpp>
+
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
 
@@ -166,6 +169,53 @@ public:
 		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, static_cast<Type>(1.0));
 
 		return result;
+	}
+
+	/*!
+	 * Returns the name of this module.
+	 * @return The name of this module.
+	 */
+	static std::string getModuleName() {
+		return "gmm++";
+	}
+
+	/*!
+	 * Returns a trigger such that if the option "matrixlib" is set to "gmm++", this model checker
+	 * is to be used.
+	 * @return An option trigger for this module.
+	 */
+	static std::pair<std::string, std::string> getOptionTrigger() {
+		return std::pair<std::string, std::string>("matrixlib", "gmm++");
+	}
+
+	/*!
+	 * Registers all options associated with the gmm++ matrix library.
+	 */
+	static void putOptions(boost::program_options::options_description* desc) {
+		desc->add_options()("lemethod", boost::program_options::value<std::string>()->default_value("bicgstab")->notifier(&validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, gmres, qmr}.");
+		desc->add_options()("lemethod", boost::program_options::value<unsigned>()->default_value(10000), "Sets the maximal number of iterations used for linear equation solving.");
+		desc->add_options()("precond", boost::program_options::value<std::string>()->default_value("ilu")->notifier(&validatePreconditioner), "Sets the preconditioner used for linear equation solving. Must be in {ilu, diagonal, ildlt}.");
+		desc->add_options()("restart", boost::program_options::value<unsigned>()->default_value(40), "Sets the number of iterations after which gmres is restarted.");
+	}
+
+	/*!
+	 * Validates whether the given lemethod matches one of the available ones.
+	 * Throws an exception of type InvalidSettings in case the selected method is illegal.
+	 */
+	static void validateLeMethod(const std::string& lemethod) {
+		if (lemethod.compare("bicgstab") != 0 && lemethod.compare("qmr") != 0 && lemethod.compare("gmres") != 0) {
+			throw exceptions::InvalidSettings();
+		}
+	}
+
+	/*!
+	 * Validates whether the given preconditioner matches one of the available ones.
+	 * Throws an exception of type InvalidSettings in case the selected preconditioner is illegal.
+	 */
+	static void validatePreconditioner(const std::string& preconditioner) {
+		if (preconditioner.compare("ilu") != 0 && preconditioner.compare("diagonal") != 0 && preconditioner.compare("ildlt") != 0) {
+			throw exceptions::InvalidSettings();
+		}
 	}
 };
 
