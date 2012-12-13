@@ -111,6 +111,7 @@ int main(const int argc, const char* argv[]) {
 	dtmc.printModelInformationToStream(std::cout);
 
 	// Uncomment this if you want to see the first model checking procedure in action. :)
+
 	mrmc::modelChecker::EigenDtmcPrctlModelChecker<double> mc(dtmc);
 	mrmc::formula::AP<double>* trueFormula = new mrmc::formula::AP<double>(std::string("true"));
 	mrmc::formula::AP<double>* ap = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
@@ -126,6 +127,7 @@ int main(const int argc, const char* argv[]) {
 	}
 	delete until;
 
+
 	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> mcG(dtmc);
 	mrmc::formula::AP<double>* trueFormulaG = new mrmc::formula::AP<double>(std::string("true"));
 	mrmc::formula::AP<double>* apG = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
@@ -133,6 +135,7 @@ int main(const int argc, const char* argv[]) {
 	std::vector<double>* gmmResult = mcG.checkPathFormula(*untilG);
 	delete untilG;
 
+	/*
 	if (eigenResult->size() != gmmResult->size()) {
 		LOG4CPLUS_ERROR(logger, "Warning: Eigen and GMM produced different results (Eigen: " << eigenResult->size() << ", Gmm: " << gmmResult->size() << ") in size!");
 	} else {
@@ -146,6 +149,7 @@ int main(const int argc, const char* argv[]) {
 			}
 		}
 	}
+	*/
 
 	/*
 	LOG4CPLUS_INFO(logger, "Result: ");

@@ -8,11 +8,10 @@
 #ifndef GMMXXDTMCPRCTLMODELCHECKER_H_
 #define GMMXXDTMCPRCTLMODELCHECKER_H_
 
-#include "src/utility/vector.h"
-
 #include "src/models/Dtmc.h"
 #include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
+#include "src/utility/vector.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
@@ -46,24 +45,23 @@ public:
 		mrmc::storage::SquareSparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
-		tmpMatrix.makeRowsAbsorbing((~*leftStates & *rightStates) | *rightStates);
+		tmpMatrix.makeRowsAbsorbing(~(*leftStates & *rightStates) | *rightStates);
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<double>* gmmxxMatrix = tmpMatrix.toGMMXXSparseMatrix();
+		gmm::csr_matrix<Type>* gmmxxMatrix = tmpMatrix.toGMMXXSparseMatrix();
 
 		// Create the vector with which to multiply.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-		mrmc::utility::setVectorValues(result, *rightStates, static_cast<double>(1.0));
+		mrmc::utility::setVectorValues(result, *rightStates, static_cast<Type>(1.0));
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
 		for (uint_fast64_t i = 0; i < formula.getBound(); ++i) {
 			gmm::mult(*gmmxxMatrix, *result, *result);
 		}
 
-		// Delete intermediate results.
+		// Delete intermediate results and return result.
 		delete leftStates;
 		delete rightStates;
-
 		return result;
 	}
 
@@ -72,19 +70,19 @@ public:
 		mrmc::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<double>* gmmxxMatrix = this->getModel().getTransitionProbabilityMatrix()->toGMMXXSparseMatrix();
+		gmm::csr_matrix<Type>* gmmxxMatrix = this->getModel().getTransitionProbabilityMatrix()->toGMMXXSparseMatrix();
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> x(this->getModel().getNumberOfStates());
-		mrmc::utility::setVectorValues(&x, *nextStates, static_cast<double>(1.0));
+		mrmc::utility::setVectorValues(&x, *nextStates, static_cast<Type>(1.0));
 
-		// Delete not needed next states bit vector.
+		// Delete obsolete sub-result.
 		delete nextStates;
 
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
-		// Perform the actual computation.
+		// Perform the actual computation, namely matrix-vector multiplication.
 		gmm::mult(*gmmxxMatrix, x, *result);
 
 		// Delete temporary matrix and return result.
@@ -101,9 +99,10 @@ public:
 		// all states that have probability 0 and 1 of satisfying the until-formula.
 		mrmc::storage::BitVector notExistsPhiUntilPsiStates(this->getModel().getNumberOfStates());
 		mrmc::storage::BitVector alwaysPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		mrmc::solver::GraphAnalyzer::getPhiUntilPsiStates<double>(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
+		mrmc::solver::GraphAnalyzer::getPhiUntilPsiStates(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
 		notExistsPhiUntilPsiStates.complement();
 
+		// Delete sub-results that are obsolete now.
 		delete leftStates;
 		delete rightStates;
 
@@ -118,13 +117,13 @@ public:
 		// Only try to solve system if there are states for which the probability is unknown.
 		if (maybeStates.getNumberOfSetBits() > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			mrmc::storage::SquareSparseMatrix<double>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
-			// Converting the matrix to the form needed for the equation system. That is, we go from
-			// x = A*x + b to (I-A)x = b.
+			mrmc::storage::SquareSparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
+			// Converting the matrix from the fixpoint notation to the form needed for the equation
+			// system. That is, we go from x = A*x + b to (I-A)x = b.
 			submatrix->convertToEquationSystem();
 
 			// Transform the submatrix to the gmm++ format to use its solvers.
-			gmm::csr_matrix<double>* gmmxxMatrix = submatrix->toGMMXXSparseMatrix();
+			gmm::csr_matrix<Type>* gmmxxMatrix = submatrix->toGMMXXSparseMatrix();
 
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
 			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
@@ -133,11 +132,13 @@ public:
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
-			std::vector<double> b(maybeStates.getNumberOfSetBits());
-			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &x);
+			std::vector<Type> b(maybeStates.getNumberOfSetBits());
+			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &b);
 
+			LOG4CPLUS_DEBUG(logger, "Computing preconditioner.");
 			// Set up the precondition of the iterative solver.
-			gmm::ilu_precond<gmm::csr_matrix<double>> P(*gmmxxMatrix);
+			gmm::ilu_precond<gmm::csr_matrix<Type>> P(*gmmxxMatrix);
+			LOG4CPLUS_DEBUG(logger, "Done computing preconditioner.");
 			// Prepare an iteration object that determines the accuracy, maximum number of iterations
 			// and the like.
 			gmm::iteration iter(0.000001);
@@ -145,7 +146,13 @@ public:
 			// Now do the actual solving.
 			LOG4CPLUS_INFO(logger, "Starting iterative solver.");
 			gmm::bicgstab(*gmmxxMatrix, x, b, P, iter);
-			LOG4CPLUS_INFO(logger, "Iterative solver converged.");
+
+			// Check if the solver converged and issue a warning otherwise.
+			if (iter.converged()) {
+				LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
+			} else {
+				LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+			}
 
 			// Set values of resulting vector according to result.
 			mrmc::utility::setVectorValues<Type>(result, maybeStates, x);
@@ -154,8 +161,9 @@ public:
 			delete gmmxxMatrix;
 		}
 
-		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, static_cast<double>(0));
-		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, static_cast<double>(1.0));
+		// Set values of resulting vector that are known exactly.
+		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, static_cast<Type>(0));
+		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, static_cast<Type>(1.0));
 
 		return result;
 	}

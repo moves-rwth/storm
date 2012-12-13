@@ -186,17 +186,23 @@ public:
 	 */
 	mrmc::storage::BitVector* checkProbabilisticIntervalOperator(
 			const mrmc::formula::ProbabilisticIntervalOperator<Type>& formula) const {
+		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
 
+		// Create resulting bit vector, which will hold the yes/no-answer for every state.
 		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
+
+		// Now, we can compute which states meet the bound specified in this operator, i.e.
+		// lie in the interval that was given along with this operator, and set the corresponding bits
+		// to true in the resulting vector.
 		Type lower = formula.getLowerBound();
 		Type upper = formula.getUpperBound();
 		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
 			if ((*probabilisticResult)[i] >= lower && (*probabilisticResult)[i] <= upper) result->set(i, true);
 		}
 
+		// Delete the probabilities computed for the states and return result.
 		delete probabilisticResult;
-
 		return result;
 	}
 
