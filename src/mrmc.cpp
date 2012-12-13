@@ -75,7 +75,7 @@ int main(const int argc, const char* argv[]) {
 
 	try {
 		s = mrmc::settings::newInstance(argc, argv, nullptr);
-	} catch (mrmc::exceptions::InvalidSettings& e) {
+	} catch (mrmc::exceptions::InvalidSettings e) {
 		LOG4CPLUS_FATAL(logger, "InvalidSettings error: " << e.what());
 		LOG4CPLUS_FATAL(logger, "Could not recover from settings error, terminating.");
 		std::cout << "Could not recover from settings error: " << e.what() << std::endl;
