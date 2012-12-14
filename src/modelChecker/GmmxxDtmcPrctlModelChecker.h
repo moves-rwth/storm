@@ -150,35 +150,48 @@ public:
 			// Now do the actual solving.
 			LOG4CPLUS_INFO(logger, "Starting iterative solver.");
 			const std::string& precond = s->getString("precond");
+			if (precond == "ilu") {
+				LOG4CPLUS_INFO(logger, "Using ILU preconditioner.");
+			} else if (precond == "diagonal") {
+				LOG4CPLUS_INFO(logger, "Using diagonal preconditioner.");
+			} else if (precond == "ildlt") {
+				LOG4CPLUS_INFO(logger, "Using ILDLT preconditioner.");
+			} else if (precond == "none") {
+				LOG4CPLUS_INFO(logger, "Using no preconditioner.");
+			}
+
 			if (s->getString("lemethod").compare("bicgstab") == 0) {
+				LOG4CPLUS_INFO(logger, "Using BiCGStab method.");
 				if (precond.compare("ilu")) {
 					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
-				} else if (precond.compare("diagonal") == 0) {
+				} else if (precond == "diagonal") {
 					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
-				} else if (precond.compare("ildlt") == 0) {
+				} else if (precond == "ildlt") {
 					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
-				} else if (precond.compare("none") == 0) {
+				} else if (precond == "none") {
 					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::identity_matrix(), iter);
 				}
 			// FIXME: gmres has been disabled, because it triggers gmm++ compilation errors
 			/* } else if (s->getString("lemethod").compare("gmres") == 0) {
+				LOG4CPLUS_INFO(logger, "Using GMRES method.");
 				if (precond.compare("ilu")) {
 					gmm::gmres(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), s->get<unsigned>("restart"), iter);
-				} else if (precond.compare("diagonal") == 0) {
+				} else if (precond == "diagonal") {
 					gmm::gmres(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), s->get<unsigned>("restart"), iter);
-				} else if (precond.compare("ildlt") == 0) {
+				} else if (precond == "ildlt") {
 					gmm::gmres(*gmmxxMatrix, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), s->get<unsigned>("restart"), iter);
-				} else if (precond.compare("none") == 0) {
+				} else if (precond == "none") {
 					gmm::gmres(*gmmxxMatrix, x, b, gmm::identity_matrix(), s->get<unsigned>("restart"), iter);
 				} */
 			} else if (s->getString("lemethod").compare("qmr") == 0) {
+				LOG4CPLUS_INFO(logger, "Using QMR method.");
 				if (precond.compare("ilu")) {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
-				} else if (precond.compare("diagonal") == 0) {
+				} else if (precond == "diagonal" == 0) {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
-				} else if (precond.compare("ildlt") == 0) {
+				} else if (precond == "ildlt") {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
-				} else if (precond.compare("none") == 0) {
+				} else if (precond == "none") {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::identity_matrix(), iter);
 				}
 			}
