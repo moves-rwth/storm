@@ -143,6 +143,7 @@ void Settings::initDescriptions()
 		("test-prctl", bpo::value<std::string>(), "name of prctl file")
 		("trafile", bpo::value<std::string>()->required(), "name of the .tra file")
 		("labfile", bpo::value<std::string>()->required(), "name of the .lab file")
+		("matrixlib", bpo::value<std::string>()->default_value("gmm++"), "name of the matrix library")
 	;
 }
 
