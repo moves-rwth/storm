@@ -52,7 +52,7 @@ namespace settings {
 			 */
 			template <typename T>
 			const T& get(const std::string &name) const {
-				if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettings();
+				if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettings() << "Could not read option " << name << ".";
 				return this->vm[name].as<T>();
 			}
 		
@@ -113,9 +113,9 @@ namespace settings {
 				// build description name
 				std::stringstream str;
 				str << T::getModuleName() << " (" << trigger.first << " = " << trigger.second << ")";
-				bpo::options_description* desc = new bpo::options_description(str.str());
+				std::shared_ptr<bpo::options_description> desc = std::shared_ptr<bpo::options_description>(new bpo::options_description(str.str()));
 				// but options
-				T::putOptions(desc);
+				T::putOptions(desc.get());
 				// store
 				Settings::modules[ trigger ] = desc;
 			}
@@ -159,7 +159,7 @@ namespace settings {
 			/*!
 			 *	@brief	Contains option descriptions for all modules.
 			 */
-			static std::map< std::pair< std::string, std::string >, bpo::options_description* > modules;
+			static std::map< std::pair< std::string, std::string >, std::shared_ptr<bpo::options_description> > modules;
 			
 			/*!
 			 *	@brief	option mapping.

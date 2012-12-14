@@ -89,6 +89,33 @@ namespace
 			ws = *( space );
 			value %= ( double_ | int_ ); // double_ must be *before* int_
 			type = string("int") | string("double");
+			
+			/*
+			 *	Todo:
+			 *	Use two arguments at one point in the code, e.g. do something like
+			 *		this->variables[ variable ] = value
+			 *	
+			 *	You can have local variables in rules, but somehow does not work.
+			 *	You can also (somehow) let a rule return some arbitrary class and let boost magically collect the arguments for the constructor.
+			 *	No idea how this can possibly work, did not get this to work.
+			 *	You can also generate a syntax tree and do this manually (-> utree)... somehow.
+			 *
+			 *	Attention: spirit had some major upgrades in the last few releases. 1.48 already lacks some features that might be useful.
+			 *
+			 *	The rules parse the const definitions of
+			 *	http://www.prismmodelchecker.org/manual/PropertySpecification/PropertiesFiles
+			 *	We actually do not need them, but the problems I described above are fairly generic.
+			 *	We will not be able to parse the formulas if we don't solve them...
+			 *
+			 *	Example input:
+			 *		const int k = 7;
+			 *		const double T = 9;
+			 *		const double p = 0.01;
+			 *
+			 *	Parser can be run via ./mrmc --test-prctl <filename> foo bar
+			 *		foo and bar are necessary, otherwise the option parser fails...
+			 */
+			
 			varDef = 
 				string("const") >> ws >> 
 				type >> ws >> 

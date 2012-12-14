@@ -7,6 +7,8 @@
 
 #include "src/utility/settings.h"
 
+#include "src/exceptions/BaseException.h"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -25,7 +27,7 @@ std::unique_ptr<bpo::options_description> mrmc::settings::Settings::desc = nullp
 std::string mrmc::settings::Settings::binaryName = "";
 mrmc::settings::Settings* mrmc::settings::Settings::inst = nullptr;
 
-std::map< std::pair<std::string, std::string>, bpo::options_description* > mrmc::settings::Settings::modules;
+std::map< std::pair<std::string, std::string>, std::shared_ptr<bpo::options_description> > mrmc::settings::Settings::modules;
 
 /*!
  *	The constructor fills the option descriptions, parses the
@@ -72,6 +74,8 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		// Perform first parse run
 		this->firstRun(argc, argv, filename);
 		
+		// Buffer for items to be deleted
+		std::list< std::pair< std::string, std::string > > deleteQueue;
 		// Check module triggers
 		for (auto it : Settings::modules)
 		{
@@ -81,11 +85,12 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 				if (this->vm[trigger.first].as<std::string>().compare(trigger.second) == 0)
 				{
 					Settings::desc->add(*it.second);
-					Settings::modules.erase(trigger);
+					deleteQueue.push_back(trigger);
 				}
 			}
-			
 		}
+		for (auto it : deleteQueue) Settings::modules.erase(it);
+		
 		
 		// Stop if help is set
 		if (this->vm.count("help") > 0)
@@ -107,27 +112,19 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 	}
 	catch (bpo::required_option e)
 	{
-		std::cerr << "Required option: " << e.what() << std::endl;
-		LOG4CPLUS_ERROR(logger, "Required option: " << e.what());
-		throw mrmc::exceptions::InvalidSettings();
+		throw mrmc::exceptions::InvalidSettings() << "Required option missing";
 	}
 	catch (bpo::validation_error e)
 	{
-		std::cerr << "Validation failed: " << e.what() << std::endl;
-		LOG4CPLUS_ERROR(logger, "Validation failed: " << e.what());
-		throw mrmc::exceptions::InvalidSettings();
+		throw mrmc::exceptions::InvalidSettings() << "Validation failed: " << e.what();
 	}
 	catch (bpo::invalid_command_line_syntax e)
 	{
-		std::cerr << "Invalid command line syntax: " << e.what() << std::endl;
-		LOG4CPLUS_ERROR(logger, "Invalid command line syntax: " << e.what());
-		throw mrmc::exceptions::InvalidSettings();
+		throw mrmc::exceptions::InvalidSettings() << e.what();
 	}
 	catch (bpo::error e)
 	{
-		std::cerr << e.what() << std::endl;
-		LOG4CPLUS_ERROR(logger, "Unknown error: " << e.what());
-		throw mrmc::exceptions::InvalidSettings();
+		throw mrmc::exceptions::InvalidSettings() << e.what();
 	}
 }
 

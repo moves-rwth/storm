@@ -62,7 +62,7 @@ void setUpConsoleLogging() {
 int main(const int argc, const char* argv[]) {
 	setUpFileLogging();
 
-	mrmc::settings::Settings* s = NULL;
+	mrmc::settings::Settings* s = nullptr;
 	
 	LOG4CPLUS_INFO(logger, "This is the Markov Reward Model Checker (MRMC) by i2 of RWTH Aachen University.");
 
@@ -74,9 +74,12 @@ int main(const int argc, const char* argv[]) {
 	LOG4CPLUS_INFO(logger, "MRMC command invoked " << commandStream.str());
 
 	try {
+		mrmc::settings::Settings::registerModule<mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> >();
 		s = mrmc::settings::newInstance(argc, argv, nullptr);
-	} catch (mrmc::exceptions::InvalidSettings&) {
+	} catch (mrmc::exceptions::InvalidSettings e) {
+		LOG4CPLUS_FATAL(logger, "InvalidSettings error: " << e.what());
 		LOG4CPLUS_FATAL(logger, "Could not recover from settings error, terminating.");
+		std::cout << "Could not recover from settings error: " << e.what() << std::endl;
 		std::cout << std::endl << mrmc::settings::help;
 		delete s;
 		return 1;
@@ -106,14 +109,16 @@ int main(const int argc, const char* argv[]) {
 	dtmc.printModelInformationToStream(std::cout);
 
 	// Uncomment this if you want to see the first model checking procedure in action. :)
+
 	mrmc::modelChecker::EigenDtmcPrctlModelChecker<double> mc(dtmc);
 	mrmc::formula::AP<double>* trueFormula = new mrmc::formula::AP<double>(std::string("true"));
 	mrmc::formula::AP<double>* ap = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
 	mrmc::formula::Until<double>* until = new mrmc::formula::Until<double>(trueFormula, ap);
 	
-	std::vector<double>* eigenResult = NULL;
+	
 	try {
-		eigenResult = mc.checkPathFormula(*until);
+		std::vector<double>* eigenResult = mc.checkPathFormula(*until);
+		delete eigenResult;
 	} catch (mrmc::exceptions::NoConvergence& nce) {
 		// solver did not converge
 		LOG4CPLUS_ERROR(logger, "EigenDtmcPrctlModelChecker did not converge with " << nce.getIterationCount() << " of max. " << nce.getMaxIterationCount() << "Iterations!");
@@ -121,13 +126,16 @@ int main(const int argc, const char* argv[]) {
 	}
 	delete until;
 
+
 	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> mcG(dtmc);
 	mrmc::formula::AP<double>* trueFormulaG = new mrmc::formula::AP<double>(std::string("true"));
 	mrmc::formula::AP<double>* apG = new mrmc::formula::AP<double>(std::string("observe0Greater1"));
 	mrmc::formula::Until<double>* untilG = new mrmc::formula::Until<double>(trueFormulaG, apG);
-	std::vector<double>* gmmResult = mcG.checkPathFormula(*untilG);
+	std::vector<double>* vec = mcG.checkPathFormula(*untilG);
+	delete vec;
 	delete untilG;
 
+	/*
 	if (eigenResult->size() != gmmResult->size()) {
 		LOG4CPLUS_ERROR(logger, "Warning: Eigen and GMM produced different results (Eigen: " << eigenResult->size() << ", Gmm: " << gmmResult->size() << ") in size!");
 	} else {
@@ -141,6 +149,7 @@ int main(const int argc, const char* argv[]) {
 			}
 		}
 	}
+	*/
 
 	/*
 	LOG4CPLUS_INFO(logger, "Result: ");
