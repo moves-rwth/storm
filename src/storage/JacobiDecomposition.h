@@ -26,7 +26,7 @@ template <class T>
 class JacobiDecomposition {
 
 public:
-	JacobiDecomposition(mrmc::storage::SquareSparseMatrix<T> * const jacobiLuMatrix, mrmc::storage::SquareSparseMatrix<T> * const jacobiDInvMatrix) : this->jacobiLuMatrix(jacobiLuMatrix), this->jacobiDInvMatrix(jacobiDInvMatrix) {
+	JacobiDecomposition(mrmc::storage::SquareSparseMatrix<T> * const jacobiLuMatrix, mrmc::storage::SquareSparseMatrix<T> * const jacobiDInvMatrix) : jacobiLuMatrix(jacobiLuMatrix), jacobiDInvMatrix(jacobiDInvMatrix) {
 	}
 
 	~JacobiDecomposition() {
