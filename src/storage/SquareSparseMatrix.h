@@ -1,5 +1,5 @@
-#ifndef MRMC_SPARSE_STATIC_SPARSE_MATRIX_H_
-#define MRMC_SPARSE_STATIC_SPARSE_MATRIX_H_
+#ifndef MRMC_STORAGE_SQUARESPARSEMATRIX_H_
+#define MRMC_STORAGE_SQUARESPARSEMATRIX_H_
 
 #include <exception>
 #include <new>
@@ -12,6 +12,7 @@
 #include "src/exceptions/out_of_range.h"
 #include "src/exceptions/file_IO_exception.h"
 #include "src/storage/BitVector.h"
+#include "src/storage/JacobiDecomposition.h"
 
 #include "src/utility/const_templates.h"
 #include "Eigen/Sparse"
@@ -340,7 +341,7 @@ public:
 	 * @return True iff the value is set in the matrix, false otherwise.
 	 * On false, 0 will be written to *target.
 	 */
-	inline bool getValue(uint_fast64_t row, uint_fast64_t col, T* const target) {
+	inline bool getValue(uint_fast64_t row, uint_fast64_t col, T* const target) const {
 		// Check for illegal access indices.
 		if ((row > rowCount) || (col > rowCount)) {
 			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
@@ -377,6 +378,52 @@ public:
 		// Set 0 as the content and return false in case the element was not found.
 		*target = 0;
 		return false;
+	}
+
+	/*!
+	 * Gets the matrix element at the given row and column to the given value.
+	 * NOTE: This function does not check the internal status for errors for performance reasons.
+	 * WARNING: It is possible to modify through this function. Usage only valid 
+	 * for elements EXISTING in the sparse matrix! If the requested value does not exist, 
+	 * an exception will be thrown.
+	 * @param row The row in which the element is to be read.
+	 * @param col The column in which the element is to be read.
+	 *
+	 * @return A reference to the value
+	 */
+	inline T& getValue(uint_fast64_t row, uint_fast64_t col) {
+		// Check for illegal access indices.
+		if ((row > rowCount) || (col > rowCount)) {
+			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
+			throw mrmc::exceptions::out_of_range("Trying to read a value from illegal position.");
+			return false;
+		}
+
+		// Read elements on the diagonal directly.
+		if (row == col) {
+			return diagonalStorage[row];
+		}
+
+		// In case the element is not on the diagonal, we have to iterate
+		// over the accessed row to find the element.
+		uint_fast64_t rowStart = rowIndications[row];
+		uint_fast64_t rowEnd = rowIndications[row + 1];
+		while (rowStart < rowEnd) {
+			// If the lement is found, write the content to the specified
+			// position and return true.
+			if (columnIndications[rowStart] == col) {
+				return valueStorage[rowStart];
+			}
+			// If the column of the current element is already larger than the
+			// requested column, the requested element cannot be contained
+			// in the matrix and we may therefore stop searching.
+			if (columnIndications[rowStart] > col) {
+				break;
+			}
+			++rowStart;
+		}
+
+		throw mrmc::exceptions::invalid_argument("Trying to get a reference to a non-existant value.");
 	}
 
 	/*!
@@ -713,7 +760,7 @@ public:
 	 * @return The sum of the elements in the given row whose column bits
 	 * are set to one on the given constraint.
 	 */
-	T getConstrainedRowSum(const uint_fast64_t row, const mrmc::storage::BitVector& constraint) {
+	T getConstrainedRowSum(const uint_fast64_t row, const mrmc::storage::BitVector& constraint) const {
 		T result(0);
 		for (uint_fast64_t i = rowIndications[row]; i < rowIndications[row + 1]; ++i) {
 			if (constraint.get(columnIndications[i])) {
@@ -731,7 +778,7 @@ public:
 	 * @param resultVector A pointer to the resulting vector that has at least
 	 * as many elements as there are bits set to true in the constraint.
 	 */
-	void getConstrainedRowCountVector(const mrmc::storage::BitVector& rowConstraint, const mrmc::storage::BitVector& columnConstraint, std::vector<T>* resultVector) {
+	void getConstrainedRowCountVector(const mrmc::storage::BitVector& rowConstraint, const mrmc::storage::BitVector& columnConstraint, std::vector<T>* resultVector) const {
 		uint_fast64_t currentRowCount = 0;
 		for (auto row : rowConstraint) {
 			(*resultVector)[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
@@ -744,7 +791,7 @@ public:
 	 * @param constraint A bit vector indicating which rows and columns to drop.
 	 * @return A pointer to a sparse matrix that is a sub-matrix of the current one.
 	 */
-	SquareSparseMatrix* getSubmatrix(mrmc::storage::BitVector& constraint) {
+	SquareSparseMatrix* getSubmatrix(mrmc::storage::BitVector& constraint) const {
 		LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix with " << constraint.getNumberOfSetBits() << " rows.");
 
 		// Check for valid constraint.
@@ -829,10 +876,30 @@ public:
 	}
 
 	/*!
+	 * Calculates the Jacobi-Decomposition of this sparse matrix.
+	 * @return A pointer to a class containing the matrix L+U and the inverted diagonal matrix D^-1
+	 */
+	mrmc::storage::JacobiDecomposition<T>* getJacobiDecomposition() const {
+		uint_fast64_t rowCount = this->getRowCount();
+		SquareSparseMatrix<T> *resultLU = new SquareSparseMatrix<T>(this);
+		SquareSparseMatrix<T> *resultDinv = new SquareSparseMatrix<T>(rowCount);
+		// no entries apart from those on the diagonal
+		resultDinv->initialize(0);
+		// copy diagonal entries to other matrix
+		T dummy;
+		for (int i = 0; i < rowCount; ++i) {
+			resultDinv->addNextValue(i, i, resultLU->getValue(i, i));
+			resultLU->getValue(i, i) = mrmc::utility::constGetZero(&dummy);
+		}
+
+		return new mrmc::storage::JacobiDecomposition<T>(resultLU, resultDinv);
+	}
+
+	/*!
 	 * Returns the size of the matrix in memory measured in bytes.
 	 * @return The size of the matrix in memory measured in bytes.
 	 */
-	uint_fast64_t getSizeInMemory() {
+	uint_fast64_t getSizeInMemory() const {
 		uint_fast64_t size = sizeof(*this);
 		// Add value_storage size.
 		size += sizeof(T) * nonZeroEntryCount;
@@ -865,7 +932,7 @@ public:
 		return this->columnIndications + this->rowIndications[row + 1];
 	}
 
-	void print() {
+	void print() const {
 		std::cout << "diag: --------------------------------" << std::endl;
 		for (uint_fast64_t i = 0; i < rowCount; ++i) {
 			std::cout << "(" << i << "," << i << ") = " << diagonalStorage[i] << std::endl;
@@ -999,7 +1066,7 @@ private:
 	 * the given Eigen matrix.
 	 */
 	template<typename _Scalar, int _Options, typename _Index>
-	_Index getEigenSparseMatrixCorrectNonZeroEntryCount(const Eigen::SparseMatrix<_Scalar, _Options, _Index>& eigen_sparse_matrix) {
+	_Index getEigenSparseMatrixCorrectNonZeroEntryCount(const Eigen::SparseMatrix<_Scalar, _Options, _Index>& eigen_sparse_matrix) const {
 		const _Index* indexPtr = eigen_sparse_matrix.innerIndexPtr();
 		const _Index* outerPtr = eigen_sparse_matrix.outerIndexPtr();
 
@@ -1040,8 +1107,10 @@ private:
 
 };
 
-} // namespace sparse
+
+
+} // namespace storage
 
 } // namespace mrmc
 
-#endif // MRMC_SPARSE_STATIC_SPARSE_MATRIX_H_
+#endif // MRMC_STORAGE_SQUARESPARSEMATRIX_H_

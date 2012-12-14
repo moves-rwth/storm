@@ -35,8 +35,15 @@ inline int_fast32_t constGetZero(int_fast32_t&) {
    return 0;
 }
 
-/*! @internal
- * Specialization of constGetZero for int_fast32_t
+/*! @cond TEMPLATE_SPECIALIZATION
+ * (exclude the specializations from the documentation) */
+template <>
+inline uint_fast64_t constGetZero(uint_fast64_t&) {
+   return 0;
+}
+
+/*! @cond TEMPLATE_SPECIALIZATION
+ * Specialization of constGetZero for double
  */
 template <>
 inline double constGetZero(double&) {
@@ -66,6 +73,15 @@ inline int_fast32_t constGetOne(int_fast32_t&) {
    return 1;
 }
 
+/*! @cond TEMPLATE_SPECIALIZATION
+ * (exclude the specializations from the documentation) */
+template<>
+inline uint_fast64_t constGetOne(uint_fast64_t&) {
+   return 1;
+}
+
+/*! @cond TEMPLATE_SPECIALIZATION
+ * (exclude the specializations from the documentation) */
 template<>
 inline double constGetOne(double&) {
    return 1.0;
