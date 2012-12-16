@@ -9,7 +9,7 @@
 #define GRAPHANALYZER_H_
 
 #include "src/models/Dtmc.h"
-#include "src/exceptions/invalid_argument.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -38,7 +38,7 @@ public:
 		// Check for valid parameter.
 		if (existsPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'existsPhiUntilPhiStates' must not be null.");
-			throw mrmc::exceptions::invalid_argument("Parameter 'existsPhiUntilPhiStates' must not be null.");
+			throw mrmc::exceptions::InvalidArgumentException("Parameter 'existsPhiUntilPhiStates' must not be null.");
 		}
 
 		// Get the backwards transition relation from the model to ease the search.
@@ -85,7 +85,7 @@ public:
 		// Check for valid parameter.
 		if (alwaysPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'alwaysPhiUntilPhiStates' must not be null.");
-			throw mrmc::exceptions::invalid_argument("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+			throw mrmc::exceptions::InvalidArgumentException("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
 		}
 
 		GraphAnalyzer::getExistsPhiUntilPsiStates(model, ~psiStates, ~existsPhiUntilPsiStates, alwaysPhiUntilPsiStates);
@@ -109,11 +109,11 @@ public:
 		// Check for valid parameters.
 		if (existsPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'existsPhiUntilPhiStates' must not be null.");
-			throw mrmc::exceptions::invalid_argument("Parameter 'existsPhiUntilPhiStates' must not be null.");
+			throw mrmc::exceptions::InvalidArgumentException("Parameter 'existsPhiUntilPhiStates' must not be null.");
 		}
 		if (alwaysPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'alwaysPhiUntilPhiStates' must not be null.");
-			throw mrmc::exceptions::invalid_argument("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+			throw mrmc::exceptions::InvalidArgumentException("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
 		}
 
 		// Perform search.

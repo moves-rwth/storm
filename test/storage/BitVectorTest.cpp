@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "src/storage/BitVector.h"
-#include "src/exceptions/invalid_argument.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 TEST(BitVectorTest, GetSetTest) {
 	mrmc::storage::BitVector *bv = NULL;

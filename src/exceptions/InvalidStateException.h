@@ -1,5 +1,5 @@
-#ifndef MRMC_EXCEPTIONS_INVALID_STATE_H_
-#define MRMC_EXCEPTIONS_INVALID_STATE_H_
+#ifndef MRMC_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_
+#define MRMC_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_
 
 #include <exception>
 
@@ -9,7 +9,7 @@ namespace exceptions {
 
 //!This exception is thrown when a memory request can't be
 //!fulfilled.
-class invalid_state : public std::exception
+class InvalidStateException : public std::exception
 {
  public:
 /* The Visual C++-Version of the exception class has constructors accepting
@@ -19,19 +19,19 @@ class invalid_state : public std::exception
  * constructor is used under linux (which will ignore the parameter)
  */
 #ifdef _WIN32
-   invalid_state() : exception("::mrmc::invalid_state"){}
-   invalid_state(const char * const s): exception(s) {}
+   InvalidStateException() : exception("::mrmc::InvalidStateException"){}
+   InvalidStateException(const char * const s): exception(s) {}
 #else
-   invalid_state() : exception() {}
-   invalid_state(const char * const s): exception() {}
+   InvalidStateException() : exception() {}
+   InvalidStateException(const char * const s): exception() {}
 
 #endif
    virtual const char* what() const throw()
-      {  return "mrmc::invalid_state";  }
+      {  return "mrmc::InvalidStateException";  }
 };
 
 } // namespace exceptions
 
 } // namespace mrmc
 
-#endif // MRMC_EXCEPTIONS_INVALID_STATE_H_
+#endif // MRMC_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_

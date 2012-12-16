@@ -9,6 +9,7 @@
 #define MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_
 
 #include "src/storage/BitVector.h"
+#include "src/exceptions/OutOfRangeException.h"
 #include <ostream>
 #include <stdexcept>
 #include <unordered_map>
@@ -81,10 +82,10 @@ public:
 	 */
 	uint_fast64_t addAtomicProposition(std::string ap) {
 		if (nameToLabelingMap.count(ap) != 0) {
-			throw std::out_of_range("Atomic Proposition already exists.");
+			throw mrmc::exceptions::OutOfRangeException("Atomic Proposition already exists.");
 		}
 		if (apsCurrent >= apCountMax) {
-			throw std::out_of_range("Added more atomic propositions than"
+			throw mrmc::exceptions::OutOfRangeException("Added more atomic propositions than"
 					"previously declared.");
 		}
 		nameToLabelingMap[ap] = apsCurrent;
@@ -109,10 +110,12 @@ public:
 	 */
 	void addAtomicPropositionToState(std::string ap, const uint_fast64_t state) {
 		if (nameToLabelingMap.count(ap) == 0) {
-			throw std::out_of_range("Atomic Proposition '" + ap + "' unknown.");
+			/*throw mrmc::exceptions::OutOfRangeException("Atomic Proposition '" << ap << "' unknown.");*/
+			// TODO !!!
+			throw mrmc::exceptions::OutOfRangeException("Atomic Proposition '' unknown.");
 		}
 		if (state >= stateCount) {
-			throw std::out_of_range("State index out of range.");
+			throw mrmc::exceptions::OutOfRangeException("State index out of range.");
 		}
 		this->singleLabelings[nameToLabelingMap[ap]]->set(state, true);
 	}
@@ -124,7 +127,7 @@ public:
 	 */
 	std::set<std::string> getPropositionsForState(uint_fast64_t state) {
 		if (state >= stateCount) {
-			throw std::out_of_range("State index out of range.");
+			throw mrmc::exceptions::OutOfRangeException("State index out of range.");
 		}
 		std::set<std::string> result;
 		for (auto it = nameToLabelingMap.begin();

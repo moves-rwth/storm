@@ -1,12 +1,12 @@
 /*
- * settings.h
+ * Settings.h
  *
  *  Created on: 22.11.2012
  *      Author: Gereon Kremer
  */
 
-#ifndef SETTINGS_H_
-#define SETTINGS_H_
+#ifndef MRMC_SETTINGS_SETTINGS_H_
+#define MRMC_SETTINGS_SETTINGS_H_
 
 #include <iostream>
 #include <sstream>
@@ -212,4 +212,4 @@ namespace settings {
 } // namespace settings
 } // namespace mrmc
 
-#endif // SETTINGS_H_
+#endif // MRMC_SETTINGS_SETTINGS_H_

@@ -8,12 +8,12 @@
 #ifndef EIGENDTMCPRCTLMODELCHECKER_H_
 #define EIGENDTMCPRCTLMODELCHECKER_H_
 
-#include "src/utility/vector.h"
+#include "src/utility/Vector.h"
 
 #include "src/models/Dtmc.h"
 #include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
-#include "src/utility/const_templates.h"
+#include "src/utility/ConstTemplates.h"
 #include "src/exceptions/NoConvergence.h"
 
 #include "Eigen/Sparse"

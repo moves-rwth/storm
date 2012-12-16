@@ -8,7 +8,7 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
-#include "src/utility/osDetection.h"
+#include "src/utility/OsDetection.h"
 
 #if defined LINUX || defined MACOSX
 #	include <sys/mman.h>
@@ -23,8 +23,8 @@
 #include <iostream>
 
 #include <boost/integer/integer_mask.hpp>
-#include "src/exceptions/file_IO_exception.h"
-#include "src/exceptions/wrong_file_format.h"
+#include "src/exceptions/FileIoException.h"
+#include "src/exceptions/WrongFileFormatException.h"
 
 namespace mrmc {
 

@@ -1,12 +1,12 @@
 /*
- * ioUtility.h
+ * IoUtility.h
  *
  *  Created on: 17.10.2012
  *      Author: Thomas Heinemann
  */
 
-#ifndef UTILITY_H_
-#define UTILITY_H_
+#ifndef MRMC_UTILITY_IOUTILITY_H_
+#define MRMC_UTILITY_IOUTILITY_H_
 
 #include "src/models/Dtmc.h"
 
@@ -42,4 +42,4 @@ mrmc::models::Dtmc<double>* parseDTMC(const char* tra_file, const char* lab_file
 
 } //namespace mrmc
 
-#endif /* UTILITY_H_ */
+#endif /* MRMC_UTILITY_IOUTILITY_H_ */

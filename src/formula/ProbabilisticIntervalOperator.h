@@ -10,7 +10,7 @@
 
 #include "PCTLStateFormula.h"
 #include "PCTLPathFormula.h"
-#include "utility/const_templates.h"
+#include "utility/ConstTemplates.h"
 
 namespace mrmc {
 

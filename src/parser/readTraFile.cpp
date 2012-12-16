@@ -8,8 +8,8 @@
 #include "parser.h"
 
 #include "src/parser/readTraFile.h"
-#include "src/exceptions/file_IO_exception.h"
-#include "src/exceptions/wrong_file_format.h"
+#include "src/exceptions/FileIoException.h"
+#include "src/exceptions/WrongFileFormatException.h"
 #include "boost/integer/integer_mask.hpp"
 #include <cstdlib>
 #include <cstdio>
@@ -142,7 +142,7 @@ TraParser::TraParser(const char * filename)
 	if (non_zero == 0)
 	{
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
-		throw mrmc::exceptions::wrong_file_format();
+		throw mrmc::exceptions::WrongFileFormatException();
 	}
 	
 	/*
@@ -195,7 +195,7 @@ TraParser::TraParser(const char * filename)
 		if ((val <= 0.0) || (val > 1.0))
 		{
 			LOG4CPLUS_ERROR(logger, "Found transition probability of " << val << ", but we think probabilities should be from (0,1].");
-			throw mrmc::exceptions::wrong_file_format();
+			throw mrmc::exceptions::WrongFileFormatException();
 		}
 		this->matrix->addNextValue(row,col,val);
 		buf = skipWS(buf);

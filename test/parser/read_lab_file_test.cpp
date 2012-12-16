@@ -9,14 +9,14 @@
 #include "mrmc-config.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/readLabFile.h"
-#include "src/exceptions/file_IO_exception.h"
-#include "src/exceptions/wrong_file_format.h"
+#include "src/exceptions/FileIoException.h"
+#include "src/exceptions/WrongFileFormatException.h"
 
 #include <memory>
 
 TEST(ReadLabFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
-   ASSERT_THROW(mrmc::parser::LabParser(0,MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::file_IO_exception);
+   ASSERT_THROW(mrmc::parser::LabParser(0,MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::FileIoException);
 }
 
 TEST(ReadLabFileTest, ParseTest) {
@@ -86,14 +86,14 @@ TEST(ReadLabFileTest, ParseTest) {
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest1) {
-   ASSERT_THROW(mrmc::parser::LabParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::LabParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), mrmc::exceptions::WrongFileFormatException);
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest2) {
-   ASSERT_THROW(mrmc::parser::LabParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::LabParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), mrmc::exceptions::WrongFileFormatException);
 }
 
 TEST(ReadLabFileTest, WrongPropositionTest) {
-   ASSERT_THROW(mrmc::parser::LabParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), mrmc::exceptions::wrong_file_format);
+   ASSERT_THROW(mrmc::parser::LabParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), mrmc::exceptions::WrongFileFormatException);
 }
 

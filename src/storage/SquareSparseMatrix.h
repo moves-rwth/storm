@@ -7,14 +7,14 @@
 #include <iostream>
 #include "boost/integer/integer_mask.hpp"
 
-#include "src/exceptions/invalid_state.h"
-#include "src/exceptions/invalid_argument.h"
-#include "src/exceptions/out_of_range.h"
-#include "src/exceptions/file_IO_exception.h"
+#include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/OutOfRangeException.h"
+#include "src/exceptions/FileIoException.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/JacobiDecomposition.h"
 
-#include "src/utility/const_templates.h"
+#include "src/utility/ConstTemplates.h"
 #include "Eigen/Sparse"
 #include "gmm/gmm_matrix.h"
 
@@ -78,7 +78,7 @@ public:
 		// Check whether copying the matrix is safe.
 		if (!ssm.hasError()) {
 			LOG4CPLUS_ERROR(logger, "Trying to copy sparse matrix in error state.");
-			throw mrmc::exceptions::invalid_argument("Trying to copy sparse matrix in error state.");
+			throw mrmc::exceptions::InvalidArgumentException("Trying to copy sparse matrix in error state.");
 		} else {
 			// Try to prepare the internal storage and throw an error in case
 			// of a failure.
@@ -142,15 +142,15 @@ public:
 		if (internalStatus != MatrixStatus::UnInitialized) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize matrix that is not uninitialized.");
-			throw mrmc::exceptions::invalid_state("Trying to initialize matrix that is not uninitialized.");
+			throw mrmc::exceptions::InvalidStateException("Trying to initialize matrix that is not uninitialized.");
 		} else if (rowCount == 0) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to create initialize a matrix with 0 rows.");
-			throw mrmc::exceptions::invalid_argument("Trying to create initialize a matrix with 0 rows.");
+			throw mrmc::exceptions::InvalidArgumentException("Trying to create initialize a matrix with 0 rows.");
 		} else if (((rowCount * rowCount) - rowCount) < nonZeroEntries) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize a matrix with more non-zero entries than there can be.");
-			throw mrmc::exceptions::invalid_argument("Trying to initialize a matrix with more non-zero entries than there can be.");
+			throw mrmc::exceptions::InvalidArgumentException("Trying to initialize a matrix with more non-zero entries than there can be.");
 		} else {
 			// If it is safe, initialize necessary members and prepare the
 			// internal storage.
@@ -181,7 +181,7 @@ public:
 		if (!eigenSparseMatrix.isCompressed()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that is not in compressed form.");
-			throw mrmc::exceptions::invalid_argument("Trying to initialize from an Eigen matrix that is not in compressed form.");
+			throw mrmc::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that is not in compressed form.");
 		}
 
 		// Compute the actual (i.e. non-diagonal) number of non-zero entries.
@@ -274,7 +274,7 @@ public:
 		if ((row > rowCount) || (col > rowCount)) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ").");
-			throw mrmc::exceptions::out_of_range("Trying to add a value at illegal position.");
+			throw mrmc::exceptions::OutOfRangeException("Trying to add a value at illegal position.");
 		}
 
 		if (row == col) { // Set a diagonal element.
@@ -307,11 +307,11 @@ public:
 		if (!isInitialized()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to finalize an uninitialized matrix.");
-			throw mrmc::exceptions::invalid_state("Trying to finalize an uninitialized matrix.");
+			throw mrmc::exceptions::InvalidStateException("Trying to finalize an uninitialized matrix.");
 		} else if (currentSize != nonZeroEntryCount) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to finalize a matrix that was initialized with more non-zero entries than given.");
-			throw mrmc::exceptions::invalid_state("Trying to finalize a matrix that was initialized with more non-zero entries than given.");
+			throw mrmc::exceptions::InvalidStateException("Trying to finalize a matrix that was initialized with more non-zero entries than given.");
 		} else {
 			// Fill in the missing entries in the row_indications array.
 			// (Can happen because of empty rows at the end.)
@@ -345,7 +345,7 @@ public:
 		// Check for illegal access indices.
 		if ((row > rowCount) || (col > rowCount)) {
 			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
-			throw mrmc::exceptions::out_of_range("Trying to read a value from illegal position.");
+			throw mrmc::exceptions::OutOfRangeException("Trying to read a value from illegal position.");
 			return false;
 		}
 
@@ -395,7 +395,7 @@ public:
 		// Check for illegal access indices.
 		if ((row > rowCount) || (col > rowCount)) {
 			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
-			throw mrmc::exceptions::out_of_range("Trying to read a value from illegal position.");
+			throw mrmc::exceptions::OutOfRangeException("Trying to read a value from illegal position.");
 			return false;
 		}
 
@@ -423,7 +423,7 @@ public:
 			++rowStart;
 		}
 
-		throw mrmc::exceptions::invalid_argument("Trying to get a reference to a non-existant value.");
+		throw mrmc::exceptions::InvalidArgumentException("Trying to get a reference to a non-existant value.");
 	}
 
 	/*!
@@ -515,7 +515,7 @@ public:
 		if (!isReadReady()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
-			throw mrmc::exceptions::invalid_state("Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
+			throw mrmc::exceptions::InvalidStateException("Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
 		} else {
 			// Create the resulting matrix.
 			int_fast32_t eigenRows = static_cast<int_fast32_t>(rowCount);
@@ -733,7 +733,7 @@ public:
 		// Check whether the accessed state exists.
 		if (row > rowCount) {
 			LOG4CPLUS_ERROR(logger, "Trying to make an illegal row " << row << " absorbing.");
-			throw mrmc::exceptions::out_of_range("Trying to make an illegal row absorbing.");
+			throw mrmc::exceptions::OutOfRangeException("Trying to make an illegal row absorbing.");
 			return false;
 		}
 
@@ -797,7 +797,7 @@ public:
 		// Check for valid constraint.
 		if (constraint.getNumberOfSetBits() == 0) {
 			LOG4CPLUS_ERROR(logger, "Trying to create a sub-matrix of size 0.");
-			throw mrmc::exceptions::invalid_argument("Trying to create a sub-matrix of size 0.");
+			throw mrmc::exceptions::InvalidArgumentException("Trying to create a sub-matrix of size 0.");
 		}
 
 		// First, we need to determine the number of non-zero entries of the

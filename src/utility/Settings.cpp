@@ -1,11 +1,11 @@
 /*
- * settings.cpp
+ * Settings.cpp
  *
  *  Created on: 22.11.2012
  *      Author: Gereon Kremer
  */
 
-#include "src/utility/settings.h"
+#include "src/utility/Settings.h"
 
 #include "src/exceptions/BaseException.h"
 

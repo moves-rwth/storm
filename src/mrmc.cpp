@@ -12,7 +12,7 @@
  *  Description: Central part of the application containing the main() Method
  */
 
-#include "src/utility/osDetection.h"
+#include "src/utility/OsDetection.h"
 #include <iostream>
 #include <cstdio>
 #include <sstream>
@@ -28,7 +28,7 @@
 #include "src/parser/readTraFile.h"
 #include "src/parser/readPrctlFile.h"
 #include "src/solver/GraphAnalyzer.h"
-#include "src/utility/settings.h"
+#include "src/utility/Settings.h"
 #include "src/formula/Formulas.h"
 #include "src/exceptions/NoConvergence.h"
 

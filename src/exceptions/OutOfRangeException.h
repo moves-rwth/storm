@@ -1,5 +1,5 @@
-#ifndef MRMC_EXCEPTIONS_OUT_OF_RANGE_H_
-#define MRMC_EXCEPTIONS_OUT_OF_RANGE_H_
+#ifndef MRMC_EXCEPTIONS_OUTOFRANGEEXCEPTION_H_
+#define MRMC_EXCEPTIONS_OUTOFRANGEEXCEPTION_H_
 
 #include <exception>
 
@@ -8,7 +8,7 @@ namespace mrmc {
 namespace exceptions {
 
 //!This exception is thrown when a parameter is not in the range of valid values
-class out_of_range : public std::exception
+class OutOfRangeException : public std::exception
 {
  public:
 /* The Visual C++-Version of the exception class has constructors accepting
@@ -18,17 +18,17 @@ class out_of_range : public std::exception
  * constructor is used under linux (which will ignore the parameter)
  */
 #ifdef _WIN32
-   out_of_range() : exception("::mrmc::out_of_range"){}
-   out_of_range(const char * const s): exception(s) {}
+   OutOfRangeException() : exception("::mrmc::OutOfRangeException"){}
+   OutOfRangeException(const char * const s): exception(s) {}
 #else
-   out_of_range() : exception() {}
-   out_of_range(const char * const s): exception() {}
+   OutOfRangeException() : exception() {}
+   OutOfRangeException(const char * const s): exception() {}
 #endif
    virtual const char* what() const throw()
-      {  return "mrmc::out_of_range";  }
+      {  return "mrmc::OutOfRangeException";  }
 };
 
 } // namespace exceptions
 
 } // namespace mrmc
-#endif // MRMC_EXCEPTIONS_OUT_OF_RANGE_H_
+#endif // MRMC_EXCEPTIONS_OUTOFRANGEEXCEPTION_H_

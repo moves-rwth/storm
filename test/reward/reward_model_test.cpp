@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "Eigen/Sparse"
-#include "src/exceptions/invalid_argument.h"
+#include "src/exceptions/InvalidArgumentException.h"
 #include "boost/integer/integer_mask.hpp"
 #include <vector>
 

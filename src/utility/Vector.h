@@ -1,12 +1,12 @@
 /*
- * vector.h
+ * Vector.h
  *
  *  Created on: 06.12.2012
  *      Author: Christian Dehnert
  */
 
-#ifndef VECTOR_H_
-#define VECTOR_H_
+#ifndef MRMC_UTILITY_VECTOR_H_
+#define MRMC_UTILITY_VECTOR_H_
 
 #include "Eigen/src/Core/Matrix.h"
 
@@ -40,4 +40,4 @@ void setVectorValues(Eigen::Matrix<T, -1, 1, 0, -1, 1>* eigenVector, const mrmc:
 
 } //namespace mrmc
 
-#endif /* VECTOR_H_ */
+#endif /* MRMC_UTILITY_VECTOR_H_ */

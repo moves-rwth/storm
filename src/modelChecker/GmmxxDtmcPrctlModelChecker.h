@@ -13,9 +13,9 @@
 #include "src/models/Dtmc.h"
 #include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
-#include "src/utility/vector.h"
+#include "src/utility/Vector.h"
 
-#include "src/utility/settings.h"
+#include "src/utility/Settings.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"

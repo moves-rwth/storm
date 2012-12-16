@@ -1,5 +1,5 @@
-#ifndef MRMC_EXCEPTIONS_INVALID_ARGUMENT_H_
-#define MRMC_EXCEPTIONS_INVALID_ARGUMENT_H_
+#ifndef MRMC_EXCEPTIONS_INVALIDARGUMENTEXCEPTION_H_
+#define MRMC_EXCEPTIONS_INVALIDARGUMENTEXCEPTION_H_
 
 #include <exception>
 
@@ -8,7 +8,7 @@ namespace mrmc {
 namespace exceptions {
 
 //!This exception is thrown when a parameter is invalid in this context
-class invalid_argument : public std::exception
+class InvalidArgumentException : public std::exception
 {
  public:
 /* The Visual C++-Version of the exception class has constructors accepting
@@ -18,17 +18,17 @@ class invalid_argument : public std::exception
  * constructor is used under linux (which will ignore the parameter)
  */
 #ifdef _WIN32
-   invalid_argument() : exception("::mrmc::invalid_argument"){}
-   invalid_argument(const char * const s): exception(s) {}
+   InvalidArgumentException() : exception("::mrmc::InvalidArgumentException"){}
+   InvalidArgumentException(const char * const s): exception(s) {}
 #else
-   invalid_argument() : exception() {}
-   invalid_argument(const char * const s): exception() {}
+   InvalidArgumentException() : exception() {}
+   InvalidArgumentException(const char * const s): exception() {}
 #endif
    virtual const char* what() const throw()
-      {  return "mrmc::invalid_argument";  }
+      {  return "mrmc::InvalidArgumentException";  }
 };
 
 } // namespace exceptions
 
 } // namespace mrmc
-#endif // MRMC_EXCEPTIONS_INVALID_ARGUMENT_H_
+#endif // MRMC_EXCEPTIONS_INVALIDARGUMENTEXCEPTION_H_

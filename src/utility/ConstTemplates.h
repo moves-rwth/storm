@@ -1,12 +1,12 @@
 /*
- * const_templates.h
+ * ConstTemplates.h
  *
  *  Created on: 11.10.2012
  *      Author: Thomas Heinemann
  */
 
-#ifndef CONST_TEMPLATES_H_
-#define CONST_TEMPLATES_H_
+#ifndef MRMC_UTILITY_CONSTTEMPLATES_H_
+#define MRMC_UTILITY_CONSTTEMPLATES_H_
 
 namespace mrmc {
 
@@ -93,4 +93,4 @@ inline double constGetOne(double&) {
 } //namespace mrmc
 
 
-#endif /* CONST_TEMPLATES_H_ */
+#endif /* MRMC_UTILITY_CONSTTEMPLATES_H_ */
