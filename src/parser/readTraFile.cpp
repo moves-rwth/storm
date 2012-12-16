@@ -48,23 +48,20 @@ namespace parser{
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode)
-{
+uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode) {
 	uint_fast64_t non_zero = 0;
 	
 	/*
 	 *	check file header and extract number of transitions
 	 */
-	if (strncmp(buf, "STATES ", 7) != 0)
-	{
+	if (strncmp(buf, "STATES ", 7) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
 	}
 	buf += 7; // skip "STATES "
 	if (strtol(buf, &buf, 10) == 0) return 0;
 	buf = skipWS(buf);
-	if (strncmp(buf, "TRANSITIONS ", 12) != 0)
-	{
+	if (strncmp(buf, "TRANSITIONS ", 12) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
 	}
@@ -78,8 +75,7 @@ uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode)
 	double val;
 	maxnode = 0;
 	char* tmp;
-	while (buf[0] != '\0')
-	{
+	while (buf[0] != '\0') {
 		/*
 		 *	read row and column
 		 */
@@ -95,8 +91,7 @@ uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode)
 		 *	if row == col, we have a diagonal element which is treated seperately and this non_zero must be decreased.
 		 */
 		val = strtod(buf, &tmp);
-		if (val == 0.0)
-		{
+		if (val == 0.0) {
 			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
 			return 0;
 		}

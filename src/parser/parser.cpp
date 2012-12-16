@@ -27,11 +27,9 @@ extern log4cplus::Logger logger;
  *	@param end New pointer will be written there
  *	@return Result of strtol()
  */
-uint_fast64_t mrmc::parser::Parser::checked_strtol(const char* str, char** end)
-{
+uint_fast64_t mrmc::parser::Parser::checked_strtol(const char* str, char** end) {
 	uint_fast64_t res = strtol(str, end, 10);
-	if (str == *end)
-	{
+	if (str == *end) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing integer. Next input token is not a number.");
 		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
 		throw mrmc::exceptions::wrong_file_format();
@@ -45,8 +43,7 @@ uint_fast64_t mrmc::parser::Parser::checked_strtol(const char* str, char** end)
  *	@param buf String buffer
  *	@return	pointer to first non-whitespace character
  */
-char* mrmc::parser::Parser::skipWS(char* buf)
-{
+char* mrmc::parser::Parser::skipWS(char* buf) {
 	while ((*buf == ' ') || (*buf == '\t') || (*buf == '\n') || (*buf == '\r')) buf++;
 	return buf;
 }
@@ -57,33 +54,29 @@ char* mrmc::parser::Parser::skipWS(char* buf)
  *	and a log entry is written.
  *	@param filename file to be opened
  */
-mrmc::parser::MappedFile::MappedFile(const char* filename)
-{
+mrmc::parser::MappedFile::MappedFile(const char* filename) {
 #if defined LINUX || defined MACOSX
 	/*
 	 *	Do file mapping for reasonable systems.
 	 *	stat64(), open(), mmap()
 	 */
 #ifdef MACOSX
-	if (stat(filename, &(this->st)) != 0)
+	if (stat(filename, &(this->st)) != 0) {
 #else
-	if (stat64(filename, &(this->st)) != 0)
+	if (stat64(filename, &(this->st)) != 0) {
 #endif
-	{
 		LOG4CPLUS_ERROR(logger, "Error in stat(" << filename << ").");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in stat()");
 	}
 	this->file = open(filename, O_RDONLY);
 
-	if (this->file < 0)
-	{
+	if (this->file < 0) {
 		LOG4CPLUS_ERROR(logger, "Error in open(" << filename << ").");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in open()");
 	}
 			
 	this->data = (char*) mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0);
-	if (this->data == (char*)-1)
-	{
+	if (this->data == (char*)-1) {
 		close(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in mmap(" << filename << ").");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in mmap()");
@@ -94,30 +87,26 @@ mrmc::parser::MappedFile::MappedFile(const char* filename)
 	 *	Do file mapping for windows.
 	 *	_stat64(), CreateFile(), CreateFileMapping(), MapViewOfFile()
 	 */
-	if (_stat64(filename, &(this->st)) != 0)
-	{
+	if (_stat64(filename, &(this->st)) != 0) {
 		LOG4CPLUS_ERROR(logger, "Error in _stat(" << filename << ").");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in stat()");
 	}
 		
 	this->file = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (this->file == INVALID_HANDLE_VALUE)
-	{
+	if (this->file == INVALID_HANDLE_VALUE) {
 		LOG4CPLUS_ERROR(logger, "Error in CreateFileA(" << filename << ").");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in CreateFileA()");
 	}
 			
 	this->mapping = CreateFileMappingA(this->file, NULL, PAGE_READONLY, (DWORD)(st.st_size >> 32), (DWORD)st.st_size, NULL);
-	if (this->mapping == NULL)
-	{
+	if (this->mapping == NULL) {
 		CloseHandle(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in CreateFileMappingA(" << filename << ").");
 		throw exceptions::file_IO_exception("mrmc::parser::MappedFile Error in CreateFileMappingA()");
 	}
 			
 	this->data = static_cast<char*>(MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, this->st.st_size));
-	if (this->data == NULL)
-	{
+	if (this->data == NULL) {
 		CloseHandle(this->mapping);
 		CloseHandle(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in MapViewOfFile(" << filename << ").");
@@ -130,8 +119,7 @@ mrmc::parser::MappedFile::MappedFile(const char* filename)
 /*!
  *	Will unmap the data and close the file.
  */
-mrmc::parser::MappedFile::~MappedFile()
-{
+mrmc::parser::MappedFile::~MappedFile() {
 #if defined LINUX || defined MACOSX
 	munmap(this->data, this->st.st_size);
 	close(this->file);

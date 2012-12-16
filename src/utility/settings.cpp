@@ -147,8 +147,7 @@ void Settings::firstRun(const int argc, const char* argv[], const char* filename
 	 */
 	if (this->vm.count("configfile")) {
 		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::desc)), this->vm, true);
-	}
-	else if (filename != NULL) {
+	} else if (filename != NULL) {
 		bpo::store(bpo::parse_config_file<char>(filename, *(Settings::desc)), this->vm, true);
 	}
 }
@@ -167,8 +166,7 @@ void Settings::secondRun(const int argc, const char* argv[], const char* filenam
 	 */
 	if (this->vm.count("configfile")) {
 		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::desc)), this->vm, true);
-	}
-	else if (filename != NULL) {
+	} else if (filename != NULL) {
 		bpo::store(bpo::parse_config_file<char>(filename, *(Settings::desc)), this->vm, true);
 	}
 }

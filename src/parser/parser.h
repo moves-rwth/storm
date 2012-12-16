@@ -52,8 +52,7 @@ namespace parser {
 	#error Platform not supported
 #endif
 	 
-	class MappedFile
-	{
+	class MappedFile {
 		private:
 #if defined LINUX || defined MACOSX
 			/*!
@@ -104,8 +103,7 @@ namespace parser {
 		~MappedFile();
 	};
 	
-	class Parser
-	{
+	class Parser {
 		protected:
 			/*!
 			 *	@brief Parses integer and checks, if something has been parsed.

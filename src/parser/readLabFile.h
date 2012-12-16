@@ -17,13 +17,11 @@ namespace parser {
  *	Note that this class creates a new AtomicPropositionsLabeling object that can
  *	be accessed via getLabeling(). However, it will not delete this object!
  */
-class LabParser : Parser
-{
+class LabParser : Parser {
 	public:
 		LabParser(uint_fast64_t node_count, const char* filename);
 
-		std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> getLabeling()
-		{
+		std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> getLabeling() {
 			return this->labeling;
 		}
 	

@@ -69,37 +69,31 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 		/*
 		 *	iterate over tokens until we hit #END or end of file
 		 */
-		while(buf[0] != '\0')
-		{
+		while(buf[0] != '\0') {
 			buf += cnt;
 			cnt = strcspn(buf, separator); // position of next separator
-			if (cnt > 0)
-			{
+			if (cnt > 0) {
 				/*
 				 *	next token is #DECLARATION: just skip it
 				 *	next token is #END: stop search
 				 *	otherwise increase proposition_count
 				 */
-				if (strncmp(buf, "#DECLARATION", cnt) == 0)
-				{
+				if (strncmp(buf, "#DECLARATION", cnt) == 0) {
 					foundDecl = true;
 					continue;
 				}
-				else if (strncmp(buf, "#END", cnt) == 0)
-				{
+				else if (strncmp(buf, "#END", cnt) == 0) {
 					foundEnd = true;
 					break;
 				}
 				proposition_count++;
-			}
-			else buf++; // next char is separator, one step forward
+			} else buf++; // next char is separator, one step forward
 		}
 		
 		/*
 		 *	If #DECLARATION or #END were not found, the file format is wrong
 		 */
-		if (! (foundDecl && foundEnd))
-		{
+		if (! (foundDecl && foundEnd)) {
 			LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). File header is corrupted.");
 			if (! foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
 			if (! foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
@@ -125,20 +119,16 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 		 */
 		char proposition[128]; // buffer for proposition names
 		size_t cnt = 0;
-		do
-		{
+		do {
 			buf += cnt;
 			cnt = strcspn(buf, separator); // position of next separator
-			if (cnt >= sizeof(proposition))
-			{
+			if (cnt >= sizeof(proposition)) {
 				/*
 				 *	if token is longer than our buffer, the following strncpy code might get risky...
 				 */
 				LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition with length > " << (sizeof(proposition)-1) << " was found.");
 				throw mrmc::exceptions::wrong_file_format();
-			}
-			else if (cnt > 0)
-			{
+			} else if (cnt > 0) {
 				/*
 				 *	next token is: #DECLARATION: just skip it
 				 *	next token is: #END: stop search
@@ -149,8 +139,7 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 				strncpy(proposition, buf, cnt);
 				proposition[cnt] = '\0';
 				this->labeling->addAtomicProposition(proposition);
-			}
-			else cnt = 1; // next char is separator, one step forward
+			} else cnt = 1; // next char is separator, one step forward
 		} while (cnt > 0);
 		/*
 		 *	Right here, the buf pointer is still pointing to our last token,
@@ -169,17 +158,14 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 		/*
 		 *	iterate over nodes
 		 */
-		while (buf[0] != '\0')
-		{
+		while (buf[0] != '\0') {
 			/*
 			 *	parse node number, then iterate over propositions
 			 */
 			node = checked_strtol(buf, &buf);
-			while ((buf[0] != '\n') && (buf[0] != '\0'))
-			{
+			while ((buf[0] != '\n') && (buf[0] != '\0')) {
 				cnt = strcspn(buf, separator);
-				if (cnt == 0)
-				{
+				if (cnt == 0) {
 					/*
 					 *	next char is a separator
 					 *	if it's a newline, we continue with next node
@@ -187,9 +173,7 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 					 */
 					if (buf[0] == '\n') break;
 					buf++;
-				}
-				else
-				{
+				} else {
 					/*
 					 *	copy proposition to buffer and add it to labeling
 					 */
