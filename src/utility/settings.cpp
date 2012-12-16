@@ -42,11 +42,9 @@ std::map< std::pair<std::string, std::string>, std::shared_ptr<bpo::options_desc
  *	@param argv should be argv passed to main function
  *	@param filename	either nullptr or name of config file
  */
-Settings::Settings(const int argc, const char* argv[], const char* filename)
-{
+Settings::Settings(const int argc, const char* argv[], const char* filename) {
 	Settings::binaryName = std::string(argv[0]);
-	try
-	{
+	try {
 		// Initially fill description objects
 		this->initDescriptions();
 
@@ -57,12 +55,10 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		// Check module triggers, add corresponding options
 		std::map< std::string, std::list< std::string > > options;
 		
-		for (auto it : Settings::modules)
-		{
+		for (auto it : Settings::modules) {
 			options[it.first.first].push_back(it.first.second);
 		}
-		for (auto it : options)
-		{
+		for (auto it : options) {
 			std::stringstream str;
 			str << "select " << it.first << " module (" << boost::algorithm::join(it.second, ", ") << ")";
 			
@@ -77,13 +73,10 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		// Buffer for items to be deleted
 		std::list< std::pair< std::string, std::string > > deleteQueue;
 		// Check module triggers
-		for (auto it : Settings::modules)
-		{
+		for (auto it : Settings::modules) {
 			std::pair< std::string, std::string > trigger = it.first;
-			if (this->vm.count(trigger.first))
-			{
-				if (this->vm[trigger.first].as<std::string>().compare(trigger.second) == 0)
-				{
+			if (this->vm.count(trigger.first)) {
+				if (this->vm[trigger.first].as<std::string>().compare(trigger.second) == 0) {
 					Settings::desc->add(*it.second);
 					deleteQueue.push_back(trigger);
 				}
@@ -93,8 +86,7 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		
 		
 		// Stop if help is set
-		if (this->vm.count("help") > 0)
-		{
+		if (this->vm.count("help") > 0) {
 			return;
 		}
 		
@@ -105,25 +97,20 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 		bpo::notify(this->vm);
 		LOG4CPLUS_DEBUG(logger, "Finished loading config.");
 	}
-	catch (bpo::reading_file e)
-	{
+	catch (bpo::reading_file e) {
 		std::cerr << "Could not read config file " << filename << std::endl;
 		LOG4CPLUS_ERROR(logger, "Could not read config file");
 	}
-	catch (bpo::required_option e)
-	{
+	catch (bpo::required_option e) {
 		throw mrmc::exceptions::InvalidSettings() << "Required option missing";
 	}
-	catch (bpo::validation_error e)
-	{
+	catch (bpo::validation_error e) {
 		throw mrmc::exceptions::InvalidSettings() << "Validation failed: " << e.what();
 	}
-	catch (bpo::invalid_command_line_syntax e)
-	{
+	catch (bpo::invalid_command_line_syntax e) {
 		throw mrmc::exceptions::InvalidSettings() << e.what();
 	}
-	catch (bpo::error e)
-	{
+	catch (bpo::error e) {
 		throw mrmc::exceptions::InvalidSettings() << e.what();
 	}
 }
@@ -132,8 +119,7 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
  *	Initially fill options_description objects.
  *	First puts some generic options, then calls all register Callbacks.
  */
-void Settings::initDescriptions()
-{
+void Settings::initDescriptions() {
 	LOG4CPLUS_DEBUG(logger, "Initializing descriptions.");
 	Settings::desc = std::unique_ptr<bpo::options_description>(new bpo::options_description("Generic Options"));
 	Settings::desc->add_options()
@@ -151,8 +137,7 @@ void Settings::initDescriptions()
  *	given), but allow for unregistered options, do not check requirements
  *	from options_description objects, do not check positional arguments.
  */
-void Settings::firstRun(const int argc, const char* argv[], const char* filename)
-{
+void Settings::firstRun(const int argc, const char* argv[], const char* filename) {
 	LOG4CPLUS_DEBUG(logger, "Performing first run.");
 	// parse command line
 	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::desc)).allow_unregistered().run(), this->vm);
@@ -160,12 +145,10 @@ void Settings::firstRun(const int argc, const char* argv[], const char* filename
 	/*
 	 *	load config file if specified
 	 */
-	if (this->vm.count("configfile"))
-	{
+	if (this->vm.count("configfile")) {
 		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::desc)), this->vm, true);
 	}
-	else if (filename != NULL)
-	{
+	else if (filename != NULL) {
 		bpo::store(bpo::parse_config_file<char>(filename, *(Settings::desc)), this->vm, true);
 	}
 }
@@ -175,20 +158,17 @@ void Settings::firstRun(const int argc, const char* argv[], const char* filename
  *	given) and check for unregistered options, requirements from
  *	options_description objects and positional arguments.
  */
-void Settings::secondRun(const int argc, const char* argv[], const char* filename)
-{
+void Settings::secondRun(const int argc, const char* argv[], const char* filename) {
 	LOG4CPLUS_DEBUG(logger, "Performing second run.");
 	// Parse command line
 	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::desc)).positional(this->positional).run(), this->vm);
 	/*
 	 *	load config file if specified
 	 */
-	if (this->vm.count("configfile"))
-	{
+	if (this->vm.count("configfile")) {
 		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::desc)), this->vm, true);
 	}
-	else if (filename != NULL)
-	{
+	else if (filename != NULL) {
 		bpo::store(bpo::parse_config_file<char>(filename, *(Settings::desc)), this->vm, true);
 	}
 }
@@ -201,12 +181,10 @@ void Settings::secondRun(const int argc, const char* argv[], const char* filenam
  *	Use it like this:
  *	@code std::cout << mrmc::settings::help; @endcode
  */
-std::ostream& help(std::ostream& os)
-{
+std::ostream& help(std::ostream& os) {
 	os << "Usage: " << mrmc::settings::Settings::binaryName << " [options] <transition file> <label file>" << std::endl;
 	os << *(mrmc::settings::Settings::desc) << std::endl;
-	for (auto it : Settings::modules)
-	{
+	for (auto it : Settings::modules) {
 		os << *(it.second) << std::endl;
 	}
 	return os;

@@ -106,13 +106,12 @@ namespace settings {
 			 *	@endcode
 			 */
 			template <typename T>
-			static void registerModule()
-			{
+			static void registerModule() {
 				// get trigger
 				std::pair< std::string, std::string > trigger = T::getOptionTrigger();
 				// build description name
 				std::stringstream str;
-				str << T::getModuleName() << " (" << trigger.first << " = " << trigger.second << ")";
+				str << "Options for " << T::getModuleName() << " (" << trigger.first << " = " << trigger.second << ")";
 				std::shared_ptr<bpo::options_description> desc = std::shared_ptr<bpo::options_description>(new bpo::options_description(str.str()));
 				// but options
 				T::putOptions(desc.get());
@@ -187,8 +186,7 @@ namespace settings {
 	 *
 	 *	@return The current instance of Settings created by newInstance().
 	 */
-	inline Settings* instance()
-	{
+	inline Settings* instance() {
 		return Settings::inst;
 	}
 	
@@ -202,8 +200,7 @@ namespace settings {
 	 *  @param filename either NULL or name of config file
 	 *	@return The new instance of Settings.
 	 */
-	inline Settings* newInstance(const int argc, const char* argv[], const char* filename)
-	{
+	inline Settings* newInstance(const int argc, const char* argv[], const char* filename) {
 		if (Settings::inst != nullptr) delete Settings::inst;
 		Settings::inst = new Settings(argc, argv, filename);
 		return Settings::inst;
