@@ -67,7 +67,7 @@ Settings::Settings(const int argc, const char* argv[], const char* filename)
 			str << "select " << it.first << " module (" << boost::algorithm::join(it.second, ", ") << ")";
 			
 			Settings::desc->add_options()
-				(it.first.c_str(), bpo::value<std::string>(), str.str().c_str())
+				(it.first.c_str(), bpo::value<std::string>()->default_value(it.second.front()), str.str().c_str())
 			;
 		}
 		
@@ -143,7 +143,6 @@ void Settings::initDescriptions()
 		("test-prctl", bpo::value<std::string>(), "name of prctl file")
 		("trafile", bpo::value<std::string>()->required(), "name of the .tra file")
 		("labfile", bpo::value<std::string>()->required(), "name of the .lab file")
-		("matrixlib", bpo::value<std::string>()->default_value("gmm++"), "name of the matrix library")
 	;
 }
 
