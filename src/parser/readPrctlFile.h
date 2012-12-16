@@ -2,7 +2,7 @@
 #define READPRCTLFILE_H_
 
 #include "src/formula/PCTLformula.h"
-#include "src/parser/parser.h"
+#include "src/parser/Parser.h"
 
 namespace mrmc {
 namespace parser {

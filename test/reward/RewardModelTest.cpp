@@ -5,7 +5,7 @@
 #include "boost/integer/integer_mask.hpp"
 #include <vector>
 
-#include "reward/reward_model.h"
+#include "reward/RewardModel.h"
 
 TEST(RewardModelTest, ReadWriteTest) {
 	// 50 entries

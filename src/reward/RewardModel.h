@@ -1,12 +1,12 @@
 /*
- * reward_model.h
+ * RewardModel.h
  *
  *  Created on: 25.10.2012
  *      Author: Philipp Berger
  */
 
-#ifndef MRMC_REWARD_REWARD_MODEL_H_
-#define MRMC_REWARD_REWARD_MODEL_H_
+#ifndef MRMC_REWARD_REWARDMODEL_H_
+#define MRMC_REWARD_REWARDMODEL_H_
 
 #include <stdexcept>
 
@@ -76,4 +76,4 @@ class RewardModel {
 
 } //namespace mrmc
 
-#endif /* MRMC_REWARD_REWARD_MODEL_H_ */
+#endif /* MRMC_REWARD_REWARDMODEL_H_ */

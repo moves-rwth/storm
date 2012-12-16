@@ -1,5 +1,5 @@
 /*
- * parse_dtmc_test.cpp
+ * ParseDtmcTest.cpp
  *
  *  Created on: 03.12.2012
  *      Author: Thomas Heinemann

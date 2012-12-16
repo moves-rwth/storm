@@ -1,5 +1,5 @@
 /*
- * read_tra_file_test.cpp
+ * ReadTraFileTest.cpp
  *
  *  Created on: 16.08.2012
  *      Author: Thomas Heinemann

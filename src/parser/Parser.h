@@ -1,12 +1,12 @@
 /*
- * parser.h
+ * Parser.h
  *
  *  Created on: 21.11.2012
  *      Author: Gereon Kremer
  */
 
-#ifndef PARSER_H_
-#define PARSER_H_
+#ifndef MRMC_PARSER_PARSER_H_
+#define MRMC_PARSER_PARSER_H_
 
 #include "src/utility/OsDetection.h"
 
@@ -52,8 +52,7 @@ namespace parser {
 	#error Platform not supported
 #endif
 	 
-	class MappedFile
-	{
+	class MappedFile {
 		private:
 #if defined LINUX || defined MACOSX
 			/*!
@@ -104,8 +103,7 @@ namespace parser {
 		~MappedFile();
 	};
 	
-	class Parser
-	{
+	class Parser {
 		protected:
 			/*!
 			 *	@brief Parses integer and checks, if something has been parsed.
@@ -121,4 +119,4 @@ namespace parser {
 } // namespace parser
 } // namespace mrmc
 
-#endif /* PARSER_H_ */
+#endif /* MRMC_PARSER_PARSER_H_ */

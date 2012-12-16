@@ -1,5 +1,5 @@
 /*
- * read_lab_file_test.cpp
+ * ReadLabFileTest.cpp
  *
  *  Created on: 12.09.2012
  *      Author: Thomas Heinemann

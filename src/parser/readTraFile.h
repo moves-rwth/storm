@@ -3,7 +3,7 @@
 
 #include "src/storage/SquareSparseMatrix.h"
 
-#include "src/parser/parser.h"
+#include "src/parser/Parser.h"
 
 #include <memory>
 
@@ -17,13 +17,11 @@ namespace parser {
  *	Note that this class creates a new StaticSparseMatrix object that can be
  *	accessed via getMatrix(). However, it does not delete this object!
  */
-class TraParser : Parser
-{
+class TraParser : Parser {
 	public:
 		TraParser(const char* filename);
 		
-		std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> getMatrix()
-		{
+		std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> getMatrix() {
 			return this->matrix;
 		}
 	
