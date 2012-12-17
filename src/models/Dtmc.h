@@ -157,14 +157,10 @@ private:
 	bool sanityCheck() {
 		for (uint_fast64_t row = 0; row < this->probabilityMatrix->getRowCount(); row++)
 		{
-			T sum = 0;
-			for (uint_fast64_t col = 0; col < this->probabilityMatrix->getRowCount(); col++)
+			T sum = this->probabilityMatrix->getDiagonalStoragePointer()[row];
+			for (uint_fast64_t id = this->probabilityMatrix->getRowIndicationsPointer()[row]; id < this->probabilityMatrix->getRowIndicationsPointer()[row+1]; id++)
 			{
-				try
-				{
-					sum += this->probabilityMatrix->getValue(row, col);
-				}
-				catch (mrmc::exceptions::InvalidArgumentException) {}
+				sum += this->probabilityMatrix->getStoragePointer()[id];
 			}
 			if (sum == 0) continue;
 			if (std::abs(sum - 1) > 1e-10) return false;
