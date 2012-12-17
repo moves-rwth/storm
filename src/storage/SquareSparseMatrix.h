@@ -396,7 +396,6 @@ public:
 		if ((row > rowCount) || (col > rowCount)) {
 			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
 			throw mrmc::exceptions::out_of_range("Trying to read a value from illegal position.");
-			return false;
 		}
 
 		// Read elements on the diagonal directly.
