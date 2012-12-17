@@ -10,13 +10,6 @@
 
 #include "src/utility/OsDetection.h"
 
-#if defined LINUX || defined MACOSX
-#	include <sys/mman.h>
-#elif defined WINDOWS
-#	include <Windows.h>
-#	include <winnt.h>
-#endif
-
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>

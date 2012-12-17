@@ -4,6 +4,7 @@
 #include "src/storage/SquareSparseMatrix.h"
 
 #include "src/parser/Parser.h"
+#include "src/utility/OsDetection.h"
 
 #include <memory>
 

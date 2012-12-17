@@ -17,10 +17,6 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
-#if defined LINUX || defined MACOSX
-	#include <sys/mman.h>
-#elif defined WINDOWS
-#endif
 #include <fcntl.h>
 #include <locale.h>
 

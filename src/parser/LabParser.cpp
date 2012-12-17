@@ -10,6 +10,7 @@
 #include "src/exceptions/WrongFileFormatException.h"
 #include "src/exceptions/FileIoException.h"
 
+#include "src/utility/OsDetection.h"
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -20,12 +21,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <locale.h>
-
-#if defined LINUX || defined MACOSX
-	#include <sys/mman.h>
-#elif defined WINDOWS
-	#define strncpy strncpy_s
-#endif
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
