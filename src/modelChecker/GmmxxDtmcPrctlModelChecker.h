@@ -250,7 +250,7 @@ public:
 	 */
 	static void validateLeMethod(const std::string& lemethod) {
 		if (lemethod.compare("bicgstab") != 0 && lemethod.compare("qmr") != 0) {
-			throw exceptions::InvalidSettings() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
+			throw exceptions::InvalidSettingsException() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
 		}
 	}
 
@@ -260,7 +260,7 @@ public:
 	 */
 	static void validatePreconditioner(const std::string& preconditioner) {
 		if (preconditioner.compare("ilu") != 0 && preconditioner.compare("diagonal") != 0 && preconditioner.compare("ildlt") && preconditioner.compare("none") != 0) {
-			throw exceptions::InvalidSettings() << "Argument " << preconditioner << " for option 'precond' is invalid.";
+			throw exceptions::InvalidSettingsException() << "Argument " << preconditioner << " for option 'precond' is invalid.";
 		}
 	}
 };

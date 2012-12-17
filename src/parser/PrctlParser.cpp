@@ -1,4 +1,4 @@
-#include "src/parser/readPrctlFile.h"
+#include "src/parser/PrctlParser.h"
 
 #include <iostream>
 #include <map>
@@ -130,7 +130,7 @@ namespace
 	};
 }
 
-mrmc::parser::PRCTLParser::PRCTLParser(const char* filename)
+mrmc::parser::PrctlParser::PrctlParser(const char* filename)
 {
 	SpiritParser p;
 	mrmc::parser::MappedFile file(filename);

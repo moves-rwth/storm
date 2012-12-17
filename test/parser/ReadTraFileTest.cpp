@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 #include "mrmc-config.h"
 #include "src/storage/SquareSparseMatrix.h"
-#include "src/parser/readTraFile.h"
+#include "src/parser/TraParser.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFileFormatException.h"
 

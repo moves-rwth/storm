@@ -1,5 +1,5 @@
-#ifndef READLABFILE_H_
-#define READLABFILE_H_
+#ifndef MRMC_PARSER_LABPARSER_H_
+#define MRMC_PARSER_LABPARSER_H_
 
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "boost/integer/integer_mask.hpp"
@@ -32,4 +32,4 @@ class LabParser : Parser {
 } // namespace parser
 } // namespace mrmc
 
-#endif /* READLABFILE_H_ */
+#endif /* MRMC_PARSER_LABPARSER_H_ */

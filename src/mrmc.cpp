@@ -24,20 +24,19 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
-#include "src/parser/readLabFile.h"
-#include "src/parser/readTraFile.h"
-#include "src/parser/readPrctlFile.h"
+#include "src/parser/LabParser.h"
+#include "src/parser/TraParser.h"
+#include "src/parser/PrctlParser.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/formula/Formulas.h"
-#include "src/exceptions/NoConvergence.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
-#include "src/exceptions/InvalidSettings.h"
+#include "src/exceptions/InvalidSettingsException.h"
 
 log4cplus::Logger logger;
 
@@ -76,7 +75,7 @@ int main(const int argc, const char* argv[]) {
 	try {
 		mrmc::settings::Settings::registerModule<mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double> >();
 		s = mrmc::settings::newInstance(argc, argv, nullptr);
-	} catch (mrmc::exceptions::InvalidSettings& e) {
+	} catch (mrmc::exceptions::InvalidSettingsException& e) {
 		LOG4CPLUS_FATAL(logger, "InvalidSettings error: " << e.what() << ".");
 		LOG4CPLUS_FATAL(logger, "Could not recover from settings error, terminating.");
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
@@ -91,7 +90,7 @@ int main(const int argc, const char* argv[]) {
 		return 0;
 	}
 	if (s->isSet("test-prctl")) {
-		mrmc::parser::PRCTLParser parser(s->getString("test-prctl").c_str());
+		mrmc::parser::PrctlParser parser(s->getString("test-prctl").c_str());
 		delete s;
 		return 0;
 	}

@@ -14,7 +14,7 @@
 #include <utility>
 #include <memory>
 #include <boost/program_options.hpp>
-#include "src/exceptions/InvalidSettings.h"
+#include "src/exceptions/InvalidSettingsException.h"
 
 namespace mrmc {
 
@@ -52,7 +52,7 @@ namespace settings {
 			 */
 			template <typename T>
 			const T& get(const std::string &name) const {
-				if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettings() << "Could not read option " << name << ".";
+				if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettingsException() << "Could not read option " << name << ".";
 				return this->vm[name].as<T>();
 			}
 		

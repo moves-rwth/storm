@@ -1,11 +1,11 @@
 /*!
- *	readTraFile.cpp
+ *	TraParser.cpp
  *
  *	Created on: 20.11.2012
  *		Author: Gereon Kremer
  */
 
-#include "src/parser/readTraFile.h"
+#include "src/parser/TraParser.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFileFormatException.h"
 #include "boost/integer/integer_mask.hpp"

@@ -1,11 +1,11 @@
 /*!
- * readLabFile.cpp
+ * LabParser.cpp
  *
  *  Created on: 21.11.2012
  *      Author: Gereon Kremer
  */
 
-#include "readLabFile.h"
+#include "src/parser/LabParser.h"
 
 #include "src/exceptions/WrongFileFormatException.h"
 #include "src/exceptions/FileIoException.h"

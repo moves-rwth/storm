@@ -102,16 +102,16 @@ Settings::Settings(const int argc, const char* argv[], const char* filename) {
 		LOG4CPLUS_ERROR(logger, "Could not read config file");
 	}
 	catch (bpo::required_option e) {
-		throw mrmc::exceptions::InvalidSettings() << "Required option missing";
+		throw mrmc::exceptions::InvalidSettingsException() << "Required option missing";
 	}
 	catch (bpo::validation_error e) {
-		throw mrmc::exceptions::InvalidSettings() << "Validation failed: " << e.what();
+		throw mrmc::exceptions::InvalidSettingsException() << "Validation failed: " << e.what();
 	}
 	catch (bpo::invalid_command_line_syntax e) {
-		throw mrmc::exceptions::InvalidSettings() << e.what();
+		throw mrmc::exceptions::InvalidSettingsException() << e.what();
 	}
 	catch (bpo::error e) {
-		throw mrmc::exceptions::InvalidSettings() << e.what();
+		throw mrmc::exceptions::InvalidSettingsException() << e.what();
 	}
 }
 

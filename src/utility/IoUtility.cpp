@@ -6,8 +6,8 @@
  */
 
 #include "src/utility/IoUtility.h"
-#include "src/parser/readTraFile.h"
-#include "src/parser/readLabFile.h"
+#include "src/parser/TraParser.h"
+#include "src/parser/LabParser.h"
 
 #include <fstream>
 

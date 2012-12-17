@@ -1,5 +1,5 @@
-#ifndef BASEEXCEPTION_H_
-#define BASEEXCEPTION_H_
+#ifndef MRMC_EXCEPTIONS_BASEEXCEPTION_H_
+#define MRMC_EXCEPTIONS_BASEEXCEPTION_H_
 
 #include <exception>
 #include <sstream>
@@ -38,4 +38,4 @@ class BaseException : public std::exception
 } // namespace exceptions
 } // namespace mrmc
 
-#endif // BASEEXCEPTION_H_
+#endif // MRMC_EXCEPTIONS_BASEEXCEPTION_H_

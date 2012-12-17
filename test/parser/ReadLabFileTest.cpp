@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 #include "mrmc-config.h"
 #include "src/models/AtomicPropositionsLabeling.h"
-#include "src/parser/readLabFile.h"
+#include "src/parser/LabParser.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFileFormatException.h"
 

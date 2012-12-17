@@ -1,5 +1,5 @@
-#ifndef READTRAFILE_H_
-#define READTRAFILE_H_
+#ifndef MRMC_PARSER_TRAPARSER_H_
+#define MRMC_PARSER_TRAPARSER_H_
 
 #include "src/storage/SquareSparseMatrix.h"
 
@@ -35,4 +35,4 @@ class TraParser : Parser {
 } // namespace parser
 } // namespace mrmc
 
-#endif /* READTRAFILE_H_ */
+#endif /* MRMC_PARSER_TRAPARSER_H_ */

@@ -670,7 +670,7 @@ public:
 			}
 		}
 		// Fill in sentinel element at the end.
-		result->jc[rowCount] = realNonZeros;
+		result->jc[rowCount] = static_cast<unsigned int>(realNonZeros);
 
 		// Now, we can copy the temporary array to the GMMXX format.
 		result->ir.resize(realNonZeros);

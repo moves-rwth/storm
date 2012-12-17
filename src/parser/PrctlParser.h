@@ -1,5 +1,5 @@
-#ifndef READPRCTLFILE_H_
-#define READPRCTLFILE_H_
+#ifndef MRMC_PARSER_PRCTLPARSER_H_
+#define MRMC_PARSER_PRCTLPARSER_H_
 
 #include "src/formula/PCTLformula.h"
 #include "src/parser/Parser.h"
@@ -10,10 +10,10 @@ namespace parser {
 /*!
  *	@brief Load PRCTL file
  */
-class PRCTLParser : Parser
+class PrctlParser : Parser
 {
 	public:
-		PRCTLParser(const char * filename);
+		PrctlParser(const char * filename);
 		 
 		/*!
 		 *	@brief return formula object parsed from file.
@@ -30,4 +30,4 @@ class PRCTLParser : Parser
 } // namespace parser
 } // namespace mrmc
 
-#endif /* READPRCTLFILE_H_ */
+#endif /* MRMC_PARSER_PRCTLPARSER_H_ */
