@@ -9,11 +9,14 @@
 #define MRMC_MODELS_DTMC_H_
 
 #include <ostream>
+#include <iostream>
 #include <memory>
+#include <cstdlib>
 
 #include "AtomicPropositionsLabeling.h"
 #include "GraphTransitions.h"
 #include "src/storage/SquareSparseMatrix.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace mrmc {
 
@@ -38,6 +41,10 @@ public:
 	 */
 	Dtmc(std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> probabilityMatrix, std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> stateLabeling)
 			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling), backwardTransitions(nullptr) {
+		if (! this->sanityCheck())
+		{
+			std::cerr << "sanity check failed" << std::endl;
+		}
 	}
 
 	//! Copy Constructor
@@ -50,6 +57,10 @@ public:
 		if (dtmc.backardTransitions != nullptr) {
 			this->backwardTransitions = new mrmc::models::GraphTransitions<T>(*dtmc.backwardTransitions);
 		}
+		if (! this->sanityCheck())
+		{
+			std::cerr << "sanity check failed" << std::endl;
+		}
 	}
 
 	//! Destructor
@@ -61,7 +72,7 @@ public:
 			delete this->backwardTransitions;
 		}
 	}
-
+	
 	/*!
 	 * Returns the state space size of the DTMC.
 	 * @return The size of the state space of the DTMC.
@@ -137,6 +148,29 @@ public:
 	}
 
 private:
+
+	/*!
+	 *	@brief Perform some sanity checks.
+	 *
+	 *	Checks probability matrix if all rows sum up to one.
+	 */
+	bool sanityCheck() {
+		for (uint_fast64_t row = 0; row < this->probabilityMatrix->getRowCount(); row++)
+		{
+			T sum = 0;
+			for (uint_fast64_t col = 0; col < this->probabilityMatrix->getRowCount(); col++)
+			{
+				try
+				{
+					sum += this->probabilityMatrix->getValue(row, col);
+				}
+				catch (mrmc::exceptions::InvalidArgumentException) {}
+			}
+			if (sum == 0) continue;
+			if (std::abs(sum - 1) > 1e-10) return false;
+		}
+		return true;
+	}
 
 	/*! A matrix representing the transition probability function of the DTMC. */
 	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> probabilityMatrix;
