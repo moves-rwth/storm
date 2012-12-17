@@ -8,24 +8,24 @@
 #ifndef MRMC_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_
 #define MRMC_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_
 
-#include <exception>
+#include "src/exceptions/BaseException.h"
 
 namespace mrmc {
 
 namespace exceptions {
 
-class WrongFileFormatException : public std::exception {
-   public:
-#ifdef _WIN32
-      WrongFileFormatException() : exception("::mrmc::WrongFileFormatException"){};
-      WrongFileFormatException(const char * const s): exception(s) {};
-#else
-      WrongFileFormatException() {};
-      WrongFileFormatException(const char * const s): exception() {};
-#endif
-      virtual const char* what() const throw(){
-         {  return "mrmc::WrongFileFormatException";  }
-      }
+/*! 
+ * @brief This exception is thrown when an input file
+ * contains invalid or missing keys.
+ */
+class WrongFileFormatException : public BaseException<WrongFileFormatException> {
+public:
+	WrongFileFormatException() {
+	}
+	WrongFileFormatException(const char* cstr) : BaseException(cstr) {
+	}
+	WrongFileFormatException(const WrongFileFormatException& cp) : BaseException(cp) {
+	}
 };
 
 } //namespace exceptions

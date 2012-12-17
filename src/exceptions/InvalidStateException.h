@@ -1,33 +1,24 @@
 #ifndef MRMC_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_
 #define MRMC_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_
 
-#include <exception>
+#include "src/exceptions/BaseException.h"
 
 namespace mrmc {
 
 namespace exceptions {
 
-//!This exception is thrown when a memory request can't be
-//!fulfilled.
-class InvalidStateException : public std::exception
-{
- public:
-/* The Visual C++-Version of the exception class has constructors accepting
- * a char*-constant; The GCC version does not have these
- *
- * As the "extended" constructor is used in the sparse matrix code, a dummy
- * constructor is used under linux (which will ignore the parameter)
+/*! 
+ * @brief This exception is thrown when a memory request can't be
+ * fulfilled.
  */
-#ifdef _WIN32
-   InvalidStateException() : exception("::mrmc::InvalidStateException"){}
-   InvalidStateException(const char * const s): exception(s) {}
-#else
-   InvalidStateException() : exception() {}
-   InvalidStateException(const char * const s): exception() {}
-
-#endif
-   virtual const char* what() const throw()
-      {  return "mrmc::InvalidStateException";  }
+class InvalidStateException : public BaseException<InvalidStateException> {
+public:
+	InvalidStateException() {
+	}
+	InvalidStateException(const char* cstr) : BaseException(cstr) {
+	}
+	InvalidStateException(const InvalidStateException& cp) : BaseException(cp) {
+	}
 };
 
 } // namespace exceptions

@@ -8,22 +8,20 @@
 #ifndef MRMC_EXCEPTIONS_FILEIOEXCEPTION_H_
 #define MRMC_EXCEPTIONS_FILEIOEXCEPTION_H_
 
+#include "src/exceptions/BaseException.h"
+
 namespace mrmc {
 
 namespace exceptions {
 
-class FileIoException : public std::exception {
-   public:
-#ifdef _WIN32
-      FileIoException() : exception("::mrmc::FileIoException"){};
-      FileIoException(const char * const s): exception(s) {};
-#else
-      FileIoException() {};
-      FileIoException(const char * const s): exception() {};
-#endif
-      virtual const char* what() const throw(){
-         {  return "mrmc::FileIoException";  }
-      }
+class FileIoException : public BaseException<FileIoException> {
+public:
+	FileIoException() : BaseException() {
+	}
+	FileIoException(const char* cstr) : BaseException(cstr) {
+	}
+	FileIoException(const FileIoException& cp) : BaseException(cp) {
+	}
 };
 
 }

@@ -110,9 +110,7 @@ public:
 	 */
 	void addAtomicPropositionToState(std::string ap, const uint_fast64_t state) {
 		if (nameToLabelingMap.count(ap) == 0) {
-			/*throw mrmc::exceptions::OutOfRangeException("Atomic Proposition '" << ap << "' unknown.");*/
-			// TODO !!!
-			throw mrmc::exceptions::OutOfRangeException("Atomic Proposition '' unknown.");
+			throw mrmc::exceptions::OutOfRangeException() << "Atomic Proposition '" << ap << "' unknown.";
 		}
 		if (state >= stateCount) {
 			throw mrmc::exceptions::OutOfRangeException("State index out of range.");
