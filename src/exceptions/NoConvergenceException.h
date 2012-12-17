@@ -9,15 +9,7 @@ namespace exceptions {
 /*!
  * @brief This exception is thrown when an iterative solver failed to converge with the given maxIterations
  */
-class NoConvergenceException : public BaseException<NoConvergenceException> {
-public:
-	NoConvergenceException() {
-	}
-	NoConvergenceException(const char* cstr) : BaseException(cstr) {
-	}
-	NoConvergenceException(const NoConvergenceException& cp) : BaseException(cp) {
-	}
-};
+MRMC_EXCEPTION_DEFINE_NEW(NoConvergenceException)
 
 } // namespace exceptions
 } // namespace mrmc

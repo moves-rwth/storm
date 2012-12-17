@@ -11,15 +11,7 @@ namespace exceptions {
  * @brief This exception is thrown when a memory request can't be
  * fulfilled.
  */
-class InvalidStateException : public BaseException<InvalidStateException> {
-public:
-	InvalidStateException() {
-	}
-	InvalidStateException(const char* cstr) : BaseException(cstr) {
-	}
-	InvalidStateException(const InvalidStateException& cp) : BaseException(cp) {
-	}
-};
+MRMC_EXCEPTION_DEFINE_NEW(InvalidStateException)
 
 } // namespace exceptions
 

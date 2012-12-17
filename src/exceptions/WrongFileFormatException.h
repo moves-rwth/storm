@@ -18,15 +18,7 @@ namespace exceptions {
  * @brief This exception is thrown when an input file
  * contains invalid or missing keys.
  */
-class WrongFileFormatException : public BaseException<WrongFileFormatException> {
-public:
-	WrongFileFormatException() {
-	}
-	WrongFileFormatException(const char* cstr) : BaseException(cstr) {
-	}
-	WrongFileFormatException(const WrongFileFormatException& cp) : BaseException(cp) {
-	}
-};
+MRMC_EXCEPTION_DEFINE_NEW(WrongFileFormatException)
 
 } //namespace exceptions
 

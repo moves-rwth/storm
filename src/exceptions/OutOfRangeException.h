@@ -10,15 +10,7 @@ namespace exceptions {
 /*
  * @briefThis exception is thrown when a parameter is not in the range of valid values
  */
-class OutOfRangeException : public BaseException<OutOfRangeException> {
-public:
-	OutOfRangeException() {
-	}
-	OutOfRangeException(const char* cstr) : BaseException(cstr) {
-	}
-	OutOfRangeException(const OutOfRangeException& cp) : BaseException(cp) {
-	}
-};
+MRMC_EXCEPTION_DEFINE_NEW(OutOfRangeException)
 
 } // namespace exceptions
 

@@ -10,15 +10,7 @@ namespace exceptions {
 /*!
  * @brief This exception is thrown when a parameter is invalid in this context
  */
-class InvalidArgumentException : public BaseException<InvalidArgumentException> {
-public:
-	InvalidArgumentException() {
-	}
-	InvalidArgumentException(const char* cstr) : BaseException(cstr) {
-	}
-	InvalidArgumentException(const InvalidArgumentException& cp) : BaseException(cp) {
-	}
-};
+MRMC_EXCEPTION_DEFINE_NEW(InvalidArgumentException)
 
 } // namespace exceptions
 

@@ -6,15 +6,7 @@
 namespace mrmc {
 namespace exceptions {
 
-class InvalidSettingsException : public BaseException<InvalidSettingsException> {
-public:
-	InvalidSettingsException() {
-	}
-	InvalidSettingsException(const char* cstr) : BaseException(cstr) {
-	}
-	InvalidSettingsException(const InvalidSettingsException& cp) : BaseException(cp) {
-	}
-};
+MRMC_EXCEPTION_DEFINE_NEW(InvalidSettingsException)
 
 } // namespace exceptions
 } // namespace mrmc

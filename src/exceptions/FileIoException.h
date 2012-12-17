@@ -14,15 +14,7 @@ namespace mrmc {
 
 namespace exceptions {
 
-class FileIoException : public BaseException<FileIoException> {
-public:
-	FileIoException() : BaseException() {
-	}
-	FileIoException(const char* cstr) : BaseException(cstr) {
-	}
-	FileIoException(const FileIoException& cp) : BaseException(cp) {
-	}
-};
+MRMC_EXCEPTION_DEFINE_NEW(FileIoException)
 
 }
 
