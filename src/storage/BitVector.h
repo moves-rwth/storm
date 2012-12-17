@@ -1,16 +1,16 @@
-#ifndef MRMC_VECTOR_BITVECTOR_H_
-#define MRMC_VECTOR_BITVECTOR_H_
+#ifndef MRMC_STORAGE_BITVECTOR_H_
+#define MRMC_STORAGE_BITVECTOR_H_
 
 #include <exception>
 #include <new>
 #include <cmath>
 #include "boost/integer/integer_mask.hpp"
 
-#include "src/exceptions/invalid_state.h"
-#include "src/exceptions/invalid_argument.h"
-#include "src/exceptions/out_of_range.h"
+#include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/OutOfRangeException.h"
 
-#include "src/utility/osDetection.h"
+#include "src/utility/OsDetection.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 
@@ -102,7 +102,7 @@ public:
 		// Check whether the given length is valid.
 		if (length == 0) {
 			LOG4CPLUS_ERROR(logger, "Trying to create bit vector of size 0.");
-			throw mrmc::exceptions::invalid_argument("Trying to create a bit vector of size 0.");
+			throw mrmc::exceptions::InvalidArgumentException("Trying to create a bit vector of size 0.");
 		}
 
 		// Compute the correct number of buckets needed to store the given number of bits
@@ -205,7 +205,7 @@ public:
 	 */
 	void set(const uint_fast64_t index, const bool value) {
 		uint_fast64_t bucket = index >> 6;
-		if (bucket >= this->bucketCount) throw mrmc::exceptions::out_of_range();
+		if (bucket >= this->bucketCount) throw mrmc::exceptions::OutOfRangeException();
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		if (value) {
 			this->bucketArray[bucket] |= mask;
@@ -223,7 +223,7 @@ public:
 	 */
 	bool get(const uint_fast64_t index) const {
 		uint_fast64_t bucket = index >> 6;
-		if (bucket >= this->bucketCount) throw mrmc::exceptions::out_of_range();
+		if (bucket >= this->bucketCount) throw mrmc::exceptions::OutOfRangeException();
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		return ((this->bucketArray[bucket] & mask) == mask);
 	}
@@ -544,4 +544,4 @@ private:
 
 } // namespace mrmc
 
-#endif // MRMC_SPARSE_STATIC_SPARSE_MATRIX_H_
+#endif // MRMC_STORAGE_BITVECTOR_H_

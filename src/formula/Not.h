@@ -5,10 +5,10 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef NOT_H_
-#define NOT_H_
+#ifndef MRMC_FORMULA_NOT_H_
+#define MRMC_FORMULA_NOT_H_
 
-#include "PCTLStateFormula.h"
+#include "PctlStateFormula.h"
 
 namespace mrmc {
 
@@ -23,11 +23,11 @@ namespace formula {
  * The subtree is seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PCTLStateFormula
- * @see PCTLFormula
+ * @see PctlStateFormula
+ * @see PctlFormula
  */
 template <class T>
-class Not : public PCTLStateFormula<T> {
+class Not : public PctlStateFormula<T> {
 
 public:
 	/*!
@@ -41,7 +41,7 @@ public:
 	 * Constructor
 	 * @param child The child node
 	 */
-	Not(PCTLStateFormula<T>* child) {
+	Not(PctlStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -60,7 +60,7 @@ public:
 	/*!
 	 * @returns The child node
 	 */
-	const PCTLStateFormula<T>& getChild() const {
+	const PctlStateFormula<T>& getChild() const {
 		return *child;
 	}
 
@@ -68,7 +68,7 @@ public:
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(PCTLStateFormula<T>* child) {
+	void setChild(PctlStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -88,7 +88,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PCTLStateFormula<T>* clone() const {
+	virtual PctlStateFormula<T>* clone() const {
 		Not<T>* result = new Not<T>();
 		if (child != NULL) {
 			result->setChild(child);
@@ -110,11 +110,11 @@ public:
 	}
 
 private:
-	PCTLStateFormula<T>* child;
+	PctlStateFormula<T>* child;
 };
 
 } //namespace formula
 
 } //namespace MRMC
 
-#endif /* NOT_H_ */
+#endif /* MRMC_FORMULA_NOT_H_ */

@@ -5,21 +5,21 @@
  *      Author: chris
  */
 
-#ifndef FORMULAS_H_
-#define FORMULAS_H_
+#ifndef MRMC_FORMULA_FORMULAS_H_
+#define MRMC_FORMULA_FORMULAS_H_
 
 #include "And.h"
-#include "AP.h"
+#include "Ap.h"
 #include "BoundedUntil.h"
 #include "Next.h"
 #include "Not.h"
 #include "Or.h"
-#include "PCTLformula.h"
-#include "PCTLPathFormula.h"
-#include "PCTLStateFormula.h"
+#include "PctlFormula.h"
+#include "PctlPathFormula.h"
+#include "PctlStateFormula.h"
 #include "ProbabilisticOperator.h"
 #include "ProbabilisticNoBoundsOperator.h"
 #include "ProbabilisticIntervalOperator.h"
 #include "Until.h"
 
-#endif /* FORMULAS_H_ */
+#endif /* MRMC_FORMULA_FORMULAS_H_ */

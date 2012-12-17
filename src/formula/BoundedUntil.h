@@ -5,11 +5,11 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef BOUNDEDUNTIL_H_
-#define BOUNDEDUNTIL_H_
+#ifndef MRMC_FORMULA_BOUNDEDUNTIL_H_
+#define MRMC_FORMULA_BOUNDEDUNTIL_H_
 
-#include "PCTLPathFormula.h"
-#include "PCTLStateFormula.h"
+#include "PctlPathFormula.h"
+#include "PctlStateFormula.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 
@@ -30,11 +30,11 @@ namespace formula {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PCTLPathFormula
- * @see PCTLFormula
+ * @see PctlPathFormula
+ * @see PctlFormula
  */
 template <class T>
-class BoundedUntil : public PCTLPathFormula<T> {
+class BoundedUntil : public PctlPathFormula<T> {
 
 public:
 	/*!
@@ -53,7 +53,7 @@ public:
 	 * @param right The left formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedUntil(PCTLStateFormula<T>* left, PCTLStateFormula<T>* right,
+	BoundedUntil(PctlStateFormula<T>* left, PctlStateFormula<T>* right,
 					 uint_fast64_t bound) {
 		this->left = left;
 		this->right = right;;
@@ -80,7 +80,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(PCTLStateFormula<T>* newLeft) {
+	void setLeft(PctlStateFormula<T>* newLeft) {
 		left = newLeft;
 	}
 
@@ -89,21 +89,21 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(PCTLStateFormula<T>* newRight) {
+	void setRight(PctlStateFormula<T>* newRight) {
 		right = newRight;
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const PCTLStateFormula<T>& getLeft() const {
+	const PctlStateFormula<T>& getLeft() const {
 		return *left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	const PCTLStateFormula<T>& getRight() const {
+	const PctlStateFormula<T>& getRight() const {
 		return *right;
 	}
 
@@ -144,7 +144,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual PCTLPathFormula<T>* clone() const {
+	virtual PctlPathFormula<T>* clone() const {
 		BoundedUntil<T>* result = new BoundedUntil();
 		result->setBound(bound);
 		if (left != NULL) {
@@ -171,8 +171,8 @@ public:
 	}
 
 private:
-	PCTLStateFormula<T>* left;
-	PCTLStateFormula<T>* right;
+	PctlStateFormula<T>* left;
+	PctlStateFormula<T>* right;
 	uint_fast64_t bound;
 };
 
@@ -180,4 +180,4 @@ private:
 
 } //namespace mrmc
 
-#endif /* BOUNDEDUNTIL_H_ */
+#endif /* MRMC_FORMULA_BOUNDEDUNTIL_H_ */

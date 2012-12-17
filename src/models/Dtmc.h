@@ -1,12 +1,12 @@
 /*
- * dtmc.h
+ * Dtmc.h
  *
  *  Created on: 14.11.2012
  *      Author: Christian Dehnert
  */
 
-#ifndef DTMC_H_
-#define DTMC_H_
+#ifndef MRMC_MODELS_DTMC_H_
+#define MRMC_MODELS_DTMC_H_
 
 #include <ostream>
 #include <memory>
@@ -155,4 +155,4 @@ private:
 
 } // namespace mrmc
 
-#endif /* DTMC_H_ */
+#endif /* MRMC_MODELS_DTMC_H_ */

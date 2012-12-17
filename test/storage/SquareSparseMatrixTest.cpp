@@ -1,12 +1,13 @@
 #include "gtest/gtest.h"
 #include "src/storage/SquareSparseMatrix.h"
-#include "src/exceptions/invalid_argument.h"
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/OutOfRangeException.h"
 
 TEST(SquareSparseMatrixTest, ZeroRowsTest) {
 	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(0);
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
-	ASSERT_THROW(ssm->initialize(50), mrmc::exceptions::invalid_argument);
+	ASSERT_THROW(ssm->initialize(50), mrmc::exceptions::InvalidArgumentException);
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
@@ -16,7 +17,7 @@ TEST(SquareSparseMatrixTest, TooManyEntriesTest) {
 	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(2);
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
-	ASSERT_THROW(ssm->initialize(10), mrmc::exceptions::invalid_argument);
+	ASSERT_THROW(ssm->initialize(10), mrmc::exceptions::InvalidArgumentException);
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
@@ -29,16 +30,16 @@ TEST(SquareSparseMatrixTest, addNextValueTest) {
 	ASSERT_NO_THROW(ssm->initialize(1));
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
-	ASSERT_THROW(ssm->addNextValue(-1, 1, 1), mrmc::exceptions::out_of_range);
+	ASSERT_THROW(ssm->addNextValue(-1, 1, 1), mrmc::exceptions::OutOfRangeException);
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
-	ASSERT_THROW(ssm->addNextValue(1, -1, 1), mrmc::exceptions::out_of_range);
+	ASSERT_THROW(ssm->addNextValue(1, -1, 1), mrmc::exceptions::OutOfRangeException);
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
-	ASSERT_THROW(ssm->addNextValue(6, 1, 1), mrmc::exceptions::out_of_range);
+	ASSERT_THROW(ssm->addNextValue(6, 1, 1), mrmc::exceptions::OutOfRangeException);
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
-	ASSERT_THROW(ssm->addNextValue(1, 6, 1), mrmc::exceptions::out_of_range);
+	ASSERT_THROW(ssm->addNextValue(1, 6, 1), mrmc::exceptions::OutOfRangeException);
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
@@ -57,7 +58,7 @@ TEST(SquareSparseMatrixTest, finalizeTest) {
 	ASSERT_NO_THROW(ssm->addNextValue(1, 5, 1));
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
-	ASSERT_THROW(ssm->finalize(), mrmc::exceptions::invalid_state);
+	ASSERT_THROW(ssm->finalize(), mrmc::exceptions::InvalidStateException);
 	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;

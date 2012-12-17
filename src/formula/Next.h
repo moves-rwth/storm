@@ -5,11 +5,11 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef NEXT_H_
-#define NEXT_H_
+#ifndef MRMC_FORMULA_NEXT_H_
+#define MRMC_FORMULA_NEXT_H_
 
-#include "PCTLPathFormula.h"
-#include "PCTLStateFormula.h"
+#include "PctlPathFormula.h"
+#include "PctlStateFormula.h"
 
 namespace mrmc {
 
@@ -27,11 +27,11 @@ namespace formula {
  * The subtree is seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PCTLPathFormula
- * @see PCTLFormula
+ * @see PctlPathFormula
+ * @see PctlFormula
  */
 template <class T>
-class Next : public PCTLPathFormula<T> {
+class Next : public PctlPathFormula<T> {
 
 public:
 	/*!
@@ -46,7 +46,7 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Next(PCTLStateFormula<T>* child) {
+	Next(PctlStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -65,7 +65,7 @@ public:
 	/*!
 	 * @returns the child node
 	 */
-	const PCTLStateFormula<T>& getChild() const {
+	const PctlStateFormula<T>& getChild() const {
 		return *child;
 	}
 
@@ -73,7 +73,7 @@ public:
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(PCTLStateFormula<T>* child) {
+	void setChild(PctlStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -95,7 +95,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual PCTLPathFormula<T>* clone() const {
+	virtual PctlPathFormula<T>* clone() const {
 		Next<T>* result = new Next<T>();
 		if (child != NULL) {
 			result->setChild(child);
@@ -117,11 +117,11 @@ public:
 	}
 
 private:
-	PCTLStateFormula<T>* child;
+	PctlStateFormula<T>* child;
 };
 
 } //namespace formula
 
 } //namespace mrmc
 
-#endif /* NEXT_H_ */
+#endif /* MRMC_FORMULA_NEXT_H_ */

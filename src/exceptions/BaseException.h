@@ -1,5 +1,5 @@
-#ifndef BASEEXCEPTION_H_
-#define BASEEXCEPTION_H_
+#ifndef MRMC_EXCEPTIONS_BASEEXCEPTION_H_
+#define MRMC_EXCEPTIONS_BASEEXCEPTION_H_
 
 #include <exception>
 #include <sstream>
@@ -15,6 +15,10 @@ class BaseException : public std::exception
 		BaseException(const BaseException& cp)
 			: exception(cp), stream(cp.stream.str())
 		{
+		}
+
+		BaseException(const char* cstr) {
+			stream << cstr;
 		}
 		
 		~BaseException() throw() { }
@@ -38,4 +42,18 @@ class BaseException : public std::exception
 } // namespace exceptions
 } // namespace mrmc
 
-#endif // BASEEXCEPTION_H_
+/* Macro to generate descendant exception classes.
+ * As all classes are nearly the same, this makes changing common features much easier.
+ */
+#define MRMC_EXCEPTION_DEFINE_NEW(exception_name) class exception_name : public BaseException<exception_name> { \
+public: \
+	exception_name() : BaseException() { \
+	} \
+	exception_name(const char* cstr) : BaseException(cstr) { \
+	} \
+	exception_name(const exception_name& cp) : BaseException(cp) { \
+	} \
+};
+
+
+#endif // MRMC_EXCEPTIONS_BASEEXCEPTION_H_

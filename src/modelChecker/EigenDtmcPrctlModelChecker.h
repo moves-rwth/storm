@@ -5,16 +5,16 @@
  *      Author: 
  */
 
-#ifndef EIGENDTMCPRCTLMODELCHECKER_H_
-#define EIGENDTMCPRCTLMODELCHECKER_H_
+#ifndef MRMC_MODELCHECKER_EIGENDTMCPRCTLMODELCHECKER_H_
+#define MRMC_MODELCHECKER_EIGENDTMCPRCTLMODELCHECKER_H_
 
-#include "src/utility/vector.h"
+#include "src/utility/Vector.h"
 
 #include "src/models/Dtmc.h"
 #include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
-#include "src/utility/const_templates.h"
-#include "src/exceptions/NoConvergence.h"
+#include "src/utility/ConstTemplates.h"
+#include "src/exceptions/NoConvergenceException.h"
 
 #include "Eigen/Sparse"
 #include "Eigen/src/IterativeLinearSolvers/BiCGSTAB.h"
@@ -197,7 +197,7 @@ public:
 				LOG4CPLUS_ERROR(logger, "Solving of Submatrix failed: InvalidInput");
 			} else if(solver.info() == Eigen::ComputationInfo::NoConvergence) {
 				// NoConvergence
-				throw mrmc::exceptions::NoConvergence("Solving of Submatrix with Eigen failed", solver.iterations(), solver.maxIterations());
+				throw mrmc::exceptions::NoConvergenceException("Solving of Submatrix with Eigen failed", solver.iterations(), solver.maxIterations());
 			} else if(solver.info() == Eigen::ComputationInfo::NumericalIssue) {
 				// NumericalIssue
 				LOG4CPLUS_ERROR(logger, "Solving of Submatrix failed: NumericalIssue");
@@ -226,4 +226,4 @@ public:
 
 } //namespace mrmc
 
-#endif /* EIGENDTMCPRCTLMODELCHECKER_H_ */
+#endif /* MRMC_MODELCHECKER_EIGENDTMCPRCTLMODELCHECKER_H_ */

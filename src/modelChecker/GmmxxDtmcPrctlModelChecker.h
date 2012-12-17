@@ -5,17 +5,17 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef GMMXXDTMCPRCTLMODELCHECKER_H_
-#define GMMXXDTMCPRCTLMODELCHECKER_H_
+#ifndef MRMC_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_
+#define MRMC_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_
 
 #include <cmath>
 
 #include "src/models/Dtmc.h"
 #include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
-#include "src/utility/vector.h"
+#include "src/utility/Vector.h"
 
-#include "src/utility/settings.h"
+#include "src/utility/Settings.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
@@ -250,7 +250,7 @@ public:
 	 */
 	static void validateLeMethod(const std::string& lemethod) {
 		if (lemethod.compare("bicgstab") != 0 && lemethod.compare("qmr") != 0) {
-			throw exceptions::InvalidSettings() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
+			throw exceptions::InvalidSettingsException() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
 		}
 	}
 
@@ -260,7 +260,7 @@ public:
 	 */
 	static void validatePreconditioner(const std::string& preconditioner) {
 		if (preconditioner.compare("ilu") != 0 && preconditioner.compare("diagonal") != 0 && preconditioner.compare("ildlt") && preconditioner.compare("none") != 0) {
-			throw exceptions::InvalidSettings() << "Argument " << preconditioner << " for option 'precond' is invalid.";
+			throw exceptions::InvalidSettingsException() << "Argument " << preconditioner << " for option 'precond' is invalid.";
 		}
 	}
 };
@@ -269,4 +269,4 @@ public:
 
 } //namespace mrmc
 
-#endif /* GMMXXDTMCPRCTLMODELCHECKER_H_ */
+#endif /* MRMC_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_ */
