@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef UNTIL_H_
-#define UNTIL_H_
+#ifndef MRMC_FORMULA_UNTIL_H_
+#define MRMC_FORMULA_UNTIL_H_
 
 #include "PCTLPathFormula.h"
 #include "PCTLStateFormula.h"
@@ -153,4 +153,4 @@ private:
 
 } //namespace mrmc
 
-#endif /* UNTIL_H_ */
+#endif /* MRMC_FORMULA_UNTIL_H_ */

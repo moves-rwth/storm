@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef PROBABILISTICOPERATOR_H_
-#define PROBABILISTICOPERATOR_H_
+#ifndef MRMC_FORMULA_PROBABILISTICOPERATOR_H_
+#define MRMC_FORMULA_PROBABILISTICOPERATOR_H_
 
 #include "PCTLStateFormula.h"
 
@@ -153,4 +153,5 @@ private:
 
 } /* namespace formula */
 } /* namespace mrmc */
-#endif /* PROBABILISTICOPERATOR_H_ */
+
+#endif /* MRMC_FORMULA_PROBABILISTICOPERATOR_H_ */

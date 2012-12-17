@@ -5,8 +5,8 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef GRAPHANALYZER_H_
-#define GRAPHANALYZER_H_
+#ifndef MRMC_SOLVER_GRAPHANALYZER_H_
+#define MRMC_SOLVER_GRAPHANALYZER_H_
 
 #include "src/models/Dtmc.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -127,4 +127,4 @@ public:
 
 } // namespace mrmc
 
-#endif /* GRAPHANALYZER_H_ */
+#endif /* MRMC_SOLVER_GRAPHANALYZER_H_ */

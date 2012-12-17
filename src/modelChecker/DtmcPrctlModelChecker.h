@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef DTMCPRCTLMODELCHECKER_H_
-#define DTMCPRCTLMODELCHECKER_H_
+#ifndef MRMC_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
+#define MRMC_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
 
 namespace mrmc {
 
@@ -262,4 +262,4 @@ private:
 
 } //namespace mrmc
 
-#endif /* DTMCPRCTLMODELCHECKER_H_ */
+#endif /* MRMC_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_ */

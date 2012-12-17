@@ -1,5 +1,5 @@
-#ifndef MRMC_VECTOR_BITVECTOR_H_
-#define MRMC_VECTOR_BITVECTOR_H_
+#ifndef MRMC_STORAGE_BITVECTOR_H_
+#define MRMC_STORAGE_BITVECTOR_H_
 
 #include <exception>
 #include <new>
@@ -544,4 +544,4 @@ private:
 
 } // namespace mrmc
 
-#endif // MRMC_SPARSE_STATIC_SPARSE_MATRIX_H_
+#endif // MRMC_STORAGE_BITVECTOR_H_

@@ -29,6 +29,7 @@ ipch/
 obj/
 CMakeFiles/
 # The build Dir
+build/
 build//CMakeLists.txt
 /*.vcxproj
 /*.filters

@@ -1,12 +1,12 @@
 /*
- * backward_transitions.h
+ * GraphTransitions.h
  *
  *  Created on: 17.11.2012
  *      Author: Christian Dehnert
  */
 
-#ifndef GRAPHTRANSITIONS_H_
-#define BACKWARDTRANSITIONS_H_
+#ifndef MRMC_MODELS_GRAPHTRANSITIONS_H_
+#define MRMC_MODELS_GRAPHTRANSITIONS_H_
 
 #include "src/storage/SquareSparseMatrix.h"
 
@@ -175,4 +175,4 @@ private:
 
 } // namespace mrmc
 
-#endif /* GRAPHTRANSITIONS_H_ */
+#endif /* MRMC_MODELS_GRAPHTRANSITIONS_H_ */

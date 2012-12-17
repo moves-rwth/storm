@@ -1,12 +1,12 @@
 /*
- * labeling.h
+ * AtomicPropositionsLabeling.h
  *
  *  Created on: 10.09.2012
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_
-#define MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_
+#ifndef MRMC_MODELS_ATOMICPROPOSITIONSLABELING_H_
+#define MRMC_MODELS_ATOMICPROPOSITIONSLABELING_H_
 
 #include "src/storage/BitVector.h"
 #include "src/exceptions/OutOfRangeException.h"
@@ -231,4 +231,4 @@ private:
 
 } // namespace mrmc
 
-#endif /* MRMC_MODELS_ATOMIC_PROPOSITIONS_LABELING_H_ */
+#endif /* MRMC_MODELS_ATOMICPROPOSITIONSLABELING_H_ */

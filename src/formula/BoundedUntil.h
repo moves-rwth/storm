@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef BOUNDEDUNTIL_H_
-#define BOUNDEDUNTIL_H_
+#ifndef MRMC_FORMULA_BOUNDEDUNTIL_H_
+#define MRMC_FORMULA_BOUNDEDUNTIL_H_
 
 #include "PCTLPathFormula.h"
 #include "PCTLStateFormula.h"
@@ -180,4 +180,4 @@ private:
 
 } //namespace mrmc
 
-#endif /* BOUNDEDUNTIL_H_ */
+#endif /* MRMC_FORMULA_BOUNDEDUNTIL_H_ */

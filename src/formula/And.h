@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef AND_H_
-#define AND_H_
+#ifndef MRMC_FORMULA_AND_H_
+#define MRMC_FORMULA_AND_H_
 
 #include "PCTLStateFormula.h"
 #include <string>
@@ -154,4 +154,4 @@ private:
 
 } //namespace mrmc
 
-#endif /* AND_H_ */
+#endif /* MRMC_FORMULA_AND_H_ */

@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef NOT_H_
-#define NOT_H_
+#ifndef MRMC_FORMULA_NOT_H_
+#define MRMC_FORMULA_NOT_H_
 
 #include "PCTLStateFormula.h"
 
@@ -117,4 +117,4 @@ private:
 
 } //namespace MRMC
 
-#endif /* NOT_H_ */
+#endif /* MRMC_FORMULA_NOT_H_ */

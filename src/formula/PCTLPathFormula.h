@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef PCTLPATHFORMULA_H_
-#define PCTLPATHFORMULA_H_
+#ifndef MRMC_FORMULA_PCTLPATHFORMULA_H_
+#define MRMC_FORMULA_PCTLPATHFORMULA_H_
 
 #include "PCTLformula.h"
 #include "modelChecker/DtmcPrctlModelChecker.h"
@@ -62,4 +62,4 @@ public:
 
 } //namespace mrmc
 
-#endif /* PCTLPATHFORMULA_H_ */
+#endif /* MRMC_FORMULA_PCTLPATHFORMULA_H_ */

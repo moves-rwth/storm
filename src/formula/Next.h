@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef NEXT_H_
-#define NEXT_H_
+#ifndef MRMC_FORMULA_NEXT_H_
+#define MRMC_FORMULA_NEXT_H_
 
 #include "PCTLPathFormula.h"
 #include "PCTLStateFormula.h"
@@ -124,4 +124,4 @@ private:
 
 } //namespace mrmc
 
-#endif /* NEXT_H_ */
+#endif /* MRMC_FORMULA_NEXT_H_ */

@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef PCTLFORMULA_H_
-#define PCTLFORMULA_H_
+#ifndef MRMC_FORMULA_PCTLFORMULA_H_
+#define MRMC_FORMULA_PCTLFORMULA_H_
 
 #include <string>
 
@@ -45,4 +45,4 @@ public:
 
 } //namespace mrmc
 
-#endif /* PCTLFORMULA_H_ */
+#endif /* MRMC_FORMULA_PCTLFORMULA_H_ */

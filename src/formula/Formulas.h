@@ -5,8 +5,8 @@
  *      Author: chris
  */
 
-#ifndef FORMULAS_H_
-#define FORMULAS_H_
+#ifndef MRMC_FORMULA_FORMULAS_H_
+#define MRMC_FORMULA_FORMULAS_H_
 
 #include "And.h"
 #include "AP.h"
@@ -22,4 +22,4 @@
 #include "ProbabilisticIntervalOperator.h"
 #include "Until.h"
 
-#endif /* FORMULAS_H_ */
+#endif /* MRMC_FORMULA_FORMULAS_H_ */

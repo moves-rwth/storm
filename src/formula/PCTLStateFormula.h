@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef PCTLSTATEFORMULA_H_
-#define PCTLSTATEFORMULA_H_
+#ifndef MRMC_FORMULA_PCTLSTATEFORMULA_H_
+#define MRMC_FORMULA_PCTLSTATEFORMULA_H_
 
 #include "PCTLformula.h"
 #include "storage/BitVector.h"
@@ -63,4 +63,4 @@ public:
 } //namespace mrmc
 
 
-#endif /* PCTLSTATEFORMULA_H_ */
+#endif /* MRMC_FORMULA_PCTLSTATEFORMULA_H_ */

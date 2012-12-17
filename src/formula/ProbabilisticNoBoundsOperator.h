@@ -5,8 +5,8 @@
  *      Author: thomas
  */
 
-#ifndef PROBABILISTICNOBOUNDSOPERATOR_H_
-#define PROBABILISTICNOBOUNDSOPERATOR_H_
+#ifndef MRMC_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
+#define MRMC_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
 
 #include "PCTLformula.h"
 #include "PCTLPathFormula.h"
@@ -97,4 +97,5 @@ private:
 
 } /* namespace formula */
 } /* namespace mrmc */
-#endif /* PROBABILISTICNOBOUNDSOPERATOR_H_ */
+
+#endif /* MRMC_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_ */

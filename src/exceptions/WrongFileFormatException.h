@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_EXCEPTIONS_WRONGFILEFORMAT_H_
-#define MRMC_EXCEPTIONS_WRONGFILEFORMAT_H_
+#ifndef MRMC_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_
+#define MRMC_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_
 
 #include <exception>
 
@@ -32,4 +32,4 @@ class WrongFileFormatException : public std::exception {
 
 } //namespace mrmc
 
-#endif /* MRMC_EXCEPTIONS_WRONGFILEFORMAT_H_ */
+#endif /* MRMC_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_ */
