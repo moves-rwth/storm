@@ -8,7 +8,7 @@
 #ifndef MRMC_FORMULA_PROBABILISTICOPERATOR_H_
 #define MRMC_FORMULA_PROBABILISTICOPERATOR_H_
 
-#include "PCTLStateFormula.h"
+#include "PctlStateFormula.h"
 
 namespace mrmc {
 namespace formula {
@@ -32,14 +32,14 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PCTLStateFormula
- * @see PCTLPathFormula
+ * @see PctlStateFormula
+ * @see PctlPathFormula
  * @see ProbabilisticIntervalOperator
  * @see ProbabilisticNoBoundsOperator
- * @see PCTLFormula
+ * @see PctlFormula
  */
 template<class T>
-class ProbabilisticOperator : public mrmc::formula::PCTLStateFormula<T> {
+class ProbabilisticOperator : public mrmc::formula::PctlStateFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -55,7 +55,7 @@ public:
 	 * @param bound The expected value for path formulas
 	 * @param pathFormula The child node
 	 */
-	ProbabilisticOperator(T bound, PCTLPathFormula<T>& pathFormula) {
+	ProbabilisticOperator(T bound, PctlPathFormula<T>& pathFormula) {
 		this->bound = bound;
 		this->pathFormula = &pathFormula;
 	}
@@ -73,7 +73,7 @@ public:
 	/*!
 	 * @returns the child node (representation of a PCTL path formula)
 	 */
-	const PCTLPathFormula<T>& getPathFormula () const {
+	const PctlPathFormula<T>& getPathFormula () const {
 		return *pathFormula;
 	}
 
@@ -89,7 +89,7 @@ public:
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
 	 */
-	void setPathFormula(PCTLPathFormula<T>* pathFormula) {
+	void setPathFormula(PctlPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -109,7 +109,7 @@ public:
 	 *
 	 * @returns a new ProbabilisticOperator-object that is identical to the called object.
 	 */
-	virtual PCTLStateFormula<T>* clone() const {
+	virtual PctlStateFormula<T>* clone() const {
 		ProbabilisticOperator<T>* result = new ProbabilisticOperator<T>();
 		result->setBound(bound);
 		if (pathFormula != NULL) {
@@ -134,9 +134,9 @@ public:
 	}
 
 	/*!
-	 *	Returns a string representation of this PCTLStateFormula
+	 *	Returns a string representation of this PctlStateFormula
 	 * 
-	 * @returns a string representation of this PCTLStateFormula
+	 * @returns a string representation of this PctlStateFormula
 	 */
 	virtual std::string toString() const {
 		std::string result = " P=";
@@ -148,7 +148,7 @@ public:
 	}
 private:
 	T bound;
-	PCTLPathFormula<T>* pathFormula;
+	PctlPathFormula<T>* pathFormula;
 };
 
 } /* namespace formula */

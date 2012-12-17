@@ -8,8 +8,8 @@
 #ifndef MRMC_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
 #define MRMC_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
 
-#include "PCTLformula.h"
-#include "PCTLPathFormula.h"
+#include "PctlFormula.h"
+#include "PctlPathFormula.h"
 
 namespace mrmc {
 namespace formula {
@@ -26,20 +26,20 @@ namespace formula {
  *
  * @note
  * 	This class is a hybrid of a state and path formula, and may only appear as the outermost operator.
- * 	Hence, it is seen as neither a state nor a path formula, but is directly derived from PCTLformula.
+ * 	Hence, it is seen as neither a state nor a path formula, but is directly derived from PctlFormula.
  *
  * The subtree is seen as part of the object and deleted with it
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PCTLStateFormula
- * @see PCTLPathFormula
+ * @see PctlStateFormula
+ * @see PctlPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticIntervalOperator
- * @see PCTLFormula
+ * @see PctlFormula
  */
 template <class T>
-class ProbabilisticNoBoundsOperator: public mrmc::formula::PCTLFormula<T> {
+class ProbabilisticNoBoundsOperator: public mrmc::formula::PctlFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -54,7 +54,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundsOperator(PCTLPathFormula<T> &pathFormula) {
+	ProbabilisticNoBoundsOperator(PctlPathFormula<T> &pathFormula) {
 		this->pathFormula = &pathFormula;
 	}
 
@@ -68,7 +68,7 @@ public:
 	/*!
 	 * @returns the child node (representation of a PCTL path formula)
 	 */
-	const PCTLPathFormula<T>& getPathFormula () const {
+	const PctlPathFormula<T>& getPathFormula () const {
 		return *pathFormula;
 	}
 
@@ -77,7 +77,7 @@ public:
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
 	 */
-	void setPathFormula(PCTLPathFormula<T>* pathFormula) {
+	void setPathFormula(PctlPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -92,7 +92,7 @@ public:
 	}
 
 private:
-	PCTLPathFormula<T>* pathFormula;
+	PctlPathFormula<T>* pathFormula;
 };
 
 } /* namespace formula */

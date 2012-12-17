@@ -8,8 +8,8 @@
 #ifndef MRMC_FORMULA_UNTIL_H_
 #define MRMC_FORMULA_UNTIL_H_
 
-#include "PCTLPathFormula.h"
-#include "PCTLStateFormula.h"
+#include "PctlPathFormula.h"
+#include "PctlStateFormula.h"
 
 namespace mrmc {
 
@@ -28,11 +28,11 @@ namespace formula {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PCTLPathFormula
- * @see PCTLFormula
+ * @see PctlPathFormula
+ * @see PctlFormula
  */
 template <class T>
-class Until : public PCTLPathFormula<T> {
+class Until : public PctlPathFormula<T> {
 
 public:
 	/*!
@@ -49,7 +49,7 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	Until(PCTLStateFormula<T>* left, PCTLStateFormula<T>* right) {
+	Until(PctlStateFormula<T>* left, PctlStateFormula<T>* right) {
 		this->left = left;
 		this->right = right;
 	}
@@ -74,7 +74,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(PCTLStateFormula<T>* newLeft) {
+	void setLeft(PctlStateFormula<T>* newLeft) {
 		left = newLeft;
 	}
 
@@ -83,21 +83,21 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(PCTLStateFormula<T>* newRight) {
+	void setRight(PctlStateFormula<T>* newRight) {
 		right = newRight;
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const PCTLStateFormula<T>& getLeft() const {
+	const PctlStateFormula<T>& getLeft() const {
 		return *left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	const PCTLStateFormula<T>& getRight() const {
+	const PctlStateFormula<T>& getRight() const {
 		return *right;
 	}
 
@@ -120,7 +120,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual PCTLPathFormula<T>* clone() const {
+	virtual PctlPathFormula<T>* clone() const {
 		Until<T>* result = new Until();
 		if (left != NULL) {
 			result->setLeft(left->clone());
@@ -145,8 +145,8 @@ public:
 	}
 
 private:
-	PCTLStateFormula<T>* left;
-	PCTLStateFormula<T>* right;
+	PctlStateFormula<T>* left;
+	PctlStateFormula<T>* right;
 };
 
 } //namespace formula

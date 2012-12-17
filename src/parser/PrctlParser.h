@@ -1,7 +1,7 @@
 #ifndef MRMC_PARSER_PRCTLPARSER_H_
 #define MRMC_PARSER_PRCTLPARSER_H_
 
-#include "src/formula/PCTLformula.h"
+#include "src/formula/PctlFormula.h"
 #include "src/parser/Parser.h"
 
 namespace mrmc {
@@ -18,13 +18,13 @@ class PrctlParser : Parser
 		/*!
 		 *	@brief return formula object parsed from file.
 		 */
-		mrmc::formula::PCTLFormula<double>* getFormula()
+		mrmc::formula::PctlFormula<double>* getFormula()
 		{
 			return this->formula;
 		}
 	
 	private:
-		mrmc::formula::PCTLFormula<double>* formula;
+		mrmc::formula::PctlFormula<double>* formula;
 };
 
 } // namespace parser

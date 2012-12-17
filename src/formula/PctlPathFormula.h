@@ -1,5 +1,5 @@
 /*
- * PCTLPathFormula.h
+ * PctlPathFormula.h
  *
  *  Created on: 19.10.2012
  *      Author: Thomas Heinemann
@@ -8,7 +8,7 @@
 #ifndef MRMC_FORMULA_PCTLPATHFORMULA_H_
 #define MRMC_FORMULA_PCTLPATHFORMULA_H_
 
-#include "PCTLformula.h"
+#include "PctlFormula.h"
 #include "modelChecker/DtmcPrctlModelChecker.h"
 #include <vector>
 
@@ -26,13 +26,13 @@ namespace formula {
  * 	   clone().
  */
 template <class T>
-class PCTLPathFormula : public PCTLFormula<T> {
+class PctlPathFormula : public PctlFormula<T> {
 
 public:
 	/*!
 	 * empty destructor
 	 */
-	virtual ~PCTLPathFormula() { }
+	virtual ~PctlPathFormula() { }
 
 	/*!
 	 * Clones the called object.
@@ -42,7 +42,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PCTLPathFormula<T>* clone() const = 0;
+	virtual PctlPathFormula<T>* clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.

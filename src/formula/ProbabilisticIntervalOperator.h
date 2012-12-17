@@ -8,8 +8,8 @@
 #ifndef MRMC_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
 #define MRMC_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
 
-#include "PCTLStateFormula.h"
-#include "PCTLPathFormula.h"
+#include "PctlStateFormula.h"
+#include "PctlPathFormula.h"
 #include "utility/ConstTemplates.h"
 
 namespace mrmc {
@@ -35,14 +35,14 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PCTLStateFormula
- * @see PCTLPathFormula
+ * @see PctlStateFormula
+ * @see PctlPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
- * @see PCTLFormula
+ * @see PctlFormula
  */
 template<class T>
-class ProbabilisticIntervalOperator : public PCTLStateFormula<T> {
+class ProbabilisticIntervalOperator : public PctlStateFormula<T> {
 
 public:
 	/*!
@@ -61,7 +61,7 @@ public:
 	 * @param upperBound The upper bound for the probability
 	 * @param pathFormula The child node
 	 */
-	ProbabilisticIntervalOperator(T lowerBound, T upperBound, PCTLPathFormula<T>& pathFormula) {
+	ProbabilisticIntervalOperator(T lowerBound, T upperBound, PctlPathFormula<T>& pathFormula) {
 		this->lower = lowerBound;
 		this->upper = upperBound;
 		this->pathFormula = &pathFormula;
@@ -82,7 +82,7 @@ public:
 	/*!
 	 * @returns the child node (representation of a PCTL path formula)
 	 */
-	const PCTLPathFormula<T>& getPathFormula () const {
+	const PctlPathFormula<T>& getPathFormula () const {
 		return *pathFormula;
 	}
 
@@ -105,7 +105,7 @@ public:
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
 	 */
-	void setPathFormula(PCTLPathFormula<T>* pathFormula) {
+	void setPathFormula(PctlPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -141,7 +141,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PCTLStateFormula<T>* clone() const {
+	virtual PctlStateFormula<T>* clone() const {
 		ProbabilisticIntervalOperator<T>* result = new ProbabilisticIntervalOperator<T>();
 		result->setInterval(lower, upper);
 		if (pathFormula != NULL) {
@@ -166,7 +166,7 @@ public:
 private:
 	T lower;
 	T upper;
-	PCTLPathFormula<T>* pathFormula;
+	PctlPathFormula<T>* pathFormula;
 };
 
 } //namespace formula

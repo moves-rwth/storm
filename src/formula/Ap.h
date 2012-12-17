@@ -1,5 +1,5 @@
 /*
- * AP.h
+ * Ap.h
  *
  *  Created on: 19.10.2012
  *      Author: Thomas Heinemann
@@ -8,7 +8,7 @@
 #ifndef MRMC_FORMULA_AP_H_
 #define MRMC_FORMULA_AP_H_
 
-#include "PCTLStateFormula.h"
+#include "PctlStateFormula.h"
 
 namespace mrmc {
 
@@ -20,21 +20,21 @@ namespace formula {
  *
  * This class represents the leaves in the formula tree.
  *
- * @see PCTLStateFormula
- * @see PCTLFormula
+ * @see PctlStateFormula
+ * @see PctlFormula
  */
 template <class T>
-class AP : public PCTLStateFormula<T> {
+class Ap : public PctlStateFormula<T> {
 
 public:
 	/*!
 	 * Constructor
 	 *
-	 * Creates a new atomic proposition leaf, with the label AP
+	 * Creates a new atomic proposition leaf, with the label Ap
 	 *
 	 * @param ap The string representing the atomic proposition
 	 */
-	AP(std::string ap) {
+	Ap(std::string ap) {
 		this->ap = ap;
 	}
 
@@ -42,12 +42,12 @@ public:
 	 * Destructor.
 	 * At this time, empty...
 	 */
-	virtual ~AP() { }
+	virtual ~Ap() { }
 
 	/*!
 	 * @returns the name of the atomic proposition
 	 */
-	const std::string& getAP() const {
+	const std::string& getAp() const {
 		return ap;
 	}
 
@@ -56,16 +56,16 @@ public:
 	 *
 	 */
 	virtual std::string toString() const {
-		return getAP();
+		return getAp();
 	}
 
 	/*!
 	 * Clones the called object.
 	 *
-	 * @returns a new AP-object that is identical the called object.
+	 * @returns a new Ap-object that is identical the called object.
 	 */
-	virtual PCTLStateFormula<T>* clone() const {
-	  return new AP(ap);
+	virtual PctlStateFormula<T>* clone() const {
+	  return new Ap(ap);
 	}
 
 	/*!
@@ -78,7 +78,7 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkAP(*this);
+	  return modelChecker.checkAp(*this);
 	}
 
 private:

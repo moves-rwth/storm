@@ -1,5 +1,5 @@
 /*
- * PCTLformula.h
+ * Pctlformula.h
  *
  *  Created on: 19.10.2012
  *      Author: Thomas Heinemann
@@ -23,16 +23,16 @@ namespace formula {
  * @attention This class is abstract.
  * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
  * 	   the syntax conflicts with copy constructors for unary operators. To produce an identical object, the classes
- * 	   PCTLPathFormula and PCTLStateFormula offer the method clone().
+ * 	   PctlPathFormula and PctlStateFormula offer the method clone().
  */
 template <class T>
-class PCTLFormula {
+class PctlFormula {
 
 public:
 	/*!
 	 * virtual destructor
 	 */
-	virtual ~PCTLFormula() { }
+	virtual ~PctlFormula() { }
 
 	/*!
 	 * @note This function is not implemented in this class.

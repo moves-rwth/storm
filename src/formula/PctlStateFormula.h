@@ -1,5 +1,5 @@
 /*
- * PCTLStateFormula.h
+ * PctlStateFormula.h
  *
  *  Created on: 19.10.2012
  *      Author: Thomas Heinemann
@@ -8,7 +8,7 @@
 #ifndef MRMC_FORMULA_PCTLSTATEFORMULA_H_
 #define MRMC_FORMULA_PCTLSTATEFORMULA_H_
 
-#include "PCTLformula.h"
+#include "PctlFormula.h"
 #include "storage/BitVector.h"
 #include "modelChecker/DtmcPrctlModelChecker.h"
 
@@ -26,13 +26,13 @@ namespace formula {
  * 	   clone().
  */
 template <class T>
-class PCTLStateFormula : public PCTLFormula<T> {
+class PctlStateFormula : public PctlFormula<T> {
 
 public:
 	/*!
 	 * empty destructor
 	 */
-	virtual ~PCTLStateFormula() { }
+	virtual ~PctlStateFormula() { }
 
 	/*!
 	 * Clones the called object.
@@ -42,7 +42,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PCTLStateFormula<T>* clone() const = 0;
+	virtual PctlStateFormula<T>* clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.

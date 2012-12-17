@@ -23,8 +23,8 @@ class DtmcPrctlModelChecker;
 
 }
 
-#include "src/formula/PCTLPathFormula.h"
-#include "src/formula/PCTLStateFormula.h"
+#include "src/formula/PctlPathFormula.h"
+#include "src/formula/PctlStateFormula.h"
 
 #include "src/formula/Formulas.h"
 
@@ -96,7 +96,7 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	mrmc::storage::BitVector* checkStateFormula(const mrmc::formula::PCTLStateFormula<Type>& formula) const {
+	mrmc::storage::BitVector* checkStateFormula(const mrmc::formula::PctlStateFormula<Type>& formula) const {
 		return formula.check(*this);
 	}
 
@@ -117,16 +117,16 @@ public:
 	/*!
 	 * The check method for a formula with an AP node as root in its formula tree
 	 *
-	 * @param formula The AP state formula to check
+	 * @param formula The Ap state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	mrmc::storage::BitVector* checkAP(const mrmc::formula::AP<Type>& formula) const {
-		if (formula.getAP().compare("true") == 0) {
+	mrmc::storage::BitVector* checkAp(const mrmc::formula::Ap<Type>& formula) const {
+		if (formula.getAp().compare("true") == 0) {
 			return new mrmc::storage::BitVector(model->getNumberOfStates(), 1);
-		} else if (formula.getAP().compare("false") == 0) {
+		} else if (formula.getAp().compare("false") == 0) {
 			return new mrmc::storage::BitVector(model->getNumberOfStates());
 		}
-		return new mrmc::storage::BitVector(*model->getLabeledStates(formula.getAP()));
+		return new mrmc::storage::BitVector(*model->getLabeledStates(formula.getAp()));
 	}
 
 	/*!
@@ -226,7 +226,7 @@ public:
 	 * @param formula The path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	std::vector<Type>* checkPathFormula(const mrmc::formula::PCTLPathFormula<Type>& formula) const {
+	std::vector<Type>* checkPathFormula(const mrmc::formula::PctlPathFormula<Type>& formula) const {
 		return formula.check(*this);
 	}
 

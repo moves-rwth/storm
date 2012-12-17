@@ -58,7 +58,7 @@ namespace
 		/*!
 		 *	@brief Resulting formula.
 		 */
-		mrmc::formula::PCTLFormula<double>* result;
+		mrmc::formula::PctlFormula<double>* result;
 		
 		struct dump
 		{
