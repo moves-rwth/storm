@@ -101,7 +101,7 @@ int main(const int argc, const char* argv[]) {
 		LOG4CPLUS_INFO(logger, "Enable verbose mode, log output gets printed to console.");
 	}
 
-	mrmc::parser::DeterministicSparseTransitionParser traparser(s->getString("trafile").c_str());	
+	mrmc::parser::DeterministicSparseTransitionParser traparser(s->getString("trafile"));
 	mrmc::parser::LabParser labparser(traparser.getMatrix()->getRowCount(), s->getString("labfile").c_str());
 	mrmc::models::Dtmc<double> dtmc(traparser.getMatrix(), labparser.getLabeling());
 

@@ -106,7 +106,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
  *	@return a pointer to the created sparse matrix.
  */
 
-DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(const char * filename)
+DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename)
 	: matrix(nullptr)
 {
 	/*
@@ -117,7 +117,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(const c
 	/*
 	 *	open file
 	 */
-	MappedFile file(filename);
+	MappedFile file(filename.c_str());
 	char* buf = file.data;
 	
 	/*

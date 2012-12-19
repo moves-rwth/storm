@@ -60,7 +60,7 @@ void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, std::string filename) {
 }
 
 //TODO: Should this stay here or be integrated in the new parser structure?
-mrmc::models::Dtmc<double>* parseDTMC(const char* tra_file, const char* lab_file) {
+mrmc::models::Dtmc<double>* parseDTMC(std::string const &tra_file, const char* lab_file) {
 	mrmc::parser::DeterministicSparseTransitionParser tp(tra_file);
 	uint_fast64_t node_count = tp.getMatrix()->getRowCount();
 

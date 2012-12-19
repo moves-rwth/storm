@@ -20,7 +20,7 @@ namespace parser {
  */
 class DeterministicSparseTransitionParser : Parser {
 	public:
-		DeterministicSparseTransitionParser(const char* filename);
+		DeterministicSparseTransitionParser(std::string const &filename);
 		
 		std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> getMatrix() {
 			return this->matrix;
