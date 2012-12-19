@@ -5,7 +5,7 @@
  *		Author: Gereon Kremer
  */
 
-#include "src/parser/TraParser.h"
+#include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFileFormatException.h"
 #include "boost/integer/integer_mask.hpp"
@@ -42,7 +42,7 @@ namespace parser{
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode) {
+uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t &maxnode) {
 	uint_fast64_t non_zero = 0;
 	
 	/*
@@ -106,7 +106,7 @@ uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode) {
  *	@return a pointer to the created sparse matrix.
  */
 
-TraParser::TraParser(const char * filename)
+DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(const char * filename)
 	: matrix(nullptr)
 {
 	/*

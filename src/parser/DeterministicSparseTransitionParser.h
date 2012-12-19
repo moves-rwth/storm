@@ -12,15 +12,15 @@ namespace mrmc {
 namespace parser {
 	
 /*!
- *	@brief	Load transition system from file and return initialized
- *	StaticSparseMatrix object.
+ *	@brief	Load a deterministic transition system from file and create a
+ *	sparse adjacency matrix whose entries represent the weights of the edges
  *
  *	Note that this class creates a new StaticSparseMatrix object that can be
  *	accessed via getMatrix(). However, it does not delete this object!
  */
-class TraParser : Parser {
+class DeterministicSparseTransitionParser : Parser {
 	public:
-		TraParser(const char* filename);
+		DeterministicSparseTransitionParser(const char* filename);
 		
 		std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> getMatrix() {
 			return this->matrix;

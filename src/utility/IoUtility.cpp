@@ -6,7 +6,7 @@
  */
 
 #include "src/utility/IoUtility.h"
-#include "src/parser/TraParser.h"
+#include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/parser/LabParser.h"
 
 #include <fstream>
@@ -61,7 +61,7 @@ void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, std::string filename) {
 
 //TODO: Should this stay here or be integrated in the new parser structure?
 mrmc::models::Dtmc<double>* parseDTMC(const char* tra_file, const char* lab_file) {
-	mrmc::parser::TraParser tp(tra_file);
+	mrmc::parser::DeterministicSparseTransitionParser tp(tra_file);
 	uint_fast64_t node_count = tp.getMatrix()->getRowCount();
 
 	mrmc::parser::LabParser lp(node_count, lab_file);
