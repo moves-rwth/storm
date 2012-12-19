@@ -24,7 +24,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
-#include "src/parser/LabParser.h"
+#include "src/parser/AtomicPropositionLabelingParser.h"
 #include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/solver/GraphAnalyzer.h"
@@ -102,7 +102,7 @@ int main(const int argc, const char* argv[]) {
 	}
 
 	mrmc::parser::DeterministicSparseTransitionParser traparser(s->getString("trafile"));
-	mrmc::parser::LabParser labparser(traparser.getMatrix()->getRowCount(), s->getString("labfile").c_str());
+	mrmc::parser::AtomicPropositionLabelingParser labparser(traparser.getMatrix()->getRowCount(), s->getString("labfile").c_str());
 	mrmc::models::Dtmc<double> dtmc(traparser.getMatrix(), labparser.getLabeling());
 
 	dtmc.printModelInformationToStream(std::cout);

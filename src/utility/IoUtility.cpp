@@ -7,7 +7,7 @@
 
 #include "src/utility/IoUtility.h"
 #include "src/parser/DeterministicSparseTransitionParser.h"
-#include "src/parser/LabParser.h"
+#include "src/parser/AtomicPropositionLabelingParser.h"
 
 #include <fstream>
 
@@ -64,7 +64,7 @@ mrmc::models::Dtmc<double>* parseDTMC(std::string const &tra_file, const char* l
 	mrmc::parser::DeterministicSparseTransitionParser tp(tra_file);
 	uint_fast64_t node_count = tp.getMatrix()->getRowCount();
 
-	mrmc::parser::LabParser lp(node_count, lab_file);
+	mrmc::parser::AtomicPropositionLabelingParser lp(node_count, lab_file);
 
 	mrmc::models::Dtmc<double>* result = new mrmc::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling());
 	return result;
