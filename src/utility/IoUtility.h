@@ -36,7 +36,7 @@ void dtmcToDot(mrmc::models::Dtmc<double>* dtmc, std::string filename);
     @returns The DTMC described by the two files.
 
  */
-mrmc::models::Dtmc<double>* parseDTMC(std::string const &tra_file, const char* lab_file);
+mrmc::models::Dtmc<double>* parseDTMC(std::string const &tra_file, std::string const &lab_file);
 
 } //namespace utility
 

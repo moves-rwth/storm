@@ -102,7 +102,7 @@ int main(const int argc, const char* argv[]) {
 	}
 
 	mrmc::parser::DeterministicSparseTransitionParser traparser(s->getString("trafile"));
-	mrmc::parser::AtomicPropositionLabelingParser labparser(traparser.getMatrix()->getRowCount(), s->getString("labfile").c_str());
+	mrmc::parser::AtomicPropositionLabelingParser labparser(traparser.getMatrix()->getRowCount(), s->getString("labfile"));
 	mrmc::models::Dtmc<double> dtmc(traparser.getMatrix(), labparser.getLabeling());
 
 	dtmc.printModelInformationToStream(std::cout);

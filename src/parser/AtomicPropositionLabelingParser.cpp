@@ -38,13 +38,14 @@ namespace parser {
  *	@param filename   input .lab file's name.
  *	@return The pointer to the created labeling object.
  */
-AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t node_count, const char * filename)
+AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t node_count,
+																					  std::string const & filename)
 	: labeling(nullptr)
 {
 	/*
 	 *	open file
 	 */
-	MappedFile file(filename);
+	MappedFile file(filename.c_str());
 	char* buf = file.data;
 
 	/*

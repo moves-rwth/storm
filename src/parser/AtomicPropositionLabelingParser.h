@@ -19,7 +19,7 @@ namespace parser {
  */
 class AtomicPropositionLabelingParser : Parser {
 	public:
-		AtomicPropositionLabelingParser(uint_fast64_t node_count, const char* filename);
+		AtomicPropositionLabelingParser(uint_fast64_t node_count, std::string const &filename);
 
 		std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> getLabeling() {
 			return this->labeling;
