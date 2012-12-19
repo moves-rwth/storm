@@ -82,7 +82,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 		if (col > maxnode) maxnode = col;
 		/*
 		 *	read value. if value is 0.0, either strtod could not read a number or we encountered a probability of zero.
-		 *	if row == col, we have a diagonal element which is treated seperately and this non_zero must be decreased.
+		 *	if row == col, we have a diagonal element which is treated separately and this non_zero must be decreased.
 		 */
 		val = strtod(buf, &tmp);
 		if (val == 0.0) {
@@ -178,14 +178,6 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(const c
 		col = checked_strtol(buf, &buf);
 		val = strtod(buf, &buf);
 		
-		/*
-		 *	only values in (0, 1] are meaningful
-		 */
-		if ((val <= 0.0) || (val > 1.0))
-		{
-			LOG4CPLUS_ERROR(logger, "Found transition probability of " << val << ", but we think probabilities should be from (0,1].");
-			throw mrmc::exceptions::WrongFileFormatException();
-		}
 		this->matrix->addNextValue(row,col,val);
 		buf = skipWS(buf);
 	}
