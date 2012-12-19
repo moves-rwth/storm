@@ -162,7 +162,7 @@ public:
 
 			if (s->getString("lemethod").compare("bicgstab") == 0) {
 				LOG4CPLUS_INFO(logger, "Using BiCGStab method.");
-				if (precond.compare("ilu")) {
+				if (precond == "ilu") {
 					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
 				} else if (precond == "diagonal") {
 					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
@@ -185,7 +185,7 @@ public:
 				} */
 			} else if (s->getString("lemethod").compare("qmr") == 0) {
 				LOG4CPLUS_INFO(logger, "Using QMR method.");
-				if (precond.compare("ilu")) {
+				if (precond == "ilu") {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
 				} else if (precond == "diagonal" == 0) {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);

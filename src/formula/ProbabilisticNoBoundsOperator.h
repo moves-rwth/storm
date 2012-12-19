@@ -82,6 +82,21 @@ public:
 	}
 
 	/*!
+	 * Calls the model checker to check this formula.
+	 * Needed to infer the correct type of formula class.
+	 *
+	 * @note This function should only be called in a generic check function of a model checker
+	 * 		class. For other uses, the methods of the model checker should be used.
+	 *
+	 * @returns A bit vector indicating all states that satisfy the formula represented by the
+	 *          called object.
+	 */
+	virtual std::vector<T> *check(
+			const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	  return modelChecker.checkProbabilisticOperator(*this);
+	}
+
+	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {

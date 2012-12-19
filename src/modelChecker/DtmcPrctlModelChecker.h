@@ -32,6 +32,11 @@ class DtmcPrctlModelChecker;
 #include "src/storage/BitVector.h"
 #include <vector>
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+
+extern log4cplus::Logger logger;
+
 namespace mrmc {
 
 namespace modelChecker {
@@ -53,8 +58,8 @@ public:
 	 *
 	 * @param model The dtmc model which is checked.
 	 */
-	explicit DtmcPrctlModelChecker(mrmc::models::Dtmc<Type>& model) {
-	   this->model = &model;
+	explicit DtmcPrctlModelChecker(mrmc::models::Dtmc<Type>& model) : model(model) {
+
 	}
 
 	/*!
@@ -70,15 +75,14 @@ public:
 	 * Destructor
 	 */
 	virtual ~DtmcPrctlModelChecker() {
-		//should not be deleted here, according to ticket #24
-	   //delete this->dtmc;
+		// Intentionally left empty.
 	}
 
 	/*!
 	 * @returns A reference to the dtmc of the model checker.
 	 */
 	mrmc::models::Dtmc<Type>& getModel() const {
-		return *(this->model);
+		return this->model;
 	}
 
 	/*!
@@ -87,6 +91,39 @@ public:
 	 */
 	void setModel(mrmc::models::Dtmc<Type>& model) {
 		this->model = &model;
+	}
+
+	/*!
+	 * Checks the given state formula on the DTMC and prints the result (true/false) for all initial
+	 * states.
+	 * @param stateFormula The formula to be checked.
+	 */
+	void check(const mrmc::formula::PctlStateFormula<Type>& stateFormula) {
+		LOG4CPLUS_INFO(logger, "Model checking formula " << stateFormula.toString());
+		mrmc::storage::BitVector* result = stateFormula.check(*this);
+		LOG4CPLUS_INFO(logger, "Result for initial states:");
+		for (auto initialState : *this->getModel().getLabeledStates("init")) {
+			LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
+		}
+		delete result;
+	}
+
+	/*!
+	 * Checks the given probabilistic operator (with no bound) on the DTMC and prints the result
+	 * (probability) for all initial states.
+	 * @param probabilisticNoBoundsFormula The formula to be checked.
+	 */
+	void check(const mrmc::formula::ProbabilisticNoBoundsOperator<Type>& probabilisticNoBoundsFormula) {
+		LOG4CPLUS_INFO(logger, "Model checking formula " << probabilisticNoBoundsFormula.toString());
+		std::cout << "Model checking formula: " << probabilisticNoBoundsFormula.toString() << std::endl;
+		std::vector<Type>* result = probabilisticNoBoundsFormula.check(*this);
+		LOG4CPLUS_INFO(logger, "Result for initial states:");
+		std::cout << "Result for initial states:" << std::endl;
+		for (auto initialState : *this->getModel().getLabeledStates("init")) {
+			LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
+			std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+		}
+		delete result;
 	}
 
 	/*!
@@ -122,11 +159,11 @@ public:
 	 */
 	mrmc::storage::BitVector* checkAp(const mrmc::formula::Ap<Type>& formula) const {
 		if (formula.getAp().compare("true") == 0) {
-			return new mrmc::storage::BitVector(model->getNumberOfStates(), 1);
+			return new mrmc::storage::BitVector(this->getModel().getNumberOfStates(), true);
 		} else if (formula.getAp().compare("false") == 0) {
-			return new mrmc::storage::BitVector(model->getNumberOfStates());
+			return new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
 		}
-		return new mrmc::storage::BitVector(*model->getLabeledStates(formula.getAp()));
+		return new mrmc::storage::BitVector(*this->getModel().getLabeledStates(formula.getAp()));
 	}
 
 	/*!
@@ -216,7 +253,7 @@ public:
 	 */
 	std::vector<Type>* checkProbabilisticOperator(
 			const mrmc::formula::ProbabilisticNoBoundsOperator<Type>& formula) const {
-		return formula.getPathFormula().check(this);
+		return formula.getPathFormula().check(*this);
 	}
 
 	/*!
@@ -255,7 +292,7 @@ public:
 	virtual std::vector<Type>* checkUntil(const mrmc::formula::Until<Type>& formula) const = 0;
 
 private:
-	mrmc::models::Dtmc<Type>* model;
+	mrmc::models::Dtmc<Type>& model;
 };
 
 } //namespace modelChecker
