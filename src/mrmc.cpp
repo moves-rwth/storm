@@ -24,8 +24,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
-#include "src/parser/AtomicPropositionLabelingParser.h"
-#include "src/parser/DeterministicSparseTransitionParser.h"
+#include "src/parser/DtmcParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
@@ -101,11 +100,10 @@ int main(const int argc, const char* argv[]) {
 		LOG4CPLUS_INFO(logger, "Enable verbose mode, log output gets printed to console.");
 	}
 
-	mrmc::parser::DeterministicSparseTransitionParser traparser(s->getString("trafile"));
-	mrmc::parser::AtomicPropositionLabelingParser labparser(traparser.getMatrix()->getRowCount(), s->getString("labfile"));
-	mrmc::models::Dtmc<double> dtmc(traparser.getMatrix(), labparser.getLabeling());
+	mrmc::parser::DtmcParser dtmcParser(s->getString("trafile"), s->getString("labfile"));
+	std::shared_ptr<mrmc::models::Dtmc<double>> dtmc = dtmcParser.getDtmc();
 
-	dtmc.printModelInformationToStream(std::cout);
+	dtmc->printModelInformationToStream(std::cout);
 
 	if (s != nullptr) {
 		delete s;
