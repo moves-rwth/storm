@@ -106,7 +106,7 @@ namespace parser {
 			/*!
 			 *	@brief Skips common whitespaces in a string.
 			 */
-			char* skipWS(char* buf);
+			char* trimWhitespaces(char* buf);
 	};
 
 } // namespace parser

@@ -177,7 +177,7 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 					buf += cnt;
 				}
 			}
-			buf = skipWS(buf);
+			buf = trimWhitespaces(buf);
 		}
 	}
 }

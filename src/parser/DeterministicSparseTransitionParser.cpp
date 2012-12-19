@@ -54,7 +54,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 	}
 	buf += 7; // skip "STATES "
 	if (strtol(buf, &buf, 10) == 0) return 0;
-	buf = skipWS(buf);
+	buf = trimWhitespaces(buf);
 	if (strncmp(buf, "TRANSITIONS ", 12) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
@@ -90,7 +90,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 			return 0;
 		}
 		if (row == col) non_zero--;
-		buf = skipWS(tmp);
+		buf = trimWhitespaces(tmp);
 	}
 
 	return non_zero;
@@ -145,7 +145,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	 */
 	buf += 7; // skip "STATES "
 	checked_strtol(buf, &buf);
-	buf = skipWS(buf);
+	buf = trimWhitespaces(buf);
 	buf += 12; // skip "TRANSITIONS "
 	checked_strtol(buf, &buf);
 	
@@ -179,7 +179,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 		val = strtod(buf, &buf);
 		
 		this->matrix->addNextValue(row,col,val);
-		buf = skipWS(buf);
+		buf = trimWhitespaces(buf);
 	}
 	
 	/*
