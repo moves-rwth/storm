@@ -24,8 +24,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
-#include "src/parser/LabParser.h"
-#include "src/parser/TraParser.h"
+#include "src/parser/DtmcParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
@@ -144,16 +143,16 @@ void cleanUp() {
  */
 void testChecking() {
 	mrmc::settings::Settings* s = mrmc::settings::instance();
-	mrmc::parser::TraParser traparser(s->getString("trafile").c_str());
-	mrmc::parser::LabParser labparser(traparser.getMatrix()->getRowCount(), s->getString("labfile").c_str());
-	mrmc::models::Dtmc<double> dtmc(traparser.getMatrix(), labparser.getLabeling());
-	dtmc.printModelInformationToStream(std::cout);
+	mrmc::parser::DtmcParser dtmcParser(s->getString("trafile"), s->getString("labfile"));
+	std::shared_ptr<mrmc::models::Dtmc<double>> dtmc = dtmcParser.getDtmc();
+
+	dtmc->printModelInformationToStream(std::cout);
 
 	mrmc::formula::Ap<double>* trueFormula = new mrmc::formula::Ap<double>("true");
 	mrmc::formula::Ap<double>* observe0Greater1Formula = new mrmc::formula::Ap<double>("observe0Greater1");
 	mrmc::formula::Until<double>* untilFormula = new mrmc::formula::Until<double>(trueFormula, observe0Greater1Formula);
 	mrmc::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new mrmc::formula::ProbabilisticNoBoundsOperator<double>(untilFormula);
-	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double>(*dtmc);
 	mc->check(*probFormula);
 
 	delete mc;

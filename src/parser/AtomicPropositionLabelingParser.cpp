@@ -5,7 +5,7 @@
  *      Author: Gereon Kremer
  */
 
-#include "src/parser/LabParser.h"
+#include "src/parser/AtomicPropositionLabelingParser.h"
 
 #include "src/exceptions/WrongFileFormatException.h"
 #include "src/exceptions/FileIoException.h"
@@ -38,13 +38,14 @@ namespace parser {
  *	@param filename   input .lab file's name.
  *	@return The pointer to the created labeling object.
  */
-LabParser::LabParser(uint_fast64_t node_count, const char * filename)
+AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t node_count,
+																					  std::string const & filename)
 	: labeling(nullptr)
 {
 	/*
 	 *	open file
 	 */
-	MappedFile file(filename);
+	MappedFile file(filename.c_str());
 	char* buf = file.data;
 
 	/*
@@ -176,7 +177,7 @@ LabParser::LabParser(uint_fast64_t node_count, const char * filename)
 					buf += cnt;
 				}
 			}
-			buf = skipWS(buf);
+			buf = trimWhitespaces(buf);
 		}
 	}
 }

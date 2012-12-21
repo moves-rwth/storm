@@ -113,7 +113,7 @@ public:
 	/*!
 	 *
 	 */
-	std::set<std::string> getPropositionsForState(uint_fast64_t state) {
+	std::set<std::string> const getPropositionsForState(uint_fast64_t const &state) const {
 		return stateLabeling->getPropositionsForState(state);
 	}
 

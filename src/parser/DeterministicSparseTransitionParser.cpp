@@ -5,7 +5,7 @@
  *		Author: Gereon Kremer
  */
 
-#include "src/parser/TraParser.h"
+#include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFileFormatException.h"
 #include "boost/integer/integer_mask.hpp"
@@ -42,7 +42,7 @@ namespace parser{
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode) {
+uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t &maxnode) {
 	uint_fast64_t non_zero = 0;
 	
 	/*
@@ -54,7 +54,7 @@ uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode) {
 	}
 	buf += 7; // skip "STATES "
 	if (strtol(buf, &buf, 10) == 0) return 0;
-	buf = skipWS(buf);
+	buf = trimWhitespaces(buf);
 	if (strncmp(buf, "TRANSITIONS ", 12) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
@@ -82,7 +82,7 @@ uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode) {
 		if (col > maxnode) maxnode = col;
 		/*
 		 *	read value. if value is 0.0, either strtod could not read a number or we encountered a probability of zero.
-		 *	if row == col, we have a diagonal element which is treated seperately and this non_zero must be decreased.
+		 *	if row == col, we have a diagonal element which is treated separately and this non_zero must be decreased.
 		 */
 		val = strtod(buf, &tmp);
 		if (val == 0.0) {
@@ -90,7 +90,7 @@ uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode) {
 			return 0;
 		}
 		if (row == col) non_zero--;
-		buf = skipWS(tmp);
+		buf = trimWhitespaces(tmp);
 	}
 
 	return non_zero;
@@ -106,7 +106,7 @@ uint_fast64_t TraParser::firstPass(char* buf, uint_fast64_t &maxnode) {
  *	@return a pointer to the created sparse matrix.
  */
 
-TraParser::TraParser(const char * filename)
+DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename)
 	: matrix(nullptr)
 {
 	/*
@@ -117,7 +117,7 @@ TraParser::TraParser(const char * filename)
 	/*
 	 *	open file
 	 */
-	MappedFile file(filename);
+	MappedFile file(filename.c_str());
 	char* buf = file.data;
 	
 	/*
@@ -145,7 +145,7 @@ TraParser::TraParser(const char * filename)
 	 */
 	buf += 7; // skip "STATES "
 	checked_strtol(buf, &buf);
-	buf = skipWS(buf);
+	buf = trimWhitespaces(buf);
 	buf += 12; // skip "TRANSITIONS "
 	checked_strtol(buf, &buf);
 	
@@ -178,16 +178,8 @@ TraParser::TraParser(const char * filename)
 		col = checked_strtol(buf, &buf);
 		val = strtod(buf, &buf);
 		
-		/*
-		 *	only values in (0, 1] are meaningful
-		 */
-		if ((val <= 0.0) || (val > 1.0))
-		{
-			LOG4CPLUS_ERROR(logger, "Found transition probability of " << val << ", but we think probabilities should be from (0,1].");
-			throw mrmc::exceptions::WrongFileFormatException();
-		}
 		this->matrix->addNextValue(row,col,val);
-		buf = skipWS(buf);
+		buf = trimWhitespaces(buf);
 	}
 	
 	/*

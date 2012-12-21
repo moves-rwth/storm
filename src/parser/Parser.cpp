@@ -34,7 +34,10 @@ uint_fast64_t mrmc::parser::Parser::checked_strtol(const char* str, char** end) 
  *	@param buf String buffer
  *	@return	pointer to first non-whitespace character
  */
-char* mrmc::parser::Parser::skipWS(char* buf) {
+char* mrmc::parser::Parser::trimWhitespaces(char* buf) {
+	/*TODO: Maybe use memcpy to copy all the stuff from the first non-whitespace char
+	 * to the position of the buffer, so we don't have to keep track of 2 pointers.
+	 */
 	while ((*buf == ' ') || (*buf == '\t') || (*buf == '\n') || (*buf == '\r')) buf++;
 	return buf;
 }
