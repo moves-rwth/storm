@@ -60,7 +60,10 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
     # Set standard flags for GCC
-    set (CMAKE_CXX_FLAGS "-std=c++0x -Wall -Werror -pedantic")
+    set (CMAKE_CXX_FLAGS "-std=c++0x -Wall -pedantic")
+    # -Werror is atm removed as this gave some problems with existing code
+    # May be re-set later
+    # (Thomas Heinemann, 2012-12-21)
     
     # Turn on popcnt instruction if possible (yes by default)
     if (USE_POPCNT)

@@ -116,7 +116,7 @@ public:
 	void check(const mrmc::formula::ProbabilisticNoBoundsOperator<Type>& probabilisticNoBoundsFormula) {
 		LOG4CPLUS_INFO(logger, "Model checking formula " << probabilisticNoBoundsFormula.toString());
 		std::cout << "Model checking formula: " << probabilisticNoBoundsFormula.toString() << std::endl;
-		std::vector<Type>* result = probabilisticNoBoundsFormula.check(*this);
+		std::vector<Type>* result = checkProbabilisticNoBoundsOperator(probabilisticNoBoundsFormula);
 		LOG4CPLUS_INFO(logger, "Result for initial states:");
 		std::cout << "Result for initial states:" << std::endl;
 		for (auto initialState : *this->getModel().getLabeledStates("init")) {
@@ -251,7 +251,7 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	std::vector<Type>* checkProbabilisticOperator(
+	std::vector<Type>* checkProbabilisticNoBoundsOperator(
 			const mrmc::formula::ProbabilisticNoBoundsOperator<Type>& formula) const {
 		return formula.getPathFormula().check(*this);
 	}

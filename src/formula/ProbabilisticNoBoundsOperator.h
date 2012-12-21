@@ -28,6 +28,12 @@ namespace formula {
  * 	This class is a hybrid of a state and path formula, and may only appear as the outermost operator.
  * 	Hence, it is seen as neither a state nor a path formula, but is directly derived from PctlFormula.
  *
+ * @note
+ * 	This class does not contain a check() method like the other formula classes.
+ * 	The check method should only be called by the model checker to infer the correct check function for sub
+ * 	formulas. As this operator can only appear at the root, the method is not useful here.
+ * 	Use the checkProbabilisticNoBoundsOperator method from the DtmcPrctlModelChecker class instead.
+ *
  * The subtree is seen as part of the object and deleted with it
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
@@ -45,7 +51,6 @@ public:
 	 * Empty constructor
 	 */
 	ProbabilisticNoBoundsOperator() {
-		// TODO Auto-generated constructor stub
 		this->pathFormula = NULL;
 	}
 
@@ -54,15 +59,17 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundsOperator(PctlPathFormula<T> &pathFormula) {
-		this->pathFormula = &pathFormula;
+	ProbabilisticNoBoundsOperator(PctlPathFormula<T>* pathFormula) {
+		this->pathFormula = pathFormula;
 	}
 
 	/*!
 	 * Destructor
 	 */
 	virtual ~ProbabilisticNoBoundsOperator() {
-		// TODO Auto-generated destructor stub
+		if (pathFormula != NULL) {
+			delete pathFormula;
+		}
 	}
 
 	/*!
@@ -79,21 +86,6 @@ public:
 	 */
 	void setPathFormula(PctlPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
-	}
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker
-	 * 		class. For other uses, the methods of the model checker should be used.
-	 *
-	 * @returns A bit vector indicating all states that satisfy the formula represented by the
-	 *          called object.
-	 */
-	virtual std::vector<T> *check(
-			const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkProbabilisticOperator(*this);
 	}
 
 	/*!

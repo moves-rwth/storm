@@ -45,8 +45,7 @@ public:
 	 * Empty constructor
 	 */
 	ProbabilisticOperator() {
-		// TODO Auto-generated constructor stub
-
+		this->pathFormula = NULL;
 	}
 
 	/*!
@@ -55,9 +54,9 @@ public:
 	 * @param bound The expected value for path formulas
 	 * @param pathFormula The child node
 	 */
-	ProbabilisticOperator(T bound, PctlPathFormula<T>& pathFormula) {
+	ProbabilisticOperator(T bound, PctlPathFormula<T>* pathFormula) {
 		this->bound = bound;
-		this->pathFormula = &pathFormula;
+		this->pathFormula = *pathFormula;
 	}
 
 	/*!
@@ -67,7 +66,9 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~ProbabilisticOperator() {
-		// TODO Auto-generated destructor stub
+		if (pathFormula != NULL) {
+			delete pathFormula;
+		}
 	}
 
 	/*!

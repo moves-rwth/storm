@@ -152,7 +152,7 @@ void testChecking() {
 	mrmc::formula::Ap<double>* trueFormula = new mrmc::formula::Ap<double>("true");
 	mrmc::formula::Ap<double>* observe0Greater1Formula = new mrmc::formula::Ap<double>("observe0Greater1");
 	mrmc::formula::Until<double>* untilFormula = new mrmc::formula::Until<double>(trueFormula, observe0Greater1Formula);
-	mrmc::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new mrmc::formula::ProbabilisticNoBoundsOperator<double>(*untilFormula);
+	mrmc::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new mrmc::formula::ProbabilisticNoBoundsOperator<double>(untilFormula);
 	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 	mc->check(*probFormula);
 

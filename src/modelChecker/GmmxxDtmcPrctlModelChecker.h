@@ -187,7 +187,11 @@ public:
 				LOG4CPLUS_INFO(logger, "Using QMR method.");
 				if (precond == "ilu") {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
-				} else if (precond == "diagonal" == 0) {
+				} /* FIXME: The following line throws a warning as there should be brackets around such a construction
+				   * TBH, I don't understand it completely (why the comparison with 0?), so I don't know how to fix it
+				   * (Thomas Heinemann, 2012-12-21)
+				   */
+				else if (precond == "diagonal" == 0) {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
 				} else if (precond == "ildlt") {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
