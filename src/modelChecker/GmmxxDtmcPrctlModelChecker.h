@@ -160,7 +160,7 @@ public:
 				LOG4CPLUS_INFO(logger, "Using no preconditioner.");
 			}
 
-			if (s->getString("lemethod").compare("bicgstab") == 0) {
+			if (s->getString("lemethod") == "bicgstab") {
 				LOG4CPLUS_INFO(logger, "Using BiCGStab method.");
 				if (precond == "ilu") {
 					gmm::bicgstab(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
@@ -183,7 +183,7 @@ public:
 				} else if (precond == "none") {
 					gmm::gmres(*gmmxxMatrix, x, b, gmm::identity_matrix(), s->get<unsigned>("restart"), iter);
 				} */
-			} else if (s->getString("lemethod").compare("qmr") == 0) {
+			} else if (s->getString("lemethod") == "qmr") {
 				LOG4CPLUS_INFO(logger, "Using QMR method.");
 				if (precond == "ilu") {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
@@ -191,7 +191,7 @@ public:
 				   * TBH, I don't understand it completely (why the comparison with 0?), so I don't know how to fix it
 				   * (Thomas Heinemann, 2012-12-21)
 				   */
-				else if (precond == "diagonal" == 0) {
+				else if (precond == "diagonal") {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
 				} else if (precond == "ildlt") {
 					gmm::qmr(*gmmxxMatrix, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*gmmxxMatrix), iter);
@@ -253,7 +253,7 @@ public:
 	 * Throws an exception of type InvalidSettings in case the selected method is illegal.
 	 */
 	static void validateLeMethod(const std::string& lemethod) {
-		if (lemethod.compare("bicgstab") != 0 && lemethod.compare("qmr") != 0) {
+		if ((lemethod != "bicgstab") && (lemethod != "qmr")) {
 			throw exceptions::InvalidSettingsException() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
 		}
 	}
@@ -263,7 +263,7 @@ public:
 	 * Throws an exception of type InvalidSettings in case the selected preconditioner is illegal.
 	 */
 	static void validatePreconditioner(const std::string& preconditioner) {
-		if (preconditioner.compare("ilu") != 0 && preconditioner.compare("diagonal") != 0 && preconditioner.compare("ildlt") && preconditioner.compare("none") != 0) {
+		if ((preconditioner != "ilu") && (preconditioner != "diagonal") && (preconditioner != "ildlt") && (preconditioner != "none")) {
 			throw exceptions::InvalidSettingsException() << "Argument " << preconditioner << " for option 'precond' is invalid.";
 		}
 	}
