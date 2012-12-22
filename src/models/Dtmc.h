@@ -41,9 +41,8 @@ public:
 	 */
 	Dtmc(std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> probabilityMatrix, std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> stateLabeling)
 			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling), backwardTransitions(nullptr) {
-		if (! this->sanityCheck())
-		{
-			std::cerr << "sanity check failed" << std::endl;
+		if (! this->checkValidityProbabilityMatrix()) {
+			std::cerr << "Probability matrix is invalid" << std::endl;
 		}
 	}
 
@@ -57,9 +56,8 @@ public:
 		if (dtmc.backardTransitions != nullptr) {
 			this->backwardTransitions = new mrmc::models::GraphTransitions<T>(*dtmc.backwardTransitions);
 		}
-		if (! this->sanityCheck())
-		{
-			std::cerr << "sanity check failed" << std::endl;
+		if (! this->checkValidityProbabilityMatrix()) {
+			std::cerr << "Probability matrix is invalid" << std::endl;
 		}
 	}
 
@@ -154,12 +152,10 @@ private:
 	 *
 	 *	Checks probability matrix if all rows sum up to one.
 	 */
-	bool sanityCheck() {
-		for (uint_fast64_t row = 0; row < this->probabilityMatrix->getRowCount(); row++)
-		{
+	bool checkValidityProbabilityMatrix() {
+		for (uint_fast64_t row = 0; row < this->probabilityMatrix->getRowCount(); row++) {
 			T sum = this->probabilityMatrix->getDiagonalStoragePointer()[row];
-			for (uint_fast64_t id = this->probabilityMatrix->getRowIndicationsPointer()[row]; id < this->probabilityMatrix->getRowIndicationsPointer()[row+1]; id++)
-			{
+			for (uint_fast64_t id = this->probabilityMatrix->getRowIndicationsPointer()[row]; id < this->probabilityMatrix->getRowIndicationsPointer()[row+1]; id++) {
 				sum += this->probabilityMatrix->getStoragePointer()[id];
 			}
 			if (sum == 0) continue;
