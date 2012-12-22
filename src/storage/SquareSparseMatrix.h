@@ -42,6 +42,11 @@ public:
 	 * a row, we can simply iterate over the array (part) itself.
 	 */
 	typedef const uint_fast64_t * const constIndexIterator;
+	
+	/*!
+	 *	Iterator type if we want to iterate over elements.
+	 */
+	typedef const T* const constIterator;
 
 	/*!
 	 * An enum representing the internal state of the Matrix.
@@ -929,6 +934,26 @@ public:
 	 */
 	constIndexIterator endConstColumnNoDiagIterator(uint_fast64_t row) const {
 		return this->columnIndications + this->rowIndications[row + 1];
+	}
+	
+	/*!
+	 *	Returns an iterator over the elements of the given row. The iterator
+	 *	will include neither the diagonal element nor zero entries.
+	 *	@param row The row whose elements the iterator will return.
+	 *	@return An iterator over the elements of the given row.
+	 */
+	constIterator beginConstNoDiagIterator(uint_fast64_t row) const {
+		return this->valueStorage + this->rowIndications[row];
+	}
+	/*!
+	 *	Returns an iterator pointing to the first element after the given
+	 *	row.
+	 *	@param row The row for which the iterator should point to the
+	 *	past-the-end element.
+	 *	@return An iterator to the element after the given row.
+	 */
+	constIterator endConstNoDiagIterator(uint_fast64_t row) const {
+		return this->valueStorage + this->rowIndications[row + 1];
 	}
 
 	void print() const {
