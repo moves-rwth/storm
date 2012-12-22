@@ -742,12 +742,12 @@ public:
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 
 		while (rowStart < rowEnd) {
-			valueStorage[rowStart] = mrmc::utility::constGetZero(valueStorage[rowStart]);
+			valueStorage[rowStart] = mrmc::utility::constGetZero<T>();
 			++rowStart;
 		}
 
 		// Set the element on the diagonal to one.
-		diagonalStorage[row] = mrmc::utility::constGetOne(diagonalStorage[row]);
+		diagonalStorage[row] = mrmc::utility::constGetOne<T>();
 		return true;
 	}
 
@@ -885,10 +885,9 @@ public:
 		// no entries apart from those on the diagonal
 		resultDinv->initialize(0);
 		// copy diagonal entries to other matrix
-		T dummy;
 		for (int i = 0; i < rowCount; ++i) {
 			resultDinv->addNextValue(i, i, resultLU->getValue(i, i));
-			resultLU->getValue(i, i) = mrmc::utility::constGetZero(&dummy);
+			resultLU->getValue(i, i) = mrmc::utility::constGetZero<T>();
 		}
 
 		return new mrmc::storage::JacobiDecomposition<T>(resultLU, resultDinv);

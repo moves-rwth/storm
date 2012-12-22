@@ -49,8 +49,8 @@ public:
 	 * Empty constructor
 	 */
 	ProbabilisticIntervalOperator() {
-		upper = mrmc::utility::constGetZero(upper);
-		lower = mrmc::utility::constGetZero(lower);
+		upper = mrmc::utility::constGetZero<T>();
+		lower = mrmc::utility::constGetZero<T>();
 		pathFormula = NULL;
 	}
 
