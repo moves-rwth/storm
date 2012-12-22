@@ -51,7 +51,7 @@ public:
 		mrmc::storage::SquareSparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
-		tmpMatrix.makeRowsAbsorbing((~*leftStates & *rightStates) | *rightStates);
+		tmpMatrix.makeRowsAbsorbing((~*leftStates | *rightStates) | *rightStates);
 
 		// Transform the transition probability matrix to the eigen format to use its arithmetic.
 		Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenMatrix = tmpMatrix.toEigenSparseMatrix();
