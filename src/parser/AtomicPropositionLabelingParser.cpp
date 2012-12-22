@@ -51,11 +51,7 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 	/*
 	 *	first run: obtain number of propositions
 	 */
-#ifdef WINDOWS
 	char separator[] = " \r\n\t";
-#else
-	char separator[] = " \n\t";
-#endif
 	bool foundDecl = false, foundEnd = false;
 	uint_fast32_t proposition_count = 0;
 	{
