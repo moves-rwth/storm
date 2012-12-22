@@ -17,75 +17,97 @@ namespace utility {
  * As (at least) gcc has problems to use the correct template by the return value
  * only, the function gets a pointer as a parameter to infer the return type.
  *
- * <b>Parameter</b>
+ * @note
+ * 	The template parameter is just inferred by the return type; GCC is not able to infer this
+ * 	automatically, hence the type should always be stated explicitly (e.g. @c constGetZero<int>();)
  *
- * The parameter is a reference which is used to infer the return type (So, if you want
- * the return value to be of type double, the parameter has to be a double variable).
- * In most cases, it is a good choice to use the the variable that is to be set.
+ * @return Value 0, fit to the return type
  */
 template<typename _Scalar>
-static inline _Scalar constGetZero(_Scalar&) {
+static inline _Scalar constGetZero() {
    return _Scalar(0);
 }
 
 /*! @cond TEMPLATE_SPECIALIZATION
- * (exclude the specializations from the documentation) */
-template <>
-inline int_fast32_t constGetZero(int_fast32_t&) {
-   return 0;
-}
+ * (By default, the template specifications are not included in the documentation)
+ */
 
-/*! @cond TEMPLATE_SPECIALIZATION
- * (exclude the specializations from the documentation) */
-template <>
-inline uint_fast64_t constGetZero(uint_fast64_t&) {
-   return 0;
-}
-
-/*! @cond TEMPLATE_SPECIALIZATION
- * Specialization of constGetZero for double
+/*!
+ * Template specification for int_fast32_t
+ * @return Value 0, fit to the type int_fast32_t
  */
 template <>
-inline double constGetZero(double&) {
+inline int_fast32_t constGetZero() {
+   return 0;
+}
+
+/*!
+ * Template specification for uint_fast64_t
+ * @return Value 0, fit to the type uint_fast64_t
+ */
+template <>
+inline uint_fast64_t constGetZero() {
+   return 0;
+}
+
+/*!
+ * Template specification for double
+ * @return Value 0.0, fit to the type double
+ */
+template <>
+inline double constGetZero() {
    return 0.0;
 }
+
 /*! @endcond */
 
 /*!
- * Returns a constant value of 0 that is fit to the type it is being written to.
+ * Returns a constant value of 1 that is fit to the type it is being written to.
  * As (at least) gcc has problems to use the correct template by the return value
  * only, the function gets a pointer as a parameter to infer the return type.
  *
- * <b>Parameter</b>
+ * @note
+ * 	The template parameter is just inferred by the return type; GCC is not able to infer this
+ * 	automatically, hence the type should always be stated explicitly (e.g. @c constGetOne<int>();)
  *
- * The parameter is a reference which is used to infer the return type (So, if you want
- * the return value to be of type double, the parameter has to be a double variable).
- * In most cases, it is a good choice to use the the variable that is to be set. */
+ * @return Value 1, fit to the return type
+ */
 template<typename _Scalar>
-static inline _Scalar constGetOne(_Scalar&) {
+static inline _Scalar constGetOne() {
    return _Scalar(1);
 }
 
 /*! @cond TEMPLATE_SPECIALIZATION
- * (exclude the specializations from the documentation) */
+ * (By default, the template specifications are not included in the documentation)
+ */
+
+/*!
+ * Template specification for int_fast32_t
+ * @return Value 1, fit to the type int_fast32_t
+ */
 template<>
-inline int_fast32_t constGetOne(int_fast32_t&) {
+inline int_fast32_t constGetOne() {
    return 1;
 }
 
-/*! @cond TEMPLATE_SPECIALIZATION
- * (exclude the specializations from the documentation) */
+/*!
+ * Template specification for uint_fast64_t
+ * @return Value 1, fit to the type uint_fast61_t
+ */
 template<>
-inline uint_fast64_t constGetOne(uint_fast64_t&) {
+inline uint_fast64_t constGetOne() {
    return 1;
 }
 
-/*! @cond TEMPLATE_SPECIALIZATION
- * (exclude the specializations from the documentation) */
+/*!
+ * Template specification for double
+ * @return Value 1.0, fit to the type double
+ */
 template<>
-inline double constGetOne(double&) {
+inline double constGetOne() {
    return 1.0;
 }
+
 /*! @endcond */
 
 } //namespace utility
