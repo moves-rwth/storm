@@ -64,9 +64,7 @@ public:
 
 		std::vector<Type>* result = new std::vector<Type>(stateCount);
 		
-		// Dummy Type variable for const templates
-		Type dummy;
-		mrmc::utility::setVectorValues(result, *rightStates, mrmc::utility::constGetOne(dummy));
+		mrmc::utility::setVectorValues(result, *rightStates, mrmc::utility::constGetOne<Type>());
 
 		Type *p = &((*result)[0]); // get the address storing the data for result
 		MapType vectorMap(p, result->size()); // vectorMap shares data 
@@ -94,8 +92,8 @@ public:
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> x(this->getModel().getNumberOfStates());
-		Type dummy;
-		mrmc::utility::setVectorValues(&x, *nextStates, mrmc::utility::constGetOne(dummy));
+
+		mrmc::utility::setVectorValues(&x, *nextStates, mrmc::utility::constGetOne<Type>());
 
 		// Delete not needed next states bit vector.
 		delete nextStates;
@@ -213,10 +211,8 @@ public:
 			delete eigenSubMatrix;
 		}
 
-		// Dummy Type variable for const templates
-		Type dummy;
-		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, mrmc::utility::constGetZero(dummy));
-		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, mrmc::utility::constGetOne(dummy));
+		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, mrmc::utility::constGetZero<Type>());
+		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, mrmc::utility::constGetOne<Type>());
 
 		return result;
 	}
