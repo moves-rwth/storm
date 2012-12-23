@@ -155,8 +155,8 @@ private:
 	bool checkValidityProbabilityMatrix() {
 		for (uint_fast64_t row = 0; row < this->probabilityMatrix->getRowCount(); row++) {
 			T sum = this->probabilityMatrix->getDiagonalStoragePointer()[row];
-			for (uint_fast64_t id = this->probabilityMatrix->getRowIndicationsPointer()[row]; id < this->probabilityMatrix->getRowIndicationsPointer()[row+1]; id++) {
-				sum += this->probabilityMatrix->getStoragePointer()[id];
+			for (auto it = this->probabilityMatrix->beginConstNoDiagIterator(row); it != this->probabilityMatrix->endConstNoDiagIterator(row); it++) {
+				sum += *it;
 			}
 			if (sum == 0) continue;
 			if (std::abs(sum - 1) > 1e-10) return false;
