@@ -100,7 +100,7 @@ bool parseOptions(const int argc, const char* argv[]) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
 		std::cout << std::endl << mrmc::settings::help;
 		delete s;
-		return 1;
+		return false;
 	}
 	
 	if (s->isSet("help")) {
