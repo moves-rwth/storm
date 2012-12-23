@@ -8,6 +8,7 @@
 #include "DtmcParser.h"
 #include "DeterministicSparseTransitionParser.h"
 #include "AtomicPropositionLabelingParser.h"
+#include "SparseStateRewardParser.h"
 
 namespace mrmc {
 namespace parser {
@@ -19,15 +20,30 @@ namespace parser {
  *
  * @param transitionSystemFile String containing the location of the transition file (....tra)
  * @param labelingFile String containing the location of the labeling file (....lab)
+ * @param stateRewardFile String containing the location of the state reward file (...srew)
+ * @param transitionRewardFile String containing the location of the transition reward file (...trew)
  */
-DtmcParser::DtmcParser(std::string const & transitionSystemFile, std::string const & labelingFile) {
+DtmcParser::DtmcParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	mrmc::parser::DeterministicSparseTransitionParser tp(transitionSystemFile);
-	uint_fast64_t nodeCount = tp.getMatrix()->getRowCount();
+	uint_fast64_t stateCount = tp.getMatrix()->getRowCount();
 
-	mrmc::parser::AtomicPropositionLabelingParser lp(nodeCount, labelingFile);
+	std::shared_ptr<std::vector<double>> stateRewards = nullptr;
+	std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> transitionRewards = nullptr;
 
-	dtmc = std::shared_ptr<mrmc::models::Dtmc<double> >(new mrmc::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling()));
+	mrmc::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
+	if (stateRewardFile != "") {
+		mrmc::parser::SparseStateRewardParser srp(stateCount, stateRewardFile);
+		stateRewards = srp.getStateRewards();
+	}
+	if (transitionRewardFile != "") {
+		mrmc::parser::DeterministicSparseTransitionParser trp(transitionRewardFile);
+		transitionRewards = trp.getMatrix();
+	}
+
+	dtmc = std::shared_ptr<mrmc::models::Dtmc<double>>(new mrmc::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling(), stateRewards, transitionRewards));
 }
 
 } /* namespace parser */
+
 } /* namespace mrmc */
