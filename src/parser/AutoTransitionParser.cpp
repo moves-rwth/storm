@@ -9,9 +9,8 @@ namespace mrmc {
 namespace parser {
 
 AutoTransitionParser::AutoTransitionParser(const std::string& filename)
-	: type(Unknown)
-{
-	
+	: type(Unknown) {
+
 	TransitionType name = this->analyzeFilename(filename);
 	std::pair<TransitionType,TransitionType> content = this->analyzeContent(filename);
 	TransitionType hint = content.first, transitions = content.second;
