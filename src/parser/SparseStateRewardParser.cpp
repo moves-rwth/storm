@@ -42,8 +42,6 @@ SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
 
-	char separator[] = " \r\n\t";
-	
 	// Create state reward vector with given state count.
 	this->stateRewards = std::shared_ptr<std::vector<double>>(new std::vector<double>(stateCount));
 	
