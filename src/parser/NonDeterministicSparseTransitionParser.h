@@ -16,7 +16,7 @@ namespace parser {
  *	@brief	Load a nondeterministic transition system from file and create a
  *	sparse adjacency matrix whose entries represent the weights of the edges
  */
-class NonDeterministicSparseTransitionParser : Parser {
+class NonDeterministicSparseTransitionParser : public Parser {
 	public:
 		NonDeterministicSparseTransitionParser(std::string const &filename);
 		

@@ -14,11 +14,8 @@ namespace parser {
 /*!
  *	@brief	Load a deterministic transition system from file and create a
  *	sparse adjacency matrix whose entries represent the weights of the edges
- *
- *	Note that this class creates a new StaticSparseMatrix object that can be
- *	accessed via getMatrix(). However, it does not delete this object!
  */
-class DeterministicSparseTransitionParser : Parser {
+class DeterministicSparseTransitionParser : public Parser {
 	public:
 		DeterministicSparseTransitionParser(std::string const &filename);
 		
