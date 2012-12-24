@@ -76,4 +76,5 @@ std::pair<TransitionType,TransitionType> AutoTransitionParser::analyzeContent(co
 }
 
 } //namespace parser
+
 } //namespace mrmc

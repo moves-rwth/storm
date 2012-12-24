@@ -16,6 +16,7 @@
 #include "src/utility/Vector.h"
 #include "src/utility/ConstTemplates.h"
 #include "src/utility/Settings.h"
+#include "src/adapters/GmmxxAdapter.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
@@ -52,7 +53,7 @@ public:
 		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* gmmxxMatrix = tmpMatrix.toGMMXXSparseMatrix();
+		gmm::csr_matrix<Type>* gmmxxMatrix = mrmc::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(tmpMatrix);
 
 		// Create the vector with which to multiply.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
@@ -80,7 +81,7 @@ public:
 		mrmc::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* gmmxxMatrix = this->getModel().getTransitionProbabilityMatrix()->toGMMXXSparseMatrix();
+		gmm::csr_matrix<Type>* gmmxxMatrix = mrmc::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionProbabilityMatrix());
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> x(this->getModel().getNumberOfStates());
@@ -133,7 +134,7 @@ public:
 			submatrix->convertToEquationSystem();
 
 			// Transform the submatrix to the gmm++ format to use its solvers.
-			gmm::csr_matrix<Type>* gmmxxMatrix = submatrix->toGMMXXSparseMatrix();
+			gmm::csr_matrix<Type>* gmmxxMatrix = mrmc::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*submatrix);
 			delete submatrix;
 
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for

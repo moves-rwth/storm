@@ -23,6 +23,9 @@
 
 extern log4cplus::Logger logger;
 
+// Forward declaration for adapter classes.
+namespace mrmc { namespace adapters{ class GmmxxAdapter; } }
+
 namespace mrmc {
 
 namespace storage {
@@ -36,6 +39,10 @@ namespace storage {
 template<class T>
 class SquareSparseMatrix {
 public:
+	/*!
+	 * Declare adapter classes as friends to use internal data.
+	 */
+	friend class mrmc::adapters::GmmxxAdapter;
 
 	/*!
 	 * If we only want to iterate over the columns of the non-zero entries of
@@ -611,84 +618,6 @@ public:
 		// This point can never be reached as both if-branches end in a return
 		// statement.
 		return nullptr;
-	}
-
-	/*!
-	 * Converts the matrix into a sparse matrix in the GMMXX format.
-	 * @return A pointer to a column-major sparse matrix in GMMXX format.
-	 */
-	gmm::csr_matrix<T>* toGMMXXSparseMatrix() {
-		uint_fast64_t realNonZeros = getNonZeroEntryCount() + getDiagonalNonZeroEntryCount();
-		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
-
-		// Prepare the resulting matrix.
-		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(rowCount, rowCount);
-
-		// Reserve enough elements for the row indications.
-		result->jc.reserve(rowCount + 1);
-
-		// For the column indications and the actual values, we have to gather
-		// the values in a temporary array first, as we have to integrate
-		// the values from the diagonal. For the row indications, we can just count the number of
-		// inserted diagonal elements and add it to the previous value.
-		uint_fast64_t* tmpColumnIndicationsArray = new uint_fast64_t[realNonZeros];
-		T* tmpValueArray = new T[realNonZeros];
-		T zero(0);
-		uint_fast64_t currentPosition = 0;
-		uint_fast64_t insertedDiagonalElements = 0;
-		for (uint_fast64_t i = 0; i < rowCount; ++i) {
-			// Compute correct start index of row.
-			result->jc[i] = rowIndications[i] + insertedDiagonalElements;
-
-			// If the current row has no non-zero which is not on the diagonal, we have to check the
-			// diagonal element explicitly.
-			if (rowIndications[i + 1] - rowIndications[i] == 0) {
-				if (diagonalStorage[i] != zero) {
-					tmpColumnIndicationsArray[currentPosition] = i;
-					tmpValueArray[currentPosition] = diagonalStorage[i];
-					++currentPosition; ++insertedDiagonalElements;
-				}
-			} else {
-				// Otherwise, we can just enumerate the non-zeros which are not on the diagonal
-				// and fit in the diagonal element where appropriate.
-				bool includedDiagonal = false;
-				for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
-					if (diagonalStorage[i] != zero && !includedDiagonal && columnIndications[j] > i) {
-						includedDiagonal = true;
-						tmpColumnIndicationsArray[currentPosition] = i;
-						tmpValueArray[currentPosition] = diagonalStorage[i];
-						++currentPosition; ++insertedDiagonalElements;
-					}
-					tmpColumnIndicationsArray[currentPosition] = columnIndications[j];
-					tmpValueArray[currentPosition] = valueStorage[j];
-					++currentPosition;
-				}
-
-				// If the diagonal element is non-zero and was not inserted until now (i.e. all
-				// off-diagonal elements in the row are before the diagonal element.
-				if (!includedDiagonal && diagonalStorage[i] != zero) {
-					tmpColumnIndicationsArray[currentPosition] = i;
-					tmpValueArray[currentPosition] = diagonalStorage[i];
-					++currentPosition; ++insertedDiagonalElements;
-				}
-			}
-		}
-		// Fill in sentinel element at the end.
-		result->jc[rowCount] = static_cast<unsigned int>(realNonZeros);
-
-		// Now, we can copy the temporary array to the GMMXX format.
-		result->ir.resize(realNonZeros);
-		std::copy(tmpColumnIndicationsArray, tmpColumnIndicationsArray + realNonZeros, result->ir.begin());
-		delete[] tmpColumnIndicationsArray;
-
-		// And do the same thing with the actual values.
-		result->pr.resize(realNonZeros);
-		std::copy(tmpValueArray, tmpValueArray + realNonZeros, result->pr.begin());
-		delete[] tmpValueArray;
-
-		LOG4CPLUS_DEBUG(logger, "Done converting matrix to gmm++ format.");
-
-		return result;
 	}
 
 	/*!
