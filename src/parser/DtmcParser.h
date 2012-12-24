@@ -24,7 +24,8 @@ namespace parser {
  */
 class DtmcParser: public mrmc::parser::Parser {
 public:
-	DtmcParser(std::string const & transitionSystemFile, std::string const & labelingFile);
+	DtmcParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+			std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
 
 	std::shared_ptr<mrmc::models::Dtmc<double>> getDtmc() {
 		return this->dtmc;

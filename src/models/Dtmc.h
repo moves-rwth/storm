@@ -39,9 +39,14 @@ public:
 	 * @param stateLabeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
-	Dtmc(std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> probabilityMatrix, std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> stateLabeling)
-			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling), backwardTransitions(nullptr) {
-		if (! this->checkValidityProbabilityMatrix()) {
+	Dtmc(std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> probabilityMatrix,
+			std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> stateLabeling,
+			std::shared_ptr<std::vector<T>> stateRewards = nullptr,
+			std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> transitionRewardMatrix = nullptr)
+			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling),
+			  stateRewards(stateRewards), transitionRewardMatrix(transitionRewardMatrix),
+			  backwardTransitions(nullptr) {
+		if (!this->checkValidityProbabilityMatrix()) {
 			std::cerr << "Probability matrix is invalid" << std::endl;
 		}
 	}
@@ -52,11 +57,12 @@ public:
 	 * @param dtmc A reference to the DTMC that is to be copied.
 	 */
 	Dtmc(const Dtmc<T> &dtmc) : probabilityMatrix(dtmc.probabilityMatrix),
-			stateLabeling(dtmc.stateLabeling) {
+			stateLabeling(dtmc.stateLabeling), stateRewards(dtmc.stateRewards),
+			transitionRewardMatrix(dtmc.transitionRewardMatrix) {
 		if (dtmc.backardTransitions != nullptr) {
 			this->backwardTransitions = new mrmc::models::GraphTransitions<T>(*dtmc.backwardTransitions);
 		}
-		if (! this->checkValidityProbabilityMatrix()) {
+		if (!this->checkValidityProbabilityMatrix()) {
 			std::cerr << "Probability matrix is invalid" << std::endl;
 		}
 	}
@@ -106,6 +112,22 @@ public:
 	 */
 	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> getTransitionProbabilityMatrix() const {
 		return this->probabilityMatrix;
+	}
+
+	/*!
+	 * Returns a pointer to the matrix representing the transition rewards.
+	 * @return A pointer to the matrix representing the transition rewards.
+	 */
+	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> getTransitionRewardMatrix() const {
+		return this->transitionRewardMatrix;
+	}
+
+	/*!
+	 * Returns a pointer to the vector representing the state rewards.
+	 * @return A pointer to the vector representing the state rewards.
+	 */
+	std::shared_ptr<std::vector<T>> getStateRewards() const {
+		return this->stateRewards;
 	}
 
 	/*!
@@ -169,6 +191,12 @@ private:
 
 	/*! The labeling of the states of the DTMC. */
 	std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> stateLabeling;
+
+	/*! The state-based rewards of the DTMC. */
+	std::shared_ptr<std::vector<T>> stateRewards;
+
+	/*! The transition-based rewards of the DTMC. */
+	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> transitionRewardMatrix;
 
 	/*!
 	 * A data structure that stores the predecessors for all states. This is

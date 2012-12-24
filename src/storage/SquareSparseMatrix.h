@@ -81,7 +81,7 @@ public:
 			  internalStatus(ssm.internalStatus), currentSize(ssm.currentSize), lastRow(ssm.lastRow) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		// Check whether copying the matrix is safe.
-		if (!ssm.hasError()) {
+		if (ssm.hasError()) {
 			LOG4CPLUS_ERROR(logger, "Trying to copy sparse matrix in error state.");
 			throw mrmc::exceptions::InvalidArgumentException("Trying to copy sparse matrix in error state.");
 		} else {

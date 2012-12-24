@@ -14,7 +14,7 @@
 #include "src/modelChecker/DtmcPrctlModelChecker.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Vector.h"
-
+#include "src/utility/ConstTemplates.h"
 #include "src/utility/Settings.h"
 
 #include "gmm/gmm_matrix.h"
@@ -49,19 +49,25 @@ public:
 		mrmc::storage::SquareSparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
-		tmpMatrix.makeRowsAbsorbing(~(*leftStates & *rightStates) | *rightStates);
+		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
 		gmm::csr_matrix<Type>* gmmxxMatrix = tmpMatrix.toGMMXXSparseMatrix();
 
 		// Create the vector with which to multiply.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-		mrmc::utility::setVectorValues(result, *rightStates, static_cast<Type>(1.0));
+		mrmc::utility::setVectorValues(result, *rightStates, mrmc::utility::constGetOne<Type>());
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
+		std::vector<Type>* swap = nullptr;
+		std::vector<Type>* tmpResult = new std::vector<Type>(this->getModel().getNumberOfStates());
 		for (uint_fast64_t i = 0; i < formula.getBound(); ++i) {
-			gmm::mult(*gmmxxMatrix, *result, *result);
+			gmm::mult(*gmmxxMatrix, *result, *tmpResult);
+			swap = tmpResult;
+			tmpResult = result;
+			result = swap;
 		}
+		delete tmpResult;
 
 		// Delete intermediate results and return result.
 		delete leftStates;
@@ -78,7 +84,7 @@ public:
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> x(this->getModel().getNumberOfStates());
-		mrmc::utility::setVectorValues(&x, *nextStates, static_cast<Type>(1.0));
+		mrmc::utility::setVectorValues(&x, *nextStates, mrmc::utility::constGetOne<Type>());
 
 		// Delete obsolete sub-result.
 		delete nextStates;
@@ -215,8 +221,8 @@ public:
 		}
 
 		// Set values of resulting vector that are known exactly.
-		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, static_cast<Type>(0));
-		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, static_cast<Type>(1.0));
+		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, mrmc::utility::constGetZero<Type>());
+		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, mrmc::utility::constGetOne<Type>());
 
 		return result;
 	}
