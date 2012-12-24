@@ -176,10 +176,7 @@ private:
 	 */
 	bool checkValidityProbabilityMatrix() {
 		for (uint_fast64_t row = 0; row < this->probabilityMatrix->getRowCount(); row++) {
-			T sum = this->probabilityMatrix->getDiagonalStoragePointer()[row];
-			for (auto it = this->probabilityMatrix->beginConstNoDiagIterator(row); it != this->probabilityMatrix->endConstNoDiagIterator(row); it++) {
-				sum += *it;
-			}
+			T sum = this->probabilityMatrix->getRowSum(row);
 			if (sum == 0) continue;
 			if (std::abs(sum - 1) > 1e-10) return false;
 		}

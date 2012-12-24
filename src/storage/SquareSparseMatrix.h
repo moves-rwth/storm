@@ -954,6 +954,22 @@ public:
 	constIterator endConstNoDiagIterator(uint_fast64_t row) const {
 		return this->valueStorage + this->rowIndications[row + 1];
 	}
+	
+	/*!
+	 *	@brief Calculate sum of all entries in given row.
+	 *
+	 *	Adds up all values in the given row (including the diagonal value)
+	 *	and returns the sum.
+	 *	@param row The row that should be added up.
+	 *	@return Sum of the row.
+	 */
+	T getRowSum(uint_fast64_t row) const {
+		T sum = this->diagonalStorage[row];
+		for (auto it = this->beginConstNoDiagIterator(row); it != this->endConstNoDiagIterator(row); it++) {
+			sum += *it;
+		}
+		return sum;
+	}
 
 	void print() const {
 		std::cout << "diag: --------------------------------" << std::endl;
