@@ -5,14 +5,14 @@
  *      Author: Philipp Berger
  */
 
-#ifndef MRMC_REWARD_REWARDMODEL_H_
-#define MRMC_REWARD_REWARDMODEL_H_
+#ifndef STORM_REWARD_REWARDMODEL_H_
+#define STORM_REWARD_REWARDMODEL_H_
 
 #include <stdexcept>
 
 #include "boost/integer/integer_mask.hpp"
 
-namespace mrmc {
+namespace storm {
 
 namespace reward {
 
@@ -74,6 +74,6 @@ class RewardModel {
 
 } //namespace reward
 
-} //namespace mrmc
+} //namespace storm
 
-#endif /* MRMC_REWARD_REWARDMODEL_H_ */
+#endif /* STORM_REWARD_REWARDMODEL_H_ */

@@ -1,4 +1,4 @@
-/* ---------------------------------- GUIDELINES FOR MRMC DEVELOPMENT ---------------------------------- */
+/* ---------------------------------- GUIDELINES FOR STORM DEVELOPMENT ---------------------------------- */
 
 In general, we adhere to the Google Styleguide for C++, found under http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml
 

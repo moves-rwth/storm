@@ -15,7 +15,7 @@ extern log4cplus::Logger logger;
 
 #include <boost/algorithm/string/join.hpp>
 
-namespace mrmc {
+namespace storm {
 namespace settings {
 
 namespace bpo = boost::program_options;
@@ -23,11 +23,11 @@ namespace bpo = boost::program_options;
 /*
  * static initializers
  */
-std::unique_ptr<bpo::options_description> mrmc::settings::Settings::desc = nullptr;
-std::string mrmc::settings::Settings::binaryName = "";
-mrmc::settings::Settings* mrmc::settings::Settings::inst = nullptr;
+std::unique_ptr<bpo::options_description> storm::settings::Settings::desc = nullptr;
+std::string storm::settings::Settings::binaryName = "";
+storm::settings::Settings* storm::settings::Settings::inst = nullptr;
 
-std::map< std::pair<std::string, std::string>, std::shared_ptr<bpo::options_description> > mrmc::settings::Settings::modules;
+std::map< std::pair<std::string, std::string>, std::shared_ptr<bpo::options_description> > storm::settings::Settings::modules;
 
 /*!
  *	The constructor fills the option descriptions, parses the
@@ -102,16 +102,16 @@ Settings::Settings(const int argc, const char* argv[], const char* filename) {
 		LOG4CPLUS_ERROR(logger, "Could not read config file");
 	}
 	catch (bpo::required_option e) {
-		throw mrmc::exceptions::InvalidSettingsException() << "Required option missing";
+		throw storm::exceptions::InvalidSettingsException() << "Required option missing";
 	}
 	catch (bpo::validation_error e) {
-		throw mrmc::exceptions::InvalidSettingsException() << "Validation failed: " << e.what();
+		throw storm::exceptions::InvalidSettingsException() << "Validation failed: " << e.what();
 	}
 	catch (bpo::invalid_command_line_syntax e) {
-		throw mrmc::exceptions::InvalidSettingsException() << e.what();
+		throw storm::exceptions::InvalidSettingsException() << e.what();
 	}
 	catch (bpo::error e) {
-		throw mrmc::exceptions::InvalidSettingsException() << e.what();
+		throw storm::exceptions::InvalidSettingsException() << e.what();
 	}
 }
 
@@ -180,11 +180,11 @@ void Settings::secondRun(const int argc, const char* argv[], const char* filenam
  *	options and the list of available command line options.
  *
  *	Use it like this:
- *	@code std::cout << mrmc::settings::help; @endcode
+ *	@code std::cout << storm::settings::help; @endcode
  */
 std::ostream& help(std::ostream& os) {
-	os << "Usage: " << mrmc::settings::Settings::binaryName << " [options] <transition file> <label file>" << std::endl;
-	os << *(mrmc::settings::Settings::desc) << std::endl;
+	os << "Usage: " << storm::settings::Settings::binaryName << " [options] <transition file> <label file>" << std::endl;
+	os << *(storm::settings::Settings::desc) << std::endl;
 	for (auto it : Settings::modules) {
 		os << *(it.second) << std::endl;
 	}
@@ -192,4 +192,4 @@ std::ostream& help(std::ostream& os) {
 }
 
 } // namespace settings
-} // namespace mrmc
+} // namespace storm

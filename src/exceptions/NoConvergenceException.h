@@ -1,17 +1,17 @@
-#ifndef MRMC_EXCEPTIONS_NOCONVERGENCEEXCEPTION_H_
-#define MRMC_EXCEPTIONS_NOCONVERGENCEEXCEPTION_H_
+#ifndef STORM_EXCEPTIONS_NOCONVERGENCEEXCEPTION_H_
+#define STORM_EXCEPTIONS_NOCONVERGENCEEXCEPTION_H_
 
 #include "src/exceptions/BaseException.h"
 
-namespace mrmc {
+namespace storm {
 namespace exceptions {
 
 /*!
  * @brief This exception is thrown when an iterative solver failed to converge with the given maxIterations
  */
-MRMC_EXCEPTION_DEFINE_NEW(NoConvergenceException)
+STORM_EXCEPTION_DEFINE_NEW(NoConvergenceException)
 
 } // namespace exceptions
-} // namespace mrmc
+} // namespace storm
 
-#endif // MRMC_EXCEPTIONS_NOCONVERGENCEEXCEPTION_H_
+#endif // STORM_EXCEPTIONS_NOCONVERGENCEEXCEPTION_H_

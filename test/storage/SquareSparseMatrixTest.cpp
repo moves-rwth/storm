@@ -4,70 +4,70 @@
 #include "src/exceptions/OutOfRangeException.h"
 
 TEST(SquareSparseMatrixTest, ZeroRowsTest) {
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(0);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(0);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
-	ASSERT_THROW(ssm->initialize(50), mrmc::exceptions::InvalidArgumentException);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
+	ASSERT_THROW(ssm->initialize(50), storm::exceptions::InvalidArgumentException);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
 }
 
 TEST(SquareSparseMatrixTest, TooManyEntriesTest) {
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(2);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(2);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
-	ASSERT_THROW(ssm->initialize(10), mrmc::exceptions::InvalidArgumentException);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
+	ASSERT_THROW(ssm->initialize(10), storm::exceptions::InvalidArgumentException);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
 }
 
 TEST(SquareSparseMatrixTest, addNextValueTest) {
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(5);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(5);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
 	ASSERT_NO_THROW(ssm->initialize(1));
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
-	ASSERT_THROW(ssm->addNextValue(-1, 1, 1), mrmc::exceptions::OutOfRangeException);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
+	ASSERT_THROW(ssm->addNextValue(-1, 1, 1), storm::exceptions::OutOfRangeException);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
-	ASSERT_THROW(ssm->addNextValue(1, -1, 1), mrmc::exceptions::OutOfRangeException);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
+	ASSERT_THROW(ssm->addNextValue(1, -1, 1), storm::exceptions::OutOfRangeException);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
-	ASSERT_THROW(ssm->addNextValue(6, 1, 1), mrmc::exceptions::OutOfRangeException);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
+	ASSERT_THROW(ssm->addNextValue(6, 1, 1), storm::exceptions::OutOfRangeException);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
-	ASSERT_THROW(ssm->addNextValue(1, 6, 1), mrmc::exceptions::OutOfRangeException);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
+	ASSERT_THROW(ssm->addNextValue(1, 6, 1), storm::exceptions::OutOfRangeException);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
 }
 
 TEST(SquareSparseMatrixTest, finalizeTest) {
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(5);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(5);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
 	ASSERT_NO_THROW(ssm->initialize(5));
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
 	ASSERT_NO_THROW(ssm->addNextValue(1, 2, 1));
 	ASSERT_NO_THROW(ssm->addNextValue(1, 3, 1));
 	ASSERT_NO_THROW(ssm->addNextValue(1, 4, 1));
 	ASSERT_NO_THROW(ssm->addNextValue(1, 5, 1));
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
-	ASSERT_THROW(ssm->finalize(), mrmc::exceptions::InvalidStateException);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
+	ASSERT_THROW(ssm->finalize(), storm::exceptions::InvalidStateException);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Error);
 
 	delete ssm;
 }
 
 TEST(SquareSparseMatrixTest, Test) {
 	// 25 rows, 50 non zero entries
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(25);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(25);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
 	int values[50] = {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -96,15 +96,15 @@ TEST(SquareSparseMatrixTest, Test) {
 	};
 
 	ASSERT_NO_THROW(ssm->initialize(50));
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
 	for (int i = 0; i < 50; ++i) {
 		ASSERT_NO_THROW(ssm->addNextValue(position_row[i], position_col[i], values[i]));
 	}
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
 	ASSERT_NO_THROW(ssm->finalize());
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	int target;
 	for (int i = 0; i < 50; ++i) {
@@ -125,15 +125,15 @@ TEST(SquareSparseMatrixTest, Test) {
 		   ASSERT_EQ(0, target);
 		}
 	}
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	delete ssm;
 }
 
 TEST(SquareSparseMatrixTest, ConversionFromDenseEigen_ColMajor_SparseMatrixTest) {
 	// 10 rows, 100 non zero entries
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(10);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(10);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
 	Eigen::SparseMatrix<int> esm(10, 10);
 	for (int row = 0; row < 10; ++row) {
@@ -149,7 +149,7 @@ TEST(SquareSparseMatrixTest, ConversionFromDenseEigen_ColMajor_SparseMatrixTest)
 
 	ASSERT_NO_THROW(ssm->finalize());
 
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	int target = -1;
 	for (int row = 0; row < 10; ++row) {
@@ -164,8 +164,8 @@ TEST(SquareSparseMatrixTest, ConversionFromDenseEigen_ColMajor_SparseMatrixTest)
 
 TEST(SquareSparseMatrixTest, ConversionFromDenseEigen_RowMajor_SparseMatrixTest) {
 	// 10 rows, 100 non zero entries
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(10);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(10);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
 	Eigen::SparseMatrix<int, Eigen::RowMajor> esm(10, 10);
 	for (int row = 0; row < 10; ++row) {
@@ -181,7 +181,7 @@ TEST(SquareSparseMatrixTest, ConversionFromDenseEigen_RowMajor_SparseMatrixTest)
 
 	ASSERT_NO_THROW(ssm->finalize());
 
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	int target = -1;
 	for (int row = 0; row < 10; ++row) {
@@ -196,8 +196,8 @@ TEST(SquareSparseMatrixTest, ConversionFromDenseEigen_RowMajor_SparseMatrixTest)
 
 TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_ColMajor_SparseMatrixTest) {
 	// 10 rows, 15 non zero entries
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(10);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(10);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
 	Eigen::SparseMatrix<int> esm(10, 10);
 	
@@ -231,7 +231,7 @@ TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_ColMajor_SparseMatrixTest
 
 	ASSERT_NO_THROW(ssm->finalize());
 
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	int target = -1;
 
@@ -245,8 +245,8 @@ TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_ColMajor_SparseMatrixTest
 
 TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest) {
 	// 10 rows, 15 non zero entries
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(10);
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(10);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
 	Eigen::SparseMatrix<int, Eigen::RowMajor> esm(10, 10);
 	
@@ -280,7 +280,7 @@ TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest
 
 	ASSERT_NO_THROW(ssm->finalize());
 
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	int target = -1;
 
@@ -294,24 +294,24 @@ TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest
 
 TEST(SquareSparseMatrixTest, ConversionToSparseEigen_RowMajor_SparseMatrixTest) {
 	int values[100];
-	mrmc::storage::SquareSparseMatrix<int> *ssm = new mrmc::storage::SquareSparseMatrix<int>(10);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(10);
 
 	for (uint_fast32_t i = 0; i < 100; ++i) {
 		values[i] = i;
 	}
 
 	ASSERT_NO_THROW(ssm->initialize(100 - 10));
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
 	for (uint_fast32_t row = 0; row < 10; ++row) {
 		for (uint_fast32_t col = 0; col < 10; ++col) {
 			ASSERT_NO_THROW(ssm->addNextValue(row, col, values[row * 10 + col]));
 		}
 	}
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
 	ASSERT_NO_THROW(ssm->finalize());
-	ASSERT_EQ(ssm->getState(), mrmc::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
+	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
 
 	Eigen::SparseMatrix<int, Eigen::RowMajor, int_fast32_t>* esm = ssm->toEigenSparseMatrix();
 

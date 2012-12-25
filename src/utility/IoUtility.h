@@ -5,12 +5,12 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_UTILITY_IOUTILITY_H_
-#define MRMC_UTILITY_IOUTILITY_H_
+#ifndef STORM_UTILITY_IOUTILITY_H_
+#define STORM_UTILITY_IOUTILITY_H_
 
 #include "src/models/Dtmc.h"
 
-namespace mrmc  {
+namespace storm  {
 
 namespace utility {
 
@@ -25,7 +25,7 @@ namespace utility {
                      it will be overwritten.
 
  */
-void dtmcToDot(mrmc::models::Dtmc<double> const &dtmc, std::string filename);
+void dtmcToDot(storm::models::Dtmc<double> const &dtmc, std::string filename);
 
 /*!
     Parses a transition file and a labeling file and produces a DTMC out of them.
@@ -36,10 +36,10 @@ void dtmcToDot(mrmc::models::Dtmc<double> const &dtmc, std::string filename);
     @returns The DTMC described by the two files.
 
  */
-//mrmc::models::Dtmc<double>* parseDTMC(std::string const &tra_file, std::string const &lab_file);
+//storm::models::Dtmc<double>* parseDTMC(std::string const &tra_file, std::string const &lab_file);
 
 } //namespace utility
 
-} //namespace mrmc
+} //namespace storm
 
-#endif /* MRMC_UTILITY_IOUTILITY_H_ */
+#endif /* STORM_UTILITY_IOUTILITY_H_ */

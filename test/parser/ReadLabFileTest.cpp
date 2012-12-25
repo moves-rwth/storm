@@ -6,7 +6,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "mrmc-config.h"
+#include "storm-config.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/AtomicPropositionLabelingParser.h"
 #include "src/exceptions/FileIoException.h"
@@ -16,17 +16,17 @@
 
 TEST(ReadLabFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
-   ASSERT_THROW(mrmc::parser::AtomicPropositionLabelingParser(0,MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::FileIoException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(0,STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(ReadLabFileTest, ParseTest) {
 	//This test is based on a test case from the original MRMC.
 	
 	
-	mrmc::parser::AtomicPropositionLabelingParser* parser;
+	storm::parser::AtomicPropositionLabelingParser* parser;
 	//Parsing the file
-	ASSERT_NO_THROW(parser = new mrmc::parser::AtomicPropositionLabelingParser(12, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
-	std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> labeling(parser->getLabeling());
+	ASSERT_NO_THROW(parser = new storm::parser::AtomicPropositionLabelingParser(12, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
+	std::shared_ptr<storm::models::AtomicPropositionsLabeling> labeling(parser->getLabeling());
 
 	//Checking whether all propositions are in the labelling
 
@@ -86,14 +86,14 @@ TEST(ReadLabFileTest, ParseTest) {
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest1) {
-   ASSERT_THROW(mrmc::parser::AtomicPropositionLabelingParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), mrmc::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), storm::exceptions::WrongFileFormatException);
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest2) {
-   ASSERT_THROW(mrmc::parser::AtomicPropositionLabelingParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), mrmc::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), storm::exceptions::WrongFileFormatException);
 }
 
 TEST(ReadLabFileTest, WrongPropositionTest) {
-   ASSERT_THROW(mrmc::parser::AtomicPropositionLabelingParser(3, MRMC_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), mrmc::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), storm::exceptions::WrongFileFormatException);
 }
 

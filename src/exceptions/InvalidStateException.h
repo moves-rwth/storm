@@ -1,9 +1,9 @@
-#ifndef MRMC_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_
-#define MRMC_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_
+#ifndef STORM_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_
+#define STORM_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_
 
 #include "src/exceptions/BaseException.h"
 
-namespace mrmc {
+namespace storm {
 
 namespace exceptions {
 
@@ -11,10 +11,10 @@ namespace exceptions {
  * @brief This exception is thrown when a memory request can't be
  * fulfilled.
  */
-MRMC_EXCEPTION_DEFINE_NEW(InvalidStateException)
+STORM_EXCEPTION_DEFINE_NEW(InvalidStateException)
 
 } // namespace exceptions
 
-} // namespace mrmc
+} // namespace storm
 
-#endif // MRMC_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_
+#endif // STORM_EXCEPTIONS_INVALIDSTATEEXCEPTION_H_

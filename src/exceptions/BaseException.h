@@ -1,10 +1,10 @@
-#ifndef MRMC_EXCEPTIONS_BASEEXCEPTION_H_
-#define MRMC_EXCEPTIONS_BASEEXCEPTION_H_
+#ifndef STORM_EXCEPTIONS_BASEEXCEPTION_H_
+#define STORM_EXCEPTIONS_BASEEXCEPTION_H_
 
 #include <exception>
 #include <sstream>
 
-namespace mrmc {
+namespace storm {
 namespace exceptions {
 
 template<typename E>
@@ -40,12 +40,12 @@ class BaseException : public std::exception
 };
 
 } // namespace exceptions
-} // namespace mrmc
+} // namespace storm
 
 /* Macro to generate descendant exception classes.
  * As all classes are nearly the same, this makes changing common features much easier.
  */
-#define MRMC_EXCEPTION_DEFINE_NEW(exception_name) class exception_name : public BaseException<exception_name> { \
+#define STORM_EXCEPTION_DEFINE_NEW(exception_name) class exception_name : public BaseException<exception_name> { \
 public: \
 	exception_name() : BaseException() { \
 	} \
@@ -56,4 +56,4 @@ public: \
 };
 
 
-#endif // MRMC_EXCEPTIONS_BASEEXCEPTION_H_
+#endif // STORM_EXCEPTIONS_BASEEXCEPTION_H_

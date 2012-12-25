@@ -5,13 +5,13 @@
  *      Author: thomas
  */
 
-#ifndef MRMC_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
-#define MRMC_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
+#ifndef STORM_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
+#define STORM_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
 
 #include "PctlFormula.h"
 #include "PctlPathFormula.h"
 
-namespace mrmc {
+namespace storm {
 namespace formula {
 
 /*!
@@ -45,7 +45,7 @@ namespace formula {
  * @see PctlFormula
  */
 template <class T>
-class ProbabilisticNoBoundsOperator: public mrmc::formula::PctlFormula<T> {
+class ProbabilisticNoBoundsOperator: public storm::formula::PctlFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -103,6 +103,6 @@ private:
 };
 
 } /* namespace formula */
-} /* namespace mrmc */
+} /* namespace storm */
 
-#endif /* MRMC_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_ */
+#endif /* STORM_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_ */

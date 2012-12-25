@@ -5,8 +5,8 @@
  *      Author: chris
  */
 
-#ifndef MRMC_FORMULA_FORMULAS_H_
-#define MRMC_FORMULA_FORMULAS_H_
+#ifndef STORM_FORMULA_FORMULAS_H_
+#define STORM_FORMULA_FORMULAS_H_
 
 #include "And.h"
 #include "Ap.h"
@@ -22,4 +22,4 @@
 #include "ProbabilisticIntervalOperator.h"
 #include "Until.h"
 
-#endif /* MRMC_FORMULA_FORMULAS_H_ */
+#endif /* STORM_FORMULA_FORMULAS_H_ */

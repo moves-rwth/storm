@@ -15,7 +15,7 @@
 
 extern log4cplus::Logger logger;
 
-namespace mrmc {
+namespace storm {
 
 namespace adapters {
 
@@ -26,7 +26,7 @@ public:
 	 * @return A pointer to a column-major sparse matrix in gmm++ format.
 	 */
 	template<class T>
-	static gmm::csr_matrix<T>* toGmmxxSparseMatrix(mrmc::storage::SquareSparseMatrix<T> const& matrix) {
+	static gmm::csr_matrix<T>* toGmmxxSparseMatrix(storm::storage::SquareSparseMatrix<T> const& matrix) {
 		uint_fast64_t realNonZeros = matrix.getNonZeroEntryCount() + matrix.getDiagonalNonZeroEntryCount();
 		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
 
@@ -103,6 +103,6 @@ public:
 
 } //namespace adapters
 
-} //namespace mrmc
+} //namespace storm
 
 #endif /* GMMXXADAPTER_H_ */

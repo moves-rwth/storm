@@ -5,19 +5,19 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_EXCEPTIONS_FILEIOEXCEPTION_H_
-#define MRMC_EXCEPTIONS_FILEIOEXCEPTION_H_
+#ifndef STORM_EXCEPTIONS_FILEIOEXCEPTION_H_
+#define STORM_EXCEPTIONS_FILEIOEXCEPTION_H_
 
 #include "src/exceptions/BaseException.h"
 
-namespace mrmc {
+namespace storm {
 
 namespace exceptions {
 
-MRMC_EXCEPTION_DEFINE_NEW(FileIoException)
+STORM_EXCEPTION_DEFINE_NEW(FileIoException)
 
 }
 
 }
 
-#endif /* MRMC_EXCEPTIONS_FILEIOEXCEPTION_H_ */
+#endif /* STORM_EXCEPTIONS_FILEIOEXCEPTION_H_ */

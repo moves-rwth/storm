@@ -5,10 +5,10 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
-#define MRMC_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
 
-namespace mrmc {
+namespace storm {
 
 namespace modelChecker {
 
@@ -37,7 +37,7 @@ class DtmcPrctlModelChecker;
 
 extern log4cplus::Logger logger;
 
-namespace mrmc {
+namespace storm {
 
 namespace modelChecker {
 
@@ -58,7 +58,7 @@ public:
 	 *
 	 * @param model The dtmc model which is checked.
 	 */
-	explicit DtmcPrctlModelChecker(mrmc::models::Dtmc<Type>& model) : model(model) {
+	explicit DtmcPrctlModelChecker(storm::models::Dtmc<Type>& model) : model(model) {
 
 	}
 
@@ -67,8 +67,8 @@ public:
 	 *
 	 * @param modelChecker The model checker that is copied.
 	 */
-	explicit DtmcPrctlModelChecker(const mrmc::modelChecker::DtmcPrctlModelChecker<Type>* modelChecker) {
-		this->model = new mrmc::models::Dtmc<Type>(modelChecker->getModel());
+	explicit DtmcPrctlModelChecker(const storm::modelChecker::DtmcPrctlModelChecker<Type>* modelChecker) {
+		this->model = new storm::models::Dtmc<Type>(modelChecker->getModel());
 	}
 
 	/*!
@@ -81,7 +81,7 @@ public:
 	/*!
 	 * @returns A reference to the dtmc of the model checker.
 	 */
-	mrmc::models::Dtmc<Type>& getModel() const {
+	storm::models::Dtmc<Type>& getModel() const {
 		return this->model;
 	}
 
@@ -89,7 +89,7 @@ public:
 	 * Sets the DTMC model which is checked
 	 * @param model
 	 */
-	void setModel(mrmc::models::Dtmc<Type>& model) {
+	void setModel(storm::models::Dtmc<Type>& model) {
 		this->model = &model;
 	}
 
@@ -98,9 +98,9 @@ public:
 	 * states.
 	 * @param stateFormula The formula to be checked.
 	 */
-	void check(const mrmc::formula::PctlStateFormula<Type>& stateFormula) {
+	void check(const storm::formula::PctlStateFormula<Type>& stateFormula) {
 		LOG4CPLUS_INFO(logger, "Model checking formula " << stateFormula.toString());
-		mrmc::storage::BitVector* result = stateFormula.check(*this);
+		storm::storage::BitVector* result = stateFormula.check(*this);
 		LOG4CPLUS_INFO(logger, "Result for initial states:");
 		for (auto initialState : *this->getModel().getLabeledStates("init")) {
 			LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
@@ -113,7 +113,7 @@ public:
 	 * (probability) for all initial states.
 	 * @param probabilisticNoBoundsFormula The formula to be checked.
 	 */
-	void check(const mrmc::formula::ProbabilisticNoBoundsOperator<Type>& probabilisticNoBoundsFormula) {
+	void check(const storm::formula::ProbabilisticNoBoundsOperator<Type>& probabilisticNoBoundsFormula) {
 		LOG4CPLUS_INFO(logger, "Model checking formula " << probabilisticNoBoundsFormula.toString());
 		std::cout << "Model checking formula: " << probabilisticNoBoundsFormula.toString() << std::endl;
 		std::vector<Type>* result = checkProbabilisticNoBoundsOperator(probabilisticNoBoundsFormula);
@@ -133,7 +133,7 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	mrmc::storage::BitVector* checkStateFormula(const mrmc::formula::PctlStateFormula<Type>& formula) const {
+	storm::storage::BitVector* checkStateFormula(const storm::formula::PctlStateFormula<Type>& formula) const {
 		return formula.check(*this);
 	}
 
@@ -143,9 +143,9 @@ public:
 	 * @param formula The And formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	mrmc::storage::BitVector* checkAnd(const mrmc::formula::And<Type>& formula) const {
-		mrmc::storage::BitVector* result = checkStateFormula(formula.getLeft());
-		mrmc::storage::BitVector* right = checkStateFormula(formula.getRight());
+	storm::storage::BitVector* checkAnd(const storm::formula::And<Type>& formula) const {
+		storm::storage::BitVector* result = checkStateFormula(formula.getLeft());
+		storm::storage::BitVector* right = checkStateFormula(formula.getRight());
 		(*result) &= (*right);
 		delete right;
 		return result;
@@ -157,13 +157,13 @@ public:
 	 * @param formula The Ap state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	mrmc::storage::BitVector* checkAp(const mrmc::formula::Ap<Type>& formula) const {
+	storm::storage::BitVector* checkAp(const storm::formula::Ap<Type>& formula) const {
 		if (formula.getAp().compare("true") == 0) {
-			return new mrmc::storage::BitVector(this->getModel().getNumberOfStates(), true);
+			return new storm::storage::BitVector(this->getModel().getNumberOfStates(), true);
 		} else if (formula.getAp().compare("false") == 0) {
-			return new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
+			return new storm::storage::BitVector(this->getModel().getNumberOfStates());
 		}
-		return new mrmc::storage::BitVector(*this->getModel().getLabeledStates(formula.getAp()));
+		return new storm::storage::BitVector(*this->getModel().getLabeledStates(formula.getAp()));
 	}
 
 	/*!
@@ -172,8 +172,8 @@ public:
 	 * @param formula The Not state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	mrmc::storage::BitVector* checkNot(const mrmc::formula::Not<Type>& formula) const {
-		mrmc::storage::BitVector* result = checkStateFormula(formula.getChild());
+	storm::storage::BitVector* checkNot(const storm::formula::Not<Type>& formula) const {
+		storm::storage::BitVector* result = checkStateFormula(formula.getChild());
 		result->complement();
 		return result;
 	}
@@ -184,9 +184,9 @@ public:
 	 * @param formula The Or state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	mrmc::storage::BitVector* checkOr(const mrmc::formula::Or<Type>& formula) const {
-		mrmc::storage::BitVector* result = checkStateFormula(formula.getLeft());
-		mrmc::storage::BitVector* right = checkStateFormula(formula.getRight());
+	storm::storage::BitVector* checkOr(const storm::formula::Or<Type>& formula) const {
+		storm::storage::BitVector* result = checkStateFormula(formula.getLeft());
+		storm::storage::BitVector* right = checkStateFormula(formula.getRight());
 		(*result) |= (*right);
 		delete right;
 		return result;
@@ -199,11 +199,11 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	mrmc::storage::BitVector* checkProbabilisticOperator(
-			const mrmc::formula::ProbabilisticOperator<Type>& formula) const {
+	storm::storage::BitVector* checkProbabilisticOperator(
+			const storm::formula::ProbabilisticOperator<Type>& formula) const {
 		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
 
-		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
+		storm::storage::BitVector* result = new storm::storage::BitVector(this->getModel().getNumberOfStates());
 		Type bound = formula.getBound();
 		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
 			if ((*probabilisticResult)[i] == bound) result->set(i, true);
@@ -221,13 +221,13 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	mrmc::storage::BitVector* checkProbabilisticIntervalOperator(
-			const mrmc::formula::ProbabilisticIntervalOperator<Type>& formula) const {
+	storm::storage::BitVector* checkProbabilisticIntervalOperator(
+			const storm::formula::ProbabilisticIntervalOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
 
 		// Create resulting bit vector, which will hold the yes/no-answer for every state.
-		mrmc::storage::BitVector* result = new mrmc::storage::BitVector(this->getModel().getNumberOfStates());
+		storm::storage::BitVector* result = new storm::storage::BitVector(this->getModel().getNumberOfStates());
 
 		// Now, we can compute which states meet the bound specified in this operator, i.e.
 		// lie in the interval that was given along with this operator, and set the corresponding bits
@@ -252,7 +252,7 @@ public:
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
 	std::vector<Type>* checkProbabilisticNoBoundsOperator(
-			const mrmc::formula::ProbabilisticNoBoundsOperator<Type>& formula) const {
+			const storm::formula::ProbabilisticNoBoundsOperator<Type>& formula) const {
 		return formula.getPathFormula().check(*this);
 	}
 
@@ -263,7 +263,7 @@ public:
 	 * @param formula The path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	std::vector<Type>* checkPathFormula(const mrmc::formula::PctlPathFormula<Type>& formula) const {
+	std::vector<Type>* checkPathFormula(const storm::formula::PctlPathFormula<Type>& formula) const {
 		return formula.check(*this);
 	}
 
@@ -273,7 +273,7 @@ public:
 	 * @param formula The Bounded Until path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<Type>* checkBoundedUntil(const mrmc::formula::BoundedUntil<Type>& formula) const = 0;
+	virtual std::vector<Type>* checkBoundedUntil(const storm::formula::BoundedUntil<Type>& formula) const = 0;
 
 	/*!
 	 * The check method for a path formula with a Next operator node as root in its formula tree
@@ -281,7 +281,7 @@ public:
 	 * @param formula The Next path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<Type>* checkNext(const mrmc::formula::Next<Type>& formula) const = 0;
+	virtual std::vector<Type>* checkNext(const storm::formula::Next<Type>& formula) const = 0;
 
 	/*!
 	 * The check method for a path formula with an Until operator node as root in its formula tree
@@ -289,14 +289,14 @@ public:
 	 * @param formula The Until path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<Type>* checkUntil(const mrmc::formula::Until<Type>& formula) const = 0;
+	virtual std::vector<Type>* checkUntil(const storm::formula::Until<Type>& formula) const = 0;
 
 private:
-	mrmc::models::Dtmc<Type>& model;
+	storm::models::Dtmc<Type>& model;
 };
 
 } //namespace modelChecker
 
-} //namespace mrmc
+} //namespace storm
 
-#endif /* MRMC_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_ */

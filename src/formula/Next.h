@@ -5,13 +5,13 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_FORMULA_NEXT_H_
-#define MRMC_FORMULA_NEXT_H_
+#ifndef STORM_FORMULA_NEXT_H_
+#define STORM_FORMULA_NEXT_H_
 
 #include "PctlPathFormula.h"
 #include "PctlStateFormula.h"
 
-namespace mrmc {
+namespace storm {
 
 namespace formula {
 
@@ -112,7 +112,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual std::vector<T> *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkNext(*this);
 	}
 
@@ -122,6 +122,6 @@ private:
 
 } //namespace formula
 
-} //namespace mrmc
+} //namespace storm
 
-#endif /* MRMC_FORMULA_NEXT_H_ */
+#endif /* STORM_FORMULA_NEXT_H_ */

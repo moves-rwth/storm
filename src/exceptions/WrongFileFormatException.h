@@ -5,12 +5,12 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_
-#define MRMC_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_
+#ifndef STORM_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_
+#define STORM_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_
 
 #include "src/exceptions/BaseException.h"
 
-namespace mrmc {
+namespace storm {
 
 namespace exceptions {
 
@@ -18,10 +18,10 @@ namespace exceptions {
  * @brief This exception is thrown when an input file
  * contains invalid or missing keys.
  */
-MRMC_EXCEPTION_DEFINE_NEW(WrongFileFormatException)
+STORM_EXCEPTION_DEFINE_NEW(WrongFileFormatException)
 
 } //namespace exceptions
 
-} //namespace mrmc
+} //namespace storm
 
-#endif /* MRMC_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_ */
+#endif /* STORM_EXCEPTIONS_WRONGFILEFORMATEXCEPTION_H_ */

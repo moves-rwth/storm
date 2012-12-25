@@ -1,25 +1,25 @@
 cmake_minimum_required (VERSION 2.6)
 
 # Set project name
-project (mrmc CXX C)
+project (storm CXX C)
 
 # Set the version number
-set (MRMC_CPP_VERSION_MAJOR 1)
-set (MRMC_CPP_VERSION_MINOR 0)
+set (STORM_CPP_VERSION_MAJOR 1)
+set (STORM_CPP_VERSION_MINOR 0)
 
 # Set all GTest references to the version in the repository and show it as output
 set (GTEST_INCLUDE_DIR resources/3rdparty/gtest-1.6.0/include)
 if(MSVC)
-	set (MRMC_LIB_SUFFIX lib)
-	set (GTEST_LIBRARY_DEBUG ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Debug/gtest.${MRMC_LIB_SUFFIX})
-	set (GTEST_MAIN_LIBRARY_DEBUG ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Debug/gtest_main.${MRMC_LIB_SUFFIX})
-	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Release/gtest.${MRMC_LIB_SUFFIX})
-	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Release/gtest_main.${MRMC_LIB_SUFFIX})
+	set (STORM_LIB_SUFFIX lib)
+	set (GTEST_LIBRARY_DEBUG ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Debug/gtest.${STORM_LIB_SUFFIX})
+	set (GTEST_MAIN_LIBRARY_DEBUG ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Debug/gtest_main.${STORM_LIB_SUFFIX})
+	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Release/gtest.${STORM_LIB_SUFFIX})
+	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Release/gtest_main.${STORM_LIB_SUFFIX})
 	set (GTEST_LIBRARIES optimized ${GTEST_LIBRARY} debug ${GTEST_LIBRARY_DEBUG})
 else()
-	set (MRMC_LIB_SUFFIX a)
-	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.${MRMC_LIB_SUFFIX})
-	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.${MRMC_LIB_SUFFIX})
+	set (STORM_LIB_SUFFIX a)
+	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.${STORM_LIB_SUFFIX})
+	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.${STORM_LIB_SUFFIX})
 	set (GTEST_LIBRARIES ${GTEST_LIBRARY}) # as we dont use FindGTest anymore
 endif()
 message(STATUS "GTEST_INCLUDE_DIR is ${GTEST_INCLUDE_DIR}")
@@ -29,9 +29,9 @@ message(STATUS "GTEST_MAIN_LIBRARY is ${GTEST_MAIN_LIBRARY}")
 # Set all log4cplus references the version in the repository
 set (LOG4CPLUS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/include)
 if (MSVC)
-	set (LOG4CPLUS_LIBRARIES optimized ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/msvc10/x64/bin.Release/log4cplusS.${MRMC_LIB_SUFFIX} debug ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/msvc10/x64/bin.Debug/log4cplusSD.${MRMC_LIB_SUFFIX})
+	set (LOG4CPLUS_LIBRARIES optimized ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/msvc10/x64/bin.Release/log4cplusS.${STORM_LIB_SUFFIX} debug ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/msvc10/x64/bin.Debug/log4cplusSD.${STORM_LIB_SUFFIX})
 else()
-	set (LOG4CPLUS_LIBRARIES ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/src/liblog4cplus.${MRMC_LIB_SUFFIX})
+	set (LOG4CPLUS_LIBRARIES ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.0/src/liblog4cplus.${STORM_LIB_SUFFIX})
 endif()
 message(STATUS "LOG4CPLUS_INCLUDE_DIR is ${LOG4CPLUS_INCLUDE_DIR}")
 message(STATUS "LOG4CPLUS_LIBRARY is ${LOG4CPLUS_LIBRARIES}")
@@ -82,29 +82,29 @@ else(CLANG)
     endif(USE_POPCNT)    
 endif()
 
-# Add the binary folder to the search path for include files so that we will find mrmc-config.h
+# Add the binary folder to the search path for include files so that we will find storm-config.h
 include_directories("${PROJECT_BINARY_DIR}")
 
 # Base path for test files
-set(MRMC_CPP_TESTS_BASE_PATH ${PROJECT_SOURCE_DIR}/test)
-message(STATUS "MRMC_CPP_TESTS_BASE_PATH is ${MRMC_CPP_TESTS_BASE_PATH}")
+set(STORM_CPP_TESTS_BASE_PATH ${PROJECT_SOURCE_DIR}/test)
+message(STATUS "STORM_CPP_TESTS_BASE_PATH is ${STORM_CPP_TESTS_BASE_PATH}")
 
 # Main Sources
-file(GLOB_RECURSE MRMC_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
-file(GLOB_RECURSE MRMC_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
+file(GLOB_RECURSE STORM_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
 # Test Sources
 # Note that the tests also need the source files, except for the main file
-file(GLOB_RECURSE MRMC_TEST_HEADERS ${PROJECT_SOURCE_DIR}/test/*.h)
-file(GLOB_RECURSE MRMC_TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/*.cpp ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
+file(GLOB_RECURSE STORM_TEST_HEADERS ${PROJECT_SOURCE_DIR}/test/*.h)
+file(GLOB_RECURSE STORM_TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/*.cpp ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 
 # Main Grouping
-source_group(Headers FILES ${MRMC_HEADERS})
-source_group(Sources FILES ${MRMC_SOURCES})
+source_group(Headers FILES ${STORM_HEADERS})
+source_group(Sources FILES ${STORM_SOURCES})
 
 # Test Grouping
-source_group(Headers FILES ${MRMC_TEST_HEADERS})
-source_group(Sources FILES ${MRMC_TEST_SOURCES})
+source_group(Headers FILES ${STORM_TEST_HEADERS})
+source_group(Sources FILES ${STORM_TEST_SOURCES})
 
 # Add base folder for better inclusion paths
 include_directories("${PROJECT_SOURCE_DIR}")
@@ -138,12 +138,12 @@ include_directories(${GMMXX_INCLUDE_DIR})
 
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
-add_executable(mrmc ${MRMC_SOURCES} ${MRMC_HEADERS})
-add_executable(mrmc-tests ${MRMC_TEST_SOURCES} ${MRMC_TEST_HEADERS})
+add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
+add_executable(storm-tests ${STORM_TEST_SOURCES} ${STORM_TEST_HEADERS})
 
 # Add target link deps for Boost program options
-target_link_libraries(mrmc ${Boost_LIBRARIES})   
-target_link_libraries(mrmc-tests ${Boost_LIBRARIES})
+target_link_libraries(storm ${Boost_LIBRARIES})   
+target_link_libraries(storm-tests ${Boost_LIBRARIES})
 
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
@@ -161,9 +161,9 @@ if (GTEST_INCLUDE_DIR)
 	enable_testing()
 
 	include_directories(${GTEST_INCLUDE_DIR})
-	target_link_libraries(mrmc-tests ${GTEST_LIBRARIES})
+	target_link_libraries(storm-tests ${GTEST_LIBRARIES})
 
-	add_test(NAME mrmc-tests COMMAND mrmc-tests)
+	add_test(NAME storm-tests COMMAND storm-tests)
 	if(MSVC) # VS2012 doesn't support correctly the tuples yet
 		add_definitions( /D _VARIADIC_MAX=10 )
 	endif()
@@ -171,29 +171,29 @@ endif(GTEST_INCLUDE_DIR)
 
 if (LOG4CPLUS_INCLUDE_DIR)
     include_directories(${LOG4CPLUS_INCLUDE_DIR})
-    target_link_libraries(mrmc ${LOG4CPLUS_LIBRARIES}) 
-    target_link_libraries(mrmc-tests ${LOG4CPLUS_LIBRARIES})
+    target_link_libraries(storm ${LOG4CPLUS_LIBRARIES}) 
+    target_link_libraries(storm-tests ${LOG4CPLUS_LIBRARIES})
     # On Linux, we have to link against librt
     if (UNIX AND NOT APPLE)
-	   target_link_libraries(mrmc rt)
-	   target_link_libraries(mrmc-tests rt)
+	   target_link_libraries(storm rt)
+	   target_link_libraries(storm-tests rt)
     endif(UNIX AND NOT APPLE)
 endif(LOG4CPLUS_INCLUDE_DIR)
 
 if (THREADS_FOUND)
 	include_directories(${THREADS_INCLUDE_DIRS})
-    target_link_libraries (mrmc ${CMAKE_THREAD_LIBS_INIT})
-	target_link_libraries (mrmc-tests ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries (storm ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries (storm-tests ${CMAKE_THREAD_LIBS_INIT})
 endif(THREADS_FOUND)
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (
-  "${PROJECT_SOURCE_DIR}/mrmc-config.h.in"
-  "${PROJECT_BINARY_DIR}/mrmc-config.h"
+  "${PROJECT_SOURCE_DIR}/storm-config.h.in"
+  "${PROJECT_BINARY_DIR}/storm-config.h"
 )
 
-add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/mrmc ${PROJECT_SOURCE_DIR}/examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab
-						DEPENDS mrmc)
-add_custom_target(memcheck-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/mrmc-tests
-						DEPENDS mrmc-tests)
+add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm ${PROJECT_SOURCE_DIR}/examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab
+						DEPENDS storm)
+add_custom_target(memcheck-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-tests
+						DEPENDS storm-tests)
 

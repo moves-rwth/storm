@@ -1,5 +1,5 @@
-#ifndef MRMC_STORAGE_BITVECTOR_H_
-#define MRMC_STORAGE_BITVECTOR_H_
+#ifndef STORM_STORAGE_BITVECTOR_H_
+#define STORM_STORAGE_BITVECTOR_H_
 
 #include <exception>
 #include <new>
@@ -18,7 +18,7 @@ extern log4cplus::Logger logger;
 
 #include <iostream>
 
-namespace mrmc {
+namespace storm {
 
 namespace storage {
 
@@ -102,7 +102,7 @@ public:
 		// Check whether the given length is valid.
 		if (length == 0) {
 			LOG4CPLUS_ERROR(logger, "Trying to create bit vector of size 0.");
-			throw mrmc::exceptions::InvalidArgumentException("Trying to create a bit vector of size 0.");
+			throw storm::exceptions::InvalidArgumentException("Trying to create a bit vector of size 0.");
 		}
 
 		// Compute the correct number of buckets needed to store the given number of bits
@@ -205,7 +205,7 @@ public:
 	 */
 	void set(const uint_fast64_t index, const bool value) {
 		uint_fast64_t bucket = index >> 6;
-		if (bucket >= this->bucketCount) throw mrmc::exceptions::OutOfRangeException();
+		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException();
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		if (value) {
 			this->bucketArray[bucket] |= mask;
@@ -223,7 +223,7 @@ public:
 	 */
 	bool get(const uint_fast64_t index) const {
 		uint_fast64_t bucket = index >> 6;
-		if (bucket >= this->bucketCount) throw mrmc::exceptions::OutOfRangeException();
+		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException();
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		return ((this->bucketArray[bucket] & mask) == mask);
 	}
@@ -542,6 +542,6 @@ private:
 
 } // namespace storage
 
-} // namespace mrmc
+} // namespace storm
 
-#endif // MRMC_STORAGE_BITVECTOR_H_
+#endif // STORM_STORAGE_BITVECTOR_H_

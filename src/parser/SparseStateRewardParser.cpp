@@ -25,7 +25,7 @@
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
-namespace mrmc {
+namespace storm {
 namespace parser {
 
 
@@ -57,7 +57,7 @@ SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::
 			reward = strtod(buf, &buf);
 			if (reward < 0.0) {
 				LOG4CPLUS_ERROR(logger, "Expected positive probability but got \"" << std::string(buf, 0, 16) << "\".");
-				throw mrmc::exceptions::WrongFileFormatException() << "State reward file specifies illegal reward value.";
+				throw storm::exceptions::WrongFileFormatException() << "State reward file specifies illegal reward value.";
 			}
 
 			(*this->stateRewards)[state] = reward;
@@ -69,4 +69,4 @@ SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::
 
 } //namespace parser
 
-} //namespace mrmc
+} //namespace storm

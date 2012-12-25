@@ -5,8 +5,8 @@
  *      Author: Gereon Kremer
  */
 
-#ifndef MRMC_PARSER_PARSER_H_
-#define MRMC_PARSER_PARSER_H_
+#ifndef STORM_PARSER_PARSER_H_
+#define STORM_PARSER_PARSER_H_
 
 #include "src/utility/OsDetection.h"
 
@@ -19,7 +19,7 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFileFormatException.h"
 
-namespace mrmc {
+namespace storm {
 
 /*!
  *	@brief Contains all file parser and helper classes.
@@ -110,6 +110,6 @@ namespace parser {
 	};
 
 } // namespace parser
-} // namespace mrmc
+} // namespace storm
 
-#endif /* MRMC_PARSER_PARSER_H_ */
+#endif /* STORM_PARSER_PARSER_H_ */

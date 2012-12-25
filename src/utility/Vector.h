@@ -5,17 +5,17 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef MRMC_UTILITY_VECTOR_H_
-#define MRMC_UTILITY_VECTOR_H_
+#ifndef STORM_UTILITY_VECTOR_H_
+#define STORM_UTILITY_VECTOR_H_
 
 #include "Eigen/src/Core/Matrix.h"
 
-namespace mrmc {
+namespace storm {
 
 namespace utility {
 
 template<class T>
-void setVectorValues(std::vector<T>* vector, const mrmc::storage::BitVector& positions, const std::vector<T> values) {
+void setVectorValues(std::vector<T>* vector, const storm::storage::BitVector& positions, const std::vector<T> values) {
 	uint_fast64_t oldPosition = 0;
 	for (auto position : positions) {
 		(*vector)[position] = values[oldPosition++];
@@ -23,14 +23,14 @@ void setVectorValues(std::vector<T>* vector, const mrmc::storage::BitVector& pos
 }
 
 template<class T>
-void setVectorValues(std::vector<T>* vector, const mrmc::storage::BitVector& positions, T value) {
+void setVectorValues(std::vector<T>* vector, const storm::storage::BitVector& positions, T value) {
 	for (auto position : positions) {
 		(*vector)[position] = value;
 	}
 }
 
 template<class T>
-void setVectorValues(Eigen::Matrix<T, -1, 1, 0, -1, 1>* eigenVector, const mrmc::storage::BitVector& positions, T value) {
+void setVectorValues(Eigen::Matrix<T, -1, 1, 0, -1, 1>* eigenVector, const storm::storage::BitVector& positions, T value) {
 	for (auto position : positions) {
 		(*eigenVector)(position, 0) = value;
 	}
@@ -38,6 +38,6 @@ void setVectorValues(Eigen::Matrix<T, -1, 1, 0, -1, 1>* eigenVector, const mrmc:
 
 } //namespace utility
 
-} //namespace mrmc
+} //namespace storm
 
-#endif /* MRMC_UTILITY_VECTOR_H_ */
+#endif /* STORM_UTILITY_VECTOR_H_ */

@@ -24,7 +24,7 @@
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
-namespace mrmc {
+namespace storm {
 namespace parser{
 
 /*!
@@ -131,7 +131,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	if (non_zero == 0)
 	{
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
-		throw mrmc::exceptions::WrongFileFormatException();
+		throw storm::exceptions::WrongFileFormatException();
 	}
 	
 	/*
@@ -155,7 +155,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
-	this->matrix = std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>>(new mrmc::storage::SquareSparseMatrix<double>(maxnode + 1));
+	this->matrix = std::shared_ptr<storm::storage::SquareSparseMatrix<double>>(new storm::storage::SquareSparseMatrix<double>(maxnode + 1));
 	if (this->matrix == NULL)
 	{
 		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
@@ -189,4 +189,4 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 }
 
 } //namespace parser
-} //namespace mrmc
+} //namespace storm

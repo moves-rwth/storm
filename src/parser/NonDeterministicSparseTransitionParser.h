@@ -1,5 +1,5 @@
-#ifndef MRMC_PARSER_NONDETTRAPARSER_H_
-#define MRMC_PARSER_NONDETTRAPARSER_H_
+#ifndef STORM_PARSER_NONDETTRAPARSER_H_
+#define STORM_PARSER_NONDETTRAPARSER_H_
 
 #include "src/storage/SquareSparseMatrix.h"
 
@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-namespace mrmc {
+namespace storm {
 namespace parser {
 	
 /*!
@@ -20,18 +20,18 @@ class NonDeterministicSparseTransitionParser : public Parser {
 	public:
 		NonDeterministicSparseTransitionParser(std::string const &filename);
 		
-		std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> getMatrix() {
+		std::shared_ptr<storm::storage::SquareSparseMatrix<double>> getMatrix() {
 			return this->matrix;
 		}
 	
 	private:
-		std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> matrix;
+		std::shared_ptr<storm::storage::SquareSparseMatrix<double>> matrix;
 		
 		std::unique_ptr<std::vector<uint_fast64_t>> firstPass(char* buf, uint_fast64_t &maxnode, uint_fast64_t &maxchoice);
 	
 };
 		
 } // namespace parser
-} // namespace mrmc
+} // namespace storm
 
-#endif /* MRMC_PARSER_NONDETTRAPARSER_H_ */
+#endif /* STORM_PARSER_NONDETTRAPARSER_H_ */

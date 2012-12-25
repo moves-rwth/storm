@@ -13,17 +13,17 @@ extern log4cplus::Logger logger;
 /*!
  *	Calls strtol() internally and checks if the new pointer is different
  *	from the original one, i.e. if str != *end. If they are the same, a
- *	mrmc::exceptions::WrongFileFormatException will be thrown.
+ *	storm::exceptions::WrongFileFormatException will be thrown.
  *	@param str String to parse
  *	@param end New pointer will be written there
  *	@return Result of strtol()
  */
-uint_fast64_t mrmc::parser::Parser::checked_strtol(const char* str, char** end) {
+uint_fast64_t storm::parser::Parser::checked_strtol(const char* str, char** end) {
 	uint_fast64_t res = strtol(str, end, 10);
 	if (str == *end) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing integer. Next input token is not a number.");
 		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
-		throw mrmc::exceptions::WrongFileFormatException("Error while parsing integer. Next input token is not a number.");
+		throw storm::exceptions::WrongFileFormatException("Error while parsing integer. Next input token is not a number.");
 	}
 	return res;
 }
@@ -34,7 +34,7 @@ uint_fast64_t mrmc::parser::Parser::checked_strtol(const char* str, char** end) 
  *	@param buf String buffer
  *	@return	pointer to first non-whitespace character
  */
-char* mrmc::parser::Parser::trimWhitespaces(char* buf) {
+char* storm::parser::Parser::trimWhitespaces(char* buf) {
 	/*TODO: Maybe use memcpy to copy all the stuff from the first non-whitespace char
 	 * to the position of the buffer, so we don't have to keep track of 2 pointers.
 	 */
@@ -48,7 +48,7 @@ char* mrmc::parser::Parser::trimWhitespaces(char* buf) {
  *	and a log entry is written.
  *	@param filename file to be opened
  */
-mrmc::parser::MappedFile::MappedFile(const char* filename) {
+storm::parser::MappedFile::MappedFile(const char* filename) {
 #if defined LINUX || defined MACOSX
 	/*
 	 *	Do file mapping for reasonable systems.
@@ -60,20 +60,20 @@ mrmc::parser::MappedFile::MappedFile(const char* filename) {
 	if (stat64(filename, &(this->st)) != 0) {
 #endif
 		LOG4CPLUS_ERROR(logger, "Error in stat(" << filename << ").");
-		throw exceptions::FileIoException("mrmc::parser::MappedFile Error in stat()");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in stat()");
 	}
 	this->file = open(filename, O_RDONLY);
 
 	if (this->file < 0) {
 		LOG4CPLUS_ERROR(logger, "Error in open(" << filename << ").");
-		throw exceptions::FileIoException("mrmc::parser::MappedFile Error in open()");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in open()");
 	}
 			
 	this->data = (char*) mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0);
 	if (this->data == (char*)-1) {
 		close(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in mmap(" << filename << ").");
-		throw exceptions::FileIoException("mrmc::parser::MappedFile Error in mmap()");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in mmap()");
 	}
 	this->dataend = this->data + this->st.st_size;
 #elif defined WINDOWS
@@ -83,20 +83,20 @@ mrmc::parser::MappedFile::MappedFile(const char* filename) {
 	 */
 	if (_stat64(filename, &(this->st)) != 0) {
 		LOG4CPLUS_ERROR(logger, "Error in _stat(" << filename << ").");
-		throw exceptions::FileIoException("mrmc::parser::MappedFile Error in stat()");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in stat()");
 	}
 		
 	this->file = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (this->file == INVALID_HANDLE_VALUE) {
 		LOG4CPLUS_ERROR(logger, "Error in CreateFileA(" << filename << ").");
-		throw exceptions::FileIoException("mrmc::parser::MappedFile Error in CreateFileA()");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in CreateFileA()");
 	}
 			
 	this->mapping = CreateFileMappingA(this->file, NULL, PAGE_READONLY, (DWORD)(st.st_size >> 32), (DWORD)st.st_size, NULL);
 	if (this->mapping == NULL) {
 		CloseHandle(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in CreateFileMappingA(" << filename << ").");
-		throw exceptions::FileIoException("mrmc::parser::MappedFile Error in CreateFileMappingA()");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in CreateFileMappingA()");
 	}
 			
 	this->data = static_cast<char*>(MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, this->st.st_size));
@@ -104,7 +104,7 @@ mrmc::parser::MappedFile::MappedFile(const char* filename) {
 		CloseHandle(this->mapping);
 		CloseHandle(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in MapViewOfFile(" << filename << ").");
-		throw exceptions::FileIoException("mrmc::parser::MappedFile Error in MapViewOfFile()");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in MapViewOfFile()");
 	}
 	this->dataend = this->data + this->st.st_size;
 #endif
@@ -113,7 +113,7 @@ mrmc::parser::MappedFile::MappedFile(const char* filename) {
 /*!
  *	Will unmap the data and close the file.
  */
-mrmc::parser::MappedFile::~MappedFile() {
+storm::parser::MappedFile::~MappedFile() {
 #if defined LINUX || defined MACOSX
 	munmap(this->data, this->st.st_size);
 	close(this->file);

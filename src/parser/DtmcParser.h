@@ -11,7 +11,7 @@
 #include "Parser.h"
 #include "models/Dtmc.h"
 
-namespace mrmc {
+namespace storm {
 namespace parser {
 
 /*!
@@ -22,19 +22,19 @@ namespace parser {
  *
  *	@Note The labeling representation in the file may use at most as much nodes as are specified in the dtmc.
  */
-class DtmcParser: public mrmc::parser::Parser {
+class DtmcParser: public storm::parser::Parser {
 public:
 	DtmcParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 			std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
 
-	std::shared_ptr<mrmc::models::Dtmc<double>> getDtmc() {
+	std::shared_ptr<storm::models::Dtmc<double>> getDtmc() {
 		return this->dtmc;
 	}
 
 private:
-	std::shared_ptr<mrmc::models::Dtmc<double>> dtmc;
+	std::shared_ptr<storm::models::Dtmc<double>> dtmc;
 };
 
 } /* namespace parser */
-} /* namespace mrmc */
+} /* namespace storm */
 #endif /* DTMCPARSER_H_ */

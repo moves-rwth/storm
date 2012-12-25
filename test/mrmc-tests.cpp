@@ -12,7 +12,7 @@ log4cplus::Logger logger;
  * Initializes the logging framework.
  */
 void setUpLogging() {
-	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender("mrmc-tests.log"));
+	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender("storm-tests.log"));
 	fileLogAppender->setName("mainFileAppender");
 	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M} (%r ms) - %F:%L : %m%n")));
 	logger = log4cplus::Logger::getInstance("mainLogger");
@@ -27,7 +27,7 @@ void setUpLogging() {
 
 int main(int argc, char** argv) {
 	setUpLogging();
-	std::cout << "MRMC Testing Suite" << std::endl;
+	std::cout << "STORM Testing Suite" << std::endl;
 	
 	testing::InitGoogleTest(&argc, argv);
 

@@ -5,8 +5,8 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef MRMC_MODELS_DTMC_H_
-#define MRMC_MODELS_DTMC_H_
+#ifndef STORM_MODELS_DTMC_H_
+#define STORM_MODELS_DTMC_H_
 
 #include <ostream>
 #include <iostream>
@@ -18,7 +18,7 @@
 #include "src/storage/SquareSparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
-namespace mrmc {
+namespace storm {
 
 namespace models {
 
@@ -39,10 +39,10 @@ public:
 	 * @param stateLabeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
-	Dtmc(std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> probabilityMatrix,
-			std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> stateLabeling,
+	Dtmc(std::shared_ptr<storm::storage::SquareSparseMatrix<T>> probabilityMatrix,
+			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
 			std::shared_ptr<std::vector<T>> stateRewards = nullptr,
-			std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> transitionRewardMatrix = nullptr)
+			std::shared_ptr<storm::storage::SquareSparseMatrix<T>> transitionRewardMatrix = nullptr)
 			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling),
 			  stateRewards(stateRewards), transitionRewardMatrix(transitionRewardMatrix),
 			  backwardTransitions(nullptr) {
@@ -60,7 +60,7 @@ public:
 			stateLabeling(dtmc.stateLabeling), stateRewards(dtmc.stateRewards),
 			transitionRewardMatrix(dtmc.transitionRewardMatrix) {
 		if (dtmc.backardTransitions != nullptr) {
-			this->backwardTransitions = new mrmc::models::GraphTransitions<T>(*dtmc.backwardTransitions);
+			this->backwardTransitions = new storm::models::GraphTransitions<T>(*dtmc.backwardTransitions);
 		}
 		if (!this->checkValidityProbabilityMatrix()) {
 			std::cerr << "Probability matrix is invalid" << std::endl;
@@ -100,7 +100,7 @@ public:
 	 * @return A bit vector in which exactly those bits are set to true that
 	 * correspond to a state labeled with the given atomic proposition.
 	 */
-	mrmc::storage::BitVector* getLabeledStates(std::string ap) const {
+	storm::storage::BitVector* getLabeledStates(std::string ap) const {
 		return this->stateLabeling->getAtomicProposition(ap);
 	}
 
@@ -110,7 +110,7 @@ public:
 	 * @return A pointer to the matrix representing the transition probability
 	 * function.
 	 */
-	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> getTransitionProbabilityMatrix() const {
+	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> getTransitionProbabilityMatrix() const {
 		return this->probabilityMatrix;
 	}
 
@@ -118,7 +118,7 @@ public:
 	 * Returns a pointer to the matrix representing the transition rewards.
 	 * @return A pointer to the matrix representing the transition rewards.
 	 */
-	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> getTransitionRewardMatrix() const {
+	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> getTransitionRewardMatrix() const {
 		return this->transitionRewardMatrix;
 	}
 
@@ -141,9 +141,9 @@ public:
 	 * Retrieves a reference to the backwards transition relation.
 	 * @return A reference to the backwards transition relation.
 	 */
-	mrmc::models::GraphTransitions<T>& getBackwardTransitions() {
+	storm::models::GraphTransitions<T>& getBackwardTransitions() {
 		if (this->backwardTransitions == nullptr) {
-			this->backwardTransitions = new mrmc::models::GraphTransitions<T>(this->probabilityMatrix, false);
+			this->backwardTransitions = new storm::models::GraphTransitions<T>(this->probabilityMatrix, false);
 		}
 		return *this->backwardTransitions;
 	}
@@ -184,26 +184,26 @@ private:
 	}
 
 	/*! A matrix representing the transition probability function of the DTMC. */
-	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> probabilityMatrix;
+	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> probabilityMatrix;
 
 	/*! The labeling of the states of the DTMC. */
-	std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> stateLabeling;
+	std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling;
 
 	/*! The state-based rewards of the DTMC. */
 	std::shared_ptr<std::vector<T>> stateRewards;
 
 	/*! The transition-based rewards of the DTMC. */
-	std::shared_ptr<mrmc::storage::SquareSparseMatrix<T>> transitionRewardMatrix;
+	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> transitionRewardMatrix;
 
 	/*!
 	 * A data structure that stores the predecessors for all states. This is
 	 * needed for backwards directed searches.
 	 */
-	mrmc::models::GraphTransitions<T>* backwardTransitions;
+	storm::models::GraphTransitions<T>* backwardTransitions;
 };
 
 } // namespace models
 
-} // namespace mrmc
+} // namespace storm
 
-#endif /* MRMC_MODELS_DTMC_H_ */
+#endif /* STORM_MODELS_DTMC_H_ */

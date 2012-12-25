@@ -26,4 +26,4 @@ Prerequisites:
 	The other fields should be auto completed after to next "Configure" round
 
 If no error occured during the last CMake Configure round, press Generate. 
-Now you can build MRMC-Cpp using the generated project/makefiles in the Build folder you selected.
+Now you can build STORM using the generated project/makefiles in the Build folder you selected.

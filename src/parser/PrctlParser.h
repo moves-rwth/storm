@@ -1,10 +1,10 @@
-#ifndef MRMC_PARSER_PRCTLPARSER_H_
-#define MRMC_PARSER_PRCTLPARSER_H_
+#ifndef STORM_PARSER_PRCTLPARSER_H_
+#define STORM_PARSER_PRCTLPARSER_H_
 
 #include "src/formula/PctlFormula.h"
 #include "src/parser/Parser.h"
 
-namespace mrmc {
+namespace storm {
 namespace parser {
 
 /*!
@@ -18,16 +18,16 @@ class PrctlParser : Parser
 		/*!
 		 *	@brief return formula object parsed from file.
 		 */
-		mrmc::formula::PctlFormula<double>* getFormula()
+		storm::formula::PctlFormula<double>* getFormula()
 		{
 			return this->formula;
 		}
 	
 	private:
-		mrmc::formula::PctlFormula<double>* formula;
+		storm::formula::PctlFormula<double>* formula;
 };
 
 } // namespace parser
-} // namespace mrmc
+} // namespace storm
 
-#endif /* MRMC_PARSER_PRCTLPARSER_H_ */
+#endif /* STORM_PARSER_PRCTLPARSER_H_ */

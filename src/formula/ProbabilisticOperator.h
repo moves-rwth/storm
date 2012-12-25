@@ -5,12 +5,12 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_FORMULA_PROBABILISTICOPERATOR_H_
-#define MRMC_FORMULA_PROBABILISTICOPERATOR_H_
+#ifndef STORM_FORMULA_PROBABILISTICOPERATOR_H_
+#define STORM_FORMULA_PROBABILISTICOPERATOR_H_
 
 #include "PctlStateFormula.h"
 
-namespace mrmc {
+namespace storm {
 namespace formula {
 
 /*!
@@ -39,7 +39,7 @@ namespace formula {
  * @see PctlFormula
  */
 template<class T>
-class ProbabilisticOperator : public mrmc::formula::PctlStateFormula<T> {
+class ProbabilisticOperator : public storm::formula::PctlStateFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -129,8 +129,8 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the
 	 *          called object.
 	 */
-	virtual mrmc::storage::BitVector *check(
-			const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector *check(
+			const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkProbabilisticOperator(*this);
 	}
 
@@ -153,6 +153,6 @@ private:
 };
 
 } /* namespace formula */
-} /* namespace mrmc */
+} /* namespace storm */
 
-#endif /* MRMC_FORMULA_PROBABILISTICOPERATOR_H_ */
+#endif /* STORM_FORMULA_PROBABILISTICOPERATOR_H_ */

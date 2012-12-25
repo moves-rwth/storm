@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_MODELS_ATOMICPROPOSITIONSLABELING_H_
-#define MRMC_MODELS_ATOMICPROPOSITIONSLABELING_H_
+#ifndef STORM_MODELS_ATOMICPROPOSITIONSLABELING_H_
+#define STORM_MODELS_ATOMICPROPOSITIONSLABELING_H_
 
 #include "src/storage/BitVector.h"
 #include "src/exceptions/OutOfRangeException.h"
@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <set>
 
-namespace mrmc {
+namespace storm {
 
 namespace models {
 
@@ -36,9 +36,9 @@ public:
 	 */
 	AtomicPropositionsLabeling(const uint_fast64_t stateCount, const uint_fast64_t apCountMax)
 			: stateCount(stateCount), apCountMax(apCountMax), apsCurrent(0) {
-		this->singleLabelings = new mrmc::storage::BitVector*[apCountMax];
+		this->singleLabelings = new storm::storage::BitVector*[apCountMax];
 		for (uint_fast64_t i = 0; i < apCountMax; ++i) {
-			this->singleLabelings[i] = new mrmc::storage::BitVector(stateCount);
+			this->singleLabelings[i] = new storm::storage::BitVector(stateCount);
 		}
 	}
 
@@ -53,9 +53,9 @@ public:
 			  apCountMax(atomicPropositionsLabeling.apCountMax),
 			  apsCurrent(atomicPropositionsLabeling.apsCurrent),
 			  nameToLabelingMap(atomicPropositionsLabeling.nameToLabelingMap) {
-		this->singleLabelings = new mrmc::storage::BitVector*[apCountMax];
+		this->singleLabelings = new storm::storage::BitVector*[apCountMax];
 		for (uint_fast64_t i = 0; i < apCountMax; ++i) {
-			this->singleLabelings[i] = new mrmc::storage::BitVector(*atomicPropositionsLabeling.singleLabelings[i]);
+			this->singleLabelings[i] = new storm::storage::BitVector(*atomicPropositionsLabeling.singleLabelings[i]);
 		}
 	}
 
@@ -82,10 +82,10 @@ public:
 	 */
 	uint_fast64_t addAtomicProposition(std::string ap) {
 		if (nameToLabelingMap.count(ap) != 0) {
-			throw mrmc::exceptions::OutOfRangeException("Atomic Proposition already exists.");
+			throw storm::exceptions::OutOfRangeException("Atomic Proposition already exists.");
 		}
 		if (apsCurrent >= apCountMax) {
-			throw mrmc::exceptions::OutOfRangeException("Added more atomic propositions than"
+			throw storm::exceptions::OutOfRangeException("Added more atomic propositions than"
 					"previously declared.");
 		}
 		nameToLabelingMap[ap] = apsCurrent;
@@ -110,10 +110,10 @@ public:
 	 */
 	void addAtomicPropositionToState(std::string ap, const uint_fast64_t state) {
 		if (nameToLabelingMap.count(ap) == 0) {
-			throw mrmc::exceptions::OutOfRangeException() << "Atomic Proposition '" << ap << "' unknown.";
+			throw storm::exceptions::OutOfRangeException() << "Atomic Proposition '" << ap << "' unknown.";
 		}
 		if (state >= stateCount) {
-			throw mrmc::exceptions::OutOfRangeException("State index out of range.");
+			throw storm::exceptions::OutOfRangeException("State index out of range.");
 		}
 		this->singleLabelings[nameToLabelingMap[ap]]->set(state, true);
 	}
@@ -125,7 +125,7 @@ public:
 	 */
 	std::set<std::string> getPropositionsForState(uint_fast64_t state) {
 		if (state >= stateCount) {
-			throw mrmc::exceptions::OutOfRangeException("State index out of range.");
+			throw storm::exceptions::OutOfRangeException("State index out of range.");
 		}
 		std::set<std::string> result;
 		for (auto it = nameToLabelingMap.begin();
@@ -164,7 +164,7 @@ public:
 	 * @return A pointer to an instance of SingleAtomicPropositionLabeling that
 	 * represents the labeling of the states with the given atomic proposition.
 	 */
-	mrmc::storage::BitVector* getAtomicProposition(std::string ap) {
+	storm::storage::BitVector* getAtomicProposition(std::string ap) {
 		return (this->singleLabelings[nameToLabelingMap[ap]]);
 	}
 
@@ -222,11 +222,11 @@ private:
 	 * a particular atomic proposition, the map from names to indices in this
 	 * array has to be used.
 	 */
-	mrmc::storage::BitVector** singleLabelings;
+	storm::storage::BitVector** singleLabelings;
 };
 
 } // namespace models
 
-} // namespace mrmc
+} // namespace storm
 
-#endif /* MRMC_MODELS_ATOMICPROPOSITIONSLABELING_H_ */
+#endif /* STORM_MODELS_ATOMICPROPOSITIONSLABELING_H_ */

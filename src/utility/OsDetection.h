@@ -1,5 +1,5 @@
-#ifndef MRMC_UTILITY_OSDETECTION_H_
-#define MRMC_UTILITY_OSDETECTION_H_
+#ifndef STORM_UTILITY_OSDETECTION_H_
+#define STORM_UTILITY_OSDETECTION_H_
 
 #if defined __linux__ || defined __linux
 #	define LINUX
@@ -19,4 +19,4 @@
 #	error Could not detect Operating System
 #endif
 
-#endif // MRMC_UTILITY_OSDETECTION_H_
+#endif // STORM_UTILITY_OSDETECTION_H_

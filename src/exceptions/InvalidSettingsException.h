@@ -1,14 +1,14 @@
-#ifndef MRMC_EXCEPTIONS_INVALIDSETTINGSEXCEPTION_H_
-#define MRMC_EXCEPTIONS_INVALIDSETTINGSEXCEPTION_H_
+#ifndef STORM_EXCEPTIONS_INVALIDSETTINGSEXCEPTION_H_
+#define STORM_EXCEPTIONS_INVALIDSETTINGSEXCEPTION_H_
 
 #include "src/exceptions/BaseException.h"
 
-namespace mrmc {
+namespace storm {
 namespace exceptions {
 
-MRMC_EXCEPTION_DEFINE_NEW(InvalidSettingsException)
+STORM_EXCEPTION_DEFINE_NEW(InvalidSettingsException)
 
 } // namespace exceptions
-} // namespace mrmc
+} // namespace storm
 
-#endif // MRMC_EXCEPTIONS_INVALIDSETTINGSEXCEPTION_H_
+#endif // STORM_EXCEPTIONS_INVALIDSETTINGSEXCEPTION_H_

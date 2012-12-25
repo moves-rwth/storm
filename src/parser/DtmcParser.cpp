@@ -10,7 +10,7 @@
 #include "AtomicPropositionLabelingParser.h"
 #include "SparseStateRewardParser.h"
 
-namespace mrmc {
+namespace storm {
 namespace parser {
 
 /*!
@@ -25,25 +25,25 @@ namespace parser {
  */
 DtmcParser::DtmcParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	mrmc::parser::DeterministicSparseTransitionParser tp(transitionSystemFile);
+	storm::parser::DeterministicSparseTransitionParser tp(transitionSystemFile);
 	uint_fast64_t stateCount = tp.getMatrix()->getRowCount();
 
 	std::shared_ptr<std::vector<double>> stateRewards = nullptr;
-	std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> transitionRewards = nullptr;
+	std::shared_ptr<storm::storage::SquareSparseMatrix<double>> transitionRewards = nullptr;
 
-	mrmc::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
+	storm::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
 	if (stateRewardFile != "") {
-		mrmc::parser::SparseStateRewardParser srp(stateCount, stateRewardFile);
+		storm::parser::SparseStateRewardParser srp(stateCount, stateRewardFile);
 		stateRewards = srp.getStateRewards();
 	}
 	if (transitionRewardFile != "") {
-		mrmc::parser::DeterministicSparseTransitionParser trp(transitionRewardFile);
+		storm::parser::DeterministicSparseTransitionParser trp(transitionRewardFile);
 		transitionRewards = trp.getMatrix();
 	}
 
-	dtmc = std::shared_ptr<mrmc::models::Dtmc<double>>(new mrmc::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling(), stateRewards, transitionRewards));
+	dtmc = std::shared_ptr<storm::models::Dtmc<double>>(new storm::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling(), stateRewards, transitionRewards));
 }
 
 } /* namespace parser */
 
-} /* namespace mrmc */
+} /* namespace storm */

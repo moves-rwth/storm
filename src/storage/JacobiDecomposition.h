@@ -1,5 +1,5 @@
-#ifndef MRMC_STORAGE_JACOBIDECOMPOSITION_H_
-#define MRMC_STORAGE_JACOBIDECOMPOSITION_H_
+#ifndef STORM_STORAGE_JACOBIDECOMPOSITION_H_
+#define STORM_STORAGE_JACOBIDECOMPOSITION_H_
 
 #include "boost/integer/integer_mask.hpp"
 
@@ -8,7 +8,7 @@
 
 extern log4cplus::Logger logger;
 
-namespace mrmc {
+namespace storm {
 
 namespace storage {
 
@@ -26,7 +26,7 @@ template <class T>
 class JacobiDecomposition {
 
 public:
-	JacobiDecomposition(mrmc::storage::SquareSparseMatrix<T> * const jacobiLuMatrix, mrmc::storage::SquareSparseMatrix<T> * const jacobiDInvMatrix) : jacobiLuMatrix(jacobiLuMatrix), jacobiDInvMatrix(jacobiDInvMatrix) {
+	JacobiDecomposition(storm::storage::SquareSparseMatrix<T> * const jacobiLuMatrix, storm::storage::SquareSparseMatrix<T> * const jacobiDInvMatrix) : jacobiLuMatrix(jacobiLuMatrix), jacobiDInvMatrix(jacobiDInvMatrix) {
 	}
 
 	~JacobiDecomposition() {
@@ -39,7 +39,7 @@ public:
 	 * Ownership stays with this class.
 	 * @return A reference to the Jacobi LU Matrix
 	 */
-	mrmc::storage::SquareSparseMatrix<T>& getJacobiLUReference() {
+	storm::storage::SquareSparseMatrix<T>& getJacobiLUReference() {
 		return *(this->jacobiLuMatrix);
 	}
 
@@ -48,7 +48,7 @@ public:
 	 * Ownership stays with this class.
 	 * @return A reference to the Jacobi D^{-1} Matrix
 	 */
-	mrmc::storage::SquareSparseMatrix<T>& getJacobiDInvReference() {
+	storm::storage::SquareSparseMatrix<T>& getJacobiDInvReference() {
 		return *(this->jacobiDInvMatrix);
 	}
 
@@ -57,7 +57,7 @@ public:
 	 * Ownership stays with this class.
 	 * @return A pointer to the Jacobi LU Matrix
 	 */
-	mrmc::storage::SquareSparseMatrix<T>* getJacobiLU() {
+	storm::storage::SquareSparseMatrix<T>* getJacobiLU() {
 		return this->jacobiLuMatrix;
 	}
 
@@ -66,7 +66,7 @@ public:
 	 * Ownership stays with this class.
 	 * @return A pointer to the Jacobi D^{-1} Matrix
 	 */
-	mrmc::storage::SquareSparseMatrix<T>* getJacobiDInv() {
+	storm::storage::SquareSparseMatrix<T>* getJacobiDInv() {
 		return this->jacobiDInvMatrix;
 	}
 
@@ -81,16 +81,16 @@ private:
 	/*!
 	 * Pointer to the LU Matrix
 	 */
-	mrmc::storage::SquareSparseMatrix<T> *jacobiLuMatrix;
+	storm::storage::SquareSparseMatrix<T> *jacobiLuMatrix;
 	
 	/*!
 	 * Pointer to the D^{-1} Matrix
 	 */
-	mrmc::storage::SquareSparseMatrix<T> *jacobiDInvMatrix;
+	storm::storage::SquareSparseMatrix<T> *jacobiDInvMatrix;
 };
 
 } // namespace storage
 
-} // namespace mrmc
+} // namespace storm
 
-#endif // MRMC_STORAGE_JACOBIDECOMPOSITION_H_
+#endif // STORM_STORAGE_JACOBIDECOMPOSITION_H_

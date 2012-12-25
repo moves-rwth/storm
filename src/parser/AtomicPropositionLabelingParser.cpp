@@ -26,7 +26,7 @@
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
-namespace mrmc {
+namespace storm {
 namespace parser {
 
 
@@ -87,14 +87,14 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 			LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). File header is corrupted.");
 			if (! foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
 			if (! foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
-			throw mrmc::exceptions::WrongFileFormatException();
+			throw storm::exceptions::WrongFileFormatException();
 		}
 	}
 	
 	/*
 	 *	create labeling object with given node and proposition count
 	 */
-	this->labeling = std::shared_ptr<mrmc::models::AtomicPropositionsLabeling>(new mrmc::models::AtomicPropositionsLabeling(node_count, proposition_count));
+	this->labeling = std::shared_ptr<storm::models::AtomicPropositionsLabeling>(new storm::models::AtomicPropositionsLabeling(node_count, proposition_count));
 	
 	/*
 	 *	second run: add propositions and node labels to labeling
@@ -117,7 +117,7 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 				 *	if token is longer than our buffer, the following strncpy code might get risky...
 				 */
 				LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition with length > " << (sizeof(proposition)-1) << " was found.");
-				throw mrmc::exceptions::WrongFileFormatException();
+				throw storm::exceptions::WrongFileFormatException();
 			} else if (cnt > 0) {
 				/*
 				 *	next token is: #DECLARATION: just skip it
@@ -179,4 +179,4 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 }
 
 } //namespace parser
-} //namespace mrmc
+} //namespace storm

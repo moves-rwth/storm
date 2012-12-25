@@ -5,10 +5,10 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_UTILITY_CONSTTEMPLATES_H_
-#define MRMC_UTILITY_CONSTTEMPLATES_H_
+#ifndef STORM_UTILITY_CONSTTEMPLATES_H_
+#define STORM_UTILITY_CONSTTEMPLATES_H_
 
-namespace mrmc {
+namespace storm {
 
 namespace utility {
 
@@ -112,7 +112,7 @@ inline double constGetOne() {
 
 } //namespace utility
 
-} //namespace mrmc
+} //namespace storm
 
 
-#endif /* MRMC_UTILITY_CONSTTEMPLATES_H_ */
+#endif /* STORM_UTILITY_CONSTTEMPLATES_H_ */

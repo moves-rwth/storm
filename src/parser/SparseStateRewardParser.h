@@ -1,12 +1,12 @@
-#ifndef MRMC_PARSER_SPARSESTATEREWARDPARSER_H_
-#define MRMC_PARSER_SPARSESTATEREWARDPARSER_H_
+#ifndef STORM_PARSER_SPARSESTATEREWARDPARSER_H_
+#define STORM_PARSER_SPARSESTATEREWARDPARSER_H_
 
 #include "boost/integer/integer_mask.hpp"
 #include "src/parser/Parser.h"
 #include <memory>
 #include <vector>
 
-namespace mrmc {
+namespace storm {
 
 namespace parser {
 
@@ -27,6 +27,6 @@ class SparseStateRewardParser : Parser {
 
 } // namespace parser
 
-} // namespace mrmc
+} // namespace storm
 
-#endif /* MRMC_PARSER_SPARSESTATEREWARDPARSER_H_ */
+#endif /* STORM_PARSER_SPARSESTATEREWARDPARSER_H_ */

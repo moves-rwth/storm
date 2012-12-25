@@ -1,5 +1,5 @@
-#ifndef MRMC_STORAGE_SQUARESPARSEMATRIX_H_
-#define MRMC_STORAGE_SQUARESPARSEMATRIX_H_
+#ifndef STORM_STORAGE_SQUARESPARSEMATRIX_H_
+#define STORM_STORAGE_SQUARESPARSEMATRIX_H_
 
 #include <exception>
 #include <new>
@@ -24,9 +24,9 @@
 extern log4cplus::Logger logger;
 
 // Forward declaration for adapter classes.
-namespace mrmc { namespace adapters{ class GmmxxAdapter; } }
+namespace storm { namespace adapters{ class GmmxxAdapter; } }
 
-namespace mrmc {
+namespace storm {
 
 namespace storage {
 
@@ -42,7 +42,7 @@ public:
 	/*!
 	 * Declare adapter classes as friends to use internal data.
 	 */
-	friend class mrmc::adapters::GmmxxAdapter;
+	friend class storm::adapters::GmmxxAdapter;
 
 	/*!
 	 * If we only want to iterate over the columns of the non-zero entries of
@@ -90,7 +90,7 @@ public:
 		// Check whether copying the matrix is safe.
 		if (ssm.hasError()) {
 			LOG4CPLUS_ERROR(logger, "Trying to copy sparse matrix in error state.");
-			throw mrmc::exceptions::InvalidArgumentException("Trying to copy sparse matrix in error state.");
+			throw storm::exceptions::InvalidArgumentException("Trying to copy sparse matrix in error state.");
 		} else {
 			// Try to prepare the internal storage and throw an error in case
 			// of a failure.
@@ -154,15 +154,15 @@ public:
 		if (internalStatus != MatrixStatus::UnInitialized) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize matrix that is not uninitialized.");
-			throw mrmc::exceptions::InvalidStateException("Trying to initialize matrix that is not uninitialized.");
+			throw storm::exceptions::InvalidStateException("Trying to initialize matrix that is not uninitialized.");
 		} else if (rowCount == 0) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to create initialize a matrix with 0 rows.");
-			throw mrmc::exceptions::InvalidArgumentException("Trying to create initialize a matrix with 0 rows.");
+			throw storm::exceptions::InvalidArgumentException("Trying to create initialize a matrix with 0 rows.");
 		} else if (((rowCount * rowCount) - rowCount) < nonZeroEntries) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize a matrix with more non-zero entries than there can be.");
-			throw mrmc::exceptions::InvalidArgumentException("Trying to initialize a matrix with more non-zero entries than there can be.");
+			throw storm::exceptions::InvalidArgumentException("Trying to initialize a matrix with more non-zero entries than there can be.");
 		} else {
 			// If it is safe, initialize necessary members and prepare the
 			// internal storage.
@@ -193,7 +193,7 @@ public:
 		if (!eigenSparseMatrix.isCompressed()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that is not in compressed form.");
-			throw mrmc::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that is not in compressed form.");
+			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that is not in compressed form.");
 		}
 
 		// Compute the actual (i.e. non-diagonal) number of non-zero entries.
@@ -286,7 +286,7 @@ public:
 		if ((row > rowCount) || (col > rowCount)) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ").");
-			throw mrmc::exceptions::OutOfRangeException("Trying to add a value at illegal position.");
+			throw storm::exceptions::OutOfRangeException("Trying to add a value at illegal position.");
 		}
 
 		if (row == col) { // Set a diagonal element.
@@ -319,11 +319,11 @@ public:
 		if (!isInitialized()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to finalize an uninitialized matrix.");
-			throw mrmc::exceptions::InvalidStateException("Trying to finalize an uninitialized matrix.");
+			throw storm::exceptions::InvalidStateException("Trying to finalize an uninitialized matrix.");
 		} else if (currentSize != nonZeroEntryCount) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to finalize a matrix that was initialized with more non-zero entries than given.");
-			throw mrmc::exceptions::InvalidStateException("Trying to finalize a matrix that was initialized with more non-zero entries than given.");
+			throw storm::exceptions::InvalidStateException("Trying to finalize a matrix that was initialized with more non-zero entries than given.");
 		} else {
 			// Fill in the missing entries in the row_indications array.
 			// (Can happen because of empty rows at the end.)
@@ -357,7 +357,7 @@ public:
 		// Check for illegal access indices.
 		if ((row > rowCount) || (col > rowCount)) {
 			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
-			throw mrmc::exceptions::OutOfRangeException("Trying to read a value from illegal position.");
+			throw storm::exceptions::OutOfRangeException("Trying to read a value from illegal position.");
 			return false;
 		}
 
@@ -407,7 +407,7 @@ public:
 		// Check for illegal access indices.
 		if ((row > rowCount) || (col > rowCount)) {
 			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
-			throw mrmc::exceptions::OutOfRangeException("Trying to read a value from illegal position.");
+			throw storm::exceptions::OutOfRangeException("Trying to read a value from illegal position.");
 		}
 
 		// Read elements on the diagonal directly.
@@ -434,7 +434,7 @@ public:
 			++rowStart;
 		}
 
-		throw mrmc::exceptions::InvalidArgumentException("Trying to get a reference to a non-existant value.");
+		throw storm::exceptions::InvalidArgumentException("Trying to get a reference to a non-existant value.");
 	}
 
 	/*!
@@ -526,7 +526,7 @@ public:
 		if (!isReadReady()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
-			throw mrmc::exceptions::InvalidStateException("Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
+			throw storm::exceptions::InvalidStateException("Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
 		} else {
 			// Create the resulting matrix.
 			int_fast32_t eigenRows = static_cast<int_fast32_t>(rowCount);
@@ -545,8 +545,8 @@ public:
 			// than an average row, the other solution might be faster.
 			// The desired conversion method may be set by an appropriate define.
 
-#define MRMC_USE_TRIPLETCONVERT
-#			ifdef MRMC_USE_TRIPLETCONVERT
+#define STORM_USE_TRIPLETCONVERT
+#			ifdef STORM_USE_TRIPLETCONVERT
 
 			// FIXME: Wouldn't it be more efficient to add the elements in
 			// order including the diagonal elements? Otherwise, Eigen has to
@@ -581,7 +581,7 @@ public:
 			// Let Eigen create a matrix from the given list of triplets.
 			mat->setFromTriplets(tripletList.begin(), tripletList.end());
 
-#			else // NOT MRMC_USE_TRIPLETCONVERT
+#			else // NOT STORM_USE_TRIPLETCONVERT
 
 			// Reserve the average number of non-zero elements per row for each
 			// row.
@@ -607,7 +607,7 @@ public:
 					++rowStart;
 				}
 			}
-#			endif // MRMC_USE_TRIPLETCONVERT
+#			endif // STORM_USE_TRIPLETCONVERT
 
 			// Make the matrix compressed, i.e. remove remaining zero-entries.
 			mat->makeCompressed();
@@ -646,7 +646,7 @@ public:
 	 * @param rows A bit vector indicating which rows to make absorbing.
 	 * @return True iff the operation was successful.
 	 */
-	bool makeRowsAbsorbing(const mrmc::storage::BitVector rows) {
+	bool makeRowsAbsorbing(const storm::storage::BitVector rows) {
 		bool result = true;
 		for (auto row : rows) {
 			result &= makeRowAbsorbing(row);
@@ -666,7 +666,7 @@ public:
 		// Check whether the accessed state exists.
 		if (row > rowCount) {
 			LOG4CPLUS_ERROR(logger, "Trying to make an illegal row " << row << " absorbing.");
-			throw mrmc::exceptions::OutOfRangeException("Trying to make an illegal row absorbing.");
+			throw storm::exceptions::OutOfRangeException("Trying to make an illegal row absorbing.");
 			return false;
 		}
 
@@ -676,12 +676,12 @@ public:
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 
 		while (rowStart < rowEnd) {
-			valueStorage[rowStart] = mrmc::utility::constGetZero<T>();
+			valueStorage[rowStart] = storm::utility::constGetZero<T>();
 			++rowStart;
 		}
 
 		// Set the element on the diagonal to one.
-		diagonalStorage[row] = mrmc::utility::constGetOne<T>();
+		diagonalStorage[row] = storm::utility::constGetOne<T>();
 		return true;
 	}
 
@@ -693,7 +693,7 @@ public:
 	 * @return The sum of the elements in the given row whose column bits
 	 * are set to one on the given constraint.
 	 */
-	T getConstrainedRowSum(const uint_fast64_t row, const mrmc::storage::BitVector& constraint) const {
+	T getConstrainedRowSum(const uint_fast64_t row, const storm::storage::BitVector& constraint) const {
 		T result(0);
 		for (uint_fast64_t i = rowIndications[row]; i < rowIndications[row + 1]; ++i) {
 			if (constraint.get(columnIndications[i])) {
@@ -711,7 +711,7 @@ public:
 	 * @param resultVector A pointer to the resulting vector that has at least
 	 * as many elements as there are bits set to true in the constraint.
 	 */
-	void getConstrainedRowCountVector(const mrmc::storage::BitVector& rowConstraint, const mrmc::storage::BitVector& columnConstraint, std::vector<T>* resultVector) const {
+	void getConstrainedRowCountVector(const storm::storage::BitVector& rowConstraint, const storm::storage::BitVector& columnConstraint, std::vector<T>* resultVector) const {
 		uint_fast64_t currentRowCount = 0;
 		for (auto row : rowConstraint) {
 			(*resultVector)[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
@@ -724,13 +724,13 @@ public:
 	 * @param constraint A bit vector indicating which rows and columns to drop.
 	 * @return A pointer to a sparse matrix that is a sub-matrix of the current one.
 	 */
-	SquareSparseMatrix* getSubmatrix(mrmc::storage::BitVector& constraint) const {
+	SquareSparseMatrix* getSubmatrix(storm::storage::BitVector& constraint) const {
 		LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix with " << constraint.getNumberOfSetBits() << " rows.");
 
 		// Check for valid constraint.
 		if (constraint.getNumberOfSetBits() == 0) {
 			LOG4CPLUS_ERROR(logger, "Trying to create a sub-matrix of size 0.");
-			throw mrmc::exceptions::InvalidArgumentException("Trying to create a sub-matrix of size 0.");
+			throw storm::exceptions::InvalidArgumentException("Trying to create a sub-matrix of size 0.");
 		}
 
 		// First, we need to determine the number of non-zero entries of the
@@ -812,7 +812,7 @@ public:
 	 * Calculates the Jacobi-Decomposition of this sparse matrix.
 	 * @return A pointer to a class containing the matrix L+U and the inverted diagonal matrix D^-1
 	 */
-	mrmc::storage::JacobiDecomposition<T>* getJacobiDecomposition() const {
+	storm::storage::JacobiDecomposition<T>* getJacobiDecomposition() const {
 		uint_fast64_t rowCount = this->getRowCount();
 		SquareSparseMatrix<T> *resultLU = new SquareSparseMatrix<T>(this);
 		SquareSparseMatrix<T> *resultDinv = new SquareSparseMatrix<T>(rowCount);
@@ -821,10 +821,10 @@ public:
 		// copy diagonal entries to other matrix
 		for (int i = 0; i < rowCount; ++i) {
 			resultDinv->addNextValue(i, i, resultLU->getValue(i, i));
-			resultLU->getValue(i, i) = mrmc::utility::constGetZero<T>();
+			resultLU->getValue(i, i) = storm::utility::constGetZero<T>();
 		}
 
-		return new mrmc::storage::JacobiDecomposition<T>(resultLU, resultDinv);
+		return new storm::storage::JacobiDecomposition<T>(resultLU, resultDinv);
 	}
 
 	/*!
@@ -1077,6 +1077,6 @@ private:
 
 } // namespace storage
 
-} // namespace mrmc
+} // namespace storm
 
-#endif // MRMC_STORAGE_SQUARESPARSEMATRIX_H_
+#endif // STORM_STORAGE_SQUARESPARSEMATRIX_H_

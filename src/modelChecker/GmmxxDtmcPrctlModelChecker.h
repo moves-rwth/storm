@@ -5,8 +5,8 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef MRMC_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_
-#define MRMC_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_
 
 #include <cmath>
 
@@ -26,7 +26,7 @@
 
 extern log4cplus::Logger logger;
 
-namespace mrmc {
+namespace storm {
 
 namespace modelChecker {
 
@@ -37,27 +37,27 @@ template <class Type>
 class GmmxxDtmcPrctlModelChecker : public DtmcPrctlModelChecker<Type> {
 
 public:
-	explicit GmmxxDtmcPrctlModelChecker(mrmc::models::Dtmc<Type>& dtmc) : DtmcPrctlModelChecker<Type>(dtmc) { }
+	explicit GmmxxDtmcPrctlModelChecker(storm::models::Dtmc<Type>& dtmc) : DtmcPrctlModelChecker<Type>(dtmc) { }
 
 	virtual ~GmmxxDtmcPrctlModelChecker() { }
 
-	virtual std::vector<Type>* checkBoundedUntil(const mrmc::formula::BoundedUntil<Type>& formula) const {
+	virtual std::vector<Type>* checkBoundedUntil(const storm::formula::BoundedUntil<Type>& formula) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-		mrmc::storage::BitVector* leftStates = this->checkStateFormula(formula.getLeft());
-		mrmc::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
+		storm::storage::BitVector* leftStates = this->checkStateFormula(formula.getLeft());
+		storm::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
 
 		// Copy the matrix before we make any changes.
-		mrmc::storage::SquareSparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
+		storm::storage::SquareSparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
 		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* gmmxxMatrix = mrmc::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(tmpMatrix);
+		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(tmpMatrix);
 
 		// Create the vector with which to multiply.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-		mrmc::utility::setVectorValues(result, *rightStates, mrmc::utility::constGetOne<Type>());
+		storm::utility::setVectorValues(result, *rightStates, storm::utility::constGetOne<Type>());
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
 		std::vector<Type>* swap = nullptr;
@@ -76,16 +76,16 @@ public:
 		return result;
 	}
 
-	virtual std::vector<Type>* checkNext(const mrmc::formula::Next<Type>& formula) const {
+	virtual std::vector<Type>* checkNext(const storm::formula::Next<Type>& formula) const {
 		// First, we need to compute the states that satisfy the sub-formula of the next-formula.
-		mrmc::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
+		storm::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* gmmxxMatrix = mrmc::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionProbabilityMatrix());
+		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionProbabilityMatrix());
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> x(this->getModel().getNumberOfStates());
-		mrmc::utility::setVectorValues(&x, *nextStates, mrmc::utility::constGetOne<Type>());
+		storm::utility::setVectorValues(&x, *nextStates, storm::utility::constGetOne<Type>());
 
 		// Delete obsolete sub-result.
 		delete nextStates;
@@ -101,16 +101,16 @@ public:
 		return result;
 	}
 
-	virtual std::vector<Type>* checkUntil(const mrmc::formula::Until<Type>& formula) const {
+	virtual std::vector<Type>* checkUntil(const storm::formula::Until<Type>& formula) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-		mrmc::storage::BitVector* leftStates = this->checkStateFormula(formula.getLeft());
-		mrmc::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
+		storm::storage::BitVector* leftStates = this->checkStateFormula(formula.getLeft());
+		storm::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
 
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-		mrmc::storage::BitVector notExistsPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		mrmc::storage::BitVector alwaysPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		mrmc::solver::GraphAnalyzer::getPhiUntilPsiStates(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
+		storm::storage::BitVector notExistsPhiUntilPsiStates(this->getModel().getNumberOfStates());
+		storm::storage::BitVector alwaysPhiUntilPsiStates(this->getModel().getNumberOfStates());
+		storm::solver::GraphAnalyzer::getPhiUntilPsiStates(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
 		notExistsPhiUntilPsiStates.complement();
 
 		// Delete sub-results that are obsolete now.
@@ -119,7 +119,7 @@ public:
 
 		LOG4CPLUS_INFO(logger, "Found " << notExistsPhiUntilPsiStates.getNumberOfSetBits() << " 'no' states.");
 		LOG4CPLUS_INFO(logger, "Found " << alwaysPhiUntilPsiStates.getNumberOfSetBits() << " 'yes' states.");
-		mrmc::storage::BitVector maybeStates = ~(notExistsPhiUntilPsiStates | alwaysPhiUntilPsiStates);
+		storm::storage::BitVector maybeStates = ~(notExistsPhiUntilPsiStates | alwaysPhiUntilPsiStates);
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector and set values accordingly.
@@ -128,13 +128,13 @@ public:
 		// Only try to solve system if there are states for which the probability is unknown.
 		if (maybeStates.getNumberOfSetBits() > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			mrmc::storage::SquareSparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
+			storm::storage::SquareSparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
 			// system. That is, we go from x = A*x + b to (I-A)x = b.
 			submatrix->convertToEquationSystem();
 
 			// Transform the submatrix to the gmm++ format to use its solvers.
-			gmm::csr_matrix<Type>* gmmxxMatrix = mrmc::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*submatrix);
+			gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*submatrix);
 			delete submatrix;
 
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
@@ -148,7 +148,7 @@ public:
 			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &b);
 
 			// Get the settings object to customize linear solving.
-			mrmc::settings::Settings* s = mrmc::settings::instance();
+			storm::settings::Settings* s = storm::settings::instance();
 
 			// Prepare an iteration object that determines the accuracy, maximum number of iterations
 			// and the like.
@@ -215,15 +215,15 @@ public:
 			}
 
 			// Set values of resulting vector according to result.
-			mrmc::utility::setVectorValues<Type>(result, maybeStates, x);
+			storm::utility::setVectorValues<Type>(result, maybeStates, x);
 
 			// Delete temporary matrix.
 			delete gmmxxMatrix;
 		}
 
 		// Set values of resulting vector that are known exactly.
-		mrmc::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, mrmc::utility::constGetZero<Type>());
-		mrmc::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, mrmc::utility::constGetOne<Type>());
+		storm::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, storm::utility::constGetZero<Type>());
+		storm::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, storm::utility::constGetOne<Type>());
 
 		return result;
 	}
@@ -278,6 +278,6 @@ public:
 
 } //namespace modelChecker
 
-} //namespace mrmc
+} //namespace storm
 
-#endif /* MRMC_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_ */

@@ -11,12 +11,12 @@
 
 #include <fstream>
 
-namespace mrmc {
+namespace storm {
 
 namespace utility {
 
-void dtmcToDot(mrmc::models::Dtmc<double> const &dtmc, std::string filename) {
-   std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> matrix(dtmc.getTransitionProbabilityMatrix());
+void dtmcToDot(storm::models::Dtmc<double> const &dtmc, std::string filename) {
+   std::shared_ptr<storm::storage::SquareSparseMatrix<double>> matrix(dtmc.getTransitionProbabilityMatrix());
    double* diagonal_storage = matrix->getDiagonalStoragePointer();
 
    std::ofstream file;
@@ -60,13 +60,13 @@ void dtmcToDot(mrmc::models::Dtmc<double> const &dtmc, std::string filename) {
 }
 
 //TODO: Should this stay here or be integrated in the new parser structure?
-/*mrmc::models::Dtmc<double>* parseDTMC(std::string const &tra_file, std::string const &lab_file) {
-	mrmc::parser::DeterministicSparseTransitionParser tp(tra_file);
+/*storm::models::Dtmc<double>* parseDTMC(std::string const &tra_file, std::string const &lab_file) {
+	storm::parser::DeterministicSparseTransitionParser tp(tra_file);
 	uint_fast64_t node_count = tp.getMatrix()->getRowCount();
 
-	mrmc::parser::AtomicPropositionLabelingParser lp(node_count, lab_file);
+	storm::parser::AtomicPropositionLabelingParser lp(node_count, lab_file);
 
-	mrmc::models::Dtmc<double>* result = new mrmc::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling());
+	storm::models::Dtmc<double>* result = new storm::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling());
 	return result;
 }*/
 

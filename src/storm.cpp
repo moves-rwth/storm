@@ -1,7 +1,7 @@
 /*
- *	MRMC - C++ Rebuild
+ *	STORM - a C++ Rebuild of MRMC
  *	
- *	MRMC is a model checker for discrete-time and continuous-time Markov
+ *	STORM (Stochastic Reward Model Checker) is a model checker for discrete-time and continuous-time Markov
  *	reward models. It supports reward extensions of PCTL and CSL (PRCTL
  *	and CSRL), and allows for the automated verification of properties
  *	concerning long-run and instantaneous rewards as well as cumulative
@@ -18,7 +18,7 @@
 #include <sstream>
 #include <vector>
 
-#include "mrmc-config.h"
+#include "storm-config.h"
 #include "src/models/Dtmc.h"
 #include "src/storage/SquareSparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
@@ -55,7 +55,7 @@ void initializeLogger() {
  * Sets up the logging to file.
  */
 void setUpFileLogging() {
-	mrmc::settings::Settings* s = mrmc::settings::instance();
+	storm::settings::Settings* s = storm::settings::instance();
 	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(s->getString("logfile")));
 	fileLogAppender->setName("mainFileAppender");
 	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %F:%L: %m%n")));
@@ -66,11 +66,11 @@ void setUpFileLogging() {
  * Prints the header.
  */
 void printHeader(const int argc, const char* argv[]) {
-	std::cout << "MRMC" << std::endl;
+	std::cout << "STORM" << std::endl;
 	std::cout << "====" << std::endl << std::endl;
 
 	std::cout << "Version: 1.0" << std::endl;
-	// "Compute" the command line argument string with which MRMC was invoked.
+	// "Compute" the command line argument string with which STORM was invoked.
 	std::stringstream commandStream;
 	for (int i = 0; i < argc; ++i) {
 		commandStream << argv[i] << " ";
@@ -92,24 +92,24 @@ void printFooter() {
  * @return True iff the program should continue to run after parsing the options.
  */
 bool parseOptions(const int argc, const char* argv[]) {
-	mrmc::settings::Settings* s = nullptr;
+	storm::settings::Settings* s = nullptr;
 	try {
-		mrmc::settings::Settings::registerModule<mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double>>();
-		s = mrmc::settings::newInstance(argc, argv, nullptr);
-	} catch (mrmc::exceptions::InvalidSettingsException& e) {
+		storm::settings::Settings::registerModule<storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>>();
+		s = storm::settings::newInstance(argc, argv, nullptr);
+	} catch (storm::exceptions::InvalidSettingsException& e) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
-		std::cout << std::endl << mrmc::settings::help;
+		std::cout << std::endl << storm::settings::help;
 		delete s;
 		return false;
 	}
 	
 	if (s->isSet("help")) {
-		std::cout << mrmc::settings::help;
+		std::cout << storm::settings::help;
 		delete s;
 		return false;
 	}
 	if (s->isSet("test-prctl")) {
-		mrmc::parser::PrctlParser parser(s->getString("test-prctl").c_str());
+		storm::parser::PrctlParser parser(s->getString("test-prctl").c_str());
 		delete s;
 		return false;
 	}
@@ -133,8 +133,8 @@ bool parseOptions(const int argc, const char* argv[]) {
  * Function to perform some cleanup.
  */
 void cleanUp() {
-	if (mrmc::settings::instance() != nullptr) {
-		delete mrmc::settings::instance();
+	if (storm::settings::instance() != nullptr) {
+		delete storm::settings::instance();
 	}
 }
 
@@ -142,17 +142,17 @@ void cleanUp() {
  * Simple testing procedure.
  */
 void testChecking() {
-	mrmc::settings::Settings* s = mrmc::settings::instance();
-	mrmc::parser::DtmcParser dtmcParser(s->getString("trafile"), s->getString("labfile"));
-	std::shared_ptr<mrmc::models::Dtmc<double>> dtmc = dtmcParser.getDtmc();
+	storm::settings::Settings* s = storm::settings::instance();
+	storm::parser::DtmcParser dtmcParser(s->getString("trafile"), s->getString("labfile"));
+	std::shared_ptr<storm::models::Dtmc<double>> dtmc = dtmcParser.getDtmc();
 
 	dtmc->printModelInformationToStream(std::cout);
 
-	mrmc::formula::Ap<double>* trueFormula = new mrmc::formula::Ap<double>("true");
-	mrmc::formula::Ap<double>* observe0Greater1Formula = new mrmc::formula::Ap<double>("observe0Greater1");
-	mrmc::formula::Until<double>* untilFormula = new mrmc::formula::Until<double>(trueFormula, observe0Greater1Formula);
-	mrmc::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new mrmc::formula::ProbabilisticNoBoundsOperator<double>(untilFormula);
-	mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new mrmc::modelChecker::GmmxxDtmcPrctlModelChecker<double>(*dtmc);
+	storm::formula::Ap<double>* trueFormula = new storm::formula::Ap<double>("true");
+	storm::formula::Ap<double>* observe0Greater1Formula = new storm::formula::Ap<double>("observe0Greater1");
+	storm::formula::Until<double>* untilFormula = new storm::formula::Until<double>(trueFormula, observe0Greater1Formula);
+	storm::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundsOperator<double>(untilFormula);
+	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(*dtmc);
 	mc->check(*probFormula);
 
 	delete mc;

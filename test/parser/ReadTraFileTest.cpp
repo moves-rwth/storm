@@ -6,7 +6,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "mrmc-config.h"
+#include "storm-config.h"
 #include "src/storage/SquareSparseMatrix.h"
 #include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/exceptions/FileIoException.h"
@@ -16,15 +16,15 @@
 
 TEST(ReadTraFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
-   ASSERT_THROW(mrmc::parser::DeterministicSparseTransitionParser(MRMC_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), mrmc::exceptions::FileIoException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
-/* The following test case is based on one of the original MRMC test cases
+/* The following test case is based on one of the original STORM test cases
  */
 TEST(ReadTraFileTest, ParseFileTest1) {
-	mrmc::parser::DeterministicSparseTransitionParser* parser;
-	ASSERT_NO_THROW(parser = new mrmc::parser::DeterministicSparseTransitionParser(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
-	std::shared_ptr<mrmc::storage::SquareSparseMatrix<double>> result = parser->getMatrix();
+	storm::parser::DeterministicSparseTransitionParser* parser;
+	ASSERT_NO_THROW(parser = new storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
+	std::shared_ptr<storm::storage::SquareSparseMatrix<double>> result = parser->getMatrix();
 
 	if (result != NULL) {
 		double val = 0;
@@ -69,13 +69,13 @@ TEST(ReadTraFileTest, ParseFileTest1) {
 }
 
 TEST(ReadTraFileTest, WrongFormatTestHeader1) {
-   ASSERT_THROW(mrmc::parser::DeterministicSparseTransitionParser(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header1.tra"), mrmc::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header1.tra"), storm::exceptions::WrongFileFormatException);
 }
 
 TEST(ReadTraFileTest, WrongFormatTestHeader2) {
-   ASSERT_THROW(mrmc::parser::DeterministicSparseTransitionParser(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header2.tra"), mrmc::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header2.tra"), storm::exceptions::WrongFileFormatException);
 }
 
 TEST(ReadTraFileTest, WrongFormatTestTransition) {
-   ASSERT_THROW(mrmc::parser::DeterministicSparseTransitionParser(MRMC_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_transition.tra"), mrmc::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_transition.tra"), storm::exceptions::WrongFileFormatException);
 }

@@ -5,14 +5,14 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
-#define MRMC_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
+#ifndef STORM_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
+#define STORM_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
 
 #include "PctlStateFormula.h"
 #include "PctlPathFormula.h"
 #include "utility/ConstTemplates.h"
 
-namespace mrmc {
+namespace storm {
 
 namespace formula {
 
@@ -49,8 +49,8 @@ public:
 	 * Empty constructor
 	 */
 	ProbabilisticIntervalOperator() {
-		upper = mrmc::utility::constGetZero<T>();
-		lower = mrmc::utility::constGetZero<T>();
+		upper = storm::utility::constGetZero<T>();
+		lower = storm::utility::constGetZero<T>();
 		pathFormula = NULL;
 	}
 
@@ -159,7 +159,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkProbabilisticIntervalOperator(*this);
 	}
 
@@ -171,6 +171,6 @@ private:
 
 } //namespace formula
 
-} //namespace mrmc
+} //namespace storm
 
-#endif /* MRMC_FORMULA_PROBABILISTICINTERVALOPERATOR_H_ */
+#endif /* STORM_FORMULA_PROBABILISTICINTERVALOPERATOR_H_ */

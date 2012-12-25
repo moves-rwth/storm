@@ -1,5 +1,5 @@
-#ifndef MRMC_PARSER_LABPARSER_H_
-#define MRMC_PARSER_LABPARSER_H_
+#ifndef STORM_PARSER_LABPARSER_H_
+#define STORM_PARSER_LABPARSER_H_
 
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "boost/integer/integer_mask.hpp"
@@ -8,7 +8,7 @@
 
 #include <memory>
 
-namespace mrmc {
+namespace storm {
 namespace parser {
 
 /*!
@@ -21,15 +21,15 @@ class AtomicPropositionLabelingParser : Parser {
 	public:
 		AtomicPropositionLabelingParser(uint_fast64_t node_count, std::string const &filename);
 
-		std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> getLabeling() {
+		std::shared_ptr<storm::models::AtomicPropositionsLabeling> getLabeling() {
 			return this->labeling;
 		}
 	
 	private:
-		std::shared_ptr<mrmc::models::AtomicPropositionsLabeling> labeling;
+		std::shared_ptr<storm::models::AtomicPropositionsLabeling> labeling;
 };
 
 } // namespace parser
-} // namespace mrmc
+} // namespace storm
 
-#endif /* MRMC_PARSER_LABPARSER_H_ */
+#endif /* STORM_PARSER_LABPARSER_H_ */

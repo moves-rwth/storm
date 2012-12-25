@@ -1,5 +1,5 @@
-#ifndef MRMC_PARSER_AUTOPARSER_H_
-#define MRMC_PARSER_AUTOPARSER_H_
+#ifndef STORM_PARSER_AUTOPARSER_H_
+#define STORM_PARSER_AUTOPARSER_H_
 
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "boost/integer/integer_mask.hpp"
@@ -10,7 +10,7 @@
 #include <iostream>
 #include <utility>
 
-namespace mrmc {
+namespace storm {
 namespace parser {
 
 /*!
@@ -83,6 +83,6 @@ class AutoTransitionParser : Parser {
 };
 
 } // namespace parser
-} // namespace mrmc
+} // namespace storm
 
-#endif /* MRMC_PARSER_AUTOPARSER_H_ */
+#endif /* STORM_PARSER_AUTOPARSER_H_ */

@@ -5,8 +5,8 @@
  *      Author: Gereon Kremer
  */
 
-#ifndef MRMC_SETTINGS_SETTINGS_H_
-#define MRMC_SETTINGS_SETTINGS_H_
+#ifndef STORM_SETTINGS_SETTINGS_H_
+#define STORM_SETTINGS_SETTINGS_H_
 
 #include <iostream>
 #include <sstream>
@@ -16,7 +16,7 @@
 #include <boost/program_options.hpp>
 #include "src/exceptions/InvalidSettingsException.h"
 
-namespace mrmc {
+namespace storm {
 
 /*!
  *	@brief Contains Settings class and associated methods.
@@ -34,10 +34,10 @@ namespace settings {
 	 *	commandline and additionally load options from a file.
 	 *
 	 *	It is meant to be used as a singleton. Call 
-	 *	@code mrmc::settings::newInstance(argc, argv, filename) @endcode
+	 *	@code storm::settings::newInstance(argc, argv, filename) @endcode
 	 *	to initialize it and obtain an instance for the first time.
 	 *	Afterwards, use
-	 *	@code mrmc::settings::instance() @endcode
+	 *	@code storm::settings::instance() @endcode
 	 *
 	 *	This class can be customized by other parts of the software using
 	 *	option modules. An option module can be anything that implements the
@@ -52,7 +52,7 @@ namespace settings {
 			 */
 			template <typename T>
 			const T& get(const std::string &name) const {
-				if (this->vm.count(name) == 0) throw mrmc::exceptions::InvalidSettingsException() << "Could not read option " << name << ".";
+				if (this->vm.count(name) == 0) throw storm::exceptions::InvalidSettingsException() << "Could not read option " << name << ".";
 				return this->vm[name].as<T>();
 			}
 		
@@ -75,7 +75,7 @@ namespace settings {
 			 *
 			 *	A new settings module can be registered via
 			 *	@code
-			 *	mrmc::settings::Settings::registerModule<mrmc::ModuleClass>();
+			 *	storm::settings::Settings::registerModule<storm::ModuleClass>();
 			 *	@endcode
 			 *	This has to be done before any parsing takes place, i.e. before newInstance() is called.
 			 *
@@ -207,6 +207,6 @@ namespace settings {
 	}
 		
 } // namespace settings
-} // namespace mrmc
+} // namespace storm
 
-#endif // MRMC_SETTINGS_SETTINGS_H_
+#endif // STORM_SETTINGS_SETTINGS_H_

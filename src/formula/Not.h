@@ -5,12 +5,12 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_FORMULA_NOT_H_
-#define MRMC_FORMULA_NOT_H_
+#ifndef STORM_FORMULA_NOT_H_
+#define STORM_FORMULA_NOT_H_
 
 #include "PctlStateFormula.h"
 
-namespace mrmc {
+namespace storm {
 
 namespace formula {
 
@@ -105,7 +105,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual mrmc::storage::BitVector *check(const mrmc::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkNot(*this);
 	}
 
@@ -115,6 +115,6 @@ private:
 
 } //namespace formula
 
-} //namespace MRMC
+} //namespace storm
 
-#endif /* MRMC_FORMULA_NOT_H_ */
+#endif /* STORM_FORMULA_NOT_H_ */

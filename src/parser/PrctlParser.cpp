@@ -58,7 +58,7 @@ namespace
 		/*!
 		 *	@brief Resulting formula.
 		 */
-		mrmc::formula::PctlFormula<double>* result;
+		storm::formula::PctlFormula<double>* result;
 		
 		struct dump
 		{
@@ -109,7 +109,7 @@ namespace
 			 *		const double T = 9;
 			 *		const double p = 0.01;
 			 *
-			 *	Parser can be run via ./mrmc --test-prctl <filename> foo bar
+			 *	Parser can be run via ./storm --test-prctl <filename> foo bar
 			 *		foo and bar are necessary, otherwise the option parser fails...
 			 */
 			
@@ -130,10 +130,10 @@ namespace
 	};
 }
 
-mrmc::parser::PrctlParser::PrctlParser(const char* filename)
+storm::parser::PrctlParser::PrctlParser(const char* filename)
 {
 	SpiritParser p;
-	mrmc::parser::MappedFile file(filename);
+	storm::parser::MappedFile file(filename);
 	
 	char* data = file.data;
 	if (bs::qi::parse< char const* >(data, file.dataend, p))

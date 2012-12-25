@@ -9,7 +9,7 @@
 
 TEST(RewardModelTest, ReadWriteTest) {
 	// 50 entries
-	mrmc::reward::RewardModel<std::vector, double> rm(50, 0.0);
+	storm::reward::RewardModel<std::vector, double> rm(50, 0.0);
 	
 	double values[50];
 	for (int i = 0; i < 50; ++i) {

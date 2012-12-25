@@ -5,8 +5,8 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef MRMC_SOLVER_GRAPHANALYZER_H_
-#define MRMC_SOLVER_GRAPHANALYZER_H_
+#ifndef STORM_SOLVER_GRAPHANALYZER_H_
+#define STORM_SOLVER_GRAPHANALYZER_H_
 
 #include "src/models/Dtmc.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -16,7 +16,7 @@
 
 extern log4cplus::Logger logger;
 
-namespace mrmc {
+namespace storm {
 
 namespace solver {
 
@@ -34,15 +34,15 @@ public:
 	 * a paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getExistsPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, mrmc::storage::BitVector* existsPhiUntilPsiStates) {
+	static void getExistsPhiUntilPsiStates(storm::models::Dtmc<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, storm::storage::BitVector* existsPhiUntilPsiStates) {
 		// Check for valid parameter.
 		if (existsPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'existsPhiUntilPhiStates' must not be null.");
-			throw mrmc::exceptions::InvalidArgumentException("Parameter 'existsPhiUntilPhiStates' must not be null.");
+			throw storm::exceptions::InvalidArgumentException("Parameter 'existsPhiUntilPhiStates' must not be null.");
 		}
 
 		// Get the backwards transition relation from the model to ease the search.
-		mrmc::models::GraphTransitions<T>& backwardTransitions = model.getBackwardTransitions();
+		storm::models::GraphTransitions<T>& backwardTransitions = model.getBackwardTransitions();
 
 		// Add all psi states as the already satisfy the condition.
 		*existsPhiUntilPsiStates |= psiStates;
@@ -81,11 +81,11 @@ public:
 	 * have paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getAlwaysPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, const mrmc::storage::BitVector& existsPhiUntilPsiStates, mrmc::storage::BitVector* alwaysPhiUntilPsiStates) {
+	static void getAlwaysPhiUntilPsiStates(storm::models::Dtmc<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, const storm::storage::BitVector& existsPhiUntilPsiStates, storm::storage::BitVector* alwaysPhiUntilPsiStates) {
 		// Check for valid parameter.
 		if (alwaysPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'alwaysPhiUntilPhiStates' must not be null.");
-			throw mrmc::exceptions::InvalidArgumentException("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+			throw storm::exceptions::InvalidArgumentException("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
 		}
 
 		GraphAnalyzer::getExistsPhiUntilPsiStates(model, ~psiStates, ~existsPhiUntilPsiStates, alwaysPhiUntilPsiStates);
@@ -105,15 +105,15 @@ public:
 	 * have paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getPhiUntilPsiStates(mrmc::models::Dtmc<T>& model, const mrmc::storage::BitVector& phiStates, const mrmc::storage::BitVector& psiStates, mrmc::storage::BitVector* existsPhiUntilPsiStates, mrmc::storage::BitVector* alwaysPhiUntilPsiStates) {
+	static void getPhiUntilPsiStates(storm::models::Dtmc<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, storm::storage::BitVector* existsPhiUntilPsiStates, storm::storage::BitVector* alwaysPhiUntilPsiStates) {
 		// Check for valid parameters.
 		if (existsPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'existsPhiUntilPhiStates' must not be null.");
-			throw mrmc::exceptions::InvalidArgumentException("Parameter 'existsPhiUntilPhiStates' must not be null.");
+			throw storm::exceptions::InvalidArgumentException("Parameter 'existsPhiUntilPhiStates' must not be null.");
 		}
 		if (alwaysPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'alwaysPhiUntilPhiStates' must not be null.");
-			throw mrmc::exceptions::InvalidArgumentException("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+			throw storm::exceptions::InvalidArgumentException("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
 		}
 
 		// Perform search.
@@ -125,6 +125,6 @@ public:
 
 } // namespace solver
 
-} // namespace mrmc
+} // namespace storm
 
-#endif /* MRMC_SOLVER_GRAPHANALYZER_H_ */
+#endif /* STORM_SOLVER_GRAPHANALYZER_H_ */

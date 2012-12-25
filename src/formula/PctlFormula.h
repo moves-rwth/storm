@@ -5,12 +5,12 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef MRMC_FORMULA_PCTLFORMULA_H_
-#define MRMC_FORMULA_PCTLFORMULA_H_
+#ifndef STORM_FORMULA_PCTLFORMULA_H_
+#define STORM_FORMULA_PCTLFORMULA_H_
 
 #include <string>
 
-namespace mrmc {
+namespace storm {
 
 namespace formula {
 
@@ -43,6 +43,6 @@ public:
 
 } //namespace formula
 
-} //namespace mrmc
+} //namespace storm
 
-#endif /* MRMC_FORMULA_PCTLFORMULA_H_ */
+#endif /* STORM_FORMULA_PCTLFORMULA_H_ */

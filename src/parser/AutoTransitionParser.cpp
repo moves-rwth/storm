@@ -5,7 +5,7 @@
 #include "DeterministicSparseTransitionParser.h"
 #include "NonDeterministicSparseTransitionParser.h"
 
-namespace mrmc {
+namespace storm {
 namespace parser {
 
 AutoTransitionParser::AutoTransitionParser(const std::string& filename)
@@ -20,7 +20,7 @@ AutoTransitionParser::AutoTransitionParser(const std::string& filename)
 		else {
 			LOG4CPLUS_ERROR(logger, "Could not determine file type of " << filename << ". Filename suggests " << name << " but transitions look like " << transitions);
 			LOG4CPLUS_ERROR(logger, "Please fix your file and try again.");
-			throw mrmc::exceptions::WrongFileFormatException() << "Could not determine type of file " << filename;
+			throw storm::exceptions::WrongFileFormatException() << "Could not determine type of file " << filename;
 		}
 	} else {
 		if ((hint == name) && (name == transitions)) this->type = name;
@@ -77,4 +77,4 @@ std::pair<TransitionType,TransitionType> AutoTransitionParser::analyzeContent(co
 
 } //namespace parser
 
-} //namespace mrmc
+} //namespace storm
