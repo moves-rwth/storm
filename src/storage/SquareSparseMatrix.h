@@ -828,6 +828,38 @@ public:
 	}
 
 	/*!
+	 * Performs a pointwise matrix multiplication of the matrix with the given matrix and returns a
+	 * vector containing the sum of the elements in each row of the resulting matrix.
+	 * @param otherMatrix A reference to the matrix with which to perform the pointwise multiplication.
+	 * This matrix must be a submatrix of the current matrix in the sense that it may not have
+	 * non-zero entries at indices where there is a zero in the current matrix.
+	 * @return A vector containing the sum of the elements in each row of the matrix resulting from
+	 * pointwise multiplication of the current matrix with the given matrix.
+	 */
+	std::vector<T>* getPointwiseProductRowSumVector(storm::storage::SquareSparseMatrix<T> const& otherMatrix) {
+		// Prepare result.
+		std::vector<T>* result = new std::vector<T>(rowCount);
+
+		// Iterate over all elements of the current matrix and either continue with the next element
+		// in case the given matrix does not have a non-zero element at this column position, or
+		// multiply the two entries and add the result to the corresponding position in the vector.
+		uint_fast64_t otherRow = 0;
+		for (uint_fast64_t row = 0; row < rowCount; ++row) {
+			(*result)[row] += diagonalStorage[row] * otherMatrix.diagonalStorage[row];
+			for (uint_fast64_t element = otherMatrix.rowIndications[row], nextElement = rowIndications[row]; element < otherMatrix.rowIndications[row + 1]; ++element) {
+				if (otherMatrix.columnIndications[element] < columnIndications[nextElement]) {
+					continue;
+				} else {
+					(*result)[row] += otherMatrix.valueStorage[element] * valueStorage[nextElement];
+					++nextElement;
+				}
+			}
+		}
+
+		return result;
+	}
+
+	/*!
 	 * Returns the size of the matrix in memory measured in bytes.
 	 * @return The size of the matrix in memory measured in bytes.
 	 */

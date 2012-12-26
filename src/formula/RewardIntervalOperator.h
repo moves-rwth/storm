@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
-#define STORM_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
+#ifndef STORM_FORMULA_REWARDINTERVALOPERATOR_H_
+#define STORM_FORMULA_REWARDINTERVALOPERATOR_H_
 
 #include "PctlStateFormula.h"
 #include "PctlPathFormula.h"
@@ -18,13 +18,12 @@ namespace formula {
 
 /*!
  * @brief
- * Class for a PCTL formula tree with a P (probablistic) operator node over a probability interval
- * as root.
+ * Class for a PCTL formula tree with a R (reward) operator node over a reward interval as root.
  *
- * Has one PCTL path formula as sub formula/tree.
+ * Has a reward path formula as sub formula/tree.
  *
  * @par Semantics
- * 	  The formula holds iff the probability that the path formula holds is inside the bounds
+ * 	  The formula holds iff the reward of the reward path formula is inside the bounds
  * 	  specified in this operator
  *
  * The subtree is seen as part of the object and deleted with it
@@ -38,16 +37,16 @@ namespace formula {
  * @see PctlFormula
  */
 template<class T>
-class ProbabilisticIntervalOperator : public PctlStateFormula<T> {
+class RewardIntervalOperator : public PctlStateFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticIntervalOperator() {
+	RewardIntervalOperator() {
 		upper = storm::utility::constGetZero<T>();
 		lower = storm::utility::constGetZero<T>();
-		pathFormula = NULL;
+		pathFormula = nullptr;
 	}
 
 	/*!
@@ -57,7 +56,7 @@ public:
 	 * @param upperBound The upper bound for the probability
 	 * @param pathFormula The child node
 	 */
-	ProbabilisticIntervalOperator(T lowerBound, T upperBound, PctlPathFormula<T>& pathFormula) {
+	RewardIntervalOperator(T lowerBound, T upperBound, PctlPathFormula<T>& pathFormula) {
 		this->lower = lowerBound;
 		this->upper = upperBound;
 		this->pathFormula = &pathFormula;
@@ -69,8 +68,8 @@ public:
 	 * The subtree is deleted with the object
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
-	virtual ~ProbabilisticIntervalOperator() {
-	 if (pathFormula != NULL) {
+	virtual ~RewardIntervalOperator() {
+	 if (pathFormula != nullptr) {
 		 delete pathFormula;
 	 }
 	}
@@ -120,13 +119,13 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "P[";
+		std::string result = "R [";
 		result += std::to_string(lower);
-		result += ";";
+		result += ", ";
 		result += std::to_string(upper);
-		result += "] (";
+		result += "] [";
 		result += pathFormula->toString();
-		result += ")";
+		result += "]";
 		return result;
 	}
 
@@ -138,9 +137,9 @@ public:
 	 * @returns a new AND-object that is identical the called object.
 	 */
 	virtual PctlStateFormula<T>* clone() const {
-		ProbabilisticIntervalOperator<T>* result = new ProbabilisticIntervalOperator<T>();
+		RewardIntervalOperator<T>* result = new RewardIntervalOperator<T>();
 		result->setInterval(lower, upper);
-		if (pathFormula != NULL) {
+		if (pathFormula != nullptr) {
 			result->setPathFormula(pathFormula->clone());
 		}
 		return result;
@@ -156,7 +155,7 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkProbabilisticIntervalOperator(*this);
+	  return modelChecker.checkRewardIntervalOperator(*this);
 	}
 
 private:
@@ -169,4 +168,4 @@ private:
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_PROBABILISTICINTERVALOPERATOR_H_ */
+#endif /* STORM_FORMULA_REWARDINTERVALOPERATOR_H_ */

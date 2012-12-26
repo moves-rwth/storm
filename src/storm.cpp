@@ -66,10 +66,10 @@ void setUpFileLogging() {
  * Prints the header.
  */
 void printHeader(const int argc, const char* argv[]) {
-	std::cout << "STORM" << std::endl;
+	std::cout << "StoRM" << std::endl;
 	std::cout << "====" << std::endl << std::endl;
 
-	std::cout << "Version: 1.0" << std::endl;
+	std::cout << "Version: 1.0 Alpha" << std::endl;
 	// "Compute" the command line argument string with which STORM was invoked.
 	std::stringstream commandStream;
 	for (int i = 0; i < argc; ++i) {
@@ -143,20 +143,26 @@ void cleanUp() {
  */
 void testChecking() {
 	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::DtmcParser dtmcParser(s->getString("trafile"), s->getString("labfile"));
+	storm::parser::DtmcParser dtmcParser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = dtmcParser.getDtmc();
 
 	dtmc->printModelInformationToStream(std::cout);
 
-	storm::formula::Ap<double>* trueFormula = new storm::formula::Ap<double>("true");
-	storm::formula::Ap<double>* observe0Greater1Formula = new storm::formula::Ap<double>("observe0Greater1");
-	storm::formula::Until<double>* untilFormula = new storm::formula::Until<double>(trueFormula, observe0Greater1Formula);
-	storm::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundsOperator<double>(untilFormula);
+	storm::formula::Ap<double>* observe0Greater1Formula = new storm::formula::Ap<double>("one");
+	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(observe0Greater1Formula);
+	storm::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundsOperator<double>(eventuallyFormula);
+
+	storm::formula::Ap<double>* done = new storm::formula::Ap<double>("done");
+	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(done);
+	storm::formula::RewardNoBoundsOperator<double>* rewardFormula = new storm::formula::RewardNoBoundsOperator<double>(reachabilityRewardFormula);
+
 	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(*dtmc);
 	mc->check(*probFormula);
+	mc->check(*rewardFormula);
 
 	delete mc;
 	delete probFormula;
+	delete rewardFormula;
 }
 
 /*!
@@ -169,7 +175,7 @@ int main(const int argc, const char* argv[]) {
 	}
 	printHeader(argc, argv);
 
-	testChecking();
+	// testChecking();
 
 	cleanUp();
 	return 0;

@@ -17,6 +17,7 @@
 #include "GraphTransitions.h"
 #include "src/storage/SquareSparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/utility/CommandLine.h"
 
 namespace storm {
 
@@ -149,12 +150,28 @@ public:
 	}
 
 	/*!
+	 * Retrieves whether this DTMC has a state reward model.
+	 * @return True if this DTMC has a state reward model.
+	 */
+	bool hasStateRewards() {
+		return this->stateRewards != nullptr;
+	}
+
+	/*!
+	 * Retrieves whether this DTMC has a transition reward model.
+	 * @return True if this DTMC has a transition reward model.
+	 */
+	bool hasTransitionRewards() {
+		return this->transitionRewardMatrix != nullptr;
+	}
+
+	/*!
 	 * Prints information about the model to the specified stream.
 	 * @param out The stream the information is to be printed to.
 	 */
 	void printModelInformationToStream(std::ostream& out) const {
-		out << "-------------------------------------------------------------- "
-			<< std::endl;
+		storm::utility::printSeparationLine(out);
+		out << std::endl;
 		out << "Model type: \t\tDTMC" << std::endl;
 		out << "States: \t\t" << this->getNumberOfStates() << std::endl;
 		out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
@@ -163,8 +180,8 @@ public:
 			<< (this->probabilityMatrix->getSizeInMemory() +
 				this->stateLabeling->getSizeInMemory() +
 				sizeof(*this))/1024 << " kbytes" << std::endl;
-		out << "-------------------------------------------------------------- "
-			<< std::endl;
+		out << std::endl;
+		storm::utility::printSeparationLine(out);
 	}
 
 private:

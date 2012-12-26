@@ -17,9 +17,16 @@
 #include "PctlFormula.h"
 #include "PctlPathFormula.h"
 #include "PctlStateFormula.h"
-#include "ProbabilisticOperator.h"
 #include "ProbabilisticNoBoundsOperator.h"
 #include "ProbabilisticIntervalOperator.h"
 #include "Until.h"
+#include "Eventually.h"
+#include "Globally.h"
+
+#include "InstantaneousReward.h"
+#include "CumulativeReward.h"
+#include "ReachabilityReward.h"
+#include "RewardIntervalOperator.h"
+#include "RewardNoBoundsOperator.h"
 
 #endif /* STORM_FORMULA_FORMULAS_H_ */

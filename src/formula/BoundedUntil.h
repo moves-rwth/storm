@@ -56,7 +56,7 @@ public:
 	BoundedUntil(PctlStateFormula<T>* left, PctlStateFormula<T>* right,
 					 uint_fast64_t bound) {
 		this->left = left;
-		this->right = right;;
+		this->right = right;
 		this->bound = bound;
 	}
 

@@ -95,6 +95,31 @@ public:
 	/*!
 	 * Computes the set of states of the given model for which all paths lead to
 	 * the given set of target states and only visit states from the filter set
+	 * before. The results are written to the given bit vector.
+	 * @param model The model whose graph structure to search.
+	 * @param phiStates A bit vector of all states satisfying phi.
+	 * @param psiStates A bit vector of all states satisfying psi.
+	 * @param alwaysPhiUntilPsiStates A pointer to the result of the search for states that only
+	 * have paths satisfying phi until psi.
+	 */
+	template <class T>
+	static void getAlwaysPhiUntilPsiStates(storm::models::Dtmc<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, storm::storage::BitVector* alwaysPhiUntilPsiStates) {
+		// Check for valid parameter.
+		if (alwaysPhiUntilPsiStates == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+			throw storm::exceptions::InvalidArgumentException("Parameter 'alwaysPhiUntilPhiStates' must not be null.");
+		}
+
+		storm::storage::BitVector existsPhiUntilPsiStates(model.getNumberOfStates());
+		GraphAnalyzer::getExistsPhiUntilPsiStates(model, phiStates, psiStates, &existsPhiUntilPsiStates);
+		GraphAnalyzer::getExistsPhiUntilPsiStates(model, ~psiStates, ~existsPhiUntilPsiStates, alwaysPhiUntilPsiStates);
+		alwaysPhiUntilPsiStates->complement();
+	}
+
+
+	/*!
+	 * Computes the set of states of the given model for which all paths lead to
+	 * the given set of target states and only visit states from the filter set
 	 * before.
 	 * @param model The model whose graph structure to search.
 	 * @param phiStates A bit vector of all states satisfying phi.
