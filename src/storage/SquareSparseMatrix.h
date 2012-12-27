@@ -107,7 +107,7 @@ public:
 					// use T() to force use of the copy constructor for complex T types
 					valueStorage[i] = T(ssm.valueStorage[i]);
 				}
-				for (uint_fast64_t i = 0; i <= rowCount; ++i) {
+				for (uint_fast64_t i = 0; i < rowCount; ++i) {
 					// use T() to force use of the copy constructor for complex T types
 					diagonalStorage[i] = T(ssm.diagonalStorage[i]);
 				}
@@ -843,15 +843,17 @@ public:
 		// Iterate over all elements of the current matrix and either continue with the next element
 		// in case the given matrix does not have a non-zero element at this column position, or
 		// multiply the two entries and add the result to the corresponding position in the vector.
-		uint_fast64_t otherRow = 0;
-		for (uint_fast64_t row = 0; row < rowCount; ++row) {
+		for (uint_fast64_t row = 0; row < rowCount && row < otherMatrix.rowCount; ++row) {
 			(*result)[row] += diagonalStorage[row] * otherMatrix.diagonalStorage[row];
-			for (uint_fast64_t element = otherMatrix.rowIndications[row], nextElement = rowIndications[row]; element < otherMatrix.rowIndications[row + 1]; ++element) {
-				if (otherMatrix.columnIndications[element] < columnIndications[nextElement]) {
+			for (uint_fast64_t element = rowIndications[row], nextOtherElement = otherMatrix.rowIndications[row]; element < rowIndications[row + 1] && nextOtherElement < otherMatrix.rowIndications[row + 1]; ++element) {
+				if (columnIndications[element] < otherMatrix.columnIndications[nextOtherElement]) {
 					continue;
 				} else {
-					(*result)[row] += otherMatrix.valueStorage[element] * valueStorage[nextElement];
-					++nextElement;
+					// If the precondition of this method (i.e. that the given matrix is a submatrix
+					// of the current one) was fulfilled, we know now that the two elements are in
+					// the same column, so we can multiply and add them to the row sum vector.
+					(*result)[row] += otherMatrix.valueStorage[element] * valueStorage[nextOtherElement];
+					++nextOtherElement;
 				}
 			}
 		}

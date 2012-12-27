@@ -241,7 +241,7 @@ public:
 	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
-			LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
+			LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
 			throw storm::exceptions::InvalidArgumentException() << "Missing reward model for formula.";
 		}
 

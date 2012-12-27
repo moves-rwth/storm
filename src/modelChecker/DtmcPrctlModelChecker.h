@@ -102,16 +102,24 @@ public:
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << stateFormula.toString());
 		std::cout << "Model checking formula:\t" << stateFormula.toString() << std::endl;
-		storm::storage::BitVector* result = stateFormula.check(*this);
-		LOG4CPLUS_INFO(logger, "Result for initial states:");
-		std::cout << "Result for initial states:" << std::endl;
-		for (auto initialState : *this->getModel().getLabeledStates("init")) {
-			LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
-			std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+		storm::storage::BitVector* result = nullptr;
+		try {
+			result = stateFormula.check(*this);
+			LOG4CPLUS_INFO(logger, "Result for initial states:");
+			std::cout << "Result for initial states:" << std::endl;
+			for (auto initialState : *this->getModel().getLabeledStates("init")) {
+				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
+				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+			}
+			delete result;
+		} catch (std::exception& e) {
+			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
+			if (result != nullptr) {
+				delete result;
+			}
 		}
 		std::cout << std::endl;
 		storm::utility::printSeparationLine(std::cout);
-		delete result;
 	}
 
 	/*!
@@ -123,16 +131,24 @@ public:
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << probabilisticNoBoundsFormula.toString());
 		std::cout << "Model checking formula:\t" << probabilisticNoBoundsFormula.toString() << std::endl;
-		std::vector<Type>* result = checkProbabilisticNoBoundsOperator(probabilisticNoBoundsFormula);
-		LOG4CPLUS_INFO(logger, "Result for initial states:");
-		std::cout << "Result for initial states:" << std::endl;
-		for (auto initialState : *this->getModel().getLabeledStates("init")) {
-			LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
-			std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+		std::vector<Type>* result = nullptr;
+		try {
+			result = checkProbabilisticNoBoundsOperator(probabilisticNoBoundsFormula);
+			LOG4CPLUS_INFO(logger, "Result for initial states:");
+			std::cout << "Result for initial states:" << std::endl;
+			for (auto initialState : *this->getModel().getLabeledStates("init")) {
+				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
+				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+			}
+			delete result;
+		} catch (std::exception& e) {
+			std::cout << "Error during computation: " << e.what() << " Skipping property." << std::endl;
+			if (result != nullptr) {
+				delete result;
+			}
 		}
 		std::cout << std::endl;
 		storm::utility::printSeparationLine(std::cout);
-		delete result;
 	}
 
 	/*!
@@ -144,16 +160,26 @@ public:
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << rewardNoBoundsFormula.toString());
 		std::cout << "Model checking formula:\t" << rewardNoBoundsFormula.toString() << std::endl;
-		std::vector<Type>* result = checkRewardNoBoundsOperator(rewardNoBoundsFormula);
-		LOG4CPLUS_INFO(logger, "Result for initial states:");
-		std::cout << "Result for initial states:" << std::endl;
-		for (auto initialState : *this->getModel().getLabeledStates("init")) {
-			LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
-			std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+		std::vector<Type>* result = nullptr;
+		try {
+			result = checkRewardNoBoundsOperator(rewardNoBoundsFormula);
+			LOG4CPLUS_INFO(logger, "Result for initial states:");
+			std::cout << "Result for initial states:" << std::endl;
+			for (auto initialState : *this->getModel().getLabeledStates("init")) {
+				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
+				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+			}
+			std::cout << std::endl;
+			storm::utility::printSeparationLine(std::cout);
+			delete result;
+		} catch (std::exception& e) {
+			std::cout << "Error during computation: " << e.what() << " Skipping property." << std::endl;
+			if (result != nullptr) {
+				delete result;
+			}
 		}
 		std::cout << std::endl;
 		storm::utility::printSeparationLine(std::cout);
-		delete result;
 	}
 
 	/*!
