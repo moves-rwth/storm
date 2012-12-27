@@ -124,54 +124,23 @@ public:
 	}
 
 	/*!
-	 * Checks the given probabilistic operator (with no bound) on the DTMC and prints the result
-	 * (probability) for all initial states.
-	 * @param probabilisticNoBoundsFormula The formula to be checked.
+	 * Checks the given operator (with no bound) on the DTMC and prints the result
+	 * (probability/rewards) for all initial states.
+	 * @param probabilisticNoBoundFormula The formula to be checked.
 	 */
-	void check(const storm::formula::ProbabilisticNoBoundsOperator<Type>& probabilisticNoBoundsFormula) const {
+	void check(const storm::formula::NoBoundOperator<Type>& noBoundFormula) const {
 		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << probabilisticNoBoundsFormula.toString());
-		std::cout << "Model checking formula:\t" << probabilisticNoBoundsFormula.toString() << std::endl;
+		LOG4CPLUS_INFO(logger, "Model checking formula\t" << noBoundFormula.toString());
+		std::cout << "Model checking formula:\t" << noBoundFormula.toString() << std::endl;
 		std::vector<Type>* result = nullptr;
 		try {
-			result = checkProbabilisticNoBoundsOperator(probabilisticNoBoundsFormula);
+			result = noBoundFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
 			for (auto initialState : *this->getModel().getLabeledStates("init")) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
 				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
 			}
-			delete result;
-		} catch (std::exception& e) {
-			std::cout << "Error during computation: " << e.what() << " Skipping property." << std::endl;
-			if (result != nullptr) {
-				delete result;
-			}
-		}
-		std::cout << std::endl;
-		storm::utility::printSeparationLine(std::cout);
-	}
-
-	/*!
-	 * Checks the given reward operator (with no bound) on the DTMC and prints the result
-	 * (reward values) for all initial states.
-	 * @param rewardNoBoundsFormula The formula to be checked.
-	 */
-	void check(const storm::formula::RewardNoBoundsOperator<Type>& rewardNoBoundsFormula) {
-		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << rewardNoBoundsFormula.toString());
-		std::cout << "Model checking formula:\t" << rewardNoBoundsFormula.toString() << std::endl;
-		std::vector<Type>* result = nullptr;
-		try {
-			result = checkRewardNoBoundsOperator(rewardNoBoundsFormula);
-			LOG4CPLUS_INFO(logger, "Result for initial states:");
-			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : *this->getModel().getLabeledStates("init")) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
-				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
-			}
-			std::cout << std::endl;
-			storm::utility::printSeparationLine(std::cout);
 			delete result;
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << " Skipping property." << std::endl;
@@ -255,60 +224,29 @@ public:
 	}
 
 	/*!
-	 * The check method for a state formula with a probabilistic interval operator node as root in
+	 * The check method for a state formula with a bound operator node as root in
 	 * its formula tree
 	 *
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	storm::storage::BitVector* checkProbabilisticIntervalOperator(
-			const storm::formula::ProbabilisticIntervalOperator<Type>& formula) const {
+	storm::storage::BitVector* checkBoundOperator(const storm::formula::BoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<Type>* probabilisticResult = this->checkPathFormula(formula.getPathFormula());
+		std::vector<Type>* quantitativeResult = this->checkPathFormula(formula.getPathFormula());
 
 		// Create resulting bit vector, which will hold the yes/no-answer for every state.
 		storm::storage::BitVector* result = new storm::storage::BitVector(this->getModel().getNumberOfStates());
 
-		// Now, we can compute which states meet the bound specified in this operator, i.e.
-		// lie in the interval that was given along with this operator, and set the corresponding bits
-		// to true in the resulting vector.
-		Type lower = formula.getLowerBound();
-		Type upper = formula.getUpperBound();
+		// Now, we can compute which states meet the bound specified in this operator and set the
+		// corresponding bits to true in the resulting vector.
 		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
-			if ((*probabilisticResult)[i] >= lower && (*probabilisticResult)[i] <= upper) result->set(i, true);
+			if (formula.meetsBound((*quantitativeResult)[i])) {
+				result->set(i, true);
+			}
 		}
 
 		// Delete the probabilities computed for the states and return result.
-		delete probabilisticResult;
-		return result;
-	}
-
-	/*!
-	 * The check method for a state formula with a reward interval operator node as root in
-	 * its formula tree
-	 *
-	 * @param formula The state formula to check
-	 * @returns The set of states satisfying the formula, represented by a bit vector
-	 */
-	storm::storage::BitVector* checkRewardIntervalOperator(
-			const storm::formula::RewardIntervalOperator<Type>& formula) const {
-		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<Type>* rewardResult = this->checkPathFormula(formula.getPathFormula());
-
-		// Create resulting bit vector, which will hold the yes/no-answer for every state.
-		storm::storage::BitVector* result = new storm::storage::BitVector(this->getModel().getNumberOfStates());
-
-		// Now, we can compute which states meet the bound specified in this operator, i.e.
-		// lie in the interval that was given along with this operator, and set the corresponding bits
-		// to true in the resulting vector.
-		Type lower = formula.getLowerBound();
-		Type upper = formula.getUpperBound();
-		for (uint_fast64_t i = 0; i < this->getModel().getNumberOfStates(); ++i) {
-			if ((*rewardResult)[i] >= lower && (*rewardResult)[i] <= upper) result->set(i, true);
-		}
-
-		// Delete the reward values computed for the states and return result.
-		delete rewardResult;
+		delete quantitativeResult;
 		return result;
 	}
 
@@ -319,20 +257,7 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	std::vector<Type>* checkProbabilisticNoBoundsOperator(
-			const storm::formula::ProbabilisticNoBoundsOperator<Type>& formula) const {
-		return formula.getPathFormula().check(*this);
-	}
-
-	/*!
-	 * The check method for a state formula with a reward operator node without bounds as root
-	 * in its formula tree
-	 *
-	 * @param formula The state formula to check
-	 * @returns The set of states satisfying the formula, represented by a bit vector
-	 */
-	std::vector<Type>* checkRewardNoBoundsOperator(
-			const storm::formula::RewardNoBoundsOperator<Type>& formula) const {
+	std::vector<Type>* checkNoBoundOperator(const storm::formula::NoBoundOperator<Type>& formula) const {
 		return formula.getPathFormula().check(*this);
 	}
 

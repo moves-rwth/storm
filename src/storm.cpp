@@ -141,11 +141,11 @@ void cleanUp() {
 void testCheckingDie(storm::models::Dtmc<double>& dtmc) {
 	storm::formula::Ap<double>* oneFormula = new storm::formula::Ap<double>("one");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(oneFormula);
-	storm::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundsOperator<double>(eventuallyFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	storm::formula::Ap<double>* done = new storm::formula::Ap<double>("done");
 	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(done);
-	storm::formula::RewardNoBoundsOperator<double>* rewardFormula = new storm::formula::RewardNoBoundsOperator<double>(reachabilityRewardFormula);
+	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
 	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 	mc->check(*probFormula);
@@ -159,7 +159,7 @@ void testCheckingDie(storm::models::Dtmc<double>& dtmc) {
 void testCheckingCrowds(storm::models::Dtmc<double>& dtmc) {
 	storm::formula::Ap<double>* observe0Greater1Formula = new storm::formula::Ap<double>("observe0Greater1");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(observe0Greater1Formula);
-	storm::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundsOperator<double>(eventuallyFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 	mc->check(*probFormula);
@@ -167,14 +167,14 @@ void testCheckingCrowds(storm::models::Dtmc<double>& dtmc) {
 
 	storm::formula::Ap<double>* observeIGreater1Formula = new storm::formula::Ap<double>("observeIGreater1");
 	eventuallyFormula = new storm::formula::Eventually<double>(observeIGreater1Formula);
-	probFormula = new storm::formula::ProbabilisticNoBoundsOperator<double>(eventuallyFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	mc->check(*probFormula);
 	delete probFormula;
 
 	storm::formula::Ap<double>* observeOnlyTrueSenderFormula = new storm::formula::Ap<double>("observeOnlyTrueSender");
 	eventuallyFormula = new storm::formula::Eventually<double>(observeOnlyTrueSenderFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundsOperator<double>(eventuallyFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	mc->check(*probFormula);
 	delete probFormula;
@@ -185,7 +185,7 @@ void testCheckingCrowds(storm::models::Dtmc<double>& dtmc) {
 void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast64_t n) {
 	storm::formula::Ap<double>* electedFormula = new storm::formula::Ap<double>("elected");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
-	storm::formula::ProbabilisticNoBoundsOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundsOperator<double>(eventuallyFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 	mc->check(*probFormula);
@@ -193,7 +193,7 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 
 	electedFormula = new storm::formula::Ap<double>("elected");
 	storm::formula::BoundedUntil<double>* boundedUntilFormula = new storm::formula::BoundedUntil<double>(new storm::formula::Ap<double>("true"), electedFormula, 1);
-	probFormula = new storm::formula::ProbabilisticNoBoundsOperator<double>(boundedUntilFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
 
 	for (uint_fast64_t L = 1; L < 5; ++L) {
 		boundedUntilFormula->setBound(L*(n + 1));
@@ -203,7 +203,7 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 
 	electedFormula = new storm::formula::Ap<double>("elected");
 	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(electedFormula);
-	storm::formula::RewardNoBoundsOperator<double>* rewardFormula = new storm::formula::RewardNoBoundsOperator<double>(reachabilityRewardFormula);
+	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
 	mc->check(*rewardFormula);
 	delete rewardFormula;
@@ -221,7 +221,7 @@ void testChecking() {
 
 	dtmc->printModelInformationToStream(std::cout);
 
-	testCheckingDie(*dtmc);
+	// testCheckingDie(*dtmc);
 	// testCheckingCrowds(*dtmc);
 	// testCheckingSynchronousLeader(*dtmc, 4);
 }

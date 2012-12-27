@@ -1,15 +1,16 @@
 /*
- * RewardNoBoundsOperator.h
+ * RewardNoBoundOperator.h
  *
- *  Created on: 12.12.2012
- *      Author: thomas
+ *  Created on: 25.12.2012
+ *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_REWARDNOBOUNDSOPERATOR_H_
-#define STORM_FORMULA_REWARDNOBOUNDSOPERATOR_H_
+#ifndef STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_
+#define STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_
 
 #include "PctlFormula.h"
 #include "PctlPathFormula.h"
+#include "NoBoundOperator.h"
 
 namespace storm {
 
@@ -33,7 +34,7 @@ namespace formula {
  * 	This class does not contain a check() method like the other formula classes.
  * 	The check method should only be called by the model checker to infer the correct check function for sub
  * 	formulas. As this operator can only appear at the root, the method is not useful here.
- * 	Use the checkRewardNoBoundsOperator method from the DtmcPrctlModelChecker class instead.
+ * 	Use the checkRewardNoBoundOperator method from the DtmcPrctlModelChecker class instead.
  *
  * The subtree is seen as part of the object and deleted with it
  * (this behavior can be prevented by setting them to NULL before deletion)
@@ -46,13 +47,13 @@ namespace formula {
  * @see PctlFormula
  */
 template <class T>
-class RewardNoBoundsOperator: public storm::formula::PctlFormula<T> {
+class RewardNoBoundOperator: public NoBoundOperator<T> {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	RewardNoBoundsOperator() {
-		this->pathFormula = nullptr;
+	RewardNoBoundOperator() : NoBoundOperator<T>(nullptr) {
+		// Intentionally left empty
 	}
 
 	/*!
@@ -60,33 +61,8 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundsOperator(PctlPathFormula<T>* pathFormula) {
-		this->pathFormula = pathFormula;
-	}
-
-	/*!
-	 * Destructor
-	 */
-	virtual ~RewardNoBoundsOperator() {
-		if (pathFormula != nullptr) {
-			delete pathFormula;
-		}
-	}
-
-	/*!
-	 * @returns the child node (representation of a PCTL path formula)
-	 */
-	const PctlPathFormula<T>& getPathFormula () const {
-		return *pathFormula;
-	}
-
-	/*!
-	 * Sets the child node
-	 *
-	 * @param pathFormula the path formula that becomes the new child node
-	 */
-	void setPathFormula(PctlPathFormula<T>* pathFormula) {
-		this->pathFormula = pathFormula;
+	RewardNoBoundOperator(PctlPathFormula<T>* pathFormula) : NoBoundOperator<T>(pathFormula) {
+		// Intentionally left empty
 	}
 
 	/*!
@@ -94,17 +70,14 @@ public:
 	 */
 	virtual std::string toString() const {
 		std::string result = " R=? [";
-		result += pathFormula->toString();
+		result += this->getPathFormula().toString();
 		result += "]";
 		return result;
 	}
-
-private:
-	PctlPathFormula<T>* pathFormula;
 };
 
 } /* namespace formula */
 
 } /* namespace storm */
 
-#endif /* STORM_FORMULA_REWARDNOBOUNDSOPERATOR_H_ */
+#endif /* STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_ */

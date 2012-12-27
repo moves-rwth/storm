@@ -1,12 +1,12 @@
 /*
- * ProbabilisticOperator.h
+ * BoundOperator.h
  *
- *  Created on: 19.10.2012
- *      Author: Thomas Heinemann
+ *  Created on: 27.12.2012
+ *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
-#define STORM_FORMULA_PROBABILISTICINTERVALOPERATOR_H_
+#ifndef STORM_FORMULA_BOUNDOPERATOR_H_
+#define STORM_FORMULA_BOUNDOPERATOR_H_
 
 #include "PctlStateFormula.h"
 #include "PctlPathFormula.h"
@@ -38,17 +38,10 @@ namespace formula {
  * @see PctlFormula
  */
 template<class T>
-class ProbabilisticIntervalOperator : public PctlStateFormula<T> {
+class BoundOperator : public PctlStateFormula<T> {
 
 public:
-	/*!
-	 * Empty constructor
-	 */
-	ProbabilisticIntervalOperator() {
-		upper = storm::utility::constGetZero<T>();
-		lower = storm::utility::constGetZero<T>();
-		pathFormula = NULL;
-	}
+	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
 
 	/*!
 	 * Constructor
@@ -57,10 +50,9 @@ public:
 	 * @param upperBound The upper bound for the probability
 	 * @param pathFormula The child node
 	 */
-	ProbabilisticIntervalOperator(T lowerBound, T upperBound, PctlPathFormula<T>& pathFormula) {
-		this->lower = lowerBound;
-		this->upper = upperBound;
-		this->pathFormula = &pathFormula;
+	BoundOperator(ComparisonType comparisonOperator, T bound, PctlPathFormula<T>* pathFormula)
+		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
+		// Intentionally left empty
 	}
 
 	/*!
@@ -69,8 +61,8 @@ public:
 	 * The subtree is deleted with the object
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
-	virtual ~ProbabilisticIntervalOperator() {
-	 if (pathFormula != NULL) {
+	virtual ~BoundOperator() {
+	 if (pathFormula != nullptr) {
 		 delete pathFormula;
 	 }
 	}
@@ -83,20 +75,6 @@ public:
 	}
 
 	/*!
-	 * @returns the lower bound for the probability
-	 */
-	const T& getLowerBound() const {
-		return lower;
-	}
-
-	/*!
-	 * @returns the upper bound for the probability
-	 */
-	const T& getUpperBound() const {
-		return upper;
-	}
-
-	/*!
 	 * Sets the child node
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
@@ -106,28 +84,47 @@ public:
 	}
 
 	/*!
+	 * @returns the bound for the measure
+	 */
+	const T& getBound() const {
+		return bound;
+	}
+
+	/*!
 	 * Sets the interval in which the probability that the path formula holds may lie in.
 	 *
-	 * @param lowerBound The lower bound for the probability
-	 * @param upperBound The upper bound for the probability
+	 * @param bound The bound for the measure
 	 */
-	void setInterval(T lowerBound, T upperBound) {
-		this->lower = lowerBound;
-		this->upper = upperBound;
+	void setBound(T bound) {
+		this->bound = bound;
 	}
 
 	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "P[";
-		result += std::to_string(lower);
-		result += ";";
-		result += std::to_string(upper);
-		result += "] (";
+		std::string result = "P ";
+		switch (comparisonOperator) {
+		case LESS: result += "<"; break;
+		case LESS_EQUAL: result += "<="; break;
+		case GREATER: result += ">"; break;
+		case GREATER_EQUAL: result += ">="; break;
+		}
+		result += std::to_string(bound);
+		result += " [";
 		result += pathFormula->toString();
-		result += ")";
+		result += "]";
 		return result;
+	}
+
+	bool meetsBound(T value) {
+		switch (comparisonOperator) {
+		case LESS: return value < bound; break;
+		case LESS_EQUAL: return value <= bound; break;
+		case GREATER: return value > bound; break;
+		case GREATER_EQUAL: return value >= bound; break;
+		default: return false;
+		}
 	}
 
 	/*!
@@ -137,14 +134,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const {
-		ProbabilisticIntervalOperator<T>* result = new ProbabilisticIntervalOperator<T>();
-		result->setInterval(lower, upper);
-		if (pathFormula != NULL) {
-			result->setPathFormula(pathFormula->clone());
-		}
-		return result;
-	}
+	virtual PctlStateFormula<T>* clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -156,12 +146,12 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkProbabilisticIntervalOperator(*this);
+	  return modelChecker.checkBoundOperator(*this);
 	}
 
 private:
-	T lower;
-	T upper;
+	ComparisonType comparisonOperator;
+	T bound;
 	PctlPathFormula<T>* pathFormula;
 };
 
@@ -169,4 +159,4 @@ private:
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_PROBABILISTICINTERVALOPERATOR_H_ */
+#endif /* STORM_FORMULA_BOUNDOPERATOR_H_ */

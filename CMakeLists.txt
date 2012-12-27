@@ -60,12 +60,13 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
     # Set standard flags for GCC
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
     set (CMAKE_CXX_FLAGS "-std=c++0x -Wall -pedantic")
     # -Werror is atm removed as this gave some problems with existing code
     # May be re-set later
     # (Thomas Heinemann, 2012-12-21)
     
-    # Turn on popcnt instruction if possible (yes by default)
+    # Turn on popcnt instruction if desired (yes by default)
     if (USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
     endif(USE_POPCNT)
@@ -73,7 +74,8 @@ elseif(MSVC)
 	# required for GMM to compile, ugly error directive in their code
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE)
 else(CLANG)
-    # Set standard flags for GCC
+    # Set standard flags for clang
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
     set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic -Wno-unused-variable")
     
     # Turn on popcnt instruction if desired (yes by default)

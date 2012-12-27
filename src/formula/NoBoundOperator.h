@@ -1,17 +1,18 @@
 /*
- * ProbabilisticNoBoundsOperator.h
+ * NoBoundOperator.h
  *
- *  Created on: 12.12.2012
- *      Author: thomas
+ *  Created on: 27.12.2012
+ *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
-#define STORM_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_
+#ifndef STORM_FORMULA_NOBOUNDOPERATOR_H_
+#define STORM_FORMULA_NOBOUNDOPERATOR_H_
 
 #include "PctlFormula.h"
 #include "PctlPathFormula.h"
 
 namespace storm {
+
 namespace formula {
 
 /*!
@@ -32,7 +33,7 @@ namespace formula {
  * 	This class does not contain a check() method like the other formula classes.
  * 	The check method should only be called by the model checker to infer the correct check function for sub
  * 	formulas. As this operator can only appear at the root, the method is not useful here.
- * 	Use the checkProbabilisticNoBoundsOperator method from the DtmcPrctlModelChecker class instead.
+ * 	Use the checkProbabilisticNoBoundOperator method from the DtmcPrctlModelChecker class instead.
  *
  * The subtree is seen as part of the object and deleted with it
  * (this behavior can be prevented by setting them to NULL before deletion)
@@ -45,12 +46,12 @@ namespace formula {
  * @see PctlFormula
  */
 template <class T>
-class ProbabilisticNoBoundsOperator: public storm::formula::PctlFormula<T> {
+class NoBoundOperator: public storm::formula::PctlFormula<T> {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticNoBoundsOperator() {
+	NoBoundOperator() {
 		this->pathFormula = NULL;
 	}
 
@@ -59,14 +60,14 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundsOperator(PctlPathFormula<T>* pathFormula) {
+	NoBoundOperator(PctlPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
 	/*!
 	 * Destructor
 	 */
-	virtual ~ProbabilisticNoBoundsOperator() {
+	virtual ~NoBoundOperator() {
 		if (pathFormula != NULL) {
 			delete pathFormula;
 		}
@@ -89,20 +90,31 @@ public:
 	}
 
 	/*!
+	 * Calls the model checker to check this formula.
+	 * Needed to infer the correct type of formula class.
+	 *
+	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
+	 *       the methods of the model checker should be used.
+	 *
+	 * @note This function is not implemented in this class.
+	 *
+	 * @returns A vector indicating all states that satisfy the formula represented by the called object.
+	 */
+	virtual std::vector<T>* check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+		return modelChecker.checkNoBoundOperator(*this);
+	}
+
+	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() const {
-		std::string result = " P=? (";
-		result += pathFormula->toString();
-		result += ")";
-		return result;
-	}
+	virtual std::string toString() const = 0;
 
 private:
 	PctlPathFormula<T>* pathFormula;
 };
 
 } /* namespace formula */
+
 } /* namespace storm */
 
-#endif /* STORM_FORMULA_PROBABILISTICNOBOUNDSOPERATOR_H_ */
+#endif /* STORM_FORMULA_NOBOUNDOPERATOR_H_ */
