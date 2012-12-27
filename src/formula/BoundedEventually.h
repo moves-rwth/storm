@@ -1,12 +1,12 @@
 /*
  * BoundedUntil.h
  *
- *  Created on: 19.10.2012
- *      Author: Thomas Heinemann
+ *  Created on: 27.11.2012
+ *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_BOUNDEDUNTIL_H_
-#define STORM_FORMULA_BOUNDEDUNTIL_H_
+#ifndef STORM_FORMULA_BOUNDEDEVENTUALLY_H_
+#define STORM_FORMULA_BOUNDEDEVENTUALLY_H_
 
 #include "PctlPathFormula.h"
 #include "PctlStateFormula.h"
@@ -19,13 +19,12 @@ namespace formula {
 
 /*!
  * @brief
- * Class for a PCTL (path) formula tree with a BoundedUntil node as root.
+ * Class for a PCTL (path) formula tree with a BoundedEventually node as root.
  *
- * Has two PCTL state formulas as sub formulas/trees.
+ * Has one PCTL state formulas as sub formula/tree.
  *
  * @par Semantics
- * The formula holds iff in at most \e bound steps, formula \e right (the right subtree) holds, and before,
- * \e left holds.
+ * The formula holds iff in at most \e bound steps, formula \e child holds.
  *
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
@@ -34,29 +33,25 @@ namespace formula {
  * @see PctlFormula
  */
 template <class T>
-class BoundedUntil : public PctlPathFormula<T> {
+class BoundedEventually : public PctlPathFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	BoundedUntil() {
-		this->left = NULL;
-		this->right = NULL;
+	BoundedEventually() {
+		this->child = nullptr;
 		bound = 0;
 	}
 
 	/*!
 	 * Constructor
 	 *
-	 * @param left The left formula subtree
-	 * @param right The left formula subtree
+	 * @param child The child formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedUntil(PctlStateFormula<T>* left, PctlStateFormula<T>* right,
-					 uint_fast64_t bound) {
-		this->left = left;
-		this->right = right;
+	BoundedEventually(PctlStateFormula<T>* child, uint_fast64_t bound) {
+		this->child = child;
 		this->bound = bound;
 	}
 
@@ -66,45 +61,25 @@ public:
 	 * Also deletes the subtrees.
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
-	virtual ~BoundedUntil() {
-	  if (left != NULL) {
-		  delete left;
-	  }
-	  if (right != NULL) {
-		  delete right;
+	virtual ~BoundedEventually() {
+	  if (child != nullptr) {
+		  delete child;
 	  }
 	}
 
 	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft the new left child.
+	 * @returns the child node
 	 */
-	void setLeft(PctlStateFormula<T>* newLeft) {
-		left = newLeft;
+	const PctlStateFormula<T>& getChild() const {
+		return *child;
 	}
 
 	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
+	 * Sets the subtree
+	 * @param child the new child node
 	 */
-	void setRight(PctlStateFormula<T>* newRight) {
-		right = newRight;
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
-	 */
-	const PctlStateFormula<T>& getLeft() const {
-		return *left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	const PctlStateFormula<T>& getRight() const {
-		return *right;
+	void setChild(PctlStateFormula<T>* child) {
+		this->child = child;
 	}
 
 	/*!
@@ -127,13 +102,10 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "(";
-		result += left->toString();
-		result += " U<=";
+		std::string result = "F<=";
 		result += std::to_string(bound);
 		result += " ";
-		result += right->toString();
-		result += ")";
+		result += child->toString();
 		return result;
 	}
 
@@ -145,13 +117,10 @@ public:
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
 	virtual PctlPathFormula<T>* clone() const {
-		BoundedUntil<T>* result = new BoundedUntil<T>();
+		BoundedEventually<T>* result = new BoundedEventually<T>();
 		result->setBound(bound);
-		if (left != NULL) {
-			result->setLeft(left->clone());
-		}
-		if (right != NULL) {
-			result->setRight(right->clone());
+		if (child != nullptr) {
+			result->setRight(child->clone());
 		}
 		return result;
 	}
@@ -167,12 +136,11 @@ public:
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
 	virtual std::vector<T> *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkBoundedUntil(*this);
+	  return modelChecker.checkBoundedEventually(*this);
 	}
 
 private:
-	PctlStateFormula<T>* left;
-	PctlStateFormula<T>* right;
+	PctlStateFormula<T>* child;
 	uint_fast64_t bound;
 };
 

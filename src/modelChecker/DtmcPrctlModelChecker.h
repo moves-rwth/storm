@@ -30,6 +30,7 @@ class DtmcPrctlModelChecker;
 
 #include "src/models/Dtmc.h"
 #include "src/storage/BitVector.h"
+#include "src/exceptions/InvalidPropertyException.h"
 #include <vector>
 
 #include "log4cplus/logger.h"
@@ -219,6 +220,11 @@ public:
 		} else if (formula.getAp().compare("false") == 0) {
 			return new storm::storage::BitVector(this->getModel().getNumberOfStates());
 		}
+
+		if (!this->getModel().hasAtomicProposition(formula.getAp())) {
+			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
+		}
+
 		return new storm::storage::BitVector(*this->getModel().getLabeledStates(formula.getAp()));
 	}
 
@@ -358,6 +364,19 @@ public:
 	virtual std::vector<Type>* checkNext(const storm::formula::Next<Type>& formula) const = 0;
 
 	/*!
+	 * The check method for a path formula with a Bounded Eventually operator node as root in its
+	 * formula tree
+	 *
+	 * @param formula The Bounded Eventually path formula to check
+	 * @returns for each state the probability that the path formula holds
+	 */
+	virtual std::vector<Type>* checkBoundedEventually(const storm::formula::BoundedEventually<Type>& formula) const {
+		// Create equivalent temporary bounded until formula and check it.
+		storm::formula::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::formula::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
+		return this->checkBoundedUntil(temporaryBoundedUntilFormula);
+	}
+
+	/*!
 	 * The check method for a path formula with an Eventually operator node as root in its formula tree
 	 *
 	 * @param formula The Eventually path formula to check
@@ -366,8 +385,7 @@ public:
 	virtual std::vector<Type>* checkEventually(const storm::formula::Eventually<Type>& formula) const {
 		// Create equivalent temporary until formula and check it.
 		storm::formula::Until<Type> temporaryUntilFormula(new storm::formula::Ap<Type>("true"), formula.getChild().clone());
-		std::vector<Type>* result = this->checkUntil(temporaryUntilFormula);
-		return result;
+		return this->checkUntil(temporaryUntilFormula);
 	}
 
 	/*!
@@ -383,7 +401,6 @@ public:
 
 		// Now subtract the resulting vector from the constant one vector to obtain final result.
 		storm::utility::subtractFromConstantOneVector(result);
-
 		return result;
 	}
 

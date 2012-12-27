@@ -67,7 +67,7 @@ void setUpFileLogging() {
  */
 void printHeader(const int argc, const char* argv[]) {
 	std::cout << "StoRM" << std::endl;
-	std::cout << "====" << std::endl << std::endl;
+	std::cout << "-----" << std::endl << std::endl;
 
 	std::cout << "Version: 1.0 Alpha" << std::endl;
 	// "Compute" the command line argument string with which STORM was invoked.
@@ -221,7 +221,7 @@ void testChecking() {
 
 	dtmc->printModelInformationToStream(std::cout);
 
-	// testCheckingDie(*dtmc);
+	testCheckingDie(*dtmc);
 	// testCheckingCrowds(*dtmc);
 	// testCheckingSynchronousLeader(*dtmc, 4);
 }

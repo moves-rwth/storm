@@ -166,6 +166,15 @@ public:
 	}
 
 	/*!
+	 * Retrieves whether the given atomic proposition is a valid atomic proposition in this model.
+	 * @param atomicProposition The atomic proposition to be checked for validity.
+	 * @return True if the given atomic proposition is valid in this model.
+	 */
+	bool hasAtomicProposition(std::string const& atomicProposition) {
+		return this->stateLabeling->containsAtomicProposition(atomicProposition);
+	}
+
+	/*!
 	 * Prints information about the model to the specified stream.
 	 * @param out The stream the information is to be printed to.
 	 */

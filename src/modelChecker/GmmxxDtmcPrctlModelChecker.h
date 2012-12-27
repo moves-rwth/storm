@@ -17,7 +17,7 @@
 #include "src/utility/ConstTemplates.h"
 #include "src/utility/Settings.h"
 #include "src/adapters/GmmxxAdapter.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InvalidPropertyException.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
@@ -170,7 +170,7 @@ public:
 		// Only compute the result if the model has a state-based reward model.
 		if (!this->getModel().hasStateRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing (state-based) reward model for formula.");
-			throw storm::exceptions::InvalidArgumentException() << "Missing (state-based) reward model for formula.";
+			throw storm::exceptions::InvalidPropertyException() << "Missing (state-based) reward model for formula.";
 		}
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
@@ -199,7 +199,7 @@ public:
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
-			throw storm::exceptions::InvalidArgumentException() << "Missing reward model for formula.";
+			throw storm::exceptions::InvalidPropertyException() << "Missing reward model for formula.";
 		}
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
@@ -242,7 +242,7 @@ public:
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
-			throw storm::exceptions::InvalidArgumentException() << "Missing reward model for formula.";
+			throw storm::exceptions::InvalidPropertyException() << "Missing reward model for formula.";
 		}
 
 		// Determine the states for which the target predicate holds.

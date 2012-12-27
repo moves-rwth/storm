@@ -22,6 +22,7 @@
 #include "Until.h"
 #include "Eventually.h"
 #include "Globally.h"
+#include "BoundedEventually.h"
 
 #include "InstantaneousReward.h"
 #include "CumulativeReward.h"
