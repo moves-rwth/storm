@@ -29,6 +29,24 @@ uint_fast64_t storm::parser::Parser::checked_strtol(const char* str, char** end)
 }
 
 /*!
+ *	Calls strtod() internally and checks if the new pointer is different
+ *	from the original one, i.e. if str != *end. If they are the same, a
+ *	storm::exceptions::WrongFileFormatException will be thrown.
+ *	@param str String to parse
+ *	@param end New pointer will be written there
+ *	@return Result of strtod()
+ */
+double storm::parser::Parser::checked_strtod(const char* str, char** end) {
+	double res = strtod(str, end);
+	if (str == *end) {
+		LOG4CPLUS_ERROR(logger, "Error while parsing floating point. Next input token is not a number.");
+		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
+		throw storm::exceptions::WrongFileFormatException("Error while parsing floating point. Next input token is not a number.");
+	}
+	return res;
+}
+
+/*!
  *	Skips spaces, tabs, newlines and carriage returns. Returns pointer
  *	to first char that is not a whitespace.
  *	@param buf String buffer

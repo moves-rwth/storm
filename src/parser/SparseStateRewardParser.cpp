@@ -54,9 +54,9 @@ SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::
 		while (buf[0] != '\0') {
 			// Parse state number and reward value.
 			state = checked_strtol(buf, &buf);
-			reward = strtod(buf, &buf);
+			reward = checked_strtod(buf, &buf);
 			if (reward < 0.0) {
-				LOG4CPLUS_ERROR(logger, "Expected positive probability but got \"" << std::string(buf, 0, 16) << "\".");
+				LOG4CPLUS_ERROR(logger, "Expected positive reward value but got \"" << reward << "\".");
 				throw storm::exceptions::WrongFileFormatException() << "State reward file specifies illegal reward value.";
 			}
 
@@ -68,5 +68,4 @@ SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::
 }
 
 } //namespace parser
-
 } //namespace storm

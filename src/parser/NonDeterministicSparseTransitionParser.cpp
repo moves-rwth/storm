@@ -71,7 +71,6 @@ std::unique_ptr<std::vector<uint_fast64_t>> NonDeterministicSparseTransitionPars
 	double val;
 	maxnode = 0;
 	maxchoice = 0;
-	char* tmp;
 	while (buf[0] != '\0') {
 		/*
 		 *	read row and column
@@ -93,16 +92,16 @@ std::unique_ptr<std::vector<uint_fast64_t>> NonDeterministicSparseTransitionPars
 			while (non_zero->size() < maxchoice) non_zero->push_back(0);
 		}
 		/*
-		 *	read value. if value is 0.0, either strtod could not read a number or we encountered a probability of zero.
+		 *	read value.
 		 *	if row == col, we have a diagonal element which is treated separately and this non_zero must be decreased.
 		 */
-		val = strtod(buf, &tmp);
-		if (val == 0.0) {
+		val = checked_strtod(buf, &buf);
+		if ((val < 0.0) || (val > 1.0)) {
 			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
 			return 0;
 		}
 		if (row != col) (*non_zero)[ndchoice-1]++;
-		buf = trimWhitespaces(tmp);
+		buf = trimWhitespaces(buf);
 	}
 
 	return non_zero;

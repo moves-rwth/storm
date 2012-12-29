@@ -68,7 +68,6 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 	uint_fast64_t row, col;
 	double val;
 	maxnode = 0;
-	char* tmp;
 	while (buf[0] != '\0') {
 		/*
 		 *	read row and column
@@ -81,16 +80,16 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 		if (row > maxnode) maxnode = row;
 		if (col > maxnode) maxnode = col;
 		/*
-		 *	read value. if value is 0.0, either strtod could not read a number or we encountered a probability of zero.
+		 *	read value. 
 		 *	if row == col, we have a diagonal element which is treated separately and this non_zero must be decreased.
 		 */
-		val = strtod(buf, &tmp);
-		if (val == 0.0) {
-			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
+		val = checked_strtod(buf, &buf);
+		if ((val < 0.0) || (val > 1.0)) {
+			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << val << "\".");
 			return 0;
 		}
 		if (row == col) non_zero--;
-		buf = trimWhitespaces(tmp);
+		buf = trimWhitespaces(buf);
 	}
 
 	return non_zero;
@@ -176,7 +175,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 		 */
 		row = checked_strtol(buf, &buf);
 		col = checked_strtol(buf, &buf);
-		val = strtod(buf, &buf);
+		val = checked_strtod(buf, &buf);
 		
 		this->matrix->addNextValue(row,col,val);
 		buf = trimWhitespaces(buf);
