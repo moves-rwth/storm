@@ -15,25 +15,7 @@
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/fusion/include/io.hpp>
 
-namespace storm {
-namespace parser {
-class intConstDef {
-public:
-	std::string name;
-	int value;
-
-	void print() {
-		std::cout << "(" << name << ", " << value << ")" << std::endl;
-	}
-};
-}
-}
-
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::parser::intConstDef,
-    (std::string, name)
-    (int, value)
-)
+#include "src/ir/expressions/Expressions.h"
 
 namespace storm {
 
@@ -41,6 +23,7 @@ namespace parser {
 
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
+namespace phoenix = boost::phoenix;
 
 class PrismParser {
 
@@ -51,7 +34,7 @@ public:
 		std::string::const_iterator end = str.end();
 		prismGrammar<std::string::const_iterator> grammar;
 
-		intConstDef result;
+		storm::ir::expressions::BaseExpression* result;
 		bool r = phrase_parse(iter, end, grammar, ascii::space, result);
 
 		std::cout << r << std::endl;
@@ -59,8 +42,7 @@ public:
 		if (r && iter == end) {
 			std::cout << "-------------------------\n";
 			std::cout << "Parsing succeeded\n";
-			result.print();
-			// std::cout << "result = " << result << std::endl;
+			std::cout << "result = " << result << std::endl;
 			std::cout << "-------------------------\n";
 		} else {
 			std::string rest(iter, end);
@@ -72,19 +54,59 @@ public:
 	}
 
 private:
+	struct keywords_ : qi::symbols<char, unsigned> {
+		keywords_() {
+			add
+				("dtmc", 1)
+				("ctmc", 2)
+				("mdp", 3)
+				("ctmdp", 4)
+				("const", 5)
+				("int", 6)
+				("bool", 7)
+				("module", 8)
+				("endmodule", 9)
+				("rewards", 10)
+				("endrewards", 11)
+				("true", 12)
+				("false", 13)
+			;
+		}
+	};
+
+	struct variables_ : qi::symbols<char, std::string> {
+		// Intentionally left empty. This map is filled during parsing.
+	};
+
+	struct modules_ : qi::symbols<char, unsigned> {
+		// Intentionally left empty. This map is filled during parsing.
+	};
+
 	template<typename Iterator>
-	struct prismGrammar : qi::grammar<Iterator, intConstDef(), ascii::space_type> {
+	struct prismGrammar : qi::grammar<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> {
 
 		prismGrammar() : prismGrammar::base_type(start) {
-			identifierName %= +(qi::char_);
-			integerConstantDefinition %= qi::lit("const") >> qi::lit("int") >> identifierName >> "=" >> qi::int_ >> ";";
+			// identifierName %= qi::lexeme[qi::char_("a-zA-Z_") >> *qi::char_("a-zA-Z_0-9")];
+			// integerConstantDefinition %= qi::lit("const") >> qi::lit("int") >> identifierName >> "=" >> qi::int_ >> ";";
 
-			start %= integerConstantDefinition;
+			start %= literalExpression;
+
+			literalExpression %= (booleanLiteralExpression | integerLiteralExpression | doubleLiteralExpression);
+			booleanLiteralExpression = qi::bool_[qi::_val = phoenix::new_<storm::ir::expressions::BooleanLiteral>(qi::_1)];
+			integerLiteralExpression = qi::int_[qi::_val = phoenix::new_<storm::ir::expressions::IntegerLiteral>(qi::_1)];
+			doubleLiteralExpression = qi::double_[qi::_val = phoenix::new_<storm::ir::expressions::DoubleLiteral>(qi::_1)];
 		}
 
-		qi::rule<Iterator, intConstDef(), ascii::space_type> start;
-		qi::rule<Iterator, intConstDef(), ascii::space_type> integerConstantDefinition;
-		qi::rule<Iterator, std::string(), ascii::space_type> identifierName;
+		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> start;
+
+		// The expression rules.
+		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> literalExpression;
+		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> booleanLiteralExpression;
+		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> integerLiteralExpression;
+		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> doubleLiteralExpression;
+
+		// qi::rule<Iterator, intConstDef(), ascii::space_type> integerConstantDefinition;
+		// qi::rule<Iterator, std::string(), ascii::space_type> identifierName;
 
 	};
 };
