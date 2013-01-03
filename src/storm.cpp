@@ -35,6 +35,8 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
+#include "src/parser/PrismParser.h"
+
 #include "src/exceptions/InvalidSettingsException.h"
 
 log4cplus::Logger logger;
@@ -230,13 +232,16 @@ void testChecking() {
  * Main entry point.
  */
 int main(const int argc, const char* argv[]) {
-	initializeLogger();
-	if (!parseOptions(argc, argv)) {
-		return 0;
-	}
-	printHeader(argc, argv);
+	// initializeLogger();
+	// if (!parseOptions(argc, argv)) {
+	//	return 0;
+	//}
+	// printHeader(argc, argv);
 
-	testChecking();
+	// testChecking();
+
+	storm::parser::PrismParser parser;
+	parser.test();
 
 	cleanUp();
 	return 0;
