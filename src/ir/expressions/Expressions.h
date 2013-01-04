@@ -17,5 +17,8 @@
 #include "UnaryBooleanFunctionExpression.h"
 #include "UnaryNumericalFunctionExpression.h"
 #include "VariableExpression.h"
+#include "BooleanConstantExpression.h"
+#include "IntegerConstantExpression.h"
+#include "DoubleConstantExpression.h"
 
 #endif /* EXPRESSIONS_H_ */
