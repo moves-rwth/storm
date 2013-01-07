@@ -5,6 +5,8 @@
 #include "DeterministicSparseTransitionParser.h"
 #include "NonDeterministicSparseTransitionParser.h"
 
+#include <string>
+
 namespace storm {
 namespace parser {
 
@@ -78,8 +80,15 @@ std::pair<TransitionType,TransitionType> AutoTransitionParser::analyzeContent(co
 	TransitionType hintType = Unknown, transType = Unknown;
 	// Open file
 	MappedFile file(filename.c_str());
-	//char* buf = file.data;
+	char* buf = file.data;
 	
+	// parse hint
+	char hint[128];
+	sscanf(buf, "%s\n", hint);
+	
+	// check hint
+	if (strncmp(hint, "dtmc", sizeof(hint)) == 0) hintType = DTMC;
+	else if (strncmp(hint, "ndtmc", sizeof(hint)) == 0) hintType = NDTMC;
 	
 	return std::pair<TransitionType,TransitionType>(hintType, transType);
 }
