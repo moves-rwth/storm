@@ -61,6 +61,15 @@ AutoTransitionParser::AutoTransitionParser(const std::string& filename)
 TransitionType AutoTransitionParser::analyzeFilename(const std::string& filename) {
 	TransitionType type = Unknown;
 	
+	// find file extension
+	std::string::size_type extpos = filename.rfind(".");
+	if (extpos == std::string::npos) return Unknown;
+	else extpos++;
+	
+	// check file extension
+	if (filename.substr(extpos) == "dtmc") type = DTMC;
+	else if (filename.substr(extpos) == "ndtmc") type = NDTMC;
+	
 	return type;
 }
 
