@@ -5,8 +5,8 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef GMMXXADAPTER_H_
-#define GMMXXADAPTER_H_
+#ifndef STORM_ADAPTERS_GMMXXADAPTER_H_
+#define STORM_ADAPTERS_GMMXXADAPTER_H_
 
 #include "src/storage/SquareSparseMatrix.h"
 
@@ -33,42 +33,13 @@ public:
 		// Prepare the resulting matrix.
 		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(matrix.rowCount, matrix.rowCount);
 
-		// Reserve enough elements for the row indications.
-		result->jc.reserve(matrix.rowCount + 1);
-
-		// For the column indications and the actual values, we have to gather
-		// the values in a temporary array first, as we have to integrate
-		// the values from the diagonal. For the row indications, we can just count the number of
-		// inserted diagonal elements and add it to the previous value.
-		uint_fast64_t* tmpColumnIndicationsArray = new uint_fast64_t[realNonZeros];
-		T* tmpValueArray = new T[realNonZeros];
-		T zero(0);
-		uint_fast64_t currentPosition = 0;
-		for (uint_fast64_t i = 0; i < matrix.rowCount; ++i) {
-			// Compute correct start index of row.
-			result->jc[i] = matrix.rowIndications[i];
-
-			// Otherwise, we can just enumerate the non-zeros which are not on the diagonal
-			// and fit in the diagonal element where appropriate.
-			for (uint_fast64_t j = matrix.rowIndications[i]; j < matrix.rowIndications[i + 1]; ++j) {
-				tmpColumnIndicationsArray[currentPosition] = matrix.columnIndications[j];
-				tmpValueArray[currentPosition] = matrix.valueStorage[j];
-				++currentPosition;
-			}
-		}
-		// Fill in sentinel element at the end.
-		result->jc[matrix.rowCount] = static_cast<unsigned int>(realNonZeros);
-
-		// Now, we can copy the temporary array to the GMMXX format.
-		// FIXME Now everything can just be copied. No TMP needed anymore
+		// Copy Row Indications
+		std::copy(matrix.rowIndications.begin(), matrix.rowIndications.end(), std::back_inserter(result->jc));
+		// Copy Columns Indications
 		result->ir.resize(realNonZeros);
-		std::copy(tmpColumnIndicationsArray, tmpColumnIndicationsArray + realNonZeros, result->ir.begin());
-		delete[] tmpColumnIndicationsArray;
-
+		std::copy(matrix.columnIndications.begin(), matrix.columnIndications.end(), std::back_inserter(result->ir));
 		// And do the same thing with the actual values.
-		result->pr.resize(realNonZeros);
-		std::copy(tmpValueArray, tmpValueArray + realNonZeros, result->pr.begin());
-		delete[] tmpValueArray;
+		std::copy(matrix.valueStorage.begin(), matrix.valueStorage.end(), std::back_inserter(result->pr));
 
 		LOG4CPLUS_DEBUG(logger, "Done converting matrix to gmm++ format.");
 
@@ -80,4 +51,4 @@ public:
 
 } //namespace storm
 
-#endif /* GMMXXADAPTER_H_ */
+#endif /* STORM_ADAPTERS_GMMXXADAPTER_H_ */

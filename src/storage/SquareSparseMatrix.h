@@ -470,7 +470,7 @@ public:
 	 * Returns a pointer to the value storage of the matrix.
 	 * @return A pointer to the value storage of the matrix.
 	 */
-	std::vector<T>& getStoragePointer() {
+	std::vector<T> const & getStoragePointer() const {
 		return valueStorage;
 	}
 
@@ -480,7 +480,7 @@ public:
 	 * @return A pointer to the array that stores the start indices of non-zero
 	 * entries in the value storage for each row.
 	 */
-	std::vector<uint_fast64_t>& getRowIndicationsPointer() {
+	std::vector<uint_fast64_t> const & getRowIndicationsPointer() const {
 		return rowIndications;
 	}
 
@@ -490,7 +490,7 @@ public:
 	 * @return A pointer to an array that stores the column of each non-zero
 	 * element.
 	 */
-	std::vector<uint_fast64_t>& getColumnIndicationsPointer() {
+	std::vector<uint_fast64_t> const & getColumnIndicationsPointer() const {
 		return columnIndications;
 	}
 
