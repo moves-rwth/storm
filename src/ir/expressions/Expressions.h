@@ -8,6 +8,7 @@
 #ifndef EXPRESSIONS_H_
 #define EXPRESSIONS_H_
 
+#include "BaseExpression.h"
 #include "BinaryBooleanFunctionExpression.h"
 #include "BinaryNumericalFunctionExpression.h"
 #include "BinaryRelationExpression.h"

@@ -13,8 +13,7 @@
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/fusion/include/io.hpp>
 
-#include "src/ir/expressions/Expressions.h"
-#include "src/ir/Program.h"
+#include "src/ir/IR.h"
 
 namespace storm {
 
@@ -28,35 +27,28 @@ class PrismParser {
 
 public:
 	void test() {
-		std::string testInput = "";
-		// storm::ir::Program* result = getProgram(testInput);
+		std::string testInput = "" \
+				"" \
+				"const bool d; const int c; const double x;" \
+				"module test " \
+				" a : bool;" \
+				"endmodule" \
+				"module test2 endmodule";
 		getProgram(testInput);
-
-/*		std::cout << "Resulting program:" << std::endl;
-		std::cout << "-------------------------\n";
-		std::cout << result->toString() << std::endl;
-		std::cout << "-------------------------\n"; */
 	}
 
 	void getProgram(std::string inputString) {
-		using qi::_val;
-		using qi::int_;
-		using qi::_r1;
-		using qi::_1;
-		using phoenix::ref;
-		using phoenix::val;
-
-		prismGrammar<std::string::const_iterator> grammar;
+		storm::ir::Program result;
+		prismGrammar<std::string::const_iterator> grammar(result);
 		std::string::const_iterator it = inputString.begin();
 		std::string::const_iterator end = inputString.end();
-		storm::ir::Program result;
 
-		int resultInt = 0;
-		std::string input = "asdf";
-		bool r = phrase_parse(it, end, grammar(phoenix::val(input)), ascii::space, resultInt);
+		storm::ir::Program realResult;
+		bool r = phrase_parse(it, end, grammar, ascii::space, realResult);
 
 		if (r && it == end) {
 			std::cout << "Parsing successful!" << std::endl;
+			std::cout << realResult.toString() << std::endl;
 		} else {
 			std::string rest(it, end);
 			std::cout << "-------------------------\n";
@@ -68,127 +60,146 @@ public:
 
 private:
 	template<typename Iterator>
-	struct prismGrammar : qi::grammar<Iterator, int(std::string), ascii::space_type> {
+	struct prismGrammar : qi::grammar<Iterator, storm::ir::Program(), ascii::space_type> {
 
-		prismGrammar() : prismGrammar::base_type(start) {
-			using qi::_val;
-			using qi::int_;
-			using qi::_r1;
-			using qi::_1;
-			using phoenix::ref;
+		prismGrammar(storm::ir::Program& program) : prismGrammar::base_type(start), program(program) {
+			freeIdentifierName %= qi::lexeme[(qi::alpha >> *(qi::alnum)) - allVariables_ - allConstants_];
 
-			// start = constantDefinitionList(phoenix::ref(qi::_r1), phoenix::ref(qi::_r1));
-			start = qi::lit(qi::_r1) >> int_;
-			constantDefinitionList = qi::int_;
-
-			variableDefinition %= (booleanVariableDefinition | integerVariableDefinition);
-			booleanVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("bool") >> qi::lit(";"))[phoenix::bind(booleanVariables_.add, qi::_1, phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(allVariables_.add, qi::_1, phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), qi::_val = phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)];
-			integerVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("[") >> integerConstantExpression >> qi::lit("..") >> integerConstantExpression >> qi::lit("]") >> qi::lit(";"))[phoenix::bind(integerVariables_.add, qi::_1, phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(allVariables_.add, qi::_1, phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), qi::_val = phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)];
-
-			constantDefinition %= (definedConstantDefinition | undefinedConstantDefinition);
-			definedConstantDefinition %= (definedBooleanConstantDefinition | definedIntegerConstantDefinition | definedDoubleConstantDefinition);
-			undefinedConstantDefinition %= (undefinedBooleanConstantDefinition | undefinedIntegerConstantDefinition | undefinedDoubleConstantDefinition);
-			definedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> freeIdentifierName >> qi::lit("=") >> booleanLiteralExpression >> qi::lit(";"))[phoenix::bind(booleanConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
-			definedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> freeIdentifierName >> qi::lit("=") >> integerLiteralExpression >> qi::lit(";"))[phoenix::bind(integerConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
-			definedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") >> freeIdentifierName >> qi::lit("=") >> doubleLiteralExpression >> qi::lit(";"))[phoenix::bind(doubleConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
-			undefinedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> freeIdentifierName >> qi::lit(";"))[phoenix::bind(booleanConstants_.add, qi::_1, phoenix::new_<storm::ir::expressions::BooleanConstantExpression>(qi::_1)), phoenix::bind(allConstants_.add, qi::_1, phoenix::new_<storm::ir::expressions::BooleanConstantExpression>(qi::_1)), qi::_val = phoenix::new_<storm::ir::expressions::BooleanConstantExpression>(qi::_1)];
-			undefinedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> freeIdentifierName >> qi::lit(";"))[phoenix::bind(integerConstants_.add, qi::_1, phoenix::new_<storm::ir::expressions::IntegerConstantExpression>(qi::_1)), phoenix::bind(allConstants_.add, qi::_1, phoenix::new_<storm::ir::expressions::IntegerConstantExpression>(qi::_1)), qi::_val = phoenix::new_<storm::ir::expressions::IntegerConstantExpression>(qi::_1)];
-			undefinedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") >> freeIdentifierName >> qi::lit(";"))[phoenix::bind(doubleConstants_.add, qi::_1, phoenix::new_<storm::ir::expressions::DoubleConstantExpression>(qi::_1)), phoenix::bind(allConstants_.add, qi::_1, phoenix::new_<storm::ir::expressions::DoubleConstantExpression>(qi::_1)), qi::_val = phoenix::new_<storm::ir::expressions::DoubleConstantExpression>(qi::_1)];
-
-			expression %= (booleanExpression | integerExpression | doubleExpression);
-
-			booleanExpression %= orExpression;
-			orExpression = andExpression[qi::_val = qi::_1] >> *(qi::lit("|") >> andExpression)[qi::_val = phoenix::new_<storm::ir::expressions::BinaryBooleanFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryBooleanFunctionExpression::OR)];
-			andExpression = atomicBooleanExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> atomicBooleanExpression)[qi::_val = phoenix::new_<storm::ir::expressions::BinaryBooleanFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryBooleanFunctionExpression::AND)];
-			atomicBooleanExpression %= (relativeExpression | booleanVariableExpression | qi::lit("(") >> booleanExpression >> qi::lit(")") | booleanLiteralExpression | booleanConstantExpression);
-			relativeExpression = (integerExpression >> relations_ >> integerExpression)[qi::_val = phoenix::new_<storm::ir::expressions::BinaryRelationExpression>(qi::_1, qi::_3, qi::_2)];
-
-			integerExpression %= integerPlusExpression;
-			integerPlusExpression = integerMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> integerMultExpression)[qi::_val = phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS)];
-			integerMultExpression %= atomicIntegerExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> atomicIntegerExpression)[qi::_val = phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES)];
-			atomicIntegerExpression %= (integerVariableExpression | qi::lit("(") >> integerExpression >> qi::lit(")") | integerConstantExpression);
-
-			doubleExpression %= doublePlusExpression;
-			doublePlusExpression = doubleMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> doubleMultExpression)[qi::_val = phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS)];
-			doubleMultExpression %= atomicDoubleExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> atomicDoubleExpression)[qi::_val = phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES)];
-			atomicDoubleExpression %= (qi::lit("(") >> doubleExpression >> qi::lit(")") | doubleConstantExpression);
-
+			booleanLiteralExpression = qi::bool_[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BooleanLiteral>(qi::_1))];
+			integerLiteralExpression = qi::int_[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::IntegerLiteral>(qi::_1))];
+			doubleLiteralExpression = qi::double_[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::DoubleLiteral>(qi::_1))];
 			literalExpression %= (booleanLiteralExpression | integerLiteralExpression | doubleLiteralExpression);
-			booleanLiteralExpression = qi::bool_[qi::_val = phoenix::new_<storm::ir::expressions::BooleanLiteral>(qi::_1)];
-			integerLiteralExpression = qi::int_[qi::_val = phoenix::new_<storm::ir::expressions::IntegerLiteral>(qi::_1)];
-			doubleLiteralExpression = qi::double_[qi::_val = phoenix::new_<storm::ir::expressions::DoubleLiteral>(qi::_1)];
 
-			constantExpression %= (booleanConstantExpression | integerConstantExpression | doubleConstantExpression);
+			integerVariableExpression = integerVariables_;
+			booleanVariableExpression = booleanVariables_;
+			variableExpression = (integerVariableExpression | booleanVariableExpression);
+
 			booleanConstantExpression %= (booleanConstants_ | booleanLiteralExpression);
 			integerConstantExpression %= (integerConstants_ | integerLiteralExpression);
 			doubleConstantExpression %= (doubleConstants_ | doubleLiteralExpression);
+			constantExpression %= (booleanConstantExpression | integerConstantExpression | doubleConstantExpression);
 
-			variableExpression = (integerVariableExpression | booleanVariableExpression);
-			integerVariableExpression = integerVariables_;
-			booleanVariableExpression = booleanVariables_;
+			atomicIntegerExpression %= (integerVariableExpression | qi::lit("(") >> integerExpression >> qi::lit(")") | integerConstantExpression);
+			integerMultExpression %= atomicIntegerExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> atomicIntegerExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES))];
+			integerPlusExpression = integerMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> integerMultExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS))];
+			integerExpression %= integerPlusExpression;
 
-			freeIdentifierName %= qi::lexeme[(qi::alpha >> *(qi::alnum)) - allVariables_ - allConstants_];
+			atomicDoubleExpression %= (qi::lit("(") >> doubleExpression >> qi::lit(")") | doubleConstantExpression);
+			doubleMultExpression %= atomicDoubleExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> atomicDoubleExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES))];
+			doublePlusExpression %= doubleMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> doubleMultExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS))];
+			doubleExpression %= doublePlusExpression;
+
+			relativeExpression = (integerExpression >> relations_ >> integerExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryRelationExpression>(qi::_1, qi::_3, qi::_2))];
+			atomicBooleanExpression %= (relativeExpression | booleanVariableExpression | qi::lit("(") >> booleanExpression >> qi::lit(")") | booleanLiteralExpression | booleanConstantExpression);
+			andExpression = atomicBooleanExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> atomicBooleanExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryBooleanFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryBooleanFunctionExpression::AND))];
+			orExpression = andExpression[qi::_val = qi::_1] >> *(qi::lit("|") >> andExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryBooleanFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryBooleanFunctionExpression::OR))];
+			booleanExpression %= orExpression;
+
+			expression %= (booleanExpression | integerExpression | doubleExpression);
+
+			booleanVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("bool") >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::BooleanVariable>(qi::_1), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(booleanVariables_.add, qi::_1, qi::_a), phoenix::bind(booleanVariableNames_.add, qi::_1, qi::_1), phoenix::bind(allVariables_.add, qi::_1, qi::_a)];
+			integerVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("[") >> integerConstantExpression >> qi::lit("..") >> integerConstantExpression >> qi::lit("]") >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::IntegerVariable>(qi::_1, qi::_2, qi::_3), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(integerVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableNames_.add, qi::_1, qi::_1), phoenix::bind(allVariables_.add, qi::_1, qi::_a), phoenix::bind(&storm::ir::IntegerVariable::setVariableName, qi::_val, qi::_1), phoenix::bind(&storm::ir::IntegerVariable::setLowerBound, qi::_val, qi::_2), phoenix::bind(&storm::ir::IntegerVariable::setUpperBound, qi::_val, qi::_3)];
+			variableDefinition = (booleanVariableDefinition[phoenix::bind(&storm::ir::Module::addBooleanVariable, qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::bind(&storm::ir::Module::addIntegerVariable, qi::_r1, qi::_1)]);
+
+			definedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> freeIdentifierName >> qi::lit("=") >> booleanLiteralExpression >> qi::lit(";"))[phoenix::bind(booleanConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
+			definedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> freeIdentifierName >> qi::lit("=") >> integerLiteralExpression >> qi::lit(";"))[phoenix::bind(integerConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
+			definedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") >> freeIdentifierName >> qi::lit("=") >> doubleLiteralExpression >> qi::lit(";"))[phoenix::bind(doubleConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
+			undefinedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> freeIdentifierName >> qi::lit(";"))[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>>(phoenix::new_<storm::ir::expressions::BooleanConstantExpression>(qi::_1)), phoenix::bind(booleanConstants_.add, qi::_1, qi::_val), phoenix::bind(allConstants_.add, qi::_1, qi::_val), phoenix::bind(&storm::ir::Program::addBooleanUndefinedConstantExpression, program, qi::_1, qi::_val)];
+			undefinedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> freeIdentifierName >> qi::lit(";"))[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>>(phoenix::new_<storm::ir::expressions::IntegerConstantExpression>(qi::_1)), phoenix::bind(integerConstants_.add, qi::_1, qi::_val), phoenix::bind(allConstants_.add, qi::_1, qi::_val), phoenix::bind(&storm::ir::Program::addIntegerUndefinedConstantExpression, program, qi::_1, qi::_val)];
+			undefinedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") >> freeIdentifierName >> qi::lit(";"))[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>>(phoenix::new_<storm::ir::expressions::DoubleConstantExpression>(qi::_1)), phoenix::bind(doubleConstants_.add, qi::_1, qi::_val), phoenix::bind(allConstants_.add, qi::_1, qi::_val), phoenix::bind(&storm::ir::Program::addDoubleUndefinedConstantExpression, program, qi::_1, qi::_val)];
+			definedConstantDefinition %= (definedBooleanConstantDefinition | definedIntegerConstantDefinition | definedDoubleConstantDefinition);
+			undefinedConstantDefinition %= (undefinedBooleanConstantDefinition | undefinedIntegerConstantDefinition | undefinedDoubleConstantDefinition);
+			constantDefinition %= (definedConstantDefinition | undefinedConstantDefinition);
+
+			constantDefinitionList = +constantDefinition;
+
+			integerVariableName %= integerVariableNames_;
+			booleanVariableName %= booleanVariableNames_;
+
+			assignmentDefinition = qi::lit("(") >> integerVariableName >> qi::lit("'") >> integerExpression >> qi::lit(")") | qi::lit("(") >> booleanVariableName >> qi::lit("'") >> booleanExpression >> qi::lit(")");
+			assignmentDefinitionList %= assignmentDefinition % "&";
+			updateDefinition %= doubleConstantExpression >> qi::lit(":") >> assignmentDefinitionList;
+			updateListDefinition = +updateDefinition;
+			commandDefinition %= qi::lit("[") >> freeIdentifierName >> qi::lit("]") >> booleanExpression >> qi::lit("->") >> updateListDefinition >> qi::lit(";");
+
+			moduleDefinition %= qi::lit("module") >> freeIdentifierName >> *variableDefinition(qi::_val) >> *commandDefinition >> qi::lit("endmodule");
+
+			moduleDefinitionList = +moduleDefinition;
+
+			start = constantDefinitionList >> moduleDefinitionList;
 		}
 
 		// The starting point of the grammar.
-		qi::rule<Iterator, int(std::string), ascii::space_type> start;
+		qi::rule<Iterator, storm::ir::Program(), ascii::space_type> start;
+		qi::rule<Iterator, qi::unused_type(), ascii::space_type> constantDefinitionList;
+		qi::rule<Iterator, std::vector<storm::ir::Module>(), ascii::space_type> moduleDefinitionList;
 
-		qi::rule<Iterator, int(), ascii::space_type> constantDefinitionList;
+		qi::rule<Iterator, storm::ir::Module(), ascii::space_type> moduleDefinition;
 
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> variableDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> booleanVariableDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> integerVariableDefinition;
+		qi::rule<Iterator, qi::unused_type(storm::ir::Module&), ascii::space_type> variableDefinition;
+		qi::rule<Iterator, storm::ir::BooleanVariable(), qi::locals<std::shared_ptr<storm::ir::expressions::VariableExpression>>, ascii::space_type> booleanVariableDefinition;
+		qi::rule<Iterator, storm::ir::IntegerVariable(), qi::locals<std::shared_ptr<storm::ir::expressions::VariableExpression>>, ascii::space_type> integerVariableDefinition;
 
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> constantDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> undefinedConstantDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> definedConstantDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> undefinedBooleanConstantDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> undefinedIntegerConstantDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> undefinedDoubleConstantDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> definedBooleanConstantDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> definedIntegerConstantDefinition;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> definedDoubleConstantDefinition;
+		qi::rule<Iterator, storm::ir::Command(), ascii::space_type> commandDefinition;
+
+		qi::rule<Iterator, std::vector<storm::ir::Update>(), ascii::space_type> updateListDefinition;
+		qi::rule<Iterator, storm::ir::Update(), ascii::space_type> updateDefinition;
+		qi::rule<Iterator, std::vector<storm::ir::Assignment>(), ascii::space_type> assignmentDefinitionList;
+		qi::rule<Iterator, storm::ir::Assignment(), ascii::space_type> assignmentDefinition;
+
+		qi::rule<Iterator, std::string(), ascii::space_type> integerVariableName;
+		qi::rule<Iterator, std::string(), ascii::space_type> booleanVariableName;
+
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> constantDefinition;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> undefinedConstantDefinition;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> definedConstantDefinition;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>(), ascii::space_type> undefinedBooleanConstantDefinition;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>(), ascii::space_type> undefinedIntegerConstantDefinition;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>(), ascii::space_type> undefinedDoubleConstantDefinition;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> definedBooleanConstantDefinition;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> definedIntegerConstantDefinition;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> definedDoubleConstantDefinition;
 
 		qi::rule<Iterator, std::string(), ascii::space_type> freeIdentifierName;
 
 		// The starting point for arbitrary expressions.
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> expression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> expression;
 
 		// Rules with boolean result type.
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> booleanExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> orExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> andExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> atomicBooleanExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> relativeExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> booleanExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> orExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> andExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> atomicBooleanExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> relativeExpression;
 
 		// Rules with integer result type.
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> integerExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> integerPlusExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> integerMultExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> atomicIntegerExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> integerExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> integerPlusExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> integerMultExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> atomicIntegerExpression;
 
 		// Rules with double result type.
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> doubleExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> doublePlusExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> doubleMultExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> atomicDoubleExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> doubleExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> doublePlusExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> doubleMultExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> atomicDoubleExpression;
 
 		// Rules for variable recognition.
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> variableExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> booleanVariableExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> integerVariableExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> variableExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> booleanVariableExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> integerVariableExpression;
 
 		// Rules for constant recognition.
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> constantExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> booleanConstantExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> integerConstantExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> doubleConstantExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> constantExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> booleanConstantExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> integerConstantExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> doubleConstantExpression;
 
 		// Rules for literal recognition.
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> literalExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> booleanLiteralExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> integerLiteralExpression;
-		qi::rule<Iterator, storm::ir::expressions::BaseExpression*(), ascii::space_type> doubleLiteralExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> literalExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> booleanLiteralExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> integerLiteralExpression;
+		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> doubleLiteralExpression;
 
 		struct keywordsStruct : qi::symbols<char, unsigned> {
 			keywordsStruct() {
@@ -222,17 +233,23 @@ private:
 			}
 		} relations_;
 
-		struct variablesStruct : qi::symbols<char, storm::ir::expressions::BaseExpression*> {
+		struct variablesStruct : qi::symbols<char, std::shared_ptr<storm::ir::expressions::BaseExpression>> {
 			// Intentionally left empty. This map is filled during parsing.
-		} integerVariables_, booleanVariables_, allVariables_ ;
+		} integerVariables_, booleanVariables_, allVariables_;
 
-		struct constantsStruct : qi::symbols<char, storm::ir::expressions::BaseExpression*> {
+		struct variableNamesStruct : qi::symbols<char, std::string> {
+			// Intentionally left empty. This map is filled during parsing.
+		} integerVariableNames_, booleanVariableNames_;
+
+		struct constantsStruct : qi::symbols<char, std::shared_ptr<storm::ir::expressions::BaseExpression>> {
 			// Intentionally left empty. This map is filled during parsing.
 		} integerConstants_, booleanConstants_, doubleConstants_, allConstants_;
 
 		struct modulesStruct : qi::symbols<char, unsigned> {
 			// Intentionally left empty. This map is filled during parsing.
 		} modules_;
+
+		storm::ir::Program& program;
 	};
 };
 

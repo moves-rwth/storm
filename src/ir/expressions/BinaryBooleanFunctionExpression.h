@@ -20,10 +20,10 @@ namespace expressions {
 class BinaryBooleanFunctionExpression : public BaseExpression {
 public:
 	enum FunctorType {AND, OR, XOR, IMPLIES} functor;
-	BaseExpression* left;
-	BaseExpression* right;
+	std::shared_ptr<storm::ir::expressions::BaseExpression> left;
+	std::shared_ptr<BaseExpression> right;
 
-	BinaryBooleanFunctionExpression(BaseExpression* left, BaseExpression* right, FunctorType functor) {
+	BinaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, FunctorType functor) {
 		this->left = left;
 		this->right = right;
 		this->functor = functor;
@@ -55,8 +55,8 @@ public:
 
 BOOST_FUSION_ADAPT_STRUCT(
     storm::ir::expressions::BinaryBooleanFunctionExpression,
-    (storm::ir::expressions::BaseExpression*, left)
-    (storm::ir::expressions::BaseExpression*, right)
+    (std::shared_ptr<storm::ir::expressions::BaseExpression>, left)
+    (std::shared_ptr<storm::ir::expressions::BaseExpression>, right)
     (storm::ir::expressions::BinaryBooleanFunctionExpression::FunctorType, functor)
 )
 

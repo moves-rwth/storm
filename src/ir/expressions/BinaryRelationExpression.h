@@ -18,11 +18,11 @@ namespace expressions {
 
 class BinaryRelationExpression : public BaseExpression {
 public:
-	BaseExpression* left;
-	BaseExpression* right;
+	std::shared_ptr<BaseExpression> left;
+	std::shared_ptr<BaseExpression> right;
 	enum RelationType {EQUAL, LESS, LESS_OR_EQUAL, GREATER, GREATER_OR_EQUAL} relation;
 
-	BinaryRelationExpression(BaseExpression* left, BaseExpression* right, RelationType relation) {
+	BinaryRelationExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, RelationType relation) {
 		this->left = left;
 		this->right = right;
 		this->relation = relation;
@@ -56,8 +56,8 @@ public:
 
 BOOST_FUSION_ADAPT_STRUCT(
     storm::ir::expressions::BinaryRelationExpression,
-    (storm::ir::expressions::BaseExpression*, left)
-    (storm::ir::expressions::BaseExpression*, right)
+    (std::shared_ptr<storm::ir::expressions::BaseExpression>, left)
+    (std::shared_ptr<storm::ir::expressions::BaseExpression>, right)
     (storm::ir::expressions::BinaryRelationExpression::RelationType, relation)
 )
 

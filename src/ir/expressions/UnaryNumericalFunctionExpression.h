@@ -18,10 +18,10 @@ namespace expressions {
 
 class UnaryNumericalFunctionExpression : public BaseExpression {
 public:
-	BaseExpression* child;
+	std::shared_ptr<BaseExpression> child;
 	enum FunctorType {MINUS} functor;
 
-	UnaryNumericalFunctionExpression(BaseExpression* child, FunctorType functor) {
+	UnaryNumericalFunctionExpression(std::shared_ptr<BaseExpression> child, FunctorType functor) {
 		this->child = child;
 		this->functor = functor;
 	}
@@ -49,7 +49,7 @@ public:
 
 BOOST_FUSION_ADAPT_STRUCT(
     storm::ir::expressions::UnaryNumericalFunctionExpression,
-    (storm::ir::expressions::BaseExpression*, child)
+    (std::shared_ptr<storm::ir::expressions::BaseExpression>, child)
     (storm::ir::expressions::UnaryNumericalFunctionExpression::FunctorType, functor)
 )
 

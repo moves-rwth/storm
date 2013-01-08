@@ -25,7 +25,7 @@
 #include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
 #include "src/parser/DtmcParser.h"
-#include "src/parser/PrctlParser.h"
+// #include "src/parser/PrctlParser.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/formula/Formulas.h"
@@ -111,7 +111,7 @@ bool parseOptions(const int argc, const char* argv[]) {
 		return false;
 	}
 	if (s->isSet("test-prctl")) {
-		storm::parser::PrctlParser parser(s->getString("test-prctl").c_str());
+		// storm::parser::PrctlParser parser(s->getString("test-prctl").c_str());
 		delete s;
 		return false;
 	}

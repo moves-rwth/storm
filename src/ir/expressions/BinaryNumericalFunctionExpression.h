@@ -18,11 +18,11 @@ namespace expressions {
 
 class BinaryNumericalFunctionExpression : public BaseExpression {
 public:
-	BaseExpression* left;
-	BaseExpression* right;
+	std::shared_ptr<BaseExpression> left;
+	std::shared_ptr<BaseExpression> right;
 	enum FunctorType {PLUS, MINUS, TIMES, DIVIDE} functor;
 
-	BinaryNumericalFunctionExpression(BaseExpression* left, BaseExpression* right, FunctorType functor) {
+	BinaryNumericalFunctionExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, FunctorType functor) {
 		this->left = left;
 		this->right = right;
 		this->functor = functor;
@@ -55,8 +55,8 @@ public:
 
 BOOST_FUSION_ADAPT_STRUCT(
     storm::ir::expressions::BinaryNumericalFunctionExpression,
-    (storm::ir::expressions::BaseExpression*, left)
-    (storm::ir::expressions::BaseExpression*, right)
+    (std::shared_ptr<storm::ir::expressions::BaseExpression>, left)
+    (std::shared_ptr<storm::ir::expressions::BaseExpression>, right)
     (storm::ir::expressions::BinaryNumericalFunctionExpression::FunctorType, functor)
 )
 
