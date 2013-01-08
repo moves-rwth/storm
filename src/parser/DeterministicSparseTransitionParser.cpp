@@ -32,13 +32,10 @@ namespace parser{
  *	non-zero cells and maximum node id.
  *
  *	This method does the first pass through the .tra file and computes
- *	the number of non-zero elements that are not diagonal elements,
- *	which correspondents to the number of transitions that are not
- *	self-loops.
- *	(Diagonal elements are treated in a special way).
+ *	the number of non-zero elements.
  *	It also calculates the maximum node id and stores it in maxnode.
  *
- *	@return The number of non-zero elements that are not on the diagonal
+ *	@return The number of non-zero elements
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
@@ -89,7 +86,8 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
 			return 0;
 		}
-		if (row == col) non_zero--;
+		// not needed anymore
+		//if (row == col) non_zero--;
 		buf = trimWhitespaces(tmp);
 	}
 

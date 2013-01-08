@@ -5,6 +5,7 @@
 #include <new>
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include "boost/integer/integer_mask.hpp"
 
 #include "src/exceptions/InvalidStateException.h"
@@ -31,8 +32,7 @@ namespace storm {
 namespace storage {
 
 /*!
- * A sparse matrix class with a constant number of non-zero entries on the non-diagonal fields
- * and a separate dense storage for the diagonal elements.
+ * A sparse matrix class with a constant number of non-zero entries.
  * NOTE: Addressing *is* zero-based, so the valid range for getValue and addNextValue is 0..(rows - 1)
  * where rows is the first argument to the constructor.
  */
@@ -73,9 +73,25 @@ public:
 	 * Constructs a sparse matrix object with the given number of rows.
 	 * @param rows The number of rows of the matrix
 	 */
-	SquareSparseMatrix(uint_fast64_t rows)
-			: rowCount(rows), nonZeroEntryCount(0), valueStorage(nullptr),
-			  diagonalStorage(nullptr),columnIndications(nullptr), rowIndications(nullptr),
+	SquareSparseMatrix(uint_fast64_t rows, uint_fast64_t cols)
+			: rowCount(rows), colCount(cols), nonZeroEntryCount(0),
+			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
+
+	/* Sadly, Delegate Constructors are not yet available with MSVC2012
+	//! Constructor
+	/*!
+	 * Constructs a square sparse matrix object with the given number rows
+	 * @param size The number of rows and cols in the matrix
+	 */ /*
+	SquareSparseMatrix(uint_fast64_t size) : SquareSparseMatrix(size, size) { }
+	*/
+
+	//! Constructor
+	/*!
+	 * Constructs a square sparse matrix object with the given number rows
+	 * @param size The number of rows and cols in the matrix
+	 */
+	SquareSparseMatrix(uint_fast64_t size) : rowCount(size), colCount(size), nonZeroEntryCount(0),
 			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
 
 	//! Copy Constructor
@@ -84,7 +100,7 @@ public:
 	 * @param ssm A reference to the matrix to be copied.
 	 */
 	SquareSparseMatrix(const SquareSparseMatrix<T> &ssm)
-			: rowCount(ssm.rowCount), nonZeroEntryCount(ssm.nonZeroEntryCount),
+			: rowCount(ssm.rowCount), colCount(ssm.colCount), nonZeroEntryCount(ssm.nonZeroEntryCount),
 			  internalStatus(ssm.internalStatus), currentSize(ssm.currentSize), lastRow(ssm.lastRow) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		// Check whether copying the matrix is safe.
@@ -98,24 +114,12 @@ public:
 				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
 				throw std::bad_alloc();
 			} else {
-				// Now that all storages have been prepared, copy over all
-				// elements. Start by copying the elements of type value and
-				// copy them seperately in order to invoke copy their copy
-				// constructor. This may not be necessary, but it is safer to
-				// do so in any case.
-				for (uint_fast64_t i = 0; i < nonZeroEntryCount; ++i) {
-					// use T() to force use of the copy constructor for complex T types
-					valueStorage[i] = T(ssm.valueStorage[i]);
-				}
-				for (uint_fast64_t i = 0; i < rowCount; ++i) {
-					// use T() to force use of the copy constructor for complex T types
-					diagonalStorage[i] = T(ssm.diagonalStorage[i]);
-				}
+				std::copy(ssm.valueStorage.begin(), ssm.valueStorage.end(), std::back_inserter(valueStorage));
 
 				// The elements that are not of the value type but rather the
 				// index type may be copied directly.
-				std::copy(ssm.columnIndications, ssm.columnIndications + nonZeroEntryCount, columnIndications);
-				std::copy(ssm.rowIndications, ssm.rowIndications + rowCount + 1, rowIndications);
+				std::copy(ssm.columnIndications.begin(), ssm.columnIndications.end(), std::back_inserter(columnIndications));
+				std::copy(ssm.rowIndications.begin(), ssm.rowIndications.end(), std::back_inserter(rowIndications));
 			}
 		}
 	}
@@ -126,18 +130,9 @@ public:
 	 */
 	~SquareSparseMatrix() {
 		setState(MatrixStatus::UnInitialized);
-		if (valueStorage != nullptr) {
-			delete[] valueStorage;
-		}
-		if (columnIndications != nullptr) {
-			delete[] columnIndications;
-		}
-		if (rowIndications != nullptr) {
-			delete[] rowIndications;
-		}
-		if (diagonalStorage != nullptr) {
-			delete[] diagonalStorage;
-		}
+		valueStorage.resize(0);
+		columnIndications.resize(0);
+		rowIndications.resize(0);
 	}
 
 	/*!
@@ -155,11 +150,11 @@ public:
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize matrix that is not uninitialized.");
 			throw storm::exceptions::InvalidStateException("Trying to initialize matrix that is not uninitialized.");
-		} else if (rowCount == 0) {
+		} else if ((rowCount == 0) || (colCount == 0)) {
 			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to create initialize a matrix with 0 rows.");
-			throw storm::exceptions::InvalidArgumentException("Trying to create initialize a matrix with 0 rows.");
-		} else if (((rowCount * rowCount) - rowCount) < nonZeroEntries) {
+			LOG4CPLUS_ERROR(logger, "Trying to create initialize a matrix with 0 rows or 0 columns.");
+			throw storm::exceptions::InvalidArgumentException("Trying to create initialize a matrix with 0 rows or 0 columns.");
+		} else if ((rowCount * colCount) < nonZeroEntries) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize a matrix with more non-zero entries than there can be.");
 			throw storm::exceptions::InvalidArgumentException("Trying to initialize a matrix with more non-zero entries than there can be.");
@@ -196,37 +191,72 @@ public:
 			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that is not in compressed form.");
 		}
 
-		// Compute the actual (i.e. non-diagonal) number of non-zero entries.
-		nonZeroEntryCount = getEigenSparseMatrixCorrectNonZeroEntryCount(eigenSparseMatrix);
+		if (eigenSparseMatrix.rows() > this->rowCount) {
+			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that has more rows than the target matrix.");
+			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that has more rows than the target matrix.");
+		}
+		if (eigenSparseMatrix.cols() > this->colCount) {
+			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that has more columns than the target matrix.");
+			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that has more columns than the target matrix.");
+		}
+
+		const _Index entryCount = eigenSparseMatrix.nonZeros();
+		nonZeroEntryCount = entryCount;
 		lastRow = 0;
 
 		// Try to prepare the internal storage and throw an error in case of
 		// failure.
-		if (!prepareInternalStorage()) {
-			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
-			throw std::bad_alloc();
-		} else {
-			// Get necessary pointers to the contents of the Eigen matrix.
-			const T* valuePtr = eigenSparseMatrix.valuePtr();
-			const _Index* indexPtr = eigenSparseMatrix.innerIndexPtr();
-			const _Index* outerPtr = eigenSparseMatrix.outerIndexPtr();
+		
+		// Get necessary pointers to the contents of the Eigen matrix.
+		const T* valuePtr = eigenSparseMatrix.valuePtr();
+		const _Index* indexPtr = eigenSparseMatrix.innerIndexPtr();
+		const _Index* outerPtr = eigenSparseMatrix.outerIndexPtr();
 
-			// If the given matrix is in RowMajor format, copying can simply
-			// be done by adding all values in order.
-			// Direct copying is, however, prevented because we have to
-			// separate the diagonal entries from others.
-			if (isEigenRowMajor(eigenSparseMatrix)) {
-				// Because of the RowMajor format outerSize evaluates to the
-				// number of rows.
-				const _Index rowCount = eigenSparseMatrix.outerSize();
-				for (_Index row = 0; row < rowCount; ++row) {
-					for (_Index col = outerPtr[row]; col < outerPtr[row + 1]; ++col) {
-						addNextValue(row, indexPtr[col], valuePtr[col]);
-					}
-				}
+		// If the given matrix is in RowMajor format, copying can simply
+		// be done by adding all values in order.
+		// Direct copying is, however, prevented because we have to
+		// separate the diagonal entries from others.
+		if (isEigenRowMajor(eigenSparseMatrix)) {
+			// Because of the RowMajor format outerSize evaluates to the
+			// number of rows.
+			if (!prepareInternalStorage(false)) {
+				triggerErrorState();
+				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
+				throw std::bad_alloc();
 			} else {
-				const _Index entryCount = eigenSparseMatrix.nonZeros();
+				if ((eigenSparseMatrix.innerSize() > nonZeroEntryCount) || (entryCount > nonZeroEntryCount)) {
+					triggerErrorState();
+					LOG4CPLUS_ERROR(logger, "Invalid internal composition of Eigen Sparse Matrix");
+					throw storm::exceptions::InvalidArgumentException("Invalid internal composition of Eigen Sparse Matrix");
+				}
+				std::vector<uint_fast64_t> eigenColumnTemp;
+				std::vector<uint_fast64_t> eigenRowTemp;
+				std::vector<T> eigenValueTemp;
+				uint_fast64_t outerSize = eigenSparseMatrix.outerSize() + 1;
+
+				for (uint_fast64_t i = 0; i < entryCount; ++i) {
+					eigenColumnTemp.push_back(indexPtr[i]);
+					eigenValueTemp.push_back(valuePtr[i]);
+				}
+				for (uint_fast64_t i = 0; i < outerSize; ++i) {
+					eigenRowTemp.push_back(outerPtr[i]);
+				}
+
+				std::copy(eigenRowTemp.begin(), eigenRowTemp.end(), std::back_inserter(this->rowIndications));
+				std::copy(eigenColumnTemp.begin(), eigenColumnTemp.end(), std::back_inserter(this->columnIndications));
+				std::copy(eigenValueTemp.begin(), eigenValueTemp.end(), std::back_inserter(this->valueStorage));
+
+				currentSize = entryCount;
+				lastRow = rowCount;
+			}
+		} else {
+			if (!prepareInternalStorage()) {
+				triggerErrorState();
+				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
+				throw std::bad_alloc();
+			} else {
 				// Because of the ColMajor format outerSize evaluates to the
 				// number of columns.
 				const _Index colCount = eigenSparseMatrix.outerSize();
@@ -250,8 +280,7 @@ public:
 					// add it in case it is also in the current row.
 					if ((positions[currentColumn] < outerPtr[currentColumn + 1])
 							&& (indexPtr[positions[currentColumn]] == currentRow)) {
-						addNextValue(currentRow, currentColumn,
-								valuePtr[positions[currentColumn]]);
+						addNextValue(currentRow, currentColumn,	valuePtr[positions[currentColumn]]);
 						// Remember that we found one more non-zero element.
 						++i;
 						// Mark this position as "used".
@@ -268,8 +297,8 @@ public:
 				}
 				delete[] positions;
 			}
-			setState(MatrixStatus::Initialized);
 		}
+		setState(MatrixStatus::Initialized);
 	}
 
 	/*!
@@ -283,30 +312,27 @@ public:
 	void addNextValue(const uint_fast64_t row, const uint_fast64_t col,	const T& value) {
 		// Check whether the given row and column positions are valid and throw
 		// error otherwise.
-		if ((row > rowCount) || (col > rowCount)) {
+		if ((row > rowCount) || (col > colCount)) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ").");
 			throw storm::exceptions::OutOfRangeException("Trying to add a value at illegal position.");
 		}
 
-		if (row == col) { // Set a diagonal element.
-			diagonalStorage[row] = value;
-		} else { // Set a non-diagonal element.
-			// If we switched to another row, we have to adjust the missing
-			// entries in the row_indications array.
-			if (row != lastRow) {
-				for (uint_fast64_t i = lastRow + 1; i <= row; ++i) {
-					rowIndications[i] = currentSize;
-				}
-				lastRow = row;
+		
+		// If we switched to another row, we have to adjust the missing
+		// entries in the row_indications array.
+		if (row != lastRow) {
+			for (uint_fast64_t i = lastRow + 1; i <= row; ++i) {
+				rowIndications[i] = currentSize;
 			}
-
-			// Finally, set the element and increase the current size.
-			valueStorage[currentSize] = value;
-			columnIndications[currentSize] = col;
-
-			++currentSize;
+			lastRow = row;
 		}
+
+		// Finally, set the element and increase the current size.
+		valueStorage[currentSize] = value;
+		columnIndications[currentSize] = col;
+
+		++currentSize;
 	}
 
 	/*
@@ -355,16 +381,10 @@ public:
 	 */
 	inline bool getValue(uint_fast64_t row, uint_fast64_t col, T* const target) const {
 		// Check for illegal access indices.
-		if ((row > rowCount) || (col > rowCount)) {
+		if ((row > rowCount) || (col > colCount)) {
 			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
 			throw storm::exceptions::OutOfRangeException("Trying to read a value from illegal position.");
 			return false;
-		}
-
-		// Read elements on the diagonal directly.
-		if (row == col) {
-			*target = diagonalStorage[row];
-			return true;
 		}
 
 		// In case the element is not on the diagonal, we have to iterate
@@ -405,17 +425,12 @@ public:
 	 */
 	inline T& getValue(uint_fast64_t row, uint_fast64_t col) {
 		// Check for illegal access indices.
-		if ((row > rowCount) || (col > rowCount)) {
+		if ((row > rowCount) || (col > colCount)) {
 			LOG4CPLUS_ERROR(logger, "Trying to read a value from illegal position (" << row << ", " << col << ").");
 			throw storm::exceptions::OutOfRangeException("Trying to read a value from illegal position.");
 		}
 
-		// Read elements on the diagonal directly.
-		if (row == col) {
-			return diagonalStorage[row];
-		}
-
-		// In case the element is not on the diagonal, we have to iterate
+		// we have to iterate
 		// over the accessed row to find the element.
 		uint_fast64_t rowStart = rowIndications[row];
 		uint_fast64_t rowEnd = rowIndications[row + 1];
@@ -445,20 +460,18 @@ public:
 	}
 
 	/*!
-	 * Returns a pointer to the value storage of the matrix. This storage does
-	 * *not* include elements on the diagonal.
-	 * @return A pointer to the value storage of the matrix.
+	 * Returns the number of columns of the matrix.
 	 */
-	T* getStoragePointer() const {
-		return valueStorage;
+	uint_fast64_t getColumnCount() const {
+		return colCount;
 	}
 
 	/*!
-	 * Returns a pointer to the storage of elements on the diagonal.
-	 * @return A pointer to the storage of elements on the diagonal.
+	 * Returns a pointer to the value storage of the matrix.
+	 * @return A pointer to the value storage of the matrix.
 	 */
-	T* getDiagonalStoragePointer() const {
-		return diagonalStorage;
+	std::vector<T>& getStoragePointer() {
+		return valueStorage;
 	}
 
 	/*!
@@ -467,17 +480,17 @@ public:
 	 * @return A pointer to the array that stores the start indices of non-zero
 	 * entries in the value storage for each row.
 	 */
-	uint_fast64_t* getRowIndicationsPointer() const {
+	std::vector<uint_fast64_t>& getRowIndicationsPointer() {
 		return rowIndications;
 	}
 
 	/*!
 	 * Returns a pointer to an array that stores the column of each non-zero
-	 * element that is not on the diagonal.
+	 * element.
 	 * @return A pointer to an array that stores the column of each non-zero
-	 * element that is not on the diagonal.
+	 * element.
 	 */
-	uint_fast64_t* getColumnIndicationsPointer() const {
+	std::vector<uint_fast64_t>& getColumnIndicationsPointer() {
 		return columnIndications;
 	}
 
@@ -548,10 +561,6 @@ public:
 #define STORM_USE_TRIPLETCONVERT
 #			ifdef STORM_USE_TRIPLETCONVERT
 
-			// FIXME: Wouldn't it be more efficient to add the elements in
-			// order including the diagonal elements? Otherwise, Eigen has to
-			// perform some sorting.
-
 			// Prepare the triplet storage.
 			typedef Eigen::Triplet<T> IntTriplet;
 			std::vector<IntTriplet> tripletList;
@@ -572,12 +581,6 @@ public:
 				}
 			}
 
-			// Then add the elements on the diagonal.
-			for (uint_fast64_t i = 0; i < rowCount; ++i) {
-				if (diagonalStorage[i] == 0) zeroCount++;
-				tripletList.push_back(IntTriplet(static_cast<int_fast32_t>(i), static_cast<int_fast32_t>(i), diagonalStorage[i]));
-			}
-
 			// Let Eigen create a matrix from the given list of triplets.
 			mat->setFromTriplets(tripletList.begin(), tripletList.end());
 
@@ -595,10 +598,6 @@ public:
 			for (uint_fast64_t row = 0; row < rowCount; ++row) {
 				rowStart = rowIndications[row];
 				rowEnd = rowIndications[row + 1];
-
-				// Insert the element on the diagonal.
-				mat->insert(row, row) = diagonalStorage[row];
-				count++;
 
 				// Insert the elements that are not on the diagonal
 				while (rowStart < rowEnd) {
@@ -629,19 +628,6 @@ public:
 	}
 
 	/*!
-	 * Returns the number of non-zero entries on the diagonal.
-	 * @return The number of non-zero entries on the diagonal.
-	 */
-	uint_fast64_t getDiagonalNonZeroEntryCount() const {
-		uint_fast64_t result = 0;
-		T zero(0);
-		for (uint_fast64_t i = 0; i < rowCount; ++i) {
-			if (diagonalStorage[i] != zero) ++result;
-		}
-		return result;
-	}
-
-	/*!
 	 * This function makes the rows given by the bit vector absorbing.
 	 * @param rows A bit vector indicating which rows to make absorbing.
 	 * @return True iff the operation was successful.
@@ -658,7 +644,7 @@ public:
 	/*!
 	 * This function makes the given row absorbing. This means that all
 	 * entries in will be set to 0 and the value 1 will be written
-	 * to the element on the diagonal.
+	 * to the element on the (pseudo-) diagonal.
 	 * @param row The row to be made absorbing.
 	 * @returns True iff the operation was successful.
 	 */
@@ -675,13 +661,31 @@ public:
 		uint_fast64_t rowStart = rowIndications[row];
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 
+		if (rowStart >= rowEnd) {
+			LOG4CPLUS_ERROR(logger, "The row " << row << " can not be made absorbing, no state in row, would have to recreate matrix!");
+			throw storm::exceptions::InvalidStateException("A row can not be made absorbing, no state in row, would have to recreate matrix!");
+		}
+		uint_fast64_t pseudoDiagonal = row % colCount;
+
+		bool foundDiagonal = false;
 		while (rowStart < rowEnd) {
-			valueStorage[rowStart] = storm::utility::constGetZero<T>();
+			if (!foundDiagonal && columnIndications[rowStart] >= pseudoDiagonal) {
+				foundDiagonal = true;
+				// insert/replace the diagonal entry
+				columnIndications[rowStart] = pseudoDiagonal;
+				valueStorage[rowStart] = storm::utility::constGetOne<T>();
+			} else {
+				valueStorage[rowStart] = storm::utility::constGetZero<T>();
+			}
 			++rowStart;
 		}
 
-		// Set the element on the diagonal to one.
-		diagonalStorage[row] = storm::utility::constGetOne<T>();
+		if (!foundDiagonal) {
+			--rowStart;
+			columnIndications[rowStart] = pseudoDiagonal;
+			valueStorage[rowStart] = storm::utility::constGetOne<T>();
+		}
+
 		return true;
 	}
 
@@ -763,8 +767,6 @@ public:
 		// Copy over selected entries.
 		uint_fast64_t rowCount = 0;
 		for (auto rowIndex : constraint) {
-			result->addNextValue(rowCount, rowCount, diagonalStorage[rowIndex]);
-
 			for (uint_fast64_t i = rowIndications[rowIndex]; i < rowIndications[rowIndex + 1]; ++i) {
 				if (constraint.get(columnIndications[i])) {
 					result->addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[i]], valueStorage[i]);
@@ -794,8 +796,17 @@ public:
 	 */
 	void invertDiagonal() {
 		T one(1);
-		for (uint_fast64_t i = 0; i < rowCount; ++i) {
-			diagonalStorage[i] = one - diagonalStorage[i];
+		for (uint_fast64_t row = 0; row < rowCount; ++row) {
+			uint_fast64_t rowStart = rowIndications[row];
+			uint_fast64_t rowEnd = rowIndications[row + 1];
+			uint_fast64_t pseudoDiagonal = row % colCount;
+			while (rowStart < rowEnd) {
+				if (columnIndications[rowStart] == pseudoDiagonal) {
+					valueStorage[rowStart] = one - valueStorage[rowStart];
+					break;
+				}
+				++rowStart;
+			}
 		}
 	}
 
@@ -803,8 +814,16 @@ public:
 	 * Negates all non-zero elements that are not on the diagonal.
 	 */
 	void negateAllNonDiagonalElements() {
-		for (uint_fast64_t i = 0; i < nonZeroEntryCount; ++i) {
-			valueStorage[i] = - valueStorage[i];
+		for (uint_fast64_t row = 0; row < rowCount; ++row) {
+			uint_fast64_t rowStart = rowIndications[row];
+			uint_fast64_t rowEnd = rowIndications[row + 1];
+			uint_fast64_t pseudoDiagonal = row % colCount;
+			while (rowStart < rowEnd) {
+				if (columnIndications[rowStart] != pseudoDiagonal) {
+					valueStorage[rowStart] = - valueStorage[rowStart];
+				}
+				++rowStart;
+			}
 		}
 	}
 
@@ -844,7 +863,6 @@ public:
 		// in case the given matrix does not have a non-zero element at this column position, or
 		// multiply the two entries and add the result to the corresponding position in the vector.
 		for (uint_fast64_t row = 0; row < rowCount && row < otherMatrix.rowCount; ++row) {
-			(*result)[row] += diagonalStorage[row] * otherMatrix.diagonalStorage[row];
 			for (uint_fast64_t element = rowIndications[row], nextOtherElement = otherMatrix.rowIndications[row]; element < rowIndications[row + 1] && nextOtherElement < otherMatrix.rowIndications[row + 1]; ++element) {
 				if (columnIndications[element] < otherMatrix.columnIndications[nextOtherElement]) {
 					continue;
@@ -868,25 +886,23 @@ public:
 	uint_fast64_t getSizeInMemory() const {
 		uint_fast64_t size = sizeof(*this);
 		// Add value_storage size.
-		size += sizeof(T) * nonZeroEntryCount;
-		// Add diagonal_storage size.
-		size += sizeof(T) * (rowCount + 1);
+		size += sizeof(T) * valueStorage.capacity();
 		// Add column_indications size.
-		size += sizeof(uint_fast64_t) * nonZeroEntryCount;
+		size += sizeof(uint_fast64_t) * columnIndications.capacity();
 		// Add row_indications size.
-		size += sizeof(uint_fast64_t) * (rowCount + 1);
+		size += sizeof(uint_fast64_t) * rowIndications.capacity();
 		return size;
 	}
 
 	/*!
 	 * Returns an iterator to the columns of the non-zero entries of the given
-	 * row that are not on the diagonal.
+	 * row.
 	 * @param row The row whose columns the iterator will return.
 	 * @return An iterator to the columns of the non-zero entries of the given
-	 * row that are not on the diagonal.
+	 * row.
 	 */
-	constIndexIterator beginConstColumnNoDiagIterator(uint_fast64_t row) const {
-		return this->columnIndications + this->rowIndications[row];
+	constIndexIterator beginConstColumnIterator(uint_fast64_t row) const {
+		return &(this->columnIndications[0]) + this->rowIndications[row];
 	}
 
 	/*!
@@ -894,18 +910,18 @@ public:
 	 * @param row The row for which the iterator should point to the past-the-end
 	 * element.
 	 */
-	constIndexIterator endConstColumnNoDiagIterator(uint_fast64_t row) const {
-		return this->columnIndications + this->rowIndications[row + 1];
+	constIndexIterator endConstColumnIterator(uint_fast64_t row) const {
+		return &(this->columnIndications[0]) + this->rowIndications[row + 1];
 	}
 	
 	/*!
 	 *	Returns an iterator over the elements of the given row. The iterator
-	 *	will include neither the diagonal element nor zero entries.
+	 *	will include no zero entries.
 	 *	@param row The row whose elements the iterator will return.
 	 *	@return An iterator over the elements of the given row.
 	 */
-	constIterator beginConstNoDiagIterator(uint_fast64_t row) const {
-		return this->valueStorage + this->rowIndications[row];
+	constIterator beginConstIterator(uint_fast64_t row) const {
+		return &(this->valueStorage[0]) + this->rowIndications[row];
 	}
 	/*!
 	 *	Returns an iterator pointing to the first element after the given
@@ -914,32 +930,28 @@ public:
 	 *	past-the-end element.
 	 *	@return An iterator to the element after the given row.
 	 */
-	constIterator endConstNoDiagIterator(uint_fast64_t row) const {
-		return this->valueStorage + this->rowIndications[row + 1];
+	constIterator endConstIterator(uint_fast64_t row) const {
+		return &(this->valueStorage[0]) + this->rowIndications[row + 1];
 	}
 	
 	/*!
 	 *	@brief Calculate sum of all entries in given row.
 	 *
-	 *	Adds up all values in the given row (including the diagonal value)
+	 *	Adds up all values in the given row
 	 *	and returns the sum.
 	 *	@param row The row that should be added up.
 	 *	@return Sum of the row.
 	 */
 	T getRowSum(uint_fast64_t row) const {
-		T sum = this->diagonalStorage[row];
-		for (auto it = this->beginConstNoDiagIterator(row); it != this->endConstNoDiagIterator(row); it++) {
+		T sum = storm::utility::constGetZero<T>();
+		for (auto it = this->beginConstIterator(row); it != this->endConstIterator(row); it++) {
 			sum += *it;
 		}
 		return sum;
 	}
 
 	void print() const {
-		std::cout << "diag: --------------------------------" << std::endl;
-		for (uint_fast64_t i = 0; i < rowCount; ++i) {
-			std::cout << "(" << i << "," << i << ") = " << diagonalStorage[i] << std::endl;
-		}
-		std::cout << "non diag: ----------------------------" << std::endl;
+		std::cout << "entries: ----------------------------" << std::endl;
 		for (uint_fast64_t i = 0; i < rowCount; ++i) {
 			for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
 				std::cout << "(" << i << "," << columnIndications[j] << ") = " << valueStorage[j] << std::endl;
@@ -955,31 +967,31 @@ private:
 	uint_fast64_t rowCount;
 
 	/*!
-	 * The number of non-zero elements that are not on the diagonal.
+	 * The number of columns of the matrix.
+	 */
+	uint_fast64_t colCount;
+
+	/*!
+	 * The number of non-zero elements.
 	 */
 	uint_fast64_t nonZeroEntryCount;
 
 	/*!
-	 * Stores all non-zero values that are not on the diagonal.
+	 * Stores all non-zero values.
 	 */
-	T* valueStorage;
+	std::vector<T> valueStorage;
 
 	/*!
-	 * Stores all elements on the diagonal, even the ones that are zero.
+	 * Stores the column for each non-zero element.
 	 */
-	T* diagonalStorage;
+	std::vector<uint_fast64_t> columnIndications;
 
 	/*!
-	 * Stores the column for each non-zero element that is not on the diagonal.
-	 */
-	uint_fast64_t* columnIndications;
-
-	/*!
-	 * Array containing the boundaries (indices) in the value_storage array
+	 * Vector containing the boundaries (indices) in the value_storage array
 	 * for each row. All elements of value_storage with indices between the
 	 * i-th and the (i+1)-st element of this array belong to row i.
 	 */
-	uint_fast64_t* rowIndications;
+	std::vector<uint_fast64_t> rowIndications;
 
 	/*!
 	 * The internal status of the matrix.
@@ -1017,24 +1029,37 @@ private:
 	/*!
 	 * Prepares the internal CSR storage. For this, it requires
 	 * non_zero_entry_count and row_count to be set correctly.
+	 * @param alsoPerformAllocation If set to true, all entries are pre-allocated. This is the default.
 	 * @return True on success, false otherwise (allocation failed).
 	 */
+	bool prepareInternalStorage(const bool alsoPerformAllocation) {
+		if (alsoPerformAllocation) {
+			// Set up the arrays for the elements that are not on the diagonal.
+			valueStorage.resize(nonZeroEntryCount, storm::utility::constGetZero<T>());
+			columnIndications.resize(nonZeroEntryCount, 0);
+
+			// Set up the row_indications vector and reserve one element more than
+			// there are rows in order to put a sentinel element at the end,
+			// which eases iteration process.
+			rowIndications.resize(rowCount + 1, 0);
+
+			// Return whether all the allocations could be made without error.
+			return ((valueStorage.capacity() >= nonZeroEntryCount) && (columnIndications.capacity() >= nonZeroEntryCount)
+				&& (rowIndications.capacity() >= (rowCount + 1)));
+		} else {
+			valueStorage.reserve(nonZeroEntryCount);
+			columnIndications.reserve(nonZeroEntryCount);
+			rowIndications.reserve(rowCount + 1);
+			return true;
+		}
+	}
+
+	/*!
+	 * Shorthand for prepareInternalStorage(true)
+	 * @see prepareInternalStorage(const bool)
+	 */
 	bool prepareInternalStorage() {
-		// Set up the arrays for the elements that are not on the diagonal.
-		valueStorage = new (std::nothrow) T[nonZeroEntryCount]();
-		columnIndications = new (std::nothrow) uint_fast64_t[nonZeroEntryCount]();
-
-		// Set up the row_indications array and reserve one element more than
-		// there are rows in order to put a sentinel element at the end,
-		// which eases iteration process.
-		rowIndications = new (std::nothrow) uint_fast64_t[rowCount + 1]();
-
-		// Set up the array for the elements on the diagonal.
-		diagonalStorage = new (std::nothrow) T[rowCount]();
-
-		// Return whether all the allocations could be made without error.
-		return ((valueStorage != NULL) && (columnIndications != NULL)
-				&& (rowIndications != NULL) && (diagonalStorage != NULL));
+		return this->prepareInternalStorage(true);
 	}
 
 	/*!
@@ -1058,53 +1083,6 @@ private:
 	bool isEigenRowMajor(
 			Eigen::SparseMatrix<_Scalar, Eigen::ColMajor, _Index>) {
 		return false;
-	}
-
-	/*!
-	 * Helper function to determine the number of non-zero elements that are
-	 * not on the diagonal of the given Eigen matrix.
-	 * @param eigen_sparse_matrix The Eigen matrix to analyze.
-	 * @return The number of non-zero elements that are not on the diagonal of
-	 * the given Eigen matrix.
-	 */
-	template<typename _Scalar, int _Options, typename _Index>
-	_Index getEigenSparseMatrixCorrectNonZeroEntryCount(const Eigen::SparseMatrix<_Scalar, _Options, _Index>& eigen_sparse_matrix) const {
-		const _Index* indexPtr = eigen_sparse_matrix.innerIndexPtr();
-		const _Index* outerPtr = eigen_sparse_matrix.outerIndexPtr();
-
-		const _Index entryCount = eigen_sparse_matrix.nonZeros();
-		const _Index outerCount = eigen_sparse_matrix.outerSize();
-
-		uint_fast64_t diagNonZeros = 0;
-
-		// For RowMajor, row is the current row and col the column and for
-		// ColMajor, row is the current column and col the row, but this is
-		// not important as we are only looking for elements on the diagonal.
-		_Index innerStart = 0;
-		_Index innerEnd = 0;
-		_Index innerMid = 0;
-		for (_Index row = 0; row < outerCount; ++row) {
-			innerStart = outerPtr[row];
-			innerEnd = outerPtr[row + 1] - 1;
-
-			// Now use binary search (but defer equality detection).
-			while (innerStart < innerEnd) {
-				innerMid = innerStart + ((innerEnd - innerStart) / 2);
-
-				if (indexPtr[innerMid] < row) {
-					innerStart = innerMid + 1;
-				} else {
-					innerEnd = innerMid;
-				}
-			}
-
-			// Check whether we have found an element on the diagonal.
-			if ((innerStart == innerEnd) && (indexPtr[innerStart] == row)) {
-				++diagNonZeros;
-			}
-		}
-
-		return static_cast<_Index>(entryCount - diagNonZeros);
 	}
 
 };

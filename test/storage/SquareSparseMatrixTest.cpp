@@ -116,11 +116,7 @@ TEST(SquareSparseMatrixTest, Test) {
 	for (int row = 15; row < 24; ++row) {
 		for (int col = 1; col <= 25; ++col) {
 		   target = 1;
-		   if (row != col) {
-		      ASSERT_FALSE(ssm->getValue(row, col, &target));
-		   } else {
-		      ASSERT_TRUE(ssm->getValue(row, col, &target));
-		   }
+		   ASSERT_FALSE(ssm->getValue(row, col, &target));
 
 		   ASSERT_EQ(0, target);
 		}
@@ -245,7 +241,7 @@ TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_ColMajor_SparseMatrixTest
 
 TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest) {
 	// 10 rows, 15 non zero entries
-	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(10);
+	storm::storage::SquareSparseMatrix<int> *ssm = new storm::storage::SquareSparseMatrix<int>(10, 10);
 	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::UnInitialized);
 
 	Eigen::SparseMatrix<int, Eigen::RowMajor> esm(10, 10);
@@ -253,7 +249,7 @@ TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest
 	typedef Eigen::Triplet<int> IntTriplet;
 	std::vector<IntTriplet> tripletList;
 	tripletList.reserve(15);
-	tripletList.push_back(IntTriplet(1, 0, 0));
+	tripletList.push_back(IntTriplet(1, 0, 15));
 	tripletList.push_back(IntTriplet(1, 1, 1));
 	tripletList.push_back(IntTriplet(1, 2, 2));
 	tripletList.push_back(IntTriplet(1, 3, 3));
@@ -281,11 +277,15 @@ TEST(SquareSparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest
 	ASSERT_NO_THROW(ssm->finalize());
 
 	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::ReadReady);
+	
+	const std::vector<uint_fast64_t> rowP = ssm->getRowIndicationsPointer();
+	const std::vector<uint_fast64_t> colP = ssm->getColumnIndicationsPointer();
+	const std::vector<int> valP = ssm->getStoragePointer();
 
 	int target = -1;
-
 	for (auto &coeff: tripletList) {
-		ASSERT_TRUE(ssm->getValue(coeff.row(), coeff.col(), &target));
+		bool retVal = ssm->getValue(coeff.row(), coeff.col(), &target);
+		ASSERT_TRUE(retVal);
 		ASSERT_EQ(target, coeff.value());
 	}
 	
@@ -300,7 +300,7 @@ TEST(SquareSparseMatrixTest, ConversionToSparseEigen_RowMajor_SparseMatrixTest) 
 		values[i] = i;
 	}
 
-	ASSERT_NO_THROW(ssm->initialize(100 - 10));
+	ASSERT_NO_THROW(ssm->initialize(100));
 	ASSERT_EQ(ssm->getState(), storm::storage::SquareSparseMatrix<int>::MatrixStatus::Initialized);
 
 	for (uint_fast32_t row = 0; row < 10; ++row) {

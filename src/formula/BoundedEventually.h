@@ -120,7 +120,7 @@ public:
 		BoundedEventually<T>* result = new BoundedEventually<T>();
 		result->setBound(bound);
 		if (child != nullptr) {
-			result->setRight(child->clone());
+			result->setChild(child->clone());
 		}
 		return result;
 	}

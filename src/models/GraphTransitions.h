@@ -93,12 +93,12 @@ private:
 
 		// First, we copy the index list from the sparse matrix as this will
 		// stay the same.
-		std::copy(transitionMatrix->getRowIndicationsPointer(), transitionMatrix->getRowIndicationsPointer() + numberOfStates + 1, this->stateIndications);
+		std::copy(transitionMatrix->getRowIndicationsPointer().begin(), transitionMatrix->getRowIndicationsPointer().end(), this->stateIndications);
 
 		// Now we can iterate over all rows of the transition matrix and record
 		// the target state.
 		for (uint_fast64_t i = 0, currentNonZeroElement = 0; i < numberOfStates; i++) {
-			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix->beginConstColumnIterator(i); rowIt != transitionMatrix->endConstColumnIterator(i); ++rowIt) {
 				this->stateIndications[currentNonZeroElement++] = *rowIt;
 			}
 		}
@@ -117,7 +117,7 @@ private:
 		// NOTE: We disregard the diagonal here, as we only consider "true"
 		// predecessors.
 		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
-			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix->beginConstColumnIterator(i); rowIt != transitionMatrix->endConstColumnIterator(i); ++rowIt) {
 				this->stateIndications[*rowIt + 1]++;
 			}
 		}
@@ -140,7 +140,7 @@ private:
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
-			for (auto rowIt = transitionMatrix->beginConstColumnNoDiagIterator(i); rowIt != transitionMatrix->endConstColumnNoDiagIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix->beginConstColumnIterator(i); rowIt != transitionMatrix->endConstColumnIterator(i); ++rowIt) {
 				this->successorList[nextIndicesList[*rowIt]++] = i;
 			}
 		}

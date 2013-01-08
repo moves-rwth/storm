@@ -53,13 +53,13 @@ TEST(ReadTraFileTest, ParseFileTest1) {
 		ASSERT_TRUE(result->getValue(3,2,&val));
 		ASSERT_EQ(val,0.0806451612903225806451612903225812);
 
-		ASSERT_TRUE(result->getValue(3,3,&val));
+		ASSERT_FALSE(result->getValue(3,3,&val));
 		ASSERT_EQ(val,0);
 
 		ASSERT_TRUE(result->getValue(3,4,&val));
 		ASSERT_EQ(val,0.080645161290322580645161290322581);
 
-		ASSERT_TRUE(result->getValue(4,4,&val));
+		ASSERT_FALSE(result->getValue(4,4,&val));
 		ASSERT_EQ(val,0);
 
 		delete parser;

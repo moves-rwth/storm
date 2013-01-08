@@ -27,7 +27,7 @@ public:
 	 */
 	template<class T>
 	static gmm::csr_matrix<T>* toGmmxxSparseMatrix(storm::storage::SquareSparseMatrix<T> const& matrix) {
-		uint_fast64_t realNonZeros = matrix.getNonZeroEntryCount() + matrix.getDiagonalNonZeroEntryCount();
+		uint_fast64_t realNonZeros = matrix.getNonZeroEntryCount();
 		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
 
 		// Prepare the resulting matrix.
@@ -44,48 +44,23 @@ public:
 		T* tmpValueArray = new T[realNonZeros];
 		T zero(0);
 		uint_fast64_t currentPosition = 0;
-		uint_fast64_t insertedDiagonalElements = 0;
 		for (uint_fast64_t i = 0; i < matrix.rowCount; ++i) {
 			// Compute correct start index of row.
-			result->jc[i] = matrix.rowIndications[i] + insertedDiagonalElements;
+			result->jc[i] = matrix.rowIndications[i];
 
-			// If the current row has no non-zero which is not on the diagonal, we have to check the
-			// diagonal element explicitly.
-			if (matrix.rowIndications[i + 1] - matrix.rowIndications[i] == 0) {
-				if (matrix.diagonalStorage[i] != zero) {
-					tmpColumnIndicationsArray[currentPosition] = i;
-					tmpValueArray[currentPosition] = matrix.diagonalStorage[i];
-					++currentPosition; ++insertedDiagonalElements;
-				}
-			} else {
-				// Otherwise, we can just enumerate the non-zeros which are not on the diagonal
-				// and fit in the diagonal element where appropriate.
-				bool includedDiagonal = false;
-				for (uint_fast64_t j = matrix.rowIndications[i]; j < matrix.rowIndications[i + 1]; ++j) {
-					if (matrix.diagonalStorage[i] != zero && !includedDiagonal && matrix.columnIndications[j] > i) {
-						includedDiagonal = true;
-						tmpColumnIndicationsArray[currentPosition] = i;
-						tmpValueArray[currentPosition] = matrix.diagonalStorage[i];
-						++currentPosition; ++insertedDiagonalElements;
-					}
-					tmpColumnIndicationsArray[currentPosition] = matrix.columnIndications[j];
-					tmpValueArray[currentPosition] = matrix.valueStorage[j];
-					++currentPosition;
-				}
-
-				// If the diagonal element is non-zero and was not inserted until now (i.e. all
-				// off-diagonal elements in the row are before the diagonal element.
-				if (!includedDiagonal && matrix.diagonalStorage[i] != zero) {
-					tmpColumnIndicationsArray[currentPosition] = i;
-					tmpValueArray[currentPosition] = matrix.diagonalStorage[i];
-					++currentPosition; ++insertedDiagonalElements;
-				}
+			// Otherwise, we can just enumerate the non-zeros which are not on the diagonal
+			// and fit in the diagonal element where appropriate.
+			for (uint_fast64_t j = matrix.rowIndications[i]; j < matrix.rowIndications[i + 1]; ++j) {
+				tmpColumnIndicationsArray[currentPosition] = matrix.columnIndications[j];
+				tmpValueArray[currentPosition] = matrix.valueStorage[j];
+				++currentPosition;
 			}
 		}
 		// Fill in sentinel element at the end.
 		result->jc[matrix.rowCount] = static_cast<unsigned int>(realNonZeros);
 
 		// Now, we can copy the temporary array to the GMMXX format.
+		// FIXME Now everything can just be copied. No TMP needed anymore
 		result->ir.resize(realNonZeros);
 		std::copy(tmpColumnIndicationsArray, tmpColumnIndicationsArray + realNonZeros, result->ir.begin());
 		delete[] tmpColumnIndicationsArray;
