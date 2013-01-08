@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_SQUARESPARSEMATRIX_H_
-#define STORM_STORAGE_SQUARESPARSEMATRIX_H_
+#ifndef STORM_STORAGE_SPARSEMATRIX_H_
+#define STORM_STORAGE_SPARSEMATRIX_H_
 
 #include <exception>
 #include <new>
@@ -37,7 +37,7 @@ namespace storage {
  * where rows is the first argument to the constructor.
  */
 template<class T>
-class SquareSparseMatrix {
+class SparseMatrix {
 public:
 	/*!
 	 * Declare adapter classes as friends to use internal data.
@@ -73,7 +73,7 @@ public:
 	 * Constructs a sparse matrix object with the given number of rows.
 	 * @param rows The number of rows of the matrix
 	 */
-	SquareSparseMatrix(uint_fast64_t rows, uint_fast64_t cols)
+	SparseMatrix(uint_fast64_t rows, uint_fast64_t cols)
 			: rowCount(rows), colCount(cols), nonZeroEntryCount(0),
 			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
 
@@ -83,7 +83,7 @@ public:
 	 * Constructs a square sparse matrix object with the given number rows
 	 * @param size The number of rows and cols in the matrix
 	 */ /*
-	SquareSparseMatrix(uint_fast64_t size) : SquareSparseMatrix(size, size) { }
+	SparseMatrix(uint_fast64_t size) : SparseMatrix(size, size) { }
 	*/
 
 	//! Constructor
@@ -91,7 +91,7 @@ public:
 	 * Constructs a square sparse matrix object with the given number rows
 	 * @param size The number of rows and cols in the matrix
 	 */
-	SquareSparseMatrix(uint_fast64_t size) : rowCount(size), colCount(size), nonZeroEntryCount(0),
+	SparseMatrix(uint_fast64_t size) : rowCount(size), colCount(size), nonZeroEntryCount(0),
 			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
 
 	//! Copy Constructor
@@ -99,7 +99,7 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given sparse matrix.
 	 * @param ssm A reference to the matrix to be copied.
 	 */
-	SquareSparseMatrix(const SquareSparseMatrix<T> &ssm)
+	SparseMatrix(const SparseMatrix<T> &ssm)
 			: rowCount(ssm.rowCount), colCount(ssm.colCount), nonZeroEntryCount(ssm.nonZeroEntryCount),
 			  internalStatus(ssm.internalStatus), currentSize(ssm.currentSize), lastRow(ssm.lastRow) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
@@ -128,7 +128,7 @@ public:
 	/*!
 	 * Destructor. Performs deletion of the reserved storage arrays.
 	 */
-	~SquareSparseMatrix() {
+	~SparseMatrix() {
 		setState(MatrixStatus::UnInitialized);
 		valueStorage.resize(0);
 		columnIndications.resize(0);
@@ -728,7 +728,7 @@ public:
 	 * @param constraint A bit vector indicating which rows and columns to drop.
 	 * @return A pointer to a sparse matrix that is a sub-matrix of the current one.
 	 */
-	SquareSparseMatrix* getSubmatrix(storm::storage::BitVector& constraint) const {
+	SparseMatrix* getSubmatrix(storm::storage::BitVector& constraint) const {
 		LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix with " << constraint.getNumberOfSetBits() << " rows.");
 
 		// Check for valid constraint.
@@ -749,7 +749,7 @@ public:
 		}
 
 		// Create and initialize resulting matrix.
-		SquareSparseMatrix* result = new SquareSparseMatrix(constraint.getNumberOfSetBits());
+		SparseMatrix* result = new SparseMatrix(constraint.getNumberOfSetBits());
 		result->initialize(subNonZeroEntries);
 
 		// Create a temporary array that stores for each index whose bit is set
@@ -833,8 +833,8 @@ public:
 	 */
 	storm::storage::JacobiDecomposition<T>* getJacobiDecomposition() const {
 		uint_fast64_t rowCount = this->getRowCount();
-		SquareSparseMatrix<T> *resultLU = new SquareSparseMatrix<T>(this);
-		SquareSparseMatrix<T> *resultDinv = new SquareSparseMatrix<T>(rowCount);
+		SparseMatrix<T> *resultLU = new SparseMatrix<T>(this);
+		SparseMatrix<T> *resultDinv = new SparseMatrix<T>(rowCount);
 		// no entries apart from those on the diagonal
 		resultDinv->initialize(0);
 		// copy diagonal entries to other matrix
@@ -855,7 +855,7 @@ public:
 	 * @return A vector containing the sum of the elements in each row of the matrix resulting from
 	 * pointwise multiplication of the current matrix with the given matrix.
 	 */
-	std::vector<T>* getPointwiseProductRowSumVector(storm::storage::SquareSparseMatrix<T> const& otherMatrix) {
+	std::vector<T>* getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) {
 		// Prepare result.
 		std::vector<T>* result = new std::vector<T>(rowCount);
 
@@ -1091,4 +1091,4 @@ private:
 
 } // namespace storm
 
-#endif // STORM_STORAGE_SQUARESPARSEMATRIX_H_
+#endif // STORM_STORAGE_SPARSEMATRIX_H_

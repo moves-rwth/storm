@@ -8,7 +8,7 @@
 #ifndef STORM_MODELS_GRAPHTRANSITIONS_H_
 #define STORM_MODELS_GRAPHTRANSITIONS_H_
 
-#include "src/storage/SquareSparseMatrix.h"
+#include "src/storage/SparseMatrix.h"
 
 #include <algorithm>
 #include <memory>
@@ -39,7 +39,7 @@ public:
 	 * @param forward If set to true, this objects will store the graph structure
 	 * of the backwards transition relation.
 	 */
-	GraphTransitions(std::shared_ptr<storm::storage::SquareSparseMatrix<T>> transitionMatrix, bool forward)
+	GraphTransitions(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix, bool forward)
 			: successorList(nullptr), stateIndications(nullptr), numberOfStates(transitionMatrix->getRowCount()), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
 		if (forward) {
 			this->initializeForward(transitionMatrix);
@@ -87,7 +87,7 @@ private:
 	 * Initializes this graph transitions object using the forward transition
 	 * relation given by means of a sparse matrix.
 	 */
-	void initializeForward(std::shared_ptr<storm::storage::SquareSparseMatrix<T>> transitionMatrix) {
+	void initializeForward(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix) {
 		this->successorList = new uint_fast64_t[numberOfNonZeroTransitions];
 		this->stateIndications = new uint_fast64_t[numberOfStates + 1];
 
@@ -109,7 +109,7 @@ private:
 	 * relation, whose forward transition relation is given by means of a sparse
 	 * matrix.
 	 */
-	void initializeBackward(std::shared_ptr<storm::storage::SquareSparseMatrix<T>> transitionMatrix) {
+	void initializeBackward(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix) {
 		this->successorList = new uint_fast64_t[numberOfNonZeroTransitions]();
 		this->stateIndications = new uint_fast64_t[numberOfStates + 1]();
 

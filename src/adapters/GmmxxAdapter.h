@@ -8,7 +8,7 @@
 #ifndef STORM_ADAPTERS_GMMXXADAPTER_H_
 #define STORM_ADAPTERS_GMMXXADAPTER_H_
 
-#include "src/storage/SquareSparseMatrix.h"
+#include "src/storage/SparseMatrix.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -26,7 +26,7 @@ public:
 	 * @return A pointer to a column-major sparse matrix in gmm++ format.
 	 */
 	template<class T>
-	static gmm::csr_matrix<T>* toGmmxxSparseMatrix(storm::storage::SquareSparseMatrix<T> const& matrix) {
+	static gmm::csr_matrix<T>* toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix) {
 		uint_fast64_t realNonZeros = matrix.getNonZeroEntryCount();
 		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
 

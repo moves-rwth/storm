@@ -7,7 +7,7 @@
 
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/storage/SquareSparseMatrix.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFileFormatException.h"
@@ -24,7 +24,7 @@ TEST(ReadTraFileTest, NonExistingFileTest) {
 TEST(ReadTraFileTest, ParseFileTest1) {
 	storm::parser::DeterministicSparseTransitionParser* parser;
 	ASSERT_NO_THROW(parser = new storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
-	std::shared_ptr<storm::storage::SquareSparseMatrix<double>> result = parser->getMatrix();
+	std::shared_ptr<storm::storage::SparseMatrix<double>> result = parser->getMatrix();
 
 	if (result != NULL) {
 		double val = 0;

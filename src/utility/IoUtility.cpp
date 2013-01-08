@@ -16,7 +16,7 @@ namespace storm {
 	namespace utility {
 
 		void dtmcToDot(storm::models::Dtmc<double> const &dtmc, std::string filename) {
-			std::shared_ptr<storm::storage::SquareSparseMatrix<double>> matrix(dtmc.getTransitionProbabilityMatrix());
+			std::shared_ptr<storm::storage::SparseMatrix<double>> matrix(dtmc.getTransitionProbabilityMatrix());
 			std::ofstream file;
 			file.open(filename);
 

@@ -1,7 +1,7 @@
 #ifndef STORM_PARSER_TRAPARSER_H_
 #define STORM_PARSER_TRAPARSER_H_
 
-#include "src/storage/SquareSparseMatrix.h"
+#include "src/storage/SparseMatrix.h"
 
 #include "src/parser/Parser.h"
 #include "src/utility/OsDetection.h"
@@ -19,12 +19,12 @@ class DeterministicSparseTransitionParser : public Parser {
 	public:
 		DeterministicSparseTransitionParser(std::string const &filename);
 		
-		std::shared_ptr<storm::storage::SquareSparseMatrix<double>> getMatrix() {
+		std::shared_ptr<storm::storage::SparseMatrix<double>> getMatrix() {
 			return this->matrix;
 		}
 	
 	private:
-		std::shared_ptr<storm::storage::SquareSparseMatrix<double>> matrix;
+		std::shared_ptr<storm::storage::SparseMatrix<double>> matrix;
 		
 		uint_fast64_t firstPass(char* buf, uint_fast64_t &maxnode);
 	
