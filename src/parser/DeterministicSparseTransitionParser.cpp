@@ -6,26 +6,30 @@
  */
 
 #include "src/parser/DeterministicSparseTransitionParser.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
-#include "boost/integer/integer_mask.hpp"
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <clocale>
-#include <iostream>
+
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <locale.h>
 
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <clocale>
+#include <iostream>
+#include <string>
+
+#include "src/exceptions/FileIoException.h"
+#include "src/exceptions/WrongFileFormatException.h"
+#include "boost/integer/integer_mask.hpp"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
 namespace storm {
-namespace parser{
+namespace parser {
 
 /*!
  *	@brief	Perform first pass through the file and obtain number of
@@ -39,9 +43,9 @@ namespace parser{
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t &maxnode) {
+uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& maxnode) {
 	uint_fast64_t non_zero = 0;
-	
+
 	/*
 	 *	check file header and extract number of transitions
 	 */
@@ -49,16 +53,16 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
 	}
-	buf += 7; // skip "STATES "
+	buf += 7;  // skip "STATES "
 	if (strtol(buf, &buf, 10) == 0) return 0;
 	buf = trimWhitespaces(buf);
 	if (strncmp(buf, "TRANSITIONS ", 12) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
 	}
-	buf += 12; // skip "TRANSITIONS "
+	buf += 12;  // skip "TRANSITIONS "
 	if ((non_zero = strtol(buf, &buf, 10)) == 0) return 0;
-	
+
 	/*
 	 *	check all transitions for non-zero diagonal entrys
 	 */
@@ -86,7 +90,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 			return 0;
 		}
 		// not needed anymore
-		//if (row == col) non_zero--;
+		// if (row == col) non_zero--;
 		buf = trimWhitespaces(buf);
 	}
 
@@ -104,19 +108,18 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
  */
 
 DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename)
-	: matrix(nullptr)
-{
+	: matrix(nullptr) {
 	/*
 	*	enforce locale where decimal point is '.'
 	*/
-	setlocale( LC_NUMERIC, "C" );
-	
+	setlocale(LC_NUMERIC, "C");
+
 	/*
 	 *	open file
 	 */
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
-	
+
 	/*
 	 *	perform first pass, i.e. count entries that are not zero and not on the diagonal
 	 */
@@ -125,12 +128,11 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	if first pass returned zero, the file format was wrong
 	 */
-	if (non_zero == 0)
-	{
+	if (non_zero == 0) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
 		throw storm::exceptions::WrongFileFormatException();
 	}
-	
+
 	/*
 	 *	perform second pass
 	 *	
@@ -140,12 +142,12 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	read file header, extract number of states
 	 */
-	buf += 7; // skip "STATES "
+	buf += 7;  // skip "STATES "
 	checked_strtol(buf, &buf);
 	buf = trimWhitespaces(buf);
-	buf += 12; // skip "TRANSITIONS "
+	buf += 12;  // skip "TRANSITIONS "
 	checked_strtol(buf, &buf);
-	
+
 	/*
 	 *	Creating matrix
 	 *	Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
@@ -153,8 +155,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
 	this->matrix = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(maxnode + 1));
-	if (this->matrix == NULL)
-	{
+	if (this->matrix == NULL) {
 		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
 		throw std::bad_alloc();
 	}
@@ -166,24 +167,23 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	read all transitions from file
 	 */
-	while (buf[0] != '\0')
-	{
+	while (buf[0] != '\0') {
 		/*
 		 *	read row, col and value.
 		 */
 		row = checked_strtol(buf, &buf);
 		col = checked_strtol(buf, &buf);
 		val = checked_strtod(buf, &buf);
-		
-		this->matrix->addNextValue(row,col,val);
+
+		this->matrix->addNextValue(row, col, val);
 		buf = trimWhitespaces(buf);
 	}
-	
+
 	/*
 	 * clean up
 	 */	
 	this->matrix->finalize();
 }
 
-} //namespace parser
-} //namespace storm
+}  // namespace parser
+}  // namespace storm
