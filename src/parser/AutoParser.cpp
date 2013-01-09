@@ -1,4 +1,4 @@
-#include "src/parser/AutoTransitionParser.h"
+#include "src/parser/AutoParser.h"
 
 #include "src/exceptions/WrongFileFormatException.h"
 
@@ -10,12 +10,12 @@
 namespace storm {
 namespace parser {
 
-AutoTransitionParser::AutoTransitionParser(const std::string& filename)
+AutoParser::AutoParser(const std::string& filename)
 	: type(Unknown) {
 
-	TransitionType name = this->analyzeFilename(filename);
-	std::pair<TransitionType,TransitionType> content = this->analyzeContent(filename);
-	TransitionType hint = content.first, transitions = content.second;
+	ModelType name = this->analyzeFilename(filename);
+	std::pair<ModelType,ModelType> content = this->analyzeContent(filename);
+	ModelType hint = content.first, transitions = content.second;
 	
 	if (hint == Unknown) {
 		if (name == transitions) this->type = name;
@@ -60,8 +60,8 @@ AutoTransitionParser::AutoTransitionParser(const std::string& filename)
 	}
 }
 
-TransitionType AutoTransitionParser::analyzeFilename(const std::string& filename) {
-	TransitionType type = Unknown;
+ModelType AutoParser::analyzeFilename(const std::string& filename) {
+	ModelType type = Unknown;
 	
 	// find file extension
 	std::string::size_type extpos = filename.rfind(".");
@@ -75,9 +75,9 @@ TransitionType AutoTransitionParser::analyzeFilename(const std::string& filename
 	return type;
 }
 
-std::pair<TransitionType,TransitionType> AutoTransitionParser::analyzeContent(const std::string& filename) {
+std::pair<ModelType,ModelType> AutoParser::analyzeContent(const std::string& filename) {
 	
-	TransitionType hintType = Unknown, transType = Unknown;
+	ModelType hintType = Unknown, transType = Unknown;
 	// Open file
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
@@ -90,7 +90,11 @@ std::pair<TransitionType,TransitionType> AutoTransitionParser::analyzeContent(co
 	if (strncmp(hint, "dtmc", sizeof(hint)) == 0) hintType = DTMC;
 	else if (strncmp(hint, "ndtmc", sizeof(hint)) == 0) hintType = NDTMC;
 	
-	return std::pair<TransitionType,TransitionType>(hintType, transType);
+	
+	// check transition format
+	// todo.
+	
+	return std::pair<ModelType,ModelType>(hintType, transType);
 }
 
 } //namespace parser

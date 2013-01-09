@@ -14,19 +14,19 @@ namespace storm {
 namespace parser {
 
 /*!
- *	@brief	Enumeration of all supported types of transition systems.
+ *	@brief	Enumeration of all supported types of models.
  */
-enum TransitionType {
+enum ModelType {
 	Unknown, DTMC, NDTMC
 };
 
-std::ostream& operator<<(std::ostream& os, const TransitionType type)
+std::ostream& operator<<(std::ostream& os, const ModelType type)
 {
 	switch (type) {
 		case Unknown: os << "Unknown"; break;
 		case DTMC: os << "DTMC"; break;
 		case NDTMC: os << "NDTMC"; break;
-		default: os << "Invalid TransitionType";
+		default: os << "Invalid ModelType";
 	}
 	return os;
 }
@@ -46,35 +46,34 @@ std::ostream& operator<<(std::ostream& os, const TransitionType type)
  *	parser.
  *	Otherwise, it will issue an error.
  */
-class AutoTransitionParser : Parser {
+class AutoParser : Parser {
 	public:
-		AutoTransitionParser(const std::string& filename);
+		AutoParser(const std::string& filename);
 		
 		/*!
 		 *	@brief 	Returns the type of transition system that was detected.
 		 */
-		TransitionType getTransitionType() {
+		ModelType getModelType() {
 			return this->type;
 		}
 		
-		// TODO: is this actually safe with shared_ptr?
 		template <typename T>
 		T* getParser() {
 			return dynamic_cast<T*>( this->parser );
 		}
 		
-		~AutoTransitionParser() {
+		~AutoParser() {
 			delete this->parser;
 		}
 	private:
 		
-		TransitionType analyzeFilename(const std::string& filename);
-		std::pair<TransitionType,TransitionType> analyzeContent(const std::string& filename);
+		ModelType analyzeFilename(const std::string& filename);
+		std::pair<ModelType,ModelType> analyzeContent(const std::string& filename);
 		
 		/*!
 		 *	@brief Type of the transition system.
 		 */
-		TransitionType type;
+		ModelType type;
 		
 		/*!
 		 *	@brief Pointer to a parser that has parsed the given transition system.

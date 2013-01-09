@@ -19,6 +19,8 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/CommandLine.h"
 
+#include "src/models/Model.h"
+
 namespace storm {
 
 namespace models {
@@ -28,7 +30,7 @@ namespace models {
  * labeled with atomic propositions.
  */
 template <class T>
-class Dtmc {
+class Dtmc : public storm::models::Model {
 
 public:
 	//! Constructor

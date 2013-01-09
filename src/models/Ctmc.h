@@ -18,6 +18,8 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include "src/models/Model.h"
+
 namespace storm {
 
 namespace models {
@@ -27,7 +29,7 @@ namespace models {
  * labeled with atomic propositions.
  */
 template <class T>
-class Ctmc {
+class Ctmc : public storm::models::Model {
 
 public:
 	//! Constructor
