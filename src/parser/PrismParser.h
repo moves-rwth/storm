@@ -98,7 +98,7 @@ private:
 			expression %= (booleanExpression | integerExpression | doubleExpression);
 
 			booleanVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("bool") >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::BooleanVariable>(qi::_1), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(booleanVariables_.add, qi::_1, qi::_a), phoenix::bind(booleanVariableNames_.add, qi::_1, qi::_1), phoenix::bind(allVariables_.add, qi::_1, qi::_a)];
-			integerVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("[") >> integerConstantExpression >> qi::lit("..") >> integerConstantExpression >> qi::lit("]") >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::IntegerVariable>(qi::_1, qi::_2, qi::_3), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(integerVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableNames_.add, qi::_1, qi::_1), phoenix::bind(allVariables_.add, qi::_1, qi::_a), phoenix::bind(&storm::ir::IntegerVariable::setVariableName, qi::_val, qi::_1), phoenix::bind(&storm::ir::IntegerVariable::setLowerBound, qi::_val, qi::_2), phoenix::bind(&storm::ir::IntegerVariable::setUpperBound, qi::_val, qi::_3)];
+			integerVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("[") >> integerConstantExpression >> qi::lit("..") >> integerConstantExpression >> qi::lit("]") >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::IntegerVariable>(qi::_1, qi::_2, qi::_3), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(integerVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableNames_.add, qi::_1, qi::_1), phoenix::bind(allVariables_.add, qi::_1, qi::_a)];
 			variableDefinition = (booleanVariableDefinition[phoenix::bind(&storm::ir::Module::addBooleanVariable, qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::bind(&storm::ir::Module::addIntegerVariable, qi::_r1, qi::_1)]);
 
 			definedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> freeIdentifierName >> qi::lit("=") >> booleanLiteralExpression >> qi::lit(";"))[phoenix::bind(booleanConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
@@ -116,17 +116,17 @@ private:
 			integerVariableName %= integerVariableNames_;
 			booleanVariableName %= booleanVariableNames_;
 
-			assignmentDefinition = qi::lit("(") >> integerVariableName >> qi::lit("'") >> integerExpression >> qi::lit(")") | qi::lit("(") >> booleanVariableName >> qi::lit("'") >> booleanExpression >> qi::lit(")");
+			assignmentDefinition = (qi::lit("(") >> integerVariableName >> qi::lit("'") >> integerExpression >> qi::lit(")"))[qi::_val = phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)] | (qi::lit("(") >> booleanVariableName >> qi::lit("'") >> booleanExpression >> qi::lit(")"))[qi::_val = phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)];
 			assignmentDefinitionList %= assignmentDefinition % "&";
-			updateDefinition %= doubleConstantExpression >> qi::lit(":") >> assignmentDefinitionList;
+			updateDefinition = (doubleConstantExpression >> qi::lit(":") >> assignmentDefinitionList)[qi::_val = phoenix::construct<storm::ir::Update>(qi::_1, qi::_2)];
 			updateListDefinition = +updateDefinition;
-			commandDefinition %= qi::lit("[") >> freeIdentifierName >> qi::lit("]") >> booleanExpression >> qi::lit("->") >> updateListDefinition >> qi::lit(";");
+			commandDefinition = (qi::lit("[") >> freeIdentifierName >> qi::lit("]") >> booleanExpression >> qi::lit("->") >> updateListDefinition >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::Command>(qi::_1, qi::_2, qi::_3)];
 
-			moduleDefinition %= qi::lit("module") >> freeIdentifierName >> *variableDefinition(qi::_val) >> *commandDefinition >> qi::lit("endmodule");
+			moduleDefinition = (qi::lit("module") >> freeIdentifierName >> *variableDefinition(qi::_val) >> *commandDefinition >> qi::lit("endmodule"))[qi::_val = phoenix::construct<storm::ir::Module>(qi::_1, qi::_2)];
 
 			moduleDefinitionList = +moduleDefinition;
 
-			start = constantDefinitionList >> moduleDefinitionList;
+			start = (constantDefinitionList >> moduleDefinitionList)[qi::_val = phoenix::construct<storm::ir::Program>(storm::ir::Program::ModelType::DTMC, qi::_1)];
 		}
 
 		// The starting point of the grammar.

@@ -16,7 +16,16 @@ namespace ir {
 
 class Module {
 public:
-	Module() {
+	Module() : moduleName(""), booleanVariables(), integerVariables(), commands() {
+
+	}
+
+	Module(std::string moduleName, std::vector<storm::ir::BooleanVariable> booleanVariables, std::vector<storm::ir::IntegerVariable> integerVariables, std::vector<storm::ir::Command> commands)
+		: moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables), commands(commands) {
+
+	}
+
+	Module(std::string moduleName, std::vector<storm::ir::Command> commands) : moduleName(moduleName), booleanVariables(), integerVariables(), commands(commands) {
 
 	}
 
@@ -44,6 +53,7 @@ public:
 		integerVariables.push_back(variable);
 	}
 
+private:
 	std::string moduleName;
 
 	std::vector<storm::ir::BooleanVariable> booleanVariables;
@@ -55,11 +65,5 @@ public:
 }
 
 }
-
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::Module,
-    (std::string, moduleName)
-    (std::vector<storm::ir::Command>, commands)
-)
 
 #endif /* MODULE_H_ */

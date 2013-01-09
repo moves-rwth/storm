@@ -20,5 +20,4 @@ class RewardModel {
 
 }
 
-
 #endif /* REWARDMODEL_H_ */

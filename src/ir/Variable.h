@@ -14,8 +14,6 @@ namespace ir {
 
 class Variable {
 public:
-	std::string variableName;
-
 	Variable() {
 
 	}
@@ -32,9 +30,12 @@ public:
 		return variableName;
 	}
 
-	void setVariableName(std::string variableName) {
-		this->variableName = variableName;
+	std::string getVariableName() {
+		return variableName;
 	}
+
+private:
+	std::string variableName;
 };
 
 }

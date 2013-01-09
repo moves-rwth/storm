@@ -27,17 +27,12 @@ public:
 	}
 
 	virtual std::string toString() {
-		return variableName + ": bool;";
+		return getVariableName() + ": bool;";
 	}
 };
 
 }
 
 }
-
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::BooleanVariable,
-    (std::string, variableName)
-)
 
 #endif /* BOOLEANVARIABLE_H_ */

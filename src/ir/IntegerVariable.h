@@ -29,17 +29,10 @@ public:
 	}
 
 	virtual std::string toString() {
-		return variableName + ": int[];";
+		return getVariableName() + ": int[" + lowerBound->toString() + ".." + upperBound->toString() + "];";
 	}
 
-	void setLowerBound(std::shared_ptr<storm::ir::expressions::BaseExpression>& lowerBound) {
-		this->lowerBound = lowerBound;
-	}
-
-	void setUpperBound(std::shared_ptr<storm::ir::expressions::BaseExpression>& upperBound) {
-		this->upperBound = upperBound;
-	}
-
+private:
 	std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound;
 	std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound;
 };

@@ -16,6 +16,27 @@ namespace ir {
 
 class Update {
 public:
+	Update() : likelihoodExpression(nullptr), assignments() {
+
+	}
+
+	Update(std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression, std::vector<storm::ir::Assignment> assignments)
+		: likelihoodExpression(likelihoodExpression), assignments(assignments) {
+
+	}
+
+	std::string toString() {
+		std::string result = likelihoodExpression->toString() + " : ";
+		for (uint_fast64_t i = 0; i < assignments.size(); ++i) {
+			result += assignments[i].toString();
+			if (i < assignments.size() - 1) {
+				result += " & ";
+			}
+		}
+		return result;
+	}
+
+private:
 	std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression;
 	std::vector<storm::ir::Assignment> assignments;
 };
@@ -23,11 +44,5 @@ public:
 }
 
 }
-
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::Update,
-    (std::shared_ptr<storm::ir::expressions::BaseExpression>, likelihoodExpression)
-    (std::vector<storm::ir::Assignment>, assignments)
-)
 
 #endif /* UPDATE_H_ */
