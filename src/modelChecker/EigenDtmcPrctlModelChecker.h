@@ -48,7 +48,7 @@ public:
 		storm::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
 
 		// Copy the matrix before we make any changes.
-		storm::storage::SquareSparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
+		storm::storage::SparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
 		tmpMatrix.makeRowsAbsorbing((~*leftStates | *rightStates) | *rightStates);
@@ -148,7 +148,7 @@ public:
 			typedef Eigen::Map<VectorType> MapType;
 
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SquareSparseMatrix<double>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
+			storm::storage::SparseMatrix<double>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix to the form needed for the equation system. That is, we go from
 			// x = A*x + b to (I-A)x = b.
 			submatrix->convertToEquationSystem();

@@ -15,7 +15,7 @@
 
 #include "AtomicPropositionsLabeling.h"
 #include "GraphTransitions.h"
-#include "src/storage/SquareSparseMatrix.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/CommandLine.h"
 
@@ -40,10 +40,10 @@ public:
 	 * @param stateLabeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
-	Dtmc(std::shared_ptr<storm::storage::SquareSparseMatrix<T>> probabilityMatrix,
+	Dtmc(std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix,
 			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
 			std::shared_ptr<std::vector<T>> stateRewards = nullptr,
-			std::shared_ptr<storm::storage::SquareSparseMatrix<T>> transitionRewardMatrix = nullptr)
+			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix = nullptr)
 			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling),
 			  stateRewards(stateRewards), transitionRewardMatrix(transitionRewardMatrix),
 			  backwardTransitions(nullptr) {
@@ -111,7 +111,7 @@ public:
 	 * @return A pointer to the matrix representing the transition probability
 	 * function.
 	 */
-	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> getTransitionProbabilityMatrix() const {
+	std::shared_ptr<storm::storage::SparseMatrix<T>> getTransitionProbabilityMatrix() const {
 		return this->probabilityMatrix;
 	}
 
@@ -119,7 +119,7 @@ public:
 	 * Returns a pointer to the matrix representing the transition rewards.
 	 * @return A pointer to the matrix representing the transition rewards.
 	 */
-	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> getTransitionRewardMatrix() const {
+	std::shared_ptr<storm::storage::SparseMatrix<T>> getTransitionRewardMatrix() const {
 		return this->transitionRewardMatrix;
 	}
 
@@ -210,7 +210,7 @@ private:
 	}
 
 	/*! A matrix representing the transition probability function of the DTMC. */
-	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> probabilityMatrix;
+	std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix;
 
 	/*! The labeling of the states of the DTMC. */
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling;
@@ -219,7 +219,7 @@ private:
 	std::shared_ptr<std::vector<T>> stateRewards;
 
 	/*! The transition-based rewards of the DTMC. */
-	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> transitionRewardMatrix;
+	std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix;
 
 	/*!
 	 * A data structure that stores the predecessors for all states. This is

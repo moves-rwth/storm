@@ -16,7 +16,7 @@ namespace storage {
  * Forward declaration against Cycle
  */
 template <class T>
-class SquareSparseMatrix;
+class SparseMatrix;
 
 
 /*!
@@ -26,7 +26,7 @@ template <class T>
 class JacobiDecomposition {
 
 public:
-	JacobiDecomposition(storm::storage::SquareSparseMatrix<T> * const jacobiLuMatrix, storm::storage::SquareSparseMatrix<T> * const jacobiDInvMatrix) : jacobiLuMatrix(jacobiLuMatrix), jacobiDInvMatrix(jacobiDInvMatrix) {
+	JacobiDecomposition(storm::storage::SparseMatrix<T> * const jacobiLuMatrix, storm::storage::SparseMatrix<T> * const jacobiDInvMatrix) : jacobiLuMatrix(jacobiLuMatrix), jacobiDInvMatrix(jacobiDInvMatrix) {
 	}
 
 	~JacobiDecomposition() {
@@ -39,7 +39,7 @@ public:
 	 * Ownership stays with this class.
 	 * @return A reference to the Jacobi LU Matrix
 	 */
-	storm::storage::SquareSparseMatrix<T>& getJacobiLUReference() {
+	storm::storage::SparseMatrix<T>& getJacobiLUReference() {
 		return *(this->jacobiLuMatrix);
 	}
 
@@ -48,7 +48,7 @@ public:
 	 * Ownership stays with this class.
 	 * @return A reference to the Jacobi D^{-1} Matrix
 	 */
-	storm::storage::SquareSparseMatrix<T>& getJacobiDInvReference() {
+	storm::storage::SparseMatrix<T>& getJacobiDInvReference() {
 		return *(this->jacobiDInvMatrix);
 	}
 
@@ -57,7 +57,7 @@ public:
 	 * Ownership stays with this class.
 	 * @return A pointer to the Jacobi LU Matrix
 	 */
-	storm::storage::SquareSparseMatrix<T>* getJacobiLU() {
+	storm::storage::SparseMatrix<T>* getJacobiLU() {
 		return this->jacobiLuMatrix;
 	}
 
@@ -66,7 +66,7 @@ public:
 	 * Ownership stays with this class.
 	 * @return A pointer to the Jacobi D^{-1} Matrix
 	 */
-	storm::storage::SquareSparseMatrix<T>* getJacobiDInv() {
+	storm::storage::SparseMatrix<T>* getJacobiDInv() {
 		return this->jacobiDInvMatrix;
 	}
 
@@ -81,12 +81,12 @@ private:
 	/*!
 	 * Pointer to the LU Matrix
 	 */
-	storm::storage::SquareSparseMatrix<T> *jacobiLuMatrix;
+	storm::storage::SparseMatrix<T> *jacobiLuMatrix;
 	
 	/*!
 	 * Pointer to the D^{-1} Matrix
 	 */
-	storm::storage::SquareSparseMatrix<T> *jacobiDInvMatrix;
+	storm::storage::SparseMatrix<T> *jacobiDInvMatrix;
 };
 
 } // namespace storage

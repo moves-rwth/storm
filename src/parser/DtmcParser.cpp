@@ -29,7 +29,7 @@ DtmcParser::DtmcParser(std::string const & transitionSystemFile, std::string con
 	uint_fast64_t stateCount = tp.getMatrix()->getRowCount();
 
 	std::shared_ptr<std::vector<double>> stateRewards = nullptr;
-	std::shared_ptr<storm::storage::SquareSparseMatrix<double>> transitionRewards = nullptr;
+	std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewards = nullptr;
 
 	storm::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
 	if (stateRewardFile != "") {

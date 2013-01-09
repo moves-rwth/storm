@@ -48,7 +48,7 @@ public:
 		storm::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
 
 		// Copy the matrix before we make any changes.
-		storm::storage::SquareSparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
+		storm::storage::SparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
 		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
@@ -130,7 +130,7 @@ public:
 		// Only try to solve system if there are states for which the probability is unknown.
 		if (maybeStates.getNumberOfSetBits() > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SquareSparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
+			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
 			// system. That is, we go from x = A*x + b to (I-A)x = b.
 			submatrix->convertToEquationSystem();
@@ -261,7 +261,7 @@ public:
 		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
 		if (maybeStates.getNumberOfSetBits() > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SquareSparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
+			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
 			// system. That is, we go from x = A*x + b to (I-A)x = b.
 			submatrix->convertToEquationSystem();

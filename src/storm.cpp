@@ -20,7 +20,7 @@
 
 #include "storm-config.h"
 #include "src/models/Dtmc.h"
-#include "src/storage/SquareSparseMatrix.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
