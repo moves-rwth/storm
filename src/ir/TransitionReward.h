@@ -25,7 +25,7 @@ public:
 	}
 
 	std::string toString() {
-		return "[" + commandName + "] " + statePredicate->toString() + ": " + rewardValue->toString() + ";";
+		return "\t[" + commandName + "] " + statePredicate->toString() + ": " + rewardValue->toString() + ";";
 	}
 
 private:

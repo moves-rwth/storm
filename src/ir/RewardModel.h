@@ -8,6 +8,8 @@
 #ifndef REWARDMODEL_H_
 #define REWARDMODEL_H_
 
+#include <iostream>
+
 namespace storm {
 
 namespace ir {
@@ -22,8 +24,12 @@ public:
 
 	}
 
+	RewardModel(RewardModel const& other) : rewardModelName(other.rewardModelName), stateRewards(other.stateRewards), transitionRewards(other.transitionRewards) {
+
+	}
+
 	std::string toString() {
-		std::string result = "rewards \"" + rewardModelName + "\n";
+		std::string result = "rewards \"" + rewardModelName + "\"\n";
 		for (auto reward : stateRewards) {
 			result += reward.toString() + "\n";
 		}

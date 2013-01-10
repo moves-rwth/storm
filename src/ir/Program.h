@@ -12,6 +12,8 @@
 #include "Module.h"
 #include "RewardModel.h"
 
+#include <iostream>
+
 namespace storm {
 
 namespace ir {

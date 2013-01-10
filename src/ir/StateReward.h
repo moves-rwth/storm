@@ -25,7 +25,7 @@ public:
 	}
 
 	std::string toString() {
-		return statePredicate->toString() + ": " + rewardValue->toString() + ";";
+		return "\t" + statePredicate->toString() + ": " + rewardValue->toString() + ";";
 	}
 
 private:

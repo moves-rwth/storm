@@ -1,5 +1,9 @@
 dtmc
 
+const bool sic;
+const int i;
+const double e;
+
 module die
 
 // local state
@@ -14,6 +18,11 @@ d : [0..6] init 0;
 [] s=4 -> 0.5 : (s'=7) & (d'=2) + 0.5 : (s'=7) & (d'=3);
 [] s=5 -> 0.5 : (s'=7) & (d'=4) + 0.5 : (s'=7) & (d'=5);
 [] s=6 -> 0.5 : (s'=2) + 0.5 : (s'=7) & (d'=6);
-[] s==7 -> 1 : (s'=7);
+[] s=7 -> 1 : (s'=7);
 	
 endmodule
+
+rewards "coin_flips"
+	[] s<7 : 1;
+	s>3 : 1;
+endrewards
