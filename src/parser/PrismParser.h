@@ -97,21 +97,19 @@ private:
 
 			expression %= (booleanExpression | integerExpression | doubleExpression);
 
-			booleanVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("bool") >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::BooleanVariable>(qi::_1), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(booleanVariables_.add, qi::_1, qi::_a), phoenix::bind(booleanVariableNames_.add, qi::_1, qi::_1), phoenix::bind(allVariables_.add, qi::_1, qi::_a)];
-			integerVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("[") >> integerConstantExpression >> qi::lit("..") >> integerConstantExpression >> qi::lit("]") >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::IntegerVariable>(qi::_1, qi::_2, qi::_3), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(integerVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableNames_.add, qi::_1, qi::_1), phoenix::bind(allVariables_.add, qi::_1, qi::_a)];
-			variableDefinition = (booleanVariableDefinition[phoenix::bind(&storm::ir::Module::addBooleanVariable, qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::bind(&storm::ir::Module::addIntegerVariable, qi::_r1, qi::_1)]);
+			booleanVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("bool") >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::BooleanVariable>(qi::_1), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(booleanVariables_.add, qi::_1, qi::_a), phoenix::bind(booleanVariableNames_.add, qi::_1, qi::_1), phoenix::bind(allVariables_.add, qi::_1, qi::_a), phoenix::bind(booleanVariableInfo_.add, qi::_1, qi::_val)];
+			integerVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("[") >> integerConstantExpression >> qi::lit("..") >> integerConstantExpression >> qi::lit("]") >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::IntegerVariable>(qi::_1, qi::_2, qi::_3), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(integerVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableNames_.add, qi::_1, qi::_1), phoenix::bind(allVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableInfo_.add, qi::_1, qi::_val)];
+			variableDefinition = (booleanVariableDefinition | integerVariableDefinition);
 
 			definedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> freeIdentifierName >> qi::lit("=") >> booleanLiteralExpression >> qi::lit(";"))[phoenix::bind(booleanConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
 			definedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> freeIdentifierName >> qi::lit("=") >> integerLiteralExpression >> qi::lit(";"))[phoenix::bind(integerConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
 			definedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") >> freeIdentifierName >> qi::lit("=") >> doubleLiteralExpression >> qi::lit(";"))[phoenix::bind(doubleConstants_.add, qi::_1, qi::_2), phoenix::bind(allConstants_.add, qi::_1, qi::_2), qi::_val = qi::_2];
-			undefinedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> freeIdentifierName >> qi::lit(";"))[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>>(phoenix::new_<storm::ir::expressions::BooleanConstantExpression>(qi::_1)), phoenix::bind(booleanConstants_.add, qi::_1, qi::_val), phoenix::bind(allConstants_.add, qi::_1, qi::_val), phoenix::bind(&storm::ir::Program::addBooleanUndefinedConstantExpression, program, qi::_1, qi::_val)];
-			undefinedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> freeIdentifierName >> qi::lit(";"))[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>>(phoenix::new_<storm::ir::expressions::IntegerConstantExpression>(qi::_1)), phoenix::bind(integerConstants_.add, qi::_1, qi::_val), phoenix::bind(allConstants_.add, qi::_1, qi::_val), phoenix::bind(&storm::ir::Program::addIntegerUndefinedConstantExpression, program, qi::_1, qi::_val)];
-			undefinedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") >> freeIdentifierName >> qi::lit(";"))[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>>(phoenix::new_<storm::ir::expressions::DoubleConstantExpression>(qi::_1)), phoenix::bind(doubleConstants_.add, qi::_1, qi::_val), phoenix::bind(allConstants_.add, qi::_1, qi::_val), phoenix::bind(&storm::ir::Program::addDoubleUndefinedConstantExpression, program, qi::_1, qi::_val)];
+			undefinedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> freeIdentifierName >> qi::lit(";"))[qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>>(phoenix::new_<storm::ir::expressions::BooleanConstantExpression>(qi::_1)), phoenix::bind(booleanConstantInfo_.add, qi::_1, qi::_a), phoenix::bind(booleanConstants_.add, qi::_1, qi::_a), phoenix::bind(allConstants_.add, qi::_1, qi::_a)];
+			undefinedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> freeIdentifierName >> qi::lit(";"))[qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>>(phoenix::new_<storm::ir::expressions::IntegerConstantExpression>(qi::_1)), phoenix::bind(integerConstantInfo_.add, qi::_1, qi::_a), phoenix::bind(integerConstants_.add, qi::_1, qi::_a), phoenix::bind(allConstants_.add, qi::_1, qi::_a)];
+			undefinedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") >> freeIdentifierName >> qi::lit(";"))[qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>>(phoenix::new_<storm::ir::expressions::DoubleConstantExpression>(qi::_1)), phoenix::bind(doubleConstantInfo_.add, qi::_1, qi::_a), phoenix::bind(doubleConstants_.add, qi::_1, qi::_a), phoenix::bind(allConstants_.add, qi::_1, qi::_a)];
 			definedConstantDefinition %= (definedBooleanConstantDefinition | definedIntegerConstantDefinition | definedDoubleConstantDefinition);
-			undefinedConstantDefinition %= (undefinedBooleanConstantDefinition | undefinedIntegerConstantDefinition | undefinedDoubleConstantDefinition);
-			constantDefinition %= (definedConstantDefinition | undefinedConstantDefinition);
-
-			constantDefinitionList = +constantDefinition;
+			// undefinedConstantDefinition = (undefinedBooleanConstantDefinition | undefinedIntegerConstantDefinition | undefinedDoubleConstantDefinition);
+			// constantDefinitionList = *(definedConstantDefinition | undefinedConstantDefinition);
 
 			integerVariableName %= integerVariableNames_;
 			booleanVariableName %= booleanVariableNames_;
@@ -122,21 +120,21 @@ private:
 			updateListDefinition = +updateDefinition;
 			commandDefinition = (qi::lit("[") >> freeIdentifierName >> qi::lit("]") >> booleanExpression >> qi::lit("->") >> updateListDefinition >> qi::lit(";"))[qi::_val = phoenix::construct<storm::ir::Command>(qi::_1, qi::_2, qi::_3)];
 
-			moduleDefinition = (qi::lit("module") >> freeIdentifierName >> *variableDefinition(qi::_val) >> *commandDefinition >> qi::lit("endmodule"))[qi::_val = phoenix::construct<storm::ir::Module>(qi::_1, qi::_2)];
+			moduleDefinition = (qi::lit("module") >> freeIdentifierName >> *(booleanVariableDefinition[phoenix::push_back(qi::_a, qi::_1)] | integerVariableDefinition[phoenix::push_back(qi::_b, qi::_1)]) >> *commandDefinition >> qi::lit("endmodule"))[qi::_val = phoenix::construct<storm::ir::Module>(qi::_1, qi::_a, qi::_b, qi::_3)];
 
 			moduleDefinitionList = +moduleDefinition;
 
-			start = (constantDefinitionList >> moduleDefinitionList)[qi::_val = phoenix::construct<storm::ir::Program>(storm::ir::Program::ModelType::DTMC, qi::_1)];
+			start = (*(definedConstantDefinition | (undefinedBooleanConstantDefinition[phoenix::push_back(qi::_a, qi::_1)] | undefinedIntegerConstantDefinition[phoenix::push_back(qi::_b, qi::_1)] | undefinedDoubleConstantDefinition[phoenix::push_back(qi::_c, qi::_1)])) >> moduleDefinitionList)[qi::_val = phoenix::construct<storm::ir::Program>(storm::ir::Program::ModelType::DTMC, qi::_a, qi::_b, qi::_c, qi::_1)];
 		}
 
 		// The starting point of the grammar.
-		qi::rule<Iterator, storm::ir::Program(), ascii::space_type> start;
+		qi::rule<Iterator, storm::ir::Program(), qi::locals<std::vector<std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>>,std::vector<std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>>,std::vector<std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>>>, ascii::space_type> start;
 		qi::rule<Iterator, qi::unused_type(), ascii::space_type> constantDefinitionList;
 		qi::rule<Iterator, std::vector<storm::ir::Module>(), ascii::space_type> moduleDefinitionList;
 
-		qi::rule<Iterator, storm::ir::Module(), ascii::space_type> moduleDefinition;
+		qi::rule<Iterator, storm::ir::Module(), qi::locals<std::vector<storm::ir::BooleanVariable>, std::vector<storm::ir::IntegerVariable>>, ascii::space_type> moduleDefinition;
 
-		qi::rule<Iterator, qi::unused_type(storm::ir::Module&), ascii::space_type> variableDefinition;
+		qi::rule<Iterator, qi::unused_type(), ascii::space_type> variableDefinition;
 		qi::rule<Iterator, storm::ir::BooleanVariable(), qi::locals<std::shared_ptr<storm::ir::expressions::VariableExpression>>, ascii::space_type> booleanVariableDefinition;
 		qi::rule<Iterator, storm::ir::IntegerVariable(), qi::locals<std::shared_ptr<storm::ir::expressions::VariableExpression>>, ascii::space_type> integerVariableDefinition;
 
@@ -151,11 +149,11 @@ private:
 		qi::rule<Iterator, std::string(), ascii::space_type> booleanVariableName;
 
 		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> constantDefinition;
-		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> undefinedConstantDefinition;
+		qi::rule<Iterator, qi::unused_type(), ascii::space_type> undefinedConstantDefinition;
 		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> definedConstantDefinition;
-		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>(), ascii::space_type> undefinedBooleanConstantDefinition;
-		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>(), ascii::space_type> undefinedIntegerConstantDefinition;
-		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>(), ascii::space_type> undefinedDoubleConstantDefinition;
+		qi::rule<Iterator, qi::unused_type(), qi::locals<std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>>, ascii::space_type> undefinedBooleanConstantDefinition;
+		qi::rule<Iterator, qi::unused_type(), qi::locals<std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>>, ascii::space_type> undefinedIntegerConstantDefinition;
+		qi::rule<Iterator, qi::unused_type(), qi::locals<std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>>, ascii::space_type> undefinedDoubleConstantDefinition;
 		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> definedBooleanConstantDefinition;
 		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> definedIntegerConstantDefinition;
 		qi::rule<Iterator, std::shared_ptr<storm::ir::expressions::BaseExpression>(), ascii::space_type> definedDoubleConstantDefinition;
@@ -241,9 +239,29 @@ private:
 			// Intentionally left empty. This map is filled during parsing.
 		} integerVariableNames_, booleanVariableNames_;
 
+		struct booleanVariableTypesStruct : qi::symbols<char, storm::ir::BooleanVariable> {
+			// Intentionally left empty. This map is filled during parsing.
+		} booleanVariableInfo_;
+
+		struct integerVariableTypesStruct : qi::symbols<char, storm::ir::IntegerVariable> {
+			// Intentionally left empty. This map is filled during parsing.
+		} integerVariableInfo_;
+
 		struct constantsStruct : qi::symbols<char, std::shared_ptr<storm::ir::expressions::BaseExpression>> {
 			// Intentionally left empty. This map is filled during parsing.
 		} integerConstants_, booleanConstants_, doubleConstants_, allConstants_;
+
+		struct undefinedBooleanConstantsTypesStruct : qi::symbols<char, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> {
+			// Intentionally left empty. This map is filled during parsing.
+		} booleanConstantInfo_;
+
+		struct undefinedIntegerConstantsTypesStruct : qi::symbols<char, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> {
+			// Intentionally left empty. This map is filled during parsing.
+		} integerConstantInfo_;
+
+		struct undefinedDoubleConstantsTypesStruct : qi::symbols<char, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> {
+			// Intentionally left empty. This map is filled during parsing.
+		} doubleConstantInfo_;
 
 		struct modulesStruct : qi::symbols<char, unsigned> {
 			// Intentionally left empty. This map is filled during parsing.
