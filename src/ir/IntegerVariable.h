@@ -16,11 +16,11 @@ namespace ir {
 
 class IntegerVariable : public Variable {
 public:
-	IntegerVariable() {
+	IntegerVariable() : lowerBound(nullptr), upperBound(nullptr) {
 
 	}
 
-	IntegerVariable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound) : Variable(variableName), lowerBound(lowerBound), upperBound(upperBound) {
+	IntegerVariable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = nullptr) : Variable(variableName, initialValue), lowerBound(lowerBound), upperBound(upperBound) {
 
 	}
 
@@ -29,7 +29,12 @@ public:
 	}
 
 	virtual std::string toString() {
-		return getVariableName() + ": int[" + lowerBound->toString() + ".." + upperBound->toString() + "];";
+		std::string result = getVariableName() + ": [" + lowerBound->toString() + ".." + upperBound->toString() + "]";
+		if (this->getInitialValue() != nullptr) {
+			result += " init " + this->getInitialValue()->toString();
+		}
+		result += ";";
+		return result;
 	}
 
 private:

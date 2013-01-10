@@ -16,6 +16,8 @@
 #include "BooleanVariable.h"
 #include "IntegerVariable.h"
 #include "Module.h"
+#include "StateReward.h"
+#include "TransitionReward.h"
 #include "RewardModel.h"
 #include "Program.h"
 

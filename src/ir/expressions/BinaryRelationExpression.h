@@ -35,7 +35,7 @@ public:
 	virtual std::string toString() const {
 		std::string result = left->toString();
 		switch (relation) {
-		case EQUAL: result += " == "; break;
+		case EQUAL: result += " = "; break;
 		case LESS: result += " < "; break;
 		case LESS_OR_EQUAL: result += " <= "; break;
 		case GREATER: result += " > "; break;

@@ -18,7 +18,7 @@ public:
 
 	}
 
-	BooleanVariable(std::string variableName) : Variable(variableName) {
+	BooleanVariable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = nullptr) : Variable(variableName,  initialValue) {
 
 	}
 
@@ -27,7 +27,12 @@ public:
 	}
 
 	virtual std::string toString() {
-		return getVariableName() + ": bool;";
+		std::string result = getVariableName() + ": bool";
+		if (this->getInitialValue() != nullptr) {
+			result += " init " + this->getInitialValue()->toString();
+		}
+		result += ";";
+		return result;
 	}
 };
 

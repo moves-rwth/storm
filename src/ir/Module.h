@@ -34,7 +34,6 @@ public:
 		for (auto variable : booleanVariables) {
 			result += "\t" + variable.toString() + "\n";
 		}
-		result += "\n";
 		for (auto variable : integerVariables) {
 			result += "\t" + variable.toString() + "\n";
 		}

@@ -35,7 +35,7 @@ public:
 	}
 
 	std::string toString() {
-		return variableName + "' = " + expression->toString();
+		return "(" + variableName + "' = " + expression->toString() + ")";
 	}
 
 private:

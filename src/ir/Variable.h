@@ -14,11 +14,11 @@ namespace ir {
 
 class Variable {
 public:
-	Variable() {
+	Variable() : variableName(""), initialValue(nullptr) {
 
 	}
 
-	Variable(std::string variableName) : variableName(variableName) {
+	Variable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = nullptr) : variableName(variableName), initialValue(initialValue) {
 
 	}
 
@@ -34,8 +34,13 @@ public:
 		return variableName;
 	}
 
+	std::shared_ptr<storm::ir::expressions::BaseExpression> getInitialValue() {
+		return initialValue;
+	}
+
 private:
 	std::string variableName;
+	std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue;
 };
 
 }

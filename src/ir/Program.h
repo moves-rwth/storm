@@ -19,9 +19,9 @@ namespace ir {
 class Program {
 public:
 
-	enum ModelType {DTMC, CTMC, MDP, CTMDP};
+	enum ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP};
 
-	Program() : modelType(DTMC), booleanUndefinedConstantExpressions(), integerUndefinedConstantExpressions(), doubleUndefinedConstantExpressions(), modules(), rewards() {
+	Program() : modelType(UNDEFINED), booleanUndefinedConstantExpressions(), integerUndefinedConstantExpressions(), doubleUndefinedConstantExpressions(), modules(), rewards() {
 
 	}
 
@@ -30,6 +30,12 @@ public:
 
 	}
 
+	Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules)
+		: modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), modules(modules), rewards() {
+
+	}
+
+
 	Program(ModelType modelType, std::vector<storm::ir::Module> modules) : modelType(modelType), booleanUndefinedConstantExpressions(), integerUndefinedConstantExpressions(), doubleUndefinedConstantExpressions(), modules(modules), rewards() {
 
 	}
@@ -37,10 +43,11 @@ public:
 	std::string toString() {
 		std::string result = "";
 		switch (modelType) {
-		case DTMC: result += "dtmc\n"; break;
-		case CTMC: result += "ctmc\n"; break;
-		case MDP: result += "mdp\n"; break;
-		case CTMDP: result += "ctmdp\n"; break;
+		case UNDEFINED: result += "undefined\n\n"; break;
+		case DTMC: result += "dtmc\n\n"; break;
+		case CTMC: result += "ctmc\n\n"; break;
+		case MDP: result += "mdp\n\n"; break;
+		case CTMDP: result += "ctmdp\n\n"; break;
 		}
 		for (auto element : booleanUndefinedConstantExpressions) {
 			result += "const bool " + element.first + ";\n";
@@ -51,8 +58,15 @@ public:
 		for (auto element : doubleUndefinedConstantExpressions) {
 			result += "const double " + element.first + ";\n";
 		}
+		result += "\n";
 		for (auto mod : modules) {
 			result += mod.toString();
+			result += "\n";
+		}
+
+		for (auto rewardModel : rewards) {
+			result += rewardModel.second.toString();
+			result +="\n";
 		}
 
 		return result;
