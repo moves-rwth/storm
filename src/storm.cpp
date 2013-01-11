@@ -241,7 +241,7 @@ int main(const int argc, const char* argv[]) {
 	// testChecking();
 
 	storm::parser::PrismParser parser;
-	parser.test("test.input");
+	parser.parseFile("test.input");
 
 	cleanUp();
 	return 0;

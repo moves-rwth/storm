@@ -10,6 +10,8 @@
 
 #include "src/ir/expressions/BaseExpression.h"
 
+#include "boost/lexical_cast.hpp"
+
 namespace storm {
 
 namespace ir {
