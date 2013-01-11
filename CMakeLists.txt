@@ -48,6 +48,10 @@ message(STATUS "GMMXX_INCLUDE_DIR is ${GMMXX_INCLUDE_DIR}")
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
+option(LINK_LIBCXXABI "Sets whether libc++abi should be linked" OFF) 
+set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
+set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
+set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory.")
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (DEBUG)
@@ -74,9 +78,12 @@ elseif(MSVC)
 	# required for GMM to compile, ugly error directive in their code
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE)
 else(CLANG)
+	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
+	set (CLANG ON)
     # Set standard flags for clang
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
-    set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE")
+    # TODO: activate -Werror asap
+    set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE")
     
     # Turn on popcnt instruction if desired (yes by default)
     if (USE_POPCNT)
@@ -118,6 +125,11 @@ find_package(Doxygen REQUIRED)
 set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
+
+# If a custom boost root directory was specified, we set the corresponding hint for the script to find it.
+if(CUSTOM_BOOST_ROOT)
+	set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
+endif(CUSTOM_BOOST_ROOT)
 find_package(Boost REQUIRED COMPONENTS program_options)
 
 if(Boost_FOUND)
@@ -138,6 +150,16 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 # Add GMMXX to the included directories
 include_directories(${GMMXX_INCLUDE_DIR})
 
+# Add custom additional include or link directories
+if (ADDITIONAL_INCLUDE_DIRS)
+	message(STATUS "Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")
+	include_directories(${ADDITIONAL_INCLUDE_DIRS})
+endif(ADDITIONAL_INCLUDE_DIRS)
+if (ADDITIONAL_LINK_DIRS)
+	message(STATUS "Using additional link directories ${ADDITIONAL_LINK_DIRS}")
+	link_directories(${ADDITIONAL_LINK_DIRS})
+endif(ADDITIONAL_LINK_DIRS)
+
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
 add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
@@ -146,6 +168,13 @@ add_executable(storm-tests ${STORM_TEST_SOURCES} ${STORM_TEST_HEADERS})
 # Add target link deps for Boost program options
 target_link_libraries(storm ${Boost_LIBRARIES})   
 target_link_libraries(storm-tests ${Boost_LIBRARIES})
+
+# Link against libc++abi if requested. May be needed to build on Linux systems using clang.
+if (LINK_LIBCXXABI)
+	message (STATUS "Linking against libc++abi.")
+	target_link_libraries(storm "c++abi")
+	target_link_libraries(storm-tests "c++abi")
+endif(LINK_LIBCXXABI)
 
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)

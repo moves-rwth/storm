@@ -10,6 +10,8 @@
 
 #include "src/ir/expressions/BaseExpression.h"
 
+#include <iostream>
+
 namespace storm {
 
 namespace ir {
@@ -20,8 +22,8 @@ class VariableExpression : public BaseExpression {
 public:
 	std::string variableName;
 
-	VariableExpression(std::string variableName) {
-		this->variableName = variableName;
+	VariableExpression(std::string variableName) : variableName(variableName) {
+
 	}
 
 	virtual ~VariableExpression() {

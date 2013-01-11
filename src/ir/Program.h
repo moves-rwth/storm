@@ -8,11 +8,12 @@
 #ifndef PROGRAM_H_
 #define PROGRAM_H_
 
-#include "src/ir/expressions/ConstantExpression.h"
+#include "expressions/BaseExpression.h"
+#include "expressions/BooleanConstantExpression.h"
+#include "expressions/IntegerConstantExpression.h"
+#include "expressions/DoubleConstantExpression.h"
 #include "Module.h"
 #include "RewardModel.h"
-
-#include <iostream>
 
 namespace storm {
 
@@ -27,8 +28,8 @@ public:
 
 	}
 
-	Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules, std::map<std::string, storm::ir::RewardModel> rewards)
-		: modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), modules(modules), rewards(rewards) {
+	Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules, std::map<std::string, storm::ir::RewardModel> rewards, std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels)
+		: modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), modules(modules), rewards(rewards), labels(labels) {
 
 	}
 
@@ -71,19 +72,11 @@ public:
 			result +="\n";
 		}
 
+		for (auto label : labels) {
+			result += "label " + label.first + " = " + label.second->toString() + ";\n";
+		}
+
 		return result;
-	}
-
-	void addBooleanUndefinedConstantExpression(std::string constantName, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression> constantExpression) {
-		booleanUndefinedConstantExpressions[constantName] = constantExpression;
-	}
-
-	void addIntegerUndefinedConstantExpression(std::string constantName, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression> constantExpression) {
-		integerUndefinedConstantExpressions[constantName] = constantExpression;
-	}
-
-	void addDoubleUndefinedConstantExpression(std::string constantName, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression> constantExpression) {
-		doubleUndefinedConstantExpressions[constantName] = constantExpression;
 	}
 
 private:
@@ -93,6 +86,7 @@ private:
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions;
 	std::vector<storm::ir::Module> modules;
 	std::map<std::string, storm::ir::RewardModel> rewards;
+	std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels;
 };
 
 }

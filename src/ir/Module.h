@@ -8,7 +8,9 @@
 #ifndef MODULE_H_
 #define MODULE_H_
 
-#include "IR.h"
+#include "BooleanVariable.h"
+#include "IntegerVariable.h"
+#include "Command.h"
 
 namespace storm {
 
@@ -42,14 +44,6 @@ public:
 		}
 		result += "endmodule\n";
 		return result;
-	}
-
-	void addBooleanVariable(storm::ir::BooleanVariable variable) {
-		booleanVariables.push_back(variable);
-	}
-
-	void addIntegerVariable(storm::ir::IntegerVariable variable) {
-		integerVariables.push_back(variable);
 	}
 
 private:

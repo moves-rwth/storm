@@ -9,6 +9,7 @@
 #define INTEGERVARIABLE_H_
 
 #include "Variable.h"
+#include "expressions/BaseExpression.h"
 
 namespace storm {
 

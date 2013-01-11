@@ -8,7 +8,8 @@
 #ifndef COMMAND_H_
 #define COMMAND_H_
 
-#include "IR.h"
+#include "expressions/BaseExpression.h"
+#include "Update.h"
 
 namespace storm {
 
