@@ -83,7 +83,7 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
 	maxnode = 0;
 	while (buf[0] != '\0') {
 		/*
-		 *	Read source node and choice.
+		 *	Read source node.
 		 *	Check if current source node is larger than current maximum node id.
 		 *	Increase number of choices.
 		 *	Check if we have skipped any source node, i.e. if any node has no
@@ -97,6 +97,8 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
 			nonzero += source - lastsource - 1;
 			parsed_nonzero += source - lastsource - 1;
 		}
+		lastsource = source;
+		buf = trimWhitespaces(buf); // Skip to name of choice
 		buf += strcspn(buf, " \t\n\r");  // Skip name of choice.
 		
 		/*
@@ -153,85 +155,134 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 	: matrix(nullptr)
 {
 	/*
-	*	enforce locale where decimal point is '.'
+	*	Enforce locale where decimal point is '.'.
 	*/
 	setlocale( LC_NUMERIC, "C" );
 	
 	/*
-	 *	open file
+	 *	Open file.
 	 */
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
 	
 	/*
-	 *	perform first pass, i.e. count entries that are not zero and not on the diagonal
+	 *	Perform first pass, i.e. obtain number of columns, rows and non-zero elements.
 	 */
-	uint_fast64_t maxnode, maxchoices;
-	uint_fast64_t non_zero = this->firstPass(file.data, maxnode, maxchoices);
+	uint_fast64_t maxnode, choices;
+	uint_fast64_t nonzero = this->firstPass(file.data, choices, maxnode);
 	
 	/*
-	 *	if first pass returned zero, the file format was wrong
+	 *	If first pass returned zero, the file format was wrong.
 	 */
-	if (non_zero == 0)
+	if (nonzero == 0)
 	{
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
 		throw storm::exceptions::WrongFileFormatException();
 	}
 	
 	/*
-	 *	perform second pass
+	 *	Perform second pass.
 	 *	
-	 *	from here on, we already know that the file header is correct
+	 *	From here on, we already know that the file header is correct.
 	 */
 
 	/*
-	 *	read file header, extract number of states
+	 *	Read file header, ignore values within.
 	 */
-	buf += 7; // skip "STATES "
+	buf = strchr(buf, '\n') + 1;  // skip format hint
+	buf += 7;  // skip "STATES "
 	checked_strtol(buf, &buf);
 	buf = trimWhitespaces(buf);
-	buf += 12; // skip "TRANSITIONS "
+	buf += 12;  // skip "TRANSITIONS "
 	checked_strtol(buf, &buf);
 	
 	/*
-	 *	Creating matrix
-	 *	Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
-	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
+	 *	Create and initialize matrix.
+	 *	The matrix should have as many columns as we have nodes and as many rows as we have choices.
+	 *	Those two values, as well as the number of nonzero elements, was been calculated in the first run.
 	 */
-	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
-	this->matrix = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(maxnode + 1));
-	if (this->matrix == NULL)
-	{
-		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
+	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << choices << " x " << (maxnode+1) << " with " << nonzero << " entries.");
+	this->matrix = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(choices, maxnode + 1));
+	if (this->matrix == nullptr) {
+		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << choices << " x " << (maxnode+1) << ".");
 		throw std::bad_alloc();
 	}
-	// TODO: put stuff in matrix / matrices.
-	//this->matrix->initialize(*non_zero);
-
-	uint_fast64_t row, col, ndchoice;
+	this->matrix->initialize(nonzero);
+	
+	/*
+	 *	Parse file content.
+	 */
+	uint_fast64_t source, target, lastsource = 0;
+	uint_fast64_t curRow = 0;
+	std::string choice;
 	double val;
+	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
+	bool hadDeadlocks = false;
 
 	/*
-	 *	read all transitions from file
+	 *	Read all transitions from file.
 	 */
 	while (buf[0] != '\0')
 	{
 		/*
-		 *	read row, col and value.
-		 */
-		row = checked_strtol(buf, &buf);
-		ndchoice = checked_strtol(buf, &buf);
-		col = checked_strtol(buf, &buf);
-		val = strtod(buf, &buf);
+		 *	Read source node and choice name.
+		*/
+		source = checked_strtol(buf, &buf);
+		buf = trimWhitespaces(buf); // Skip to name of choice
+		choice = std::string(buf, strcspn(buf, " \t\n\r"));
 		
-		//this->matrix->addNextValue(row,col,val);
+		/*
+		 *	Check if we have skipped any source node, i.e. if any node has no
+		 *	outgoing transitions. If so, insert a self-loop.
+		 */
+		for (uint_fast64_t node = lastsource + 1; node < source; node++) {
+			hadDeadlocks = true;
+			if (fixDeadlocks) {
+				// TODO: add (curRow <-> (node,"")) to rowMapping
+				this->matrix->addNextValue(curRow, node, 1);
+				curRow++;
+				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+			} else {
+				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
+			}
+		}
+		lastsource = source;
+		
+		// TODO: add (curRow <-> (node,choice)) to rowMapping
+
+		/*
+		 *	Skip name of choice.
+		 */
+		buf += strcspn(buf, " \t\n\r");
+
+		/*
+		 *	Read all targets for this choice.
+		 */
 		buf = trimWhitespaces(buf);
+		while (buf[0] == '*') {
+			buf++;
+			/*
+			 *	Read target node and transition value.
+			 *	Put it into the matrix.
+			 */
+			target = checked_strtol(buf, &buf);
+			val = checked_strtod(buf, &buf);
+			this->matrix->addNextValue(curRow, target, val);
+			
+			/*
+			 *	Proceed to beginning of next line in file and next row in matrix.
+			 */
+			buf = trimWhitespaces(buf);
+		}
+		curRow++;
 	}
 	
+	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+	
 	/*
-	 * clean up
+	 * Finalize matrix.
 	 */	
-	//this->matrix->finalize();
+	this->matrix->finalize();
 }
 
 } //namespace parser
