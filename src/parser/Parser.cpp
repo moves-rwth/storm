@@ -54,9 +54,6 @@ double storm::parser::Parser::checked_strtod(const char* str, char** end) {
  *	@return	pointer to first non-whitespace character
  */
 char* storm::parser::Parser::trimWhitespaces(char* buf) {
-	/*TODO: Maybe use memcpy to copy all the stuff from the first non-whitespace char
-	 * to the position of the buffer, so we don't have to keep track of 2 pointers.
-	 */
 	while ((*buf == ' ') || (*buf == '\t') || (*buf == '\n') || (*buf == '\r')) buf++;
 	return buf;
 }
