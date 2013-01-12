@@ -2,11 +2,11 @@
  * Program.h
  *
  *  Created on: 04.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef PROGRAM_H_
-#define PROGRAM_H_
+#ifndef STORM_IR_PROGRAM_H_
+#define STORM_IR_PROGRAM_H_
 
 #include "expressions/BaseExpression.h"
 #include "expressions/BooleanConstantExpression.h"
@@ -15,82 +15,76 @@
 #include "Module.h"
 #include "RewardModel.h"
 
+#include <map>
+#include <vector>
+#include <memory>
+
 namespace storm {
 
 namespace ir {
 
+/*!
+ * A class representing a program.
+ */
 class Program {
 public:
 
+	/*!
+	 * An enum for the different model types.
+	 */
 	enum ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP};
 
-	Program() : modelType(UNDEFINED), booleanUndefinedConstantExpressions(), integerUndefinedConstantExpressions(), doubleUndefinedConstantExpressions(), modules(), rewards() {
+	/*!
+	 * Default constructor. Creates an empty program.
+	 */
+	Program();
 
-	}
+	/*!
+	 * Creates a program with the given model type, undefined constants, modules, rewards and labels.
+	 * @param modelType the type of the model that this program gives rise to.
+	 * @param booleanUndefinedConstantExpressions a map of undefined boolean constants to their
+	 * expression nodes.
+	 * @param integerUndefinedConstantExpressions a map of undefined integer constants to their
+	 * expression nodes.
+	 * @param doubleUndefinedConstantExpressions a map of undefined double constants to their
+	 * expression nodes.
+	 * @param modules The modules of the program.
+	 * @param rewards The reward models of the program.
+	 * @param labels The labels defined for this model.
+	 */
+	Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules, std::map<std::string, storm::ir::RewardModel> rewards, std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
 
-	Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules, std::map<std::string, storm::ir::RewardModel> rewards, std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels)
-		: modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), modules(modules), rewards(rewards), labels(labels) {
-
-	}
-
-	Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules)
-		: modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), modules(modules), rewards() {
-
-	}
-
-
-	Program(ModelType modelType, std::vector<storm::ir::Module> modules) : modelType(modelType), booleanUndefinedConstantExpressions(), integerUndefinedConstantExpressions(), doubleUndefinedConstantExpressions(), modules(modules), rewards() {
-
-	}
-
-	std::string toString() {
-		std::string result = "";
-		switch (modelType) {
-		case UNDEFINED: result += "undefined\n\n"; break;
-		case DTMC: result += "dtmc\n\n"; break;
-		case CTMC: result += "ctmc\n\n"; break;
-		case MDP: result += "mdp\n\n"; break;
-		case CTMDP: result += "ctmdp\n\n"; break;
-		}
-		for (auto element : booleanUndefinedConstantExpressions) {
-			result += "const bool " + element.first + ";\n";
-		}
-		for (auto element : integerUndefinedConstantExpressions) {
-			result += "const int " + element.first + ";\n";
-		}
-		for (auto element : doubleUndefinedConstantExpressions) {
-			result += "const double " + element.first + ";\n";
-		}
-		result += "\n";
-		for (auto mod : modules) {
-			result += mod.toString();
-			result += "\n";
-		}
-
-		for (auto rewardModel : rewards) {
-			result += rewardModel.second.toString();
-			result +="\n";
-		}
-
-		for (auto label : labels) {
-			result += "label " + label.first + " = " + label.second->toString() + ";\n";
-		}
-
-		return result;
-	}
+	/*!
+	 * Retrieves a string representation of this program.
+	 * @returns a string representation of this program.
+	 */
+	std::string toString() const;
 
 private:
+	// The type of the model.
 	ModelType modelType;
+
+	// A map of undefined boolean constants to their expression nodes.
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions;
+
+	// A map of undefined integer constants to their expressions nodes.
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions;
+
+	// A mpa of undefined double constants to their expressions nodes.
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions;
+
+	// The modules associated with the program.
 	std::vector<storm::ir::Module> modules;
+
+	// The reward models associated with the program.
 	std::map<std::string, storm::ir::RewardModel> rewards;
+
+	// The labels that are defined for this model.
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels;
 };
 
-}
+} // namespace ir
 
-}
+} // namespace storm
 
-#endif /* PROGRAM_H_ */
+#endif /* STORM_IR_PROGRAM_H_ */

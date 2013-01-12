@@ -53,11 +53,4 @@ public:
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::expressions::BinaryNumericalFunctionExpression,
-    (std::shared_ptr<storm::ir::expressions::BaseExpression>, left)
-    (std::shared_ptr<storm::ir::expressions::BaseExpression>, right)
-    (storm::ir::expressions::BinaryNumericalFunctionExpression::FunctorType, functor)
-)
-
 #endif /* BINARYFUNCTIONEXPRESSION_H_ */

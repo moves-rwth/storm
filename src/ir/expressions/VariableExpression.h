@@ -41,9 +41,4 @@ public:
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::expressions::VariableExpression,
-    (std::string, variableName)
-)
-
 #endif /* VARIABLEEXPRESSION_H_ */

@@ -2,12 +2,13 @@
  * IR.h
  *
  *  Created on: 06.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef IR_H_
-#define IR_H_
+#ifndef STORM_IR_IR_H_
+#define STORM_IR_IR_H_
 
+// Bundle all headers to make it easy to include them.
 #include "expressions/Expressions.h"
 #include "Assignment.h"
 #include "Update.h"
@@ -21,4 +22,4 @@
 #include "RewardModel.h"
 #include "Program.h"
 
-#endif /* IR_H_ */
+#endif /* STORM_IR_IR_H_ */

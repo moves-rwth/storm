@@ -2,39 +2,56 @@
  * StateReward.h
  *
  *  Created on: Jan 10, 2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef STATEREWARD_H_
-#define STATEREWARD_H_
+#ifndef STORM_IR_STATEREWARD_H_
+#define STORM_IR_STATEREWARD_H_
 
 #include "expressions/BaseExpression.h"
+
+#include <memory>
 
 namespace storm {
 
 namespace ir {
 
+/*!
+ * A class representing a state reward.
+ */
 class StateReward {
 public:
-	StateReward() : statePredicate(nullptr), rewardValue(nullptr) {
+	/*!
+	 * Default constructor. Creates an empty state reward.
+	 */
+	StateReward();
 
-	}
+	/*!
+	 * Creates a state reward for the states satisfying the given expression with the value given
+	 * by a second expression.
+	 * @param statePredicate the predicate that states earning this state-based reward need to
+	 * satisfy.
+	 * @param rewardValue an expression specifying the values of the rewards to attach to the
+	 * states.
+	 */
+	StateReward(std::shared_ptr<storm::ir::expressions::BaseExpression> statePredicate, std::shared_ptr<storm::ir::expressions::BaseExpression> rewardValue);
 
-	StateReward(std::shared_ptr<storm::ir::expressions::BaseExpression> statePredicate, std::shared_ptr<storm::ir::expressions::BaseExpression> rewardValue) : statePredicate(statePredicate), rewardValue(rewardValue) {
-
-	}
-
-	std::string toString() {
-		return "\t" + statePredicate->toString() + ": " + rewardValue->toString() + ";";
-	}
+	/*!
+	 * Retrieves a string representation of this state reward.
+	 * @returns a string representation of this state reward.
+	 */
+	std::string toString() const;
 
 private:
+	// The predicate that characterizes the states that obtain this reward.
 	std::shared_ptr<storm::ir::expressions::BaseExpression> statePredicate;
+
+	// The expression that specifies the value of the reward obtained.
 	std::shared_ptr<storm::ir::expressions::BaseExpression> rewardValue;
 };
 
-}
+} // namespace ir
 
-}
+} // namespace storm
 
-#endif /* STATEREWARD_H_ */
+#endif /* STORM_IR_STATEREWARD_H_ */

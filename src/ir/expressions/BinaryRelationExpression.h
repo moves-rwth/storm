@@ -54,11 +54,4 @@ public:
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::expressions::BinaryRelationExpression,
-    (std::shared_ptr<storm::ir::expressions::BaseExpression>, left)
-    (std::shared_ptr<storm::ir::expressions::BaseExpression>, right)
-    (storm::ir::expressions::BinaryRelationExpression::RelationType, relation)
-)
-
 #endif /* BINARYRELATIONEXPRESSION_H_ */

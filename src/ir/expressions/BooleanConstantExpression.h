@@ -10,6 +10,8 @@
 
 #include "ConstantExpression.h"
 
+#include <boost/lexical_cast.hpp>
+
 namespace storm {
 
 namespace ir {
@@ -57,10 +59,5 @@ public:
 }
 
 }
-
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::expressions::BooleanConstantExpression,
-    (std::string, constantName)
-)
 
 #endif /* BOOLEANCONSTANTEXPRESSION_H_ */

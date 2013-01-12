@@ -41,9 +41,4 @@ public:
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::expressions::DoubleLiteral,
-    (double, value)
-)
-
 #endif /* DOUBLELITERAL_H_ */

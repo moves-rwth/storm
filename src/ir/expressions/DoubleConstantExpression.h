@@ -58,9 +58,4 @@ public:
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::expressions::DoubleConstantExpression,
-    (std::string, constantName)
-)
-
 #endif /* DOUBLECONSTANTEXPRESSION_H_ */

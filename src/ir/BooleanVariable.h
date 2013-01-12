@@ -2,42 +2,45 @@
  * BooleanVariable.h
  *
  *  Created on: 08.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef BOOLEANVARIABLE_H_
-#define BOOLEANVARIABLE_H_
+#ifndef STORM_IR_BOOLEANVARIABLE_H_
+#define STORM_IR_BOOLEANVARIABLE_H_
+
+#include "Variable.h"
+#include <memory>
 
 namespace storm {
 
 namespace ir {
 
+/*!
+ * A class representing a boolean variable.
+ */
 class BooleanVariable : public Variable {
 public:
-	BooleanVariable() {
+	/*!
+	 * Default constructor. Creates a boolean variable without a name.
+	 */
+	BooleanVariable();
 
-	}
+	/*!
+	 * Creates a boolean variable with the given name and the given initial value.
+	 * @param variableName the name of the variable.
+	 * @param initialValue the expression that defines the initial value of the variable.
+	 */
+	BooleanVariable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>());
 
-	BooleanVariable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = nullptr) : Variable(variableName,  initialValue) {
-
-	}
-
-	virtual ~BooleanVariable() {
-
-	}
-
-	virtual std::string toString() {
-		std::string result = getVariableName() + ": bool";
-		if (this->getInitialValue() != nullptr) {
-			result += " init " + this->getInitialValue()->toString();
-		}
-		result += ";";
-		return result;
-	}
+	/*!
+	 * Retrieves a string representation of this variable.
+	 * @returns a string representation of this variable.
+	 */
+	std::string toString() const;
 };
 
-}
+} // namespace ir
 
-}
+} // namespace storm
 
-#endif /* BOOLEANVARIABLE_H_ */
+#endif /* STORM_IR_BOOLEANVARIABLE_H_ */

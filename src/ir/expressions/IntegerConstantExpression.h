@@ -58,9 +58,4 @@ public:
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::expressions::IntegerConstantExpression,
-    (std::string, constantName)
-)
-
 #endif /* INTEGERCONSTANTEXPRESSION_H_ */

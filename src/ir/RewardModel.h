@@ -2,52 +2,59 @@
  * RewardModel.h
  *
  *  Created on: 04.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef REWARDMODEL_H_
-#define REWARDMODEL_H_
+#ifndef STORM_IR_REWARDMODEL_H_
+#define STORM_IR_REWARDMODEL_H_
 
-#include <iostream>
+#include "StateReward.h"
+#include "TransitionReward.h"
+
+#include <string>
+#include <vector>
 
 namespace storm {
 
 namespace ir {
 
+/*!
+ * A class representing a reward model.
+ */
 class RewardModel {
 public:
-	RewardModel() : rewardModelName(""), stateRewards(), transitionRewards() {
+	/*!
+	 * Default constructor. Creates an empty reward model.
+	 */
+	RewardModel();
 
-	}
+	/*!
+	 * Creates a reward module with the given name, state and transition rewards.
+	 * @param rewardModelName the name of the reward model.
+	 * @param stateRewards A vector of state-based reward.
+	 * @param transitionRewards A vector of transition-based reward.
+	 */
+	RewardModel(std::string rewardModelName, std::vector<storm::ir::StateReward> stateRewards, std::vector<storm::ir::TransitionReward> transitionRewards);
 
-	RewardModel(std::string rewardModelName, std::vector<storm::ir::StateReward> stateRewards, std::vector<storm::ir::TransitionReward> transitionRewards) : rewardModelName(rewardModelName), stateRewards(stateRewards), transitionRewards(transitionRewards) {
-
-	}
-
-	RewardModel(RewardModel const& other) : rewardModelName(other.rewardModelName), stateRewards(other.stateRewards), transitionRewards(other.transitionRewards) {
-
-	}
-
-	std::string toString() {
-		std::string result = "rewards \"" + rewardModelName + "\"\n";
-		for (auto reward : stateRewards) {
-			result += reward.toString() + "\n";
-		}
-		for (auto reward : transitionRewards) {
-			result += reward.toString() + "\n";
-		}
-		result += "endrewards\n";
-		return result;
-	}
+	/*!
+	 * Retrieves a string representation of this variable.
+	 * @returns a string representation of this variable.
+	 */
+	std::string toString() const;
 
 private:
+	// The name of the reward model.
 	std::string rewardModelName;
+
+	// The state-based rewards associated with this reward model.
 	std::vector<storm::ir::StateReward> stateRewards;
+
+	// The transition-based rewards associated with this reward model.
 	std::vector<storm::ir::TransitionReward> transitionRewards;
 };
 
-}
+} // namespace ir
 
-}
+} // namespace storm
 
-#endif /* REWARDMODEL_H_ */
+#endif /* STORM_IR_REWARDMODEL_H_ */

@@ -47,10 +47,4 @@ public:
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::expressions::UnaryNumericalFunctionExpression,
-    (std::shared_ptr<storm::ir::expressions::BaseExpression>, child)
-    (storm::ir::expressions::UnaryNumericalFunctionExpression::FunctorType, functor)
-)
-
 #endif /* UNARYFUNCTIONEXPRESSION_H_ */

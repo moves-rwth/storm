@@ -2,49 +2,56 @@
  * IntegerVariable.h
  *
  *  Created on: 08.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef INTEGERVARIABLE_H_
-#define INTEGERVARIABLE_H_
+#ifndef STORM_IR_INTEGERVARIABLE_H_
+#define STORM_IR_INTEGERVARIABLE_H_
 
-#include "Variable.h"
 #include "expressions/BaseExpression.h"
+#include "Variable.h"
+#include <memory>
 
 namespace storm {
 
 namespace ir {
 
+/*!
+ * A class representing an integer variable.
+ */
 class IntegerVariable : public Variable {
 public:
-	IntegerVariable() : lowerBound(nullptr), upperBound(nullptr) {
+	/*!
+	 * Default constructor. Creates an integer variable without a name and lower and upper bounds.
+	 */
+	IntegerVariable();
 
-	}
+	/*!
+	 * Creates an integer variable with the given name, lower and upper bounds and the given initial
+	 * value.
+	 * @param variableName the name of the variable.
+	 * @param lowerBound the lower bound of the domain of the variable.
+	 * @param upperBound the upper bound of the domain of the variable.
+	 * @param initialValue the expression that defines the initial value of the variable.
+	 */
+	IntegerVariable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>());
 
-	IntegerVariable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = nullptr) : Variable(variableName, initialValue), lowerBound(lowerBound), upperBound(upperBound) {
-
-	}
-
-	virtual ~IntegerVariable() {
-
-	}
-
-	virtual std::string toString() {
-		std::string result = getVariableName() + ": [" + lowerBound->toString() + ".." + upperBound->toString() + "]";
-		if (this->getInitialValue() != nullptr) {
-			result += " init " + this->getInitialValue()->toString();
-		}
-		result += ";";
-		return result;
-	}
+	/*!
+	 * Retrieves a string representation of this variable.
+	 * @returns a string representation of this variable.
+	 */
+	std::string toString() const;
 
 private:
+	// The lower bound of the domain of the variable.
 	std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound;
+
+	// The upper bound of the domain of the variable.
 	std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound;
 };
 
-}
+} // namespace ir
 
-}
+} // namespace storm
 
-#endif /* INTEGERVARIABLE_H_ */
+#endif /* STORM_IR_INTEGERVARIABLE_H_ */

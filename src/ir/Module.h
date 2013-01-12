@@ -2,61 +2,65 @@
  * Module.h
  *
  *  Created on: 04.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef MODULE_H_
-#define MODULE_H_
+#ifndef STORM_IR_MODULE_H_
+#define STORM_IR_MODULE_H_
 
 #include "BooleanVariable.h"
 #include "IntegerVariable.h"
 #include "Command.h"
 
 #include <map>
+#include <string>
+#include <vector>
 
 namespace storm {
 
 namespace ir {
 
+/*!
+ * A class representing a module.
+ */
 class Module {
 public:
-	Module() : moduleName(""), booleanVariables(), integerVariables(), commands() {
+	/*!
+	 * Default constructor. Creates an empty module.
+	 */
+	Module();
 
-	}
+	/*!
+	 * Creates a module with the given name, variables and commands.
+	 * @param moduleName the name of the module.
+	 * @param booleanVariables a map of boolean variables.
+	 * @param integerVariables a map of integer variables.
+	 * @param commands the vector of commands.
+	 */
+	Module(std::string moduleName, std::map<std::string, storm::ir::BooleanVariable> booleanVariables, std::map<std::string, storm::ir::IntegerVariable> integerVariables, std::vector<storm::ir::Command> commands);
 
-	Module(std::string moduleName, std::map<std::string, storm::ir::BooleanVariable> booleanVariables, std::map<std::string, storm::ir::IntegerVariable> integerVariables, std::vector<storm::ir::Command> commands)
-		: moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables), commands(commands) {
-
-	}
-
-	Module(std::string moduleName, std::vector<storm::ir::Command> commands) : moduleName(moduleName), booleanVariables(), integerVariables(), commands(commands) {
-
-	}
-
-	std::string toString() {
-		std::string result = "module " + moduleName + "\n";
-		for (auto variable : booleanVariables) {
-			result += "\t" + variable.second.toString() + "\n";
-		}
-		for (auto variable : integerVariables) {
-			result += "\t" + variable.second.toString() + "\n";
-		}
-		for (auto command : commands) {
-			result += "\t" + command.toString() + "\n";
-		}
-		result += "endmodule\n";
-		return result;
-	}
+	/*!
+	 * Retrieves a string representation of this variable.
+	 * @returns a string representation of this variable.
+	 */
+	std::string toString() const;
 
 private:
+	// The name of the module.
 	std::string moduleName;
+
+	// A map of boolean variable names to their details.
 	std::map<std::string, storm::ir::BooleanVariable> booleanVariables;
+
+	// A map of integer variable names to their details.
 	std::map<std::string, storm::ir::IntegerVariable> integerVariables;
+
+	// The commands associated with the module.
 	std::vector<storm::ir::Command> commands;
 };
 
-}
+} // namespace ir
 
-}
+} // namespace storm
 
-#endif /* MODULE_H_ */
+#endif /* STORM_IR_MODULE_H_ */

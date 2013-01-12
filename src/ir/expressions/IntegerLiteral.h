@@ -39,9 +39,4 @@ public:
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(
-    storm::ir::expressions::IntegerLiteral,
-    (int, value)
-)
-
 #endif /* INTEGERLITERAL_H_ */
