@@ -23,6 +23,7 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFileFormatException.h"
 #include "boost/integer/integer_mask.hpp"
+#include "src/utility/Settings.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -47,7 +48,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 	uint_fast64_t non_zero = 0;
 
 	/*
-	 *	check file header and extract number of transitions
+	 *	Check file header and extract number of transitions.
 	 */
 	buf = strchr(buf, '\n') + 1; // skip format hint
 	if (strncmp(buf, "STATES ", 7) != 0) {
@@ -65,33 +66,40 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 	if ((non_zero = strtol(buf, &buf, 10)) == 0) return 0;
 
 	/*
-	 *	check all transitions for non-zero diagonal entrys
+	 *	Check all transitions for non-zero diagonal entrys.
 	 */
-	uint_fast64_t row, col;
+	uint_fast64_t row, lastrow, col;
 	double val;
 	maxnode = 0;
 	while (buf[0] != '\0') {
 		/*
-		 *	read row and column
+		 *	Read row and column.
 		 */
 		row = checked_strtol(buf, &buf);
 		col = checked_strtol(buf, &buf);
 		/*
-		 *	check if one is larger than the current maximum id
+		 *	Check if one is larger than the current maximum id.
 		 */
 		if (row > maxnode) maxnode = row;
 		if (col > maxnode) maxnode = col;
 		/*
-		 *	read value. 
-		 *	if row == col, we have a diagonal element which is treated separately and this non_zero must be decreased.
+		 *	Check if a node was skipped, i.e. if a node has no outgoing
+		 *	transitions. If so, increase non_zero, as the second pass will
+		 *	either throw an exception (in this case, it doesn't matter
+		 *	anyway) or add a self-loop (in this case, we'll need the
+		 *	additional transition).
+		 */
+		if (lastrow < row-1) non_zero += row - lastrow - 1;
+		lastrow = row;
+		/*
+		 *	Read probability of this transition.
+		 *	Check, if the value is a probability, i.e. if it is between 0 and 1.
 		 */
 		val = checked_strtod(buf, &buf);
 		if ((val < 0.0) || (val > 1.0)) {
 			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << val << "\".");
 			return 0;
 		}
-		// not needed anymore
-		// if (row == col) non_zero--;
 		buf = trimWhitespaces(buf);
 	}
 
@@ -111,23 +119,23 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename)
 	: matrix(nullptr) {
 	/*
-	*	enforce locale where decimal point is '.'
-	*/
+	 *	Enforce locale where decimal point is '.'.
+	 */
 	setlocale(LC_NUMERIC, "C");
 
 	/*
-	 *	open file
+	 *	Open file.
 	 */
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
 
 	/*
-	 *	perform first pass, i.e. count entries that are not zero and not on the diagonal
+	 *	Perform first pass, i.e. count entries that are not zero.
 	 */
 	uint_fast64_t maxnode;
 	uint_fast64_t non_zero = this->firstPass(file.data, maxnode);
 	/*
-	 *	if first pass returned zero, the file format was wrong
+	 *	If first pass returned zero, the file format was wrong.
 	 */
 	if (non_zero == 0) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
@@ -135,13 +143,13 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	}
 
 	/*
-	 *	perform second pass
+	 *	Perform second pass-
 	 *	
-	 *	from here on, we already know that the file header is correct
+	 *	From here on, we already know that the file header is correct.
 	 */
 
 	/*
-	 *	read file header, extract number of states
+	 *	Read file header, extract number of states.
 	 */
 	buf = strchr(buf, '\n') + 1; // skip format hint
 	buf += 7;  // skip "STATES "
@@ -151,9 +159,8 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	checked_strtol(buf, &buf);
 
 	/*
-	 *	Creating matrix
-	 *	Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
-	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
+	 *	Creating matrix here.
+	 *	The number of non-zero elements is computed by firstPass().
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
 	this->matrix = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(maxnode + 1));
@@ -163,26 +170,45 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	}
 	this->matrix->initialize(non_zero);
 
-	uint_fast64_t row, col;
+	uint_fast64_t row, lastrow, col;
 	double val;
+	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
+	bool hadDeadlocks = false;
 
 	/*
-	 *	read all transitions from file
+	 *	Read all transitions from file. Note that we assume, that the
+	 *	transitions are listed in canonical order, otherwise this will not
+	 *	work, i.e. the values in the matrix will be at wrong places.
 	 */
 	while (buf[0] != '\0') {
 		/*
-		 *	read row, col and value.
+		 *	Read row, col and value.
 		 */
 		row = checked_strtol(buf, &buf);
 		col = checked_strtol(buf, &buf);
 		val = checked_strtod(buf, &buf);
 
+		/*
+		 *	Check if we skipped a node, i.e. if a node does not have any
+		 *	outgoing transitions.
+		 */
+		for (uint_fast64_t node = lastrow + 1; node < row; node++) {
+			hadDeadlocks = true;
+			if (fixDeadlocks) {
+				this->matrix->addNextValue(node, node, 1);
+				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+			}
+			else LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
+		}
+		lastrow = row;
+
 		this->matrix->addNextValue(row, col, val);
 		buf = trimWhitespaces(buf);
 	}
+	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 
 	/*
-	 * clean up
+	 *	Finalize Matrix.
 	 */	
 	this->matrix->finalize();
 }

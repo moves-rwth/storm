@@ -132,6 +132,7 @@ void Settings::initDescriptions() {
 		("labfile", bpo::value<std::string>()->required(), "name of the .lab file")
 		("transrew", bpo::value<std::string>()->default_value(""), "name of transition reward file")
 		("staterew", bpo::value<std::string>()->default_value(""), "name of state reward file")
+		("fix-deadlocks", "insert self-loops for states without outgoing transitions")
 	;
 }
 
