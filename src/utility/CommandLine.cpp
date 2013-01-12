@@ -8,13 +8,11 @@
 #include <ostream>
 
 namespace storm {
-
 namespace utility {
 
 void printSeparationLine(std::ostream& out) {
 	out << "------------------------------------------------------" << std::endl;
 }
 
-} // namespace utility
-
-} // namespace storm
+}  // namespace utility
+}  // namespace storm

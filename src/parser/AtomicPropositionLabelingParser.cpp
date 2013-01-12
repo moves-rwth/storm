@@ -7,20 +7,22 @@
 
 #include "src/parser/AtomicPropositionLabelingParser.h"
 
-#include "src/exceptions/WrongFileFormatException.h"
-#include "src/exceptions/FileIoException.h"
-
-#include "src/utility/OsDetection.h"
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <clocale>
-#include <iostream>
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <locale.h>
+
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <string>
+#include <clocale>
+#include <iostream>
+
+#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/FileIoException.h"
+#include "src/utility/OsDetection.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -39,17 +41,16 @@ namespace parser {
  *	@return The pointer to the created labeling object.
  */
 AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t node_count,
-																					  std::string const & filename)
-	: labeling(nullptr)
-{
+		std::string const & filename)
+	: labeling(nullptr) {
 	/*
-	 *	open file
+	 *	Open file.
 	 */
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
 
 	/*
-	 *	first run: obtain number of propositions
+	 *	First run: obtain number of propositions.
 	 */
 	char separator[] = " \r\n\t";
 	bool foundDecl = false, foundEnd = false;
@@ -57,11 +58,11 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 	{
 		size_t cnt = 0;
 		/*
-		 *	iterate over tokens until we hit #END or end of file
+		 *	Iterate over tokens until we hit #END or end of file.
 		 */
 		while(buf[0] != '\0') {
 			buf += cnt;
-			cnt = strcspn(buf, separator); // position of next separator
+			cnt = strcspn(buf, separator);  // position of next separator
 			if (cnt > 0) {
 				/*
 				 *	next token is #DECLARATION: just skip it
@@ -71,31 +72,32 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 				if (strncmp(buf, "#DECLARATION", cnt) == 0) {
 					foundDecl = true;
 					continue;
-				}
-				else if (strncmp(buf, "#END", cnt) == 0) {
+				} else if (strncmp(buf, "#END", cnt) == 0) {
 					foundEnd = true;
 					break;
 				}
 				proposition_count++;
-			} else buf++; // next char is separator, one step forward
+			} else {
+				buf++;  // next char is separator, one step forward
+			}
 		}
-		
+
 		/*
 		 *	If #DECLARATION or #END were not found, the file format is wrong
 		 */
-		if (! (foundDecl && foundEnd)) {
+		if (!(foundDecl && foundEnd)) {
 			LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). File header is corrupted.");
-			if (! foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
-			if (! foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
+			if (!foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
+			if (!foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
 			throw storm::exceptions::WrongFileFormatException();
 		}
 	}
-	
+
 	/*
 	 *	create labeling object with given node and proposition count
 	 */
 	this->labeling = std::shared_ptr<storm::models::AtomicPropositionsLabeling>(new storm::models::AtomicPropositionsLabeling(node_count, proposition_count));
-	
+
 	/*
 	 *	second run: add propositions and node labels to labeling
 	 *
@@ -107,11 +109,11 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 		 *	load propositions
 		 *	As we already checked the file format, we can be a bit sloppy here...
 		 */
-		char proposition[128]; // buffer for proposition names
+		char proposition[128];  // buffer for proposition names
 		size_t cnt = 0;
 		do {
 			buf += cnt;
-			cnt = strcspn(buf, separator); // position of next separator
+			cnt = strcspn(buf, separator);  // position of next separator
 			if (cnt >= sizeof(proposition)) {
 				/*
 				 *	if token is longer than our buffer, the following strncpy code might get risky...
@@ -129,7 +131,9 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 				strncpy(proposition, buf, cnt);
 				proposition[cnt] = '\0';
 				this->labeling->addAtomicProposition(proposition);
-			} else cnt = 1; // next char is separator, one step forward
+			} else {
+				cnt = 1;  // next char is separator, one step forward
+			}
 		} while (cnt > 0);
 		/*
 		 *	Right here, the buf pointer is still pointing to our last token,
@@ -137,7 +141,7 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 		 */
 		buf += 4;
 	}
-	
+
 	{
 		/*
 		 *	now parse node label assignments
@@ -178,5 +182,5 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 	}
 }
 
-} //namespace parser
-} //namespace storm
+}  // namespace parser
+}  // namespace storm
