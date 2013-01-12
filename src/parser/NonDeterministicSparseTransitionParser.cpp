@@ -7,22 +7,24 @@
 
 #include "src/parser/NonDeterministicSparseTransitionParser.h"
 
-#include "src/utility/Settings.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
-#include "boost/integer/integer_mask.hpp"
-
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <clocale>
-#include <iostream>
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <locale.h>
 
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <clocale>
+#include <iostream>
+#include <utility>
+#include <string>
+
+#include "src/utility/Settings.h"
+#include "src/exceptions/FileIoException.h"
+#include "src/exceptions/WrongFileFormatException.h"
+#include "boost/integer/integer_mask.hpp"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -56,14 +58,14 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
 		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
 	}
-	buf += 7; // skip "STATES "
+	buf += 7;  // skip "STATES "
 	if (strtol(buf, &buf, 10) == 0) return 0;
 	buf = trimWhitespaces(buf);
 	if (strncmp(buf, "TRANSITIONS ", 12) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
 	}
-	buf += 12; // skip "TRANSITIONS "
+	buf += 12;  // skip "TRANSITIONS "
 	/*
 	 *	Parse number of transitions.
 	 *	We will not actually use this value, but we will compare it to the
@@ -71,7 +73,7 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
 	 *	vlaue is wrong.
 	 */
 	uint_fast64_t parsed_nonzero = strtol(buf, &buf, 10);
-	
+
 	/*
 	 *	Read all transitions.
 	 */
@@ -98,9 +100,9 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
 			parsed_nonzero += source - lastsource - 1;
 		}
 		lastsource = source;
-		buf = trimWhitespaces(buf); // Skip to name of choice
+		buf = trimWhitespaces(buf);  // Skip to name of choice
 		buf += strcspn(buf, " \t\n\r");  // Skip name of choice.
-		
+
 		/*
 		 *	Read all targets for this choice.
 		 */
@@ -119,12 +121,12 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
 				LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
 				return 0;
 			}
-			
+
 			/*
 			 *	Increase number of non-zero values.
 			 */
 			nonzero++;
-			 
+
 			/*
 			 *	Proceed to beginning of next line.
 			 */
@@ -152,34 +154,32 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
  */
 
 NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(std::string const &filename)
-	: matrix(nullptr)
-{
+	: matrix(nullptr) {
 	/*
-	*	Enforce locale where decimal point is '.'.
-	*/
-	setlocale( LC_NUMERIC, "C" );
-	
+	 *	Enforce locale where decimal point is '.'.
+	 */
+	setlocale(LC_NUMERIC, "C");
+
 	/*
 	 *	Open file.
 	 */
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
-	
+
 	/*
 	 *	Perform first pass, i.e. obtain number of columns, rows and non-zero elements.
 	 */
 	uint_fast64_t maxnode, choices;
 	uint_fast64_t nonzero = this->firstPass(file.data, choices, maxnode);
-	
+
 	/*
 	 *	If first pass returned zero, the file format was wrong.
 	 */
-	if (nonzero == 0)
-	{
+	if (nonzero == 0) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
 		throw storm::exceptions::WrongFileFormatException();
 	}
-	
+
 	/*
 	 *	Perform second pass.
 	 *	
@@ -195,7 +195,7 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 	buf = trimWhitespaces(buf);
 	buf += 12;  // skip "TRANSITIONS "
 	checked_strtol(buf, &buf);
-	
+
 	/*
 	 *	Create and initialize matrix.
 	 *	The matrix should have as many columns as we have nodes and as many rows as we have choices.
@@ -208,12 +208,12 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 		throw std::bad_alloc();
 	}
 	this->matrix->initialize(nonzero);
-	
+
 	/*
 	 *	Create row mapping.
 	 */
 	this->rowMapping = std::shared_ptr<RowMapping>(new RowMapping());
-	
+
 	/*
 	 *	Parse file content.
 	 */
@@ -227,15 +227,14 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 	/*
 	 *	Read all transitions from file.
 	 */
-	while (buf[0] != '\0')
-	{
+	while (buf[0] != '\0') {
 		/*
 		 *	Read source node and choice name.
-		*/
+		 */
 		source = checked_strtol(buf, &buf);
-		buf = trimWhitespaces(buf); // Skip to name of choice
+		buf = trimWhitespaces(buf);  // Skip to name of choice
 		choice = std::string(buf, strcspn(buf, " \t\n\r"));
-		
+
 		/*
 		 *	Check if we have skipped any source node, i.e. if any node has no
 		 *	outgoing transitions. If so, insert a self-loop.
@@ -244,7 +243,7 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 		for (uint_fast64_t node = lastsource + 1; node < source; node++) {
 			hadDeadlocks = true;
 			if (fixDeadlocks) {
-				this->rowMapping->insert( RowMapping::value_type( curRow, std::pair<uint_fast64_t,std::string>(node, "")) );
+				this->rowMapping->insert(RowMapping::value_type(curRow, std::pair<uint_fast64_t, std::string>(node, "")));
 				this->matrix->addNextValue(curRow, node, 1);
 				curRow++;
 				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
@@ -253,11 +252,11 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 			}
 		}
 		lastsource = source;
-		
+
 		/*
 		 *	Add this source-choice pair to rowMapping.
 		 */
-		this->rowMapping->insert( RowMapping::value_type( curRow, std::pair<uint_fast64_t,std::string>(source, choice)) );
+		this->rowMapping->insert(RowMapping::value_type(curRow, std::pair<uint_fast64_t, std::string>(source, choice)));
 
 		/*
 		 *	Skip name of choice.
@@ -277,7 +276,7 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 			target = checked_strtol(buf, &buf);
 			val = checked_strtod(buf, &buf);
 			this->matrix->addNextValue(curRow, target, val);
-			
+
 			/*
 			 *	Proceed to beginning of next line in file and next row in matrix.
 			 */
@@ -285,14 +284,14 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 		}
 		curRow++;
 	}
-	
+
 	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
-	
+
 	/*
 	 * Finalize matrix.
 	 */	
 	this->matrix->finalize();
 }
 
-} //namespace parser
-} //namespace storm
+}  // namespace parser
+}  // namespace storm

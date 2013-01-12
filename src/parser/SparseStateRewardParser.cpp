@@ -6,21 +6,23 @@
  */
 
 #include "src/parser/SparseStateRewardParser.h"
-#include "src/exceptions/WrongFileFormatException.h"
-#include "src/exceptions/FileIoException.h"
 
-#include "src/utility/OsDetection.h"
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <clocale>
-#include <iostream>
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <locale.h>
+#include <iostream>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <string>
+#include <vector>
+#include <clocale>
 
+#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/FileIoException.h"
+#include "src/utility/OsDetection.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -44,7 +46,7 @@ SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::
 
 	// Create state reward vector with given state count.
 	this->stateRewards = std::shared_ptr<std::vector<double>>(new std::vector<double>(stateCount));
-	
+
 	{
 		// Now parse state reward assignments.
 		uint_fast64_t state;
@@ -67,5 +69,5 @@ SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::
 	}
 }
 
-} //namespace parser
-} //namespace storm
+}  // namespace parser
+}  // namespace storm
