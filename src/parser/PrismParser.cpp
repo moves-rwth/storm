@@ -169,13 +169,17 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 		integerVariableName.name("integer variable");
 		commandName %= commandNames_;
 		commandName.name("command name");
+		unassignedLocalBooleanVariableName %= localBooleanVariables_ - assignedLocalBooleanVariables_;
+		unassignedLocalBooleanVariableName.name("unassigned local boolean variable");
+		unassignedLocalIntegerVariableName %= localIntegerVariables_ - assignedLocalIntegerVariables_;
+		unassignedLocalIntegerVariableName.name("unassigned local integer variable");
 
 		// This block defines all entities that are needed for parsing a single command.
-		assignmentDefinition = (qi::lit("(") >> integerVariableName > qi::lit("'") > qi::lit("=") > integerExpression > qi::lit(")"))[phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::Assignment>>(qi::_1, phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)))] | (qi::lit("(") > booleanVariableName > qi::lit("'") > qi::lit("=") > booleanExpression > qi::lit(")"))[phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::Assignment>>(qi::_1, phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)))];
+		assignmentDefinition = (qi::lit("(") >> unassignedLocalIntegerVariableName > qi::lit("'") > qi::lit("=") > integerExpression > qi::lit(")"))[phoenix::bind(assignedLocalIntegerVariables_.add, qi::_1, qi::_1), phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::Assignment>>(qi::_1, phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)))] | (qi::lit("(") > unassignedLocalBooleanVariableName > qi::lit("'") > qi::lit("=") > booleanExpression > qi::lit(")"))[phoenix::bind(assignedLocalBooleanVariables_.add, qi::_1, qi::_1), phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::Assignment>>(qi::_1, phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)))];
 		assignmentDefinition.name("assignment");
 		assignmentDefinitionList = assignmentDefinition(qi::_r1) % "&";
 		assignmentDefinitionList.name("assignment list");
-		updateDefinition = (constantDoubleExpression > qi::lit(":") > assignmentDefinitionList(qi::_a))[qi::_val = phoenix::construct<storm::ir::Update>(qi::_1, qi::_a)];
+		updateDefinition = (constantDoubleExpression > qi::lit(":")[phoenix::clear(phoenix::ref(assignedLocalBooleanVariables_)), phoenix::clear(phoenix::ref(assignedLocalIntegerVariables_))] > assignmentDefinitionList(qi::_a))[qi::_val = phoenix::construct<storm::ir::Update>(qi::_1, qi::_a)];
 		updateDefinition.name("update");
 		updateListDefinition = +updateDefinition % "+";
 		updateListDefinition.name("update list");
@@ -183,15 +187,15 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 		commandDefinition.name("command");
 
 		// This block defines all entities that are neede for parsing variable definitions.
-		booleanVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("bool") > -(qi::lit("init") > constantBooleanExpression[qi::_b = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(qi::_1)]) > qi::lit(";"))[phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::BooleanVariable>>(qi::_1, phoenix::construct<storm::ir::BooleanVariable>(phoenix::val(qi::_1), qi::_b))), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(booleanVariables_.add, qi::_1, qi::_a), phoenix::bind(booleanVariableNames_.add, qi::_1, qi::_1)];
+		booleanVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("bool") > -(qi::lit("init") > constantBooleanExpression[qi::_b = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(qi::_1)]) > qi::lit(";"))[phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::BooleanVariable>>(qi::_1, phoenix::construct<storm::ir::BooleanVariable>(phoenix::val(qi::_1), qi::_b))), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(booleanVariables_.add, qi::_1, qi::_a), phoenix::bind(booleanVariableNames_.add, qi::_1, qi::_1), phoenix::bind(localBooleanVariables_.add, qi::_1, qi::_1)];
 		booleanVariableDefinition.name("boolean variable declaration");
-		integerVariableDefinition = (freeIdentifierName > qi::lit(":") > qi::lit("[") > constantIntegerExpression > qi::lit("..") > constantIntegerExpression > qi::lit("]") > -(qi::lit("init") > constantIntegerExpression[qi::_b = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(qi::_1)]) > qi::lit(";"))[phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::IntegerVariable>>(qi::_1, phoenix::construct<storm::ir::IntegerVariable>(qi::_1, qi::_2, qi::_3, qi::_b))), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(integerVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableNames_.add, qi::_1, qi::_1)];
+		integerVariableDefinition = (freeIdentifierName > qi::lit(":") > qi::lit("[") > constantIntegerExpression > qi::lit("..") > constantIntegerExpression > qi::lit("]") > -(qi::lit("init") > constantIntegerExpression[qi::_b = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(qi::_1)]) > qi::lit(";"))[phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::IntegerVariable>>(qi::_1, phoenix::construct<storm::ir::IntegerVariable>(qi::_1, qi::_2, qi::_3, qi::_b))), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(integerVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableNames_.add, qi::_1, qi::_1), phoenix::bind(localIntegerVariables_.add, qi::_1, qi::_1)];
 		integerVariableDefinition.name("integer variable declaration");
 		variableDefinition = (booleanVariableDefinition(qi::_r1) | integerVariableDefinition(qi::_r2));
 		variableDefinition.name("variable declaration");
 
 		// This block defines all entities that are needed for parsing a module.
-		moduleDefinition = (qi::lit("module") > freeIdentifierName > *(variableDefinition(qi::_a, qi::_b)) > +commandDefinition > qi::lit("endmodule"))[phoenix::bind(moduleNames_.add, qi::_1, qi::_1), qi::_val = phoenix::construct<storm::ir::Module>(qi::_1, qi::_a, qi::_b, qi::_2)];
+		moduleDefinition = (qi::lit("module")[phoenix::clear(phoenix::ref(localBooleanVariables_)), phoenix::clear(phoenix::ref(localIntegerVariables_))] > freeIdentifierName > *(variableDefinition(qi::_a, qi::_b)) > +commandDefinition > qi::lit("endmodule"))[phoenix::bind(moduleNames_.add, qi::_1, qi::_1), qi::_val = phoenix::construct<storm::ir::Module>(qi::_1, qi::_a, qi::_b, qi::_2)];
 		moduleDefinition.name("module");
 		moduleDefinitionList %= +moduleDefinition;
 		moduleDefinitionList.name("module list");
@@ -248,6 +252,8 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 	qi::rule<Iterator, std::string(), Skipper> integerVariableName;
 	qi::rule<Iterator, std::string(), Skipper> booleanVariableName;
 	qi::rule<Iterator, std::string(), Skipper> commandName;
+	qi::rule<Iterator, std::string(), Skipper> unassignedLocalBooleanVariableName;
+	qi::rule<Iterator, std::string(), Skipper> unassignedLocalIntegerVariableName;
 
 	// Rules for reward definitions.
 	qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::ir::RewardModel>&), Skipper> rewardDefinitionList;
@@ -377,7 +383,8 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 	struct qi::symbols<char, std::shared_ptr<storm::ir::expressions::BaseExpression>> integerConstants_, booleanConstants_, doubleConstants_;
 
 	// A structure representing the identity function over identifier names.
-	struct qi::symbols<char, std::string> integerVariableNames_, booleanVariableNames_, commandNames_, labelNames_, allConstantNames_, moduleNames_;
+	struct variableNamesStruct : qi::symbols<char, std::string> { } integerVariableNames_, booleanVariableNames_, commandNames_, labelNames_, allConstantNames_, moduleNames_,
+		localBooleanVariables_, localIntegerVariables_, assignedLocalBooleanVariables_, assignedLocalIntegerVariables_;
 };
 
 /*!
