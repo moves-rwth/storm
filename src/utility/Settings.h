@@ -51,7 +51,7 @@ namespace settings {
 			 *	@brief	Get value of a generic option.
 			 */
 			template <typename T>
-			const T& get(const std::string &name) const {
+			inline const T& get( std::string const & name) const {
 				if (this->vm.count(name) == 0) throw storm::exceptions::InvalidSettingsException() << "Could not read option " << name << ".";
 				return this->vm[name].as<T>();
 			}
@@ -59,14 +59,14 @@ namespace settings {
 			/*!
 			 *	@brief	Get value of string option
 			 */
-			const std::string& getString(const std::string &name) const {
+			inline const std::string& getString(std::string const & name) const {
 				return this->get<std::string>(name);
 			}
 		
 			/*!
 			 *	@brief	Check if an option is set
 			 */
-			const bool isSet(const std::string &name) const {
+			inline const bool isSet(std::string const & name) const {
 				return this->vm.count(name) > 0;
 			}
 			
@@ -107,28 +107,28 @@ namespace settings {
 			 */
 			template <typename T>
 			static void registerModule() {
-				// get trigger
+				// Get trigger values.
 				std::pair< std::string, std::string > trigger = T::getOptionTrigger();
-				// build description name
+				// Build description name.
 				std::stringstream str;
 				str << "Options for " << T::getModuleName() << " (" << trigger.first << " = " << trigger.second << ")";
 				std::shared_ptr<bpo::options_description> desc = std::shared_ptr<bpo::options_description>(new bpo::options_description(str.str()));
-				// but options
+				// Put options into description.
 				T::putOptions(desc.get());
-				// store
+				// Store module.
 				Settings::modules[ trigger ] = desc;
 			}
 	
 			friend std::ostream& help(std::ostream& os);
 			friend std::ostream& helpConfigfile(std::ostream& os);
 			friend Settings* instance();
-			friend Settings* newInstance(const int argc, const char* argv[], const char* filename);
+			friend Settings* newInstance(int const argc, char const * const argv[], char const * const filename);
 
 		private:
 			/*!
 			 *	@brief	Constructor.
 			 */
-			Settings(const int argc, const char* argv[], const char* filename);
+			Settings(int const argc, char const * const argv[], char const * const filename);
 			
 			/*!
 			 *	@brief	Initialize options_description object.
@@ -138,12 +138,12 @@ namespace settings {
 			/*!
 			 *	@brief	Perform first parser run
 			 */
-			void firstRun(const int argc, const char* argv[], const char* filename);
+			void firstRun(int const argc, char const * const argv[], char const * const filename);
 			
 			/*!
 			 *	@brief	Perform second parser run.
 			 */
-			void secondRun(const int argc, const char* argv[], const char* filename);
+			void secondRun(int const argc, char const * const argv[], char const * const filename);
 			
 			/*!
 			 *	@brief	Option description for positional arguments on command line.
@@ -197,10 +197,10 @@ namespace settings {
 	 *
 	 *	@param argc should be argc passed to main function
 	 *	@param argv should be argv passed to main function
-	 *  @param filename either NULL or name of config file
+	 *	@param filename either NULL or name of config file
 	 *	@return The new instance of Settings.
 	 */
-	inline Settings* newInstance(const int argc, const char* argv[], const char* filename) {
+	inline Settings* newInstance(int const argc, char const * const argv[], char const * const filename) {
 		if (Settings::inst != nullptr) delete Settings::inst;
 		Settings::inst = new Settings(argc, argv, filename);
 		return Settings::inst;
