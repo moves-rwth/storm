@@ -7,13 +7,17 @@
 
 #include "src/utility/Settings.h"
 
-#include "src/exceptions/BaseException.h"
+#include <boost/algorithm/string/join.hpp>
+#include <utility>
+#include <map>
+#include <string>
+#include <list>
 
+#include "src/exceptions/BaseException.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
-#include <boost/algorithm/string/join.hpp>
 
 namespace storm {
 namespace settings {
@@ -54,22 +58,22 @@ Settings::Settings(int const argc, char const * const argv[], char const * const
 
 		// Check module triggers, add corresponding options.
 		std::map< std::string, std::list< std::string > > options;
-		
+
 		for (auto it : Settings::modules) {
 			options[it.first.first].push_back(it.first.second);
 		}
 		for (auto it : options) {
 			std::stringstream str;
 			str << "select " << it.first << " module (" << boost::algorithm::join(it.second, ", ") << ")";
-			
+
 			Settings::desc->add_options()
 				(it.first.c_str(), bpo::value<std::string>()->default_value(it.second.front()), str.str().c_str())
 			;
 		}
-		
+
 		// Perform first parse run.
 		this->firstRun(argc, argv, filename);
-		
+
 		// Buffer for items to be deleted.
 		std::list< std::pair< std::string, std::string > > deleteQueue;
 		// Check module triggers.
@@ -83,15 +87,15 @@ Settings::Settings(int const argc, char const * const argv[], char const * const
 			}
 		}
 		for (auto it : deleteQueue) Settings::modules.erase(it);
-		
+
 		// Stop if help is set.
 		if (this->vm.count("help") > 0) {
 			return;
 		}
-		
+
 		// Perform second run.
 		this->secondRun(argc, argv, filename);
-		
+
 		// Finalize parsed options, check for specified requirements.
 		bpo::notify(this->vm);
 		LOG4CPLUS_DEBUG(logger, "Finished loading config.");
@@ -190,5 +194,5 @@ std::ostream& help(std::ostream& os) {
 	return os;
 }
 
-} // namespace settings
-} // namespace storm
+}  // namespace settings
+}  // namespace storm

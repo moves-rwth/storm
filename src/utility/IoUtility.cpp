@@ -6,10 +6,11 @@
 */
 
 #include "src/utility/IoUtility.h"
-#include "src/parser/DeterministicSparseTransitionParser.h"
-#include "src/parser/AtomicPropositionLabelingParser.h"
 
 #include <fstream>
+
+#include "src/parser/DeterministicSparseTransitionParser.h"
+#include "src/parser/AtomicPropositionLabelingParser.h"
 
 namespace storm {
 

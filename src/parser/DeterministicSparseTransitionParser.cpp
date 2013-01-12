@@ -50,7 +50,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
-	buf = strchr(buf, '\n') + 1; // skip format hint
+	buf = strchr(buf, '\n') + 1;  // skip format hint
 	if (strncmp(buf, "STATES ", 7) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
@@ -151,7 +151,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	Read file header, extract number of states.
 	 */
-	buf = strchr(buf, '\n') + 1; // skip format hint
+	buf = strchr(buf, '\n') + 1;  // skip format hint
 	buf += 7;  // skip "STATES "
 	checked_strtol(buf, &buf);
 	buf = trimWhitespaces(buf);
@@ -197,8 +197,9 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 			if (fixDeadlocks) {
 				this->matrix->addNextValue(node, node, 1);
 				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+			} else {
+				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
 			}
-			else LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
 		}
 		lastrow = row;
 

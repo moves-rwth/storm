@@ -8,8 +8,8 @@
 #ifndef DTMCPARSER_H_
 #define DTMCPARSER_H_
 
-#include "Parser.h"
-#include "models/Dtmc.h"
+#include "src/parser/Parser.h"
+#include "src/models/Dtmc.h"
 
 namespace storm {
 namespace parser {

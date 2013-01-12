@@ -12,8 +12,7 @@
  *	@param type	Model type.
  *	@return Output stream os.
  */
-std::ostream& storm::models::operator<<(std::ostream& os, storm::models::ModelType const type)
-{
+std::ostream& storm::models::operator<<(std::ostream& os, storm::models::ModelType const type) {
     switch (type) {
         case storm::models::Unknown: os << "Unknown"; break;
         case storm::models::DTMC: os << "DTMC"; break;
@@ -21,6 +20,6 @@ std::ostream& storm::models::operator<<(std::ostream& os, storm::models::ModelTy
         case storm::models::MDP: os << "MDP"; break;
         case storm::models::CTMDP: os << "CTMDP"; break;
         default: os << "Invalid ModelType"; break;
-    }   
+    }
     return os;
 }

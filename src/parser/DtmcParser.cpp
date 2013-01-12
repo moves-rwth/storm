@@ -5,10 +5,14 @@
  *      Author: thomas
  */
 
-#include "DtmcParser.h"
-#include "DeterministicSparseTransitionParser.h"
-#include "AtomicPropositionLabelingParser.h"
-#include "SparseStateRewardParser.h"
+#include "src/parser/DtmcParser.h"
+
+#include <string>
+#include <vector>
+
+#include "src/parser/DeterministicSparseTransitionParser.h"
+#include "src/parser/AtomicPropositionLabelingParser.h"
+#include "src/parser/SparseStateRewardParser.h"
 
 namespace storm {
 namespace parser {
