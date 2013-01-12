@@ -14,17 +14,9 @@ namespace parser {
 /*!
  *	@brief Checks the given files and parses the model within these files.
  *
- *	This parser analyzes the filename, an optional format hint (in the first
- *	line of the transition file) and the transitions within the file.
- *
- *	If all three (or two, if the hint is not given) are consistent, it will
- *	call the appropriate parser.
- *	If two guesses are the same but the third one contradicts, it will issue
- *	a warning to the user and call the (hopefully) appropriate parser.
- *	If all guesses differ, but a format hint is given, it will issue a
- *	warning to the user and use the format hint to determine the correct
- *	parser.
- *	Otherwise, it will issue an error.
+ *	This parser analyzes the format hitn in the first line of the transition
+ *	file. If this is a valid format, it will use the parser for this format,
+ *	otherwise it will throw an exception.
  *
  *	When the files are parsed successfully, the parsed ModelType and Model
  *	can be obtained via getType() and getModel<ModelClass>().
@@ -38,7 +30,8 @@ class AutoParser : Parser {
 		 *	@brief 	Returns the type of model that was parsed.
 		 */
 		storm::models::ModelType getType() {
-			return this->model->getType();
+			if (this->model) return this->model->getType();
+			else return storm::models::Unknown;
 		}
 		
 		/*!
@@ -51,11 +44,13 @@ class AutoParser : Parser {
 		
 	private:
 		
-		storm::models::ModelType analyzeFilename(const std::string& filename);
-		std::pair<storm::models::ModelType, storm::models::ModelType> analyzeContent(const std::string& filename);
+		/*!
+		 *	@brief	Open file and read file format hint.
+		 */
+		storm::models::ModelType analyzeHint(const std::string& filename);
 		
 		/*!
-		 *	@brief Pointer to a parser that has parsed the given transition system.
+		 *	@brief	Pointer to a parser that has parsed the given transition system.
 		 */
 		std::shared_ptr<storm::models::AbstractModel> model;
 };

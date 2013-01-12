@@ -49,6 +49,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 	/*
 	 *	check file header and extract number of transitions
 	 */
+	buf = strchr(buf, '\n') + 1; // skip format hint
 	if (strncmp(buf, "STATES ", 7) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
@@ -142,6 +143,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	read file header, extract number of states
 	 */
+	buf = strchr(buf, '\n') + 1; // skip format hint
 	buf += 7;  // skip "STATES "
 	checked_strtol(buf, &buf);
 	buf = trimWhitespaces(buf);
