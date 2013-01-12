@@ -1,6 +1,7 @@
 #include "src/parser/AutoParser.h"
 
 #include "src/exceptions/WrongFileFormatException.h"
+#include "src/models/AbstractModel.h"
 
 #include "src/parser/DtmcParser.h"
 //#include "NonDeterministicSparseTransitionParser.h"
