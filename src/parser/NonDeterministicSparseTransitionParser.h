@@ -27,7 +27,7 @@ class NonDeterministicSparseTransitionParser : public Parser {
 	private:
 		std::shared_ptr<storm::storage::SparseMatrix<double>> matrix;
 		
-		std::unique_ptr<std::vector<uint_fast64_t>> firstPass(char* buf, uint_fast64_t &maxnode, uint_fast64_t &maxchoice);
+		uint_fast64_t firstPass(char* buf, uint_fast64_t& choices, uint_fast64_t& maxnode);
 	
 };
 		
