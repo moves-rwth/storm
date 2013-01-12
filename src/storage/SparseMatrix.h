@@ -77,7 +77,7 @@ public:
 			: rowCount(rows), colCount(cols), nonZeroEntryCount(0),
 			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
 
-	/* Sadly, Delegate Constructors are not yet available with MSVC2012
+	/* Sadly, Delegate Constructors are not yet available with MSVC2012 */
 	//! Constructor
 	/*!
 	 * Constructs a square sparse matrix object with the given number rows
