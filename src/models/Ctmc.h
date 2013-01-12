@@ -18,7 +18,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
-#include "src/models/Model.h"
+#include "src/models/AbstractModel.h"
 
 namespace storm {
 
@@ -29,7 +29,7 @@ namespace models {
  * labeled with atomic propositions.
  */
 template <class T>
-class Ctmc : public storm::models::Model {
+class Ctmc : public storm::models::AbstractModel {
 
 public:
 	//! Constructor
@@ -58,7 +58,7 @@ public:
 	Ctmc(const Ctmc<T> &ctmc) : rateMatrix(ctmc.rateMatrix),
 			stateLabeling(ctmc.stateLabeling), stateRewards(ctmc.stateRewards),
 			transitionRewardMatrix(ctmc.transitionRewardMatrix) {
-		if (ctmc.backardTransitions != nullptr) {
+		if (ctmc.backwardTransitions != nullptr) {
 			this->backwardTransitions = new storm::models::GraphTransitions<T>(*ctmc.backwardTransitions);
 		}
 	}
@@ -161,6 +161,10 @@ public:
 				sizeof(*this))/1024 << " kbytes" << std::endl;
 		out << "-------------------------------------------------------------- "
 			<< std::endl;
+	}
+
+	storm::models::ModelType getType() {
+		return CTMC;
 	}
 
 private:

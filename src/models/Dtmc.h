@@ -19,7 +19,7 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/CommandLine.h"
 
-#include "src/models/Model.h"
+#include "src/models/AbstractModel.h"
 
 namespace storm {
 
@@ -30,7 +30,7 @@ namespace models {
  * labeled with atomic propositions.
  */
 template <class T>
-class Dtmc : public storm::models::Model {
+class Dtmc : public storm::models::AbstractModel {
 
 public:
 	//! Constructor
@@ -62,7 +62,7 @@ public:
 	Dtmc(const Dtmc<T> &dtmc) : probabilityMatrix(dtmc.probabilityMatrix),
 			stateLabeling(dtmc.stateLabeling), stateRewards(dtmc.stateRewards),
 			transitionRewardMatrix(dtmc.transitionRewardMatrix) {
-		if (dtmc.backardTransitions != nullptr) {
+		if (dtmc.backwardTransitions != nullptr) {
 			this->backwardTransitions = new storm::models::GraphTransitions<T>(*dtmc.backwardTransitions);
 		}
 		if (!this->checkValidityProbabilityMatrix()) {
@@ -193,6 +193,10 @@ public:
 				sizeof(*this))/1024 << " kbytes" << std::endl;
 		out << std::endl;
 		storm::utility::printSeparationLine(out);
+	}
+	
+	storm::models::ModelType getType() {
+		return DTMC;
 	}
 
 private:
