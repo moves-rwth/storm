@@ -210,6 +210,11 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 	this->matrix->initialize(nonzero);
 	
 	/*
+	 *	Create row mapping.
+	 */
+	this->rowMapping = std::shared_ptr<RowMapping>(new RowMapping());
+	
+	/*
 	 *	Parse file content.
 	 */
 	uint_fast64_t source, target, lastsource = 0;
@@ -234,11 +239,12 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 		/*
 		 *	Check if we have skipped any source node, i.e. if any node has no
 		 *	outgoing transitions. If so, insert a self-loop.
+		 *	Also add self-loops to rowMapping.
 		 */
 		for (uint_fast64_t node = lastsource + 1; node < source; node++) {
 			hadDeadlocks = true;
 			if (fixDeadlocks) {
-				// TODO: add (curRow <-> (node,"")) to rowMapping
+				this->rowMapping->insert( RowMapping::value_type( curRow, std::pair<uint_fast64_t,std::string>(node, "")) );
 				this->matrix->addNextValue(curRow, node, 1);
 				curRow++;
 				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
@@ -248,7 +254,10 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 		}
 		lastsource = source;
 		
-		// TODO: add (curRow <-> (node,choice)) to rowMapping
+		/*
+		 *	Add this source-choice pair to rowMapping.
+		 */
+		this->rowMapping->insert( RowMapping::value_type( curRow, std::pair<uint_fast64_t,std::string>(source, choice)) );
 
 		/*
 		 *	Skip name of choice.
