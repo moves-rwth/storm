@@ -68,7 +68,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 	/*
 	 *	Check all transitions for non-zero diagonal entrys.
 	 */
-	uint_fast64_t row, lastrow, col;
+	uint_fast64_t row, lastrow = 0, col;
 	double val;
 	maxnode = 0;
 	while (buf[0] != '\0') {
@@ -170,7 +170,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	}
 	this->matrix->initialize(non_zero);
 
-	uint_fast64_t row, lastrow, col;
+	uint_fast64_t row, lastrow = 0, col;
 	double val;
 	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
 	bool hadDeadlocks = false;
