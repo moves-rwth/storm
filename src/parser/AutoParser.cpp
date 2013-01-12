@@ -2,82 +2,89 @@
 
 #include "src/exceptions/WrongFileFormatException.h"
 
-#include "DeterministicSparseTransitionParser.h"
-#include "NonDeterministicSparseTransitionParser.h"
+#include "src/parser/DtmcParser.h"
+//#include "NonDeterministicSparseTransitionParser.h"
 
 #include <string>
 
 namespace storm {
 namespace parser {
 
-AutoParser::AutoParser(const std::string& filename)
-	: type(Unknown) {
+AutoParser::AutoParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+	std::string const & stateRewardFile, std::string const & transitionRewardFile)
+	{
 
-	ModelType name = this->analyzeFilename(filename);
-	std::pair<ModelType,ModelType> content = this->analyzeContent(filename);
-	ModelType hint = content.first, transitions = content.second;
+	storm::models::ModelType name = this->analyzeFilename(transitionSystemFile);
+	std::pair<storm::models::ModelType,storm::models::ModelType> content = this->analyzeContent(transitionSystemFile);
+	storm::models::ModelType hint = content.first, transitions = content.second;
 	
-	if (hint == Unknown) {
-		if (name == transitions) this->type = name;
+	storm::models::ModelType type = storm::models::Unknown;
+	
+	if (hint == storm::models::Unknown) {
+		if (name == transitions) type = name;
 		else {
-			LOG4CPLUS_ERROR(logger, "Could not determine file type of " << filename << ". Filename suggests " << name << " but transitions look like " << transitions);
-			LOG4CPLUS_ERROR(logger, "Please fix your file and try again.");
-			throw storm::exceptions::WrongFileFormatException() << "Could not determine type of file " << filename;
+			LOG4CPLUS_ERROR(logger, "Could not determine file type of " << transitionSystemFile << ". Filename suggests " << name << " but transitions look like " << transitions);			LOG4CPLUS_ERROR(logger, "Please fix your file and try again.");
+			throw storm::exceptions::WrongFileFormatException() << "Could not determine type of file " << transitionSystemFile;
 		}
 	} else {
-		if ((hint == name) && (name == transitions)) this->type = name;
+		if ((hint == name) && (name == transitions)) type = name;
 		else if (hint == name) {
-			LOG4CPLUS_WARN(logger, "Transition format in file " << filename << " of type " << name << " look like " << transitions << " transitions.");
+			LOG4CPLUS_WARN(logger, "Transition format in file " << transitionSystemFile << " of type " << name << " look like " << transitions << " transitions.");
 			LOG4CPLUS_WARN(logger, "We will use the parser for " << name << " and hope for the best!");
-			this->type = name;
+			type = name;
 		}
 		else if (hint == transitions) {
-			LOG4CPLUS_WARN(logger, "File extension of " << filename << " suggests type " << name << " but the content seems to be " << hint);
+			LOG4CPLUS_WARN(logger, "File extension of " << transitionSystemFile << " suggests type " << name << " but the content seems to be " << hint);
 			LOG4CPLUS_WARN(logger, "We will use the parser for " << hint << " and hope for the best!");
-			this->type = hint;
+			type = hint;
 		}
 		else if (name == transitions) {
-			LOG4CPLUS_WARN(logger, "File " << filename << " contains a hint that it is " << hint << " but filename and transition pattern suggests " << name);
+			LOG4CPLUS_WARN(logger, "File " << transitionSystemFile << " contains a hint that it is " << hint << " but filename and transition pattern suggests " << name);
 			LOG4CPLUS_WARN(logger, "We will use the parser for " << name << " and hope for the best!");
-			this->type = name;
+			type = name;
 		}
 		else {
-			LOG4CPLUS_WARN(logger, "File " << filename << " contains a hint that it is " << hint << " but filename suggests " << name << " and transition pattern suggests " << transitions);
+			LOG4CPLUS_WARN(logger, "File " << transitionSystemFile << " contains a hint that it is " << hint << " but filename suggests " << name << " and transition pattern suggests " << transitions);
 			LOG4CPLUS_WARN(logger, "We will stick to the hint, use the parser for " << hint << " and hope for the best!");
-			this->type = hint;
+			type = hint;
 		}
 	}
 	
 	// Do actual parsing
-	switch (this->type) {
-		case DTMC:
-			this->parser = new DeterministicSparseTransitionParser(filename);
+	switch (type) {
+		case storm::models::DTMC: {
+				DtmcParser* parser = new DtmcParser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+				this->model = parser->getDtmc();
+				break;
+			}
+		case storm::models::CTMC:
 			break;
-		case NDTMC:
-			this->parser = new NonDeterministicSparseTransitionParser(filename);
+		case storm::models::MDP:
+			break;
+		case storm::models::CTMDP:
 			break;
 		default: ; // Unknown
 	}
 }
 
-ModelType AutoParser::analyzeFilename(const std::string& filename) {
-	ModelType type = Unknown;
+storm::models::ModelType AutoParser::analyzeFilename(const std::string& filename) {
+	storm::models::ModelType type = storm::models::Unknown;
 	
 	// find file extension
 	std::string::size_type extpos = filename.rfind(".");
-	if (extpos == std::string::npos) return Unknown;
+	if (extpos == std::string::npos) return storm::models::Unknown;
 	else extpos++;
 	
 	// check file extension
-	if (filename.substr(extpos) == "dtmc") type = DTMC;
-	else if (filename.substr(extpos) == "ndtmc") type = NDTMC;
+	if (filename.substr(extpos) == "dtmc") type = storm::models::DTMC;
+	else if (filename.substr(extpos) == "mdp") type = storm::models::MDP;
 	
 	return type;
 }
 
-std::pair<ModelType,ModelType> AutoParser::analyzeContent(const std::string& filename) {
+std::pair<storm::models::ModelType,storm::models::ModelType> AutoParser::analyzeContent(const std::string& filename) {
 	
-	ModelType hintType = Unknown, transType = Unknown;
+	storm::models::ModelType hintType = storm::models::Unknown, transType = storm::models::Unknown;
 	// Open file
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
@@ -87,14 +94,14 @@ std::pair<ModelType,ModelType> AutoParser::analyzeContent(const std::string& fil
 	sscanf(buf, "%s\n", hint);
 	
 	// check hint
-	if (strncmp(hint, "dtmc", sizeof(hint)) == 0) hintType = DTMC;
-	else if (strncmp(hint, "ndtmc", sizeof(hint)) == 0) hintType = NDTMC;
+	if (strncmp(hint, "dtmc", sizeof(hint)) == 0) hintType = storm::models::DTMC;
+	else if (strncmp(hint, "mdp", sizeof(hint)) == 0) hintType = storm::models::MDP;
 	
 	
 	// check transition format
 	// todo.
 	
-	return std::pair<ModelType,ModelType>(hintType, transType);
+	return std::pair<storm::models::ModelType,storm::models::ModelType>(hintType, transType);
 }
 
 } //namespace parser

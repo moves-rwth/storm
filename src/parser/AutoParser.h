@@ -1,10 +1,8 @@
 #ifndef STORM_PARSER_AUTOPARSER_H_
 #define STORM_PARSER_AUTOPARSER_H_
 
-#include "src/models/AtomicPropositionsLabeling.h"
-#include "boost/integer/integer_mask.hpp"
-
 #include "src/parser/Parser.h"
+#include "src/models/AbstractModel.h"
 
 #include <memory>
 #include <iostream>
@@ -14,28 +12,10 @@ namespace storm {
 namespace parser {
 
 /*!
- *	@brief	Enumeration of all supported types of models.
- */
-enum ModelType {
-	Unknown, DTMC, NDTMC
-};
-
-std::ostream& operator<<(std::ostream& os, const ModelType type)
-{
-	switch (type) {
-		case Unknown: os << "Unknown"; break;
-		case DTMC: os << "DTMC"; break;
-		case NDTMC: os << "NDTMC"; break;
-		default: os << "Invalid ModelType";
-	}
-	return os;
-}
-
-/*!
- *	@brief Checks the given file and tries to call the correct parser.
+ *	@brief Checks the given files and parses the model within these files.
  *
  *	This parser analyzes the filename, an optional format hint (in the first
- *	line of the file) and the transitions within the file.
+ *	line of the transition file) and the transitions within the file.
  *
  *	If all three (or two, if the hint is not given) are consistent, it will
  *	call the appropriate parser.
@@ -45,40 +25,39 @@ std::ostream& operator<<(std::ostream& os, const ModelType type)
  *	warning to the user and use the format hint to determine the correct
  *	parser.
  *	Otherwise, it will issue an error.
+ *
+ *	When the files are parsed successfully, the parsed ModelType and Model
+ *	can be obtained via getType() and getModel<ModelClass>().
  */
 class AutoParser : Parser {
 	public:
-		AutoParser(const std::string& filename);
+		AutoParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
 		
 		/*!
-		 *	@brief 	Returns the type of transition system that was detected.
+		 *	@brief 	Returns the type of model that was parsed.
 		 */
-		ModelType getModelType() {
-			return this->type;
+		storm::models::ModelType getType() {
+			return this->model->getType();
 		}
 		
-		template <typename T>
-		T* getParser() {
-			return dynamic_cast<T*>( this->parser );
+		/*!
+		 *	@brief	Returns the model with the given type.
+		 */
+		template <typename Model>
+		std::shared_ptr<Model> getModel() {
+			return this->model->as<Model>();
 		}
 		
-		~AutoParser() {
-			delete this->parser;
-		}
 	private:
 		
-		ModelType analyzeFilename(const std::string& filename);
-		std::pair<ModelType,ModelType> analyzeContent(const std::string& filename);
-		
-		/*!
-		 *	@brief Type of the transition system.
-		 */
-		ModelType type;
+		storm::models::ModelType analyzeFilename(const std::string& filename);
+		std::pair<storm::models::ModelType, storm::models::ModelType> analyzeContent(const std::string& filename);
 		
 		/*!
 		 *	@brief Pointer to a parser that has parsed the given transition system.
 		 */
-		Parser* parser;
+		std::shared_ptr<storm::models::AbstractModel> model;
 };
 
 } // namespace parser
