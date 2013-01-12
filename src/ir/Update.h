@@ -9,6 +9,7 @@
 #define UPDATE_H_
 
 #include "expressions/BaseExpression.h"
+#include <map>
 
 namespace storm {
 
@@ -20,25 +21,28 @@ public:
 
 	}
 
-	Update(std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression, std::vector<storm::ir::Assignment> assignments)
+	Update(std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression, std::map<std::string, storm::ir::Assignment> assignments)
 		: likelihoodExpression(likelihoodExpression), assignments(assignments) {
 
 	}
 
 	std::string toString() {
 		std::string result = likelihoodExpression->toString() + " : ";
-		for (uint_fast64_t i = 0; i < assignments.size(); ++i) {
-			result += assignments[i].toString();
+		uint_fast64_t i = 0;
+		for (auto assignment : assignments) {
+			result += assignment.second.toString();
+			++i;
 			if (i < assignments.size() - 1) {
 				result += " & ";
 			}
+
 		}
 		return result;
 	}
 
 private:
 	std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression;
-	std::vector<storm::ir::Assignment> assignments;
+	std::map<std::string, storm::ir::Assignment> assignments;
 };
 
 }

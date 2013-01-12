@@ -12,6 +12,8 @@
 #include "IntegerVariable.h"
 #include "Command.h"
 
+#include <map>
+
 namespace storm {
 
 namespace ir {
@@ -22,7 +24,7 @@ public:
 
 	}
 
-	Module(std::string moduleName, std::vector<storm::ir::BooleanVariable> booleanVariables, std::vector<storm::ir::IntegerVariable> integerVariables, std::vector<storm::ir::Command> commands)
+	Module(std::string moduleName, std::map<std::string, storm::ir::BooleanVariable> booleanVariables, std::map<std::string, storm::ir::IntegerVariable> integerVariables, std::vector<storm::ir::Command> commands)
 		: moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables), commands(commands) {
 
 	}
@@ -34,10 +36,10 @@ public:
 	std::string toString() {
 		std::string result = "module " + moduleName + "\n";
 		for (auto variable : booleanVariables) {
-			result += "\t" + variable.toString() + "\n";
+			result += "\t" + variable.second.toString() + "\n";
 		}
 		for (auto variable : integerVariables) {
-			result += "\t" + variable.toString() + "\n";
+			result += "\t" + variable.second.toString() + "\n";
 		}
 		for (auto command : commands) {
 			result += "\t" + command.toString() + "\n";
@@ -48,11 +50,9 @@ public:
 
 private:
 	std::string moduleName;
-
-	std::vector<storm::ir::BooleanVariable> booleanVariables;
-	std::vector<storm::ir::IntegerVariable> integerVariables;
+	std::map<std::string, storm::ir::BooleanVariable> booleanVariables;
+	std::map<std::string, storm::ir::IntegerVariable> integerVariables;
 	std::vector<storm::ir::Command> commands;
-
 };
 
 }

@@ -8,6 +8,8 @@
 #ifndef EXPRESSION_H_
 #define EXPRESSION_H_
 
+#include <string>
+
 namespace storm {
 
 namespace ir {

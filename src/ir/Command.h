@@ -11,6 +11,8 @@
 #include "expressions/BaseExpression.h"
 #include "Update.h"
 
+#include <vector>
+
 namespace storm {
 
 namespace ir {
