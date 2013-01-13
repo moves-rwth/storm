@@ -62,6 +62,15 @@ std::string Program::toString() const {
 	return result.str();
 }
 
+uint_fast64_t Program::getNumberOfModules() const {
+	return this->modules.size();
+}
+
+storm::ir::Module const& Program::getModule(uint_fast64_t index) const {
+	return this->modules[index];
+}
+
+
 } // namespace ir
 
 } // namepsace storm

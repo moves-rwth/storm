@@ -55,6 +55,18 @@ public:
 	Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules, std::map<std::string, storm::ir::RewardModel> rewards, std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
 
 	/*!
+	 * Retrieves the number of modules in the program.
+	 * @returns the number of modules in the program.
+	 */
+	uint_fast64_t getNumberOfModules() const;
+
+	/*!
+	 * Retrieves a reference to the module with the given index.
+	 * @param index the index of the module to retrieve.
+	 */
+	storm::ir::Module const& getModule(uint_fast64_t index) const;
+
+	/*!
 	 * Retrieves a string representation of this program.
 	 * @returns a string representation of this program.
 	 */

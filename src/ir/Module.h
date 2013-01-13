@@ -37,7 +37,47 @@ public:
 	 * @param integerVariables a map of integer variables.
 	 * @param commands the vector of commands.
 	 */
-	Module(std::string moduleName, std::map<std::string, storm::ir::BooleanVariable> booleanVariables, std::map<std::string, storm::ir::IntegerVariable> integerVariables, std::vector<storm::ir::Command> commands);
+	Module(std::string moduleName, std::vector<storm::ir::BooleanVariable> booleanVariables,
+			std::vector<storm::ir::IntegerVariable> integerVariables,
+			std::map<std::string, uint_fast64_t> booleanVariableToIndexMap,
+			std::map<std::string, uint_fast64_t> integerVariableToIndexMap,
+			std::vector<storm::ir::Command> commands);
+
+	/*!
+	 * Retrieves the number of boolean variables in the module.
+	 * @returns the number of boolean variables in the module.
+	 */
+	uint_fast64_t getNumberOfBooleanVariables() const;
+
+	/*!
+	 * Retrieves a reference to the boolean variable with the given index.
+	 * @returns a reference to the boolean variable with the given index.
+	 */
+	storm::ir::BooleanVariable const& getBooleanVariable(uint_fast64_t index) const;
+
+	/*!
+	 * Retrieves the number of integer variables in the module.
+	 * @returns the number of integer variables in the module.
+	 */
+	uint_fast64_t getNumberOfIntegerVariables() const;
+
+	/*!
+	 * Retrieves a reference to the integer variable with the given index.
+	 * @returns a reference to the integer variable with the given index.
+	 */
+	storm::ir::IntegerVariable const& getIntegerVariable(uint_fast64_t index) const;
+
+	/*!
+	 * Retrieves the number of commands of this module.
+	 * @returns the number of commands of this module.
+	 */
+	uint_fast64_t getNumberOfCommands() const;
+
+	/*!
+	 * Retrieves a reference to the command with the given index.
+	 * @returns a reference to the command with the given index.
+	 */
+	storm::ir::Command const& getCommand(uint_fast64_t index) const;
 
 	/*!
 	 * Retrieves a string representation of this variable.
@@ -49,11 +89,17 @@ private:
 	// The name of the module.
 	std::string moduleName;
 
-	// A map of boolean variable names to their details.
-	std::map<std::string, storm::ir::BooleanVariable> booleanVariables;
+	// A list of boolean variables.
+	std::vector<storm::ir::BooleanVariable> booleanVariables;
+
+	// A list of integer variables.
+	std::vector<storm::ir::IntegerVariable> integerVariables;
+
+	// A map of boolean variable names to their index.
+	std::map<std::string, uint_fast64_t> booleanVariablesToIndexMap;
 
 	// A map of integer variable names to their details.
-	std::map<std::string, storm::ir::IntegerVariable> integerVariables;
+	std::map<std::string, uint_fast64_t> integerVariablesToIndexMap;
 
 	// The commands associated with the module.
 	std::vector<storm::ir::Command> commands;

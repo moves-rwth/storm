@@ -22,12 +22,16 @@ class DoubleLiteral : public BaseExpression {
 public:
 	double value;
 
-	DoubleLiteral(double value) {
-		this->value = value;
+	DoubleLiteral(double value) : BaseExpression(double_), value(value) {
+
 	}
 
 	virtual ~DoubleLiteral() {
 
+	}
+
+	virtual double getValueAsDouble(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+		return value;
 	}
 
 	virtual std::string toString() const {

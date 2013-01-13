@@ -9,6 +9,8 @@
 
 #include <sstream>
 
+#include <iostream>
+
 namespace storm {
 
 namespace ir {
@@ -19,14 +21,16 @@ IntegerVariable::IntegerVariable() : lowerBound(), upperBound() {
 }
 
 // Initializes all members according to the given values.
-IntegerVariable::IntegerVariable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue) : Variable(variableName, initialValue), lowerBound(lowerBound), upperBound(upperBound) {
-	// Nothing to do here.
+IntegerVariable::IntegerVariable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue) : Variable(index, variableName, initialValue), lowerBound(lowerBound), upperBound(upperBound) {
+	if (this->getInitialValue() == nullptr) {
+		this->setInitialValue(lowerBound);
+	}
 }
 
 // Build a string representation of the variable.
 std::string IntegerVariable::toString() const {
 	std::stringstream result;
-	result << this->getVariableName() << ": [" << lowerBound->toString() << ".." << upperBound->toString() << "]";
+	result << this->getName() << ": [" << lowerBound->toString() << ".." << upperBound->toString() << "]";
 	if (this->getInitialValue() != nullptr) {
 		result << " init " + this->getInitialValue()->toString();
 	}

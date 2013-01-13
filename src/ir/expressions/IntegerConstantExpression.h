@@ -18,13 +18,21 @@ namespace expressions {
 
 class IntegerConstantExpression : public ConstantExpression {
 public:
-	IntegerConstantExpression(std::string constantName) : ConstantExpression(constantName) {
-		defined = false;
-		value = 0;
+	IntegerConstantExpression(std::string constantName) : ConstantExpression(int_, constantName), defined(false), value(0) {
+
 	}
 
 	virtual ~IntegerConstantExpression() {
 
+	}
+
+	virtual int_fast64_t getValueAsInt(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+		if (!defined) {
+			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+					<< "Integer constant '" << this->getConstantName() << "' is undefined.";
+		} else {
+			return value;
+		}
 	}
 
 	virtual std::string toString() const {
@@ -43,13 +51,14 @@ public:
 		return value;
 	}
 
-	void define(int value) {
+	void define(int_fast64_t value) {
 		defined = true;
 		this->value = value;
 	}
 
-	int value;
+private:
 	bool defined;
+	int_fast64_t value;
 };
 
 }

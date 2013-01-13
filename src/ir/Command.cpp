@@ -24,6 +24,21 @@ Command::Command(std::string commandName, std::shared_ptr<storm::ir::expressions
 	// Nothing to do here.
 }
 
+// Return the expression for the guard.
+std::shared_ptr<storm::ir::expressions::BaseExpression> const& Command::getGuard() const {
+	return guardExpression;
+}
+
+// Return the number of updates.
+uint_fast64_t Command::getNumberOfUpdates() const {
+	return this->updates.size();
+}
+
+// Return the requested update.
+storm::ir::Update const& Command::getUpdate(uint_fast64_t index) const {
+	return this->updates[index];
+}
+
 // Build a string representation of the command.
 std::string Command::toString() const {
 	std::stringstream result;

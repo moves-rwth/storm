@@ -28,16 +28,17 @@ public:
 
 	/*!
 	 * Creates an untyped variable with the given name and initial value.
+	 * @param index A unique (among the variables of equal type) index for the variable.
 	 * @param variableName the name of the variable.
 	 * @param initialValue the expression that defines the initial value of the variable.
 	 */
-	Variable(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>());
+	Variable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>());
 
 	/*!
 	 * Retrieves the name of the variable.
 	 * @returns the name of the variable.
 	 */
-	std::string const& getVariableName() const;
+	std::string const& getName() const;
 
 	/*!
 	 * Retrieves the expression defining the initial value of the variable.
@@ -45,7 +46,16 @@ public:
 	 */
 	std::shared_ptr<storm::ir::expressions::BaseExpression> const& getInitialValue() const;
 
+	/*!
+	 * Sets the initial value to the given expression.
+	 * @param initialValue the new initial value.
+	 */
+	void setInitialValue(std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue);
+
 private:
+	// A unique (among the variables of equal type) index for the variable
+	uint_fast64_t index;
+
 	// The name of the variable.
 	std::string variableName;
 

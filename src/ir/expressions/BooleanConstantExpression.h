@@ -20,13 +20,22 @@ namespace expressions {
 
 class BooleanConstantExpression : public ConstantExpression {
 public:
-	BooleanConstantExpression(std::string constantName) : ConstantExpression(constantName) {
+	BooleanConstantExpression(std::string constantName) : ConstantExpression(bool_, constantName) {
 		defined = false;
 		value = false;
 	}
 
 	virtual ~BooleanConstantExpression() {
 
+	}
+
+	virtual bool getValueAsBool(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+		if (!defined) {
+			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+					<< "Boolean constant '" << this->getConstantName() << "' is undefined.";
+		} else {
+			return value;
+		}
 	}
 
 	virtual std::string toString() const {

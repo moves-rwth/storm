@@ -51,7 +51,7 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 	 * TODO: It should be ensured that updates of a command only refer to variables of the
 	 * current module.
 	 */
-	PrismGrammar() : PrismGrammar::base_type(start) {
+	PrismGrammar() : PrismGrammar::base_type(start), nextBooleanVariableIndex(0), nextIntegerVariableIndex(0) {
 		// This rule defines all identifiers that have not been previously used.
 		freeIdentifierName %= qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_'))) - booleanVariableNames_ - integerVariableNames_ - allConstantNames_ - labelNames_ - moduleNames_ - keywords_]];
 		freeIdentifierName.name("unused identifier");
@@ -87,9 +87,9 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 		// This block defines all expressions of integral type.
 		atomicIntegerExpression %= (integerVariableExpression | qi::lit("(") >> integerExpression >> qi::lit(")") | integerConstantExpression);
 		atomicIntegerExpression.name("integer expression");
-		integerMultExpression %= atomicIntegerExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> atomicIntegerExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES))];
+		integerMultExpression %= atomicIntegerExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> atomicIntegerExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(storm::ir::expressions::BaseExpression::int_, qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES))];
 		integerMultExpression.name("integer expression");
-		integerPlusExpression = integerMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> integerMultExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS))];
+		integerPlusExpression = integerMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> integerMultExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(storm::ir::expressions::BaseExpression::int_, qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS))];
 		integerPlusExpression.name("integer expression");
 		integerExpression %= integerPlusExpression;
 		integerExpression.name("integer expression");
@@ -97,9 +97,9 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 		// This block defines all expressions of integral type that are by syntax constant. That is, they are evaluable given the values for all constants.
 		constantAtomicIntegerExpression %= (qi::lit("(") >> constantIntegerExpression >> qi::lit(")") | integerConstantExpression);
 		constantAtomicIntegerExpression.name("constant integer expression");
-		constantIntegerMultExpression %= constantAtomicIntegerExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> constantAtomicIntegerExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES))];
+		constantIntegerMultExpression %= constantAtomicIntegerExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> constantAtomicIntegerExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(storm::ir::expressions::BaseExpression::int_, qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES))];
 		constantIntegerMultExpression.name("constant integer expression");
-		constantIntegerPlusExpression = constantIntegerMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> constantIntegerMultExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS))];
+		constantIntegerPlusExpression = constantIntegerMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> constantIntegerMultExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(storm::ir::expressions::BaseExpression::int_, qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS))];
 		constantIntegerPlusExpression.name("constant integer expression");
 		constantIntegerExpression %= constantIntegerPlusExpression;
 		constantIntegerExpression.name("constant integer expression");
@@ -107,9 +107,9 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 		// This block defines all expressions of type double that are by syntax constant. That is, they are evaluable given the values for all constants.
 		constantAtomicDoubleExpression %= (qi::lit("(") >> constantDoubleExpression >> qi::lit(")") | doubleConstantExpression);
 		constantAtomicDoubleExpression.name("constant double expression");
-		constantDoubleMultExpression %= constantAtomicDoubleExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> constantAtomicDoubleExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES))];
+		constantDoubleMultExpression %= constantAtomicDoubleExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> constantAtomicDoubleExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(storm::ir::expressions::BaseExpression::double_, qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::TIMES))];
 		constantDoubleMultExpression.name("constant double expression");
-		constantDoublePlusExpression %= constantDoubleMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> constantDoubleMultExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS))];
+		constantDoublePlusExpression %= constantDoubleMultExpression[qi::_val = qi::_1] >> *(qi::lit("+") >> constantDoubleMultExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryNumericalFunctionExpression>(storm::ir::expressions::BaseExpression::double_, qi::_val, qi::_1, storm::ir::expressions::BinaryNumericalFunctionExpression::PLUS))];
 		constantDoublePlusExpression.name("constant double expression");
 		constantDoubleExpression %= constantDoublePlusExpression;
 		constantDoubleExpression.name("constant double expression");
@@ -119,7 +119,7 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 		relativeExpression.name("boolean expression");
 		atomicBooleanExpression %= (relativeExpression | booleanVariableExpression | qi::lit("(") >> booleanExpression >> qi::lit(")") | booleanConstantExpression);
 		atomicBooleanExpression.name("boolean expression");
-		notExpression = atomicBooleanExpression[qi::_val = qi::_1] | (qi::lit("!") >> atomicBooleanExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::UnaryBooleanFunctionExpression>>(phoenix::new_<storm::ir::expressions::UnaryBooleanFunctionExpression>(qi::_1, storm::ir::expressions::UnaryBooleanFunctionExpression::FunctorType::NOT))];
+		notExpression = atomicBooleanExpression[qi::_val = qi::_1] | (qi::lit("!") >> atomicBooleanExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::UnaryBooleanFunctionExpression>>(phoenix::new_<storm::ir::expressions::UnaryBooleanFunctionExpression>(qi::_1, storm::ir::expressions::UnaryBooleanFunctionExpression::NOT))];
 		notExpression.name("boolean expression");
 		andExpression = notExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> notExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryBooleanFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryBooleanFunctionExpression::AND))];
 		andExpression.name("boolean expression");
@@ -133,7 +133,7 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 		constantRelativeExpression.name("constant boolean expression");
 		constantAtomicBooleanExpression %= (constantRelativeExpression | qi::lit("(") >> constantBooleanExpression >> qi::lit(")") | booleanLiteralExpression | booleanConstantExpression);
 		constantAtomicBooleanExpression.name("constant boolean expression");
-		constantNotExpression = constantAtomicBooleanExpression[qi::_val = qi::_1] | (qi::lit("!") >> constantAtomicBooleanExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::UnaryBooleanFunctionExpression>>(phoenix::new_<storm::ir::expressions::UnaryBooleanFunctionExpression>(qi::_1, storm::ir::expressions::UnaryBooleanFunctionExpression::FunctorType::NOT))];
+		constantNotExpression = constantAtomicBooleanExpression[qi::_val = qi::_1] | (qi::lit("!") >> constantAtomicBooleanExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::UnaryBooleanFunctionExpression>>(phoenix::new_<storm::ir::expressions::UnaryBooleanFunctionExpression>(qi::_1, storm::ir::expressions::UnaryBooleanFunctionExpression::NOT))];
 		constantNotExpression.name("constant boolean expression");
 		constantAndExpression = constantNotExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> constantNotExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryBooleanFunctionExpression>(qi::_val, qi::_1, storm::ir::expressions::BinaryBooleanFunctionExpression::AND))];
 		constantAndExpression.name("constant boolean expression");
@@ -175,11 +175,11 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 		unassignedLocalIntegerVariableName.name("unassigned local integer variable");
 
 		// This block defines all entities that are needed for parsing a single command.
-		assignmentDefinition = (qi::lit("(") >> unassignedLocalIntegerVariableName > qi::lit("'") > qi::lit("=") > integerExpression > qi::lit(")"))[phoenix::bind(assignedLocalIntegerVariables_.add, qi::_1, qi::_1), phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::Assignment>>(qi::_1, phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)))] | (qi::lit("(") > unassignedLocalBooleanVariableName > qi::lit("'") > qi::lit("=") > booleanExpression > qi::lit(")"))[phoenix::bind(assignedLocalBooleanVariables_.add, qi::_1, qi::_1), phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::Assignment>>(qi::_1, phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)))];
+		assignmentDefinition = (qi::lit("(") >> unassignedLocalIntegerVariableName > qi::lit("'") > qi::lit("=") > integerExpression > qi::lit(")"))[phoenix::bind(assignedLocalIntegerVariables_.add, qi::_1, qi::_1), phoenix::insert(qi::_r2, phoenix::construct<std::pair<std::string, storm::ir::Assignment>>(qi::_1, phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)))] | (qi::lit("(") > unassignedLocalBooleanVariableName > qi::lit("'") > qi::lit("=") > booleanExpression > qi::lit(")"))[phoenix::bind(assignedLocalBooleanVariables_.add, qi::_1, qi::_1), phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::Assignment>>(qi::_1, phoenix::construct<storm::ir::Assignment>(qi::_1, qi::_2)))];
 		assignmentDefinition.name("assignment");
-		assignmentDefinitionList = assignmentDefinition(qi::_r1) % "&";
+		assignmentDefinitionList = assignmentDefinition(qi::_r1, qi::_r2) % "&";
 		assignmentDefinitionList.name("assignment list");
-		updateDefinition = (constantDoubleExpression > qi::lit(":")[phoenix::clear(phoenix::ref(assignedLocalBooleanVariables_)), phoenix::clear(phoenix::ref(assignedLocalIntegerVariables_))] > assignmentDefinitionList(qi::_a))[qi::_val = phoenix::construct<storm::ir::Update>(qi::_1, qi::_a)];
+		updateDefinition = (constantDoubleExpression > qi::lit(":")[phoenix::clear(phoenix::ref(assignedLocalBooleanVariables_)), phoenix::clear(phoenix::ref(assignedLocalIntegerVariables_))] > assignmentDefinitionList(qi::_a, qi::_b))[qi::_val = phoenix::construct<storm::ir::Update>(qi::_1, qi::_a, qi::_b)];
 		updateDefinition.name("update");
 		updateListDefinition = +updateDefinition % "+";
 		updateListDefinition.name("update list");
@@ -187,15 +187,15 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 		commandDefinition.name("command");
 
 		// This block defines all entities that are neede for parsing variable definitions.
-		booleanVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("bool") > -(qi::lit("init") > constantBooleanExpression[qi::_b = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(qi::_1)]) > qi::lit(";"))[phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::BooleanVariable>>(qi::_1, phoenix::construct<storm::ir::BooleanVariable>(phoenix::val(qi::_1), qi::_b))), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(booleanVariables_.add, qi::_1, qi::_a), phoenix::bind(booleanVariableNames_.add, qi::_1, qi::_1), phoenix::bind(localBooleanVariables_.add, qi::_1, qi::_1)];
+		booleanVariableDefinition = (freeIdentifierName >> qi::lit(":") >> qi::lit("bool") > -(qi::lit("init") > constantBooleanExpression[qi::_b = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(qi::_1)]) > qi::lit(";"))[phoenix::push_back(qi::_r1, phoenix::construct<storm::ir::BooleanVariable>(phoenix::val(nextBooleanVariableIndex), phoenix::val(qi::_1), qi::_b)), phoenix::insert(qi::_r2, phoenix::construct<std::pair<std::string, uint_fast64_t>>(qi::_1, phoenix::val(nextBooleanVariableIndex))), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(storm::ir::expressions::BaseExpression::bool_, phoenix::val(nextBooleanVariableIndex), qi::_1)), phoenix::bind(booleanVariables_.add, qi::_1, qi::_a), phoenix::bind(booleanVariableNames_.add, qi::_1, qi::_1), phoenix::bind(localBooleanVariables_.add, qi::_1, qi::_1), phoenix::ref(nextBooleanVariableIndex)++];
 		booleanVariableDefinition.name("boolean variable declaration");
-		integerVariableDefinition = (freeIdentifierName > qi::lit(":") > qi::lit("[") > constantIntegerExpression > qi::lit("..") > constantIntegerExpression > qi::lit("]") > -(qi::lit("init") > constantIntegerExpression[qi::_b = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(qi::_1)]) > qi::lit(";"))[phoenix::insert(qi::_r1, phoenix::construct<std::pair<std::string, storm::ir::IntegerVariable>>(qi::_1, phoenix::construct<storm::ir::IntegerVariable>(qi::_1, qi::_2, qi::_3, qi::_b))), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(qi::_1)), phoenix::bind(integerVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableNames_.add, qi::_1, qi::_1), phoenix::bind(localIntegerVariables_.add, qi::_1, qi::_1)];
+		integerVariableDefinition = (freeIdentifierName > qi::lit(":") > qi::lit("[") > constantIntegerExpression > qi::lit("..") > constantIntegerExpression > qi::lit("]") > -(qi::lit("init") > constantIntegerExpression[qi::_b = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(qi::_1)]) > qi::lit(";"))[phoenix::push_back(qi::_r1, phoenix::construct<storm::ir::IntegerVariable>(phoenix::val(nextIntegerVariableIndex), qi::_1, qi::_2, qi::_3, qi::_b)), phoenix::insert(qi::_r2, phoenix::construct<std::pair<std::string, uint_fast64_t>>(qi::_1, phoenix::val(nextIntegerVariableIndex))), qi::_a = phoenix::construct<std::shared_ptr<storm::ir::expressions::VariableExpression>>(phoenix::new_<storm::ir::expressions::VariableExpression>(storm::ir::expressions::BaseExpression::int_, phoenix::val(nextIntegerVariableIndex), qi::_1)), phoenix::bind(integerVariables_.add, qi::_1, qi::_a), phoenix::bind(integerVariableNames_.add, qi::_1, qi::_1), phoenix::bind(localIntegerVariables_.add, qi::_1, qi::_1), phoenix::ref(nextIntegerVariableIndex)++];
 		integerVariableDefinition.name("integer variable declaration");
-		variableDefinition = (booleanVariableDefinition(qi::_r1) | integerVariableDefinition(qi::_r2));
+		variableDefinition = (booleanVariableDefinition(qi::_r1, qi::_r3) | integerVariableDefinition(qi::_r2, qi::_r4));
 		variableDefinition.name("variable declaration");
 
 		// This block defines all entities that are needed for parsing a module.
-		moduleDefinition = (qi::lit("module")[phoenix::clear(phoenix::ref(localBooleanVariables_)), phoenix::clear(phoenix::ref(localIntegerVariables_))] > freeIdentifierName > *(variableDefinition(qi::_a, qi::_b)) > +commandDefinition > qi::lit("endmodule"))[phoenix::bind(moduleNames_.add, qi::_1, qi::_1), qi::_val = phoenix::construct<storm::ir::Module>(qi::_1, qi::_a, qi::_b, qi::_2)];
+		moduleDefinition = (qi::lit("module")[phoenix::clear(phoenix::ref(localBooleanVariables_)), phoenix::clear(phoenix::ref(localIntegerVariables_))] > freeIdentifierName > *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) > +commandDefinition > qi::lit("endmodule"))[phoenix::bind(moduleNames_.add, qi::_1, qi::_1), qi::_val = phoenix::construct<storm::ir::Module>(qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2)];
 		moduleDefinition.name("module");
 		moduleDefinitionList %= +moduleDefinition;
 		moduleDefinitionList.name("module list");
@@ -234,19 +234,19 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 	qi::rule<Iterator, std::vector<storm::ir::Module>(), Skipper> moduleDefinitionList;
 
 	// Rules for module definition.
-	qi::rule<Iterator, storm::ir::Module(), qi::locals<std::map<std::string, storm::ir::BooleanVariable>, std::map<std::string, storm::ir::IntegerVariable>>, Skipper> moduleDefinition;
+	qi::rule<Iterator, storm::ir::Module(), qi::locals<std::vector<storm::ir::BooleanVariable>, std::vector<storm::ir::IntegerVariable>, std::map<std::string, uint_fast64_t>, std::map<std::string, uint_fast64_t>>, Skipper> moduleDefinition;
 
 	// Rules for variable definitions.
-	qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::ir::BooleanVariable>&, std::map<std::string, storm::ir::IntegerVariable>&), Skipper> variableDefinition;
-	qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::ir::BooleanVariable>&), qi::locals<std::shared_ptr<storm::ir::expressions::VariableExpression>, std::shared_ptr<storm::ir::expressions::BaseExpression>>, Skipper> booleanVariableDefinition;
-	qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::ir::IntegerVariable>&), qi::locals<std::shared_ptr<storm::ir::expressions::VariableExpression>, std::shared_ptr<storm::ir::expressions::BaseExpression>>, Skipper> integerVariableDefinition;
+	qi::rule<Iterator, qi::unused_type(std::vector<storm::ir::BooleanVariable>&, std::vector<storm::ir::IntegerVariable>&, std::map<std::string, uint_fast64_t>&, std::map<std::string, uint_fast64_t>&), Skipper> variableDefinition;
+	qi::rule<Iterator, qi::unused_type(std::vector<storm::ir::BooleanVariable>&, std::map<std::string, uint_fast64_t>&), qi::locals<std::shared_ptr<storm::ir::expressions::VariableExpression>, std::shared_ptr<storm::ir::expressions::BaseExpression>>, Skipper> booleanVariableDefinition;
+	qi::rule<Iterator, qi::unused_type(std::vector<storm::ir::IntegerVariable>&, std::map<std::string, uint_fast64_t>&), qi::locals<std::shared_ptr<storm::ir::expressions::VariableExpression>, std::shared_ptr<storm::ir::expressions::BaseExpression>>, Skipper> integerVariableDefinition;
 
 	// Rules for command definitions.
 	qi::rule<Iterator, storm::ir::Command(), qi::locals<std::string>, Skipper> commandDefinition;
 	qi::rule<Iterator, std::vector<storm::ir::Update>(), Skipper> updateListDefinition;
-	qi::rule<Iterator, storm::ir::Update(), qi::locals<std::map<std::string, storm::ir::Assignment>>, Skipper> updateDefinition;
-	qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::ir::Assignment>&), Skipper> assignmentDefinitionList;
-	qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::ir::Assignment>&), Skipper> assignmentDefinition;
+	qi::rule<Iterator, storm::ir::Update(), qi::locals<std::map<std::string, storm::ir::Assignment>, std::map<std::string, storm::ir::Assignment>>, Skipper> updateDefinition;
+	qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::ir::Assignment>&, std::map<std::string, storm::ir::Assignment>&), Skipper> assignmentDefinitionList;
+	qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::ir::Assignment>&, std::map<std::string, storm::ir::Assignment>&), Skipper> assignmentDefinition;
 
 	// Rules for variable/command names.
 	qi::rule<Iterator, std::string(), Skipper> integerVariableName;
@@ -376,6 +376,10 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 			;
 		}
 	} relations_;
+
+	// Used for indexing the variables.
+	uint_fast64_t nextBooleanVariableIndex;
+	uint_fast64_t nextIntegerVariableIndex;
 
 	// Structures mapping variable and constant names to the corresponding expression nodes of
 	// the intermediate representation.

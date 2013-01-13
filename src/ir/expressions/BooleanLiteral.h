@@ -20,12 +20,16 @@ class BooleanLiteral : public BaseExpression {
 public:
 	bool value;
 
-	BooleanLiteral(bool value) {
-		this->value = value;
+	BooleanLiteral(bool value) : BaseExpression(bool_), value(value) {
+
 	}
 
 	virtual ~BooleanLiteral() {
 
+	}
+
+	virtual bool getValueAsBool(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+		return value;
 	}
 
 	virtual std::string toString() const {

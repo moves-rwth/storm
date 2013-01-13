@@ -18,27 +18,38 @@ namespace expressions {
 
 class UnaryBooleanFunctionExpression : public BaseExpression {
 public:
-	std::shared_ptr<BaseExpression> child;
-	enum FunctorType {NOT} functor;
+	enum FunctionType {NOT};
 
-	UnaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> child, FunctorType functor) {
-		this->child = child;
-		this->functor = functor;
+	UnaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> child, FunctionType functionType) : BaseExpression(bool_), child(child), functionType(functionType) {
+
 	}
 
 	virtual ~UnaryBooleanFunctionExpression() {
 
 	}
 
+	virtual bool getValueAsBool(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+		bool resultChild = child->getValueAsBool(booleanVariableValues, integerVariableValues);
+		switch(functionType) {
+		case NOT: return !resultChild; break;
+		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+				<< "Unknown boolean unary operator: '" << functionType << "'.";
+		}
+	}
+
 	virtual std::string toString() const {
 		std::string result = "";
-		switch (functor) {
+		switch (functionType) {
 		case NOT: result += "!"; break;
 		}
 		result += child->toString();
 
 		return result;
 	}
+
+private:
+	std::shared_ptr<BaseExpression> child;
+	FunctionType functionType;
 };
 
 }

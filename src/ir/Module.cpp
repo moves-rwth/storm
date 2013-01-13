@@ -14,14 +14,51 @@ namespace storm {
 namespace ir {
 
 // Initializes all members with their default constructors.
-Module::Module() : moduleName(), booleanVariables(), integerVariables(), commands() {
+Module::Module() : moduleName(), booleanVariables(), integerVariables(), booleanVariablesToIndexMap(),
+		  integerVariablesToIndexMap(), commands() {
 	// Nothing to do here.
 }
 
 // Initializes all members according to the given values.
-Module::Module(std::string moduleName, std::map<std::string, storm::ir::BooleanVariable> booleanVariables, std::map<std::string, storm::ir::IntegerVariable> integerVariables, std::vector<storm::ir::Command> commands)
-	: moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables), commands(commands) {
+Module::Module(std::string moduleName, std::vector<storm::ir::BooleanVariable> booleanVariables,
+		std::vector<storm::ir::IntegerVariable> integerVariables,
+		std::map<std::string, uint_fast64_t> booleanVariableToIndexMap,
+		std::map<std::string, uint_fast64_t> integerVariableToIndexMap,
+		std::vector<storm::ir::Command> commands)
+	: moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables),
+	  booleanVariablesToIndexMap(booleanVariableToIndexMap),
+	  integerVariablesToIndexMap(integerVariableToIndexMap), commands(commands) {
 	// Nothing to do here.
+}
+
+// Return the number of boolean variables.
+uint_fast64_t Module::getNumberOfBooleanVariables() const {
+	return this->booleanVariables.size();
+}
+
+// Return the requested boolean variable.
+storm::ir::BooleanVariable const& Module::getBooleanVariable(uint_fast64_t index) const {
+	return this->booleanVariables[index];
+}
+
+// Return the number of integer variables.
+uint_fast64_t Module::getNumberOfIntegerVariables() const {
+	return this->integerVariables.size();
+}
+
+// Return the requested integer variable.
+storm::ir::IntegerVariable const& Module::getIntegerVariable(uint_fast64_t index) const {
+	return this->integerVariables[index];
+}
+
+// Return the number of commands.
+uint_fast64_t Module::getNumberOfCommands() const {
+	return this->commands.size();
+}
+
+// Return the requested command.
+storm::ir::Command const& Module::getCommand(uint_fast64_t index) const {
+	return this->commands[index];
 }
 
 // Build a string representation of the variable.
@@ -29,10 +66,10 @@ std::string Module::toString() const {
 	std::stringstream result;
 	result << "module " << moduleName << std::endl;
 	for (auto variable : booleanVariables) {
-		result << "\t" << variable.second.toString() << std::endl;
+		result << "\t" << variable.toString() << std::endl;
 	}
 	for (auto variable : integerVariables) {
-		result << "\t" << variable.second.toString() << std::endl;
+		result << "\t" << variable.toString() << std::endl;
 	}
 	for (auto command : commands) {
 		result << "\t" << command.toString() << std::endl;

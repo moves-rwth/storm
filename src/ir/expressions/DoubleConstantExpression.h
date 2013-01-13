@@ -18,13 +18,21 @@ namespace expressions {
 
 class DoubleConstantExpression : public ConstantExpression {
 public:
-	DoubleConstantExpression(std::string constantName) : ConstantExpression(constantName) {
-		defined = false;
-		value = 0.0;
+	DoubleConstantExpression(std::string constantName) : ConstantExpression(double_, constantName), defined(false), value(0) {
+
 	}
 
 	virtual ~DoubleConstantExpression() {
 
+	}
+
+	virtual double getValueAsDouble(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+		if (!defined) {
+			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+					<< "Double constant '" << this->getConstantName() << "' is undefined.";
+		} else {
+			return value;
+		}
 	}
 
 	virtual std::string toString() const {
@@ -48,8 +56,9 @@ public:
 		this->value = value;
 	}
 
-	double value;
+private:
 	bool defined;
+	double value;
 };
 
 }

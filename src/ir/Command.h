@@ -36,6 +36,24 @@ public:
 	Command(std::string commandName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> updates);
 
 	/*!
+	 * Retrieves a reference to the guard of the command.
+	 * @returns a reference to the guard of the command.
+	 */
+	std::shared_ptr<storm::ir::expressions::BaseExpression> const& getGuard() const;
+
+	/*!
+	 * Retrieves the number of updates associated with this command.
+	 * @returns the number of updates associated with this command.
+	 */
+	uint_fast64_t getNumberOfUpdates() const;
+
+	/*!
+	 * Retrieves a reference to the update with the given index.
+	 * @returns a reference to the update with the given index.
+	 */
+	storm::ir::Update const& getUpdate(uint_fast64_t index) const;
+
+	/*!
 	 * Retrieves a string representation of this command.
 	 * @returns a string representation of this command.
 	 */

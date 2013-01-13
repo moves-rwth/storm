@@ -18,27 +18,55 @@ namespace expressions {
 
 class UnaryNumericalFunctionExpression : public BaseExpression {
 public:
-	std::shared_ptr<BaseExpression> child;
-	enum FunctorType {MINUS} functor;
+	enum FunctionType {MINUS};
 
-	UnaryNumericalFunctionExpression(std::shared_ptr<BaseExpression> child, FunctorType functor) {
-		this->child = child;
-		this->functor = functor;
+	UnaryNumericalFunctionExpression(ReturnType type, std::shared_ptr<BaseExpression> child, FunctionType functionType) : BaseExpression(type), child(child), functionType(functionType) {
+
 	}
 
 	virtual ~UnaryNumericalFunctionExpression() {
 
 	}
 
+	virtual int_fast64_t getValueAsInt(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+		if (this->getType() != int_) {
+			BaseExpression::getValueAsInt(booleanVariableValues, integerVariableValues);
+		}
+
+		int_fast64_t resultChild = child->getValueAsInt(booleanVariableValues, integerVariableValues);
+		switch(functionType) {
+		case MINUS: return -resultChild; break;
+		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+				<< "Unknown numerical unary operator: '" << functionType << "'.";
+		}
+	}
+
+	virtual double getValueAsDouble(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+		if (this->getType() != double_) {
+			BaseExpression::getValueAsDouble(booleanVariableValues, integerVariableValues);
+		}
+
+		double resultChild = child->getValueAsDouble(booleanVariableValues, integerVariableValues);
+		switch(functionType) {
+		case MINUS: return -resultChild; break;
+		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+				<< "Unknown numerical unary operator: '" << functionType << "'.";
+		}
+	}
+
 	virtual std::string toString() const {
 		std::string result = "";
-		switch (functor) {
+		switch (functionType) {
 		case MINUS: result += "-"; break;
 		}
 		result += child->toString();
 
 		return result;
 	}
+
+private:
+	std::shared_ptr<BaseExpression> child;
+	FunctionType functionType;
 };
 
 }

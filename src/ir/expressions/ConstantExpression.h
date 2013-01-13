@@ -20,12 +20,16 @@ class ConstantExpression : public BaseExpression {
 public:
 	std::string constantName;
 
-	ConstantExpression(std::string constantName) {
-		this->constantName = constantName;
+	ConstantExpression(ReturnType type, std::string constantName) : BaseExpression(type), constantName(constantName) {
+
 	}
 
 	virtual ~ConstantExpression() {
 
+	}
+
+	std::string const& getConstantName() const {
+		return constantName;
 	}
 
 	virtual std::string toString() const {

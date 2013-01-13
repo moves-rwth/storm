@@ -18,14 +18,18 @@ namespace expressions {
 
 class IntegerLiteral : public BaseExpression {
 public:
-	int value;
+	int_fast64_t value;
 
-	IntegerLiteral(int value) {
-		this->value = value;
+	IntegerLiteral(int_fast64_t value) : BaseExpression(int_), value(value) {
+
 	}
 
 	virtual ~IntegerLiteral() {
 
+	}
+
+	virtual int_fast64_t getValueAsInt(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+		return value;
 	}
 
 	virtual std::string toString() const {

@@ -19,16 +19,16 @@ BooleanVariable::BooleanVariable() : Variable() {
 }
 
 // Initializes all members according to the given values.
-BooleanVariable::BooleanVariable(std::string variableName,
+BooleanVariable::BooleanVariable(uint_fast64_t index, std::string variableName,
 		std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue)
-		: Variable(variableName,  initialValue) {
+		: Variable(index, variableName,  initialValue) {
 	// Nothing to do here.
 }
 
 // Build a string representation of the variable.
 std::string BooleanVariable::toString() const {
 	std::stringstream result;
-	result << getVariableName() << ": bool";
+	result << this->getName() << ": bool";
 	if (this->getInitialValue() != nullptr) {
 		result << " init " << this->getInitialValue()->toString();
 	}
