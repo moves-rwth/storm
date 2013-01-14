@@ -10,7 +10,6 @@
 
 #include "PctlFormula.h"
 #include "storage/BitVector.h"
-#include "modelChecker/DtmcPrctlModelChecker.h"
 
 namespace storm {
 
@@ -61,6 +60,5 @@ public:
 } //namespace formula
 
 } //namespace storm
-
 
 #endif /* STORM_FORMULA_PCTLSTATEFORMULA_H_ */

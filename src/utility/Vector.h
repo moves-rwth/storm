@@ -9,7 +9,7 @@
 #define STORM_UTILITY_VECTOR_H_
 
 #include "Eigen/src/Core/Matrix.h"
-
+#include "ConstTemplates.h"
 #include <iostream>
 
 namespace storm {

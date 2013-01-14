@@ -8,25 +8,13 @@
 #ifndef STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
 
-namespace storm {
 
-namespace modelChecker {
-
-/* The formula classes need to reference a model checker for the check function,
- * which is used to infer the correct type of formula,
- * so the model checker class is declared here already.
- *
- */
-template <class Type>
-class DtmcPrctlModelChecker;
-}
-
-}
 
 #include "src/formula/PctlPathFormula.h"
 #include "src/formula/PctlStateFormula.h"
 
 #include "src/formula/Formulas.h"
+#include "src/utility/Vector.h"
 
 #include "src/models/Dtmc.h"
 #include "src/storage/BitVector.h"
@@ -192,6 +180,7 @@ public:
 
 		if (!this->getModel().hasAtomicProposition(formula.getAp())) {
 			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
+			return nullptr;
 		}
 
 		return new storm::storage::BitVector(*this->getModel().getLabeledStates(formula.getAp()));

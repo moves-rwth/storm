@@ -1,8 +1,10 @@
 #ifndef STORM_PARSER_PRCTLPARSER_H_
 #define STORM_PARSER_PRCTLPARSER_H_
 
-#include "src/formula/PctlFormula.h"
 #include "src/parser/Parser.h"
+
+#include "src/formula/Formulas.h"
+#include <memory>
 
 namespace storm {
 namespace parser {
@@ -13,18 +15,20 @@ namespace parser {
 class PrctlParser : Parser
 {
 	public:
-		PrctlParser(const char * filename);
+		PrctlParser(std::string filename);
 		 
 		/*!
 		 *	@brief return formula object parsed from file.
 		 */
-		storm::formula::PctlFormula<double>* getFormula()
+		std::shared_ptr<storm::formula::PctlFormula<double>> getFormula()
 		{
 			return this->formula;
 		}
 	
 	private:
-		storm::formula::PctlFormula<double>* formula;
+		std::shared_ptr<storm::formula::PctlFormula<double>> formula;
+		template<typename Iterator, typename Skipper>
+		struct PrctlGrammar;
 };
 
 } // namespace parser

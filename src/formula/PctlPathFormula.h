@@ -9,7 +9,7 @@
 #define STORM_FORMULA_PCTLPATHFORMULA_H_
 
 #include "PctlFormula.h"
-#include "modelChecker/DtmcPrctlModelChecker.h"
+
 #include <vector>
 
 namespace storm {
@@ -61,5 +61,7 @@ public:
 } //namespace formula
 
 } //namespace storm
+
+
 
 #endif /* STORM_FORMULA_PCTLPATHFORMULA_H_ */

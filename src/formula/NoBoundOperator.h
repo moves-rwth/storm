@@ -11,6 +11,8 @@
 #include "PctlFormula.h"
 #include "PctlPathFormula.h"
 
+#include "modelChecker/ForwardDeclarations.h"
+
 namespace storm {
 
 namespace formula {
