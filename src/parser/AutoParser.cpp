@@ -6,6 +6,7 @@
 #include "src/exceptions/WrongFileFormatException.h"
 #include "src/models/AbstractModel.h"
 #include "src/parser/DtmcParser.h"
+#include "src/parser/MdpParser.h"
 
 namespace storm {
 namespace parser {
@@ -26,14 +27,17 @@ AutoParser::AutoParser(std::string const & transitionSystemFile, std::string con
 	// Do actual parsing
 	switch (type) {
 		case storm::models::DTMC: {
-				DtmcParser* parser = new DtmcParser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-				this->model = parser->getDtmc();
-				break;
-			}
+			DtmcParser* parser = new DtmcParser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+			this->model = parser->getDtmc();
+			break;
+		}
 		case storm::models::CTMC:
 			break;
-		case storm::models::MDP:
+		case storm::models::MDP: {
+			MdpParser* parser = new MdpParser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+			this->model = parser->getMdp();
 			break;
+		}
 		case storm::models::CTMDP:
 			break;
 		default: ;  // Unknown
