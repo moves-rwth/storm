@@ -233,7 +233,7 @@ void testChecking() {
  * Main entry point.
  */
 int main(const int argc, const char* argv[]) {
-	// initializeLogger();
+	initializeLogger();
 	// if (!parseOptions(argc, argv)) {
 	//	return 0;
 	//}
