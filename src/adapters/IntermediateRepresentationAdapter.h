@@ -165,7 +165,8 @@ public:
 		storm::storage::SquareSparseMatrix<T>* resultMatrix = new storm::storage::SquareSparseMatrix<T>(allStates.size());
 		resultMatrix->initialize(totalNumberOfTransitions);
 
-		for (StateType* state : allStates) {
+		uint_fast64_t currentIndex = 0;
+		for (StateType* currentState : allStates) {
 			// Iterate over all modules.
 			for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
 				storm::ir::Module const& module = program.getModule(i);
@@ -176,7 +177,7 @@ public:
 
 					// Check if this command is enabled in the current state.
 					if (command.getGuard()->getValueAsBool(*currentState)) {
-						std::unordered_map<StateType*, double, StateHash, StateCompare> stateToProbabilityMap;
+						std::map<uint_fast64_t, double> stateIndexToProbabilityMap;
 						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
 							storm::ir::Update const& update = command.getUpdate(k);
 
@@ -191,14 +192,28 @@ public:
 								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(*currentState));
 							}
 
-							auto probIt = stateToProbabilityMap.find(newState);
-							if (probIt != stateToProbabilityMap.end()) {
-								stateToProbabilityMap[newState] += update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+							uint_fast64_t targetIndex = (*stateToIndexMap.find(newState)).second;
+							delete newState;
+
+							auto probIt = stateIndexToProbabilityMap.find(targetIndex);
+							if (probIt != stateIndexToProbabilityMap.end()) {
+								stateIndexToProbabilityMap[targetIndex] += update.getLikelihoodExpression()->getValueAsDouble(*currentState);
 							} else {
-								++totalNumberOfTransitions;
-								stateToProbabilityMap[newState] = update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+								stateIndexToProbabilityMap[targetIndex] = update.getLikelihoodExpression()->getValueAsDouble(*currentState);
 							}
+						}
+
+						// Now insert the actual values into the matrix.
+						//for (auto targetIndex : stateIndexToProbabilityMap) {
+						//	resultMatrix->addNextValue(currentIndex, targetIndex.first, targetIndex.second);
+						//}
+					}
+				}
+			}
+			++currentIndex;
 		}
+
+		resultMatrix->finalize();
 
 		// Now free all the elements we allocated.
 		for (auto element : allStates) {

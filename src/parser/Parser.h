@@ -102,6 +102,11 @@ namespace parser {
 			 *	@brief Parses integer and checks, if something has been parsed.
 			 */
 			uint_fast64_t checked_strtol(const char* str, char** end);
+
+			/*!
+			 *	@brief Parses floating point and checks, if something has been parsed.
+			 */
+			double checked_strtod(const char* str, char** end);
 	
 			/*!
 			 *	@brief Skips common whitespaces in a string.

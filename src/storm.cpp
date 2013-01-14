@@ -20,12 +20,12 @@
 
 #include "storm-config.h"
 #include "src/models/Dtmc.h"
-#include "src/storage/SquareSparseMatrix.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
-#include "src/parser/DtmcParser.h"
-// #include "src/parser/PrctlParser.h"
+#include "src/parser/AutoParser.h"
+#include "src/parser/PrctlParser.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/formula/Formulas.h"
@@ -219,10 +219,13 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
  */
 void testChecking() {
 	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::DtmcParser dtmcParser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = dtmcParser.getDtmc();
+	storm::parser::AutoParser parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
 
-	dtmc->printModelInformationToStream(std::cout);
+	if (parser.getType() == storm::models::DTMC) {
+		std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
+		dtmc->printModelInformationToStream(std::cout);
+	}
+	else std::cout << "Input is not DTMC" << std::endl;
 
 	// testCheckingDie(*dtmc);
 	// testCheckingCrowds(*dtmc);

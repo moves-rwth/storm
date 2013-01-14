@@ -5,11 +5,11 @@
  *      Author: thomas
  */
 
-#ifndef DTMCPARSER_H_
-#define DTMCPARSER_H_
+#ifndef STORM_PARSER_DTMCPARSER_H_
+#define STORM_PARSER_DTMCPARSER_H_
 
-#include "Parser.h"
-#include "models/Dtmc.h"
+#include "src/parser/Parser.h"
+#include "src/models/Dtmc.h"
 
 namespace storm {
 namespace parser {
@@ -37,4 +37,4 @@ private:
 
 } /* namespace parser */
 } /* namespace storm */
-#endif /* DTMCPARSER_H_ */
+#endif /* STORM_PARSER_DTMCPARSER_H_ */

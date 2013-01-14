@@ -8,13 +8,11 @@ namespace storm {
 namespace exceptions {
 
 template<typename E>
-class BaseException : public std::exception
-{
+class BaseException : public std::exception {
 	public:
 		BaseException() : exception() {}
 		BaseException(const BaseException& cp)
-			: exception(cp), stream(cp.stream.str())
-		{
+			: exception(cp), stream(cp.stream.str()) {
 		}
 
 		BaseException(const char* cstr) {
@@ -24,14 +22,12 @@ class BaseException : public std::exception
 		~BaseException() throw() { }
 		
 		template<class T>
-		E& operator<<(const T& var)
-		{
+		E& operator<<(const T& var) {
 			this->stream << var;
 			return * dynamic_cast<E*>(this);
 		}
 		
-		virtual const char* what() const throw()
-		{
+		virtual const char* what() const throw() {
 			return this->stream.str().c_str();
 		}
 	

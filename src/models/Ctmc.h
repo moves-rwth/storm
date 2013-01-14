@@ -15,8 +15,10 @@
 
 #include "AtomicPropositionsLabeling.h"
 #include "GraphTransitions.h"
-#include "src/storage/SquareSparseMatrix.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
+
+#include "src/models/AbstractModel.h"
 
 namespace storm {
 
@@ -27,7 +29,7 @@ namespace models {
  * labeled with atomic propositions.
  */
 template <class T>
-class Ctmc {
+class Ctmc : public storm::models::AbstractModel {
 
 public:
 	//! Constructor
@@ -39,10 +41,10 @@ public:
 	 * @param stateLabeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
-	Ctmc(std::shared_ptr<storm::storage::SquareSparseMatrix<T>> rateMatrix,
+	Ctmc(std::shared_ptr<storm::storage::SparseMatrix<T>> rateMatrix,
 			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
 			std::shared_ptr<std::vector<T>> stateRewards = nullptr,
-			std::shared_ptr<storm::storage::SquareSparseMatrix<T>> transitionRewardMatrix = nullptr)
+			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix = nullptr)
 			: rateMatrix(rateMatrix), stateLabeling(stateLabeling),
 			  stateRewards(stateRewards), transitionRewardMatrix(transitionRewardMatrix),
 			  backwardTransitions(nullptr) {
@@ -56,7 +58,7 @@ public:
 	Ctmc(const Ctmc<T> &ctmc) : rateMatrix(ctmc.rateMatrix),
 			stateLabeling(ctmc.stateLabeling), stateRewards(ctmc.stateRewards),
 			transitionRewardMatrix(ctmc.transitionRewardMatrix) {
-		if (ctmc.backardTransitions != nullptr) {
+		if (ctmc.backwardTransitions != nullptr) {
 			this->backwardTransitions = new storm::models::GraphTransitions<T>(*ctmc.backwardTransitions);
 		}
 	}
@@ -104,7 +106,7 @@ public:
 	 * @return A pointer to the matrix representing the transition probability
 	 * function.
 	 */
-	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> getTransitionRateMatrix() const {
+	std::shared_ptr<storm::storage::SparseMatrix<T>> getTransitionRateMatrix() const {
 		return this->rateMatrix;
 	}
 
@@ -112,7 +114,7 @@ public:
 	 * Returns a pointer to the matrix representing the transition rewards.
 	 * @return A pointer to the matrix representing the transition rewards.
 	 */
-	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> getTransitionRewardMatrix() const {
+	std::shared_ptr<storm::storage::SparseMatrix<T>> getTransitionRewardMatrix() const {
 		return this->transitionRewardMatrix;
 	}
 
@@ -161,10 +163,14 @@ public:
 			<< std::endl;
 	}
 
+	storm::models::ModelType getType() {
+		return CTMC;
+	}
+
 private:
 
 	/*! A matrix representing the transition rate function of the CTMC. */
-	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> rateMatrix;
+	std::shared_ptr<storm::storage::SparseMatrix<T>> rateMatrix;
 
 	/*! The labeling of the states of the CTMC. */
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling;
@@ -173,7 +179,7 @@ private:
 	std::shared_ptr<std::vector<T>> stateRewards;
 
 	/*! The transition-based rewards of the CTMC. */
-	std::shared_ptr<storm::storage::SquareSparseMatrix<T>> transitionRewardMatrix;
+	std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix;
 
 	/*!
 	 * A data structure that stores the predecessors for all states. This is

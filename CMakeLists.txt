@@ -227,4 +227,6 @@ add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ${PRO
 						DEPENDS storm)
 add_custom_target(memcheck-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-tests
 						DEPENDS storm-tests)
-
+						
+set (CPPLINT_ARGS --filter=-whitespace/tab,-whitespace/line_length,-legal/copyright,-readability/streams)
+add_custom_target(style python cpplint.py ${CPPLINT_ARGS} `find ./src/ -iname "*.h" -or -iname "*.cpp"`)

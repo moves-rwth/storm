@@ -7,13 +7,17 @@
 
 #include "src/utility/Settings.h"
 
-#include "src/exceptions/BaseException.h"
+#include <boost/algorithm/string/join.hpp>
+#include <utility>
+#include <map>
+#include <string>
+#include <list>
 
+#include "src/exceptions/BaseException.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
-#include <boost/algorithm/string/join.hpp>
 
 namespace storm {
 namespace settings {
@@ -21,7 +25,7 @@ namespace settings {
 namespace bpo = boost::program_options;
 
 /*
- * static initializers
+ * Static initializers.
  */
 std::unique_ptr<bpo::options_description> storm::settings::Settings::desc = nullptr;
 std::string storm::settings::Settings::binaryName = "";
@@ -42,37 +46,37 @@ std::map< std::pair<std::string, std::string>, std::shared_ptr<bpo::options_desc
  *	@param argv should be argv passed to main function
  *	@param filename	either nullptr or name of config file
  */
-Settings::Settings(const int argc, const char* argv[], const char* filename) {
+Settings::Settings(int const argc, char const * const argv[], char const * const filename) {
 	Settings::binaryName = std::string(argv[0]);
 	try {
-		// Initially fill description objects
+		// Initially fill description objects.
 		this->initDescriptions();
 
-		// Take care of positional arguments
+		// Take care of positional arguments.
 		Settings::positional.add("trafile", 1);
 		Settings::positional.add("labfile", 1);
 
-		// Check module triggers, add corresponding options
+		// Check module triggers, add corresponding options.
 		std::map< std::string, std::list< std::string > > options;
-		
+
 		for (auto it : Settings::modules) {
 			options[it.first.first].push_back(it.first.second);
 		}
 		for (auto it : options) {
 			std::stringstream str;
 			str << "select " << it.first << " module (" << boost::algorithm::join(it.second, ", ") << ")";
-			
+
 			Settings::desc->add_options()
 				(it.first.c_str(), bpo::value<std::string>()->default_value(it.second.front()), str.str().c_str())
 			;
 		}
-		
-		// Perform first parse run
+
+		// Perform first parse run.
 		this->firstRun(argc, argv, filename);
-		
-		// Buffer for items to be deleted
+
+		// Buffer for items to be deleted.
 		std::list< std::pair< std::string, std::string > > deleteQueue;
-		// Check module triggers
+		// Check module triggers.
 		for (auto it : Settings::modules) {
 			std::pair< std::string, std::string > trigger = it.first;
 			if (this->vm.count(trigger.first)) {
@@ -83,17 +87,16 @@ Settings::Settings(const int argc, const char* argv[], const char* filename) {
 			}
 		}
 		for (auto it : deleteQueue) Settings::modules.erase(it);
-		
-		
-		// Stop if help is set
+
+		// Stop if help is set.
 		if (this->vm.count("help") > 0) {
 			return;
 		}
-		
-		// Perform second run
+
+		// Perform second run.
 		this->secondRun(argc, argv, filename);
-		
-		// Finalize parsed options, check for specified requirements
+
+		// Finalize parsed options, check for specified requirements.
 		bpo::notify(this->vm);
 		LOG4CPLUS_DEBUG(logger, "Finished loading config.");
 	}
@@ -117,7 +120,6 @@ Settings::Settings(const int argc, const char* argv[], const char* filename) {
 
 /*!
  *	Initially fill options_description objects.
- *	First puts some generic options, then calls all register Callbacks.
  */
 void Settings::initDescriptions() {
 	LOG4CPLUS_DEBUG(logger, "Initializing descriptions.");
@@ -132,6 +134,7 @@ void Settings::initDescriptions() {
 		("labfile", bpo::value<std::string>()->required(), "name of the .lab file")
 		("transrew", bpo::value<std::string>()->default_value(""), "name of transition reward file")
 		("staterew", bpo::value<std::string>()->default_value(""), "name of state reward file")
+		("fix-deadlocks", "insert self-loops for states without outgoing transitions")
 	;
 }
 
@@ -140,13 +143,13 @@ void Settings::initDescriptions() {
  *	given), but allow for unregistered options, do not check requirements
  *	from options_description objects, do not check positional arguments.
  */
-void Settings::firstRun(const int argc, const char* argv[], const char* filename) {
+void Settings::firstRun(int const argc, char const * const argv[], char const * const filename) {
 	LOG4CPLUS_DEBUG(logger, "Performing first run.");
-	// parse command line
+	// Parse command line.
 	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::desc)).allow_unregistered().run(), this->vm);
 
 	/*
-	 *	load config file if specified
+	 *	Load config file if specified.
 	 */
 	if (this->vm.count("configfile")) {
 		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::desc)), this->vm, true);
@@ -160,12 +163,12 @@ void Settings::firstRun(const int argc, const char* argv[], const char* filename
  *	given) and check for unregistered options, requirements from
  *	options_description objects and positional arguments.
  */
-void Settings::secondRun(const int argc, const char* argv[], const char* filename) {
+void Settings::secondRun(int const argc, char const * const argv[], char const * const filename) {
 	LOG4CPLUS_DEBUG(logger, "Performing second run.");
-	// Parse command line
+	// Parse command line.
 	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::desc)).positional(this->positional).run(), this->vm);
 	/*
-	 *	load config file if specified
+	 *	Load config file if specified.
 	 */
 	if (this->vm.count("configfile")) {
 		bpo::store(bpo::parse_config_file<char>(this->vm["configfile"].as<std::string>().c_str(), *(Settings::desc)), this->vm, true);
@@ -191,5 +194,5 @@ std::ostream& help(std::ostream& os) {
 	return os;
 }
 
-} // namespace settings
-} // namespace storm
+}  // namespace settings
+}  // namespace storm

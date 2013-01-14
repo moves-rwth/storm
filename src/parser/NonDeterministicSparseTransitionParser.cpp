@@ -6,106 +6,141 @@
  */
 
 #include "src/parser/NonDeterministicSparseTransitionParser.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
-#include "boost/integer/integer_mask.hpp"
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <clocale>
-#include <iostream>
+
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <locale.h>
 
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <clocale>
+#include <iostream>
+#include <utility>
+#include <string>
+
+#include "src/utility/Settings.h"
+#include "src/exceptions/FileIoException.h"
+#include "src/exceptions/WrongFileFormatException.h"
+#include "boost/integer/integer_mask.hpp"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
 namespace storm {
-namespace parser{
+namespace parser {
 
 /*!
- *	@brief	Perform first pass through the file and obtain number of
- *	non-zero cells and maximum node id.
+ *	@brief	Perform first pass through the file and obtain overall number of
+ *	choices, number of non-zero cells and maximum node id.
  *
- *	This method does the first pass through the .tra file and computes
- *	the number of non-zero elements that are not diagonal elements,
- *	which correspondents to the number of transitions that are not
- *	self-loops.
- *	(Diagonal elements are treated in a special way).
- *	It also calculates the maximum node id and stores it in maxnode.
- *	It also stores the maximum number of nondeterministic choices for a
- *	single single node in maxchoices.
+ *	This method does the first pass through the transition file.
  *
- *	@return The number of non-zero elements that are not on the diagonal
+ *	It computes the overall number of nondeterministic choices, i.e. the
+ *	number of rows in the matrix that should be created.
+ *	It also calculates the overall number of non-zero cells, i.e. the number
+ *	of elements the matrix has to hold, and the maximum node id, i.e. the
+ *	number of columns of the matrix.
+ *
  *	@param buf Data to scan. Is expected to be some char array.
+ *	@param choices Overall number of choices.
  *	@param maxnode Is set to highest id of all nodes.
+ *	@return The number of non-zero elements.
  */
-std::unique_ptr<std::vector<uint_fast64_t>> NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t &maxnode, uint_fast64_t &maxchoice) {
-	std::unique_ptr<std::vector<uint_fast64_t>> non_zero = std::unique_ptr<std::vector<uint_fast64_t>>(new std::vector<uint_fast64_t>());
-	
+uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& choices, uint_fast64_t& maxnode) {
 	/*
-	 *	check file header and extract number of transitions
+	 *	Check file header and extract number of transitions.
 	 */
+	buf = strchr(buf, '\n') + 1;  // skip format hint
 	if (strncmp(buf, "STATES ", 7) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
-		return nullptr;
+		return 0;
 	}
-	buf += 7; // skip "STATES "
+	buf += 7;  // skip "STATES "
 	if (strtol(buf, &buf, 10) == 0) return 0;
 	buf = trimWhitespaces(buf);
 	if (strncmp(buf, "TRANSITIONS ", 12) != 0) {
 		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
 		return 0;
 	}
-	buf += 12; // skip "TRANSITIONS "
-	strtol(buf, &buf, 10);
-	
+	buf += 12;  // skip "TRANSITIONS "
 	/*
-	 *	check all transitions for non-zero diagonal entrys
+	 *	Parse number of transitions.
+	 *	We will not actually use this value, but we will compare it to the
+	 *	number of transitions we count and issue a warning if this parsed
+	 *	vlaue is wrong.
 	 */
-	uint_fast64_t row, col, ndchoice;
+	uint_fast64_t parsed_nonzero = strtol(buf, &buf, 10);
+
+	/*
+	 *	Read all transitions.
+	 */
+	uint_fast64_t source, target;
+	uint_fast64_t lastsource = 0;
+	uint_fast64_t nonzero = 0;
 	double val;
+	choices = 0;
 	maxnode = 0;
-	maxchoice = 0;
-	char* tmp;
 	while (buf[0] != '\0') {
 		/*
-		 *	read row and column
+		 *	Read source node.
+		 *	Check if current source node is larger than current maximum node id.
+		 *	Increase number of choices.
+		 *	Check if we have skipped any source node, i.e. if any node has no
+		 *	outgoing transitions. If so, increase nonzero (and
+		 *	parsed_nonzero).
 		 */
-		row = checked_strtol(buf, &buf);
-		ndchoice = checked_strtol(buf, &buf);
-		col = checked_strtol(buf, &buf);
-		/*
-		 *	check if one is larger than the current maximum id
-		 */
-		if (row > maxnode) maxnode = row;
-		if (col > maxnode) maxnode = col;
-		/*
-		 *	check if nondeterministic choice is larger than current maximum
-		 */
-		if (ndchoice > maxchoice)
-		{
-			maxchoice = ndchoice;
-			while (non_zero->size() < maxchoice) non_zero->push_back(0);
+		source = checked_strtol(buf, &buf);
+		if (source > maxnode) maxnode = source;
+		choices++;
+		if (source > lastsource + 1) {
+			nonzero += source - lastsource - 1;
+			parsed_nonzero += source - lastsource - 1;
 		}
+		lastsource = source;
+		buf = trimWhitespaces(buf);  // Skip to name of choice
+		buf += strcspn(buf, " \t\n\r");  // Skip name of choice.
+
 		/*
-		 *	read value. if value is 0.0, either strtod could not read a number or we encountered a probability of zero.
-		 *	if row == col, we have a diagonal element which is treated separately and this non_zero must be decreased.
+		 *	Read all targets for this choice.
 		 */
-		val = strtod(buf, &tmp);
-		if (val == 0.0) {
-			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
-			return 0;
+		buf = trimWhitespaces(buf);
+		while (buf[0] == '*') {
+			buf++;
+			/*
+			 *	Read target node and transition value.
+			 *	Check if current target node is larger than current maximum node id.
+			 *	Check if the transition value is a valid probability.
+			 */
+			target = checked_strtol(buf, &buf);
+			if (target > maxnode) maxnode = target;
+			val = checked_strtod(buf, &buf);
+			if ((val < 0.0) || (val > 1.0)) {
+				LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
+				return 0;
+			}
+
+			/*
+			 *	Increase number of non-zero values.
+			 */
+			nonzero++;
+
+			/*
+			 *	Proceed to beginning of next line.
+			 */
+			buf = trimWhitespaces(buf);
 		}
-		if (row != col) (*non_zero)[ndchoice-1]++;
-		buf = trimWhitespaces(tmp);
 	}
 
-	return non_zero;
+	/*
+	 *	Check if the number of transitions given in the file is correct.
+	 */
+	if (nonzero != parsed_nonzero) {
+		LOG4CPLUS_WARN(logger, "File states to have " << parsed_nonzero << " transitions, but I counted " << nonzero << ". Maybe want to fix your file?");
+	}
+	return nonzero;
 }
 
 
@@ -119,89 +154,144 @@ std::unique_ptr<std::vector<uint_fast64_t>> NonDeterministicSparseTransitionPars
  */
 
 NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(std::string const &filename)
-	: matrix(nullptr)
-{
+	: matrix(nullptr) {
 	/*
-	*	enforce locale where decimal point is '.'
-	*/
-	setlocale( LC_NUMERIC, "C" );
-	
+	 *	Enforce locale where decimal point is '.'.
+	 */
+	setlocale(LC_NUMERIC, "C");
+
 	/*
-	 *	open file
+	 *	Open file.
 	 */
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
-	
+
 	/*
-	 *	perform first pass, i.e. count entries that are not zero and not on the diagonal
+	 *	Perform first pass, i.e. obtain number of columns, rows and non-zero elements.
 	 */
-	uint_fast64_t maxnode, maxchoices;
-	std::unique_ptr<std::vector<uint_fast64_t>> non_zero = this->firstPass(file.data, maxnode, maxchoices);
-	
+	uint_fast64_t maxnode, choices;
+	uint_fast64_t nonzero = this->firstPass(file.data, choices, maxnode);
+
 	/*
-	 *	if first pass returned zero, the file format was wrong
+	 *	If first pass returned zero, the file format was wrong.
 	 */
-	if (non_zero == nullptr)
-	{
+	if (nonzero == 0) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
 		throw storm::exceptions::WrongFileFormatException();
 	}
-	
+
 	/*
-	 *	perform second pass
+	 *	Perform second pass.
 	 *	
-	 *	from here on, we already know that the file header is correct
+	 *	From here on, we already know that the file header is correct.
 	 */
 
 	/*
-	 *	read file header, extract number of states
+	 *	Read file header, ignore values within.
 	 */
-	buf += 7; // skip "STATES "
+	buf = strchr(buf, '\n') + 1;  // skip format hint
+	buf += 7;  // skip "STATES "
 	checked_strtol(buf, &buf);
 	buf = trimWhitespaces(buf);
-	buf += 12; // skip "TRANSITIONS "
+	buf += 12;  // skip "TRANSITIONS "
 	checked_strtol(buf, &buf);
-	
+
 	/*
-	 *	Creating matrix
-	 *	Memory for diagonal elements is automatically allocated, hence only the number of non-diagonal
-	 *	non-zero elements has to be specified (which is non_zero, computed by make_first_pass)
+	 *	Create and initialize matrix.
+	 *	The matrix should have as many columns as we have nodes and as many rows as we have choices.
+	 *	Those two values, as well as the number of nonzero elements, was been calculated in the first run.
 	 */
-	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
-	this->matrix = std::shared_ptr<storm::storage::SquareSparseMatrix<double>>(new storm::storage::SquareSparseMatrix<double>(maxnode + 1));
-	if (this->matrix == NULL)
-	{
-		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
+	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << choices << " x " << (maxnode+1) << " with " << nonzero << " entries.");
+	this->matrix = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(choices, maxnode + 1));
+	if (this->matrix == nullptr) {
+		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << choices << " x " << (maxnode+1) << ".");
 		throw std::bad_alloc();
 	}
-	// TODO: put stuff in matrix / matrices.
-	//this->matrix->initialize(*non_zero);
-
-	uint_fast64_t row, col, ndchoice;
-	double val;
+	this->matrix->initialize(nonzero);
 
 	/*
-	 *	read all transitions from file
+	 *	Create row mapping.
 	 */
-	while (buf[0] != '\0')
-	{
-		/*
-		 *	read row, col and value.
-		 */
-		row = checked_strtol(buf, &buf);
-		ndchoice = checked_strtol(buf, &buf);
-		col = checked_strtol(buf, &buf);
-		val = strtod(buf, &buf);
-		
-		//this->matrix->addNextValue(row,col,val);
-		buf = trimWhitespaces(buf);
-	}
-	
+	this->rowMapping = std::shared_ptr<RowMapping>(new RowMapping());
+
 	/*
-	 * clean up
+	 *	Parse file content.
+	 */
+	uint_fast64_t source, target, lastsource = 0;
+	uint_fast64_t curRow = 0;
+	std::string choice;
+	double val;
+	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
+	bool hadDeadlocks = false;
+
+	/*
+	 *	Read all transitions from file.
+	 */
+	while (buf[0] != '\0') {
+		/*
+		 *	Read source node and choice name.
+		 */
+		source = checked_strtol(buf, &buf);
+		buf = trimWhitespaces(buf);  // Skip to name of choice
+		choice = std::string(buf, strcspn(buf, " \t\n\r"));
+
+		/*
+		 *	Check if we have skipped any source node, i.e. if any node has no
+		 *	outgoing transitions. If so, insert a self-loop.
+		 *	Also add self-loops to rowMapping.
+		 */
+		for (uint_fast64_t node = lastsource + 1; node < source; node++) {
+			hadDeadlocks = true;
+			if (fixDeadlocks) {
+				this->rowMapping->insert(RowMapping::value_type(curRow, std::pair<uint_fast64_t, std::string>(node, "")));
+				this->matrix->addNextValue(curRow, node, 1);
+				curRow++;
+				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+			} else {
+				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
+			}
+		}
+		lastsource = source;
+
+		/*
+		 *	Add this source-choice pair to rowMapping.
+		 */
+		this->rowMapping->insert(RowMapping::value_type(curRow, std::pair<uint_fast64_t, std::string>(source, choice)));
+
+		/*
+		 *	Skip name of choice.
+		 */
+		buf += strcspn(buf, " \t\n\r");
+
+		/*
+		 *	Read all targets for this choice.
+		 */
+		buf = trimWhitespaces(buf);
+		while (buf[0] == '*') {
+			buf++;
+			/*
+			 *	Read target node and transition value.
+			 *	Put it into the matrix.
+			 */
+			target = checked_strtol(buf, &buf);
+			val = checked_strtod(buf, &buf);
+			this->matrix->addNextValue(curRow, target, val);
+
+			/*
+			 *	Proceed to beginning of next line in file and next row in matrix.
+			 */
+			buf = trimWhitespaces(buf);
+		}
+		curRow++;
+	}
+
+	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+
+	/*
+	 * Finalize matrix.
 	 */	
-	//this->matrix->finalize();
+	this->matrix->finalize();
 }
 
-} //namespace parser
-} //namespace storm
+}  // namespace parser
+}  // namespace storm

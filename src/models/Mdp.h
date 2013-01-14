@@ -1,12 +1,12 @@
 /*
- * Dtmc.h
+ * Mdp.h
  *
- *  Created on: 14.11.2012
- *      Author: Christian Dehnert
+ *  Created on: 14.01.2013
+ *      Author: Philipp Berger
  */
 
-#ifndef STORM_MODELS_DTMC_H_
-#define STORM_MODELS_DTMC_H_
+#ifndef STORM_MODELS_MDP_H_
+#define STORM_MODELS_MDP_H_
 
 #include <ostream>
 #include <iostream>
@@ -26,23 +26,23 @@ namespace storm {
 namespace models {
 
 /*!
- * This class represents a discrete-time Markov chain (DTMC) whose states are
+ * This class represents a Markov Decision Process (MDP) whose states are
  * labeled with atomic propositions.
  */
 template <class T>
-class Dtmc : public storm::models::AbstractModel {
+class Mdp : public storm::models::AbstractModel {
 
 public:
 	//! Constructor
 	/*!
-	 * Constructs a DTMC object from the given transition probability matrix and
+	 * Constructs a MDP object from the given transition probability matrix and
 	 * the given labeling of the states.
-	 * @param probabilityMatrix The transition probability function of the
-	 * DTMC given by a matrix.
+	 * @param probabilityMatrix The transition probability relation of the
+	 * MDP given by a matrix.
 	 * @param stateLabeling The labeling that assigns a set of atomic
 	 * propositions to each state.
 	 */
-	Dtmc(std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix,
+	Mdp(std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix,
 			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
 			std::shared_ptr<std::vector<T>> stateRewards = nullptr,
 			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix = nullptr)
@@ -57,14 +57,14 @@ public:
 
 	//! Copy Constructor
 	/*!
-	 * Copy Constructor. Performs a deep copy of the given DTMC.
-	 * @param dtmc A reference to the DTMC that is to be copied.
+	 * Copy Constructor. Performs a deep copy of the given MDP.
+	 * @param mdp A reference to the MDP that is to be copied.
 	 */
-	Dtmc(const Dtmc<T> &dtmc) : probabilityMatrix(dtmc.probabilityMatrix),
-			stateLabeling(dtmc.stateLabeling), stateRewards(dtmc.stateRewards),
-			transitionRewardMatrix(dtmc.transitionRewardMatrix) {
-		if (dtmc.backwardTransitions != nullptr) {
-			this->backwardTransitions = new storm::models::GraphTransitions<T>(*dtmc.backwardTransitions);
+	Mdp(const Mdp<T> &mdp) : probabilityMatrix(mdp.probabilityMatrix),
+			stateLabeling(mdp.stateLabeling), stateRewards(mdp.stateRewards),
+			transitionRewardMatrix(mdp.transitionRewardMatrix) {
+		if (mdp.backwardTransitions != nullptr) {
+			this->backwardTransitions = new storm::models::GraphTransitions<T>(*mdp.backwardTransitions);
 		}
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
@@ -74,25 +74,25 @@ public:
 
 	//! Destructor
 	/*!
-	 * Destructor. Frees the matrix and labeling associated with this DTMC.
+	 * Destructor. Frees the matrix and labeling associated with this MDP.
 	 */
-	~Dtmc() {
+	~Mdp() {
 		if (this->backwardTransitions != nullptr) {
 			delete this->backwardTransitions;
 		}
 	}
 	
 	/*!
-	 * Returns the state space size of the DTMC.
-	 * @return The size of the state space of the DTMC.
+	 * Returns the state space size of the MDP.
+	 * @return The size of the state space of the MDP.
 	 */
 	uint_fast64_t getNumberOfStates() const {
-		return this->probabilityMatrix->getRowCount();
+		return this->probabilityMatrix->getColumnCount();
 	}
 
 	/*!
-	 * Returns the number of (non-zero) transitions of the DTMC.
-	 * @return The number of (non-zero) transitions of the DTMC.
+	 * Returns the number of (non-zero) transitions of the MDP.
+	 * @return The number of (non-zero) transitions of the MDP.
 	 */
 	uint_fast64_t getNumberOfTransitions() const {
 		return this->probabilityMatrix->getNonZeroEntryCount();
@@ -154,16 +154,16 @@ public:
 	}
 
 	/*!
-	 * Retrieves whether this DTMC has a state reward model.
-	 * @return True if this DTMC has a state reward model.
+	 * Retrieves whether this MDP has a state reward model.
+	 * @return True if this MDP has a state reward model.
 	 */
 	bool hasStateRewards() {
 		return this->stateRewards != nullptr;
 	}
 
 	/*!
-	 * Retrieves whether this DTMC has a transition reward model.
-	 * @return True if this DTMC has a transition reward model.
+	 * Retrieves whether this MDP has a transition reward model.
+	 * @return True if this MDP has a transition reward model.
 	 */
 	bool hasTransitionRewards() {
 		return this->transitionRewardMatrix != nullptr;
@@ -185,7 +185,7 @@ public:
 	void printModelInformationToStream(std::ostream& out) const {
 		storm::utility::printSeparationLine(out);
 		out << std::endl;
-		out << "Model type: \t\tDTMC" << std::endl;
+		out << "Model type: \t\tMDP" << std::endl;
 		out << "States: \t\t" << this->getNumberOfStates() << std::endl;
 		out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
 		this->stateLabeling->printAtomicPropositionsInformationToStream(out);
@@ -198,7 +198,7 @@ public:
 	}
 	
 	storm::models::ModelType getType() {
-		return DTMC;
+		return MDP;
 	}
 
 private:
@@ -212,30 +212,24 @@ private:
 		// Get the settings object to customize linear solving.
 		storm::settings::Settings* s = storm::settings::instance();
 		double precision = s->get<double>("precision");
-
-		if (this->probabilityMatrix->getRowCount() != this->probabilityMatrix->getColumnCount()) {
-			// not square
-			return false;
-		}
-
 		for (uint_fast64_t row = 0; row < this->probabilityMatrix->getRowCount(); row++) {
 			T sum = this->probabilityMatrix->getRowSum(row);
-			if (sum == 0) return false;
+			if (sum == 0) continue;
 			if (std::abs(sum - 1) > precision) return false;
 		}
 		return true;
 	}
 
-	/*! A matrix representing the transition probability function of the DTMC. */
+	/*! A matrix representing the transition probability function of the MDP. */
 	std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix;
 
-	/*! The labeling of the states of the DTMC. */
+	/*! The labeling of the states of the MDP. */
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling;
 
-	/*! The state-based rewards of the DTMC. */
+	/*! The state-based rewards of the MDP. */
 	std::shared_ptr<std::vector<T>> stateRewards;
 
-	/*! The transition-based rewards of the DTMC. */
+	/*! The transition-based rewards of the MDP. */
 	std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix;
 
 	/*!
@@ -249,4 +243,4 @@ private:
 
 } // namespace storm
 
-#endif /* STORM_MODELS_DTMC_H_ */
+#endif /* STORM_MODELS_MDP_H_ */

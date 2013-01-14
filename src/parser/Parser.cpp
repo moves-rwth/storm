@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <string>
 
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFileFormatException.h"
@@ -29,19 +30,34 @@ uint_fast64_t storm::parser::Parser::checked_strtol(const char* str, char** end)
 }
 
 /*!
+ *	Calls strtod() internally and checks if the new pointer is different
+ *	from the original one, i.e. if str != *end. If they are the same, a
+ *	storm::exceptions::WrongFileFormatException will be thrown.
+ *	@param str String to parse
+ *	@param end New pointer will be written there
+ *	@return Result of strtod()
+ */
+double storm::parser::Parser::checked_strtod(const char* str, char** end) {
+	double res = strtod(str, end);
+	if (str == *end) {
+		LOG4CPLUS_ERROR(logger, "Error while parsing floating point. Next input token is not a number.");
+		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
+		throw storm::exceptions::WrongFileFormatException("Error while parsing floating point. Next input token is not a number.");
+	}
+	return res;
+}
+
+/*!
  *	Skips spaces, tabs, newlines and carriage returns. Returns pointer
  *	to first char that is not a whitespace.
  *	@param buf String buffer
  *	@return	pointer to first non-whitespace character
  */
 char* storm::parser::Parser::trimWhitespaces(char* buf) {
-	/*TODO: Maybe use memcpy to copy all the stuff from the first non-whitespace char
-	 * to the position of the buffer, so we don't have to keep track of 2 pointers.
-	 */
 	while ((*buf == ' ') || (*buf == '\t') || (*buf == '\n') || (*buf == '\r')) buf++;
 	return buf;
 }
-	
+
 /*!
  *	Will stat the given file, open it and map it to memory.
  *	If anything of this fails, an appropriate exception is raised
@@ -68,9 +84,9 @@ storm::parser::MappedFile::MappedFile(const char* filename) {
 		LOG4CPLUS_ERROR(logger, "Error in open(" << filename << ").");
 		throw exceptions::FileIoException("storm::parser::MappedFile Error in open()");
 	}
-			
-	this->data = (char*) mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0);
-	if (this->data == (char*)-1) {
+
+	this->data = reinterpret_cast<char*>(mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0));
+	if (this->data == reinterpret_cast<char*>(-1)) {
 		close(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in mmap(" << filename << ").");
 		throw exceptions::FileIoException("storm::parser::MappedFile Error in mmap()");
@@ -85,20 +101,20 @@ storm::parser::MappedFile::MappedFile(const char* filename) {
 		LOG4CPLUS_ERROR(logger, "Error in _stat(" << filename << ").");
 		throw exceptions::FileIoException("storm::parser::MappedFile Error in stat()");
 	}
-		
+
 	this->file = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (this->file == INVALID_HANDLE_VALUE) {
 		LOG4CPLUS_ERROR(logger, "Error in CreateFileA(" << filename << ").");
 		throw exceptions::FileIoException("storm::parser::MappedFile Error in CreateFileA()");
 	}
-			
+
 	this->mapping = CreateFileMappingA(this->file, NULL, PAGE_READONLY, (DWORD)(st.st_size >> 32), (DWORD)st.st_size, NULL);
 	if (this->mapping == NULL) {
 		CloseHandle(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in CreateFileMappingA(" << filename << ").");
 		throw exceptions::FileIoException("storm::parser::MappedFile Error in CreateFileMappingA()");
 	}
-			
+
 	this->data = static_cast<char*>(MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, this->st.st_size));
 	if (this->data == NULL) {
 		CloseHandle(this->mapping);
@@ -109,7 +125,7 @@ storm::parser::MappedFile::MappedFile(const char* filename) {
 	this->dataend = this->data + this->st.st_size;
 #endif
 }
-		
+
 /*!
  *	Will unmap the data and close the file.
  */

@@ -1,16 +1,16 @@
 /*
- * DtmcParser.cpp
+ * MdpParser.cpp
  *
- *  Created on: 19.12.2012
- *      Author: thomas
+ *  Created on: 14.01.2013
+ *      Author: Philipp Berger
  */
 
-#include "src/parser/DtmcParser.h"
+#include "src/parser/MdpParser.h"
 
 #include <string>
 #include <vector>
 
-#include "src/parser/DeterministicSparseTransitionParser.h"
+#include "src/parser/NonDeterministicSparseTransitionParser.h"
 #include "src/parser/AtomicPropositionLabelingParser.h"
 #include "src/parser/SparseStateRewardParser.h"
 
@@ -18,8 +18,8 @@ namespace storm {
 namespace parser {
 
 /*!
- * Parses a transition file and a labeling file and produces a DTMC out of them; a pointer to the dtmc
- * is saved in the field "dtmc"
+ * Parses a transition file and a labeling file and produces a MDP out of them; a pointer to the mdp
+ * is saved in the field "mdp"
  * Note that the labeling file may have at most as many nodes as the transition file!
  *
  * @param transitionSystemFile String containing the location of the transition file (....tra)
@@ -27,9 +27,9 @@ namespace parser {
  * @param stateRewardFile String containing the location of the state reward file (...srew)
  * @param transitionRewardFile String containing the location of the transition reward file (...trew)
  */
-DtmcParser::DtmcParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+MdpParser::MdpParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	storm::parser::DeterministicSparseTransitionParser tp(transitionSystemFile);
+	storm::parser::NonDeterministicSparseTransitionParser tp(transitionSystemFile);
 	uint_fast64_t stateCount = tp.getMatrix()->getRowCount();
 
 	std::shared_ptr<std::vector<double>> stateRewards = nullptr;
@@ -41,11 +41,11 @@ DtmcParser::DtmcParser(std::string const & transitionSystemFile, std::string con
 		stateRewards = srp.getStateRewards();
 	}
 	if (transitionRewardFile != "") {
-		storm::parser::DeterministicSparseTransitionParser trp(transitionRewardFile);
+		storm::parser::NonDeterministicSparseTransitionParser trp(transitionRewardFile);
 		transitionRewards = trp.getMatrix();
 	}
 
-	dtmc = std::shared_ptr<storm::models::Dtmc<double>>(new storm::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling(), stateRewards, transitionRewards));
+	mdp = std::shared_ptr<storm::models::Mdp<double>>(new storm::models::Mdp<double>(tp.getMatrix(), lp.getLabeling(), stateRewards, transitionRewards));
 }
 
 } /* namespace parser */
