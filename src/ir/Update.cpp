@@ -79,18 +79,18 @@ std::string Update::toString() const {
 	uint_fast64_t i = 0;
 	for (auto assignment : booleanAssignments) {
 		result << assignment.second.toString();
-		++i;
 		if (i < booleanAssignments.size() - 1 || integerAssignments.size() > 0) {
 			result << " & ";
 		}
+		++i;
 	}
 	i = 0;
 	for (auto assignment : integerAssignments) {
 		result << assignment.second.toString();
-		++i;
 		if (i < integerAssignments.size() - 1) {
 			result << " & ";
 		}
+		++i;
 	}
 	return result.str();
 }

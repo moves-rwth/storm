@@ -35,6 +35,13 @@ public:
 	}
 };
 
+class StateCompare {
+public:
+	bool operator()(StateType* state1, StateType* state2) const {
+		return *state1 == *state2;
+	}
+};
+
 class IntermediateRepresentationAdapter {
 public:
 	template<class T>
@@ -72,24 +79,20 @@ public:
 			}
 		}
 
-		StateType* initialState = new StateType(std::vector<bool>(), std::vector<int_fast64_t>());
-		std::get<0>(*initialState).resize(numberOfBooleanVariables);
-		std::get<1>(*initialState).resize(numberOfIntegerVariables);
+		StateType* initialState = getNewState(numberOfBooleanVariables, numberOfIntegerVariables);
 
 		for (uint_fast64_t i = 0; i < numberOfBooleanVariables; ++i) {
-			bool initialValue = booleanVariables[i].getInitialValue()->getValueAsBool(std::get<0>(*initialState), std::get<1>(*initialState));
+			bool initialValue = booleanVariables[i].getInitialValue()->getValueAsBool(*initialState);
 			std::get<0>(*initialState)[i] = initialValue;
 		}
 
 		for (uint_fast64_t i = 0; i < numberOfIntegerVariables; ++i) {
-			int_fast64_t initialValue = integerVariables[i].getInitialValue()->getValueAsInt(std::get<0>(*initialState), std::get<1>(*initialState));
+			int_fast64_t initialValue = integerVariables[i].getInitialValue()->getValueAsInt(*initialState);
 			std::get<1>(*initialState)[i] = initialValue;
 		}
 
-		std::cout << "Initial State:" << std::get<0>(*initialState) << " / " << std::get<1>(*initialState) << std::endl;
-
 		uint_fast64_t nextIndex = 1;
-		std::unordered_map<StateType*, uint_fast64_t, StateHash> stateToIndexMap;
+		std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
 		std::vector<StateType*> allStates;
 		std::queue<StateType*> stateQueue;
 
@@ -97,6 +100,7 @@ public:
 		stateQueue.push(initialState);
 		stateToIndexMap[initialState] = 0;
 
+		uint_fast64_t totalNumberOfTransitions = 0;
 		while (!stateQueue.empty()) {
 			// Get first state in queue.
 			StateType* currentState = stateQueue.front();
@@ -111,15 +115,44 @@ public:
 					storm::ir::Command const& command = module.getCommand(j);
 
 					// Check if this command is enabled in the current state.
-					if (command.getGuard()->getValueAsBool(std::get<0>(*currentState), std::get<1>(*currentState))) {
+					if (command.getGuard()->getValueAsBool(*currentState)) {
+						std::unordered_map<StateType*, double, StateHash, StateCompare> stateToProbabilityMap;
 						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
 							storm::ir::Update const& update = command.getUpdate(k);
 
+							StateType* newState = new StateType(*currentState);
+
 							std::map<std::string, storm::ir::Assignment> const& booleanAssignmentMap = update.getBooleanAssignments();
 							for (auto assignedVariable : booleanAssignmentMap) {
-								// Check if the variable that is being assigned is a boolean or an integer.
-								// auto boolIt =
+								setValue(newState, booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(*currentState));
+							}
+							std::map<std::string, storm::ir::Assignment> const& integerAssignmentMap = update.getIntegerAssignments();
+							for (auto assignedVariable : integerAssignmentMap) {
+								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(*currentState));
+							}
 
+							auto probIt = stateToProbabilityMap.find(newState);
+							if (probIt != stateToProbabilityMap.end()) {
+								stateToProbabilityMap[newState] += update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+							} else {
+								++totalNumberOfTransitions;
+								stateToProbabilityMap[newState] = update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+							}
+
+							auto it = stateToIndexMap.find(newState);
+							if (it != stateToIndexMap.end()) {
+								// Delete the state object directly as we have already seen that state.
+								delete newState;
+							} else {
+								// Add state to the queue of states that are still to be explored.
+								stateQueue.push(newState);
+
+								// Add state to list of all states so that we can delete it at the end.
+								allStates.push_back(newState);
+
+								// Give a unique index to the newly found state.
+								stateToIndexMap[newState] = nextIndex;
+								++nextIndex;
 							}
 						}
 					}
@@ -127,13 +160,68 @@ public:
 			}
 		}
 
+		std::cout << "Found " << allStates.size() << " reachable states and " << totalNumberOfTransitions << " transitions.";
+
+		storm::storage::SquareSparseMatrix<T>* resultMatrix = new storm::storage::SquareSparseMatrix<T>(allStates.size());
+		resultMatrix->initialize(totalNumberOfTransitions);
+
+		for (StateType* state : allStates) {
+			// Iterate over all modules.
+			for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
+				storm::ir::Module const& module = program.getModule(i);
+
+				// Iterate over all commands.
+				for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
+					storm::ir::Command const& command = module.getCommand(j);
+
+					// Check if this command is enabled in the current state.
+					if (command.getGuard()->getValueAsBool(*currentState)) {
+						std::unordered_map<StateType*, double, StateHash, StateCompare> stateToProbabilityMap;
+						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
+							storm::ir::Update const& update = command.getUpdate(k);
+
+							StateType* newState = new StateType(*currentState);
+
+							std::map<std::string, storm::ir::Assignment> const& booleanAssignmentMap = update.getBooleanAssignments();
+							for (auto assignedVariable : booleanAssignmentMap) {
+								setValue(newState, booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(*currentState));
+							}
+							std::map<std::string, storm::ir::Assignment> const& integerAssignmentMap = update.getIntegerAssignments();
+							for (auto assignedVariable : integerAssignmentMap) {
+								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(*currentState));
+							}
+
+							auto probIt = stateToProbabilityMap.find(newState);
+							if (probIt != stateToProbabilityMap.end()) {
+								stateToProbabilityMap[newState] += update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+							} else {
+								++totalNumberOfTransitions;
+								stateToProbabilityMap[newState] = update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+							}
+		}
+
 		// Now free all the elements we allocated.
 		for (auto element : allStates) {
 			delete element;
 		}
-		return nullptr;
+		return resultMatrix;
 	}
 
+private:
+	static StateType* getNewState(uint_fast64_t numberOfBooleanVariables, uint_fast64_t numberOfIntegerVariables) {
+		StateType* result = new StateType();
+		result->first.resize(numberOfBooleanVariables);
+		result->second.resize(numberOfIntegerVariables);
+		return result;
+	}
+
+	static void setValue(StateType* state, uint_fast64_t index, bool value) {
+		std::get<0>(*state)[index] = value;
+	}
+
+	static void setValue(StateType* state, uint_fast64_t index, int_fast64_t value) {
+		std::get<1>(*state)[index] = value;
+	}
 };
 
 }

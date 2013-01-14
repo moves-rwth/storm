@@ -459,11 +459,8 @@ std::shared_ptr<storm::ir::Program> PrismParser::parse(std::istream& inputStream
 		}
 		msg << std::endl;
 
-// On Mac OS, exception messages are not displayed in case an exception is propagated to the
-// operating system, so we need to display the message ourselves.
-#if defined(MACOSX)
-		std::cout << msg.str();
-#endif
+		std::cerr << msg.str();
+
 		// Now propagate exception.
 		throw storm::exceptions::WrongFileFormatException() << msg.str();
 	}

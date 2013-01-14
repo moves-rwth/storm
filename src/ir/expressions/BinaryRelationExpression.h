@@ -28,9 +28,9 @@ public:
 
 	}
 
-	virtual bool getValueAsBool(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
-		int_fast64_t resultLeft = left->getValueAsInt(booleanVariableValues, integerVariableValues);
-		int_fast64_t resultRight = right->getValueAsInt(booleanVariableValues, integerVariableValues);
+	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+		int_fast64_t resultLeft = left->getValueAsInt(variableValues);
+		int_fast64_t resultRight = right->getValueAsInt(variableValues);
 		switch(relationType) {
 		case EQUAL: return resultLeft == resultRight; break;
 		case LESS: return resultLeft < resultRight; break;

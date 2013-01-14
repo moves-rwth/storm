@@ -37,7 +37,7 @@ public:
 
 	}
 
-	virtual int_fast64_t getValueAsInt(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (type != int_) {
 			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression of type '"
 					<< this->getTypeName() << "' as 'int'.";
@@ -46,7 +46,7 @@ public:
 					<< this->getTypeName() << " because evaluation implementation is missing.";
 	}
 
-	virtual bool getValueAsBool(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (type != bool_) {
 			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression of type '"
 					<< this->getTypeName() << "' as 'bool'.";
@@ -55,7 +55,7 @@ public:
 					<< this->getTypeName() << " because evaluation implementation is missing.";
 	}
 
-	virtual double getValueAsDouble(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (type != bool_) {
 			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression of type '"
 					<< this->getTypeName() << "' as 'double'.";

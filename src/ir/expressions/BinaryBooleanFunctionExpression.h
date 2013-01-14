@@ -31,9 +31,9 @@ public:
 
 	}
 
-	virtual bool getValueAsBool(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
-		bool resultLeft = left->getValueAsBool(booleanVariableValues, integerVariableValues);
-		bool resultRight = right->getValueAsBool(booleanVariableValues, integerVariableValues);
+	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+		bool resultLeft = left->getValueAsBool(variableValues);
+		bool resultRight = right->getValueAsBool(variableValues);
 		switch(functionType) {
 		case AND: return resultLeft & resultRight; break;
 		case OR: return resultLeft | resultRight; break;

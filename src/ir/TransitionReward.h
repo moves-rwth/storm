@@ -10,6 +10,8 @@
 
 #include "expressions/BaseExpression.h"
 
+#include <memory>
+
 namespace storm {
 
 namespace ir {

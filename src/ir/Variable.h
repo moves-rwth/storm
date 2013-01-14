@@ -11,6 +11,7 @@
 #include "expressions/BaseExpression.h"
 
 #include <string>
+#include <memory>
 
 namespace storm {
 

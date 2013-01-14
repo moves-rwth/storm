@@ -32,25 +32,25 @@ public:
 		return variableName;
 	}
 
-	virtual int_fast64_t getValueAsInt(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (this->getType() != int_) {
-			BaseExpression::getValueAsInt(booleanVariableValues, integerVariableValues);
+			BaseExpression::getValueAsInt(variableValues);
 		}
 
-		return integerVariableValues[index];
+		return variableValues.second[index];
 	}
 
-	virtual bool getValueAsBool(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (this->getType() != bool_) {
-			BaseExpression::getValueAsBool(booleanVariableValues, integerVariableValues);
+			BaseExpression::getValueAsBool(variableValues);
 		}
 
-		return booleanVariableValues[index];
+		return variableValues.first[index];
 	}
 
-	virtual double getValueAsDouble(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (this->getType() != double_) {
-			BaseExpression::getValueAsDouble(booleanVariableValues, integerVariableValues);
+			BaseExpression::getValueAsDouble(variableValues);
 		}
 
 		throw storm::exceptions::NotImplementedException() << "Cannot evaluate expression with "

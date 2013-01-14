@@ -28,8 +28,8 @@ public:
 
 	}
 
-	virtual bool getValueAsBool(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
-		bool resultChild = child->getValueAsBool(booleanVariableValues, integerVariableValues);
+	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+		bool resultChild = child->getValueAsBool(variableValues);
 		switch(functionType) {
 		case NOT: return !resultChild; break;
 		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "

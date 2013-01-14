@@ -28,12 +28,12 @@ public:
 
 	}
 
-	virtual int_fast64_t getValueAsInt(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (this->getType() != int_) {
-			BaseExpression::getValueAsInt(booleanVariableValues, integerVariableValues);
+			BaseExpression::getValueAsInt(variableValues);
 		}
 
-		int_fast64_t resultChild = child->getValueAsInt(booleanVariableValues, integerVariableValues);
+		int_fast64_t resultChild = child->getValueAsInt(variableValues);
 		switch(functionType) {
 		case MINUS: return -resultChild; break;
 		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
@@ -41,12 +41,12 @@ public:
 		}
 	}
 
-	virtual double getValueAsDouble(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (this->getType() != double_) {
-			BaseExpression::getValueAsDouble(booleanVariableValues, integerVariableValues);
+			BaseExpression::getValueAsDouble(variableValues);
 		}
 
-		double resultChild = child->getValueAsDouble(booleanVariableValues, integerVariableValues);
+		double resultChild = child->getValueAsDouble(variableValues);
 		switch(functionType) {
 		case MINUS: return -resultChild; break;
 		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "

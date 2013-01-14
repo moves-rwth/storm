@@ -28,13 +28,13 @@ public:
 
 	}
 
-	virtual int_fast64_t getValueAsInt(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (this->getType() != int_) {
-			BaseExpression::getValueAsInt(booleanVariableValues, integerVariableValues);
+			BaseExpression::getValueAsInt(variableValues);
 		}
 
-		int_fast64_t resultLeft = left->getValueAsInt(booleanVariableValues, integerVariableValues);
-		int_fast64_t resultRight = right->getValueAsInt(booleanVariableValues, integerVariableValues);
+		int_fast64_t resultLeft = left->getValueAsInt(variableValues);
+		int_fast64_t resultRight = right->getValueAsInt(variableValues);
 		switch(functionType) {
 		case PLUS: return resultLeft + resultRight; break;
 		case MINUS: return resultLeft - resultRight; break;
@@ -45,13 +45,13 @@ public:
 		}
 	}
 
-	virtual double getValueAsDouble(std::vector<bool> const& booleanVariableValues, std::vector<int_fast64_t> const& integerVariableValues) const {
+	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
 		if (this->getType() != double_) {
-			BaseExpression::getValueAsDouble(booleanVariableValues, integerVariableValues);
+			BaseExpression::getValueAsDouble(variableValues);
 		}
 
-		double resultLeft = left->getValueAsDouble(booleanVariableValues, integerVariableValues);
-		double resultRight = right->getValueAsDouble(booleanVariableValues, integerVariableValues);
+		double resultLeft = left->getValueAsDouble(variableValues);
+		double resultRight = right->getValueAsDouble(variableValues);
 		switch(functionType) {
 		case PLUS: return resultLeft + resultRight; break;
 		case MINUS: return resultLeft - resultRight; break;
