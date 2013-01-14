@@ -8,6 +8,8 @@
 #ifndef STORM_IR_INTERMEDIATEREPRESENTATIONADAPTER_H_
 #define STORM_IR_INTERMEDIATEREPRESENTATIONADAPTER_H_
 
+#include "src/storage/SparseMatrix.h"
+
 #include <tuple>
 #include <unordered_map>
 #include <boost/functional/hash.hpp>
@@ -45,7 +47,7 @@ public:
 class IntermediateRepresentationAdapter {
 public:
 	template<class T>
-	static storm::storage::SquareSparseMatrix<T>* toSparseMatrix(storm::ir::Program const& program) {
+	static storm::storage::SparseMatrix<T>* toSparseMatrix(storm::ir::Program const& program) {
 
 		uint_fast64_t numberOfIntegerVariables = 0;
 		uint_fast64_t numberOfBooleanVariables = 0;
@@ -162,7 +164,7 @@ public:
 
 		std::cout << "Found " << allStates.size() << " reachable states and " << totalNumberOfTransitions << " transitions.";
 
-		storm::storage::SquareSparseMatrix<T>* resultMatrix = new storm::storage::SquareSparseMatrix<T>(allStates.size());
+		storm::storage::SparseMatrix<T>* resultMatrix = new storm::storage::SparseMatrix<T>(allStates.size());
 		resultMatrix->initialize(totalNumberOfTransitions);
 
 		uint_fast64_t currentIndex = 0;
@@ -204,9 +206,9 @@ public:
 						}
 
 						// Now insert the actual values into the matrix.
-						//for (auto targetIndex : stateIndexToProbabilityMap) {
-						//	resultMatrix->addNextValue(currentIndex, targetIndex.first, targetIndex.second);
-						//}
+						for (auto targetIndex : stateIndexToProbabilityMap) {
+							resultMatrix->addNextValue(currentIndex, targetIndex.first, targetIndex.second);
+						}
 					}
 				}
 			}

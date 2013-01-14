@@ -25,7 +25,7 @@
 #include "src/modelChecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
-#include "src/parser/PrctlParser.h"
+//#include "src/parser/PrctlParser.h"
 #include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/formula/Formulas.h"
@@ -246,7 +246,7 @@ int main(const int argc, const char* argv[]) {
 
 	storm::parser::PrismParser parser;
 	std::shared_ptr<storm::ir::Program> program = parser.parseFile("test.input");
-	storm::storage::SquareSparseMatrix<double>* result = storm::adapters::IntermediateRepresentationAdapter::toSparseMatrix<double>(*program);
+	storm::storage::SparseMatrix<double>* result = storm::adapters::IntermediateRepresentationAdapter::toSparseMatrix<double>(*program);
 	result->print();
 	delete result;
 
