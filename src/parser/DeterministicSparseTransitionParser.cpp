@@ -44,7 +44,7 @@ namespace parser {
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& maxnode) {
+uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast64_t& maxnode) {
 	uint_fast64_t non_zero = 0;
 
 	/*
@@ -68,7 +68,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 	/*
 	 *	Check all transitions for non-zero diagonal entrys.
 	 */
-	uint_fast64_t row, lastrow = 0, col;
+	int_fast64_t row, lastrow = -1, col;
 	double val;
 	maxnode = 0;
 	while (buf[0] != '\0') {
@@ -89,7 +89,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 		 *	anyway) or add a self-loop (in this case, we'll need the
 		 *	additional transition).
 		 */
-		if (lastrow < row-1) non_zero += row - lastrow - 1;
+		if (lastrow < row - 1) non_zero += row - lastrow - 1;
 		lastrow = row;
 		/*
 		 *	Read probability of this transition.
@@ -132,7 +132,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	Perform first pass, i.e. count entries that are not zero.
 	 */
-	uint_fast64_t maxnode;
+	int_fast64_t maxnode;
 	uint_fast64_t non_zero = this->firstPass(file.data, maxnode);
 	/*
 	 *	If first pass returned zero, the file format was wrong.
@@ -170,7 +170,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	}
 	this->matrix->initialize(non_zero);
 
-	uint_fast64_t row, lastrow = 0, col;
+	int_fast64_t row, lastrow = -1, col;
 	double val;
 	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
 	bool hadDeadlocks = false;
@@ -192,7 +192,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 		 *	Check if we skipped a node, i.e. if a node does not have any
 		 *	outgoing transitions.
 		 */
-		for (uint_fast64_t node = lastrow + 1; node < row; node++) {
+		for (int_fast64_t node = lastrow + 1; node < row; node++) {
 			hadDeadlocks = true;
 			if (fixDeadlocks) {
 				this->matrix->addNextValue(node, node, 1);
