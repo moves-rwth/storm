@@ -122,13 +122,13 @@ namespace settings {
 			friend std::ostream& help(std::ostream& os);
 			friend std::ostream& helpConfigfile(std::ostream& os);
 			friend Settings* instance();
-			friend Settings* newInstance(int const argc, char const * const argv[], char const * const filename);
+			friend Settings* newInstance(int const argc, char const * const argv[], char const * const filename, bool const sloppy = false);
 
 		private:
 			/*!
 			 *	@brief	Constructor.
 			 */
-			Settings(int const argc, char const * const argv[], char const * const filename);
+			Settings(int const argc, char const * const argv[], char const * const filename, bool const sloppy);
 			
 			/*!
 			 *	@brief	Initialize options_description object.
@@ -200,9 +200,9 @@ namespace settings {
 	 *	@param filename either NULL or name of config file
 	 *	@return The new instance of Settings.
 	 */
-	inline Settings* newInstance(int const argc, char const * const argv[], char const * const filename) {
+	inline Settings* newInstance(int const argc, char const * const argv[], char const * const filename, bool const sloppy) {
 		if (Settings::inst != nullptr) delete Settings::inst;
-		Settings::inst = new Settings(argc, argv, filename);
+		Settings::inst = new Settings(argc, argv, filename, sloppy);
 		return Settings::inst;
 	}
 		

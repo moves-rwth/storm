@@ -46,12 +46,12 @@ std::map< std::pair<std::string, std::string>, std::shared_ptr<bpo::options_desc
  *	@param argv should be argv passed to main function
  *	@param filename	either nullptr or name of config file
  */
-Settings::Settings(int const argc, char const * const argv[], char const * const filename) {
+Settings::Settings(int const argc, char const * const argv[], char const * const filename, bool const sloppy) {
 	Settings::binaryName = std::string(argv[0]);
 	try {
 		// Initially fill description objects.
 		this->initDescriptions();
-
+		
 		// Take care of positional arguments.
 		Settings::positional.add("trafile", 1);
 		Settings::positional.add("labfile", 1);
@@ -97,7 +97,9 @@ Settings::Settings(int const argc, char const * const argv[], char const * const
 		this->secondRun(argc, argv, filename);
 
 		// Finalize parsed options, check for specified requirements.
-		bpo::notify(this->vm);
+		if (!sloppy) {
+			bpo::notify(this->vm);
+		}
 		LOG4CPLUS_DEBUG(logger, "Finished loading config.");
 	}
 	catch (bpo::reading_file e) {
