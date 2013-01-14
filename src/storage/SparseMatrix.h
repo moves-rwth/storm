@@ -795,13 +795,15 @@ public:
 	 * value.
 	 */
 	void invertDiagonal() {
+		if (this->getRowCount() != this->getColumnCount()) {
+			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to be square!";
+		}
 		T one(1);
 		for (uint_fast64_t row = 0; row < rowCount; ++row) {
 			uint_fast64_t rowStart = rowIndications[row];
 			uint_fast64_t rowEnd = rowIndications[row + 1];
-			uint_fast64_t pseudoDiagonal = row % colCount;
 			while (rowStart < rowEnd) {
-				if (columnIndications[rowStart] == pseudoDiagonal) {
+				if (columnIndications[rowStart] == row) {
 					valueStorage[rowStart] = one - valueStorage[rowStart];
 					break;
 				}
@@ -814,12 +816,14 @@ public:
 	 * Negates all non-zero elements that are not on the diagonal.
 	 */
 	void negateAllNonDiagonalElements() {
+		if (this->getRowCount() != this->getColumnCount()) {
+			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to be square!";
+		}
 		for (uint_fast64_t row = 0; row < rowCount; ++row) {
 			uint_fast64_t rowStart = rowIndications[row];
 			uint_fast64_t rowEnd = rowIndications[row + 1];
-			uint_fast64_t pseudoDiagonal = row % colCount;
 			while (rowStart < rowEnd) {
-				if (columnIndications[rowStart] != pseudoDiagonal) {
+				if (columnIndications[rowStart] != row) {
 					valueStorage[rowStart] = - valueStorage[rowStart];
 				}
 				++rowStart;
