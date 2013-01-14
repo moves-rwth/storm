@@ -215,13 +215,20 @@ private:
 
 		if (this->probabilityMatrix->getRowCount() != this->probabilityMatrix->getColumnCount()) {
 			// not square
+			LOG4CPLUS_ERROR(logger, "Probability matrix is not square.");
 			return false;
 		}
 
 		for (uint_fast64_t row = 0; row < this->probabilityMatrix->getRowCount(); row++) {
 			T sum = this->probabilityMatrix->getRowSum(row);
-			if (sum == 0) return false;
-			if (std::abs(sum - 1) > precision) return false;
+			if (sum == 0) {
+				LOG4CPLUS_ERROR(logger, "Row " << row << " has sum 0");
+				return false;
+			}
+			if (std::abs(sum - 1) > precision) {
+				LOG4CPLUS_ERROR(logger, "Row " << row << " has sum " << sum);
+				return false;
+			}
 		}
 		return true;
 	}
