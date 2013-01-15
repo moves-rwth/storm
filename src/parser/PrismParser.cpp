@@ -25,9 +25,8 @@
 #include <iomanip>
 
 // Some typedefs and namespace definitions to reduce code size.
-typedef std::istreambuf_iterator<char> base_iterator_type;
-typedef boost::spirit::multi_pass<base_iterator_type> forward_iterator_type;
-typedef boost::spirit::classic::position_iterator2<forward_iterator_type> pos_iterator_type;
+typedef std::string::const_iterator BaseIteratorType;
+typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
 namespace qi = boost::spirit::qi;
 namespace phoenix = boost::phoenix;
 
@@ -422,23 +421,27 @@ std::shared_ptr<storm::ir::Program> PrismParser::parseFile(std::string const& fi
  */
 std::shared_ptr<storm::ir::Program> PrismParser::parse(std::istream& inputStream, std::string const& filename) const {
 	// Prepare iterators to input.
-	base_iterator_type in_begin(inputStream);
-	forward_iterator_type fwd_begin = boost::spirit::make_default_multi_pass(in_begin);
-	forward_iterator_type fwd_end;
-	pos_iterator_type position_begin(fwd_begin, fwd_end, filename);
-	pos_iterator_type position_end;
+	// TODO: Right now, this parses the whole contents of the file into a string first.
+	// While this is usually not necessary, because there exist adapters that make an input stream
+	// iterable in both directions without storing it into a string, using the corresponding
+	// Boost classes gives an awful output under valgrind and is thus disabled for the time being.
+	std::string fileContent((std::istreambuf_iterator<char>(inputStream)), (std::istreambuf_iterator<char>()));
+	BaseIteratorType stringIteratorBegin = fileContent.begin();
+	BaseIteratorType stringIteratorEnd = fileContent.end();
+	PositionIteratorType positionIteratorBegin(stringIteratorBegin, stringIteratorEnd, filename);
+	PositionIteratorType positionIteratorEnd;
 
 	// Prepare resulting intermediate representation of input.
 	std::shared_ptr<storm::ir::Program> result(new storm::ir::Program());
 
 	// In order to instantiate the grammar, we have to pass the type of the skipping parser.
 	// As this is more complex, we let Boost figure out the actual type for us.
-	PrismGrammar<pos_iterator_type,  BOOST_TYPEOF(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol)> grammar;
+	PrismGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol)> grammar;
 	try {
 		// Now parse the content using phrase_parse in order to be able to supply a skipping
 		// parser.
-		qi::phrase_parse(position_begin, position_end, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, *result);
-	} catch(const qi::expectation_failure<pos_iterator_type>& e) {
+		qi::phrase_parse(positionIteratorBegin, positionIteratorEnd, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, *result);
+	} catch(const qi::expectation_failure<PositionIteratorType>& e) {
 		// If the parser expected content different than the one provided, display information
 		// about the location of the error.
 		const boost::spirit::classic::file_position_base<std::string>& pos = e.first.get_position();
