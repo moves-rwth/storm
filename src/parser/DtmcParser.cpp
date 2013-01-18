@@ -45,7 +45,7 @@ DtmcParser::DtmcParser(std::string const & transitionSystemFile, std::string con
 		transitionRewards = trp.getMatrix();
 	}
 
-	dtmc = std::shared_ptr<storm::models::Dtmc<double>>(new storm::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling(), stateRewards, transitionRewards));
+	this->dtmc = std::shared_ptr<storm::models::Dtmc<double>>(new storm::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling(), stateRewards, transitionRewards));
 }
 
 } /* namespace parser */

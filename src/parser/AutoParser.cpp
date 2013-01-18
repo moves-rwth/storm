@@ -27,15 +27,15 @@ AutoParser::AutoParser(std::string const & transitionSystemFile, std::string con
 	// Do actual parsing
 	switch (type) {
 		case storm::models::DTMC: {
-			DtmcParser* parser = new DtmcParser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-			this->model = parser->getDtmc();
+			DtmcParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+			this->model = parser.getDtmc();
 			break;
 		}
 		case storm::models::CTMC:
 			break;
 		case storm::models::MDP: {
-			MdpParser* parser = new MdpParser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-			this->model = parser->getMdp();
+			MdpParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+			this->model = parser.getMdp();
 			break;
 		}
 		case storm::models::CTMDP:
@@ -43,7 +43,10 @@ AutoParser::AutoParser(std::string const & transitionSystemFile, std::string con
 		default: ;  // Unknown
 	}
 
-	if (!this->model) std::cout << "model is still null" << std::endl;
+	
+	if (!this->model) {
+		LOG4CPLUS_WARN(logger, "Model is still null.");
+	}
 }
 
 storm::models::ModelType AutoParser::analyzeHint(const std::string& filename) {

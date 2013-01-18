@@ -14,7 +14,7 @@ namespace parser {
 /*!
  *	@brief Checks the given files and parses the model within these files.
  *
- *	This parser analyzes the format hitn in the first line of the transition
+ *	This parser analyzes the format hint in the first line of the transition
  *	file. If this is a valid format, it will use the parser for this format,
  *	otherwise it will throw an exception.
  *

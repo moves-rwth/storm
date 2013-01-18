@@ -51,7 +51,7 @@ Settings::Settings(int const argc, char const * const argv[], char const * const
 	try {
 		// Initially fill description objects.
 		this->initDescriptions();
-		
+
 		// Take care of positional arguments.
 		Settings::positional.add("trafile", 1);
 		Settings::positional.add("labfile", 1);
