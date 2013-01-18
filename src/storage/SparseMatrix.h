@@ -953,6 +953,27 @@ public:
 		}
 		return sum;
 	}
+	
+	/*!
+	 *	@brief Checks if it is a submatrix of the given matrix.
+	 *
+	 *	A matrix A is a submatrix of B if a value in A is only nonzero, if
+	 *	the value in B at the same position is also nonzero. Furthermore, A
+	 *	and B have to have the same size.
+	 *	@param matrix Matrix to check against.
+	 *	@return True iff this is a submatrix of matrix.
+	 */
+	bool isSubmatrixOf(SparseMatrix<T> const & matrix) const {
+		if (this->getRowCount() != matrix.getRowCount()) return false;
+		if (this->getColumnCount() != matrix.getColumnCount()) return false;
+
+		for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
+			for (uint_fast64_t elem = rowIndications[row], elem2 = matrix.rowIndications[row]; elem < rowIndications[row + 1] && elem < matrix.rowIndications[row + 1]; ++elem, ++elem2) {
+				if (columnIndications[elem] < matrix.columnIndications[elem2]) return false;
+			}
+		}
+		return true;
+	}
 
 	void print() const {
 		std::cout << "entries: ----------------------------" << std::endl;
