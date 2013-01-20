@@ -8,12 +8,12 @@
 
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/parser/DtmcParser.h"
+#include "src/parser/DeterministicModelParser.h"
 #include "src/utility/IoUtility.h"
 
 TEST(ParseDtmcTest, parseAndOutput) {
-	storm::parser::DtmcParser* dtmcParser;
-	ASSERT_NO_THROW(dtmcParser = new storm::parser::DtmcParser(
+	storm::parser::DeterministicModelParser* dtmcParser;
+	ASSERT_NO_THROW(dtmcParser = new storm::parser::DeterministicModelParser(
 			STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/pctl_general_input_01.tra",
 			STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
 
