@@ -57,19 +57,19 @@ namespace settings {
 			}
 		
 			/*!
-			 *	@brief	Get value of string option
+			 *	@brief	Get value of string option.
 			 */
 			inline const std::string& getString(std::string const & name) const {
 				return this->get<std::string>(name);
 			}
 		
 			/*!
-			 *	@brief	Check if an option is set
+			 *	@brief	Check if an option is set.
 			 */
 			inline const bool isSet(std::string const & name) const {
 				return this->vm.count(name) > 0;
 			}
-			
+
 			/*!
 			 *	@brief	Register a new module.
 			 *
@@ -118,7 +118,7 @@ namespace settings {
 				// Store module.
 				Settings::modules[ trigger ] = desc;
 			}
-	
+			
 			friend std::ostream& help(std::ostream& os);
 			friend std::ostream& helpConfigfile(std::ostream& os);
 			friend Settings* instance();

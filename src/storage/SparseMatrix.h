@@ -25,10 +25,13 @@
 extern log4cplus::Logger logger;
 
 // Forward declaration for adapter classes.
-namespace storm { namespace adapters{ class GmmxxAdapter; } }
+namespace storm {
+namespace adapters{
+class GmmxxAdapter;
+}
+}
 
 namespace storm {
-
 namespace storage {
 
 /*!
@@ -49,7 +52,7 @@ public:
 	 * a row, we can simply iterate over the array (part) itself.
 	 */
 	typedef const uint_fast64_t * const constIndexIterator;
-	
+
 	/*!
 	 *	Iterator type if we want to iterate over elements.
 	 */
@@ -91,7 +94,8 @@ public:
 	 * Constructs a square sparse matrix object with the given number rows
 	 * @param size The number of rows and cols in the matrix
 	 */
-	SparseMatrix(uint_fast64_t size) : rowCount(size), colCount(size), nonZeroEntryCount(0),
+	SparseMatrix(uint_fast64_t size)
+			: rowCount(size), colCount(size), nonZeroEntryCount(0),
 			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
 
 	//! Copy Constructor
@@ -208,7 +212,7 @@ public:
 
 		// Try to prepare the internal storage and throw an error in case of
 		// failure.
-		
+
 		// Get necessary pointers to the contents of the Eigen matrix.
 		const T* valuePtr = eigenSparseMatrix.valuePtr();
 		const _Index* indexPtr = eigenSparseMatrix.innerIndexPtr();
@@ -318,7 +322,6 @@ public:
 			throw storm::exceptions::OutOfRangeException("Trying to add a value at illegal position.");
 		}
 
-		
 		// If we switched to another row, we have to adjust the missing
 		// entries in the row_indications array.
 		if (row != lastRow) {
@@ -415,8 +418,8 @@ public:
 	/*!
 	 * Gets the matrix element at the given row and column to the given value.
 	 * NOTE: This function does not check the internal status for errors for performance reasons.
-	 * WARNING: It is possible to modify through this function. Usage only valid 
-	 * for elements EXISTING in the sparse matrix! If the requested value does not exist, 
+	 * WARNING: It is possible to modify through this function. Usage only valid
+	 * for elements EXISTING in the sparse matrix! If the requested value does not exist,
 	 * an exception will be thrown.
 	 * @param row The row in which the element is to be read.
 	 * @param col The column in which the element is to be read.
@@ -917,7 +920,7 @@ public:
 	constIndexIterator endConstColumnIterator(uint_fast64_t row) const {
 		return &(this->columnIndications[0]) + this->rowIndications[row + 1];
 	}
-	
+
 	/*!
 	 *	Returns an iterator over the elements of the given row. The iterator
 	 *	will include no zero entries.
@@ -937,7 +940,7 @@ public:
 	constIterator endConstIterator(uint_fast64_t row) const {
 		return &(this->valueStorage[0]) + this->rowIndications[row + 1];
 	}
-	
+
 	/*!
 	 *	@brief Calculate sum of all entries in given row.
 	 *
@@ -953,7 +956,7 @@ public:
 		}
 		return sum;
 	}
-	
+
 	/*!
 	 *	@brief Checks if it is a submatrix of the given matrix.
 	 *
@@ -1042,7 +1045,7 @@ private:
 		setState(MatrixStatus::Error);
 	}
 
-	/*! 
+	/*!
 	 * Sets the internal status to the given state if the current state is not
 	 * the error state.
 	 * @param new_state The new state to be switched to.

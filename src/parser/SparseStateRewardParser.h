@@ -20,7 +20,7 @@ class SparseStateRewardParser : Parser {
 		std::shared_ptr<std::vector<double>> getStateRewards() {
 			return this->stateRewards;
 		}
-	
+
 	private:
 		std::shared_ptr<std::vector<double>> stateRewards;
 };

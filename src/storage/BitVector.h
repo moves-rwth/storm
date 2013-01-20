@@ -69,13 +69,17 @@ public:
 		 * Returns the index of the current bit that is set to true.
 		 * @return The index of the current bit that is set to true.
 		 */
-		uint_fast64_t operator*() const { return currentIndex; }
+		uint_fast64_t operator*() const {
+			return currentIndex;
+		}
 
 		/*!
 		 * Compares the iterator with another iterator to determine whether
 		 * the iteration process has reached the end.
 		 */
-		bool operator!=(const constIndexIterator& rhs) const { return currentIndex != rhs.currentIndex; }
+		bool operator!=(const constIndexIterator& rhs) const {
+			return currentIndex != rhs.currentIndex;
+		}
 	private:
 
 		/*! The bit vector to search for set bits. */
