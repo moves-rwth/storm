@@ -128,7 +128,8 @@ public:
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
 		// Only try to solve system if there are states for which the probability is unknown.
-		if (maybeStates.getNumberOfSetBits() > 0) {
+		uint_fast64_t mayBeStatesSetBitCount = maybeStates.getNumberOfSetBits();
+		if (mayBeStatesSetBitCount > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
 			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
@@ -142,11 +143,11 @@ public:
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
 			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
 			// probability is strictly larger than 0.
-			std::vector<Type> x(maybeStates.getNumberOfSetBits(), Type(0.5));
+			std::vector<Type> x(mayBeStatesSetBitCount, Type(0.5));
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
-			std::vector<Type> b(maybeStates.getNumberOfSetBits());
+			std::vector<Type> b(mayBeStatesSetBitCount);
 			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &b);
 
 			// Solve the corresponding system of linear equations.
