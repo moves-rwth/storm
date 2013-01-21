@@ -6,6 +6,8 @@
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 
+#include "src/exceptions/InvalidAccessException.h"
+
 extern log4cplus::Logger logger;
 
 namespace storm {
@@ -76,7 +78,9 @@ private:
 	 * The copy constructor is disabled for this class.
 	 */
 	//JacobiDecomposition(const JacobiDecomposition<T>& that) = delete; // not possible in VS2012
-	JacobiDecomposition(const JacobiDecomposition<T>& that) {}
+	JacobiDecomposition(const JacobiDecomposition<T>& that) {
+		throw new storm::exceptions::InvalidAccessException() << "The copy constructor of JacobiDecomposition is explicitly disabled.";
+	}
 
 	/*!
 	 * Pointer to the LU Matrix
