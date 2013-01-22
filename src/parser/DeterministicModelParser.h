@@ -28,12 +28,18 @@ class DeterministicModelParser: public storm::parser::Parser {
 		DeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
 
+		/*!
+		 *	@brief	Get the parsed dtmc model.
+		 */
 		std::shared_ptr<storm::models::Dtmc<double>> getDtmc() {
 			if (this->dtmc == nullptr) {
 				this->dtmc = std::shared_ptr<storm::models::Dtmc<double>>(new storm::models::Dtmc<double>(this->transitionSystem, this->labeling, this->stateRewards, this->transitionRewards));
 			}
 			return this->dtmc;
 		}
+		/*!
+		 *	@brief	Get the parsed ctmc model.
+		 */
 		std::shared_ptr<storm::models::Ctmc<double>> getCtmc() {
 			if (this->ctmc == nullptr) {
 				this->ctmc = std::shared_ptr<storm::models::Ctmc<double>>(new storm::models::Ctmc<double>(this->transitionSystem, this->labeling, this->stateRewards, this->transitionRewards));
