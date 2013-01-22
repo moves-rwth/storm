@@ -118,12 +118,12 @@ public:
 				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
 				throw std::bad_alloc();
 			} else {
-				std::copy(ssm.valueStorage.begin(), ssm.valueStorage.end(), std::back_inserter(valueStorage));
+				std::copy(ssm.valueStorage.begin(), ssm.valueStorage.end(), valueStorage.begin());
 
 				// The elements that are not of the value type but rather the
 				// index type may be copied directly.
-				std::copy(ssm.columnIndications.begin(), ssm.columnIndications.end(), std::back_inserter(columnIndications));
-				std::copy(ssm.rowIndications.begin(), ssm.rowIndications.end(), std::back_inserter(rowIndications));
+				std::copy(ssm.columnIndications.begin(), ssm.columnIndications.end(), columnIndications.begin());
+				std::copy(ssm.rowIndications.begin(), ssm.rowIndications.end(), rowIndications.begin());
 			}
 		}
 	}
@@ -665,8 +665,9 @@ public:
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 
 		if (rowStart >= rowEnd) {
-			LOG4CPLUS_ERROR(logger, "The row " << row << " can not be made absorbing, no state in row, would have to recreate matrix!");
-			throw storm::exceptions::InvalidStateException("A row can not be made absorbing, no state in row, would have to recreate matrix!");
+			this->print();
+			LOG4CPLUS_ERROR(logger, "Cannot make row absorbing, because there is no entry in this row.");
+			throw storm::exceptions::InvalidStateException("Cannot make row absorbing, because there is no entry in this row.");
 		}
 		uint_fast64_t pseudoDiagonal = row % colCount;
 
@@ -886,6 +887,31 @@ public:
 		return result;
 	}
 
+	void repeatedMultiply(std::vector<T>* vector, uint_fast64_t multiplications) {
+		std::vector<T>* originalVector = vector;
+		std::vector<T>* swap = nullptr;
+		std::vector<T>* temporaryResult = new std::vector<T>(vector->size());
+		for (uint_fast64_t iter = 0; iter < multiplications; ++iter) {
+			for (uint_fast64_t row = 0; row < rowCount; ++row) {
+				(*temporaryResult)[row] = 0;
+				for (uint_fast64_t col = columnIndications[row]; col < columnIndications[row + 1]; ++col) {
+					(*temporaryResult)[row] += valueStorage[col] * (*vector)[row];
+				}
+			}
+
+			swap = temporaryResult;
+			temporaryResult = vector;
+			vector = swap;
+		}
+
+		if (multiplications % 2 == 1) {
+			*originalVector = *temporaryResult;
+			delete vector;
+		} else {
+			delete temporaryResult;
+		}
+	}
+
 	/*!
 	 * Returns the size of the matrix in memory measured in bytes.
 	 * @return The size of the matrix in memory measured in bytes.
@@ -979,7 +1005,9 @@ public:
 	}
 
 	void print() const {
-		std::cout << "entries: ----------------------------" << std::endl;
+		std::cout << "entries in (" << rowCount << "x" << colCount << " matrix):" << std::endl;
+		std::cout << rowIndications << std::endl;
+		std::cout << columnIndications << std::endl;
 		for (uint_fast64_t i = 0; i < rowCount; ++i) {
 			for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
 				std::cout << "(" << i << "," << columnIndications[j] << ") = " << valueStorage[j] << std::endl;
