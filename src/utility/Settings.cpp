@@ -33,6 +33,8 @@ storm::settings::Settings* storm::settings::Settings::inst = nullptr;
 
 std::map< std::pair<std::string, std::string>, std::shared_ptr<bpo::options_description> > storm::settings::Settings::modules;
 
+storm::settings::Destroyer storm::settings::Settings::destroyer;
+
 /*!
  *	The constructor fills the option descriptions, parses the
  *	command line and the config file and puts the option values to

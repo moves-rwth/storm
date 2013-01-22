@@ -42,13 +42,11 @@ bool parseOptions(int const argc, char const * const argv[]) {
     } catch (storm::exceptions::InvalidSettingsException& e) {
         std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
         std::cout << std::endl << storm::settings::help;
-        delete s;
         return false;
     }
     
     if (s->isSet("help")) {
         std::cout << storm::settings::help;
-        delete s;
         return false;
     }
     
