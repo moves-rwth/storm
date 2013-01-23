@@ -841,9 +841,13 @@ public:
 		SparseMatrix<T> *resultDinv = new SparseMatrix<T>(rowCount);
 		// no entries apart from those on the diagonal
 		resultDinv->initialize(0);
+
+		// constant 1 for diagonal inversion
+		T constOne = storm::utility::constGetOne<T>();
+
 		// copy diagonal entries to other matrix
 		for (int i = 0; i < rowCount; ++i) {
-			resultDinv->addNextValue(i, i, resultLU->getValue(i, i));
+			resultDinv->addNextValue(i, i, constOne / resultLU->getValue(i, i));
 			resultLU->getValue(i, i) = storm::utility::constGetZero<T>();
 		}
 
