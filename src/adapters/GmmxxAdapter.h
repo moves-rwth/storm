@@ -31,7 +31,7 @@ public:
 		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
 
 		// Prepare the resulting matrix.
-		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(matrix.rowCount, matrix.rowCount);
+		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(matrix.rowCount, matrix.colCount);
 
 		// Copy Row Indications
 		std::copy(matrix.rowIndications.begin(), matrix.rowIndications.end(), std::back_inserter(result->jc));
