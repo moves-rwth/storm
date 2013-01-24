@@ -887,29 +887,16 @@ public:
 		return result;
 	}
 
-	void repeatedMultiply(std::vector<T>* vector, uint_fast64_t multiplications) {
-		std::vector<T>* originalVector = vector;
-		std::vector<T>* swap = nullptr;
-		std::vector<T>* temporaryResult = new std::vector<T>(vector->size());
-		for (uint_fast64_t iter = 0; iter < multiplications; ++iter) {
-			for (uint_fast64_t row = 0; row < rowCount; ++row) {
-				(*temporaryResult)[row] = 0;
-				for (uint_fast64_t col = columnIndications[row]; col < columnIndications[row + 1]; ++col) {
-					(*temporaryResult)[row] += valueStorage[col] * (*vector)[row];
-				}
-			}
-
-			swap = temporaryResult;
-			temporaryResult = vector;
-			vector = swap;
+	T getRowVectorProduct(uint_fast64_t row, std::vector<T>& vector) {
+		T result = storm::utility::constGetZero<T>();;
+		auto valueIterator = valueStorage.begin() + rowIndications[row];
+		const auto valueIteratorEnd = valueStorage.begin() + rowIndications[row + 1];
+		auto columnIterator = columnIndications.begin() + rowIndications[row];
+		const auto columnIteratorEnd = columnIndications.begin() + rowIndications[row + 1];
+		for (; valueIterator != valueIteratorEnd; ++valueIterator, ++columnIterator) {
+			result += *valueIterator * vector[*columnIterator];
 		}
-
-		if (multiplications % 2 == 1) {
-			*originalVector = *temporaryResult;
-			delete vector;
-		} else {
-			delete temporaryResult;
-		}
+		return result;
 	}
 
 	/*!
@@ -1008,11 +995,7 @@ public:
 		std::cout << "entries in (" << rowCount << "x" << colCount << " matrix):" << std::endl;
 		std::cout << rowIndications << std::endl;
 		std::cout << columnIndications << std::endl;
-		for (uint_fast64_t i = 0; i < rowCount; ++i) {
-			for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
-				std::cout << "(" << i << "," << columnIndications[j] << ") = " << valueStorage[j] << std::endl;
-			}
-		}
+		std::cout << valueStorage << std::endl;
 	}
 
 private:
