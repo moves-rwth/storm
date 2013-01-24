@@ -25,7 +25,7 @@
 extern log4cplus::Logger logger;
 
 // Forward declaration for adapter classes.
-namespace storm { namespace adapters{ class GmmxxAdapter; } }
+namespace storm { namespace adapters{ class GmmxxAdapter; class EigenAdapter; } }
 
 namespace storm {
 
@@ -43,6 +43,7 @@ public:
 	 * Declare adapter classes as friends to use internal data.
 	 */
 	friend class storm::adapters::GmmxxAdapter;
+	friend class storm::adapters::EigenAdapter;
 
 	/*!
 	 * If we only want to iterate over the columns of the non-zero entries of
