@@ -8,23 +8,32 @@
 #ifndef STORM_FORMULA_AP_H_
 #define STORM_FORMULA_AP_H_
 
-#include "PctlStateFormula.h"
+#include "AbstractStateFormula.h"
+#include "src/modelChecker/AbstractModelChecker.h"
 
 namespace storm {
 
 namespace formula {
 
+template <class T> class Ap;
+
+template <class T>
+class IApModelChecker {
+    public:
+        virtual storm::storage::BitVector* checkAp(const Ap<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL formula tree with atomic proposition as root.
+ * Class for a Abstract formula tree with atomic proposition as root.
  *
  * This class represents the leaves in the formula tree.
  *
- * @see PctlStateFormula
- * @see PctlFormula
+ * @see AbstractStateFormula
+ * @see AbstractFormula
  */
 template <class T>
-class Ap : public PctlStateFormula<T> {
+class Ap : public AbstractStateFormula<T> {
 
 public:
 	/*!
@@ -64,7 +73,7 @@ public:
 	 *
 	 * @returns a new Ap-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const {
 	  return new Ap(ap);
 	}
 
@@ -77,8 +86,8 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkAp(*this);
+	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return this->template cast<IApModelChecker>(modelChecker)->checkAp(*this);
 	}
 
 private:

@@ -8,18 +8,26 @@
 #ifndef STORM_FORMULA_NEXT_H_
 #define STORM_FORMULA_NEXT_H_
 
-#include "PctlPathFormula.h"
-#include "PctlStateFormula.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
 
 namespace storm {
 
 namespace formula {
 
+template <class T> class Next;
+
+template <class T>
+class INextModelChecker {
+    public:
+        virtual std::vector<T>* checkNext(const Next<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL (path) formula tree with a Next node as root.
+ * Class for a Abstract (path) formula tree with a Next node as root.
  *
- * Has two PCTL state formulas as sub formulas/trees.
+ * Has two Abstract state formulas as sub formulas/trees.
  *
  * @par Semantics
  * The formula holds iff in the next step, \e child holds
@@ -27,11 +35,11 @@ namespace formula {
  * The subtree is seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PctlPathFormula
- * @see PctlFormula
+ * @see AbstractPathFormula
+ * @see AbstractFormula
  */
 template <class T>
-class Next : public PctlPathFormula<T> {
+class Next : public AbstractPathFormula<T> {
 
 public:
 	/*!
@@ -46,7 +54,7 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Next(PctlStateFormula<T>* child) {
+	Next(AbstractStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -65,7 +73,7 @@ public:
 	/*!
 	 * @returns the child node
 	 */
-	const PctlStateFormula<T>& getChild() const {
+	const AbstractStateFormula<T>& getChild() const {
 		return *child;
 	}
 
@@ -73,7 +81,7 @@ public:
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(PctlStateFormula<T>* child) {
+	void setChild(AbstractStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -95,7 +103,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual PctlPathFormula<T>* clone() const {
+	virtual AbstractPathFormula<T>* clone() const {
 		Next<T>* result = new Next<T>();
 		if (child != NULL) {
 			result->setChild(child);
@@ -112,12 +120,12 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual std::vector<T> *check(const INextModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkNext(*this);
 	}
 
 private:
-	PctlStateFormula<T>* child;
+	AbstractStateFormula<T>* child;
 };
 
 } //namespace formula

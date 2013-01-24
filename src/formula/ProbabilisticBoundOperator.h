@@ -8,8 +8,8 @@
 #ifndef STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_
 #define STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_
 
-#include "PctlStateFormula.h"
-#include "PctlPathFormula.h"
+#include "AbstractStateFormula.h"
+#include "AbstractPathFormula.h"
 #include "BoundOperator.h"
 #include "utility/ConstTemplates.h"
 
@@ -19,10 +19,10 @@ namespace formula {
 
 /*!
  * @brief
- * Class for a PCTL formula tree with a P (probablistic) operator node over a probability interval
+ * Class for a Abstract formula tree with a P (probablistic) operator node over a probability interval
  * as root.
  *
- * Has one PCTL path formula as sub formula/tree.
+ * Has one Abstract path formula as sub formula/tree.
  *
  * @par Semantics
  * 	  The formula holds iff the probability that the path formula holds is inside the bounds
@@ -32,11 +32,11 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PctlStateFormula
- * @see PctlPathFormula
+ * @see AbstractStateFormula
+ * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
- * @see PctlFormula
+ * @see AbstractFormula
  */
 template<class T>
 class ProbabilisticBoundOperator : public BoundOperator<T> {
@@ -56,7 +56,7 @@ public:
 	 * @param upperBound The upper bound for the probability
 	 * @param pathFormula The child node
 	 */
-	ProbabilisticBoundOperator(T lowerBound, T upperBound, PctlPathFormula<T>& pathFormula) : BoundOperator<T>(lowerBound, upperBound, pathFormula) {
+	ProbabilisticBoundOperator(T lowerBound, T upperBound, AbstractPathFormula<T>& pathFormula) : BoundOperator<T>(lowerBound, upperBound, pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -81,7 +81,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const {
 		ProbabilisticBoundOperator<T>* result = new ProbabilisticBoundOperator<T>();
 		result->setInterval(this->getLowerBound(), this->getUpperBound());
 		result->setPathFormula(this->getPathFormula()->clone());

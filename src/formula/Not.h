@@ -8,26 +8,34 @@
 #ifndef STORM_FORMULA_NOT_H_
 #define STORM_FORMULA_NOT_H_
 
-#include "PctlStateFormula.h"
+#include "AbstractStateFormula.h"
 
 namespace storm {
 
 namespace formula {
 
+template <class T> class Not;
+
+template <class T>
+class INotModelChecker {
+    public:
+        virtual storm::storage::BitVector* checkNot(const Not<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL formula tree with NOT node as root.
+ * Class for a Abstract formula tree with NOT node as root.
  *
- * Has one PCTL state formula as sub formula/tree.
+ * Has one Abstract state formula as sub formula/tree.
  *
  * The subtree is seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PctlStateFormula
- * @see PctlFormula
+ * @see AbstractStateFormula
+ * @see AbstractFormula
  */
 template <class T>
-class Not : public PctlStateFormula<T> {
+class Not : public AbstractStateFormula<T> {
 
 public:
 	/*!
@@ -41,7 +49,7 @@ public:
 	 * Constructor
 	 * @param child The child node
 	 */
-	Not(PctlStateFormula<T>* child) {
+	Not(AbstractStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -60,7 +68,7 @@ public:
 	/*!
 	 * @returns The child node
 	 */
-	const PctlStateFormula<T>& getChild() const {
+	const AbstractStateFormula<T>& getChild() const {
 		return *child;
 	}
 
@@ -68,7 +76,7 @@ public:
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(PctlStateFormula<T>* child) {
+	void setChild(AbstractStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -88,7 +96,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const {
 		Not<T>* result = new Not<T>();
 		if (child != NULL) {
 			result->setChild(child);
@@ -105,12 +113,12 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector *check(const INotModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkNot(*this);
 	}
 
 private:
-	PctlStateFormula<T>* child;
+	AbstractStateFormula<T>* child;
 };
 
 } //namespace formula

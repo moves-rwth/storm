@@ -8,20 +8,28 @@
 #ifndef STORM_FORMULA_BOUNDOPERATOR_H_
 #define STORM_FORMULA_BOUNDOPERATOR_H_
 
-#include "PctlStateFormula.h"
-#include "PctlPathFormula.h"
+#include "AbstractStateFormula.h"
+#include "AbstractPathFormula.h"
 #include "utility/ConstTemplates.h"
 
 namespace storm {
 
 namespace formula {
 
+template <class T> class BoundUntil;
+
+template <class T>
+class IBoundUntilModelChecker {
+    public:
+        virtual storm::storage::BitVector* checkBoundUntil(const BoundUntil<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL formula tree with a P (probablistic) operator node over a probability interval
+ * Class for a Abstract formula tree with a P (probablistic) operator node over a probability interval
  * as root.
  *
- * Has one PCTL path formula as sub formula/tree.
+ * Has one Abstract path formula as sub formula/tree.
  *
  * @par Semantics
  * 	  The formula holds iff the probability that the path formula holds is inside the bounds
@@ -31,14 +39,14 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PctlStateFormula
- * @see PctlPathFormula
+ * @see AbstractStateFormula
+ * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
- * @see PctlFormula
+ * @see AbstractFormula
  */
 template<class T>
-class BoundOperator : public PctlStateFormula<T> {
+class BoundOperator : public AbstractStateFormula<T> {
 
 public:
 	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
@@ -50,7 +58,7 @@ public:
 	 * @param upperBound The upper bound for the probability
 	 * @param pathFormula The child node
 	 */
-	BoundOperator(ComparisonType comparisonOperator, T bound, PctlPathFormula<T>* pathFormula)
+	BoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
@@ -68,9 +76,9 @@ public:
 	}
 
 	/*!
-	 * @returns the child node (representation of a PCTL path formula)
+	 * @returns the child node (representation of a Abstract path formula)
 	 */
-	const PctlPathFormula<T>& getPathFormula () const {
+	const AbstractPathFormula<T>& getPathFormula () const {
 		return *pathFormula;
 	}
 
@@ -79,7 +87,7 @@ public:
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
 	 */
-	void setPathFormula(PctlPathFormula<T>* pathFormula) {
+	void setPathFormula(AbstractPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -134,7 +142,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const = 0;
+	virtual AbstractStateFormula<T>* clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -145,14 +153,14 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector *check(const IBoundUntilModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkBoundOperator(*this);
 	}
 
 private:
 	ComparisonType comparisonOperator;
 	T bound;
-	PctlPathFormula<T>* pathFormula;
+	AbstractPathFormula<T>* pathFormula;
 };
 
 } //namespace formula

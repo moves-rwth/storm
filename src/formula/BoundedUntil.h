@@ -8,8 +8,8 @@
 #ifndef STORM_FORMULA_BOUNDEDUNTIL_H_
 #define STORM_FORMULA_BOUNDEDUNTIL_H_
 
-#include "PctlPathFormula.h"
-#include "PctlStateFormula.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 
@@ -17,11 +17,19 @@ namespace storm {
 
 namespace formula {
 
+template <class T> class BoundedUntil;
+
+template <class T>
+class IBoundedUntilModelChecker {
+    public:
+        virtual std::vector<T>* checkBoundedUntil(const BoundedUntil<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL (path) formula tree with a BoundedUntil node as root.
+ * Class for a Abstract (path) formula tree with a BoundedUntil node as root.
  *
- * Has two PCTL state formulas as sub formulas/trees.
+ * Has two Abstract state formulas as sub formulas/trees.
  *
  * @par Semantics
  * The formula holds iff in at most \e bound steps, formula \e right (the right subtree) holds, and before,
@@ -30,11 +38,11 @@ namespace formula {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PctlPathFormula
- * @see PctlFormula
+ * @see AbstractPathFormula
+ * @see AbstractFormula
  */
 template <class T>
-class BoundedUntil : public PctlPathFormula<T> {
+class BoundedUntil : public AbstractPathFormula<T> {
 
 public:
 	/*!
@@ -53,7 +61,7 @@ public:
 	 * @param right The left formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedUntil(PctlStateFormula<T>* left, PctlStateFormula<T>* right,
+	BoundedUntil(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right,
 					 uint_fast64_t bound) {
 		this->left = left;
 		this->right = right;
@@ -80,7 +88,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(PctlStateFormula<T>* newLeft) {
+	void setLeft(AbstractStateFormula<T>* newLeft) {
 		left = newLeft;
 	}
 
@@ -89,21 +97,21 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(PctlStateFormula<T>* newRight) {
+	void setRight(AbstractStateFormula<T>* newRight) {
 		right = newRight;
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const PctlStateFormula<T>& getLeft() const {
+	const AbstractStateFormula<T>& getLeft() const {
 		return *left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	const PctlStateFormula<T>& getRight() const {
+	const AbstractStateFormula<T>& getRight() const {
 		return *right;
 	}
 
@@ -144,7 +152,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual PctlPathFormula<T>* clone() const {
+	virtual AbstractPathFormula<T>* clone() const {
 		BoundedUntil<T>* result = new BoundedUntil<T>();
 		result->setBound(bound);
 		if (left != NULL) {
@@ -166,13 +174,13 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual std::vector<T> *check(const IBoundedUntilModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkBoundedUntil(*this);
 	}
 
 private:
-	PctlStateFormula<T>* left;
-	PctlStateFormula<T>* right;
+	AbstractStateFormula<T>* left;
+	AbstractStateFormula<T>* right;
 	uint_fast64_t bound;
 };
 

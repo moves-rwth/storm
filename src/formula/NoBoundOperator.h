@@ -8,26 +8,34 @@
 #ifndef STORM_FORMULA_NOBOUNDOPERATOR_H_
 #define STORM_FORMULA_NOBOUNDOPERATOR_H_
 
-#include "PctlFormula.h"
-#include "PctlPathFormula.h"
+#include "AbstractFormula.h"
+#include "AbstractPathFormula.h"
 
 namespace storm {
 
 namespace formula {
 
+template <class T> class NoBoundOperator;
+
+template <class T>
+class INoBoundOperatorModelChecker {
+    public:
+        virtual std::vector<T>* checkNoBoundOperator(const NoBoundOperator<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL formula tree with a P (probablistic) operator without declaration of probabilities
+ * Class for a Abstract formula tree with a P (probablistic) operator without declaration of probabilities
  * as root.
  *
  * Checking a formula with this operator as root returns the probabilities that the path formula holds
  * (for each state)
  *
- * Has one PCTL path formula as sub formula/tree.
+ * Has one Abstract path formula as sub formula/tree.
  *
  * @note
  * 	This class is a hybrid of a state and path formula, and may only appear as the outermost operator.
- * 	Hence, it is seen as neither a state nor a path formula, but is directly derived from PctlFormula.
+ * 	Hence, it is seen as neither a state nor a path formula, but is directly derived from AbstractFormula.
  *
  * @note
  * 	This class does not contain a check() method like the other formula classes.
@@ -39,14 +47,14 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PctlStateFormula
- * @see PctlPathFormula
+ * @see AbstractStateFormula
+ * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticIntervalOperator
- * @see PctlFormula
+ * @see AbstractFormula
  */
 template <class T>
-class NoBoundOperator: public storm::formula::PctlFormula<T> {
+class NoBoundOperator: public storm::formula::AbstractFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -60,7 +68,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	NoBoundOperator(PctlPathFormula<T>* pathFormula) {
+	NoBoundOperator(AbstractPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -74,9 +82,9 @@ public:
 	}
 
 	/*!
-	 * @returns the child node (representation of a PCTL path formula)
+	 * @returns the child node (representation of a Abstract path formula)
 	 */
-	const PctlPathFormula<T>& getPathFormula () const {
+	const AbstractPathFormula<T>& getPathFormula () const {
 		return *pathFormula;
 	}
 
@@ -85,7 +93,7 @@ public:
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
 	 */
-	void setPathFormula(PctlPathFormula<T>* pathFormula) {
+	void setPathFormula(AbstractPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -100,7 +108,7 @@ public:
 	 *
 	 * @returns A vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual std::vector<T>* check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual std::vector<T>* check(const INoBoundOperatorModelChecker<T>& modelChecker) const {
 		return modelChecker.checkNoBoundOperator(*this);
 	}
 
@@ -110,7 +118,7 @@ public:
 	virtual std::string toString() const = 0;
 
 private:
-	PctlPathFormula<T>* pathFormula;
+	AbstractPathFormula<T>* pathFormula;
 };
 
 } /* namespace formula */

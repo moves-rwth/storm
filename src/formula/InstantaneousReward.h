@@ -8,8 +8,8 @@
 #ifndef STORM_FORMULA_INSTANTANEOUSREWARD_H_
 #define STORM_FORMULA_INSTANTANEOUSREWARD_H_
 
-#include "PctlPathFormula.h"
-#include "PctlStateFormula.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 
@@ -17,18 +17,26 @@ namespace storm {
 
 namespace formula {
 
+template <class T> class InstantaneousReward;
+
+template <class T>
+class IInstantaneousRewardModelChecker {
+    public:
+        virtual std::vector<T>* checkInstantaneousReward(const InstantaneousReward<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL (path) formula tree with a Instantaneous Reward node as root.
+ * Class for a Abstract (path) formula tree with a Instantaneous Reward node as root.
  *
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PctlPathFormula
- * @see PctlFormula
+ * @see AbstractPathFormula
+ * @see AbstractFormula
  */
 template <class T>
-class InstantaneousReward : public PctlPathFormula<T> {
+class InstantaneousReward : public AbstractPathFormula<T> {
 
 public:
 	/*!
@@ -84,9 +92,9 @@ public:
 	 *
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns a new InstantaneousReward-object that is identical the called object.
 	 */
-	virtual PctlPathFormula<T>* clone() const {
+	virtual AbstractPathFormula<T>* clone() const {
 		return new InstantaneousReward(bound);
 	}
 
@@ -100,7 +108,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual std::vector<T> *check(const IInstantaneousRewardModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkInstantaneousReward(*this);
 	}
 

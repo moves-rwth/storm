@@ -8,8 +8,8 @@
 #ifndef STORM_FORMULA_BOUNDEDEVENTUALLY_H_
 #define STORM_FORMULA_BOUNDEDEVENTUALLY_H_
 
-#include "PctlPathFormula.h"
-#include "PctlStateFormula.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 
@@ -17,11 +17,19 @@ namespace storm {
 
 namespace formula {
 
+template <class T> class BoundedEventually;
+
+template <class T>
+class IBoundedEventuallyModelChecker {
+    public:
+        virtual std::vector<T>* checkBoundedEventually(const BoundedEventually<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL (path) formula tree with a BoundedEventually node as root.
+ * Class for a Abstract (path) formula tree with a BoundedEventually node as root.
  *
- * Has one PCTL state formulas as sub formula/tree.
+ * Has one Abstract state formulas as sub formula/tree.
  *
  * @par Semantics
  * The formula holds iff in at most \e bound steps, formula \e child holds.
@@ -29,11 +37,11 @@ namespace formula {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PctlPathFormula
- * @see PctlFormula
+ * @see AbstractPathFormula
+ * @see AbstractFormula
  */
 template <class T>
-class BoundedEventually : public PctlPathFormula<T> {
+class BoundedEventually : public AbstractPathFormula<T> {
 
 public:
 	/*!
@@ -50,7 +58,7 @@ public:
 	 * @param child The child formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedEventually(PctlStateFormula<T>* child, uint_fast64_t bound) {
+	BoundedEventually(AbstractStateFormula<T>* child, uint_fast64_t bound) {
 		this->child = child;
 		this->bound = bound;
 	}
@@ -70,7 +78,7 @@ public:
 	/*!
 	 * @returns the child node
 	 */
-	const PctlStateFormula<T>& getChild() const {
+	const AbstractStateFormula<T>& getChild() const {
 		return *child;
 	}
 
@@ -78,7 +86,7 @@ public:
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(PctlStateFormula<T>* child) {
+	void setChild(AbstractStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -116,7 +124,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual PctlPathFormula<T>* clone() const {
+	virtual AbstractPathFormula<T>* clone() const {
 		BoundedEventually<T>* result = new BoundedEventually<T>();
 		result->setBound(bound);
 		if (child != nullptr) {
@@ -135,12 +143,12 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
+	virtual std::vector<T> *check(const IBoundedEventuallyModelChecker<T>& modelChecker) const {
 	  return modelChecker.checkBoundedEventually(*this);
 	}
 
 private:
-	PctlStateFormula<T>* child;
+	AbstractStateFormula<T>* child;
 	uint_fast64_t bound;
 };
 
