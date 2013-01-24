@@ -9,6 +9,7 @@
 #define STORM_IR_INTERMEDIATEREPRESENTATIONADAPTER_H_
 
 #include "src/storage/SparseMatrix.h"
+#include "src/utility/Settings.h"
 
 #include <tuple>
 #include <unordered_map>
@@ -18,6 +19,10 @@
 #include <iostream>
 
 typedef std::pair<std::vector<bool>, std::vector<int_fast64_t>> StateType;
+
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
 
 namespace storm {
 
@@ -48,7 +53,7 @@ class IntermediateRepresentationAdapter {
 public:
 	template<class T>
 	static storm::storage::SparseMatrix<T>* toSparseMatrix(storm::ir::Program const& program) {
-
+		LOG4CPLUS_INFO(logger, "Creating sparse matrix for probabilistic program.");
 		uint_fast64_t numberOfIntegerVariables = 0;
 		uint_fast64_t numberOfBooleanVariables = 0;
 		for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
@@ -108,6 +113,8 @@ public:
 			StateType* currentState = stateQueue.front();
 			stateQueue.pop();
 
+			bool hasTransition = false;
+
 			// Iterate over all modules.
 			for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
 				storm::ir::Module const& module = program.getModule(i);
@@ -118,20 +125,26 @@ public:
 
 					// Check if this command is enabled in the current state.
 					if (command.getGuard()->getValueAsBool(*currentState)) {
+						hasTransition = true;
 						std::unordered_map<StateType*, double, StateHash, StateCompare> stateToProbabilityMap;
+						std::queue<StateType*> statesToDelete;
 						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
 							storm::ir::Update const& update = command.getUpdate(k);
 
 							StateType* newState = new StateType(*currentState);
-
+							// std::cout << "took state: " << newState->first << "/" << newState->second << std::endl;
 							std::map<std::string, storm::ir::Assignment> const& booleanAssignmentMap = update.getBooleanAssignments();
 							for (auto assignedVariable : booleanAssignmentMap) {
 								setValue(newState, booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(*currentState));
 							}
 							std::map<std::string, storm::ir::Assignment> const& integerAssignmentMap = update.getIntegerAssignments();
 							for (auto assignedVariable : integerAssignmentMap) {
+								// std::cout << "evaluting " << assignedVariable.second.getExpression()->toString() << " as " << assignedVariable.second.getExpression()->getValueAsInt(*currentState) << std::endl;
 								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(*currentState));
 							}
+
+							// std::cout << "applied: " << update.toString() << std::endl;
+							// std::cout << "got: " << newState->first << "/" << newState->second << std::endl;
 
 							auto probIt = stateToProbabilityMap.find(newState);
 							if (probIt != stateToProbabilityMap.end()) {
@@ -144,7 +157,7 @@ public:
 							auto it = stateToIndexMap.find(newState);
 							if (it != stateToIndexMap.end()) {
 								// Delete the state object directly as we have already seen that state.
-								delete newState;
+								statesToDelete.push(newState);
 							} else {
 								// Add state to the queue of states that are still to be explored.
 								stateQueue.push(newState);
@@ -157,18 +170,31 @@ public:
 								++nextIndex;
 							}
 						}
+						while (!statesToDelete.empty()) {
+							delete statesToDelete.front();
+							statesToDelete.pop();
+						}
 					}
 				}
 			}
-		}
 
-		std::cout << "Found " << allStates.size() << " reachable states and " << totalNumberOfTransitions << " transitions.";
+			if (!hasTransition) {
+				if (storm::settings::instance()->isSet("fix-deadlocks")) {
+					++totalNumberOfTransitions;
+				} else {
+					LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state.");
+					throw storm::exceptions::WrongFileFormatException() << "Error while creating sparse matrix from probabilistic program: found deadlock state.";
+				}
+			}
+		}
 
 		storm::storage::SparseMatrix<T>* resultMatrix = new storm::storage::SparseMatrix<T>(allStates.size());
 		resultMatrix->initialize(totalNumberOfTransitions);
 
 		uint_fast64_t currentIndex = 0;
 		for (StateType* currentState : allStates) {
+			bool hasTransition = false;
+
 			// Iterate over all modules.
 			for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
 				storm::ir::Module const& module = program.getModule(i);
@@ -179,6 +205,7 @@ public:
 
 					// Check if this command is enabled in the current state.
 					if (command.getGuard()->getValueAsBool(*currentState)) {
+						hasTransition = true;
 						std::map<uint_fast64_t, double> stateIndexToProbabilityMap;
 						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
 							storm::ir::Update const& update = command.getUpdate(k);
@@ -212,15 +239,22 @@ public:
 					}
 				}
 			}
+			if (!hasTransition) {
+				resultMatrix->addNextValue(currentIndex, currentIndex, 1);
+			}
+
 			++currentIndex;
 		}
 
 		resultMatrix->finalize();
 
+		LOG4CPLUS_INFO(logger, "Created sparse matrix with " << allStates.size() << " reachable states and " << totalNumberOfTransitions << " transitions.");
+
 		// Now free all the elements we allocated.
 		for (auto element : allStates) {
 			delete element;
 		}
+
 		return resultMatrix;
 	}
 

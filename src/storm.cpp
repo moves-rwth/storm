@@ -198,7 +198,7 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 	storm::formula::BoundedUntil<double>* boundedUntilFormula = new storm::formula::BoundedUntil<double>(new storm::formula::Ap<double>("true"), electedFormula, 1);
 	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
 
-	for (uint_fast64_t L = 1; L < 5; ++L) {
+	for (uint_fast64_t L = 9; L < 10; ++L) {
 		boundedUntilFormula->setBound(L*(n + 1));
 		mc->check(*probFormula);
 	}
@@ -224,12 +224,11 @@ void testChecking() {
 	if (parser.getType() == storm::models::DTMC) {
 		std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 		dtmc->printModelInformationToStream(std::cout);
+		// testCheckingDie(*dtmc);
+		// testCheckingCrowds(*dtmc);
+		testCheckingSynchronousLeader(*dtmc, 5);
 	}
 	else std::cout << "Input is not DTMC" << std::endl;
-
-	// testCheckingDie(*dtmc);
-	// testCheckingCrowds(*dtmc);
-	// testCheckingSynchronousLeader(*dtmc, 4);
 }
 
 /*!
@@ -237,9 +236,9 @@ void testChecking() {
  */
 int main(const int argc, const char* argv[]) {
 	initializeLogger();
-	// if (!parseOptions(argc, argv)) {
-	//	return 0;
-	//}
+	if (!parseOptions(argc, argv)) {
+		return 0;
+	}
 	// printHeader(argc, argv);
 
 	// testChecking();
@@ -247,7 +246,7 @@ int main(const int argc, const char* argv[]) {
 	storm::parser::PrismParser parser;
 	std::shared_ptr<storm::ir::Program> program = parser.parseFile("test.input");
 	storm::storage::SparseMatrix<double>* result = storm::adapters::IntermediateRepresentationAdapter::toSparseMatrix<double>(*program);
-	result->print();
+	// result->print();
 	delete result;
 
 	cleanUp();
