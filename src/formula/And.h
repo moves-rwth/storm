@@ -8,7 +8,8 @@
 #ifndef STORM_FORMULA_AND_H_
 #define STORM_FORMULA_AND_H_
 
-#include "AbstractStateFormula.h"
+#include "src/formula/AbstractStateFormula.h"
+#include "src/modelChecker/AbstractModelChecker.h"
 #include <string>
 
 namespace storm {
@@ -148,8 +149,8 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const IAndModelChecker<T>& modelChecker) const {
-		return modelChecker.checkAnd(*this);
+	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) {
+		return this->template cast<IAndModelChecker>(modelChecker)->checkAnd(*this);
 	}
 
 private:

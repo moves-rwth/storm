@@ -8,8 +8,9 @@
 #ifndef STORM_FORMULA_REACHABILITYREWARD_H_
 #define STORM_FORMULA_REACHABILITYREWARD_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/AbstractStateFormula.h"
+#include "src/modelChecker/AbstractModelChecker.h"
 
 namespace storm {
 
@@ -115,8 +116,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const IReachabilityRewardModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkReachabilityReward(*this);
+	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+	  return this->template cast<IReachabilityRewardModelChecker>(modelChecker)->checkReachabilityReward(*this);
 	}
 
 private:

@@ -8,9 +8,10 @@
 #ifndef STORM_FORMULA_BOUNDOPERATOR_H_
 #define STORM_FORMULA_BOUNDOPERATOR_H_
 
-#include "AbstractStateFormula.h"
-#include "AbstractPathFormula.h"
-#include "utility/ConstTemplates.h"
+#include "src/formula/AbstractStateFormula.h"
+#include "src/formula/AbstractPathFormula.h"
+#include "src/modelChecker/AbstractModelChecker.h"
+#include "src/utility/ConstTemplates.h"
 
 namespace storm {
 
@@ -153,8 +154,8 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const IBoundUntilModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkBoundOperator(*this);
+	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+	  return this->template cast<IBoundUntilModelChecker>(modelChecker)->checkBoundOperator(*this);
 	}
 
 private:

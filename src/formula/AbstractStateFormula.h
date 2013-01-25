@@ -59,10 +59,11 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		std::cerr << "The model checker " << typeid(modelChecker).name() << " does not support " << typeid(*this).name() << std::endl;
+	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const = 0; // {
+/*		std::cerr << "The model checker " << typeid(modelChecker).name() << " does not support " << typeid(*this).name() << std::endl;
 		return nullptr;
 	}
+*/
 };
 
 } //namespace formula

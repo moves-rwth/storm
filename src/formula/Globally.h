@@ -118,8 +118,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const IGloballyModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkGlobally(*this);
+	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return this->template cast<IGloballyModelChecker>(modelChecker)->checkGlobally(*this);  
 	}
 
 private:

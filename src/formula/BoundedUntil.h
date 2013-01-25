@@ -10,6 +10,7 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
+#include "src/modelChecker/AbstractModelChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 
@@ -174,8 +175,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const IBoundedUntilModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkBoundedUntil(*this);
+	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+	  return this->template cast<IBoundedUntilModelChecker>(modelChecker)->checkBoundedUntil(*this);
 	}
 
 private:
