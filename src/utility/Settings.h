@@ -27,6 +27,8 @@ namespace settings {
 	
 	namespace bpo = boost::program_options;
 	
+	class Destroyer;
+	
 	/*!
 	 *	@brief	Wrapper around boost::program_options to handle configuration options.
 	 *
@@ -43,8 +45,7 @@ namespace settings {
 	 *	option modules. An option module can be anything that implements the
 	 *	interface specified by registerModule().
 	 */
-	class Settings
-	{
+	class Settings {
 		public:
 		
 			/*!
@@ -57,19 +58,19 @@ namespace settings {
 			}
 		
 			/*!
-			 *	@brief	Get value of string option
+			 *	@brief	Get value of string option.
 			 */
 			inline const std::string& getString(std::string const & name) const {
 				return this->get<std::string>(name);
 			}
 		
 			/*!
-			 *	@brief	Check if an option is set
+			 *	@brief	Check if an option is set.
 			 */
 			inline const bool isSet(std::string const & name) const {
 				return this->vm.count(name) > 0;
 			}
-			
+
 			/*!
 			 *	@brief	Register a new module.
 			 *
@@ -118,17 +119,30 @@ namespace settings {
 				// Store module.
 				Settings::modules[ trigger ] = desc;
 			}
-	
+			
 			friend std::ostream& help(std::ostream& os);
 			friend std::ostream& helpConfigfile(std::ostream& os);
 			friend Settings* instance();
-			friend Settings* newInstance(int const argc, char const * const argv[], char const * const filename);
+			friend Settings* newInstance(int const argc, char const * const argv[], char const * const filename, bool const sloppy = false);
+			friend Destroyer;
 
 		private:
 			/*!
-			 *	@brief	Constructor.
+			 *	@brief	Private constructor.
+			 *
+			 *	This constructor is private, as noone should be able to create
+			 *	an instance manually, one should always use the
+			 *	newInstance() method.
 			 */
-			Settings(int const argc, char const * const argv[], char const * const filename);
+			Settings(int const argc, char const * const argv[], char const * const filename, bool const sloppy);
+			
+			/*!
+			 *	@brief	Private destructor.
+			 *
+			 *	This destructor should be private, as noone should be able to destroy a singleton.
+			 *	The object is automatically destroyed when the program terminates by the destroyer.
+			 */
+			~Settings() {}
 			
 			/*!
 			 *	@brief	Initialize options_description object.
@@ -174,8 +188,35 @@ namespace settings {
 			 *	@brief	actual instance of this class.
 			 */
  			static Settings* inst;
+ 			
+ 			/*!
+ 			 *	@brief	Destroyer object.
+ 			 */
+ 			static Destroyer destroyer;
 	};
 
+	/*!
+	 *	@brief	Destroyer class for singleton object of Settings.
+	 *
+	 *	The sole purpose of this class is to clean up the singleton object
+	 *	instance of Settings. The Settings class has a static member of this
+	 *	Destroyer type that gets cleaned up when the program terminates. In
+	 *	it's destructor, this object will remove the Settings instance.
+	 */
+	class Destroyer {
+		public:
+			/*!
+			 *	@brief	Destructor.
+			 *
+			 *	Free Settings::inst.
+			 */
+			~Destroyer() {
+				if (Settings::inst != nullptr) {
+					delete Settings::inst;
+				}
+			}
+	};
+	
 	/*!
 	 *	@brief	Print usage help.
 	 */
@@ -200,9 +241,9 @@ namespace settings {
 	 *	@param filename either NULL or name of config file
 	 *	@return The new instance of Settings.
 	 */
-	inline Settings* newInstance(int const argc, char const * const argv[], char const * const filename) {
+	inline Settings* newInstance(int const argc, char const * const argv[], char const * const filename, bool const sloppy) {
 		if (Settings::inst != nullptr) delete Settings::inst;
-		Settings::inst = new Settings(argc, argv, filename);
+		Settings::inst = new Settings(argc, argv, filename, sloppy);
 		return Settings::inst;
 	}
 		

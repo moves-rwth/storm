@@ -6,6 +6,9 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
+#include "src/utility/Settings.h"
+#include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
+
 log4cplus::Logger logger;
 
 /*!
@@ -25,8 +28,36 @@ void setUpLogging() {
 	// logger.addAppender(consoleLogAppender);
 }
 
-int main(int argc, char** argv) {
+/*!
+ * Function that parses the command line options.
+ * @param argc The argc argument of main().
+ * @param argv The argv argument of main().
+ * @return True iff the program should continue to run after parsing the options.
+ */
+bool parseOptions(int const argc, char const * const argv[]) {
+    storm::settings::Settings* s = nullptr;
+    try {
+        storm::settings::Settings::registerModule<storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>>();
+        s = storm::settings::newInstance(argc, argv, nullptr, true);
+    } catch (storm::exceptions::InvalidSettingsException& e) {
+        std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
+        std::cout << std::endl << storm::settings::help;
+        return false;
+    }
+    
+    if (s->isSet("help")) {
+        std::cout << storm::settings::help;
+        return false;
+    }
+    
+    return true; 
+}
+
+int main(int argc, char* argv[]) {
 	setUpLogging();
+	if (!parseOptions(argc, argv)) {
+		return 0;
+	}
 	std::cout << "STORM Testing Suite" << std::endl;
 	
 	testing::InitGoogleTest(&argc, argv);

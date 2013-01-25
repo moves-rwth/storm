@@ -49,7 +49,7 @@ namespace parser {
  *	@param maxnode Is set to highest id of all nodes.
  *	@return The number of non-zero elements.
  */
-uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& choices, uint_fast64_t& maxnode) {
+uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode) {
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
@@ -77,8 +77,8 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
 	/*
 	 *	Read all transitions.
 	 */
-	uint_fast64_t source, target;
-	uint_fast64_t lastsource = 0;
+	int_fast64_t source, target;
+	int_fast64_t lastsource = -1;
 	uint_fast64_t nonzero = 0;
 	double val;
 	choices = 0;
@@ -97,6 +97,7 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
 		choices++;
 		if (source > lastsource + 1) {
 			nonzero += source - lastsource - 1;
+			choices += source - lastsource - 1;
 			parsed_nonzero += source - lastsource - 1;
 		}
 		lastsource = source;
@@ -169,7 +170,8 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 	/*
 	 *	Perform first pass, i.e. obtain number of columns, rows and non-zero elements.
 	 */
-	uint_fast64_t maxnode, choices;
+	int_fast64_t maxnode;
+	uint_fast64_t choices;
 	uint_fast64_t nonzero = this->firstPass(file.data, choices, maxnode);
 
 	/*
@@ -217,7 +219,7 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 	/*
 	 *	Parse file content.
 	 */
-	uint_fast64_t source, target, lastsource = 0;
+	int_fast64_t source, target, lastsource = -1;
 	uint_fast64_t curRow = 0;
 	std::string choice;
 	double val;
@@ -240,7 +242,7 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 		 *	outgoing transitions. If so, insert a self-loop.
 		 *	Also add self-loops to rowMapping.
 		 */
-		for (uint_fast64_t node = lastsource + 1; node < source; node++) {
+		for (int_fast64_t node = lastsource + 1; node < source; node++) {
 			hadDeadlocks = true;
 			if (fixDeadlocks) {
 				this->rowMapping->insert(RowMapping::value_type(curRow, std::pair<uint_fast64_t, std::string>(node, "")));
