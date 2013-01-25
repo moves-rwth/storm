@@ -8,6 +8,7 @@
 #ifndef STORM_FORMULA_PCTLSTATEFORMULA_H_
 #define STORM_FORMULA_PCTLSTATEFORMULA_H_
 
+#include "modelChecker/ForwardDeclarations.h"
 #include "PctlFormula.h"
 #include "storage/BitVector.h"
 

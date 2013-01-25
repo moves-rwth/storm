@@ -8,8 +8,6 @@
 #ifndef STORM_FORMULA_FORMULAS_H_
 #define STORM_FORMULA_FORMULAS_H_
 
-#include "modelChecker/ForwardDeclarations.h"
-
 #include "And.h"
 #include "Ap.h"
 #include "BoundedUntil.h"

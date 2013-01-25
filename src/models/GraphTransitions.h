@@ -110,8 +110,8 @@ private:
 	 * matrix.
 	 */
 	void initializeBackward(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix) {
-		this->successorList = new uint_fast64_t[numberOfNonZeroTransitions]();
-		this->stateIndications = new uint_fast64_t[numberOfStates + 1]();
+		this->successorList = new uint_fast64_t[numberOfNonZeroTransitions];
+		this->stateIndications = new uint_fast64_t[numberOfStates + 1];
 
 		// First, we need to count how many backward transitions each state has.
 		// NOTE: We disregard the diagonal here, as we only consider "true"

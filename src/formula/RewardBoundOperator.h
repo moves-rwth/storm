@@ -44,18 +44,20 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	RewardBoundOperator() : BoundOperator<T>(storm::utility::constGetZero<T>(), storm::utility::constGetZero<T>(), nullptr) {
+	RewardBoundOperator() : BoundOperator<T>(BoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 
 	/*!
 	 * Constructor
 	 *
-	 * @param lowerBound The lower bound for the probability
-	 * @param upperBound The upper bound for the probability
+	 * @param comparisonRelation The relation to compare the actual value and the bound
+	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	RewardBoundOperator(T lowerBound, T upperBound, PctlPathFormula<T>& pathFormula) : BoundOperator<T>(lowerBound, upperBound, pathFormula) {
+	RewardBoundOperator(
+			typename BoundOperator<T>::ComparisonType comparisonRelation, T bound, PctlPathFormula<T>* pathFormula) :
+				BoundOperator<T>(BoundOperator<T>::LESS, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -63,13 +65,8 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "R [";
-		result += std::to_string(this->getLowerBound());
-		result += ", ";
-		result += std::to_string(this->getUpperBound());
-		result += "] [";
-		result += this->getPathFormula()->toString();
-		result += "]";
+		std::string result = "R ";
+		result += BoundOperator<T>::toString();
 		return result;
 	}
 
@@ -82,8 +79,9 @@ public:
 	 */
 	virtual PctlStateFormula<T>* clone() const {
 		RewardBoundOperator<T>* result = new RewardBoundOperator<T>();
-		result->setBound(this->getLowerBound(), this->getUpperBound());
-		result->setPathFormula(this->getPathFormula()->clone());
+		result->setComparisonOperator(this->getComparisonOperator());
+		result->setBound(this->getBound());
+		result->setPathFormula(this->getPathFormula().clone());
 		return result;
 	}
 };

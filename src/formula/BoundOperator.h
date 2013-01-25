@@ -46,8 +46,8 @@ public:
 	/*!
 	 * Constructor
 	 *
-	 * @param lowerBound The lower bound for the probability
-	 * @param upperBound The upper bound for the probability
+	 * @param comparisonOperator The relation for the bound.
+	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
 	BoundOperator(ComparisonType comparisonOperator, T bound, PctlPathFormula<T>* pathFormula)
@@ -84,6 +84,17 @@ public:
 	}
 
 	/*!
+	 * @returns the comparison relation
+	 */
+	const ComparisonType getComparisonOperator() const {
+		return comparisonOperator;
+	}
+
+	void setComparisonOperator(ComparisonType comparisonOperator) {
+		this->comparisonOperator = comparisonOperator;
+	}
+
+	/*!
 	 * @returns the bound for the measure
 	 */
 	const T& getBound() const {
@@ -103,7 +114,7 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "P ";
+		std::string result = "";
 		switch (comparisonOperator) {
 		case LESS: result += "<"; break;
 		case LESS_EQUAL: result += "<="; break;
@@ -117,7 +128,7 @@ public:
 		return result;
 	}
 
-	bool meetsBound(T value) {
+	bool meetsBound(T value) const {
 		switch (comparisonOperator) {
 		case LESS: return value < bound; break;
 		case LESS_EQUAL: return value <= bound; break;

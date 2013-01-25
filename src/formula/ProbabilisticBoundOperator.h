@@ -45,18 +45,21 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticBoundOperator() : BoundOperator<T>(storm::utility::constGetZero<T>(), storm::utility::constGetZero<T>(), nullptr) {
+	ProbabilisticBoundOperator() : BoundOperator<T>
+		(BoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 
 	/*!
 	 * Constructor
 	 *
-	 * @param lowerBound The lower bound for the probability
-	 * @param upperBound The upper bound for the probability
+	 * @param comparisonRelation The relation to compare the actual value and the bound
+	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	ProbabilisticBoundOperator(T lowerBound, T upperBound, PctlPathFormula<T>& pathFormula) : BoundOperator<T>(lowerBound, upperBound, pathFormula) {
+	ProbabilisticBoundOperator(
+			typename BoundOperator<T>::ComparisonType comparisonRelation, T bound, PctlPathFormula<T>* pathFormula) :
+				BoundOperator<T>(BoundOperator<T>::LESS, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -64,13 +67,8 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "P [";
-		result += std::to_string(this->getLowerBound());
-		result += ",";
-		result += std::to_string(this->getUpperBound());
-		result += "] (";
-		result += this->getPathFormula()->toString();
-		result += ")";
+		std::string result = "P";
+		result += BoundOperator<T>::toString();
 		return result;
 	}
 
@@ -83,8 +81,9 @@ public:
 	 */
 	virtual PctlStateFormula<T>* clone() const {
 		ProbabilisticBoundOperator<T>* result = new ProbabilisticBoundOperator<T>();
-		result->setInterval(this->getLowerBound(), this->getUpperBound());
-		result->setPathFormula(this->getPathFormula()->clone());
+		result->setComparisonOperator(this->getComparisonOperator());
+		result->setBound(this->getBound());
+		result->setPathFormula(this->getPathFormula().clone());
 		return result;
 	}
 };

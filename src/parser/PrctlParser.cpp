@@ -20,9 +20,8 @@
 #include <iomanip>
 
 // Some typedefs and namespace definitions to reduce code size.
-typedef std::istreambuf_iterator<char> base_iterator_type;
-typedef boost::spirit::multi_pass<base_iterator_type> forward_iterator_type;
-typedef boost::spirit::classic::position_iterator2<forward_iterator_type> pos_iterator_type;
+typedef std::string::const_iterator BaseIteratorType;
+typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
 namespace qi = boost::spirit::qi;
 namespace phoenix = boost::phoenix;
 
@@ -36,54 +35,47 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 		freeIdentifierName = qi::lexeme[(qi::alpha | qi::char_('_'))];
 
 		//This block defines rules for parsing state formulas
-		stateFormula = (andFormula | atomicProposition | orFormula | notFormula | probabilisticBoundOperator | rewardBoundOperator);
-		andFormula = ("(" << stateFormula << "&" << stateFormula << ")")[qi::_val =
-				phoenix::new_<storm::formula::And<double>>(qi::_1, qi::_2)];
-		orFormula = ('(' << stateFormula << '|' << stateFormula << ')')[qi::_val =
+		stateFormula %= (andFormula | atomicProposition | orFormula | notFormula | probabilisticBoundOperator | rewardBoundOperator);
+
+		andFormula = (qi::lit("(") >> stateFormula >> qi::lit("&") >> stateFormula >> qi::lit(")"))[
+		      qi::_val = phoenix::new_<storm::formula::And<double>>(qi::_1, qi::_2)];
+		orFormula = (qi::lit("(") >> stateFormula >> '|' >> stateFormula >> ')')[qi::_val =
 				phoenix::new_<storm::formula::Or<double>>(qi::_1, qi::_2)];
-		notFormula = ('!' << stateFormula)[qi::_val =
+		notFormula = ('!' >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Not<double>>(qi::_1)];
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				phoenix::new_<storm::formula::Ap<double>>(qi::_1)];
 		probabilisticBoundOperator = (
-				("P=" << qi::double_ << '[' << pathFormula << ']') [qi::_val =
-						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double>>(qi::_1, qi::_1, qi::_2)] |
-				("P[" << qi::double_ << qi::double_ << ']' << '[' << pathFormula << ']')[qi::_val =
-						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(qi::_1, qi::_2, qi::_3)] |
-				("P>=" << qi::double_ << '[' << pathFormula << ']')[qi::_val =
-						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(qi::_1, 1, qi::_2)] |
-				("P<=" << qi::double_ << '[' << pathFormula << ']')[qi::_val =
-						phoenix::new_<storm::formula::PctlStateFormula<double> >(0, qi::_1, qi::_2)]
+				("P>=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
+				("P<=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 		rewardBoundOperator = (
-				("R=" << qi::double_ << '[' << pathFormula << ']') [qi::_val =
-						phoenix::new_<storm::formula::RewardBoundOperator<double> >(qi::_1, qi::_1, qi::_2)] |
-				("R[" << qi::double_ << qi::double_ << ']' << '[' << pathFormula << ']')[qi::_val =
-						phoenix::new_<storm::formula::RewardBoundOperator<double> >(qi::_1, qi::_2, qi::_3)] |
-				("R>=" << qi::double_ << '[' << pathFormula << ']')[qi::_val =
-						phoenix::new_<storm::formula::RewardBoundOperator<double> >(qi::_1, storm::utility::constGetInfinity<double>(), qi::_2)] |
-				("R<=" << qi::double_ << '[' << pathFormula << ']')[qi::_val =
-						phoenix::new_<storm::formula::RewardBoundOperator<double> >(0, qi::_1, qi::_2)]
+				("R>=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
+				("R<=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 
 		//This block defines rules for parsing formulas with noBoundOperators
 		noBoundOperator %= (probabilisticNoBoundOperator | rewardNoBoundOperator);
-		probabilisticNoBoundOperator = ("P=?[" << pathFormula << ']')[qi::_val =
+		probabilisticNoBoundOperator = ("P=?[" >> pathFormula >> ']')[qi::_val =
 				phoenix::new_<storm::formula::ProbabilisticNoBoundOperator<double> >(qi::_1)];
-		rewardNoBoundOperator = ("R=?[" << pathFormula << ']')[qi::_val =
+		rewardNoBoundOperator = ("R=?[" >> pathFormula >> ']')[qi::_val =
 				phoenix::new_<storm::formula::RewardNoBoundOperator<double> >(qi::_1)];
 
 		//This block defines rules for parsing path formulas
 		pathFormula %= (eventually | boundedEventually | globally | boundedUntil | until);
-		eventually = ('F' << pathFormula)[qi::_val =
+		eventually = ('F' >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Eventually<double> >(qi::_1)];
-		boundedEventually = ("F<=" << qi::double_ << pathFormula)[qi::_val =
+		boundedEventually = ("F<=" >> qi::int_ >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::BoundedEventually<double>>(qi::_2, qi::_1)];
-		globally = ('G' << pathFormula)[qi::_val =
+		globally = ('G' >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Globally<double> >(qi::_1)];
-		until = (stateFormula << 'U' << stateFormula)[qi::_val =
+		until = (stateFormula >> 'U' >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Until<double>>(qi::_1, qi::_2)];
-		boundedUntil = (stateFormula << "U<=" << qi::double_ << stateFormula)[qi::_val =
+		boundedUntil = (stateFormula >> "U<=" >> qi::int_ >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::BoundedUntil<double>>(qi::_1, qi::_3, qi::_2)];
 
 		start %= (stateFormula | noBoundOperator);
@@ -93,7 +85,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 
 	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> stateFormula;
 	qi::rule<Iterator, storm::formula::And<double>*(), Skipper> andFormula;
-	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> atomicProposition;
+	qi::rule<Iterator, storm::formula::Ap<double>*(), Skipper> atomicProposition;
 	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> orFormula;
 	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> notFormula;
 	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> probabilisticBoundOperator;
@@ -117,24 +109,28 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 } //namespace storm
 } //namespace parser
 
-storm::parser::PrctlParser::PrctlParser(std::string filename)
-{
+storm::parser::PrctlParser::PrctlParser(std::string filename) {
 	// Open file and initialize result.
 	std::ifstream inputFileStream(filename, std::ios::in);
 
 	// Prepare iterators to input.
-	base_iterator_type in_begin(inputFileStream);
-	forward_iterator_type fwd_begin = boost::spirit::make_default_multi_pass(in_begin);
-	forward_iterator_type fwd_end;
-	pos_iterator_type position_begin(fwd_begin, fwd_end, filename);
-	pos_iterator_type position_end;
+	// TODO: Right now, this parses the whole contents of the file into a string first.
+	// While this is usually not necessary, because there exist adapters that make an input stream
+	// iterable in both directions without storing it into a string, using the corresponding
+	// Boost classes gives an awful output under valgrind and is thus disabled for the time being.
+	std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
+	BaseIteratorType stringIteratorBegin = fileContent.begin();
+	BaseIteratorType stringIteratorEnd = fileContent.end();
+	PositionIteratorType positionIteratorBegin(stringIteratorBegin, stringIteratorEnd, filename);
+	PositionIteratorType positionIteratorEnd;
+
 
 	// Prepare resulting intermediate representation of input.
-	storm::formula::PctlFormula<double>* result_pointer;
+	storm::formula::PctlFormula<double>* result_pointer = nullptr;
 
-	PrctlGrammar<pos_iterator_type,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
+	PrctlGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
 
-	qi::phrase_parse(position_begin, position_end, grammar, boost::spirit::ascii::space, result_pointer);
+	qi::phrase_parse(positionIteratorBegin, positionIteratorEnd, grammar, boost::spirit::ascii::space, result_pointer);
 
 
 }
