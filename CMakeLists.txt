@@ -44,6 +44,12 @@ message(STATUS "EIGEN3_INCLUDE_DIR is ${EIGEN3_INCLUDE_DIR}")
 set(GMMXX_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-4.2/include)
 message(STATUS "GMMXX_INCLUDE_DIR is ${GMMXX_INCLUDE_DIR}")
 
+# Set all CUDD references to the version in the repository
+set(CUDD_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/include)
+set(CUDD_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/cudd ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/mtr ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/util ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/st ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/epd ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/obj)
+message(STATUS "CUDD_INCLUDE_DIR is ${CUDD_INCLUDE_DIR}")
+message(STATUS "CUDD_LIBRARY_DIRS is ${CUDD_LIBRARY_DIRS}")
+
 # Now define all available custom options
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
@@ -160,6 +166,13 @@ if (ADDITIONAL_LINK_DIRS)
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
+if (CUDD_INCLUDE_DIR)
+    include_directories(${CUDD_INCLUDE_DIR})
+endif(CUDD_INCLUDE_DIR)
+if (CUDD_LIBRARY_DIRS)
+    link_directories(${CUDD_LIBRARY_DIRS})
+endif(CUDD_LIBRARY_DIRS)
+
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
 add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
@@ -210,6 +223,10 @@ if (LOG4CPLUS_INCLUDE_DIR)
 	   target_link_libraries(storm-tests rt)
     endif(UNIX AND NOT APPLE)
 endif(LOG4CPLUS_INCLUDE_DIR)
+
+if (CUDD_LIBRARY_DIRS)
+    target_link_libraries(storm "-lcudd -lmtr -lst -lutil -lepd -lobj")
+endif(CUDD_LIBRARY_DIRS)
 
 if (THREADS_FOUND)
 	include_directories(${THREADS_INCLUDE_DIRS})

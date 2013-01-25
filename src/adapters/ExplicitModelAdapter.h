@@ -5,8 +5,8 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_IR_INTERMEDIATEREPRESENTATIONADAPTER_H_
-#define STORM_IR_INTERMEDIATEREPRESENTATIONADAPTER_H_
+#ifndef STORM_IR_EXPLICITMODELADAPTER_H_
+#define STORM_IR_EXPLICITMODELADAPTER_H_
 
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/Settings.h"
@@ -49,7 +49,7 @@ public:
 	}
 };
 
-class IntermediateRepresentationAdapter {
+class ExplicitModelAdapter {
 public:
 	template<class T>
 	static storm::storage::SparseMatrix<T>* toSparseMatrix(storm::ir::Program const& program) {
@@ -89,12 +89,12 @@ public:
 		StateType* initialState = getNewState(numberOfBooleanVariables, numberOfIntegerVariables);
 
 		for (uint_fast64_t i = 0; i < numberOfBooleanVariables; ++i) {
-			bool initialValue = booleanVariables[i].getInitialValue()->getValueAsBool(*initialState);
+			bool initialValue = booleanVariables[i].getInitialValue()->getValueAsBool(initialState);
 			std::get<0>(*initialState)[i] = initialValue;
 		}
 
 		for (uint_fast64_t i = 0; i < numberOfIntegerVariables; ++i) {
-			int_fast64_t initialValue = integerVariables[i].getInitialValue()->getValueAsInt(*initialState);
+			int_fast64_t initialValue = integerVariables[i].getInitialValue()->getValueAsInt(initialState);
 			std::get<1>(*initialState)[i] = initialValue;
 		}
 
@@ -124,7 +124,7 @@ public:
 					storm::ir::Command const& command = module.getCommand(j);
 
 					// Check if this command is enabled in the current state.
-					if (command.getGuard()->getValueAsBool(*currentState)) {
+					if (command.getGuard()->getValueAsBool(currentState)) {
 						hasTransition = true;
 						std::unordered_map<StateType*, double, StateHash, StateCompare> stateToProbabilityMap;
 						std::queue<StateType*> statesToDelete;
@@ -135,12 +135,12 @@ public:
 							// std::cout << "took state: " << newState->first << "/" << newState->second << std::endl;
 							std::map<std::string, storm::ir::Assignment> const& booleanAssignmentMap = update.getBooleanAssignments();
 							for (auto assignedVariable : booleanAssignmentMap) {
-								setValue(newState, booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(*currentState));
+								setValue(newState, booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(currentState));
 							}
 							std::map<std::string, storm::ir::Assignment> const& integerAssignmentMap = update.getIntegerAssignments();
 							for (auto assignedVariable : integerAssignmentMap) {
 								// std::cout << "evaluting " << assignedVariable.second.getExpression()->toString() << " as " << assignedVariable.second.getExpression()->getValueAsInt(*currentState) << std::endl;
-								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(*currentState));
+								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(currentState));
 							}
 
 							// std::cout << "applied: " << update.toString() << std::endl;
@@ -148,10 +148,10 @@ public:
 
 							auto probIt = stateToProbabilityMap.find(newState);
 							if (probIt != stateToProbabilityMap.end()) {
-								stateToProbabilityMap[newState] += update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+								stateToProbabilityMap[newState] += update.getLikelihoodExpression()->getValueAsDouble(currentState);
 							} else {
 								++totalNumberOfTransitions;
-								stateToProbabilityMap[newState] = update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+								stateToProbabilityMap[newState] = update.getLikelihoodExpression()->getValueAsDouble(currentState);
 							}
 
 							auto it = stateToIndexMap.find(newState);
@@ -204,7 +204,7 @@ public:
 					storm::ir::Command const& command = module.getCommand(j);
 
 					// Check if this command is enabled in the current state.
-					if (command.getGuard()->getValueAsBool(*currentState)) {
+					if (command.getGuard()->getValueAsBool(currentState)) {
 						hasTransition = true;
 						std::map<uint_fast64_t, double> stateIndexToProbabilityMap;
 						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
@@ -214,11 +214,11 @@ public:
 
 							std::map<std::string, storm::ir::Assignment> const& booleanAssignmentMap = update.getBooleanAssignments();
 							for (auto assignedVariable : booleanAssignmentMap) {
-								setValue(newState, booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(*currentState));
+								setValue(newState, booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(currentState));
 							}
 							std::map<std::string, storm::ir::Assignment> const& integerAssignmentMap = update.getIntegerAssignments();
 							for (auto assignedVariable : integerAssignmentMap) {
-								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(*currentState));
+								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(currentState));
 							}
 
 							uint_fast64_t targetIndex = (*stateToIndexMap.find(newState)).second;
@@ -226,9 +226,9 @@ public:
 
 							auto probIt = stateIndexToProbabilityMap.find(targetIndex);
 							if (probIt != stateIndexToProbabilityMap.end()) {
-								stateIndexToProbabilityMap[targetIndex] += update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+								stateIndexToProbabilityMap[targetIndex] += update.getLikelihoodExpression()->getValueAsDouble(currentState);
 							} else {
-								stateIndexToProbabilityMap[targetIndex] = update.getLikelihoodExpression()->getValueAsDouble(*currentState);
+								stateIndexToProbabilityMap[targetIndex] = update.getLikelihoodExpression()->getValueAsDouble(currentState);
 							}
 						}
 
@@ -275,9 +275,8 @@ private:
 	}
 };
 
-}
+} // namespace adapters
 
-}
+} // namespace storm
 
-
-#endif /* STORM_IR_INTERMEDIATEREPRESENTATIONADAPTER_H_ */
+#endif /* STORM_IR_EXPLICITMODELADAPTER_H_ */

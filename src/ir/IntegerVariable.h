@@ -38,6 +38,18 @@ public:
 	IntegerVariable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr));
 
 	/*!
+	 * Retrieves the lower bound for this integer variable.
+	 * @returns the lower bound for this integer variable.
+	 */
+	std::shared_ptr<storm::ir::expressions::BaseExpression> getLowerBound() const;
+
+	/*!
+	 * Retrieves the upper bound for this integer variable.
+	 * @returns the upper bound for this integer variable.
+	 */
+	std::shared_ptr<storm::ir::expressions::BaseExpression> getUpperBound() const;
+
+	/*!
 	 * Retrieves a string representation of this variable.
 	 * @returns a string representation of this variable.
 	 */

@@ -28,7 +28,7 @@ public:
 
 	}
 
-	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
 		if (this->getType() != int_) {
 			BaseExpression::getValueAsInt(variableValues);
 		}
@@ -41,7 +41,7 @@ public:
 		}
 	}
 
-	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
 		if (this->getType() != double_) {
 			BaseExpression::getValueAsDouble(variableValues);
 		}

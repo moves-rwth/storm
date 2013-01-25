@@ -32,23 +32,33 @@ public:
 		return variableName;
 	}
 
-	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
 		if (this->getType() != int_) {
 			BaseExpression::getValueAsInt(variableValues);
 		}
 
-		return variableValues.second[index];
+		if (variableValues != nullptr) {
+			return variableValues->second[index];
+		} else {
+			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression"
+					<< " involving variables without variable values.";
+		}
 	}
 
-	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
 		if (this->getType() != bool_) {
 			BaseExpression::getValueAsBool(variableValues);
 		}
 
-		return variableValues.first[index];
+		if (variableValues != nullptr) {
+			return variableValues->first[index];
+		} else {
+			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression"
+					<< " involving variables without variable values.";
+		}
 	}
 
-	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
 		if (this->getType() != double_) {
 			BaseExpression::getValueAsDouble(variableValues);
 		}

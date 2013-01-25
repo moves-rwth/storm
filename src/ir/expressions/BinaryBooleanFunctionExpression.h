@@ -31,7 +31,7 @@ public:
 
 	}
 
-	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
 		bool resultLeft = left->getValueAsBool(variableValues);
 		bool resultRight = right->getValueAsBool(variableValues);
 		switch(functionType) {

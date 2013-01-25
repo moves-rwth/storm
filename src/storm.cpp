@@ -36,7 +36,8 @@
 #include "log4cplus/fileappender.h"
 
 #include "src/parser/PrismParser.h"
-#include "src/adapters/IntermediateRepresentationAdapter.h"
+#include "src/adapters/ExplicitModelAdapter.h"
+#include "src/adapters/SymbolicModelAdapter.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
 
@@ -245,9 +246,8 @@ int main(const int argc, const char* argv[]) {
 
 	storm::parser::PrismParser parser;
 	std::shared_ptr<storm::ir::Program> program = parser.parseFile("test.input");
-	storm::storage::SparseMatrix<double>* result = storm::adapters::IntermediateRepresentationAdapter::toSparseMatrix<double>(*program);
-	// result->print();
-	delete result;
+	storm::adapters::SymbolicModelAdapter symbolicAdapter;
+	symbolicAdapter.toMTBDD(*program);
 
 	cleanUp();
 	return 0;

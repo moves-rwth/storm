@@ -26,7 +26,7 @@ public:
 
 	}
 
-	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+	virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
 		if (!defined) {
 			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
 					<< "Integer constant '" << this->getConstantName() << "' is undefined.";

@@ -7,15 +7,16 @@
 # be overridden from the command line.
 
 # C++ compiler
-CXX	= g++
+#CXX	= g++
 #CXX	= icpc
 #CXX	= ecpc
 #CXX	= CC
 #CXX	= /usr/local/opt/SUNWspro/bin/CC
 #CXX	= cxx
+CXX	= clang++
 
 # Specific options for compilation of C++ files.
-CXXFLAGS =
+CXXFLAGS = -std=c++11 -stdlib=libc++
 # Stricter standard conformance for g++.
 #CXXFLAGS = -std=c++98
 # For Sun CC version 5, this invokes compatibility mode.
@@ -27,12 +28,13 @@ CXXFLAGS =
 # C compiler used for all targets except optimize_dec, which always uses cc.
 #CC	= cc
 #CC	= /usr/local/opt/SUNWspro/bin/cc
-CC	= gcc
+#CC	= gcc
 #CC	= icc
 #CC	= ecc
 #CC	= /usr/ucb/cc
 #CC	= c89
 #CC	= $(CXX)
+CC	= clang
 
 # On some machines ranlib is either non-existent or redundant.
 # Use the following definition if your machine has ranlib and you think
@@ -49,7 +51,7 @@ RANLIB	= ranlib
 #ICFLAGS	=
 # These two are typical settings for optimized code with gcc.
 #ICFLAGS	= -g -O3 -Wall
-ICFLAGS	= -g -O3
+ICFLAGS	= -O3
 
 # Use XCFLAGS to specify machine-dependent compilation flags.
 # For some platforms no special flags are needed.
@@ -59,7 +61,7 @@ ICFLAGS	= -g -O3
 #  Linux
 #
 # Gcc 4.2.4 or higher on i686.
-XCFLAGS	= -mtune=native -malign-double -DHAVE_IEEE_754 -DBSD
+XCFLAGS	= -arch x86_64 -DHAVE_IEEE_754 -DBSD -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8
 # Gcc 3.2.2 or higher on i686.
 #XCFLAGS	= -mtune=pentium4 -malign-double -DHAVE_IEEE_754 -DBSD
 # Gcc 2.8.1 on i686.
@@ -198,7 +200,7 @@ DDWDIR	= .
 IDIR	= $(DDWDIR)/include
 INCLUDE = -I$(IDIR)
 
-BDIRS	= cudd dddmp mtr st util epd
+BDIRS	= cudd dddmp mtr st util epd obj
 DIRS	= $(BDIRS) nanotrav
 
 #------------------------------------------------------------------------

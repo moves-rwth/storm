@@ -30,7 +30,7 @@ public:
 
 	}
 
-	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
 		return value;
 	}
 

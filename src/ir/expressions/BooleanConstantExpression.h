@@ -29,7 +29,7 @@ public:
 
 	}
 
-	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const& variableValues) const {
+	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
 		if (!defined) {
 			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
 					<< "Boolean constant '" << this->getConstantName() << "' is undefined.";

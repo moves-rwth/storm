@@ -27,6 +27,17 @@ IntegerVariable::IntegerVariable(uint_fast64_t index, std::string variableName, 
 	}
 }
 
+// Return lower bound for variable.
+std::shared_ptr<storm::ir::expressions::BaseExpression> IntegerVariable::getLowerBound() const {
+	return this->lowerBound;
+}
+
+// Return upper bound for variable.
+std::shared_ptr<storm::ir::expressions::BaseExpression> IntegerVariable::getUpperBound() const {
+	return this->upperBound;
+}
+
+
 // Build a string representation of the variable.
 std::string IntegerVariable::toString() const {
 	std::stringstream result;
