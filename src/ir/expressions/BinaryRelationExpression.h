@@ -10,6 +10,8 @@
 
 #include "src/ir/expressions/BaseExpression.h"
 
+#include "src/utility/CuddUtility.h"
+
 namespace storm {
 
 namespace ir {
@@ -18,7 +20,7 @@ namespace expressions {
 
 class BinaryRelationExpression : public BaseExpression {
 public:
-	enum RelationType {EQUAL, LESS, LESS_OR_EQUAL, GREATER, GREATER_OR_EQUAL};
+	enum RelationType {EQUAL, NOT_EQUAL, LESS, LESS_OR_EQUAL, GREATER, GREATER_OR_EQUAL};
 
 	BinaryRelationExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, RelationType relationType) : BaseExpression(bool_), left(left), right(right), relationType(relationType) {
 
@@ -33,6 +35,7 @@ public:
 		int_fast64_t resultRight = right->getValueAsInt(variableValues);
 		switch(relationType) {
 		case EQUAL: return resultLeft == resultRight; break;
+		case NOT_EQUAL: return resultLeft != resultRight; break;
 		case LESS: return resultLeft < resultRight; break;
 		case LESS_OR_EQUAL: return resultLeft <= resultRight; break;
 		case GREATER: return resultLeft > resultRight; break;
@@ -42,10 +45,27 @@ public:
 		}
 	}
 
+	virtual ADD* toAdd() const {
+		ADD* leftAdd = left->toAdd();
+		ADD* rightAdd = right->toAdd();
+
+		switch(relationType) {
+		case EQUAL: return new ADD(leftAdd->Equals(*rightAdd)); break;
+		case NOT_EQUAL: return new ADD(leftAdd->NotEquals(*rightAdd)); break;
+		case LESS: return new ADD(leftAdd->LessThan(*rightAdd)); break;
+		case LESS_OR_EQUAL: return new ADD(leftAdd->LessThanOrEqual(*rightAdd)); break;
+		case GREATER: return new ADD(leftAdd->GreaterThan(*rightAdd)); break;
+		case GREATER_OR_EQUAL: return new ADD(leftAdd->GreaterThanOrEqual(*rightAdd)); break;
+		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+				<< "Unknown boolean binary operator: '" << relationType << "'.";
+		}
+	}
+
 	virtual std::string toString() const {
 		std::string result = left->toString();
 		switch (relationType) {
 		case EQUAL: result += " = "; break;
+		case NOT_EQUAL: result += " != "; break;
 		case LESS: result += " < "; break;
 		case LESS_OR_EQUAL: result += " <= "; break;
 		case GREATER: result += " > "; break;

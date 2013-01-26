@@ -34,6 +34,11 @@ public:
 		return value;
 	}
 
+	virtual ADD* toAdd() const {
+		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
+		return new ADD(*cuddUtility->getConstant(value));
+	}
+
 	virtual std::string toString() const {
 		return boost::lexical_cast<std::string>(value);
 	}

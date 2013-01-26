@@ -140,6 +140,7 @@ void cleanUp() {
 	if (storm::settings::instance() != nullptr) {
 		delete storm::settings::instance();
 	}
+	delete storm::utility::cuddUtilityInstance();
 }
 
 void testCheckingDie(storm::models::Dtmc<double>& dtmc) {

@@ -2,11 +2,11 @@
  * Expressions.h
  *
  *  Created on: 03.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef EXPRESSIONS_H_
-#define EXPRESSIONS_H_
+#ifndef STORM_IR_EXPRESSIONS_EXPRESSIONS_H_
+#define STORM_IR_EXPRESSIONS_EXPRESSIONS_H_
 
 #include "BaseExpression.h"
 #include "BinaryBooleanFunctionExpression.h"
@@ -18,8 +18,9 @@
 #include "UnaryBooleanFunctionExpression.h"
 #include "UnaryNumericalFunctionExpression.h"
 #include "VariableExpression.h"
+#include "ConstantExpression.h"
 #include "BooleanConstantExpression.h"
 #include "IntegerConstantExpression.h"
 #include "DoubleConstantExpression.h"
 
-#endif /* EXPRESSIONS_H_ */
+#endif /* STORM_IR_EXPRESSIONS_EXPRESSIONS_H_ */

@@ -37,6 +37,11 @@ public:
 		}
 	}
 
+	virtual ADD* toAdd() const {
+		ADD* childResult = child->toAdd();
+		return new ADD(~(*childResult));
+	}
+
 	virtual std::string toString() const {
 		std::string result = "";
 		switch (functionType) {

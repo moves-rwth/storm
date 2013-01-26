@@ -32,6 +32,11 @@ public:
 		return value;
 	}
 
+	virtual ADD* toAdd() const {
+		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
+		return new ADD(*cuddUtility->getConstant(value ? 1 : 0));
+	}
+
 	virtual std::string toString() const {
 		if (value) {
 			return std::string("true");

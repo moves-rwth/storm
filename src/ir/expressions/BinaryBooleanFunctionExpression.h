@@ -10,6 +10,8 @@
 
 #include "src/ir/expressions/BaseExpression.h"
 
+#include "src/utility/CuddUtility.h"
+
 #include <memory>
 #include <sstream>
 
@@ -37,6 +39,18 @@ public:
 		switch(functionType) {
 		case AND: return resultLeft & resultRight; break;
 		case OR: return resultLeft | resultRight; break;
+		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+				<< "Unknown boolean binary operator: '" << functionType << "'.";
+		}
+	}
+
+	virtual ADD* toAdd() const {
+		ADD* leftAdd = left->toAdd();
+		ADD* rightAdd = right->toAdd();
+
+		switch(functionType) {
+		case AND: return new ADD(leftAdd->Times(*rightAdd)); break;
+		case OR: return new ADD(leftAdd->Plus(*rightAdd)); break;
 		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
 				<< "Unknown boolean binary operator: '" << functionType << "'.";
 		}

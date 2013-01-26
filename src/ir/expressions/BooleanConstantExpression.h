@@ -10,6 +10,8 @@
 
 #include "ConstantExpression.h"
 
+#include "src/utility/CuddUtility.h"
+
 #include <boost/lexical_cast.hpp>
 
 namespace storm {
@@ -36,6 +38,16 @@ public:
 		} else {
 			return value;
 		}
+	}
+
+	virtual ADD* toAdd() const {
+		if (!defined) {
+			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+					<< "Boolean constant '" << this->getConstantName() << "' is undefined.";
+		}
+
+		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
+		return new ADD(*cuddUtility->getConstant(value ? 1 : 0));
 	}
 
 	virtual std::string toString() const {

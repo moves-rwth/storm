@@ -10,6 +10,7 @@
 
 #include "src/ir/expressions/BaseExpression.h"
 
+#include <memory>
 #include <iostream>
 
 namespace storm {
@@ -20,7 +21,11 @@ namespace expressions {
 
 class VariableExpression : public BaseExpression {
 public:
-	VariableExpression(ReturnType type, uint_fast64_t index, std::string variableName) : BaseExpression(type), index(index), variableName(variableName) {
+	VariableExpression(ReturnType type, uint_fast64_t index, std::string variableName,
+			std::shared_ptr<BaseExpression> lowerBound = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr),
+			std::shared_ptr<BaseExpression> upperBound = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr))
+			: BaseExpression(type), index(index), variableName(variableName),
+			  lowerBound(lowerBound), upperBound(upperBound) {
 
 	}
 
@@ -67,9 +72,28 @@ public:
 				<< " variable '" << variableName << "' of type double.";
 	}
 
+	virtual ADD* toAdd() const {
+		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
+
+		return nullptr;
+
+		if (this->getType() == bool_) {
+			ADD* result = cuddUtility->getConstant(0);
+			//cuddUtility->addValueForEncodingOfConstant(result, 1, )
+		} else {
+			int64_t low = lowerBound->getValueAsInt(nullptr);
+			int64_t high = upperBound->getValueAsInt(nullptr);
+		}
+
+		return new ADD();
+	}
+
 private:
 	uint_fast64_t index;
 	std::string variableName;
+
+	std::shared_ptr<BaseExpression> lowerBound;
+	std::shared_ptr<BaseExpression> upperBound;
 };
 
 }

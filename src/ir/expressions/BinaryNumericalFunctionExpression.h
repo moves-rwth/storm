@@ -10,6 +10,8 @@
 
 #include "src/ir/expressions/BaseExpression.h"
 
+#include "src/utility/CuddUtility.h"
+
 namespace storm {
 
 namespace ir {
@@ -59,6 +61,20 @@ public:
 		case DIVIDE: return resultLeft / resultRight; break;
 		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
 				<< "Unknown numeric binary operator: '" << functionType << "'.";
+		}
+	}
+
+	virtual ADD* toAdd() const {
+		ADD* leftAdd = left->toAdd();
+		ADD* rightAdd = right->toAdd();
+
+		switch(functionType) {
+		case PLUS: return new ADD(leftAdd->Plus(*rightAdd)); break;
+		case MINUS: return new ADD(leftAdd->Minus(*rightAdd)); break;
+		case TIMES: return new ADD(leftAdd->Times(*rightAdd)); break;
+		case DIVIDE: return new ADD(leftAdd->Divide(*rightAdd)); break;
+		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+				<< "Unknown boolean binary operator: '" << functionType << "'.";
 		}
 	}
 

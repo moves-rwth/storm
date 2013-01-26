@@ -54,6 +54,13 @@ public:
 		}
 	}
 
+	virtual ADD* toAdd() const {
+		ADD* childResult = child->toAdd();
+		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
+		ADD* result = cuddUtility->getConstant(0);
+		return new ADD(result->Minus(*childResult));
+	}
+
 	virtual std::string toString() const {
 		std::string result = "";
 		switch (functionType) {

@@ -11,6 +11,8 @@
 #include "src/exceptions/ExpressionEvaluationException.h"
 #include "src/exceptions/NotImplementedException.h"
 
+#include "src/utility/CuddUtility.h"
+
 #include <string>
 #include <vector>
 
@@ -63,6 +65,8 @@ public:
 		throw storm::exceptions::NotImplementedException() << "Cannot evaluate expression of type '"
 					<< this->getTypeName() << " because evaluation implementation is missing.";
 	}
+
+	virtual ADD* toAdd() const = 0;
 
 	virtual std::string toString() const = 0;
 

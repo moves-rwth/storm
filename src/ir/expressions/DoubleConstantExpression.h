@@ -35,6 +35,16 @@ public:
 		}
 	}
 
+	virtual ADD* toAdd() const {
+		if (!defined) {
+			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
+					<< "Double constant '" << this->getConstantName() << "' is undefined.";
+		}
+
+		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
+		return new ADD(*cuddUtility->getConstant(value));
+	}
+
 	virtual std::string toString() const {
 		std::string result = this->constantName;
 		if (defined) {
