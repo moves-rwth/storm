@@ -783,7 +783,187 @@ Cudd_addLog(
 
 } /* end of Cudd_addLog */
 
+/**Function********************************************************************
 
+  Synopsis    [1 if f==g; 0 otherwise.]
+
+  Description [Returns NULL if not a terminal case; f op g otherwise,
+  where f op g is 1 if f==g; 0 otherwise.]
+
+  SideEffects [None]
+
+  SeeAlso     [Cudd_addApply]
+
+******************************************************************************/
+DdNode *
+Cudd_addEquals(
+  DdManager * dd,
+  DdNode ** f,
+  DdNode ** g)
+{
+    DdNode *F, *G;
+
+    F = *f; G = *g;
+    if (F == G) return(DD_ONE(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) return(DD_ZERO(dd));
+    if (F > G) { /* swap f and g */
+	*f = G;
+	*g = F;
+    }
+    return(NULL);
+
+} /* end of Cudd_addEquals */
+
+
+/**Function********************************************************************
+
+  Synopsis    [1 if f!=g; 0 otherwise.]
+
+  Description [Returns NULL if not a terminal case; f op g otherwise,
+  where f op g is 1 if f!=g; 0 otherwise.]
+
+  SideEffects [None]
+
+  SeeAlso     [Cudd_addApply]
+
+******************************************************************************/
+DdNode *
+Cudd_addNotEquals(
+  DdManager * dd,
+  DdNode ** f,
+  DdNode ** g)
+{
+    DdNode *F, *G;
+
+    F = *f; G = *g;
+    if (F == G) return(DD_ZERO(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) return(DD_ONE(dd));
+    if (F > G) { /* swap f and g */
+	*f = G;
+	*g = F;
+    }
+    return(NULL);
+
+} /* end of Cudd_addNotEquals */
+
+/**Function********************************************************************
+
+  Synopsis    [1 if f>g; 0 otherwise.]
+
+  Description [Returns NULL if not a terminal case; f op g otherwise,
+  where f op g is 1 if f>g; 0 otherwise.]
+
+  SideEffects [None]
+
+  SeeAlso     [Cudd_addApply]
+
+******************************************************************************/
+DdNode *
+Cudd_addGreaterThan(
+  DdManager * dd,
+  DdNode ** f,
+  DdNode ** g)
+{
+    DdNode *F, *G;
+
+    F = *f; G = *g;
+    if (F == G) return(DD_ZERO(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+		if (cuddV(F)>cuddV(G)) return (DD_ONE(dd)); else return (DD_ZERO(dd));
+    }
+    return(NULL);
+
+} /* end of Cudd_addGreaterThan */
+
+
+/**Function********************************************************************
+
+  Synopsis    [1 if f>=g; 0 otherwise.]
+
+  Description [Returns NULL if not a terminal case; f op g otherwise,
+  where f op g is 1 if f>=g; 0 otherwise.]
+
+  SideEffects [None]
+
+  SeeAlso     [Cudd_addApply]
+
+******************************************************************************/
+DdNode *
+Cudd_addGreaterThanEquals(
+  DdManager * dd,
+  DdNode ** f,
+  DdNode ** g)
+{
+    DdNode *F, *G;
+
+    F = *f; G = *g;
+    if (F == G) return(DD_ONE(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+		if (cuddV(F)>=cuddV(G)) return (DD_ONE(dd)); else return (DD_ZERO(dd));
+    }
+    return(NULL);
+
+} /* end of Cudd_addGreaterThanEquals */
+
+
+/**Function********************************************************************
+
+  Synopsis    [1 if f<g; 0 otherwise.]
+
+  Description [Returns NULL if not a terminal case; f op g otherwise,
+  where f op g is 1 if f<g; 0 otherwise.]
+
+  SideEffects [None]
+
+  SeeAlso     [Cudd_addApply]
+
+******************************************************************************/
+DdNode *
+Cudd_addLessThan(
+  DdManager * dd,
+  DdNode ** f,
+  DdNode ** g)
+{
+    DdNode *F, *G;
+
+    F = *f; G = *g;
+    if (F == G) return(DD_ZERO(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+		if (cuddV(F)<cuddV(G)) return (DD_ONE(dd)); else return (DD_ZERO(dd));
+    }
+    return(NULL);
+
+} /* end of Cudd_addLessThan */
+
+
+/**Function********************************************************************
+
+  Synopsis    [1 if f<=g; 0 otherwise.]
+
+  Description [Returns NULL if not a terminal case; f op g otherwise,
+  where f op g is 1 if f<=g; 0 otherwise.]
+
+  SideEffects [None]
+
+  SeeAlso     [Cudd_addApply]
+
+******************************************************************************/
+DdNode *
+Cudd_addLessThanEquals(
+  DdManager * dd,
+  DdNode ** f,
+  DdNode ** g)
+{
+    DdNode *F, *G;
+
+    F = *f; G = *g;
+    if (F == G) return(DD_ONE(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+		if (cuddV(F)<=cuddV(G)) return (DD_ONE(dd)); else return (DD_ZERO(dd));
+    }
+    return(NULL);
+
+} /* end of Cudd_addLessThanEquals */
 /*---------------------------------------------------------------------------*/
 /* Definition of internal functions                                          */
 /*---------------------------------------------------------------------------*/
