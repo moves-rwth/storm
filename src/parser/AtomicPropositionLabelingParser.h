@@ -24,7 +24,7 @@ class AtomicPropositionLabelingParser : Parser {
 		std::shared_ptr<storm::models::AtomicPropositionsLabeling> getLabeling() {
 			return this->labeling;
 		}
-	
+
 	private:
 		std::shared_ptr<storm::models::AtomicPropositionsLabeling> labeling;
 };

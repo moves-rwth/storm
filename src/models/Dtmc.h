@@ -53,6 +53,12 @@ public:
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
 		}
+		if (this->transitionRewardMatrix != nullptr) {
+			if (!this->transitionRewardMatrix->isSubmatrixOf(*(this->probabilityMatrix))) {
+				LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+				throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
+			}
+		}
 	}
 
 	//! Copy Constructor
@@ -66,10 +72,7 @@ public:
 		if (dtmc.backwardTransitions != nullptr) {
 			this->backwardTransitions = new storm::models::GraphTransitions<T>(*dtmc.backwardTransitions);
 		}
-		if (!this->checkValidityOfProbabilityMatrix()) {
-			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
-			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
-		}
+		// no checks here, as they have already been performed for dtmc.
 	}
 
 	//! Destructor

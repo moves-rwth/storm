@@ -99,18 +99,15 @@ bool parseOptions(const int argc, const char* argv[]) {
 	} catch (storm::exceptions::InvalidSettingsException& e) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
 		std::cout << std::endl << storm::settings::help;
-		delete s;
 		return false;
 	}
 	
 	if (s->isSet("help")) {
 		std::cout << storm::settings::help;
-		delete s;
 		return false;
 	}
 	if (s->isSet("test-prctl")) {
 		storm::parser::PrctlParser parser(s->getString("test-prctl").c_str());
-		delete s;
 		return false;
 	}
 	
@@ -133,9 +130,7 @@ bool parseOptions(const int argc, const char* argv[]) {
  * Function to perform some cleanup.
  */
 void cleanUp() {
-	if (storm::settings::instance() != nullptr) {
-		delete storm::settings::instance();
-	}
+	// nothing here
 }
 
 void testCheckingDie(storm::models::Dtmc<double>& dtmc) {
@@ -221,12 +216,12 @@ void testChecking() {
 	if (parser.getType() == storm::models::DTMC) {
 		std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 		dtmc->printModelInformationToStream(std::cout);
+
+		// testCheckingDie(*dtmc);
+		// testCheckingCrowds(*dtmc);
+		// testCheckingSynchronousLeader(*dtmc, 4);
 	}
 	else std::cout << "Input is not DTMC" << std::endl;
-
-	// testCheckingDie(*dtmc);
-	// testCheckingCrowds(*dtmc);
-	// testCheckingSynchronousLeader(*dtmc, 4);
 }
 
 /*!

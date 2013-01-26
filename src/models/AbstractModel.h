@@ -24,7 +24,7 @@ std::ostream& operator<<(std::ostream& os, ModelType const type);
  *	This is base class defines a common interface for all models to identify
  *	their type and obtain the special model.
  */
-class AbstractModel {
+class AbstractModel: public std::enable_shared_from_this<AbstractModel> {
 
 	public:
 		/*!
@@ -44,7 +44,7 @@ class AbstractModel {
 		 */
 		template <typename Model>
 		std::shared_ptr<Model> as() {
-			return std::dynamic_pointer_cast<Model>(std::shared_ptr<AbstractModel>(this));
+			return std::dynamic_pointer_cast<Model>(shared_from_this());
 		}
 		
 		/*!
