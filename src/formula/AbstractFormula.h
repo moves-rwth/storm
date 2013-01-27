@@ -44,18 +44,6 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const = 0;
-	
-	template <template <class Type> class MC>
-	const MC<T>* cast(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		try {
-			const MC<T>& mc = dynamic_cast<const MC<T>&>(modelChecker);
-			return &mc;
-		} catch (std::bad_cast& bc) {
-			std::cerr << "Bad cast: tried to cast " << typeid(modelChecker).name() << " to " << typeid(MC<T>).name() << std::endl;
-			
-		}
-		return nullptr;
-	}
 };
 
 } //namespace formula

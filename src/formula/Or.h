@@ -147,8 +147,8 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const IOrModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkOr(*this);
+	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
 
 private:

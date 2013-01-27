@@ -17,6 +17,8 @@ template <class Type> class AbstractModelChecker;
 #include "src/formula/Ap.h"
 #include "src/storage/BitVector.h"
 
+#include <iostream>
+
 namespace storm {
 namespace modelChecker {
 
@@ -34,6 +36,18 @@ class AbstractModelChecker :
 	public virtual storm::formula::IOrModelChecker<Type>,
 	public virtual storm::formula::IApModelChecker<Type>
 	{
+	
+public:
+	template <template <class T> class Target>
+	const Target<Type>* as() const {
+		try {
+			const Target<Type>* target = dynamic_cast<const Target<Type>*>(this);
+			return target;
+		} catch (std::bad_cast& bc) {
+			std::cerr << "Bad cast: tried to cast " << typeid(*this).name() << " to " << typeid(Target<Type>).name() << std::endl;
+		}
+		return nullptr;
+	}
 };
 
 } //namespace modelChecker

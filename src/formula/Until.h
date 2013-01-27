@@ -148,8 +148,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const IUntilModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkUntil(*this);
+	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<IUntilModelChecker>()->checkUntil(*this);
 	}
 
 private:

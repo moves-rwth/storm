@@ -108,8 +108,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const IInstantaneousRewardModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkInstantaneousReward(*this);
+	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<IInstantaneousRewardModelChecker>()->checkInstantaneousReward(*this);
 	}
 
 private:

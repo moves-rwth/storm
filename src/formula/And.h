@@ -150,7 +150,7 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) {
-		return this->template cast<IAndModelChecker>(modelChecker)->checkAnd(*this);
+		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
 	}
 
 private:

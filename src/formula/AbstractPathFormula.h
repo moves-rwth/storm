@@ -62,10 +62,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		std::cerr << "The model checker " << typeid(modelChecker).name() << " does not support " << typeid(*this).name() << std::endl;
-		return nullptr;
-	}
+	virtual std::vector<T>* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const = 0;
 };
 
 } //namespace formula

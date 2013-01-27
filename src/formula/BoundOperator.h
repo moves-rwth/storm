@@ -155,7 +155,7 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-	  return this->template cast<IBoundUntilModelChecker>(modelChecker)->checkBoundOperator(*this);
+		return modelChecker.template as<IBoundUntilModelChecker>()->checkBoundOperator(*this);
 	}
 
 private:

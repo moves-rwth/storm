@@ -176,7 +176,7 @@ public:
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
 	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-	  return this->template cast<IBoundedUntilModelChecker>(modelChecker)->checkBoundedUntil(*this);
+		return modelChecker.template as<IBoundedUntilModelChecker>()->checkBoundedUntil(*this);
 	}
 
 private:
