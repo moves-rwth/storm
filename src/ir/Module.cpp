@@ -7,6 +7,8 @@
 
 #include "Module.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
 #include <sstream>
 
 namespace storm {
@@ -54,6 +56,26 @@ storm::ir::IntegerVariable const& Module::getIntegerVariable(uint_fast64_t index
 // Return the number of commands.
 uint_fast64_t Module::getNumberOfCommands() const {
 	return this->commands.size();
+}
+
+// Return the index of the variable if it exists and throw exception otherwise.
+uint_fast64_t Module::getBooleanVariableIndex(std::string variableName) const {
+	auto it = booleanVariablesToIndexMap.find(variableName);
+	if (it != booleanVariablesToIndexMap.end()) {
+		return it->second;
+	}
+	throw storm::exceptions::InvalidArgumentException() << "Cannot retrieve index of unknown "
+			<< "boolean variable " << variableName << ".";
+}
+
+// Return the index of the variable if it exists and throw exception otherwise.
+uint_fast64_t Module::getIntegerVariableIndex(std::string variableName) const {
+	auto it = integerVariablesToIndexMap.find(variableName);
+	if (it != integerVariablesToIndexMap.end()) {
+		return it->second;
+	}
+	throw storm::exceptions::InvalidArgumentException() << "Cannot retrieve index of unknown "
+			<< "variable " << variableName << ".";
 }
 
 // Return the requested command.

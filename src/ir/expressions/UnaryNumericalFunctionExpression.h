@@ -8,7 +8,7 @@
 #ifndef UNARYFUNCTIONEXPRESSION_H_
 #define UNARYFUNCTIONEXPRESSION_H_
 
-#include "src/ir/expressions/BaseExpression.h"
+#include "src/ir/expressions/UnaryExpression.h"
 
 namespace storm {
 
@@ -16,11 +16,11 @@ namespace ir {
 
 namespace expressions {
 
-class UnaryNumericalFunctionExpression : public BaseExpression {
+class UnaryNumericalFunctionExpression : public UnaryExpression {
 public:
 	enum FunctionType {MINUS};
 
-	UnaryNumericalFunctionExpression(ReturnType type, std::shared_ptr<BaseExpression> child, FunctionType functionType) : BaseExpression(type), child(child), functionType(functionType) {
+	UnaryNumericalFunctionExpression(ReturnType type, std::shared_ptr<BaseExpression> child, FunctionType functionType) : UnaryExpression(type, child), functionType(functionType) {
 
 	}
 
@@ -33,7 +33,7 @@ public:
 			BaseExpression::getValueAsInt(variableValues);
 		}
 
-		int_fast64_t resultChild = child->getValueAsInt(variableValues);
+		int_fast64_t resultChild = this->getChild()->getValueAsInt(variableValues);
 		switch(functionType) {
 		case MINUS: return -resultChild; break;
 		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
@@ -46,7 +46,7 @@ public:
 			BaseExpression::getValueAsDouble(variableValues);
 		}
 
-		double resultChild = child->getValueAsDouble(variableValues);
+		double resultChild = this->getChild()->getValueAsDouble(variableValues);
 		switch(functionType) {
 		case MINUS: return -resultChild; break;
 		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
@@ -54,11 +54,12 @@ public:
 		}
 	}
 
-	virtual ADD* toAdd() const {
-		ADD* childResult = child->toAdd();
-		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
-		ADD* result = cuddUtility->getConstant(0);
-		return new ADD(result->Minus(*childResult));
+	FunctionType getFunctionType() const {
+		return functionType;
+	}
+
+	virtual void accept(ExpressionVisitor* visitor) {
+		visitor->visit(this);
 	}
 
 	virtual std::string toString() const {
@@ -66,13 +67,12 @@ public:
 		switch (functionType) {
 		case MINUS: result += "-"; break;
 		}
-		result += child->toString();
+		result += this->getChild()->toString();
 
 		return result;
 	}
 
 private:
-	std::shared_ptr<BaseExpression> child;
 	FunctionType functionType;
 };
 

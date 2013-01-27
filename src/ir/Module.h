@@ -74,6 +74,20 @@ public:
 	uint_fast64_t getNumberOfCommands() const;
 
 	/*!
+	 * Retrieves the index of the boolean variable with the given name.
+	 * @param variableName the name of the variable whose index to retrieve.
+	 * @returns the index of the boolean variable with the given name.
+	 */
+	uint_fast64_t getBooleanVariableIndex(std::string variableName) const;
+
+	/*!
+	 * Retrieves the index of the integer variable with the given name.
+	 * @param variableName the name of the variable whose index to retrieve.
+	 * @returns the index of the integer variable with the given name.
+	 */
+	uint_fast64_t getIntegerVariableIndex(std::string variableName) const;
+
+	/*!
 	 * Retrieves a reference to the command with the given index.
 	 * @returns a reference to the command with the given index.
 	 */

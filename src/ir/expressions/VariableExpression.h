@@ -33,6 +33,10 @@ public:
 
 	}
 
+	virtual void accept(ExpressionVisitor* visitor) {
+		visitor->visit(this);
+	}
+
 	virtual std::string toString() const {
 		return variableName;
 	}
@@ -72,20 +76,16 @@ public:
 				<< " variable '" << variableName << "' of type double.";
 	}
 
-	virtual ADD* toAdd() const {
-		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
+	std::string const& getVariableName() const {
+		return variableName;
+	}
 
-		return nullptr;
+	std::shared_ptr<BaseExpression> const& getLowerBound() const {
+		return lowerBound;
+	}
 
-		if (this->getType() == bool_) {
-			ADD* result = cuddUtility->getConstant(0);
-			//cuddUtility->addValueForEncodingOfConstant(result, 1, )
-		} else {
-			int64_t low = lowerBound->getValueAsInt(nullptr);
-			int64_t high = upperBound->getValueAsInt(nullptr);
-		}
-
-		return new ADD();
+	std::shared_ptr<BaseExpression> const& getUpperBound() const {
+		return upperBound;
 	}
 
 private:

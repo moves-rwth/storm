@@ -25,11 +25,17 @@ public:
 	ADD* getNewAddVariable();
 	ADD* getAddVariable(int index) const;
 
-	ADD* getConstantEncoding(uint_fast64_t constant, std::vector<ADD*>& variables) const;
+	ADD* getOne() const;
+	ADD* getZero() const;
 
-	ADD* addValueForEncodingOfConstant(ADD* add, uint_fast64_t constant, std::vector<ADD*>& variables, double value) const;
+	ADD* getConstantEncoding(uint_fast64_t constant, std::vector<ADD*> const& variables) const;
+
+	void setValueAtIndex(ADD* add, uint_fast64_t index, std::vector<ADD*> const& variables, double value) const;
+	void setValueAtIndices(ADD* add, uint_fast64_t rowIndex, uint_fast64_t columnIndex, std::vector<ADD*> const& rowVariables, std::vector<ADD*> const& columnVariables, double value) const;
 
 	ADD* getConstant(double value) const;
+
+	void permuteVariables(ADD* add, std::vector<ADD*> fromVariables, std::vector<ADD*> toVariables, uint_fast64_t totalNumberOfVariables) const;
 
 	void dumpDotToFile(ADD* add, std::string filename) const;
 
@@ -38,7 +44,7 @@ public:
 	friend CuddUtility* cuddUtilityInstance();
 
 private:
-	CuddUtility() : manager(0, 0), allDecisionDiagramVariables() {
+	CuddUtility() : manager(), allDecisionDiagramVariables() {
 
 	}
 

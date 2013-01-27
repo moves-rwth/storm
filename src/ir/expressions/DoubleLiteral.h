@@ -34,9 +34,8 @@ public:
 		return value;
 	}
 
-	virtual ADD* toAdd() const {
-		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
-		return new ADD(*cuddUtility->getConstant(value));
+	virtual void accept(ExpressionVisitor* visitor) {
+		visitor->visit(this);
 	}
 
 	virtual std::string toString() const {

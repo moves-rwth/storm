@@ -35,14 +35,8 @@ public:
 		}
 	}
 
-	virtual ADD* toAdd() const {
-		if (!defined) {
-			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-					<< "Integer constant '" << this->getConstantName() << "' is undefined.";
-		}
-
-		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
-		return new ADD(*cuddUtility->getConstant(value));
+	virtual void accept(ExpressionVisitor* visitor) {
+		visitor->visit(this);
 	}
 
 	virtual std::string toString() const {

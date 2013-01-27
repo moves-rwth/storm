@@ -8,7 +8,7 @@
 #ifndef BINARYRELATIONEXPRESSION_H_
 #define BINARYRELATIONEXPRESSION_H_
 
-#include "src/ir/expressions/BaseExpression.h"
+#include "src/ir/expressions/BinaryExpression.h"
 
 #include "src/utility/CuddUtility.h"
 
@@ -18,11 +18,11 @@ namespace ir {
 
 namespace expressions {
 
-class BinaryRelationExpression : public BaseExpression {
+class BinaryRelationExpression : public BinaryExpression {
 public:
 	enum RelationType {EQUAL, NOT_EQUAL, LESS, LESS_OR_EQUAL, GREATER, GREATER_OR_EQUAL};
 
-	BinaryRelationExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, RelationType relationType) : BaseExpression(bool_), left(left), right(right), relationType(relationType) {
+	BinaryRelationExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, RelationType relationType) : BinaryExpression(bool_, left, right), relationType(relationType) {
 
 	}
 
@@ -31,8 +31,8 @@ public:
 	}
 
 	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-		int_fast64_t resultLeft = left->getValueAsInt(variableValues);
-		int_fast64_t resultRight = right->getValueAsInt(variableValues);
+		int_fast64_t resultLeft = this->getLeft()->getValueAsInt(variableValues);
+		int_fast64_t resultRight = this->getRight()->getValueAsInt(variableValues);
 		switch(relationType) {
 		case EQUAL: return resultLeft == resultRight; break;
 		case NOT_EQUAL: return resultLeft != resultRight; break;
@@ -45,24 +45,16 @@ public:
 		}
 	}
 
-	virtual ADD* toAdd() const {
-		ADD* leftAdd = left->toAdd();
-		ADD* rightAdd = right->toAdd();
+	RelationType getRelationType() const {
+		return relationType;
+	}
 
-		switch(relationType) {
-		case EQUAL: return new ADD(leftAdd->Equals(*rightAdd)); break;
-		case NOT_EQUAL: return new ADD(leftAdd->NotEquals(*rightAdd)); break;
-		case LESS: return new ADD(leftAdd->LessThan(*rightAdd)); break;
-		case LESS_OR_EQUAL: return new ADD(leftAdd->LessThanOrEqual(*rightAdd)); break;
-		case GREATER: return new ADD(leftAdd->GreaterThan(*rightAdd)); break;
-		case GREATER_OR_EQUAL: return new ADD(leftAdd->GreaterThanOrEqual(*rightAdd)); break;
-		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-				<< "Unknown boolean binary operator: '" << relationType << "'.";
-		}
+	virtual void accept(ExpressionVisitor* visitor) {
+		visitor->visit(this);
 	}
 
 	virtual std::string toString() const {
-		std::string result = left->toString();
+		std::string result = this->getLeft()->toString();
 		switch (relationType) {
 		case EQUAL: result += " = "; break;
 		case NOT_EQUAL: result += " != "; break;
@@ -71,14 +63,12 @@ public:
 		case GREATER: result += " > "; break;
 		case GREATER_OR_EQUAL: result += " >= "; break;
 		}
-		result += right->toString();
+		result += this->getRight()->toString();
 
 		return result;
 	}
 
 private:
-	std::shared_ptr<BaseExpression> left;
-	std::shared_ptr<BaseExpression> right;
 	RelationType relationType;
 };
 

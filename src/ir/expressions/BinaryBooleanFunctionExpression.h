@@ -8,7 +8,7 @@
 #ifndef STORM_IR_EXPRESSIONS_BINARYBOOLEANFUNCTIONEXPRESSION_H_
 #define STORM_IR_EXPRESSIONS_BINARYBOOLEANFUNCTIONEXPRESSION_H_
 
-#include "src/ir/expressions/BaseExpression.h"
+#include "src/ir/expressions/BinaryExpression.h"
 
 #include "src/utility/CuddUtility.h"
 
@@ -21,11 +21,11 @@ namespace ir {
 
 namespace expressions {
 
-class BinaryBooleanFunctionExpression : public BaseExpression {
+class BinaryBooleanFunctionExpression : public BinaryExpression {
 public:
 	enum FunctionType {AND, OR};
 
-	BinaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, FunctionType functionType) : BaseExpression(bool_), left(left), right(right), functionType(functionType) {
+	BinaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, FunctionType functionType) : BinaryExpression(bool_, left, right), functionType(functionType) {
 
 	}
 
@@ -34,8 +34,8 @@ public:
 	}
 
 	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-		bool resultLeft = left->getValueAsBool(variableValues);
-		bool resultRight = right->getValueAsBool(variableValues);
+		bool resultLeft = this->getLeft()->getValueAsBool(variableValues);
+		bool resultRight = this->getRight()->getValueAsBool(variableValues);
 		switch(functionType) {
 		case AND: return resultLeft & resultRight; break;
 		case OR: return resultLeft | resultRight; break;
@@ -44,33 +44,27 @@ public:
 		}
 	}
 
-	virtual ADD* toAdd() const {
-		ADD* leftAdd = left->toAdd();
-		ADD* rightAdd = right->toAdd();
+	FunctionType getFunctionType() const {
+		return functionType;
+	}
 
-		switch(functionType) {
-		case AND: return new ADD(leftAdd->Times(*rightAdd)); break;
-		case OR: return new ADD(leftAdd->Plus(*rightAdd)); break;
-		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-				<< "Unknown boolean binary operator: '" << functionType << "'.";
-		}
+	virtual void accept(ExpressionVisitor* visitor) {
+		visitor->visit(this);
 	}
 
 	virtual std::string toString() const {
 		std::stringstream result;
-		result << left->toString();
+		result << this->getLeft()->toString();
 		switch (functionType) {
 		case AND: result << " & "; break;
 		case OR: result << " | "; break;
 		}
-		result << right->toString();
+		result << this->getRight()->toString();
 
 		return result.str();
 	}
 
 private:
-	std::shared_ptr<BaseExpression> left;
-	std::shared_ptr<BaseExpression> right;
 	FunctionType functionType;
 };
 
