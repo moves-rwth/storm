@@ -35,7 +35,7 @@ public:
 
 	ADD* getConstant(double value) const;
 
-	void permuteVariables(ADD* add, std::vector<ADD*> fromVariables, std::vector<ADD*> toVariables, uint_fast64_t totalNumberOfVariables) const;
+	ADD* permuteVariables(ADD* add, std::vector<ADD*> fromVariables, std::vector<ADD*> toVariables, uint_fast64_t totalNumberOfVariables) const;
 
 	void dumpDotToFile(ADD* add, std::string filename) const;
 

@@ -161,9 +161,13 @@ private:
 	}
 
 	void performReachability(storm::ir::Program const& program, ADD* systemAdd) {
+		ADD* systemAdd01 = new ADD(systemAdd->GreaterThan(*cuddUtility->getZero()));
+		cuddUtility->dumpDotToFile(systemAdd01, "system01.add");
+
 		cuddUtility->dumpDotToFile(systemAdd, "reachtransold.add");
 		ADD* reachableStates = getInitialStateDecisionDiagram(program);
-		ADD* newReachableStates = reachableStates;
+		cuddUtility->dumpDotToFile(reachableStates, "init.add");
+		ADD* newReachableStates = new ADD(*reachableStates);
 
 		ADD* rowCube = cuddUtility->getOne();
 		for (auto variablePtr : allRowDecisionDiagramVariables) {
@@ -174,31 +178,23 @@ private:
 		int iter = 0;
 		do {
 			changed = false;
-			std::cout << "iter " << ++iter << std::endl;
-
-			*newReachableStates = *reachableStates * *systemAdd;
-			newReachableStates->ExistAbstract(*rowCube);
+			*newReachableStates = *reachableStates * *systemAdd01;
+			newReachableStates = new ADD(newReachableStates->ExistAbstract(*rowCube));
 
 			cuddUtility->dumpDotToFile(newReachableStates, "reach1.add");
 
-			cuddUtility->permuteVariables(newReachableStates, allColumnDecisionDiagramVariables, allRowDecisionDiagramVariables, allDecisionDiagramVariables.size());
+			newReachableStates = cuddUtility->permuteVariables(newReachableStates, allColumnDecisionDiagramVariables, allRowDecisionDiagramVariables, allDecisionDiagramVariables.size());
 
-			cuddUtility->dumpDotToFile(newReachableStates, "reach2.add");
-			cuddUtility->dumpDotToFile(reachableStates, "reachplus.add");
 			*newReachableStates += *reachableStates;
+			newReachableStates = new ADD(newReachableStates->GreaterThan(*cuddUtility->getZero()));
 
-			cuddUtility->dumpDotToFile(newReachableStates, "reach3.add");
-			cuddUtility->dumpDotToFile(reachableStates, "reach4.add");
-
-			if (*newReachableStates != *reachableStates) {
-				std::cout << "changed ..." << std::endl;
-				changed = true;
-			}
+			if (*newReachableStates != *reachableStates) changed = true;
 			*reachableStates = *newReachableStates;
 		} while (changed);
 
 		*systemAdd *= *reachableStates;
-		cuddUtility->dumpDotToFile(systemAdd, "reachtrans.add");
+		std::cout << "got " << systemAdd->nodeCount() << " nodes" << std::endl;
+		std::cout << "and " << systemAdd->CountMinterm(allRowDecisionDiagramVariables.size() + allColumnDecisionDiagramVariables.size()) << std::endl;
 	}
 
 	void createIdentityDecisionDiagrams(storm::ir::Program const& program) {

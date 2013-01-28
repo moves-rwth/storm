@@ -155,7 +155,7 @@ ADD* CuddUtility::getConstant(double value) const {
 	return new ADD(manager.constant(value));
 }
 
-void CuddUtility::permuteVariables(ADD* add, std::vector<ADD*> fromVariables, std::vector<ADD*> toVariables, uint_fast64_t totalNumberOfVariables) const {
+ADD* CuddUtility::permuteVariables(ADD* add, std::vector<ADD*> fromVariables, std::vector<ADD*> toVariables, uint_fast64_t totalNumberOfVariables) const {
 	std::vector<int> permutation;
 	permutation.resize(totalNumberOfVariables);
 	for (uint_fast64_t i = 0; i < totalNumberOfVariables; ++i) {
@@ -164,7 +164,7 @@ void CuddUtility::permuteVariables(ADD* add, std::vector<ADD*> fromVariables, st
 	for (uint_fast64_t i = 0; i < fromVariables.size(); ++i) {
 		permutation[fromVariables[i]->NodeReadIndex()] = toVariables[i]->NodeReadIndex();
 	}
-	add->Permute(&permutation[0]);
+	return new ADD(add->Permute(&permutation[0]));
 }
 
 void CuddUtility::dumpDotToFile(ADD* add, std::string filename) const {
