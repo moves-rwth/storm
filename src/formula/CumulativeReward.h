@@ -20,9 +20,21 @@ namespace formula {
 
 template <class T> class CumulativeReward;
 
+/*!
+ *  @brief Interface class for model checkers that support CumulativeReward.
+ *
+ *  All model checkers that support the formula class CumulativeReward must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class ICumulativeRewardModelChecker {
     public:
+		/*!
+         *  @brief Evaluates CumulativeReward formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
         virtual std::vector<T>* checkCumulativeReward(const CumulativeReward<T>& obj) const = 0;
 };
 
@@ -113,6 +125,14 @@ public:
 		return modelChecker.template as<ICumulativeRewardModelChecker>()->checkCumulativeReward(*this);
 	}
 	
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *  
+     *  As CumulativeReward objects have no subformulas, we return true here.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true
+     */	
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
 		return true;
 	}

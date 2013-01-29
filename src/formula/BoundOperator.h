@@ -18,12 +18,18 @@ namespace storm {
 
 namespace formula {
 
-template <class T> class BoundUntil;
+template <class T> class BoundOperator;
 
+/*!
+ *  @brief Interface class for model checkers that support BoundOperator.
+ *   
+ *  All model checkers that support the formula class BoundOperator must inherit
+ *  this pure virtual class.
+ */
 template <class T>
-class IBoundUntilModelChecker {
+class IBoundOperatorModelChecker {
     public:
-        virtual storm::storage::BitVector* checkBoundUntil(const BoundUntil<T>& obj) const = 0;
+        virtual storm::storage::BitVector* checkBoundOperator(const BoundOperator<T>& obj) const = 0;
 };
 
 /*!
@@ -156,9 +162,15 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IBoundUntilModelChecker>()->checkBoundOperator(*this);
+		return modelChecker.template as<IBoundOperatorModelChecker>()->checkBoundOperator(*this);
 	}
 	
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
         return checker.conforms(this->pathFormula);
     }

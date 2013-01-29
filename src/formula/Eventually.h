@@ -18,9 +18,21 @@ namespace formula {
 
 template <class T> class Eventually;
 
+/*!
+ *  @brief Interface class for model checkers that support Eventually.
+ *
+ *  All model checkers that support the formula class Eventually must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class IEventuallyModelChecker {
     public:
+		/*!
+         *  @brief Evaluates Eventually formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
         virtual std::vector<T>* checkEventually(const Eventually<T>& obj) const = 0;
 };
 
@@ -123,6 +135,12 @@ public:
 		return modelChecker.template as<IEventuallyModelChecker>()->checkEventually(*this);
 	}
 	
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
 		return checker.conforms(this->child);
 	}

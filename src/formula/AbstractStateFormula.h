@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_AbstractSTATEFORMULA_H_
-#define STORM_FORMULA_AbstractSTATEFORMULA_H_
+#ifndef STORM_FORMULA_ABSTRACTSTATEFORMULA_H_
+#define STORM_FORMULA_ABSTRACTSTATEFORMULA_H_
 
 namespace storm { namespace formula {
 template <class T> class AbstractStateFormula;
@@ -17,7 +17,6 @@ template <class T> class AbstractStateFormula;
 #include "src/modelChecker/AbstractModelChecker.h"
 
 namespace storm {
-
 namespace formula {
 
 /*!
@@ -63,7 +62,6 @@ public:
 };
 
 } //namespace formula
-
 } //namespace storm
 
 

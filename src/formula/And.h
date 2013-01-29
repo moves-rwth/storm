@@ -18,9 +18,21 @@ namespace formula {
 
 template <class T> class And;
 
+/*!
+ *	@brief Interface class for model checkers that support And.
+ *
+ *	All model checkers that support the formula class And must inherit
+ *	this pure virtual class.
+ */
 template <class T>
 class IAndModelChecker {
 	public:
+		/*!
+		 *	@brief Evaluates And formula within a model checker.
+		 *
+		 *	@param obj Formula object with subformulas.
+		 *	@return Result of the formula for every node.
+		 */
 		virtual storm::storage::BitVector* checkAnd(const And<T>& obj) const = 0;
 };
 
@@ -154,6 +166,12 @@ public:
 		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
 	}
 	
+	/*!
+	 *	@brief Checks if all subtrees conform to some logic.
+	 *
+	 *	@param checker Formula checker object.
+	 *	@return true iff all subtrees conform to some logic.
+	 */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
         return checker.conforms(this->left) && checker.conforms(this->right);
     }

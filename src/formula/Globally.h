@@ -18,9 +18,21 @@ namespace formula {
 
 template <class T> class Globally;
 
+/*!
+ *  @brief Interface class for model checkers that support Globally.
+ *   
+ *  All model checkers that support the formula class Globally must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class IGloballyModelChecker {
     public:
+		/*!
+         *  @brief Evaluates Globally formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
         virtual std::vector<T>* checkGlobally(const Globally<T>& obj) const = 0;
 };
 
@@ -123,6 +135,12 @@ public:
 		return modelChecker.template as<IGloballyModelChecker>()->checkGlobally(*this);  
 	}
 	
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
 		return checker.conforms(this->child);
 	}
