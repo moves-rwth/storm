@@ -79,7 +79,7 @@ private:
 	 */
 	//JacobiDecomposition(const JacobiDecomposition<T>& that) = delete; // not possible in VS2012
 	JacobiDecomposition(const JacobiDecomposition<T>& that) {
-		throw new storm::exceptions::InvalidAccessException() << "The copy constructor of JacobiDecomposition is explicitly disabled.";
+		throw storm::exceptions::InvalidAccessException() << "The copy constructor of JacobiDecomposition is explicitly disabled.";
 	}
 
 	/*!

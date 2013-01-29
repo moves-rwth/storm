@@ -460,10 +460,12 @@ private:
 	 * x.
 	 */
 	void solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const {
+		// Get the settings object to customize linear solving.
+		storm::settings::Settings* s = storm::settings::instance();
 
 		double precision = s->get<double>("precision");
 		if (precision <= 0) {
-			LOG4CPLUS_ERROR(logger, "Precision is not greater Zero");
+			LOG4CPLUS_ERROR(logger, "Selected precision for linear equation solving must be strictly greater than zero for Jacobi method.");
 		}
 			
 		// Get a Jacobi Decomposition of the Input Matrix A
