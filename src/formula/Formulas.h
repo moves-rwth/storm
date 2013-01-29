@@ -15,6 +15,7 @@
 #include "And.h"
 #include "Ap.h"
 #include "BoundedUntil.h"
+#include "BoundedNaryUntil.h"
 #include "Next.h"
 #include "Not.h"
 #include "Or.h"
