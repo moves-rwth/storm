@@ -8,11 +8,12 @@
 #ifndef STORM_FORMULA_BOUNDEDUNTIL_H_
 #define STORM_FORMULA_BOUNDEDUNTIL_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/AbstractStateFormula.h"
 #include "src/modelChecker/AbstractModelChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
+#include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 
@@ -177,6 +178,10 @@ public:
 	 */
 	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IBoundedUntilModelChecker>()->checkBoundedUntil(*this);
+	}
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return checker.conforms(this->left) && checker.conforms(this->right);
 	}
 
 private:

@@ -10,6 +10,7 @@
 
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractStateFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelChecker/AbstractModelChecker.h"
 
 namespace storm {
@@ -118,6 +119,10 @@ public:
 	 */
 	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IReachabilityRewardModelChecker>()->checkReachabilityReward(*this);
+	}
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return checker.conforms(this->child);
 	}
 
 private:

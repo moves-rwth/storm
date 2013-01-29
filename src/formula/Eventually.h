@@ -122,6 +122,10 @@ public:
 	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IEventuallyModelChecker>()->checkEventually(*this);
 	}
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return checker.conforms(this->child);
+	}
 
 private:
 	AbstractStateFormula<T>* child;

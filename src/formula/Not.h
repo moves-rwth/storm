@@ -9,6 +9,7 @@
 #define STORM_FORMULA_NOT_H_
 
 #include "AbstractStateFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelChecker/AbstractModelChecker.h"
 
 namespace storm {
@@ -116,6 +117,10 @@ public:
 	 */
 	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);  
+	}
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return checker.conforms(this->child);
 	}
 
 private:

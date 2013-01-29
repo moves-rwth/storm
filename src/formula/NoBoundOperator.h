@@ -10,6 +10,7 @@
 
 #include "AbstractFormula.h"
 #include "AbstractPathFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 
@@ -116,6 +117,10 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const = 0;
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return checker.conforms(this->pathFormula);
+	}
 
 private:
 	AbstractPathFormula<T>* pathFormula;
