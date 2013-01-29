@@ -42,6 +42,12 @@ public:
 	std::string const& getName() const;
 
 	/*!
+	 * Retrieves the index of the variable.
+	 * @returns the index of the variable.
+	 */
+	uint_fast64_t getIndex() const;
+
+	/*!
 	 * Retrieves the expression defining the initial value of the variable.
 	 * @returns the expression defining the initial value of the variable.
 	 */

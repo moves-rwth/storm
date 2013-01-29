@@ -28,6 +28,10 @@ std::string const& Variable::getName() const {
 	return variableName;
 }
 
+uint_fast64_t getIndex() const {
+	return index;
+}
+
 // Return the expression for the initial value of the variable.
 std::shared_ptr<storm::ir::expressions::BaseExpression> const& Variable::getInitialValue() const {
 	return initialValue;
