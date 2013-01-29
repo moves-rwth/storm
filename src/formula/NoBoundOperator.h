@@ -18,9 +18,21 @@ namespace formula {
 
 template <class T> class NoBoundOperator;
 
+/*!
+ *  @brief Interface class for model checkers that support NoBoundOperator.
+ *   
+ *  All model checkers that support the formula class NoBoundOperator must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class INoBoundOperatorModelChecker {
     public:
+		/*!
+         *  @brief Evaluates NoBoundOperator formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
         virtual std::vector<T>* checkNoBoundOperator(const NoBoundOperator<T>& obj) const = 0;
 };
 
@@ -118,6 +130,12 @@ public:
 	 */
 	virtual std::string toString() const = 0;
 	
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
 		return checker.conforms(this->pathFormula);
 	}

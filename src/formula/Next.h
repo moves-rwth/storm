@@ -18,9 +18,21 @@ namespace formula {
 
 template <class T> class Next;
 
+/*!
+ *  @brief Interface class for model checkers that support Next.
+ *   
+ *  All model checkers that support the formula class Next must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class INextModelChecker {
     public:
+		/*!
+         *  @brief Evaluates Next formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
         virtual std::vector<T>* checkNext(const Next<T>& obj) const = 0;
 };
 
@@ -125,6 +137,12 @@ public:
 		return modelChecker.template as<INextModelChecker>()->checkNext(*this);
 	}
 	
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
         return checker.conforms(this->child);
     }

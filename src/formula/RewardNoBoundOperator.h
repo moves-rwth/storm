@@ -13,7 +13,6 @@
 #include "NoBoundOperator.h"
 
 namespace storm {
-
 namespace formula {
 
 /*!
@@ -77,7 +76,6 @@ public:
 };
 
 } /* namespace formula */
-
 } /* namespace storm */
 
 #endif /* STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_ */

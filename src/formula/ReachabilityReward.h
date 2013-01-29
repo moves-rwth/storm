@@ -14,14 +14,25 @@
 #include "src/modelChecker/AbstractModelChecker.h"
 
 namespace storm {
-
 namespace formula {
 
 template <class T> class ReachabilityReward;
 
+/*!
+ *  @brief Interface class for model checkers that support ReachabilityReward.
+ *   
+ *  All model checkers that support the formula class ReachabilityReward must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class IReachabilityRewardModelChecker {
     public:
+		/*!
+         *  @brief Evaluates ReachabilityReward formula within a model checker.  
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
         virtual std::vector<T>* checkReachabilityReward(const ReachabilityReward<T>& obj) const = 0;
 };
 
@@ -121,6 +132,12 @@ public:
 		return modelChecker.template as<IReachabilityRewardModelChecker>()->checkReachabilityReward(*this);
 	}
 	
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
 		return checker.conforms(this->child);
 	}
@@ -130,7 +147,6 @@ private:
 };
 
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_REACHABILITYREWARD_H_ */

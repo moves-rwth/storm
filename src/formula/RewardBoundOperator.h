@@ -14,7 +14,6 @@
 #include "utility/ConstTemplates.h"
 
 namespace storm {
-
 namespace formula {
 
 /*!
@@ -90,7 +89,6 @@ public:
 };
 
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_REWARDBOUNDOPERATOR_H_ */

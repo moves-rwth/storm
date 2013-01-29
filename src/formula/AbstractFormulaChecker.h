@@ -19,13 +19,13 @@ namespace formula {
  *
  *	Usually, this will be implemented like this:
  *	@code
- *	if (
+ *	if	(
  *			dynamic_cast<const And<T>*>(formula) ||
  *			dynamic_cast<const Not<T>*>(formula) ||
  *			dynamic_cast<const Or<T>*>(formula)
  *		) {
  *		return formula->conforms(*this);
- *	} else return false;
+ *	} else	return false;
  *	@endcode
  *
  *	Every formula class implements a conforms() method itself which calls

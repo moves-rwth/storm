@@ -18,9 +18,21 @@ namespace formula {
 
 template <class T> class Not;
 
+/*!
+ *  @brief Interface class for model checkers that support Not.
+ *   
+ *  All model checkers that support the formula class Not must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class INotModelChecker {
     public:
+		/*!
+         *  @brief Evaluates Not formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
         virtual storm::storage::BitVector* checkNot(const Not<T>& obj) const = 0;
 };
 
@@ -119,6 +131,12 @@ public:
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);  
 	}
 	
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
 		return checker.conforms(this->child);
 	}

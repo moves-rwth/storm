@@ -9,9 +9,22 @@
 namespace storm {
 namespace formula {
 
+/*!
+ *	@brief Checks formulas if they are within PRCTL.
+ *
+ *	This class implements AbstractFormulaChecker to check if a given formula
+ *	is part of PRCTL logic.
+ */
 template <class T>
 class PrctlFormulaChecker : public AbstractFormulaChecker<T> {
 	public:
+		/*!
+		 *	Implementation of AbstractFormulaChecker::conforms() using code
+		 *	looking exactly like the sample code given there.
+		 *
+		 *	We currently allow And, Ap, Eventually, Not, Or,
+		 *	ProbabilisticNoBoundOperator.
+		 */
 		virtual bool conforms(const AbstractFormula<T>* formula) const {
 			if (
 					dynamic_cast<const And<T>*>(formula) ||
@@ -25,11 +38,9 @@ class PrctlFormulaChecker : public AbstractFormulaChecker<T> {
 			}
 			return false;
 		}
-	
-	private:
 };
 
-}
-}
+} // namespace formula
+} // namespace storm
 
 #endif

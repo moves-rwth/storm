@@ -13,14 +13,25 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-
 namespace formula {
 
 template <class T> class Until;
 
+/*!
+ *  @brief Interface class for model checkers that support Until.
+ *
+ *  All model checkers that support the formula class Until must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class IUntilModelChecker {
     public:
+		/*!
+         *  @brief Evaluates Until formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
         virtual std::vector<T>* checkUntil(const Until<T>& obj) const = 0;
 };
 
@@ -153,6 +164,12 @@ public:
 		return modelChecker.template as<IUntilModelChecker>()->checkUntil(*this);
 	}
 	
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *
+     *  @param checker Formula checker object.
+     *  @return true iff all subtrees conform to some logic.
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
         return checker.conforms(this->left) && checker.conforms(this->right);
     }

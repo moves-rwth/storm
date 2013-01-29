@@ -20,9 +20,21 @@ namespace formula {
 
 template <class T> class InstantaneousReward;
 
+/*!
+ *  @brief Interface class for model checkers that support InstantaneousReward.
+ *
+ *  All model checkers that support the formula class InstantaneousReward must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class IInstantaneousRewardModelChecker {
     public:
+		/*!
+         *  @brief Evaluates InstantaneousReward formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
         virtual std::vector<T>* checkInstantaneousReward(const InstantaneousReward<T>& obj) const = 0;
 };
 
@@ -113,6 +125,14 @@ public:
 		return modelChecker.template as<IInstantaneousRewardModelChecker>()->checkInstantaneousReward(*this);
 	}
 	
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *  
+     *  As InstantaneousReward formulas have no subformulas, we return true here.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
 		return true;
 	}

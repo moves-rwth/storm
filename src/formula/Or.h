@@ -16,9 +16,21 @@ namespace formula {
 
 template <class T> class Or;
 
+/*!
+ *  @brief Interface class for model checkers that support Or.
+ *   
+ *  All model checkers that support the formula class Or must inherit
+ *  this pure virtual class.
+ */
 template <class T>
 class IOrModelChecker {
 	public:
+		/*!
+         *  @brief Evaluates Or formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
 		virtual storm::storage::BitVector* checkOr(const Or<T>& obj) const = 0;
 };
 
@@ -152,6 +164,12 @@ public:
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
 	
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *
+     *  @param checker Formula checker object.
+     *  @return true iff all subtrees conform to some logic.
+     */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
         return checker.conforms(this->left) && checker.conforms(this->right);
     }
