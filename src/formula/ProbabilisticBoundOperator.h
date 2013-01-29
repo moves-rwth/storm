@@ -45,9 +45,11 @@ public:
 	/*!
 	 * Empty constructor
 	 */
+//! TODO: this constructor should give a comparisontype as first argument
 	ProbabilisticBoundOperator() : BoundOperator<T>(storm::utility::constGetZero<T>(), storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
+
 
 	/*!
 	 * Constructor

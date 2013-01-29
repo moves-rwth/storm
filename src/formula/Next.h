@@ -10,6 +10,7 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 
@@ -123,6 +124,10 @@ public:
 	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<INextModelChecker>()->checkNext(*this);
 	}
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+        return checker.conforms(this->child);
+    }
 
 private:
 	AbstractStateFormula<T>* child;

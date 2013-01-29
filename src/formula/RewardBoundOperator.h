@@ -44,6 +44,7 @@ public:
 	/*!
 	 * Empty constructor
 	 */
+//! TODO: this constructor should give a comparisontype as first argument
 	RewardBoundOperator() : BoundOperator<T>(storm::utility::constGetZero<T>(), storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}

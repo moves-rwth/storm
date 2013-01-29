@@ -8,7 +8,8 @@
 #ifndef STORM_FORMULA_OR_H_
 #define STORM_FORMULA_OR_H_
 
-#include "AbstractStateFormula.h"
+#include "src/formula/AbstractStateFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 namespace formula {
@@ -150,6 +151,10 @@ public:
 	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+        return checker.conforms(this->left) && checker.conforms(this->right);
+    }
 
 private:
 	AbstractStateFormula<T>* left;

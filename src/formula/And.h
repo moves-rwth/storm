@@ -9,6 +9,7 @@
 #define STORM_FORMULA_AND_H_
 
 #include "src/formula/AbstractStateFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelChecker/AbstractModelChecker.h"
 #include <string>
 
@@ -149,9 +150,13 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) {
+	virtual storm::storage::BitVector* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
 	}
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+        return checker.conforms(this->left) && checker.conforms(this->right);
+    }
 
 private:
 	AbstractStateFormula<T>* left;

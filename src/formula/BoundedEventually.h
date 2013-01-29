@@ -10,6 +10,7 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 #include "src/modelChecker/AbstractModelChecker.h"
@@ -146,6 +147,10 @@ public:
 	 */
 	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IBoundedEventuallyModelChecker>()->checkBoundedEventually(*this);
+	}
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return checker.conforms(this->child);
 	}
 
 private:

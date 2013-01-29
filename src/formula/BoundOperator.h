@@ -10,6 +10,7 @@
 
 #include "src/formula/AbstractStateFormula.h"
 #include "src/formula/AbstractPathFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelChecker/AbstractModelChecker.h"
 #include "src/utility/ConstTemplates.h"
 
@@ -157,6 +158,10 @@ public:
 	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IBoundUntilModelChecker>()->checkBoundOperator(*this);
 	}
+	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+        return checker.conforms(this->pathFormula);
+    }
 
 private:
 	ComparisonType comparisonOperator;
