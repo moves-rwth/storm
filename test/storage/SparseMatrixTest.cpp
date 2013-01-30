@@ -94,6 +94,10 @@ TEST(SparseMatrixTest, Test) {
 		2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 		14, 15, 16, 17, 18, 19, 20, 21, 22, 23 /* second to last row */
 	};
+	int row_sums[25] = {};
+	for (int i = 0; i < 50; ++i) {
+		row_sums[position_row[i]] += values[i];
+	}
 
 	ASSERT_NO_THROW(ssm->initialize(50));
 	ASSERT_EQ(ssm->getState(), storm::storage::SparseMatrix<int>::MatrixStatus::Initialized);
@@ -122,6 +126,11 @@ TEST(SparseMatrixTest, Test) {
 		}
 	}
 	ASSERT_EQ(ssm->getState(), storm::storage::SparseMatrix<int>::MatrixStatus::ReadReady);
+
+	// Test Row Sums
+	for (int row = 0; row < 25; ++row) {
+		ASSERT_EQ(row_sums[row], ssm->getRowSum(row));
+	}
 
 	delete ssm;
 }

@@ -799,21 +799,28 @@ public:
 	/*!
 	 * Inverts all elements on the diagonal, i.e. sets the diagonal values to 1 minus their previous
 	 * value.
+	 * Requires the matrix to contain each diagonal element AND to be square!
 	 */
 	void invertDiagonal() {
 		if (this->getRowCount() != this->getColumnCount()) {
 			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to be square!";
 		}
-		T one(1);
+		T one = storm::utility::constGetOne<T>();
+		bool foundRow;
 		for (uint_fast64_t row = 0; row < rowCount; ++row) {
 			uint_fast64_t rowStart = rowIndications[row];
 			uint_fast64_t rowEnd = rowIndications[row + 1];
+			foundRow = false;
 			while (rowStart < rowEnd) {
 				if (columnIndications[rowStart] == row) {
 					valueStorage[rowStart] = one - valueStorage[rowStart];
+					foundRow = true;
 					break;
 				}
 				++rowStart;
+			}
+			if (!foundRow) {
+				throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to contain all diagonal entries!";
 			}
 		}
 	}

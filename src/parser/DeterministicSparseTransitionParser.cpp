@@ -66,9 +66,10 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
 	if ((non_zero = strtol(buf, &buf, 10)) == 0) return 0;
 
 	/*
-	 *	Check all transitions for non-zero diagonal entrys.
+	 *	Check all transitions for existing diagonal entrys.
 	 */
-	int_fast64_t row, lastrow = -1, col;
+	int_fast64_t row, col;
+	int_fast64_t lastDiagonal = -1;
 	double val;
 	maxnode = 0;
 	while (buf[0] != '\0') {
@@ -80,17 +81,29 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
 		/*
 		 *	Check if one is larger than the current maximum id.
 		 */
-		if (row > maxnode) maxnode = row;
-		if (col > maxnode) maxnode = col;
+		if (row > maxnode) {
+			maxnode = row;
+		}
+		if (col > maxnode) { 
+			maxnode = col;
+		}
 		/*
-		 *	Check if a node was skipped, i.e. if a node has no outgoing
-		 *	transitions. If so, increase non_zero, as the second pass will
+		 *  Check if a self-loop was skipped. If so, increase non_zero, as the second pass will
 		 *	either throw an exception (in this case, it doesn't matter
 		 *	anyway) or add a self-loop (in this case, we'll need the
 		 *	additional transition).
 		 */
-		if (lastrow < row - 1) non_zero += row - lastrow - 1;
-		lastrow = row;
+		if (lastDiagonal < (row - 1)) {
+			non_zero += row - 1 - lastDiagonal;
+			lastDiagonal = row - 1;
+		}
+		/*
+		 * Check if this is a self-loop and remember that
+		 */
+		if (row == col) {
+			lastDiagonal = row;
+		}
+
 		/*
 		 *	Read probability of this transition.
 		 *	Check, if the value is a probability, i.e. if it is between 0 and 1.
@@ -101,6 +114,10 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
 			return 0;
 		}
 		buf = trimWhitespaces(buf);
+	}
+
+	if (lastDiagonal < (row - 1)) {
+		non_zero += row - 1 - lastDiagonal;
 	}
 
 	return non_zero;
@@ -171,12 +188,15 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	this->matrix->initialize(non_zero);
 
 	int_fast64_t row, lastrow = -1, col;
+	int_fast64_t lastDiagonal = -1;
 	double val;
 	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
+	bool fixSelfloops = storm::settings::instance()->isSet("fix-selfloops");
 	bool hadDeadlocks = false;
+	bool hadNoSelfLoops = false;
 
 	/*
-	 *	Read all transitions from file. Note that we assume, that the
+	 *	Read all transitions from file. Note that we assume that the
 	 *	transitions are listed in canonical order, otherwise this will not
 	 *	work, i.e. the values in the matrix will be at wrong places.
 	 */
@@ -189,24 +209,53 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 		val = checked_strtod(buf, &buf);
 
 		/*
-		 *	Check if we skipped a node, i.e. if a node does not have any
-		 *	outgoing transitions.
+		 *  Check if a self-loop was skipped.
 		 */
-		for (int_fast64_t node = lastrow + 1; node < row; node++) {
-			hadDeadlocks = true;
-			if (fixDeadlocks) {
-				this->matrix->addNextValue(node, node, 1);
-				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+		if (lastDiagonal < (row - 1)) {
+			/*
+			 *	Check if we skipped a node entirely, i.e. a node does not have any
+			 *	outgoing transitions.
+			 */
+			if ((lastrow + 1) < row) {
+				for (int_fast64_t node = lastrow + 1; node < row; node++) {
+					hadDeadlocks = true;
+					if (fixDeadlocks || fixSelfloops) {
+						this->matrix->addNextValue(node, node, storm::utility::constGetOne<double>());
+						LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+					} else {
+						LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
+					}
+				}
 			} else {
-				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
+				// there were other transitions but no self-loop
+				for (int_fast64_t node = lastDiagonal + 1; node < row; node++) {
+					hadNoSelfLoops = true;
+					if (fixSelfloops) {
+						this->matrix->addNextValue(node, node, storm::utility::constGetZero<double>());
+						LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no self transition. A self-loop was inserted.");
+					} else {
+						LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no self transition.");
+					}
+				}
 			}
+			lastDiagonal = row - 1;
+		}		
+		
+		
+		/*
+		 * Check if this is a self-loop and remember that
+		 */
+		if (row == col) {
+			lastDiagonal = row;
 		}
+
 		lastrow = row;
 
 		this->matrix->addNextValue(row, col, val);
 		buf = trimWhitespaces(buf);
 	}
 	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+	if (!fixSelfloops && hadNoSelfLoops) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had no self loops. You can use --fix-selfloops to insert self-loops on the fly.";
 
 	/*
 	 *	Finalize Matrix.
