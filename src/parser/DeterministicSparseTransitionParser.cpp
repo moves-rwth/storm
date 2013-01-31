@@ -133,7 +133,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
  *	@return a pointer to the created sparse matrix.
  */
 
-DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename)
+DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing)
 	: matrix(nullptr) {
 	/*
 	 *	Enforce locale where decimal point is '.'.
@@ -188,12 +188,10 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	this->matrix->initialize(non_zero);
 
 	int_fast64_t row, lastrow = -1, col;
-	int_fast64_t lastDiagonal = -1;
 	double val;
 	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
-	bool fixSelfloops = storm::settings::instance()->isSet("fix-selfloops");
 	bool hadDeadlocks = false;
-	bool hadNoSelfLoops = false;
+	bool rowHadDiagonalEntry = false;
 
 	/*
 	 *	Read all transitions from file. Note that we assume that the
@@ -208,45 +206,39 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 		col = checked_strtol(buf, &buf);
 		val = checked_strtod(buf, &buf);
 
+		if (row != lastrow) {
+			rowHadDiagonalEntry = false;
+		}
+
 		/*
-		 *  Check if a self-loop was skipped.
+		 *	Check if we skipped a state entirely, i.e. a state does not have any
+		 *	outgoing transitions.
 		 */
-		if (lastDiagonal < (row - 1)) {
-			/*
-			 *	Check if we skipped a node entirely, i.e. a node does not have any
-			 *	outgoing transitions.
-			 */
-			if ((lastrow + 1) < row) {
-				for (int_fast64_t node = lastrow + 1; node < row; node++) {
-					hadDeadlocks = true;
-					if (fixDeadlocks || fixSelfloops) {
-						this->matrix->addNextValue(node, node, storm::utility::constGetOne<double>());
-						LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
-					} else {
-						LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
-					}
-				}
-			} else {
-				// there were other transitions but no self-loop
-				for (int_fast64_t node = lastDiagonal + 1; node < row; node++) {
-					hadNoSelfLoops = true;
-					if (fixSelfloops) {
-						this->matrix->addNextValue(node, node, storm::utility::constGetZero<double>());
-						LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no self transition. A self-loop was inserted.");
-					} else {
-						LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no self transition.");
-					}
+		if ((lastrow + 1) < row) {
+			for (int_fast64_t state = lastrow + 1; state < row; ++state) {
+				hadDeadlocks = true;
+				if (fixDeadlocks) {
+					this->matrix->addNextValue(state, state, storm::utility::constGetOne<double>());
+					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << state << " has no outgoing transitions. A self-loop was inserted.");
+				} else {
+					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << state << " has no outgoing transitions.");
 				}
 			}
-			lastDiagonal = row - 1;
-		}		
-		
-		
+		}
+
+		// Insert the missing diagonal value if requested.
+		if (col > row && !rowHadDiagonalEntry) {
+			if (insertDiagonalEntriesIfMissing) {
+				this->matrix->addNextValue(row, row, storm::utility::constGetZero<double>());
+			}
+			rowHadDiagonalEntry = true;
+		}
+
 		/*
-		 * Check if this is a self-loop and remember that
+		 * Check if the transition is a self-loop
 		 */
 		if (row == col) {
-			lastDiagonal = row;
+			rowHadDiagonalEntry = true;
 		}
 
 		lastrow = row;
@@ -255,7 +247,6 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 		buf = trimWhitespaces(buf);
 	}
 	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
-	if (!fixSelfloops && hadNoSelfLoops) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had no self loops. You can use --fix-selfloops to insert self-loops on the fly.";
 
 	/*
 	 *	Finalize Matrix.

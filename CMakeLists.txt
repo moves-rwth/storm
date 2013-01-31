@@ -75,7 +75,7 @@ elseif(MSVC)
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE)
 else(CLANG)
     # Set standard flags for clang
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
+    set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -funroll-loops -O4")
     set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic -Wno-unused-variable")
     
     # Turn on popcnt instruction if desired (yes by default)

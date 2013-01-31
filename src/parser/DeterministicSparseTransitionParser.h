@@ -17,7 +17,7 @@ namespace parser {
  */
 class DeterministicSparseTransitionParser : public Parser {
 	public:
-		DeterministicSparseTransitionParser(std::string const &filename);
+		DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing = true);
 		
 		std::shared_ptr<storm::storage::SparseMatrix<double>> getMatrix() {
 			return this->matrix;

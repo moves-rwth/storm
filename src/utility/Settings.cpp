@@ -139,7 +139,6 @@ void Settings::initDescriptions() {
 		("transrew", bpo::value<std::string>()->default_value(""), "name of transition reward file")
 		("staterew", bpo::value<std::string>()->default_value(""), "name of state reward file")
 		("fix-deadlocks", "insert self-loops for states without outgoing transitions")
-		("fix-selfloops", "insert self-loops for states without such transitions")
 	;
 }
 
