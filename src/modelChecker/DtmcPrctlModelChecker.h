@@ -31,6 +31,7 @@ class DtmcPrctlModelChecker;
 #include "src/models/Dtmc.h"
 #include "src/storage/BitVector.h"
 #include "src/exceptions/InvalidPropertyException.h"
+#include "src/utility/Vector.h"
 #include <vector>
 
 #include "log4cplus/logger.h"

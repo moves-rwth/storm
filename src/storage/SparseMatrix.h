@@ -25,10 +25,14 @@
 extern log4cplus::Logger logger;
 
 // Forward declaration for adapter classes.
-namespace storm { namespace adapters{ class GmmxxAdapter; } }
+namespace storm { 
+	namespace adapters{ 
+		class GmmxxAdapter; 
+		class EigenAdapter; 
+	} 
+}
 
 namespace storm {
-
 namespace storage {
 
 /*!
@@ -43,13 +47,14 @@ public:
 	 * Declare adapter classes as friends to use internal data.
 	 */
 	friend class storm::adapters::GmmxxAdapter;
+	friend class storm::adapters::EigenAdapter;
 
 	/*!
 	 * If we only want to iterate over the columns of the non-zero entries of
 	 * a row, we can simply iterate over the array (part) itself.
 	 */
 	typedef const uint_fast64_t * const constIndexIterator;
-	
+
 	/*!
 	 *	Iterator type if we want to iterate over elements.
 	 */
@@ -91,7 +96,8 @@ public:
 	 * Constructs a square sparse matrix object with the given number rows
 	 * @param size The number of rows and cols in the matrix
 	 */
-	SparseMatrix(uint_fast64_t size) : rowCount(size), colCount(size), nonZeroEntryCount(0),
+	SparseMatrix(uint_fast64_t size)
+			: rowCount(size), colCount(size), nonZeroEntryCount(0),
 			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
 
 	//! Copy Constructor
@@ -114,12 +120,12 @@ public:
 				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
 				throw std::bad_alloc();
 			} else {
-				std::copy(ssm.valueStorage.begin(), ssm.valueStorage.end(), std::back_inserter(valueStorage));
+				std::copy(ssm.valueStorage.begin(), ssm.valueStorage.end(), valueStorage.begin());
 
 				// The elements that are not of the value type but rather the
 				// index type may be copied directly.
-				std::copy(ssm.columnIndications.begin(), ssm.columnIndications.end(), std::back_inserter(columnIndications));
-				std::copy(ssm.rowIndications.begin(), ssm.rowIndications.end(), std::back_inserter(rowIndications));
+				std::copy(ssm.columnIndications.begin(), ssm.columnIndications.end(), columnIndications.begin());
+				std::copy(ssm.rowIndications.begin(), ssm.rowIndications.end(), rowIndications.begin());
 			}
 		}
 	}
@@ -208,7 +214,7 @@ public:
 
 		// Try to prepare the internal storage and throw an error in case of
 		// failure.
-		
+
 		// Get necessary pointers to the contents of the Eigen matrix.
 		const T* valuePtr = eigenSparseMatrix.valuePtr();
 		const _Index* indexPtr = eigenSparseMatrix.innerIndexPtr();
@@ -318,7 +324,6 @@ public:
 			throw storm::exceptions::OutOfRangeException("Trying to add a value at illegal position.");
 		}
 
-		
 		// If we switched to another row, we have to adjust the missing
 		// entries in the row_indications array.
 		if (row != lastRow) {
@@ -415,8 +420,8 @@ public:
 	/*!
 	 * Gets the matrix element at the given row and column to the given value.
 	 * NOTE: This function does not check the internal status for errors for performance reasons.
-	 * WARNING: It is possible to modify through this function. Usage only valid 
-	 * for elements EXISTING in the sparse matrix! If the requested value does not exist, 
+	 * WARNING: It is possible to modify through this function. Usage only valid
+	 * for elements EXISTING in the sparse matrix! If the requested value does not exist,
 	 * an exception will be thrown.
 	 * @param row The row in which the element is to be read.
 	 * @param col The column in which the element is to be read.
@@ -662,8 +667,9 @@ public:
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 
 		if (rowStart >= rowEnd) {
-			LOG4CPLUS_ERROR(logger, "The row " << row << " can not be made absorbing, no state in row, would have to recreate matrix!");
-			throw storm::exceptions::InvalidStateException("A row can not be made absorbing, no state in row, would have to recreate matrix!");
+			this->print();
+			LOG4CPLUS_ERROR(logger, "Cannot make row absorbing, because there is no entry in this row.");
+			throw storm::exceptions::InvalidStateException("Cannot make row absorbing, because there is no entry in this row.");
 		}
 		uint_fast64_t pseudoDiagonal = row % colCount;
 
@@ -793,21 +799,28 @@ public:
 	/*!
 	 * Inverts all elements on the diagonal, i.e. sets the diagonal values to 1 minus their previous
 	 * value.
+	 * Requires the matrix to contain each diagonal element AND to be square!
 	 */
 	void invertDiagonal() {
 		if (this->getRowCount() != this->getColumnCount()) {
 			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to be square!";
 		}
-		T one(1);
+		T one = storm::utility::constGetOne<T>();
+		bool foundRow;
 		for (uint_fast64_t row = 0; row < rowCount; ++row) {
 			uint_fast64_t rowStart = rowIndications[row];
 			uint_fast64_t rowEnd = rowIndications[row + 1];
+			foundRow = false;
 			while (rowStart < rowEnd) {
 				if (columnIndications[rowStart] == row) {
 					valueStorage[rowStart] = one - valueStorage[rowStart];
+					foundRow = true;
 					break;
 				}
 				++rowStart;
+			}
+			if (!foundRow) {
+				throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to contain all diagonal entries!";
 			}
 		}
 	}
@@ -841,9 +854,13 @@ public:
 		SparseMatrix<T> *resultDinv = new SparseMatrix<T>(rowCount);
 		// no entries apart from those on the diagonal
 		resultDinv->initialize(0);
+
+		// constant 1 for diagonal inversion
+		T constOne = storm::utility::constGetOne<T>();
+
 		// copy diagonal entries to other matrix
 		for (int i = 0; i < rowCount; ++i) {
-			resultDinv->addNextValue(i, i, resultLU->getValue(i, i));
+			resultDinv->addNextValue(i, i, constOne / resultLU->getValue(i, i));
 			resultLU->getValue(i, i) = storm::utility::constGetZero<T>();
 		}
 
@@ -883,6 +900,18 @@ public:
 		return result;
 	}
 
+	T getRowVectorProduct(uint_fast64_t row, std::vector<T>& vector) {
+		T result = storm::utility::constGetZero<T>();;
+		auto valueIterator = valueStorage.begin() + rowIndications[row];
+		const auto valueIteratorEnd = valueStorage.begin() + rowIndications[row + 1];
+		auto columnIterator = columnIndications.begin() + rowIndications[row];
+		const auto columnIteratorEnd = columnIndications.begin() + rowIndications[row + 1];
+		for (; valueIterator != valueIteratorEnd; ++valueIterator, ++columnIterator) {
+			result += *valueIterator * vector[*columnIterator];
+		}
+		return result;
+	}
+
 	/*!
 	 * Returns the size of the matrix in memory measured in bytes.
 	 * @return The size of the matrix in memory measured in bytes.
@@ -917,7 +946,7 @@ public:
 	constIndexIterator endConstColumnIterator(uint_fast64_t row) const {
 		return &(this->columnIndications[0]) + this->rowIndications[row + 1];
 	}
-	
+
 	/*!
 	 *	Returns an iterator over the elements of the given row. The iterator
 	 *	will include no zero entries.
@@ -937,7 +966,7 @@ public:
 	constIterator endConstIterator(uint_fast64_t row) const {
 		return &(this->valueStorage[0]) + this->rowIndications[row + 1];
 	}
-	
+
 	/*!
 	 *	@brief Calculate sum of all entries in given row.
 	 *
@@ -954,13 +983,32 @@ public:
 		return sum;
 	}
 
-	void print() const {
-		std::cout << "entries: ----------------------------" << std::endl;
-		for (uint_fast64_t i = 0; i < rowCount; ++i) {
-			for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
-				std::cout << "(" << i << "," << columnIndications[j] << ") = " << valueStorage[j] << std::endl;
+	/*!
+	 *	@brief Checks if it is a submatrix of the given matrix.
+	 *
+	 *	A matrix A is a submatrix of B if a value in A is only nonzero, if
+	 *	the value in B at the same position is also nonzero. Furthermore, A
+	 *	and B have to have the same size.
+	 *	@param matrix Matrix to check against.
+	 *	@return True iff this is a submatrix of matrix.
+	 */
+	bool isSubmatrixOf(SparseMatrix<T> const & matrix) const {
+		if (this->getRowCount() != matrix.getRowCount()) return false;
+		if (this->getColumnCount() != matrix.getColumnCount()) return false;
+
+		for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
+			for (uint_fast64_t elem = rowIndications[row], elem2 = matrix.rowIndications[row]; elem < rowIndications[row + 1] && elem < matrix.rowIndications[row + 1]; ++elem, ++elem2) {
+				if (columnIndications[elem] < matrix.columnIndications[elem2]) return false;
 			}
 		}
+		return true;
+	}
+
+	void print() const {
+		std::cout << "entries in (" << rowCount << "x" << colCount << " matrix):" << std::endl;
+		std::cout << rowIndications << std::endl;
+		std::cout << columnIndications << std::endl;
+		std::cout << valueStorage << std::endl;
 	}
 
 private:
@@ -1021,7 +1069,7 @@ private:
 		setState(MatrixStatus::Error);
 	}
 
-	/*! 
+	/*!
 	 * Sets the internal status to the given state if the current state is not
 	 * the error state.
 	 * @param new_state The new state to be switched to.

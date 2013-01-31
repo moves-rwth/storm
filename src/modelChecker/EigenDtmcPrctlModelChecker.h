@@ -87,7 +87,7 @@ public:
 		// First, we need to compute the states that satisfy the sub-formula of the next-formula.
 		storm::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
 
-		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
+		// Transform the transition probability matrix to the eigen format to use its arithmetic.
 		Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenMatrix = this->getModel().getTransitionProbabilityMatrix()->toEigenSparseMatrix();
 
 		// Create the vector with which to multiply and initialize it correctly.

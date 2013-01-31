@@ -28,7 +28,11 @@ class BaseException : public std::exception {
 		}
 		
 		virtual const char* what() const throw() {
-			return this->stream.str().c_str();
+			std::string errorString = this->stream.str();
+			char* result = new char[errorString.size() + 1];
+			result[errorString.size()] = '\0';
+			std::copy(errorString.begin(), errorString.end(), result);
+			return result;
 		}
 	
 	private:

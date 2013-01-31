@@ -1,11 +1,11 @@
 /*
- * DtmcParser.cpp
+ * DeterministicModelParser.cpp
  *
  *  Created on: 19.12.2012
  *      Author: thomas
  */
 
-#include "src/parser/DtmcParser.h"
+#include "src/parser/DeterministicModelParser.h"
 
 #include <string>
 #include <vector>
@@ -27,25 +27,29 @@ namespace parser {
  * @param stateRewardFile String containing the location of the state reward file (...srew)
  * @param transitionRewardFile String containing the location of the transition reward file (...trew)
  */
-DtmcParser::DtmcParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+DeterministicModelParser::DeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	storm::parser::DeterministicSparseTransitionParser tp(transitionSystemFile);
-	uint_fast64_t stateCount = tp.getMatrix()->getRowCount();
-
-	std::shared_ptr<std::vector<double>> stateRewards = nullptr;
-	std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewards = nullptr;
+	this->transitionSystem = tp.getMatrix();
+	
+	uint_fast64_t stateCount = this->transitionSystem->getRowCount();
 
 	storm::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
+	this->labeling = lp.getLabeling();
+	
+	this->stateRewards = nullptr;
+	this->transitionRewards = nullptr;
+
 	if (stateRewardFile != "") {
 		storm::parser::SparseStateRewardParser srp(stateCount, stateRewardFile);
-		stateRewards = srp.getStateRewards();
+		this->stateRewards = srp.getStateRewards();
 	}
 	if (transitionRewardFile != "") {
 		storm::parser::DeterministicSparseTransitionParser trp(transitionRewardFile);
-		transitionRewards = trp.getMatrix();
+		this->transitionRewards = trp.getMatrix();
 	}
-
-	dtmc = std::shared_ptr<storm::models::Dtmc<double>>(new storm::models::Dtmc<double>(tp.getMatrix(), lp.getLabeling(), stateRewards, transitionRewards));
+	this->dtmc = nullptr;
+	this->ctmc = nullptr;
 }
 
 } /* namespace parser */
