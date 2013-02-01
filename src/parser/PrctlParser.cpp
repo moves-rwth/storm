@@ -1,4 +1,3 @@
-#include "src/storage/SparseMatrix.h"
 #include "src/parser/PrctlParser.h"
 #include "src/utility/OsDetection.h"
 #include "src/utility/ConstTemplates.h"
@@ -46,8 +45,12 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				phoenix::new_<storm::formula::Ap<double>>(qi::_1)];
 		probabilisticBoundOperator = (
+				("P>" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER, qi::_1, qi::_2)] |
 				("P>=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
+				("P<" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+								phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS, qi::_1, qi::_2)] |
 				("P<=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
@@ -132,5 +135,6 @@ storm::parser::PrctlParser::PrctlParser(std::string filename) {
 
 	qi::phrase_parse(positionIteratorBegin, positionIteratorEnd, grammar, boost::spirit::ascii::space, result_pointer);
 
+	formula = result_pointer;
 
 }

@@ -8,13 +8,9 @@
 #ifndef STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
 
-
-
-#include "src/formula/PctlPathFormula.h"
-#include "src/formula/PctlStateFormula.h"
-
 #include "src/formula/Formulas.h"
 #include "src/utility/Vector.h"
+#include "src/storage/SparseMatrix.h"
 
 #include "src/models/Dtmc.h"
 #include "src/storage/BitVector.h"
