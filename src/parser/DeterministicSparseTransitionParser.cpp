@@ -46,7 +46,7 @@ namespace parser {
  */
 uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast64_t& maxnode) {
 	uint_fast64_t nonZeroEntryCount = 0;
-
+	uint_fast64_t inputFileNonZeroEntryCount = 0;
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
@@ -63,12 +63,13 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
 		return 0;
 	}
 	buf += 12;  // skip "TRANSITIONS "
-	if ((nonZeroEntryCount = strtol(buf, &buf, 10)) == 0) return 0;
+	if ((inputFileNonZeroEntryCount = strtol(buf, &buf, 10)) == 0) return 0;
 
     /*
      * Check all transitions for non-zero diagonal entries and deadlock states.
      */
     int_fast64_t row, lastRow = -1, col;
+	uint_fast64_t readTransitionCount = 0;
     bool rowHadDiagonalEntry = false;
     double val;
     maxnode = 0;
@@ -79,24 +80,24 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
             row = checked_strtol(buf, &buf);
             col = checked_strtol(buf, &buf);
 
-            /*
-             * 		If we have switched to the next row, we need to clear the information about
-             * 		the diagonal entry.
-             */
-            if (row != lastRow) {
-            	/*
-            	 * If the last row did have transitions, but no diagonal element, we need to insert
-            	 * it as well.
-            	 */
-            	if (!rowHadDiagonalEntry && lastRow != -1) {
-            		++nonZeroEntryCount;
-            	}
-            	rowHadDiagonalEntry = false;
-            }
+			if (lastRow != row) {
+				if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
+					++nonZeroEntryCount;
+					rowHadDiagonalEntry = true;
+				}
+				for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
+					++nonZeroEntryCount;
+				}
+				lastRow = row;
+				rowHadDiagonalEntry = false;
+			}
 
-            if (row == col) {
-            	rowHadDiagonalEntry = true;
-            }
+			if (col == row) {
+				rowHadDiagonalEntry = true;
+			} else if (col > row && !rowHadDiagonalEntry) {
+				rowHadDiagonalEntry = true;
+				++nonZeroEntryCount;
+			}
 
             /*
              *      Check if one is larger than the current maximum id.
@@ -104,17 +105,6 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
             if (row > maxnode) maxnode = row;
             if (col > maxnode) maxnode = col;
 
-            /*
-             *      Check if a node was skipped, i.e. if a node has no outgoing
-             *      transitions. If so, increase non_zero, as the second pass will
-             *      either throw an exception (in this case, it doesn't matter
-             *      anyway) or add a self-loop (in this case, we'll need the
-             *      additional transition).
-             */
-            if (lastRow < row - 1) {
-            	nonZeroEntryCount += row - lastRow - 1;
-            }
-            lastRow = row;
             /*
              *      Read probability of this transition.
              *      Check, if the value is a probability, i.e. if it is between 0 and 1.
@@ -124,12 +114,19 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
                     LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << val << "\".");
                     return 0;
             }
+			++nonZeroEntryCount;
+			++readTransitionCount;
             buf = trimWhitespaces(buf);
     }
 
     if (!rowHadDiagonalEntry) {
     	++nonZeroEntryCount;
     }
+
+	if (inputFileNonZeroEntryCount != readTransitionCount) {
+		LOG4CPLUS_ERROR(logger, "Input File TRANSITIONS line stated " << inputFileNonZeroEntryCount << " but there were " << readTransitionCount << " transitions afterwards.");
+		return 0;
+	}
 
     return nonZeroEntryCount;
 }
@@ -162,6 +159,9 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	 */
 	int_fast64_t maxStateId;
 	uint_fast64_t nonZeroEntryCount = this->firstPass(file.data, maxStateId);
+
+	LOG4CPLUS_INFO(logger, "First pass on " << filename << " shows " << nonZeroEntryCount << " NonZeros.");
+
 	/*
 	 *	If first pass returned zero, the file format was wrong.
 	 */
@@ -217,56 +217,55 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 		col = checked_strtol(buf, &buf);
 		val = checked_strtod(buf, &buf);
 
-		if (row != lastRow) {
-			/*
-			 * 	If the previous row did not have a diagonal entry, we need to insert it.
-			 */
-			if (!rowHadDiagonalEntry && lastRow != -1) {
-				this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
+		if (lastRow != row) {
+			if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
+				if (insertDiagonalEntriesIfMissing) {
+					this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
+					LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
+				} else {
+					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
+				}
+				// No increment for lastRow
+				rowHadDiagonalEntry = true;
 			}
-
+			for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
+				hadDeadlocks = true;
+				if (fixDeadlocks) {
+					this->matrix->addNextValue(skippedRow, skippedRow, storm::utility::constGetOne<double>());
+					rowHadDiagonalEntry = true;
+					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
+				} else {
+					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
+					// FIXME Why no exception at this point? This will break the App.
+				}
+			}
+			lastRow = row;
 			rowHadDiagonalEntry = false;
 		}
 
-		/*
-		 *	Check if we skipped a state entirely, i.e. a state does not have any
-		 *	outgoing transitions.
-		 */
-		if ((lastRow + 1) < row) {
-			for (int_fast64_t state = lastRow + 1; state < row; ++state) {
-				hadDeadlocks = true;
-				if (fixDeadlocks) {
-					this->matrix->addNextValue(state, state, storm::utility::constGetOne<double>());
-					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << state << " has no outgoing transitions. A self-loop was inserted.");
-				} else {
-					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << state << " has no outgoing transitions.");
-				}
-			}
-		}
-
-		// Insert the missing diagonal value here, because the input skipped it.
-		if (col > row && !rowHadDiagonalEntry) {
+		if (col == row) {
+			rowHadDiagonalEntry = true;
+		} else if (col > row && !rowHadDiagonalEntry) {
+			rowHadDiagonalEntry = true;
 			if (insertDiagonalEntriesIfMissing) {
 				this->matrix->addNextValue(row, row, storm::utility::constGetZero<double>());
+				LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
+			} else {
+				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
 			}
-			rowHadDiagonalEntry = true;
 		}
-
-		/*
-		 * Check if the transition is a self-loop
-		 */
-		if (row == col) {
-			rowHadDiagonalEntry = true;
-		}
-
-		lastRow = row;
 
 		this->matrix->addNextValue(row, col, val);
 		buf = trimWhitespaces(buf);
 	}
 
 	if (!rowHadDiagonalEntry) {
-		this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
+		if (insertDiagonalEntriesIfMissing) {
+			this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
+			LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
+		} else {
+			LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
+		}
 	}
 
 	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
