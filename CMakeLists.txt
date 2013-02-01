@@ -50,13 +50,16 @@ option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
-if (DEBUG)
-    set (CMAKE_BUILD_TYPE "DEBUG")
-    message(STATUS "Building DEBUG version.")
-else()
-    set (CMAKE_BUILD_TYPE "RELEASE")
-    message(STATUS "Building RELEASE version.")
-endif()
+#if (DEBUG)
+#    set (CMAKE_BUILD_TYPE "DEBUG")
+#    message(STATUS "Building DEBUG version.")
+#else()
+#    set (CMAKE_BUILD_TYPE "RELEASE")
+#    message(STATUS "Building RELEASE version.")
+#endif()
+
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+message(STATUS "CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 
 if(CMAKE_COMPILER_IS_GNUCC)
     # Set standard flags for GCC
@@ -77,6 +80,8 @@ else(CLANG)
     # Set standard flags for clang
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
     set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic -Wno-unused-variable")
+    
+    set (CMAKE_CXX_FLAGS_DEBUG "-g")
     
     # Turn on popcnt instruction if desired (yes by default)
     if (USE_POPCNT)
