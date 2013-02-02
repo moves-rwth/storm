@@ -155,7 +155,7 @@ public:
 			submatrix->convertToEquationSystem();
 
 			// Transform the submatric matrix to the eigen format to use its solvers
-			Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenSubMatrix = storm::adapters::EigenAdapter::toEigenSparseMatrix(submatrix);
+			Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenSubMatrix = storm::adapters::EigenAdapter::toEigenSparseMatrix<Type>(submatrix);
 			delete submatrix;
 
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
