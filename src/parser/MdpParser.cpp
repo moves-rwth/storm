@@ -45,7 +45,7 @@ MdpParser::MdpParser(std::string const & transitionSystemFile, std::string const
 		transitionRewards = trp.getMatrix();
 	}
 
-	mdp = std::shared_ptr<storm::models::Mdp<double>>(new storm::models::Mdp<double>(tp.getMatrix(), lp.getLabeling(), stateRewards, transitionRewards));
+	mdp = std::shared_ptr<storm::models::Mdp<double>>(new storm::models::Mdp<double>(tp.getMatrix(), lp.getLabeling(), tp.getRowMapping(), stateRewards, transitionRewards));
 }
 
 } /* namespace parser */
