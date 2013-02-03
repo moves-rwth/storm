@@ -20,6 +20,7 @@
 #include "src/utility/CommandLine.h"
 #include "src/utility/Settings.h"
 #include "src/models/AbstractModel.h"
+#include "src/parser/NonDeterministicSparseTransitionParser.h"
 
 namespace storm {
 
@@ -44,9 +45,10 @@ public:
 	 */
 	Mdp(std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix,
 			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
+			std::shared_ptr<storm::parser::RowStateMapping> rowMapping,
 			std::shared_ptr<std::vector<T>> stateRewards = nullptr,
 			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix = nullptr)
-			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling),
+			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling), rowMapping(rowMapping),
 			  stateRewards(stateRewards), transitionRewardMatrix(transitionRewardMatrix),
 			  backwardTransitions(nullptr) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
@@ -61,7 +63,7 @@ public:
 	 * @param mdp A reference to the MDP that is to be copied.
 	 */
 	Mdp(const Mdp<T> &mdp) : probabilityMatrix(mdp.probabilityMatrix),
-			stateLabeling(mdp.stateLabeling), stateRewards(mdp.stateRewards),
+			stateLabeling(mdp.stateLabeling), rowMapping(mdp.rowMapping), stateRewards(mdp.stateRewards),
 			transitionRewardMatrix(mdp.transitionRewardMatrix) {
 		if (mdp.backwardTransitions != nullptr) {
 			this->backwardTransitions = new storm::models::GraphTransitions<T>(*mdp.backwardTransitions);
@@ -225,6 +227,9 @@ private:
 
 	/*! The labeling of the states of the MDP. */
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling;
+	
+	/*! The mapping from rows to (state,choice) pairs. */
+	std::shared_ptr<storm::parser::RowStateMapping> rowMapping;
 
 	/*! The state-based rewards of the MDP. */
 	std::shared_ptr<std::vector<T>> stateRewards;
