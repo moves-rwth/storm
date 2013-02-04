@@ -45,7 +45,7 @@ public:
 	 */
 	Mdp(std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix,
 			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
-			std::shared_ptr<storm::parser::RowStateMapping> rowMapping,
+			std::shared_ptr<std::vector<uint_fast64_t>> rowMapping,
 			std::shared_ptr<std::vector<T>> stateRewards = nullptr,
 			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix = nullptr)
 			: probabilityMatrix(probabilityMatrix), stateLabeling(stateLabeling), rowMapping(rowMapping),
@@ -228,8 +228,8 @@ private:
 	/*! The labeling of the states of the MDP. */
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling;
 	
-	/*! The mapping from rows to (state,choice) pairs. */
-	std::shared_ptr<storm::parser::RowStateMapping> rowMapping;
+	/*! The mapping from states to rows. */
+	std::shared_ptr<std::vector<uint_fast64_t>> rowMapping;
 
 	/*! The state-based rewards of the MDP. */
 	std::shared_ptr<std::vector<T>> stateRewards;
