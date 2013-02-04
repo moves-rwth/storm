@@ -13,8 +13,6 @@
 namespace storm {
 namespace parser {
 	
-typedef boost::bimap<uint_fast64_t, std::pair<uint_fast64_t,std::string>> RowStateMapping;
-
 /*!
  *	@brief	Load a nondeterministic transition system from file and create a
  *	sparse adjacency matrix whose entries represent the weights of the edges
