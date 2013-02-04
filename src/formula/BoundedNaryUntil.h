@@ -163,8 +163,11 @@ public:
 			result->setLeft(left->clone());
 		}
 		if (right != NULL) {
-			//TODO: implement clone of std::vector
-			//result->setRight(right->clone());
+			std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* newright = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
+			for (auto it = this->right->begin(); it != this->right->end(); ++it) {
+				newright->push_back(std::tuple<AbstractStateFormula<T>*,T,T>(std::get<0>(*it)->clone(), std::get<1>(*it), std::get<2>(*it)));
+			}
+			result->setRight(newright);
 		}
 		return result;
 	}
