@@ -79,8 +79,7 @@ public:
 	 * @param right The left formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedNaryUntil(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right,
-					 uint_fast64_t bound) {
+	BoundedNaryUntil(AbstractStateFormula<T>* left, std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right) {
 		this->left = left;
 		this->right = right;
 	}
