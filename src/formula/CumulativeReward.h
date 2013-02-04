@@ -8,8 +8,9 @@
 #ifndef STORM_FORMULA_CUMULATIVEREWARD_H_
 #define STORM_FORMULA_CUMULATIVEREWARD_H_
 
-#include "PctlPathFormula.h"
-#include "PctlStateFormula.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 
@@ -17,18 +18,38 @@ namespace storm {
 
 namespace formula {
 
+template <class T> class CumulativeReward;
+
+/*!
+ *  @brief Interface class for model checkers that support CumulativeReward.
+ *
+ *  All model checkers that support the formula class CumulativeReward must inherit
+ *  this pure virtual class.
+ */
+template <class T>
+class ICumulativeRewardModelChecker {
+    public:
+		/*!
+         *  @brief Evaluates CumulativeReward formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
+        virtual std::vector<T>* checkCumulativeReward(const CumulativeReward<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL (path) formula tree with a Cumulative Reward node as root.
+ * Class for a Abstract (path) formula tree with a Cumulative Reward node as root.
  *
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see PctlPathFormula
- * @see PctlFormula
+ * @see AbstractPathFormula
+ * @see AbstractFormula
  */
 template <class T>
-class CumulativeReward : public PctlPathFormula<T> {
+class CumulativeReward : public AbstractPathFormula<T> {
 
 public:
 	/*!
@@ -84,9 +105,9 @@ public:
 	 *
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns a new CumulativeReward-object that is identical the called object.
 	 */
-	virtual PctlPathFormula<T>* clone() const {
+	virtual AbstractPathFormula<T>* clone() const {
 		return new CumulativeReward(bound);
 	}
 
@@ -100,8 +121,20 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkCumulativeReward(*this);
+	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<ICumulativeRewardModelChecker>()->checkCumulativeReward(*this);
+	}
+	
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *  
+     *  As CumulativeReward objects have no subformulas, we return true here.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true
+     */	
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return true;
 	}
 
 private:

@@ -8,23 +8,44 @@
 #ifndef STORM_FORMULA_AP_H_
 #define STORM_FORMULA_AP_H_
 
-#include "PctlStateFormula.h"
+#include "src/formula/AbstractStateFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
+#include "src/modelChecker/AbstractModelChecker.h"
 
 namespace storm {
-
 namespace formula {
+
+template <class T> class Ap;
+
+/*!
+ *  @brief Interface class for model checkers that support Ap.
+ *
+ *  All model checkers that support the formula class Ap must inherit
+ *  this pure virtual class.
+ */
+template <class T>
+class IApModelChecker {
+    public:
+		/*!
+         *  @brief Evaluates Ap formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
+        virtual storm::storage::BitVector* checkAp(const Ap<T>& obj) const = 0;
+};
 
 /*!
  * @brief
- * Class for a PCTL formula tree with atomic proposition as root.
+ * Class for a Abstract formula tree with atomic proposition as root.
  *
  * This class represents the leaves in the formula tree.
  *
- * @see PctlStateFormula
- * @see PctlFormula
+ * @see AbstractStateFormula
+ * @see AbstractFormula
  */
 template <class T>
-class Ap : public PctlStateFormula<T> {
+class Ap : public AbstractStateFormula<T> {
 
 public:
 	/*!
@@ -64,7 +85,7 @@ public:
 	 *
 	 * @returns a new Ap-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const {
 	  return new Ap(ap);
 	}
 
@@ -77,8 +98,20 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkAp(*this);
+	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<IApModelChecker>()->checkAp(*this);
+	}
+	
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *	
+     *	As atomic propositions have no subformulas, we return true here.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true
+     */
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return true;
 	}
 
 private:

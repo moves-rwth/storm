@@ -58,7 +58,7 @@ namespace
 		/*!
 		 *	@brief Resulting formula.
 		 */
-		storm::formula::PctlFormula<double>* result;
+		//storm::formula::PctlFormula<double>* result;
 		
 		struct dump
 		{
@@ -141,7 +141,7 @@ storm::parser::PrctlParser::PrctlParser(const char* filename)
 		std::cout << "File was parsed" << std::endl;
 		std::string rest(data, file.dataend);
 		std::cout << "Rest: " << rest << std::endl;
-		this->formula = p.result;
+		//this->formula = p.result;
 	}
-	else this->formula = NULL;
+	//else this->formula = NULL;
 }

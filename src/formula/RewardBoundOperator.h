@@ -8,18 +8,17 @@
 #ifndef STORM_FORMULA_REWARDBOUNDOPERATOR_H_
 #define STORM_FORMULA_REWARDBOUNDOPERATOR_H_
 
-#include "PctlStateFormula.h"
-#include "PctlPathFormula.h"
+#include "AbstractStateFormula.h"
+#include "AbstractPathFormula.h"
 #include "BoundOperator.h"
 #include "utility/ConstTemplates.h"
 
 namespace storm {
-
 namespace formula {
 
 /*!
  * @brief
- * Class for a PCTL formula tree with a R (reward) operator node over a reward interval as root.
+ * Class for a Abstract formula tree with a R (reward) operator node over a reward interval as root.
  *
  * Has a reward path formula as sub formula/tree.
  *
@@ -31,11 +30,11 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PctlStateFormula
- * @see PctlPathFormula
+ * @see AbstractStateFormula
+ * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
- * @see PctlFormula
+ * @see AbstractFormula
  */
 template<class T>
 class RewardBoundOperator : public BoundOperator<T> {
@@ -44,6 +43,7 @@ public:
 	/*!
 	 * Empty constructor
 	 */
+//! TODO: this constructor should give a comparisontype as first argument
 	RewardBoundOperator() : BoundOperator<T>(storm::utility::constGetZero<T>(), storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
@@ -55,7 +55,7 @@ public:
 	 * @param upperBound The upper bound for the probability
 	 * @param pathFormula The child node
 	 */
-	RewardBoundOperator(T lowerBound, T upperBound, PctlPathFormula<T>& pathFormula) : BoundOperator<T>(lowerBound, upperBound, pathFormula) {
+	RewardBoundOperator(T lowerBound, T upperBound, AbstractPathFormula<T>& pathFormula) : BoundOperator<T>(lowerBound, upperBound, pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -80,7 +80,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const {
 		RewardBoundOperator<T>* result = new RewardBoundOperator<T>();
 		result->setBound(this->getLowerBound(), this->getUpperBound());
 		result->setPathFormula(this->getPathFormula()->clone());
@@ -89,7 +89,6 @@ public:
 };
 
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_REWARDBOUNDOPERATOR_H_ */

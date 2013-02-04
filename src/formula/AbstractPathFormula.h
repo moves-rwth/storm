@@ -1,24 +1,30 @@
 /*
- * PctlStateFormula.h
+ * AbstractPathFormula.h
  *
  *  Created on: 19.10.2012
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_PCTLSTATEFORMULA_H_
-#define STORM_FORMULA_PCTLSTATEFORMULA_H_
+#ifndef STORM_FORMULA_ABSTRACTPATHFORMULA_H_
+#define STORM_FORMULA_ABSTRACTPATHFORMULA_H_
 
-#include "PctlFormula.h"
-#include "storage/BitVector.h"
-#include "modelChecker/DtmcPrctlModelChecker.h"
+namespace storm { namespace formula {
+template <class T> class AbstractPathFormula;
+}}
+
+#include "src/formula/AbstractFormula.h"
+
+#include "modelChecker/AbstractModelChecker.h"
+#include <vector>
+#include <iostream>
+#include <typeinfo>
 
 namespace storm {
-
 namespace formula {
 
 /*!
  * @brief
- * Abstract base class for PCTL state formulas.
+ * Abstract base class for Abstract path formulas.
  *
  * @attention This class is abstract.
  * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
@@ -26,13 +32,13 @@ namespace formula {
  * 	   clone().
  */
 template <class T>
-class PctlStateFormula : public PctlFormula<T> {
+class AbstractPathFormula : public virtual AbstractFormula<T> {
 
 public:
 	/*!
 	 * empty destructor
 	 */
-	virtual ~PctlStateFormula() { }
+	virtual ~AbstractPathFormula() { }
 
 	/*!
 	 * Clones the called object.
@@ -42,7 +48,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const = 0;
+	virtual AbstractPathFormula<T>* clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -53,14 +59,12 @@ public:
 	 *
 	 * @note This function is not implemented in this class.
 	 *
-	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
+	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const = 0;
+	virtual std::vector<T>* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const = 0;
 };
 
 } //namespace formula
-
 } //namespace storm
 
-
-#endif /* STORM_FORMULA_PCTLSTATEFORMULA_H_ */
+#endif /* STORM_FORMULA_ABSTRACTPATHFORMULA_H_ */

@@ -1,7 +1,7 @@
 #ifndef STORM_PARSER_PRCTLPARSER_H_
 #define STORM_PARSER_PRCTLPARSER_H_
 
-#include "src/formula/PctlFormula.h"
+// #include "src/formula/PctlFormula.h"
 #include "src/parser/Parser.h"
 
 namespace storm {
@@ -18,13 +18,14 @@ class PrctlParser : Parser
 		/*!
 		 *	@brief return formula object parsed from file.
 		 */
-		storm::formula::PctlFormula<double>* getFormula()
+/*		storm::formula::PctlFormula<double>* getFormula()
 		{
 			return this->formula;
 		}
 	
 	private:
 		storm::formula::PctlFormula<double>* formula;
+*/
 };
 
 } // namespace parser
