@@ -129,7 +129,7 @@ public:
 	virtual std::string toString() const {
 		std::string result = "(";
 		result += left->toString();
-		result += " && ";
+		result += " & ";
 		result += right->toString();
 		result += ")";
 		return result;

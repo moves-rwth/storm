@@ -12,15 +12,16 @@
 #include "src/parser/PrctlFileParser.h"
 
 TEST(PrctlParserTest, parseApOnlyTest) {
+	std::string ap = "P";
 	storm::parser::PrctlParser* prctlParser = nullptr;
 	ASSERT_NO_THROW(
-			prctlParser = new storm::parser::PrctlParser("P");
+			prctlParser = new storm::parser::PrctlParser(ap);
 	);
 
 	ASSERT_NE(prctlParser->getFormula(), nullptr);
 
 
-	ASSERT_EQ(prctlParser->getFormula()->toString(), "P");
+	ASSERT_EQ(ap, prctlParser->getFormula()->toString());
 
 	delete prctlParser->getFormula();
 	delete prctlParser;
@@ -36,7 +37,7 @@ TEST(PrctlParserTest, parsePropositionalFormulaTest) {
 	ASSERT_NE(prctlFileParser->getFormula(), nullptr);
 
 
-	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "(!(a && b) || (a && !c))");
+	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "(!(a & b) | (a & !c))");
 
 	delete prctlFileParser->getFormula();
 	delete prctlFileParser;
@@ -91,7 +92,7 @@ TEST(PrctlParserTest, parseRewardNoBoundFormulaTest) {
 	ASSERT_NE(prctlFileParser->getFormula(), nullptr);
 
 
-	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "R = ? [(a U<=4 (b && !c))]");
+	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "R = ? [(a U<=4 (b & !c))]");
 
 	delete prctlFileParser->getFormula();
 	delete prctlFileParser;
@@ -123,7 +124,7 @@ TEST(PrctlParserTest, parseComplexFormulaTest) {
 	ASSERT_NE(prctlFileParser->getFormula(), nullptr);
 
 
-	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "(P <= 0.500000 [F a] && (R > 15.000000 [G P > 0.900000 [F<=7 (a && b)]] || !P < 0.400000 [G !b]))");
+	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "(P <= 0.500000 [F a] & (R > 15.000000 [G P > 0.900000 [F<=7 (a & b)]] | !P < 0.400000 [G !b]))");
 	delete prctlFileParser->getFormula();
 	delete prctlFileParser;
 
