@@ -112,7 +112,6 @@ bool parseOptions(const int argc, const char* argv[]) {
 	}
 	if (s->isSet("test-prctl")) {
 		// storm::parser::PrctlParser parser(s->getString("test-prctl").c_str());
-		delete s;
 		return false;
 	}
 	
@@ -243,8 +242,11 @@ int main(const int argc, const char* argv[]) {
 
 	storm::parser::PrismParser parser;
 	std::shared_ptr<storm::ir::Program> program = parser.parseFile("test.input");
-	storm::adapters::SymbolicModelAdapter symbolicAdapter;
-	symbolicAdapter.toMTBDD(*program);
+
+	std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = storm::adapters::ExplicitModelAdapter::toSparseMatrix<double>(*program);
+
+	//storm::adapters::SymbolicModelAdapter symbolicModelAdapter;
+	//symbolicAdapter.toMTBDD(*program);
 
 	cleanUp();
 	return 0;

@@ -67,6 +67,12 @@ public:
 	storm::ir::Module const& getModule(uint_fast64_t index) const;
 
 	/*!
+	 * Retrieves the model type of the model.
+	 * @returns the type of the model.
+	 */
+	ModelType getModelType() const;
+
+	/*!
 	 * Retrieves a string representation of this program.
 	 * @returns a string representation of this program.
 	 */

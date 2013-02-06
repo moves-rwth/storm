@@ -28,7 +28,7 @@ std::string const& Variable::getName() const {
 	return variableName;
 }
 
-uint_fast64_t getIndex() const {
+uint_fast64_t Variable::getIndex() const {
 	return index;
 }
 

@@ -24,6 +24,10 @@ Program::Program(ModelType modelType, std::map<std::string, std::shared_ptr<stor
 	// Nothing to do here.
 }
 
+ModelType Program::getModelType() const {
+	return modelType;
+}
+
 // Build a string representation of the program.
 std::string Program::toString() const {
 	std::stringstream result;
