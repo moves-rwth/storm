@@ -10,15 +10,18 @@
 
 #include "modelChecker/ForwardDeclarations.h"
 
+#include "AbstractFormula.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
+
+
 #include "And.h"
 #include "Ap.h"
 #include "BoundedUntil.h"
+#include "BoundedNaryUntil.h"
 #include "Next.h"
 #include "Not.h"
 #include "Or.h"
-#include "PctlFormula.h"
-#include "PctlPathFormula.h"
-#include "PctlStateFormula.h"
 #include "ProbabilisticNoBoundOperator.h"
 #include "ProbabilisticBoundOperator.h"
 #include "Until.h"

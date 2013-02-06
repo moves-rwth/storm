@@ -8,18 +8,17 @@
 #ifndef STORM_FORMULA_REWARDBOUNDOPERATOR_H_
 #define STORM_FORMULA_REWARDBOUNDOPERATOR_H_
 
-#include "PctlStateFormula.h"
-#include "PctlPathFormula.h"
+#include "AbstractStateFormula.h"
+#include "AbstractPathFormula.h"
 #include "BoundOperator.h"
 #include "utility/ConstTemplates.h"
 
 namespace storm {
-
 namespace formula {
 
 /*!
  * @brief
- * Class for a PCTL formula tree with a R (reward) operator node over a reward interval as root.
+ * Class for a Abstract formula tree with a R (reward) operator node over a reward interval as root.
  *
  * Has a reward path formula as sub formula/tree.
  *
@@ -31,11 +30,11 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PctlStateFormula
- * @see PctlPathFormula
+ * @see AbstractStateFormula
+ * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
- * @see PctlFormula
+ * @see AbstractFormula
  */
 template<class T>
 class RewardBoundOperator : public BoundOperator<T> {
@@ -56,7 +55,7 @@ public:
 	 * @param pathFormula The child node
 	 */
 	RewardBoundOperator(
-			typename BoundOperator<T>::ComparisonType comparisonRelation, T bound, PctlPathFormula<T>* pathFormula) :
+			typename BoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula) :
 				BoundOperator<T>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
@@ -77,7 +76,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const {
 		RewardBoundOperator<T>* result = new RewardBoundOperator<T>();
 		result->setComparisonOperator(this->getComparisonOperator());
 		result->setBound(this->getBound());
@@ -87,7 +86,6 @@ public:
 };
 
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_REWARDBOUNDOPERATOR_H_ */

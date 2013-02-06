@@ -16,6 +16,7 @@
 #include "src/storage/BitVector.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/utility/Vector.h"
+#include "src/modelChecker/AbstractModelChecker.h"
 #include <vector>
 
 #include "log4cplus/logger.h"
@@ -37,7 +38,12 @@ namespace modelChecker {
  * @attention This class is abstract.
  */
 template<class Type>
-class DtmcPrctlModelChecker {
+class DtmcPrctlModelChecker : 
+	public virtual AbstractModelChecker<Type>, 
+	public virtual storm::formula::INoBoundOperatorModelChecker<Type>,
+	public virtual storm::formula::IReachabilityRewardModelChecker<Type>,
+	public virtual storm::formula::IEventuallyModelChecker<Type>
+	{
 public:
 	/*!
 	 * Constructor
@@ -84,7 +90,7 @@ public:
 	 * states.
 	 * @param stateFormula The formula to be checked.
 	 */
-	void check(const storm::formula::PctlStateFormula<Type>& stateFormula) const {
+	void check(const storm::formula::AbstractStateFormula<Type>& stateFormula) const {
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << stateFormula.toString());
 		std::cout << "Model checking formula:\t" << stateFormula.toString() << std::endl;
@@ -144,7 +150,7 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	storm::storage::BitVector* checkStateFormula(const storm::formula::PctlStateFormula<Type>& formula) const {
+	storm::storage::BitVector* checkStateFormula(const storm::formula::AbstractStateFormula<Type>& formula) const {
 		return formula.check(*this);
 	}
 
@@ -201,7 +207,7 @@ public:
 	 * @param formula The Or state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	storm::storage::BitVector* checkOr(const storm::formula::Or<Type>& formula) const {
+	virtual storm::storage::BitVector* checkOr(const storm::formula::Or<Type>& formula) const {
 		storm::storage::BitVector* result = checkStateFormula(formula.getLeft());
 		storm::storage::BitVector* right = checkStateFormula(formula.getRight());
 		(*result) |= (*right);
@@ -254,7 +260,7 @@ public:
 	 * @param formula The path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	std::vector<Type>* checkPathFormula(const storm::formula::PctlPathFormula<Type>& formula) const {
+	std::vector<Type>* checkPathFormula(const storm::formula::AbstractPathFormula<Type>& formula) const {
 		return formula.check(*this);
 	}
 

@@ -12,7 +12,7 @@
 #include "src/utility/IoUtility.h"
 
 TEST(ParseDtmcTest, parseAndOutput) {
-	storm::parser::DeterministicModelParser* dtmcParser;
+	storm::parser::DeterministicModelParser* dtmcParser = nullptr;
 	ASSERT_NO_THROW(dtmcParser = new storm::parser::DeterministicModelParser(
 			STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/pctl_general_input_01.tra",
 			STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));

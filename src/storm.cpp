@@ -216,12 +216,12 @@ void testChecking() {
 	if (parser.getType() == storm::models::DTMC) {
 		std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 		dtmc->printModelInformationToStream(std::cout);
+
+		// testCheckingDie(*dtmc);
+		// testCheckingCrowds(*dtmc);
+		// testCheckingSynchronousLeader(*dtmc, 4);
 	}
 	else std::cout << "Input is not DTMC" << std::endl;
-
-	// testCheckingDie(*dtmc);
-	// testCheckingCrowds(*dtmc);
-	// testCheckingSynchronousLeader(*dtmc, 4);
 }
 
 /*!

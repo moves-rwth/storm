@@ -23,7 +23,7 @@ TEST(ReadLabFileTest, ParseTest) {
 	//This test is based on a test case from the original MRMC.
 	
 	
-	storm::parser::AtomicPropositionLabelingParser* parser;
+	storm::parser::AtomicPropositionLabelingParser* parser = nullptr;
 	//Parsing the file
 	ASSERT_NO_THROW(parser = new storm::parser::AtomicPropositionLabelingParser(12, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> labeling(parser->getLabeling());
@@ -32,7 +32,7 @@ TEST(ReadLabFileTest, ParseTest) {
 
 	char phi[] = "phi", psi[] = "psi", smth[] = "smth";
 
-	if (labeling != NULL) {
+	if (labeling != nullptr) {
 		ASSERT_TRUE(labeling->containsAtomicProposition(phi));
 		ASSERT_TRUE(labeling->containsAtomicProposition(psi));
 		ASSERT_TRUE(labeling->containsAtomicProposition(smth));

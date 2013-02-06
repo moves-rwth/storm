@@ -8,27 +8,26 @@
 #ifndef STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_
 #define STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_
 
-#include "PctlFormula.h"
-#include "PctlPathFormula.h"
+#include "AbstractFormula.h"
+#include "AbstractPathFormula.h"
 #include "NoBoundOperator.h"
 
 namespace storm {
-
 namespace formula {
 
 /*!
  * @brief
- * Class for a PCTL formula tree with a R (reward) operator without declaration of reward values
+ * Class for a Abstract formula tree with a R (reward) operator without declaration of reward values
  * as root.
  *
  * Checking a formula with this operator as root returns the reward for the reward path formula for
  * each state
  *
- * Has one PCTL path formula as sub formula/tree.
+ * Has one Abstract path formula as sub formula/tree.
  *
  * @note
  * 	This class is a hybrid of a state and path formula, and may only appear as the outermost operator.
- * 	Hence, it is seen as neither a state nor a path formula, but is directly derived from PctlFormula.
+ * 	Hence, it is seen as neither a state nor a path formula, but is directly derived from AbstractFormula.
  *
  * @note
  * 	This class does not contain a check() method like the other formula classes.
@@ -40,11 +39,11 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PctlStateFormula
- * @see PctlPathFormula
+ * @see AbstractStateFormula
+ * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticIntervalOperator
- * @see PctlFormula
+ * @see AbstractFormula
  */
 template <class T>
 class RewardNoBoundOperator: public NoBoundOperator<T> {
@@ -61,7 +60,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundOperator(PctlPathFormula<T>* pathFormula) : NoBoundOperator<T>(pathFormula) {
+	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula) : NoBoundOperator<T>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -77,7 +76,6 @@ public:
 };
 
 } /* namespace formula */
-
 } /* namespace storm */
 
 #endif /* STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_ */

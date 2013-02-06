@@ -387,11 +387,11 @@ public:
 	 * Returns the number of bits that are set (to one) in this bit vector.
 	 * @return The number of bits that are set (to one) in this bit vector.
 	 */
-	uint_fast64_t getNumberOfSetBits() {
+	uint_fast64_t getNumberOfSetBits() const {
 		return getNumberOfSetBitsBeforeIndex(bucketCount << 6);
 	}
 
-	uint_fast64_t getNumberOfSetBitsBeforeIndex(uint_fast64_t index) {
+	uint_fast64_t getNumberOfSetBitsBeforeIndex(uint_fast64_t index) const {
 		uint_fast64_t result = 0;
 		// First, count all full buckets.
 		uint_fast64_t bucket = index >> 6;
@@ -437,7 +437,7 @@ public:
 	/*!
 	 * Retrieves the number of bits this bit vector can store.
 	 */
-	uint_fast64_t getSize() {
+	uint_fast64_t getSize() const {
 		return bitCount;
 	}
 
@@ -445,7 +445,7 @@ public:
 	 * Returns the size of the bit vector in memory measured in bytes.
 	 * @return The size of the bit vector in memory measured in bytes.
 	 */
-	uint_fast64_t getSizeInMemory() {
+	uint_fast64_t getSizeInMemory() const {
 		return sizeof(*this) + sizeof(uint_fast64_t) * bucketCount;
 	}
 
@@ -461,6 +461,20 @@ public:
 	 */
 	const constIndexIterator& end() const {
 		return endIterator;
+	}
+
+	/*!
+	 * Returns a string representation of the bit vector.
+	 */
+	std::string toString() const {
+		std::stringstream result;
+		result << "bit vector(" << this->getNumberOfSetBits() << ") [";
+		for (auto index : *this) {
+			result << index << " ";
+		}
+		result << "]";
+
+		return result.str();
 	}
 
 private:

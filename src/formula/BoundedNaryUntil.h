@@ -1,52 +1,58 @@
 /*
- * BoundedUntil.h
+ * BoundedNaryUntil.h
  *
  *  Created on: 19.10.2012
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_BOUNDEDUNTIL_H_
-#define STORM_FORMULA_BOUNDEDUNTIL_H_
+#ifndef STORM_FORMULA_BOUNDEDNARYUNTIL_H_
+#define STORM_FORMULA_BOUNDEDNARYUNTIL_H_
 
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractStateFormula.h"
 #include "src/modelChecker/AbstractModelChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
+#include <vector>
+#include <tuple>
+#include <sstream>
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 namespace formula {
 
-template <class T> class BoundedUntil;
+template <class T> class BoundedNaryUntil;
 
 /*!
- *  @brief Interface class for model checkers that support BoundedUntil.
+ *  @brief Interface class for model checkers that support BoundedNaryUntil.
  *   
- *  All model checkers that support the formula class BoundedUntil must inherit
+ *  All model checkers that support the formula class BoundedNaryUntil must inherit
  *  this pure virtual class.
  */
 template <class T>
-class IBoundedUntilModelChecker {
+class IBoundedNaryUntilModelChecker {
     public:
 		/*!
-         *  @brief Evaluates BoundedUntil formula within a model checker.
+         *  @brief Evaluates BoundedNaryUntil formula within a model checker.
          *
          *  @param obj Formula object with subformulas.
          *  @return Result of the formula for every node.
          */
-        virtual std::vector<T>* checkBoundedUntil(const BoundedUntil<T>& obj) const = 0;
+        virtual std::vector<T>* checkBoundedNaryUntil(const BoundedNaryUntil<T>& obj) const = 0;
 };
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a BoundedUntil node as root.
+ * Class for a Abstract (path) formula tree with a BoundedNaryUntil node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has at least two Abstract state formulas as sub formulas and an interval
+ * associated with all but the first sub formula. We'll call the first one
+ * \e left and all other one \e right.
  *
  * @par Semantics
- * The formula holds iff in at most \e bound steps, formula \e right (the right subtree) holds, and before,
- * \e left holds.
+ * The formula holds iff \e left holds until eventually any of the \e right
+ * formulas holds after a number of steps contained in the interval
+ * associated with this formula.
  *
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
@@ -55,16 +61,15 @@ class IBoundedUntilModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class BoundedUntil : public AbstractPathFormula<T> {
+class BoundedNaryUntil : public AbstractPathFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	BoundedUntil() {
+	BoundedNaryUntil() {
 		this->left = NULL;
-		this->right = NULL;
-		bound = 0;
+		this->right = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
 	}
 
 	/*!
@@ -74,11 +79,9 @@ public:
 	 * @param right The left formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedUntil(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right,
-					 uint_fast64_t bound) {
+	BoundedNaryUntil(AbstractStateFormula<T>* left, std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right) {
 		this->left = left;
 		this->right = right;
-		this->bound = bound;
 	}
 
 	/*!
@@ -87,7 +90,7 @@ public:
 	 * Also deletes the subtrees.
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
-	virtual ~BoundedUntil() {
+	virtual ~BoundedNaryUntil() {
 	  if (left != NULL) {
 		  delete left;
 	  }
@@ -105,13 +108,18 @@ public:
 		left = newLeft;
 	}
 
+	void setRight(std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* newRight) {
+		right = newRight;
+	}
+
+
 	/*!
 	 * Sets the right child node.
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(AbstractStateFormula<T>* newRight) {
-		right = newRight;
+	void addRight(AbstractStateFormula<T>* newRight, T upperBound, T lowerBound) {
+		this->right->push_back(std::tuple<AbstractStateFormula<T>*,T,T>(newRight, upperBound, lowerBound));
 	}
 
 	/*!
@@ -122,40 +130,23 @@ public:
 	}
 
 	/*!
-	 * @returns a pointer to the right child node
+	 * @returns a pointer to the right child nodes.
 	 */
-	const AbstractStateFormula<T>& getRight() const {
+	const std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>& getRight() const {
 		return *right;
-	}
-
-	/*!
-	 * @returns the maximally allowed number of steps for the bounded until operator
-	 */
-	uint_fast64_t getBound() const {
-		return bound;
-	}
-
-	/*!
-	 * Sets the maximally allowed number of steps for the bounded until operator
-	 *
-	 * @param bound the new bound.
-	 */
-	void setBound(uint_fast64_t bound) {
-		this->bound = bound;
 	}
 
 	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "(";
-		result += left->toString();
-		result += " U<=";
-		result += std::to_string(bound);
-		result += " ";
-		result += right->toString();
-		result += ")";
-		return result;
+		std::stringstream result;
+		result << "( " << left->toString();
+		for (auto it = this->right->begin(); it != this->right->end(); ++it) {
+			result << " U[" << std::get<1>(*it) << "," << std::get<2>(*it) << "] " << std::get<0>(*it)->toString();
+		}
+		result << ")";
+		return result.str();
 	}
 
 	/*!
@@ -163,16 +154,19 @@ public:
 	 *
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns a new BoundedNaryUntil-object that is identical the called object.
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
-		BoundedUntil<T>* result = new BoundedUntil<T>();
-		result->setBound(bound);
+		BoundedNaryUntil<T>* result = new BoundedNaryUntil<T>();
 		if (left != NULL) {
 			result->setLeft(left->clone());
 		}
 		if (right != NULL) {
-			result->setRight(right->clone());
+			std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* newright = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
+			for (auto it = this->right->begin(); it != this->right->end(); ++it) {
+				newright->push_back(std::tuple<AbstractStateFormula<T>*,T,T>(std::get<0>(*it)->clone(), std::get<1>(*it), std::get<2>(*it)));
+			}
+			result->setRight(newright);
 		}
 		return result;
 	}
@@ -188,7 +182,7 @@ public:
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
 	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IBoundedUntilModelChecker>()->checkBoundedUntil(*this);
+		return modelChecker.template as<IBoundedNaryUntilModelChecker>()->checkBoundedNaryUntil(*this);
 	}
 	
 	/*!
@@ -198,17 +192,20 @@ public:
      *  @return true iff all subtrees conform to some logic.
      */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return checker.conforms(this->left) && checker.conforms(this->right);
+		bool res = checker.conforms(this->left);
+		for (auto it = this->right->begin(); it != this->right->end(); ++it) {
+			res &= checker.conforms(std::get<0>(*it));
+		}
+		return res;
 	}
 
 private:
 	AbstractStateFormula<T>* left;
-	AbstractStateFormula<T>* right;
-	uint_fast64_t bound;
+	std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right;
 };
 
 } //namespace formula
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_BOUNDEDUNTIL_H_ */
+#endif /* STORM_FORMULA_BOUNDEDNARYUNTIL_H_ */

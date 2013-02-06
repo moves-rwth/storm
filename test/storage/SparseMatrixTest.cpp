@@ -2,6 +2,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
+#include "src/adapters/EigenAdapter.h"
 
 TEST(SparseMatrixTest, ZeroRowsTest) {
 	storm::storage::SparseMatrix<int> *ssm = new storm::storage::SparseMatrix<int>(0);
@@ -94,6 +95,10 @@ TEST(SparseMatrixTest, Test) {
 		2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 		14, 15, 16, 17, 18, 19, 20, 21, 22, 23 /* second to last row */
 	};
+	int row_sums[25] = {};
+	for (int i = 0; i < 50; ++i) {
+		row_sums[position_row[i]] += values[i];
+	}
 
 	ASSERT_NO_THROW(ssm->initialize(50));
 	ASSERT_EQ(ssm->getState(), storm::storage::SparseMatrix<int>::MatrixStatus::Initialized);
@@ -122,6 +127,11 @@ TEST(SparseMatrixTest, Test) {
 		}
 	}
 	ASSERT_EQ(ssm->getState(), storm::storage::SparseMatrix<int>::MatrixStatus::ReadReady);
+
+	// Test Row Sums
+	for (int row = 0; row < 25; ++row) {
+		ASSERT_EQ(row_sums[row], ssm->getRowSum(row));
+	}
 
 	delete ssm;
 }
@@ -313,7 +323,7 @@ TEST(SparseMatrixTest, ConversionToSparseEigen_RowMajor_SparseMatrixTest) {
 	ASSERT_NO_THROW(ssm->finalize());
 	ASSERT_EQ(ssm->getState(), storm::storage::SparseMatrix<int>::MatrixStatus::ReadReady);
 
-	Eigen::SparseMatrix<int, Eigen::RowMajor, int_fast32_t>* esm = ssm->toEigenSparseMatrix();
+	Eigen::SparseMatrix<int, Eigen::RowMajor, int_fast32_t>* esm = storm::adapters::EigenAdapter::toEigenSparseMatrix<int>(*ssm);
 
 	for (uint_fast32_t row = 0; row < 10; ++row) {
 		for (uint_fast32_t col = 0; col < 10; ++col) {

@@ -8,8 +8,9 @@
 #ifndef STORM_FORMULA_NOBOUNDOPERATOR_H_
 #define STORM_FORMULA_NOBOUNDOPERATOR_H_
 
-#include "PctlFormula.h"
-#include "PctlPathFormula.h"
+#include "AbstractFormula.h"
+#include "AbstractPathFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
 
 #include "modelChecker/ForwardDeclarations.h"
 
@@ -17,19 +18,39 @@ namespace storm {
 
 namespace formula {
 
+template <class T> class NoBoundOperator;
+
+/*!
+ *  @brief Interface class for model checkers that support NoBoundOperator.
+ *   
+ *  All model checkers that support the formula class NoBoundOperator must inherit
+ *  this pure virtual class.
+ */
+template <class T>
+class INoBoundOperatorModelChecker {
+    public:
+		/*!
+         *  @brief Evaluates NoBoundOperator formula within a model checker.
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
+        virtual std::vector<T>* checkNoBoundOperator(const NoBoundOperator<T>& obj) const = 0;
+};
+
 /*!
  * @brief
- * Class for a PCTL formula tree with a P (probablistic) operator without declaration of probabilities
+ * Class for a Abstract formula tree with a P (probablistic) operator without declaration of probabilities
  * as root.
  *
  * Checking a formula with this operator as root returns the probabilities that the path formula holds
  * (for each state)
  *
- * Has one PCTL path formula as sub formula/tree.
+ * Has one Abstract path formula as sub formula/tree.
  *
  * @note
  * 	This class is a hybrid of a state and path formula, and may only appear as the outermost operator.
- * 	Hence, it is seen as neither a state nor a path formula, but is directly derived from PctlFormula.
+ * 	Hence, it is seen as neither a state nor a path formula, but is directly derived from AbstractFormula.
  *
  * @note
  * 	This class does not contain a check() method like the other formula classes.
@@ -41,14 +62,14 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PctlStateFormula
- * @see PctlPathFormula
+ * @see AbstractStateFormula
+ * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticIntervalOperator
- * @see PctlFormula
+ * @see AbstractFormula
  */
 template <class T>
-class NoBoundOperator: public storm::formula::PctlFormula<T> {
+class NoBoundOperator: public storm::formula::AbstractFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -62,7 +83,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	NoBoundOperator(PctlPathFormula<T>* pathFormula) {
+	NoBoundOperator(AbstractPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -76,9 +97,9 @@ public:
 	}
 
 	/*!
-	 * @returns the child node (representation of a PCTL path formula)
+	 * @returns the child node (representation of a Abstract path formula)
 	 */
-	const PctlPathFormula<T>& getPathFormula () const {
+	const AbstractPathFormula<T>& getPathFormula () const {
 		return *pathFormula;
 	}
 
@@ -87,7 +108,7 @@ public:
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
 	 */
-	void setPathFormula(PctlPathFormula<T>* pathFormula) {
+	void setPathFormula(AbstractPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -102,17 +123,27 @@ public:
 	 *
 	 * @returns A vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual std::vector<T>* check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-		return modelChecker.checkNoBoundOperator(*this);
+	virtual std::vector<T>* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<INoBoundOperatorModelChecker>()->checkNoBoundOperator(*this);
 	}
 
 	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const = 0;
+	
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return checker.conforms(this->pathFormula);
+	}
 
 private:
-	PctlPathFormula<T>* pathFormula;
+	AbstractPathFormula<T>* pathFormula;
 };
 
 } /* namespace formula */

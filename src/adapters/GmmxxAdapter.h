@@ -23,7 +23,7 @@ class GmmxxAdapter {
 public:
 	/*!
 	 * Converts a sparse matrix into the sparse matrix in the gmm++ format.
-	 * @return A pointer to a column-major sparse matrix in gmm++ format.
+	 * @return A pointer to a row-major sparse matrix in gmm++ format.
 	 */
 	template<class T>
 	static gmm::csr_matrix<T>* toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix) {

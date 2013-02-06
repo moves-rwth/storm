@@ -1,25 +1,30 @@
 /*
- * PctlPathFormula.h
+ * AbstractPathFormula.h
  *
  *  Created on: 19.10.2012
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_PCTLPATHFORMULA_H_
-#define STORM_FORMULA_PCTLPATHFORMULA_H_
+#ifndef STORM_FORMULA_ABSTRACTPATHFORMULA_H_
+#define STORM_FORMULA_ABSTRACTPATHFORMULA_H_
 
-#include "modelChecker/ForwardDeclarations.h"
-#include "PctlFormula.h"
+namespace storm { namespace formula {
+template <class T> class AbstractPathFormula;
+}}
 
+#include "src/formula/AbstractFormula.h"
+
+#include "modelChecker/AbstractModelChecker.h"
 #include <vector>
+#include <iostream>
+#include <typeinfo>
 
 namespace storm {
-
 namespace formula {
 
 /*!
  * @brief
- * Abstract base class for PCTL path formulas.
+ * Abstract base class for Abstract path formulas.
  *
  * @attention This class is abstract.
  * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
@@ -27,13 +32,13 @@ namespace formula {
  * 	   clone().
  */
 template <class T>
-class PctlPathFormula : public PctlFormula<T> {
+class AbstractPathFormula : public virtual AbstractFormula<T> {
 
 public:
 	/*!
 	 * empty destructor
 	 */
-	virtual ~PctlPathFormula() { }
+	virtual ~AbstractPathFormula() { }
 
 	/*!
 	 * Clones the called object.
@@ -43,7 +48,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlPathFormula<T>* clone() const = 0;
+	virtual AbstractPathFormula<T>* clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -56,13 +61,10 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const = 0;
+	virtual std::vector<T>* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const = 0;
 };
 
 } //namespace formula
-
 } //namespace storm
 
-
-
-#endif /* STORM_FORMULA_PCTLPATHFORMULA_H_ */
+#endif /* STORM_FORMULA_ABSTRACTPATHFORMULA_H_ */

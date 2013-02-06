@@ -8,21 +8,20 @@
 #ifndef STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_
 #define STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_
 
-#include "PctlStateFormula.h"
-#include "PctlPathFormula.h"
+#include "AbstractStateFormula.h"
+#include "AbstractPathFormula.h"
 #include "BoundOperator.h"
 #include "utility/ConstTemplates.h"
 
 namespace storm {
-
 namespace formula {
 
 /*!
  * @brief
- * Class for a PCTL formula tree with a P (probablistic) operator node over a probability interval
+ * Class for a Abstract formula tree with a P (probablistic) operator node over a probability interval
  * as root.
  *
- * Has one PCTL path formula as sub formula/tree.
+ * Has one Abstract path formula as sub formula/tree.
  *
  * @par Semantics
  * 	  The formula holds iff the probability that the path formula holds is inside the bounds
@@ -32,11 +31,11 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see PctlStateFormula
- * @see PctlPathFormula
+ * @see AbstractStateFormula
+ * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
- * @see PctlFormula
+ * @see AbstractFormula
  */
 template<class T>
 class ProbabilisticBoundOperator : public BoundOperator<T> {
@@ -50,6 +49,7 @@ public:
 		// Intentionally left empty
 	}
 
+
 	/*!
 	 * Constructor
 	 *
@@ -58,7 +58,7 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			typename BoundOperator<T>::ComparisonType comparisonRelation, T bound, PctlPathFormula<T>* pathFormula) :
+			typename BoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula) :
 				BoundOperator<T>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
@@ -79,7 +79,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const {
 		ProbabilisticBoundOperator<T>* result = new ProbabilisticBoundOperator<T>();
 		result->setComparisonOperator(this->getComparisonOperator());
 		result->setBound(this->getBound());
@@ -89,7 +89,6 @@ public:
 };
 
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_ */

@@ -18,6 +18,7 @@
 
 #include "Eigen/Sparse"
 #include "Eigen/src/IterativeLinearSolvers/BiCGSTAB.h"
+#include "src/adapters/EigenAdapter.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
@@ -54,7 +55,7 @@ public:
 		tmpMatrix.makeRowsAbsorbing((~*leftStates | *rightStates) | *rightStates);
 
 		// Transform the transition probability matrix to the eigen format to use its arithmetic.
-		Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenMatrix = tmpMatrix.toEigenSparseMatrix();
+		Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenMatrix = storm::adapters::EigenAdapter::toEigenSparseMatrix(tmpMatrix);
 
 		// Create the vector with which to multiply.
 		uint_fast64_t stateCount = this->getModel().getNumberOfStates();
@@ -87,8 +88,8 @@ public:
 		// First, we need to compute the states that satisfy the sub-formula of the next-formula.
 		storm::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
 
-		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenMatrix = this->getModel().getTransitionProbabilityMatrix()->toEigenSparseMatrix();
+		// Transform the transition probability matrix to the eigen format to use its arithmetic.
+		Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenMatrix = storm::adapters::EigenAdapter::toEigenSparseMatrix(this->getModel().getTransitionProbabilityMatrix());
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> x(this->getModel().getNumberOfStates());
@@ -154,7 +155,7 @@ public:
 			submatrix->convertToEquationSystem();
 
 			// Transform the submatric matrix to the eigen format to use its solvers
-			Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenSubMatrix = submatrix->toEigenSparseMatrix();
+			Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenSubMatrix = storm::adapters::EigenAdapter::toEigenSparseMatrix<Type>(submatrix);
 			delete submatrix;
 
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for

@@ -8,27 +8,48 @@
 #ifndef STORM_FORMULA_REACHABILITYREWARD_H_
 #define STORM_FORMULA_REACHABILITYREWARD_H_
 
-#include "PctlPathFormula.h"
-#include "PctlStateFormula.h"
+#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/AbstractStateFormula.h"
+#include "src/formula/AbstractFormulaChecker.h"
+#include "src/modelChecker/AbstractModelChecker.h"
 
 namespace storm {
-
 namespace formula {
+
+template <class T> class ReachabilityReward;
+
+/*!
+ *  @brief Interface class for model checkers that support ReachabilityReward.
+ *   
+ *  All model checkers that support the formula class ReachabilityReward must inherit
+ *  this pure virtual class.
+ */
+template <class T>
+class IReachabilityRewardModelChecker {
+    public:
+		/*!
+         *  @brief Evaluates ReachabilityReward formula within a model checker.  
+         *
+         *  @param obj Formula object with subformulas.
+         *  @return Result of the formula for every node.
+         */
+        virtual std::vector<T>* checkReachabilityReward(const ReachabilityReward<T>& obj) const = 0;
+};
 
 /*!
  * @brief
- * Class for a PCTL (path) formula tree with an Reachability Reward node as root.
+ * Class for a Abstract (path) formula tree with an Reachability Reward node as root.
  *
- * Has one PCTL state formula as sub formula/tree.
+ * Has one Abstract state formula as sub formula/tree.
  *
  * The subtree is seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to nullptr before deletion)
  *
- * @see PctlPathFormula
- * @see PctlFormula
+ * @see AbstractPathFormula
+ * @see AbstractFormula
  */
 template <class T>
-class ReachabilityReward : public PctlPathFormula<T> {
+class ReachabilityReward : public AbstractPathFormula<T> {
 
 public:
 	/*!
@@ -43,7 +64,7 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	ReachabilityReward(PctlStateFormula<T>* child) {
+	ReachabilityReward(AbstractStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -62,7 +83,7 @@ public:
 	/*!
 	 * @returns the child node
 	 */
-	const PctlStateFormula<T>& getChild() const {
+	const AbstractStateFormula<T>& getChild() const {
 		return *child;
 	}
 
@@ -70,7 +91,7 @@ public:
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(PctlStateFormula<T>* child) {
+	void setChild(AbstractStateFormula<T>* child) {
 		this->child = child;
 	}
 
@@ -88,9 +109,9 @@ public:
 	 *
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns a new ReachabilityReward-object that is identical the called object.
 	 */
-	virtual PctlPathFormula<T>* clone() const {
+	virtual AbstractPathFormula<T>* clone() const {
 		ReachabilityReward<T>* result = new ReachabilityReward<T>();
 		if (child != nullptr) {
 			result->setChild(child);
@@ -107,16 +128,25 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const {
-	  return modelChecker.checkReachabilityReward(*this);
+	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<IReachabilityRewardModelChecker>()->checkReachabilityReward(*this);
+	}
+	
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     * 
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
+	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+		return checker.conforms(this->child);
 	}
 
 private:
-	PctlStateFormula<T>* child;
+	AbstractStateFormula<T>* child;
 };
 
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_REACHABILITYREWARD_H_ */

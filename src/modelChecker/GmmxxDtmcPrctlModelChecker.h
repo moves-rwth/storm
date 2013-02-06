@@ -18,6 +18,7 @@
 #include "src/utility/Settings.h"
 #include "src/adapters/GmmxxAdapter.h"
 #include "src/exceptions/InvalidPropertyException.h"
+#include "src/storage/JacobiDecomposition.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
@@ -128,7 +129,8 @@ public:
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
 		// Only try to solve system if there are states for which the probability is unknown.
-		if (maybeStates.getNumberOfSetBits() > 0) {
+		uint_fast64_t mayBeStatesSetBitCount = maybeStates.getNumberOfSetBits();
+		if (mayBeStatesSetBitCount > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
 			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
@@ -142,11 +144,11 @@ public:
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
 			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
 			// probability is strictly larger than 0.
-			std::vector<Type> x(maybeStates.getNumberOfSetBits(), Type(0.5));
+			std::vector<Type> x(mayBeStatesSetBitCount, Type(0.5));
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
-			std::vector<Type> b(maybeStates.getNumberOfSetBits());
+			std::vector<Type> b(mayBeStatesSetBitCount);
 			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &b);
 
 			// Solve the corresponding system of linear equations.
@@ -259,7 +261,8 @@ public:
 
 		// Check whether there are states for which we have to compute the result.
 		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
-		if (maybeStates.getNumberOfSetBits() > 0) {
+		const int maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
+		if (maybeStatesSetBitCount > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
 			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
@@ -272,10 +275,10 @@ public:
 
 			// Initialize the x vector with 1 for each element. This is the initial guess for
 			// the iterative solvers.
-			std::vector<Type> x(maybeStates.getNumberOfSetBits(), storm::utility::constGetOne<Type>());
+			std::vector<Type> x(maybeStatesSetBitCount, storm::utility::constGetOne<Type>());
 
 			// Prepare the right-hand side of the equation system.
-			std::vector<Type>* b = new std::vector<Type>(maybeStates.getNumberOfSetBits());
+			std::vector<Type>* b = new std::vector<Type>(maybeStatesSetBitCount);
 			if (this->getModel().hasTransitionRewards()) {
 				// If a transition-based reward model is available, we initialize the right-hand
 				// side to the vector resulting from summing the rows of the pointwise product
@@ -289,7 +292,7 @@ public:
 					// as well. As the state reward vector contains entries not just for the states
 					// that we still consider (i.e. maybeStates), we need to extract these values
 					// first.
-					std::vector<Type>* subStateRewards = new std::vector<Type>(maybeStates.getNumberOfSetBits());
+					std::vector<Type>* subStateRewards = new std::vector<Type>(maybeStatesSetBitCount);
 					storm::utility::setVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewards());
 					gmm::add(*subStateRewards, *b);
 					delete subStateRewards;
@@ -443,6 +446,64 @@ private:
 		} else {
 			LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
 		}
+	}
+
+	/*!
+	 * Solves the linear equation system Ax=b with the given parameters
+	 * using the Jacobi Method and therefor the Jacobi Decomposition of A.
+	 *
+	 * @param A The matrix A specifying the coefficients of the linear equations.
+	 * @param x The vector x for which to solve the equations. The initial value of the elements of
+	 * this vector are used as the initial guess and might thus influence performance and convergence.
+	 * @param b The vector b specifying the values on the right-hand-sides of the equations.
+	 * @return The solution of the system of linear equations in form of the elements of the vector
+	 * x.
+	 */
+	void solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const {
+		// Get the settings object to customize linear solving.
+		storm::settings::Settings* s = storm::settings::instance();
+
+		double precision = s->get<double>("precision");
+		if (precision <= 0) {
+			LOG4CPLUS_ERROR(logger, "Selected precision for linear equation solving must be strictly greater than zero for Jacobi method.");
+		}
+			
+		// Get a Jacobi Decomposition of the Input Matrix A
+		storm::storage::JacobiDecomposition<Type>* jacobiDecomposition = A.getJacobiDecomposition();
+
+		// Convert the Diagonal matrix to GMM format
+		gmm::csr_matrix<Type>* gmmxxDiagonalInverted = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiDInv());
+		// Convert the LU Matrix to GMM format
+		gmm::csr_matrix<Type>* gmmxxLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiLU());
+
+		delete jacobiDecomposition;
+
+		LOG4CPLUS_INFO(logger, "Starting iterative Jacobi Solver.");
+		
+		// x_(k + 1) = D^-1 * (b  - R * x_k)
+		std::vector<Type>* xNext = new std::vector<Type>(x.size());
+		const std::vector<Type>* xCopy = xNext;
+		std::vector<Type>* xCurrent = &x;
+
+		uint_fast64_t iterationCount = 0;
+		do {
+			// R * x_k -> xCurrent
+			gmm::mult(*gmmxxLU, *xCurrent, *xNext);
+			// b - R * x_k
+			gmm::add(b, gmm::scaled(*xNext, -1.0), *xNext);
+			// D^-1 * (b - R * x_k)
+			gmm::mult(*gmmxxDiagonalInverted, *xNext, *xNext);
+			
+			std::vector<Type>* swap = xNext;
+			xNext = xCurrent;
+			xCurrent = swap;
+
+			++iterationCount;
+		} while (gmm::vect_norminf(*xCurrent) > precision);
+
+		delete xCopy;
+
+		LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterationCount << " iterations.");
 	}
 };
 

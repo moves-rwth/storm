@@ -1,24 +1,27 @@
 /*
- * PctlStateFormula.h
+ * AbstractStateFormula.h
  *
  *  Created on: 19.10.2012
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_PCTLSTATEFORMULA_H_
-#define STORM_FORMULA_PCTLSTATEFORMULA_H_
+#ifndef STORM_FORMULA_ABSTRACTSTATEFORMULA_H_
+#define STORM_FORMULA_ABSTRACTSTATEFORMULA_H_
 
-#include "modelChecker/ForwardDeclarations.h"
-#include "PctlFormula.h"
-#include "storage/BitVector.h"
+namespace storm { namespace formula {
+template <class T> class AbstractStateFormula;
+}}
+
+#include "AbstractFormula.h"
+#include "src/storage/BitVector.h"
+#include "src/modelChecker/AbstractModelChecker.h"
 
 namespace storm {
-
 namespace formula {
 
 /*!
  * @brief
- * Abstract base class for PCTL state formulas.
+ * Abstract base class for Abstract state formulas.
  *
  * @attention This class is abstract.
  * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
@@ -26,13 +29,13 @@ namespace formula {
  * 	   clone().
  */
 template <class T>
-class PctlStateFormula : public PctlFormula<T> {
+class AbstractStateFormula : public AbstractFormula<T> {
 
 public:
 	/*!
 	 * empty destructor
 	 */
-	virtual ~PctlStateFormula() { }
+	virtual ~AbstractStateFormula() { }
 
 	/*!
 	 * Clones the called object.
@@ -42,7 +45,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual PctlStateFormula<T>* clone() const = 0;
+	virtual AbstractStateFormula<T>* clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -55,11 +58,11 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::DtmcPrctlModelChecker<T>& modelChecker) const = 0;
+	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const = 0; // {
 };
 
 } //namespace formula
-
 } //namespace storm
 
-#endif /* STORM_FORMULA_PCTLSTATEFORMULA_H_ */
+
+#endif /* STORM_FORMULA_AbstractSTATEFORMULA_H_ */

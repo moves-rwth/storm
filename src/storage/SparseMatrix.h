@@ -25,10 +25,11 @@
 extern log4cplus::Logger logger;
 
 // Forward declaration for adapter classes.
-namespace storm {
-namespace adapters{
-class GmmxxAdapter;
-}
+namespace storm { 
+	namespace adapters{ 
+		class GmmxxAdapter; 
+		class EigenAdapter; 
+	} 
 }
 
 namespace storm {
@@ -46,6 +47,7 @@ public:
 	 * Declare adapter classes as friends to use internal data.
 	 */
 	friend class storm::adapters::GmmxxAdapter;
+	friend class storm::adapters::EigenAdapter;
 
 	/*!
 	 * If we only want to iterate over the columns of the non-zero entries of
@@ -798,21 +800,28 @@ public:
 	/*!
 	 * Inverts all elements on the diagonal, i.e. sets the diagonal values to 1 minus their previous
 	 * value.
+	 * Requires the matrix to contain each diagonal element AND to be square!
 	 */
 	void invertDiagonal() {
 		if (this->getRowCount() != this->getColumnCount()) {
 			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to be square!";
 		}
-		T one(1);
+		T one = storm::utility::constGetOne<T>();
+		bool foundRow;
 		for (uint_fast64_t row = 0; row < rowCount; ++row) {
 			uint_fast64_t rowStart = rowIndications[row];
 			uint_fast64_t rowEnd = rowIndications[row + 1];
+			foundRow = false;
 			while (rowStart < rowEnd) {
 				if (columnIndications[rowStart] == row) {
 					valueStorage[rowStart] = one - valueStorage[rowStart];
+					foundRow = true;
 					break;
 				}
 				++rowStart;
+			}
+			if (!foundRow) {
+				throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to contain all diagonal entries!";
 			}
 		}
 	}
@@ -846,9 +855,13 @@ public:
 		SparseMatrix<T> *resultDinv = new SparseMatrix<T>(rowCount);
 		// no entries apart from those on the diagonal
 		resultDinv->initialize(0);
+
+		// constant 1 for diagonal inversion
+		T constOne = storm::utility::constGetOne<T>();
+
 		// copy diagonal entries to other matrix
 		for (int i = 0; i < rowCount; ++i) {
-			resultDinv->addNextValue(i, i, resultLU->getValue(i, i));
+			resultDinv->addNextValue(i, i, constOne / resultLU->getValue(i, i));
 			resultLU->getValue(i, i) = storm::utility::constGetZero<T>();
 		}
 

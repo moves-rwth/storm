@@ -6,7 +6,6 @@
 #include "src/parser/Parser.h"
 #include "src/utility/OsDetection.h"
 
-#include <boost/bimap.hpp>
 #include <utility>
 #include <memory>
 #include <vector>
@@ -26,14 +25,13 @@ class NonDeterministicSparseTransitionParser : public Parser {
 			return this->matrix;
 		}
 		
-		typedef boost::bimap<uint_fast64_t, std::pair<uint_fast64_t,std::string>> RowMapping;
-		inline std::shared_ptr<RowMapping> getRowMapping() const {
+		inline std::shared_ptr<std::vector<uint_fast64_t>> getRowMapping() const {
 			return this->rowMapping;
 		}
 	
 	private:
 		std::shared_ptr<storm::storage::SparseMatrix<double>> matrix;
-		std::shared_ptr<RowMapping> rowMapping;
+		std::shared_ptr<std::vector<uint_fast64_t>> rowMapping;
 		
 		uint_fast64_t firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode);
 	

@@ -1,4 +1,4 @@
-# Install script for directory: /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests
+# Install script for directory: /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -27,23 +27,28 @@ IF(NOT CMAKE_INSTALL_COMPONENT)
   ENDIF(COMPONENT)
 ENDIF(NOT CMAKE_INSTALL_COMPONENT)
 
+# Install shared libraries without execute permission?
+IF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
+  SET(CMAKE_INSTALL_SO_NO_EXE "1")
+ENDIF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
+
 IF(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/appender_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/configandwatch_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/customloglevel_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/fileappender_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/filter_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/hierarchy_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/loglog_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/ndc_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/ostream_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/patternlayout_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/performance_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/priority_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/propertyconfig_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/thread_test/cmake_install.cmake")
-  INCLUDE("/Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/timeformat_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/appender_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/configandwatch_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/customloglevel_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/fileappender_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/filter_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/hierarchy_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/loglog_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/ndc_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/ostream_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/patternlayout_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/performance_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/priority_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/propertyconfig_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/thread_test/cmake_install.cmake")
+  INCLUDE("/home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/timeformat_test/cmake_install.cmake")
 
 ENDIF(NOT CMAKE_INSTALL_LOCAL_ONLY)
 

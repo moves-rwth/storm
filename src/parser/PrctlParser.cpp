@@ -18,18 +18,21 @@
 #include <fstream>
 #include <iomanip>
 
+
 // Some typedefs and namespace definitions to reduce code size.
 typedef std::string::const_iterator BaseIteratorType;
 typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
 namespace qi = boost::spirit::qi;
 namespace phoenix = boost::phoenix;
 
+
+
 namespace storm {
 
 namespace parser {
 
 template<typename Iterator, typename Skipper>
-struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFormula<double>*(), Skipper> {
+struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::AbstractFormula<double>*(), Skipper> {
 	PrctlGrammar() : PrctlGrammar::base_type(start) {
 		freeIdentifierName = qi::lexeme[(qi::alpha | qi::char_('_'))];
 
@@ -86,28 +89,29 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 				phoenix::new_<storm::formula::BoundedUntil<double>>(qi::_1, qi::_3, qi::_2)];
 
 		start = (noBoundOperator | stateFormula);
+
 	}
 
-	qi::rule<Iterator, storm::formula::PctlFormula<double>*(), Skipper> start;
+	qi::rule<Iterator, storm::formula::AbstractFormula<double>*(), Skipper> start;
 
-	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> stateFormula;
+	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> stateFormula;
 	qi::rule<Iterator, storm::formula::And<double>*(), Skipper> andFormula;
 	qi::rule<Iterator, storm::formula::Ap<double>*(), Skipper> atomicProposition;
-	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> orFormula;
-	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> notFormula;
-	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> probabilisticBoundOperator;
-	qi::rule<Iterator, storm::formula::PctlStateFormula<double>*(), Skipper> rewardBoundOperator;
+	qi::rule<Iterator, storm::formula::Or<double>*(), Skipper> orFormula;
+	qi::rule<Iterator, storm::formula::Not<double>*(), Skipper> notFormula;
+	qi::rule<Iterator, storm::formula::ProbabilisticBoundOperator<double>*(), Skipper> probabilisticBoundOperator;
+	qi::rule<Iterator, storm::formula::RewardBoundOperator<double>*(), Skipper> rewardBoundOperator;
 
 	qi::rule<Iterator, storm::formula::NoBoundOperator<double>*(), Skipper> noBoundOperator;
 	qi::rule<Iterator, storm::formula::NoBoundOperator<double>*(), Skipper> probabilisticNoBoundOperator;
 	qi::rule<Iterator, storm::formula::NoBoundOperator<double>*(), Skipper> rewardNoBoundOperator;
 
-	qi::rule<Iterator, storm::formula::PctlPathFormula<double>*(), Skipper> pathFormula;
-	qi::rule<Iterator, storm::formula::PctlPathFormula<double>*(), Skipper> boundedEventually;
-	qi::rule<Iterator, storm::formula::PctlPathFormula<double>*(), Skipper> eventually;
-	qi::rule<Iterator, storm::formula::PctlPathFormula<double>*(), Skipper> globally;
-	qi::rule<Iterator, storm::formula::PctlPathFormula<double>*(), Skipper> boundedUntil;
-	qi::rule<Iterator, storm::formula::PctlPathFormula<double>*(), Skipper> until;
+	qi::rule<Iterator, storm::formula::AbstractPathFormula<double>*(), Skipper> pathFormula;
+	qi::rule<Iterator, storm::formula::BoundedEventually<double>*(), Skipper> boundedEventually;
+	qi::rule<Iterator, storm::formula::Eventually<double>*(), Skipper> eventually;
+	qi::rule<Iterator, storm::formula::Globally<double>*(), Skipper> globally;
+	qi::rule<Iterator, storm::formula::BoundedUntil<double>*(), Skipper> boundedUntil;
+	qi::rule<Iterator, storm::formula::Until<double>*(), Skipper> until;
 
 	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
 
@@ -133,7 +137,7 @@ storm::parser::PrctlParser::PrctlParser(std::string filename) {
 
 
 	// Prepare resulting intermediate representation of input.
-	storm::formula::PctlFormula<double>* result_pointer = nullptr;
+	storm::formula::AbstractFormula<double>* result_pointer = nullptr;
 
 	PrctlGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
 

@@ -45,8 +45,8 @@ namespace parser {
  *	@param maxnode Is set to highest id of all nodes.
  */
 uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast64_t& maxnode) {
-	uint_fast64_t non_zero = 0;
-
+	uint_fast64_t nonZeroEntryCount = 0;
+	uint_fast64_t inputFileNonZeroEntryCount = 0;
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
@@ -63,47 +63,72 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
 		return 0;
 	}
 	buf += 12;  // skip "TRANSITIONS "
-	if ((non_zero = strtol(buf, &buf, 10)) == 0) return 0;
+	if ((inputFileNonZeroEntryCount = strtol(buf, &buf, 10)) == 0) return 0;
 
-	/*
-	 *	Check all transitions for non-zero diagonal entrys.
-	 */
-	int_fast64_t row, lastrow = -1, col;
-	double val;
-	maxnode = 0;
-	while (buf[0] != '\0') {
-		/*
-		 *	Read row and column.
-		 */
-		row = checked_strtol(buf, &buf);
-		col = checked_strtol(buf, &buf);
-		/*
-		 *	Check if one is larger than the current maximum id.
-		 */
-		if (row > maxnode) maxnode = row;
-		if (col > maxnode) maxnode = col;
-		/*
-		 *	Check if a node was skipped, i.e. if a node has no outgoing
-		 *	transitions. If so, increase non_zero, as the second pass will
-		 *	either throw an exception (in this case, it doesn't matter
-		 *	anyway) or add a self-loop (in this case, we'll need the
-		 *	additional transition).
-		 */
-		if (lastrow < row - 1) non_zero += row - lastrow - 1;
-		lastrow = row;
-		/*
-		 *	Read probability of this transition.
-		 *	Check, if the value is a probability, i.e. if it is between 0 and 1.
-		 */
-		val = checked_strtod(buf, &buf);
-		if ((val < 0.0) || (val > 1.0)) {
-			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << val << "\".");
-			return 0;
-		}
-		buf = trimWhitespaces(buf);
+    /*
+     * Check all transitions for non-zero diagonal entries and deadlock states.
+     */
+    int_fast64_t row, lastRow = -1, col;
+	uint_fast64_t readTransitionCount = 0;
+    bool rowHadDiagonalEntry = false;
+    double val;
+    maxnode = 0;
+    while (buf[0] != '\0') {
+            /*
+             *      Read row and column.
+             */
+            row = checked_strtol(buf, &buf);
+            col = checked_strtol(buf, &buf);
+
+			if (lastRow != row) {
+				if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
+					++nonZeroEntryCount;
+					rowHadDiagonalEntry = true;
+				}
+				for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
+					++nonZeroEntryCount;
+				}
+				lastRow = row;
+				rowHadDiagonalEntry = false;
+			}
+
+			if (col == row) {
+				rowHadDiagonalEntry = true;
+			} else if (col > row && !rowHadDiagonalEntry) {
+				rowHadDiagonalEntry = true;
+				++nonZeroEntryCount;
+			}
+
+            /*
+             *      Check if one is larger than the current maximum id.
+             */
+            if (row > maxnode) maxnode = row;
+            if (col > maxnode) maxnode = col;
+
+            /*
+             *      Read probability of this transition.
+             *      Check, if the value is a probability, i.e. if it is between 0 and 1.
+             */
+            val = checked_strtod(buf, &buf);
+            if ((val < 0.0) || (val > 1.0)) {
+                    LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << val << "\".");
+                    return 0;
+            }
+			++nonZeroEntryCount;
+			++readTransitionCount;
+            buf = trimWhitespaces(buf);
+    }
+
+    if (!rowHadDiagonalEntry) {
+    	++nonZeroEntryCount;
+    }
+
+	if (inputFileNonZeroEntryCount != readTransitionCount) {
+		LOG4CPLUS_ERROR(logger, "Input File TRANSITIONS line stated " << inputFileNonZeroEntryCount << " but there were " << readTransitionCount << " transitions afterwards.");
+		return 0;
 	}
 
-	return non_zero;
+    return nonZeroEntryCount;
 }
 
 
@@ -116,7 +141,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
  *	@return a pointer to the created sparse matrix.
  */
 
-DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename)
+DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing)
 	: matrix(nullptr) {
 	/*
 	 *	Enforce locale where decimal point is '.'.
@@ -132,12 +157,15 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	Perform first pass, i.e. count entries that are not zero.
 	 */
-	int_fast64_t maxnode;
-	uint_fast64_t non_zero = this->firstPass(file.data, maxnode);
+	int_fast64_t maxStateId;
+	uint_fast64_t nonZeroEntryCount = this->firstPass(file.data, maxStateId);
+
+	LOG4CPLUS_INFO(logger, "First pass on " << filename << " shows " << nonZeroEntryCount << " NonZeros.");
+
 	/*
 	 *	If first pass returned zero, the file format was wrong.
 	 */
-	if (non_zero == 0) {
+	if (nonZeroEntryCount == 0) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
 		throw storm::exceptions::WrongFileFormatException();
 	}
@@ -162,21 +190,22 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	 *	Creating matrix here.
 	 *	The number of non-zero elements is computed by firstPass().
 	 */
-	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
-	this->matrix = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(maxnode + 1));
-	if (this->matrix == NULL) {
-		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << (maxnode+1) << " x " << (maxnode+1) << ".");
+	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxStateId+1) << " x " << (maxStateId+1) << ".");
+	this->matrix = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(maxStateId + 1));
+	if (this->matrix == nullptr) {
+		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << (maxStateId+1) << " x " << (maxStateId+1) << ".");
 		throw std::bad_alloc();
 	}
-	this->matrix->initialize(non_zero);
+	this->matrix->initialize(nonZeroEntryCount);
 
-	int_fast64_t row, lastrow = -1, col;
+	int_fast64_t row, lastRow = -1, col;
 	double val;
 	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
 	bool hadDeadlocks = false;
+	bool rowHadDiagonalEntry = false;
 
 	/*
-	 *	Read all transitions from file. Note that we assume, that the
+	 *	Read all transitions from file. Note that we assume that the
 	 *	transitions are listed in canonical order, otherwise this will not
 	 *	work, i.e. the values in the matrix will be at wrong places.
 	 */
@@ -188,24 +217,57 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 		col = checked_strtol(buf, &buf);
 		val = checked_strtod(buf, &buf);
 
-		/*
-		 *	Check if we skipped a node, i.e. if a node does not have any
-		 *	outgoing transitions.
-		 */
-		for (int_fast64_t node = lastrow + 1; node < row; node++) {
-			hadDeadlocks = true;
-			if (fixDeadlocks) {
-				this->matrix->addNextValue(node, node, 1);
-				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+		if (lastRow != row) {
+			if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
+				if (insertDiagonalEntriesIfMissing) {
+					this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
+					LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
+				} else {
+					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
+				}
+				// No increment for lastRow
+				rowHadDiagonalEntry = true;
+			}
+			for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
+				hadDeadlocks = true;
+				if (fixDeadlocks) {
+					this->matrix->addNextValue(skippedRow, skippedRow, storm::utility::constGetOne<double>());
+					rowHadDiagonalEntry = true;
+					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
+				} else {
+					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
+					// FIXME Why no exception at this point? This will break the App.
+				}
+			}
+			lastRow = row;
+			rowHadDiagonalEntry = false;
+		}
+
+		if (col == row) {
+			rowHadDiagonalEntry = true;
+		} else if (col > row && !rowHadDiagonalEntry) {
+			rowHadDiagonalEntry = true;
+			if (insertDiagonalEntriesIfMissing) {
+				this->matrix->addNextValue(row, row, storm::utility::constGetZero<double>());
+				LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
 			} else {
-				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
+				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
 			}
 		}
-		lastrow = row;
 
 		this->matrix->addNextValue(row, col, val);
 		buf = trimWhitespaces(buf);
 	}
+
+	if (!rowHadDiagonalEntry) {
+		if (insertDiagonalEntriesIfMissing) {
+			this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
+			LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
+		} else {
+			LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
+		}
+	}
+
 	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 
 	/*

@@ -20,15 +20,17 @@ class PrctlParser : Parser
 		/*!
 		 *	@brief return formula object parsed from file.
 		 */
-		storm::formula::PctlFormula<double>* getFormula()
+	storm::formula::AbstractFormula<double>* getFormula()
 		{
 			return this->formula;
 		}
 	
 	private:
-		storm::formula::PctlFormula<double>* formula;
+		storm::formula::AbstractFormula<double>* formula;
+
 		template<typename Iterator, typename Skipper>
 		struct PrctlGrammar;
+
 };
 
 } // namespace parser
