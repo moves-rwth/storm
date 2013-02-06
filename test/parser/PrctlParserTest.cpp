@@ -35,7 +35,7 @@ TEST(PrctlParserTest, parsePropositionalFormulaTest) {
 	ASSERT_NE(prctlParser->getFormula(), nullptr);
 
 
-	ASSERT_EQ(prctlParser->getFormula()->toString(), "!(a && b)");
+	ASSERT_EQ(prctlParser->getFormula()->toString(), "(!(a && b) || (a && !c))");
 
 	delete prctlParser->getFormula();
 	delete prctlParser;

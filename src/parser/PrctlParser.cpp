@@ -37,14 +37,16 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 		freeIdentifierName = qi::lexeme[(qi::alpha | qi::char_('_'))];
 
 		//This block defines rules for parsing state formulas
-		stateFormula = (andFormula | orFormula | notFormula | probabilisticBoundOperator | rewardBoundOperator | atomicProposition);
+		stateFormula %= orFormula;
 
-		andFormula = (qi::lit("(") >> stateFormula >> qi::lit("&") >> stateFormula >> qi::lit(")"))[
-		      qi::_val = phoenix::new_<storm::formula::And<double>>(qi::_1, qi::_2)];
-		orFormula = (qi::lit("(") >> stateFormula >> qi::lit("|") >> stateFormula >> qi::lit(")"))[qi::_val =
-				phoenix::new_<storm::formula::Or<double>>(qi::_1, qi::_2)];
-		notFormula = (qi::lit("!") >> stateFormula)[qi::_val =
+		andFormula = notFormula[qi::_val = qi::_1] >> *(qi::lit("&") >> notFormula)[qi::_val =
+				phoenix::new_<storm::formula::And<double>>(qi::_val, qi::_1)];
+		orFormula = andFormula[qi::_val = qi::_1] >> *(qi::lit("|") >> andFormula)[qi::_val =
+				phoenix::new_<storm::formula::Or<double>>(qi::_val, qi::_1)];
+		notFormula = atomicStateFormula[qi::_val = qi::_1] | (qi::lit("!") >> atomicStateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Not<double>>(qi::_1)];
+
+		atomicStateFormula %= probabilisticBoundOperator | rewardBoundOperator | atomicProposition | qi::lit("(") >> stateFormula >> qi::lit(")");
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				phoenix::new_<storm::formula::Ap<double>>(qi::_1)];
 		probabilisticBoundOperator = (
@@ -95,10 +97,12 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 	qi::rule<Iterator, storm::formula::AbstractFormula<double>*(), Skipper> start;
 
 	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> stateFormula;
-	qi::rule<Iterator, storm::formula::And<double>*(), Skipper> andFormula;
-	qi::rule<Iterator, storm::formula::Ap<double>*(), Skipper> atomicProposition;
-	qi::rule<Iterator, storm::formula::Or<double>*(), Skipper> orFormula;
-	qi::rule<Iterator, storm::formula::Not<double>*(), Skipper> notFormula;
+	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> atomicStateFormula;
+
+	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> andFormula;
+	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> atomicProposition;
+	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> orFormula;
+	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> notFormula;
 	qi::rule<Iterator, storm::formula::ProbabilisticBoundOperator<double>*(), Skipper> probabilisticBoundOperator;
 	qi::rule<Iterator, storm::formula::RewardBoundOperator<double>*(), Skipper> rewardBoundOperator;
 
