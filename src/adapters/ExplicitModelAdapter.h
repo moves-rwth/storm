@@ -52,12 +52,14 @@ public:
 
 class ExplicitModelAdapter {
 public:
+	ExplicitModelAdapter(storm::ir::Program const& program) : program(program)
+
 	template<class T>
 	std::shared_ptr<storm::storage::SparseMatrix<T>> toSparseMatrix(storm::ir::Program const& program) {
 		LOG4CPLUS_INFO(logger, "Creating sparse matrix for probabilistic program.");
 
 		this->computeReachableStateSpace(program);
-
+		this->buildMatrix(program)
 
 
 		std::shared_ptr<storm::storage::SparseMatrix<T>> resultMatrix(new storm::storage::SparseMatrix<T>(allStates.size()));
@@ -279,6 +281,7 @@ private:
 		}
 	}
 
+	storm::ir::Program const& program;
 	std::vector<StateType*> allStates;
 	uint_fast64_t numberOfTransitions;
 	std::vector<uint_fast64_t> numbersOfNondeterministicChoices;
