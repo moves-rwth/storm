@@ -34,58 +34,58 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 		freeIdentifierName = qi::lexeme[(qi::alpha | qi::char_('_'))];
 
 		//This block defines rules for parsing state formulas
-		stateFormula %= (andFormula | orFormula | notFormula | probabilisticBoundOperator | rewardBoundOperator | atomicProposition);
+		stateFormula = (andFormula | orFormula | notFormula | probabilisticBoundOperator | rewardBoundOperator | atomicProposition);
 
 		andFormula = (qi::lit("(") >> stateFormula >> qi::lit("&") >> stateFormula >> qi::lit(")"))[
 		      qi::_val = phoenix::new_<storm::formula::And<double>>(qi::_1, qi::_2)];
-		orFormula = (qi::lit("(") >> stateFormula >> '|' >> stateFormula >> ')')[qi::_val =
+		orFormula = (qi::lit("(") >> stateFormula >> qi::lit("|") >> stateFormula >> qi::lit(")"))[qi::_val =
 				phoenix::new_<storm::formula::Or<double>>(qi::_1, qi::_2)];
-		notFormula = ('!' >> stateFormula)[qi::_val =
+		notFormula = (qi::lit("!") >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Not<double>>(qi::_1)];
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				phoenix::new_<storm::formula::Ap<double>>(qi::_1)];
 		probabilisticBoundOperator = (
 				(qi::lit("P") >> qi::lit(">") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER, qi::_1, qi::_2)] |
-				(qi::lit("P") >> qi::lit(">=") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("P") >> qi::lit(">=") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
-				(qi::lit("P") >> qi::lit("<")  >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("P") >> qi::lit("<")  >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 								phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS, qi::_1, qi::_2)] |
-				(qi::lit("P") >> qi::lit("<=") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("P") >> qi::lit("<=") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 		rewardBoundOperator = (
-				(qi::lit("R") >> qi::lit(">") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("R") >> qi::lit(">") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER, qi::_1, qi::_2)] |
-				(qi::lit("R") >> qi::lit(">=") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("R") >> qi::lit(">=") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 								phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
-				(qi::lit("R") >> qi::lit("<") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("R") >> qi::lit("<") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 										phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS, qi::_1, qi::_2)] |
-				(qi::lit("R") >> qi::lit("<=")>> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("R") >> qi::lit("<=")>> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 
 		//This block defines rules for parsing formulas with noBoundOperators
-		noBoundOperator %= (probabilisticNoBoundOperator | rewardNoBoundOperator);
-		probabilisticNoBoundOperator = ("P=?[" >> pathFormula >> ']')[qi::_val =
+		noBoundOperator = (probabilisticNoBoundOperator | rewardNoBoundOperator);
+		probabilisticNoBoundOperator = (qi::lit("P") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 				phoenix::new_<storm::formula::ProbabilisticNoBoundOperator<double> >(qi::_1)];
-		rewardNoBoundOperator = ("R=?[" >> pathFormula >> ']')[qi::_val =
+		rewardNoBoundOperator = (qi::lit("R") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 				phoenix::new_<storm::formula::RewardNoBoundOperator<double> >(qi::_1)];
 
 		//This block defines rules for parsing path formulas
-		pathFormula %= (eventually | boundedEventually | globally | boundedUntil | until);
-		eventually = ('F' >> stateFormula)[qi::_val =
+		pathFormula = (eventually | boundedEventually | globally | boundedUntil | until);
+		eventually = (qi::lit("F") >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Eventually<double> >(qi::_1)];
-		boundedEventually = ("F<=" >> qi::int_ >> stateFormula)[qi::_val =
+		boundedEventually = (qi::lit("F") >> qi::lit("<=") >> qi::int_ >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::BoundedEventually<double>>(qi::_2, qi::_1)];
-		globally = ('G' >> stateFormula)[qi::_val =
+		globally = (qi::lit("G") >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Globally<double> >(qi::_1)];
 		until = (stateFormula >> qi::lit("U") >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Until<double>>(qi::_1, qi::_2)];
-		boundedUntil = (stateFormula >> "U<=" >> qi::int_ >> stateFormula)[qi::_val =
+		boundedUntil = (stateFormula >> qi::lit("U") >> qi::lit("<=") >> qi::int_ >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::BoundedUntil<double>>(qi::_1, qi::_3, qi::_2)];
 
-		start %= (stateFormula | noBoundOperator);
+		start = (noBoundOperator | stateFormula);
 	}
 
 	qi::rule<Iterator, storm::formula::PctlFormula<double>*(), Skipper> start;

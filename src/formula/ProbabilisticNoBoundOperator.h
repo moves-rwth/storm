@@ -69,7 +69,7 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = " P=? [";
+		std::string result = "P = ? [";
 		result += this->getPathFormula().toString();
 		result += "]";
 		return result;
