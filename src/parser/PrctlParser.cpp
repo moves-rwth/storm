@@ -124,19 +124,10 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 } //namespace storm
 } //namespace parser
 
-storm::parser::PrctlParser::PrctlParser(std::string filename) {
-	// Open file and initialize result.
-	std::ifstream inputFileStream(filename, std::ios::in);
-
-	// Prepare iterators to input.
-	// TODO: Right now, this parses the whole contents of the file into a string first.
-	// While this is usually not necessary, because there exist adapters that make an input stream
-	// iterable in both directions without storing it into a string, using the corresponding
-	// Boost classes gives an awful output under valgrind and is thus disabled for the time being.
-	std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
-	BaseIteratorType stringIteratorBegin = fileContent.begin();
-	BaseIteratorType stringIteratorEnd = fileContent.end();
-	PositionIteratorType positionIteratorBegin(stringIteratorBegin, stringIteratorEnd, filename);
+void storm::parser::PrctlParser::parse(std::string formulaString) {
+	BaseIteratorType stringIteratorBegin = formulaString.begin();
+	BaseIteratorType stringIteratorEnd = formulaString.end();
+	PositionIteratorType positionIteratorBegin(stringIteratorBegin, stringIteratorEnd, formulaString);
 	PositionIteratorType positionIteratorEnd;
 
 
@@ -148,5 +139,8 @@ storm::parser::PrctlParser::PrctlParser(std::string filename) {
 	qi::phrase_parse(positionIteratorBegin, positionIteratorEnd, grammar, boost::spirit::ascii::space, result_pointer);
 
 	formula = result_pointer;
+}
 
+storm::parser::PrctlParser::PrctlParser(std::string formula) {
+	parse(formula);
 }

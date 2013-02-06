@@ -15,7 +15,8 @@ namespace parser {
 class PrctlParser : Parser
 {
 	public:
-		PrctlParser(std::string filename);
+		PrctlParser() { }
+		PrctlParser(std::string formulaString);
 		 
 		/*!
 		 *	@brief return formula object parsed from file.
@@ -25,6 +26,13 @@ class PrctlParser : Parser
 			return this->formula;
 		}
 	
+	protected:
+		/*!
+		 * Parses a formula and stores the result in the field "formula"
+		 * @param formula The string representation of the formula to parse
+		 */
+		void parse(std::string formula);
+
 	private:
 		storm::formula::AbstractFormula<double>* formula;
 
