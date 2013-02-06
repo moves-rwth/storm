@@ -57,7 +57,7 @@ public:
 	 */
 	RewardBoundOperator(
 			typename BoundOperator<T>::ComparisonType comparisonRelation, T bound, PctlPathFormula<T>* pathFormula) :
-				BoundOperator<T>(BoundOperator<T>::LESS, bound, pathFormula) {
+				BoundOperator<T>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 

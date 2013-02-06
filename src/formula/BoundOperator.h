@@ -116,10 +116,10 @@ public:
 	virtual std::string toString() const {
 		std::string result = "";
 		switch (comparisonOperator) {
-		case LESS: result += "<"; break;
-		case LESS_EQUAL: result += "<="; break;
-		case GREATER: result += ">"; break;
-		case GREATER_EQUAL: result += ">="; break;
+		case LESS: result += "< "; break;
+		case LESS_EQUAL: result += "<= "; break;
+		case GREATER: result += "> "; break;
+		case GREATER_EQUAL: result += ">= "; break;
 		}
 		result += std::to_string(bound);
 		result += " [";

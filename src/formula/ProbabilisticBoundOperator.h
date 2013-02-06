@@ -59,7 +59,7 @@ public:
 	 */
 	ProbabilisticBoundOperator(
 			typename BoundOperator<T>::ComparisonType comparisonRelation, T bound, PctlPathFormula<T>* pathFormula) :
-				BoundOperator<T>(BoundOperator<T>::LESS, bound, pathFormula) {
+				BoundOperator<T>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -67,7 +67,7 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "P";
+		std::string result = "P ";
 		result += BoundOperator<T>::toString();
 		return result;
 	}

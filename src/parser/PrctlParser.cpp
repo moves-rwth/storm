@@ -47,17 +47,21 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 		probabilisticBoundOperator = (
 				(qi::lit("P") >> qi::lit(">") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER, qi::_1, qi::_2)] |
-				("P>=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("P") >> qi::lit(">=") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
-				("P<" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("P") >> qi::lit("<")  >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
 								phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS, qi::_1, qi::_2)] |
-				("P<=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("P") >> qi::lit("<=") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 		rewardBoundOperator = (
-				("R>=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
-						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
-				("R<=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("R") >> qi::lit(">") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER, qi::_1, qi::_2)] |
+				(qi::lit("R") >> qi::lit(">=") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+								phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
+				(qi::lit("R") >> qi::lit("<") >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+										phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS, qi::_1, qi::_2)] |
+				(qi::lit("R") >> qi::lit("<=")>> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
 						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 
@@ -76,7 +80,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 				phoenix::new_<storm::formula::BoundedEventually<double>>(qi::_2, qi::_1)];
 		globally = ('G' >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Globally<double> >(qi::_1)];
-		until = (stateFormula >> 'U' >> stateFormula)[qi::_val =
+		until = (stateFormula >> qi::lit("U") >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Until<double>>(qi::_1, qi::_2)];
 		boundedUntil = (stateFormula >> "U<=" >> qi::int_ >> stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::BoundedUntil<double>>(qi::_1, qi::_3, qi::_2)];
