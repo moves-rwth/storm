@@ -208,7 +208,7 @@ public:
 			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that has more columns than the target matrix.");
 		}
 
-		const _Index entryCount = eigenSparseMatrix.nonZeros();
+		const uint_fast64_t entryCount = eigenSparseMatrix.nonZeros();
 		nonZeroEntryCount = entryCount;
 		lastRow = 0;
 
@@ -279,7 +279,7 @@ public:
 				// Now copy the elements. As the matrix is in ColMajor format,
 				// we need to iterate over the columns to find the next non-zero
 				// entry.
-				int i = 0;
+				uint_fast64_t i = 0;
 				int currentRow = 0;
 				int currentColumn = 0;
 				while (i < entryCount) {

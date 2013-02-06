@@ -20,10 +20,10 @@ TEST(ParseMdpTest, parseAndOutput) {
 	std::shared_ptr<storm::models::Mdp<double>> mdp = mdpParser->getMdp();
 	std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = mdp->getTransitionProbabilityMatrix();
 
-	ASSERT_EQ(mdp->getNumberOfStates(), 3);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 11);
-	ASSERT_EQ(matrix->getRowCount(), 2 * 3);
-	ASSERT_EQ(matrix->getColumnCount(), 3);
+	ASSERT_EQ(mdp->getNumberOfStates(), (uint_fast64_t)3);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), (uint_fast64_t)11);
+	ASSERT_EQ(matrix->getRowCount(), (uint_fast64_t)2 * 3);
+	ASSERT_EQ(matrix->getColumnCount(), (uint_fast64_t)3);
 	
 
 	delete mdpParser;
