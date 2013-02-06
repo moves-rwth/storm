@@ -30,27 +30,30 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /usr/bin/cmake
+CMAKE_COMMAND = /opt/local/bin/cmake
 
 # The command to remove a file.
-RM = /usr/bin/cmake -E remove -f
+RM = /opt/local/bin/cmake -E remove -f
 
 # Escaping for special characters.
 EQUALS = =
 
+# The program to use to edit the cache.
+CMAKE_EDIT_COMMAND = /opt/local/bin/ccmake
+
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0
+CMAKE_SOURCE_DIR = /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0
+CMAKE_BINARY_DIR = /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0
 
 #=============================================================================
 # Targets provided globally by CMake.
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running interactive CMake command-line interface..."
-	/usr/bin/cmake -i .
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/opt/local/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -60,19 +63,19 @@ edit_cache/fast: edit_cache
 # Special rule for the target install
 install: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
+	/opt/local/bin/cmake -P cmake_install.cmake
 .PHONY : install
 
 # Special rule for the target install
 install/fast: preinstall/fast
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
+	/opt/local/bin/cmake -P cmake_install.cmake
 .PHONY : install/fast
 
 # Special rule for the target install/local
 install/local: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+	/opt/local/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
 .PHONY : install/local
 
 # Special rule for the target install/local
@@ -82,7 +85,7 @@ install/local/fast: install/local
 # Special rule for the target install/strip
 install/strip: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+	/opt/local/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
 .PHONY : install/strip
 
 # Special rule for the target install/strip
@@ -101,7 +104,7 @@ list_install_components/fast: list_install_components
 # Special rule for the target package
 package: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool..."
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && /usr/bin/cpack --config ./CPackConfig.cmake
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && /opt/local/bin/cpack --config ./CPackConfig.cmake
 .PHONY : package
 
 # Special rule for the target package
@@ -111,7 +114,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && /usr/bin/cpack --config ./CPackSourceConfig.cmake /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/CPackSourceConfig.cmake
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && /opt/local/bin/cpack --config ./CPackSourceConfig.cmake /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/CPackSourceConfig.cmake
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -121,7 +124,7 @@ package_source/fast: package_source
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/opt/local/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -131,7 +134,7 @@ rebuild_cache/fast: rebuild_cache
 # Special rule for the target test
 test:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
-	/usr/bin/ctest --force-new-ctest-process $(ARGS)
+	/opt/local/bin/ctest --force-new-ctest-process $(ARGS)
 .PHONY : test
 
 # Special rule for the target test
@@ -140,14 +143,14 @@ test/fast: test
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(CMAKE_COMMAND) -E cmake_progress_start /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/CMakeFiles /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/tests/timeformat_test/CMakeFiles/progress.marks
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0/CMakeFiles 0
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(CMAKE_COMMAND) -E cmake_progress_start /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/CMakeFiles /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/tests/timeformat_test/CMakeFiles/progress.marks
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/clean
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/clean
 .PHONY : clean
 
 # The main clean target
@@ -156,22 +159,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/preinstall
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/preinstall
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 tests/timeformat_test/CMakeFiles/timeformat_test.dir/rule:
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/CMakeFiles/timeformat_test.dir/rule
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f CMakeFiles/Makefile2 tests/timeformat_test/CMakeFiles/timeformat_test.dir/rule
 .PHONY : tests/timeformat_test/CMakeFiles/timeformat_test.dir/rule
 
 # Convenience name for target.
@@ -180,7 +183,7 @@ timeformat_test: tests/timeformat_test/CMakeFiles/timeformat_test.dir/rule
 
 # fast build rule for target.
 timeformat_test/fast:
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f tests/timeformat_test/CMakeFiles/timeformat_test.dir/build.make tests/timeformat_test/CMakeFiles/timeformat_test.dir/build
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f tests/timeformat_test/CMakeFiles/timeformat_test.dir/build.make tests/timeformat_test/CMakeFiles/timeformat_test.dir/build
 .PHONY : timeformat_test/fast
 
 main.o: main.cxx.o
@@ -188,7 +191,7 @@ main.o: main.cxx.o
 
 # target to build an object file
 main.cxx.o:
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f tests/timeformat_test/CMakeFiles/timeformat_test.dir/build.make tests/timeformat_test/CMakeFiles/timeformat_test.dir/main.cxx.o
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f tests/timeformat_test/CMakeFiles/timeformat_test.dir/build.make tests/timeformat_test/CMakeFiles/timeformat_test.dir/main.cxx.o
 .PHONY : main.cxx.o
 
 main.i: main.cxx.i
@@ -196,7 +199,7 @@ main.i: main.cxx.i
 
 # target to preprocess a source file
 main.cxx.i:
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f tests/timeformat_test/CMakeFiles/timeformat_test.dir/build.make tests/timeformat_test/CMakeFiles/timeformat_test.dir/main.cxx.i
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f tests/timeformat_test/CMakeFiles/timeformat_test.dir/build.make tests/timeformat_test/CMakeFiles/timeformat_test.dir/main.cxx.i
 .PHONY : main.cxx.i
 
 main.s: main.cxx.s
@@ -204,7 +207,7 @@ main.s: main.cxx.s
 
 # target to generate assembly for a file
 main.cxx.s:
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f tests/timeformat_test/CMakeFiles/timeformat_test.dir/build.make tests/timeformat_test/CMakeFiles/timeformat_test.dir/main.cxx.s
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(MAKE) -f tests/timeformat_test/CMakeFiles/timeformat_test.dir/build.make tests/timeformat_test/CMakeFiles/timeformat_test.dir/main.cxx.s
 .PHONY : main.cxx.s
 
 # Help Target
@@ -237,6 +240,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/thomas/workspace_mrmc/storm/resources/3rdparty/log4cplus-1.1.0 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /Users/chris/Documents/workspace/mrmc/MRMC/resources/3rdparty/log4cplus-1.1.0 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

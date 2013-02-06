@@ -74,7 +74,7 @@
 #define LOG4CPLUS_HAVE_GETADDRINFO 1
 
 /* */
-#define LOG4CPLUS_HAVE_GETHOSTBYNAME_R 1
+/* #undef LOG4CPLUS_HAVE_GETHOSTBYNAME_R */
 
 /* */
 #define LOG4CPLUS_HAVE_GETPID 1
@@ -83,13 +83,13 @@
 #define LOG4CPLUS_HAVE_GETTIMEOFDAY 1
 
 /* Define to 1 if you have the `clock_gettime' function. */
-#define LOG4CPLUS_HAVE_CLOCK_GETTIME 1
+/* #undef LOG4CPLUS_HAVE_CLOCK_GETTIME */
 
 /* Define to 1 if you have the `nanosleep' function. */
 #define LOG4CPLUS_HAVE_NANOSLEEP 1
 
 /* Define to 1 if you have the `clock_nanosleep' function. */
-#define LOG4CPLUS_HAVE_CLOCK_NANOSLEEP 1
+/* #undef LOG4CPLUS_HAVE_CLOCK_NANOSLEEP */
 
 /* */
 #define LOG4CPLUS_HAVE_GMTIME_R 1

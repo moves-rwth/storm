@@ -24,7 +24,7 @@
 #define HAVE_GETADDRINFO 1
 
 /* */
-#define HAVE_GETHOSTBYNAME_R 1
+/* #undef HAVE_GETHOSTBYNAME_R */
 
 /* Define to 1 if you have the `getpid' function. */
 #define HAVE_GETPID 1
@@ -69,10 +69,10 @@
 /* #undef HAVE_LIBKERNEL32 */
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
-#define HAVE_LIBNSL 1
+/* #undef HAVE_LIBNSL */
 
 /* Define to 1 if you have the `rt' library (-lrt). */
-#define HAVE_LIBRT 1
+/* #undef HAVE_LIBRT */
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 /* #undef HAVE_LIBSOCKET */
@@ -172,7 +172,7 @@
 #define LOG4CPLUS_HAVE_C99_VARIADIC_MACROS 1
 
 /* */
-#define LOG4CPLUS_HAVE_CLOCK_GETTIME 1
+/* #undef LOG4CPLUS_HAVE_CLOCK_GETTIME */
 
 /* */
 #define LOG4CPLUS_HAVE_ENAMETOOLONG 1
@@ -190,7 +190,7 @@
 #define LOG4CPLUS_HAVE_GETADDRINFO 1
 
 /* */
-#define LOG4CPLUS_HAVE_GETHOSTBYNAME_R 1
+/* #undef LOG4CPLUS_HAVE_GETHOSTBYNAME_R */
 
 /* */
 #define LOG4CPLUS_HAVE_GETPID 1
