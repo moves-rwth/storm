@@ -122,7 +122,7 @@ TEST(PrctlParserTest, parseComplexFormulaTest) {
 	ASSERT_NE(prctlParser->getFormula(), nullptr);
 
 
-	ASSERT_EQ(prctlParser->getFormula()->toString(), "(P <= 0.500000 [F a] && (R > 15.000000 [G !b] || P > 0.900000 [F<=7 (a && b)]))");
+	ASSERT_EQ(prctlParser->getFormula()->toString(), "(P <= 0.500000 [F a] && (R > 15.000000 [G P > 0.900000 [F<=7 (a && b)]] || !P < 0.400000 [G !b]))");
 	delete prctlParser->getFormula();
 	delete prctlParser;
 
