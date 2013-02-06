@@ -34,7 +34,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 		freeIdentifierName = qi::lexeme[(qi::alpha | qi::char_('_'))];
 
 		//This block defines rules for parsing state formulas
-		stateFormula %= (andFormula | atomicProposition | orFormula | notFormula | probabilisticBoundOperator | rewardBoundOperator);
+		stateFormula %= (andFormula | orFormula | notFormula | probabilisticBoundOperator | rewardBoundOperator | atomicProposition);
 
 		andFormula = (qi::lit("(") >> stateFormula >> qi::lit("&") >> stateFormula >> qi::lit(")"))[
 		      qi::_val = phoenix::new_<storm::formula::And<double>>(qi::_1, qi::_2)];
@@ -45,7 +45,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::PctlFor
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				phoenix::new_<storm::formula::Ap<double>>(qi::_1)];
 		probabilisticBoundOperator = (
-				("P>" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
+				(qi::lit("P") >> qi::lit(">") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER, qi::_1, qi::_2)] |
 				("P>=" >> qi::double_ >> '[' >> pathFormula >> ']')[qi::_val =
 						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |

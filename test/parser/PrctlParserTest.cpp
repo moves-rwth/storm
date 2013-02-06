@@ -11,16 +11,46 @@
 #include "src/parser/PrctlParser.h"
 #include <iostream>
 
-TEST(PrctlParserTest, parseAndOutput) {
+TEST(PrctlParserTest, apOnly) {
 	storm::parser::PrctlParser* prctlParser = nullptr;
 	ASSERT_NO_THROW(
-			prctlParser = new storm::parser::PrctlParser(STORM_CPP_TESTS_BASE_PATH "/parser/prctl_files/testFormula.prctl")
+			prctlParser = new storm::parser::PrctlParser(STORM_CPP_TESTS_BASE_PATH "/parser/prctl_files/apOnly.prctl")
 	);
 
 	ASSERT_NE(prctlParser->getFormula(), nullptr);
 
 
-	std::cout << prctlParser->getFormula()->toString();
+	ASSERT_EQ(prctlParser->getFormula()->toString(), "P");
+
+	delete prctlParser;
+
+}
+
+TEST(PrctlParserTest, formulaTest1) {
+	storm::parser::PrctlParser* prctlParser = nullptr;
+	ASSERT_NO_THROW(
+			prctlParser = new storm::parser::PrctlParser(STORM_CPP_TESTS_BASE_PATH "/parser/prctl_files/testFormula1.prctl")
+	);
+
+	ASSERT_NE(prctlParser->getFormula(), nullptr);
+
+
+	ASSERT_EQ(prctlParser->getFormula()->toString(), "!(a && b)");
+
+	delete prctlParser;
+
+}
+
+TEST(PrctlParserTest, formulaTest2) {
+	storm::parser::PrctlParser* prctlParser = nullptr;
+	ASSERT_NO_THROW(
+			prctlParser = new storm::parser::PrctlParser(STORM_CPP_TESTS_BASE_PATH "/parser/prctl_files/testFormula2.prctl")
+	);
+
+	ASSERT_NE(prctlParser->getFormula(), nullptr);
+
+
+	ASSERT_EQ(prctlParser->getFormula()->toString(), "P<0.500000 [F a]");
 
 	delete prctlParser;
 
