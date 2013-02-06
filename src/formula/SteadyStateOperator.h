@@ -1,86 +1,93 @@
 /*
- * Not.h
+ * SteadyState.h
  *
  *  Created on: 19.10.2012
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_NOT_H_
-#define STORM_FORMULA_NOT_H_
+#ifndef STORM_FORMULA_STEADYSTATEOPERATOR_H_
+#define STORM_FORMULA_STEADYSTATEOPERATOR_H_
 
+#include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
+#include "BoundOperator.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/modelchecker/AbstractModelChecker.h"
 
 namespace storm {
 
 namespace formula {
 
-template <class T> class Not;
+template <class T> class SteadyStateOperator;
 
 /*!
- *  @brief Interface class for model checkers that support Not.
+ *  @brief Interface class for model checkers that support SteadyStateOperator.
  *   
- *  All model checkers that support the formula class Not must inherit
+ *  All model checkers that support the formula class SteadyStateOperator must inherit
  *  this pure virtual class.
  */
 template <class T>
-class INotModelChecker {
+class ISteadyStateOperatorModelChecker {
     public:
 		/*!
-         *  @brief Evaluates Not formula within a model checker.
+         *  @brief Evaluates SteadyStateOperator formula within a model checker.
          *
          *  @param obj Formula object with subformulas.
          *  @return Result of the formula for every node.
          */
-        virtual storm::storage::BitVector* checkNot(const Not<T>& obj) const = 0;
+        virtual storm::storage::BitVector* checkSteadyStateOperator(const SteadyStateOperator<T>& obj) const = 0;
 };
 
 /*!
  * @brief
- * Class for a Abstract formula tree with NOT node as root.
+ * Class for a Abstract (path) formula tree with a SteadyStateOperator node as root.
  *
- * Has one Abstract state formula as sub formula/tree.
+ * Has two Abstract state formulas as sub formulas/trees.
+ *
+ * @par Semantics
+ * The formula holds iff \e child holds  SteadyStateOperator step, \e child holds
  *
  * The subtree is seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see AbstractStateFormula
+ * @see AbstractPathFormula
  * @see AbstractFormula
  */
 template <class T>
-class Not : public AbstractStateFormula<T> {
+class SteadyStateOperator : public BoundOperator<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	Not() {
-		this->child = NULL;
+	SteadyStateOperator() : BoundOperator<T>
+		(BoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+		// Intentionally left empty
 	}
 
 	/*!
 	 * Constructor
+	 *
 	 * @param child The child node
 	 */
-	Not(AbstractStateFormula<T>* child) {
+	SteadyStateOperator(
+		BoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* child) {
 		this->child = child;
 	}
 
 	/*!
-	 * Destructor
+	 * Constructor.
 	 *
-	 * Also deletes the subtree
-	 * (this behavior can be prevented by setting them to NULL before deletion)
+	 * Also deletes the subtree.
+	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
-	virtual ~Not() {
+	virtual ~SteadyStateOperator() {
 	  if (child != NULL) {
 		  delete child;
 	  }
 	}
 
 	/*!
-	 * @returns The child node
+	 * @returns the child node
 	 */
 	const AbstractStateFormula<T>& getChild() const {
 		return *child;
@@ -98,8 +105,10 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "!";
+		std::string result = "(";
+		result += " S ";
 		result += child->toString();
+		result += ")";
 		return result;
 	}
 
@@ -108,10 +117,10 @@ public:
 	 *
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
 	 *
-	 * @returns a new AND-object that is identical the called object.
+	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const {
-		Not<T>* result = new Not<T>();
+	virtual AbstractPathFormula<T>* clone() const {
+		SteadyStateOperator<T>* result = new SteadyStateOperator<T>();
 		if (child != NULL) {
 			result->setChild(child);
 		}
@@ -125,10 +134,10 @@ public:
 	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
 	 *       the methods of the model checker should be used.
 	 *
-	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
+	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<INotModelChecker>()->checkNot(*this);  
+	virtual storm::storage::BitVector* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<ISteadyStateOperatorModelChecker>()->checkSteadyStateOperator(*this);
 	}
 	
 	/*!
@@ -138,8 +147,8 @@ public:
      *  @return true iff the subtree conforms to some logic.
      */
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return checker.conforms(this->child);
-	}
+        return checker.conforms(this->child);
+    }
 
 private:
 	AbstractStateFormula<T>* child;
@@ -149,4 +158,4 @@ private:
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_NOT_H_ */
+#endif /* STORM_FORMULA_STEADYSTATEOPERATOR_H_ */

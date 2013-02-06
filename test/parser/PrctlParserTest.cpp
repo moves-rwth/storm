@@ -53,7 +53,7 @@ TEST(PrctlParserTest, parseProbabilisticFormulaTest) {
 
 	storm::formula::ProbabilisticBoundOperator<double>* op = static_cast<storm::formula::ProbabilisticBoundOperator<double>*>(prctlFileParser->getFormula());
 
-	ASSERT_EQ(storm::formula::BoundOperator<double>::GREATER, op->getComparisonOperator());
+	ASSERT_EQ(storm::formula::PathBoundOperator<double>::GREATER, op->getComparisonOperator());
 	ASSERT_EQ(0.5, op->getBound());
 
 	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "P > 0.500000 [F a]");
@@ -73,7 +73,7 @@ TEST(PrctlParserTest, parseRewardFormulaTest) {
 
 	storm::formula::RewardBoundOperator<double>* op = static_cast<storm::formula::RewardBoundOperator<double>*>(prctlFileParser->getFormula());
 
-	ASSERT_EQ(storm::formula::BoundOperator<double>::GREATER_EQUAL, op->getComparisonOperator());
+	ASSERT_EQ(storm::formula::PathBoundOperator<double>::GREATER_EQUAL, op->getComparisonOperator());
 	ASSERT_EQ(15.0, op->getBound());
 
 	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "R >= 15.000000 [(a U !b)]");

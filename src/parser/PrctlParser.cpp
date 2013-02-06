@@ -51,23 +51,23 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 				phoenix::new_<storm::formula::Ap<double>>(qi::_1)];
 		probabilisticBoundOperator = (
 				(qi::lit("P") >> qi::lit(">") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER, qi::_1, qi::_2)] |
+						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER, qi::_1, qi::_2)] |
 				(qi::lit("P") >> qi::lit(">=") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
+						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
 				(qi::lit("P") >> qi::lit("<")  >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-								phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS, qi::_1, qi::_2)] |
+								phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS, qi::_1, qi::_2)] |
 				(qi::lit("P") >> qi::lit("<=") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
+						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 		rewardBoundOperator = (
 				(qi::lit("R") >> qi::lit(">") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER, qi::_1, qi::_2)] |
+						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER, qi::_1, qi::_2)] |
 				(qi::lit("R") >> qi::lit(">=") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-								phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
+								phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
 				(qi::lit("R") >> qi::lit("<") >> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS, qi::_1, qi::_2)] |
+										phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS, qi::_1, qi::_2)] |
 				(qi::lit("R") >> qi::lit("<=")>> qi::double_ >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::BoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
+						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 
 		//This block defines rules for parsing formulas with noBoundOperators

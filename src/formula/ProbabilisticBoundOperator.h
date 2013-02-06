@@ -10,7 +10,7 @@
 
 #include "AbstractStateFormula.h"
 #include "AbstractPathFormula.h"
-#include "BoundOperator.h"
+#include "src/formula/PathBoundOperator.h"
 #include "utility/ConstTemplates.h"
 
 namespace storm {
@@ -38,14 +38,14 @@ namespace formula {
  * @see AbstractFormula
  */
 template<class T>
-class ProbabilisticBoundOperator : public BoundOperator<T> {
+class ProbabilisticBoundOperator : public PathBoundOperator<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticBoundOperator() : BoundOperator<T>
-		(BoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+	ProbabilisticBoundOperator() : PathBoundOperator<T>
+		(PathBoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 
@@ -58,8 +58,8 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			typename BoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula) :
-				BoundOperator<T>(comparisonRelation, bound, pathFormula) {
+			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula) :
+				PathBoundOperator<T>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -68,7 +68,7 @@ public:
 	 */
 	virtual std::string toString() const {
 		std::string result = "P ";
-		result += BoundOperator<T>::toString();
+		result += PathBoundOperator<T>::toString();
 		return result;
 	}
 

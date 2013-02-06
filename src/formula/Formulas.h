@@ -8,7 +8,7 @@
 #ifndef STORM_FORMULA_FORMULAS_H_
 #define STORM_FORMULA_FORMULAS_H_
 
-#include "modelChecker/ForwardDeclarations.h"
+#include "modelchecker/ForwardDeclarations.h"
 
 #include "AbstractFormula.h"
 #include "AbstractPathFormula.h"
@@ -35,6 +35,6 @@
 #include "RewardBoundOperator.h"
 #include "RewardNoBoundOperator.h"
 
-#include "modelChecker/DtmcPrctlModelChecker.h"
+#include "modelchecker/DtmcPrctlModelChecker.h"
 
 #endif /* STORM_FORMULA_FORMULAS_H_ */

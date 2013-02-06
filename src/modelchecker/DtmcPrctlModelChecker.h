@@ -16,7 +16,7 @@
 #include "src/storage/BitVector.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/utility/Vector.h"
-#include "src/modelChecker/AbstractModelChecker.h"
+#include "src/modelchecker/AbstractModelChecker.h"
 #include <vector>
 
 #include "log4cplus/logger.h"
@@ -222,7 +222,7 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	storm::storage::BitVector* checkBoundOperator(const storm::formula::BoundOperator<Type>& formula) const {
+	storm::storage::BitVector* checkPathBoundOperator(const storm::formula::PathBoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type>* quantitativeResult = this->checkPathFormula(formula.getPathFormula());
 
