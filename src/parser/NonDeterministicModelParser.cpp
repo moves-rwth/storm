@@ -1,11 +1,11 @@
 /*
- * MdpParser.cpp
+ * NonDeterministicModelParser.cpp
  *
  *  Created on: 14.01.2013
  *      Author: Philipp Berger
  */
 
-#include "src/parser/MdpParser.h"
+#include "src/parser/NonDeterministicModelParser.h"
 
 #include <string>
 #include <vector>
@@ -27,25 +27,27 @@ namespace parser {
  * @param stateRewardFile String containing the location of the state reward file (...srew)
  * @param transitionRewardFile String containing the location of the transition reward file (...trew)
  */
-MdpParser::MdpParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+NonDeterministicModelParser::NonDeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	storm::parser::NonDeterministicSparseTransitionParser tp(transitionSystemFile);
 	uint_fast64_t stateCount = tp.getMatrix()->getRowCount();
 
-	std::shared_ptr<std::vector<double>> stateRewards = nullptr;
-	std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewards = nullptr;
-
 	storm::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
 	if (stateRewardFile != "") {
 		storm::parser::SparseStateRewardParser srp(stateCount, stateRewardFile);
-		stateRewards = srp.getStateRewards();
+		this->stateRewards = srp.getStateRewards();
 	}
 	if (transitionRewardFile != "") {
 		storm::parser::NonDeterministicSparseTransitionParser trp(transitionRewardFile);
-		transitionRewards = trp.getMatrix();
+		this->transitionRewardMatrix = trp.getMatrix();
 	}
 
-	mdp = std::shared_ptr<storm::models::Mdp<double>>(new storm::models::Mdp<double>(tp.getMatrix(), lp.getLabeling(), tp.getRowMapping(), stateRewards, transitionRewards));
+	this->probabilityMatrix = tp.getMatrix();
+	this->stateLabeling = lp.getLabeling();
+	this->rowMapping = tp.getRowMapping();
+	
+	this->mdp = nullptr;
+	this->ctmdp = nullptr;
 }
 
 } /* namespace parser */
