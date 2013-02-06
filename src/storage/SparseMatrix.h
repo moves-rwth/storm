@@ -197,18 +197,18 @@ public:
 			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that is not in compressed form.");
 		}
 
-		if (eigenSparseMatrix.rows() > this->rowCount) {
+		if ((uint_fast64_t)eigenSparseMatrix.rows() > this->rowCount) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that has more rows than the target matrix.");
 			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that has more rows than the target matrix.");
 		}
-		if (eigenSparseMatrix.cols() > this->colCount) {
+		if ((uint_fast64_t)eigenSparseMatrix.cols() > this->colCount) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that has more columns than the target matrix.");
 			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that has more columns than the target matrix.");
 		}
 
-		const _Index entryCount = eigenSparseMatrix.nonZeros();
+		const uint_fast64_t entryCount = eigenSparseMatrix.nonZeros();
 		nonZeroEntryCount = entryCount;
 		lastRow = 0;
 
@@ -232,7 +232,7 @@ public:
 				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
 				throw std::bad_alloc();
 			} else {
-				if ((eigenSparseMatrix.innerSize() > nonZeroEntryCount) || (entryCount > nonZeroEntryCount)) {
+				if (((uint_fast64_t)eigenSparseMatrix.innerSize() > nonZeroEntryCount) || (entryCount > nonZeroEntryCount)) {
 					triggerErrorState();
 					LOG4CPLUS_ERROR(logger, "Invalid internal composition of Eigen Sparse Matrix");
 					throw storm::exceptions::InvalidArgumentException("Invalid internal composition of Eigen Sparse Matrix");
@@ -278,7 +278,7 @@ public:
 				// Now copy the elements. As the matrix is in ColMajor format,
 				// we need to iterate over the columns to find the next non-zero
 				// entry.
-				int i = 0;
+				uint_fast64_t i = 0;
 				int currentRow = 0;
 				int currentColumn = 0;
 				while (i < entryCount) {
