@@ -12,7 +12,7 @@
 #include "src/utility/IoUtility.h"
 
 TEST(ParseMdpTest, parseAndOutput) {
-	storm::parser::MdpParser* mdpParser;
+	storm::parser::MdpParser* mdpParser = nullptr;
 	ASSERT_NO_THROW(mdpParser = new storm::parser::MdpParser(
 			STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_general_input_01.tra",
 			STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));

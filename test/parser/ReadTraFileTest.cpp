@@ -26,7 +26,7 @@ TEST(ReadTraFileTest, ParseFileTest1) {
 	ASSERT_NO_THROW(parser = new storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/csl_general_input_01.tra"));
 	std::shared_ptr<storm::storage::SparseMatrix<double>> result = parser->getMatrix();
 
-	if (result != NULL) {
+	if (result != nullptr) {
 		double val = 0;
 		ASSERT_TRUE(result->getValue(0, 0, &val));
 		ASSERT_EQ(val, 0.0);
