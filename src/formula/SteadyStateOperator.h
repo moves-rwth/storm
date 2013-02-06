@@ -8,9 +8,9 @@
 #ifndef STORM_FORMULA_STEADYSTATEOPERATOR_H_
 #define STORM_FORMULA_STEADYSTATEOPERATOR_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
-#include "BoundOperator.h"
+#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/AbstractStateFormula.h"
+#include "src/formula/StateBoundOperator.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
@@ -53,14 +53,14 @@ class ISteadyStateOperatorModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class SteadyStateOperator : public BoundOperator<T> {
+class SteadyStateOperator : public StateBoundOperator<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	SteadyStateOperator() : BoundOperator<T>
-		(BoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+	SteadyStateOperator() : StateBoundOperator<T>
+		(StateBoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 
@@ -70,35 +70,8 @@ public:
 	 * @param child The child node
 	 */
 	SteadyStateOperator(
-		BoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* child) {
-		this->child = child;
-	}
-
-	/*!
-	 * Constructor.
-	 *
-	 * Also deletes the subtree.
-	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
-	 */
-	virtual ~SteadyStateOperator() {
-	  if (child != NULL) {
-		  delete child;
-	  }
-	}
-
-	/*!
-	 * @returns the child node
-	 */
-	const AbstractStateFormula<T>& getChild() const {
-		return *child;
-	}
-
-	/*!
-	 * Sets the subtree
-	 * @param child the new child node
-	 */
-	void setChild(AbstractStateFormula<T>* child) {
-		this->child = child;
+		typename StateBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* stateFormula) :
+			StateBoundOperator<T>(comparisonRelation, bound, stateFormula) {
 	}
 
 	/*!
@@ -107,7 +80,7 @@ public:
 	virtual std::string toString() const {
 		std::string result = "(";
 		result += " S ";
-		result += child->toString();
+		result += StateBoundOperator<T>::toString();
 		result += ")";
 		return result;
 	}
@@ -119,11 +92,9 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const {
 		SteadyStateOperator<T>* result = new SteadyStateOperator<T>();
-		if (child != NULL) {
-			result->setChild(child);
-		}
+		result->setStateFormula(this->getStateFormula().clone());
 		return result;
 	}
 
@@ -140,22 +111,9 @@ public:
 		return modelChecker.template as<ISteadyStateOperatorModelChecker>()->checkSteadyStateOperator(*this);
 	}
 	
-	/*!
-     *  @brief Checks if the subtree conforms to some logic.
-     * 
-     *  @param checker Formula checker object.
-     *  @return true iff the subtree conforms to some logic.
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-        return checker.conforms(this->child);
-    }
-
-private:
-	AbstractStateFormula<T>* child;
 };
 
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_STEADYSTATEOPERATOR_H_ */

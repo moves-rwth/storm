@@ -34,6 +34,7 @@
 #include "ReachabilityReward.h"
 #include "RewardBoundOperator.h"
 #include "RewardNoBoundOperator.h"
+#include "SteadyStateOperator.h"
 
 #include "modelchecker/DtmcPrctlModelChecker.h"
 
