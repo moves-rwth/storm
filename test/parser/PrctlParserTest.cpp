@@ -12,7 +12,7 @@
 #include "src/parser/PrctlFileParser.h"
 
 TEST(PrctlParserTest, parseApOnlyTest) {
-	std::string ap = "P";
+	std::string ap = "ap";
 	storm::parser::PrctlParser* prctlParser = nullptr;
 	ASSERT_NO_THROW(
 			prctlParser = new storm::parser::PrctlParser(ap);
@@ -128,4 +128,32 @@ TEST(PrctlParserTest, parseComplexFormulaTest) {
 	delete prctlFileParser->getFormula();
 	delete prctlFileParser;
 
+}
+
+TEST(PrctlParserTest, wrongProbabilisticFormulaTest) {
+	storm::parser::PrctlParser* prctlParser = nullptr;
+	ASSERT_THROW(
+			prctlParser = new storm::parser::PrctlParser("P > 0.5 [ a ]"),
+			storm::exceptions::WrongFileFormatException
+	);
+
+	delete prctlParser;
+}
+
+TEST(PrctlParserTest, wrongFormulaTest) {
+	storm::parser::PrctlParser* prctlParser = nullptr;
+	ASSERT_THROW(
+			prctlParser = new storm::parser::PrctlFileParser("& a"),
+			storm::exceptions::WrongFileFormatException
+	);
+	delete prctlParser;
+}
+
+TEST(PrctlParserTest, wrongFormulaTest2) {
+	storm::parser::PrctlParser* prctlParser = nullptr;
+	ASSERT_THROW(
+			prctlParser = new storm::parser::PrctlFileParser("P>0 [ F & a ]"),
+			storm::exceptions::WrongFileFormatException
+	);
+	delete prctlParser;
 }
