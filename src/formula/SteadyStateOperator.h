@@ -67,7 +67,7 @@ public:
 	/*!
 	 * Constructor
 	 *
-	 * @param child The child node
+	 * @param stateFormula The child node
 	 */
 	SteadyStateOperator(
 		typename StateBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* stateFormula) :

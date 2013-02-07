@@ -18,10 +18,10 @@ namespace parser {
 /*!
  *	@brief Load label and transition file and return initialized mdp object
  *
- *	@Note This class creates a new Mdp object that can
+ *	@note This class creates a new Mdp object that can
  *	be accessed via getMdp(). However, it will not delete this object!
  *
- *	@Note The labeling representation in the file may use at most as much nodes as are specified in the mdp.
+ *	@note The labeling representation in the file may use at most as much nodes as are specified in the mdp.
  */
 class NonDeterministicModelParser: public storm::parser::Parser {
 public:

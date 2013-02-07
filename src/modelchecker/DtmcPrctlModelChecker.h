@@ -117,7 +117,7 @@ public:
 	/*!
 	 * Checks the given operator (with no bound) on the DTMC and prints the result
 	 * (probability/rewards) for all initial states.
-	 * @param probabilisticNoBoundFormula The formula to be checked.
+	 * @param noBoundFormula The formula to be checked.
 	 */
 	void check(const storm::formula::NoBoundOperator<Type>& noBoundFormula) const {
 		std::cout << std::endl;
