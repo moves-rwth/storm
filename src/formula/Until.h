@@ -125,11 +125,9 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "(";
-		result += left->toString();
+		std::string result = left->toString();
 		result += " U ";
 		result += right->toString();
-		result += ")";
 		return result;
 	}
 

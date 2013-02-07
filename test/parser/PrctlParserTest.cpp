@@ -77,7 +77,7 @@ TEST(PrctlParserTest, parseRewardFormulaTest) {
 	ASSERT_EQ(storm::formula::BoundOperator<double>::GREATER_EQUAL, op->getComparisonOperator());
 	ASSERT_EQ(15.0, op->getBound());
 
-	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "R >= 15.000000 [(a U !b)]");
+	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "R >= 15.000000 [a U !b]");
 
 	delete prctlFileParser->getFormula();
 	delete prctlFileParser;
@@ -92,7 +92,7 @@ TEST(PrctlParserTest, parseRewardNoBoundFormulaTest) {
 	ASSERT_NE(prctlFileParser->getFormula(), nullptr);
 
 
-	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "R = ? [(a U<=4 (b & !c))]");
+	ASSERT_EQ(prctlFileParser->getFormula()->toString(), "R = ? [a U<=4 (b & !c)]");
 
 	delete prctlFileParser->getFormula();
 	delete prctlFileParser;
