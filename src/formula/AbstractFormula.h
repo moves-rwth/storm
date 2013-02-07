@@ -14,7 +14,7 @@ namespace storm { namespace formula {
 template <class T> class AbstractFormula;
 }}
 
-#include "src/modelchecker/AbstractModelChecker.h"
+#include "src/modelchecker/ForwardDeclarations.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {

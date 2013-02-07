@@ -10,11 +10,6 @@
 
 #include "modelchecker/ForwardDeclarations.h"
 
-#include "AbstractFormula.h"
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
-
-
 #include "And.h"
 #include "Ap.h"
 #include "BoundedUntil.h"
@@ -35,6 +30,10 @@
 #include "RewardBoundOperator.h"
 #include "RewardNoBoundOperator.h"
 #include "SteadyStateOperator.h"
+
+#include "AbstractFormula.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
 
 #include "modelchecker/DtmcPrctlModelChecker.h"
 

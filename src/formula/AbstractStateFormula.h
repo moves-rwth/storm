@@ -14,7 +14,7 @@ template <class T> class AbstractStateFormula;
 
 #include "src/formula/AbstractFormula.h"
 #include "src/storage/BitVector.h"
-#include "src/modelchecker/AbstractModelChecker.h"
+#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace formula {

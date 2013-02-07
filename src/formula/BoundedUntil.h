@@ -10,10 +10,9 @@
 
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractStateFormula.h"
-#include "src/modelchecker/AbstractModelChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
-#include "src/formula/AbstractFormulaChecker.h"
+#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace formula {

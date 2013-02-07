@@ -41,8 +41,7 @@ template<class Type>
 class DtmcPrctlModelChecker : 
 	public virtual AbstractModelChecker<Type>, 
 	public virtual storm::formula::INoBoundOperatorModelChecker<Type>,
-	public virtual storm::formula::IReachabilityRewardModelChecker<Type>,
-	public virtual storm::formula::IEventuallyModelChecker<Type>
+	public virtual storm::formula::IReachabilityRewardModelChecker<Type>
 	{
 public:
 	/*!
