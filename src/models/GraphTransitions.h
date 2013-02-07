@@ -73,7 +73,7 @@ public:
 	/*!
 	 * Returns an iterator referring to the element after the successors of
 	 * the given state.
-	 * @param row The state for which to get the iterator.
+	 * @param state The state for which to get the iterator.
 	 * @return An iterator referring to the element after the successors of
 	 * the given state.
 	 */

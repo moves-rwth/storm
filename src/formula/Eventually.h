@@ -8,9 +8,9 @@
 #ifndef STORM_FORMULA_EVENTUALLY_H_
 #define STORM_FORMULA_EVENTUALLY_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
-#include "src/modelChecker/AbstractModelChecker.h"
+#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/AbstractStateFormula.h"
+#include "src/modelchecker/AbstractModelChecker.h"
 
 namespace storm {
 

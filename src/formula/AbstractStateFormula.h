@@ -12,9 +12,9 @@ namespace storm { namespace formula {
 template <class T> class AbstractStateFormula;
 }}
 
-#include "AbstractFormula.h"
+#include "src/formula/AbstractFormula.h"
 #include "src/storage/BitVector.h"
-#include "src/modelChecker/AbstractModelChecker.h"
+#include "src/modelchecker/AbstractModelChecker.h"
 
 namespace storm {
 namespace formula {

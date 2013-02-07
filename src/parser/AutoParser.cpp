@@ -6,7 +6,7 @@
 #include "src/exceptions/WrongFormatException.h"
 #include "src/models/AbstractModel.h"
 #include "src/parser/DeterministicModelParser.h"
-#include "src/parser/MdpParser.h"
+#include "src/parser/NonDeterministicModelParser.h"
 
 namespace storm {
 namespace parser {
@@ -37,12 +37,15 @@ AutoParser::AutoParser(std::string const & transitionSystemFile, std::string con
 			break;
 		}
 		case storm::models::MDP: {
-			MdpParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+			NonDeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
 			this->model = parser.getMdp();
 			break;
 		}
-		case storm::models::CTMDP:
+		case storm::models::CTMDP: {
+			NonDeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+			this->model = parser.getCtmdp();
 			break;
+		}
 		default: ;  // Unknown
 	}
 

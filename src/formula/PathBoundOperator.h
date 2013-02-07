@@ -1,35 +1,35 @@
 /*
- * BoundOperator.h
+ * PathBoundOperator.h
  *
  *  Created on: 27.12.2012
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_BOUNDOPERATOR_H_
-#define STORM_FORMULA_BOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_PATHBOUNDOPERATOR_H_
+#define STORM_FORMULA_PATHBOUNDOPERATOR_H_
 
 #include "src/formula/AbstractStateFormula.h"
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/modelChecker/AbstractModelChecker.h"
+#include "src/modelchecker/AbstractModelChecker.h"
 #include "src/utility/ConstTemplates.h"
 
 namespace storm {
 
 namespace formula {
 
-template <class T> class BoundOperator;
+template <class T> class PathBoundOperator;
 
 /*!
- *  @brief Interface class for model checkers that support BoundOperator.
+ *  @brief Interface class for model checkers that support PathBoundOperator.
  *   
- *  All model checkers that support the formula class BoundOperator must inherit
+ *  All model checkers that support the formula class PathBoundOperator must inherit
  *  this pure virtual class.
  */
 template <class T>
-class IBoundOperatorModelChecker {
+class IPathBoundOperatorModelChecker {
     public:
-        virtual storm::storage::BitVector* checkBoundOperator(const BoundOperator<T>& obj) const = 0;
+        virtual storm::storage::BitVector* checkPathBoundOperator(const PathBoundOperator<T>& obj) const = 0;
 };
 
 /*!
@@ -54,7 +54,7 @@ class IBoundOperatorModelChecker {
  * @see AbstractFormula
  */
 template<class T>
-class BoundOperator : public AbstractStateFormula<T> {
+class PathBoundOperator : public AbstractStateFormula<T> {
 
 public:
 	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
@@ -66,7 +66,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	BoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
+	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
@@ -77,7 +77,7 @@ public:
 	 * The subtree is deleted with the object
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
-	virtual ~BoundOperator() {
+	virtual ~PathBoundOperator() {
 	 if (pathFormula != nullptr) {
 		 delete pathFormula;
 	 }
@@ -173,7 +173,7 @@ public:
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IBoundOperatorModelChecker>()->checkBoundOperator(*this);
+		return modelChecker.template as<IPathBoundOperatorModelChecker>()->checkPathBoundOperator(*this);
 	}
 	
 	/*!
@@ -196,4 +196,4 @@ private:
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_BOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_PATHBOUNDOPERATOR_H_ */

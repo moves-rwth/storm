@@ -18,10 +18,10 @@ namespace parser {
 /*!
  *	@brief Load label and transition file and return initialized dtmc or ctmc object.
  *
- *	@Note This class creates a new Dtmc or Ctmc object that can
+ *	@note This class creates a new Dtmc or Ctmc object that can
  *	be accessed via getDtmc() or getCtmc(). However, it will not delete this object!
  *
- *	@Note The labeling representation in the file may use at most as much nodes as are specified in the transition system.
+ *	@note The labeling representation in the file may use at most as much nodes as are specified in the transition system.
  */
 class DeterministicModelParser: public storm::parser::Parser {
 	public:
