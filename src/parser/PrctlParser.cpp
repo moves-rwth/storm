@@ -39,7 +39,6 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 		//This block defines rules for parsing state formulas
 		stateFormula %= orFormula;
 		stateFormula.name("state formula");
-
 		andFormula = notFormula[qi::_val = qi::_1] > *(qi::lit("&") > notFormula)[qi::_val =
 				phoenix::new_<storm::formula::And<double>>(qi::_val, qi::_1)];
 		andFormula.name("state formula");
@@ -50,6 +49,8 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 				phoenix::new_<storm::formula::Not<double>>(qi::_1)];
 		notFormula.name("state formula");
 
+		//This block defines rules for atomic state formulas
+		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
 		atomicStateFormula %= probabilisticBoundOperator | rewardBoundOperator | atomicProposition | qi::lit("(") >> stateFormula >> qi::lit(")");
 		atomicStateFormula.name("state formula");
 		atomicProposition = (freeIdentifierName)[qi::_val =
@@ -154,6 +155,7 @@ void storm::parser::PrctlParser::parse(std::string formulaString) {
 
 	PrctlGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
 
+	// Now, parse the formula from the given string
 	try {
 		qi::phrase_parse(positionIteratorBegin, positionIteratorEnd, grammar, boost::spirit::ascii::space, result_pointer);
 	} catch(const qi::expectation_failure<PositionIteratorType>& e) {
@@ -182,6 +184,10 @@ void storm::parser::PrctlParser::parse(std::string formulaString) {
 		// Now propagate exception.
 		throw storm::exceptions::WrongFormatException() << msg.str();
 	}
+
+	// The syntax can be so wrong that no rule can be matched at all
+	// In that case, no expectation failure is thrown, but the parser just returns nullptr
+	// Then, of course the result is not usable, hence we throw a WrongFormatException, too.
 	if (result_pointer == nullptr) {
 		throw storm::exceptions::WrongFormatException() << "Syntax error in formula";
 	}
@@ -190,5 +196,7 @@ void storm::parser::PrctlParser::parse(std::string formulaString) {
 }
 
 storm::parser::PrctlParser::PrctlParser(std::string formula) {
+	// delegate the string to the parse function
+	// this function has to be separate, as it may be called in subclasses which don't call this constructor
 	parse(formula);
 }

@@ -32,7 +32,7 @@ class PrctlParser : Parser
 		PrctlParser(std::string formulaString);
 		 
 		/*!
-		 *	@return the parsed formula object
+		 *	@return a pointer to the parsed formula object
 		 */
 	storm::formula::AbstractFormula<double>* getFormula()
 		{
@@ -42,11 +42,15 @@ class PrctlParser : Parser
 	protected:
 		/*!
 		 * Empty constructor.
-		 * Should only be used by subclasses which don't get a string representation of the formula
-		 * directly.
+		 *
+		 * Some subclasses do not get a formula string as input (E.g. PrctlFileFormat), hence they should not
+		 * call the usual constructor of this class.
+		 *
+		 * However, this constructor should never be called directly (only as constructor of the super class),
+		 * as it will not parse anything (and formula will point to nullptr then), so it is protected.
 		 */
 		PrctlParser() {
-			//intentionally left empty
+			formula = nullptr;
 		}
 
 		/*!
