@@ -20,7 +20,7 @@
 #include <clocale>
 #include <iostream>
 
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/utility/OsDetection.h"
 
@@ -89,7 +89,7 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 			LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). File header is corrupted.");
 			if (!foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
 			if (!foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
-			throw storm::exceptions::WrongFileFormatException();
+			throw storm::exceptions::WrongFormatException();
 		}
 	}
 
@@ -119,7 +119,7 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 				 *	if token is longer than our buffer, the following strncpy code might get risky...
 				 */
 				LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition with length > " << (sizeof(proposition)-1) << " was found.");
-				throw storm::exceptions::WrongFileFormatException();
+				throw storm::exceptions::WrongFormatException();
 			} else if (cnt > 0) {
 				/*
 				 *	next token is: #DECLARATION: just skip it

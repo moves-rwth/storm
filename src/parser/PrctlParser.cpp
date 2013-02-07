@@ -3,7 +3,7 @@
 #include "src/utility/ConstTemplates.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 // Used for Boost spirit.
 #include <boost/typeof/typeof.hpp>
@@ -142,6 +142,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 } //namespace parser
 
 void storm::parser::PrctlParser::parse(std::string formulaString) {
+	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
 	PositionIteratorType positionIteratorBegin(stringIteratorBegin, stringIteratorEnd, formulaString);
@@ -179,10 +180,10 @@ void storm::parser::PrctlParser::parse(std::string formulaString) {
 		std::cerr << msg.str();
 
 		// Now propagate exception.
-		throw storm::exceptions::WrongFileFormatException() << msg.str();
+		throw storm::exceptions::WrongFormatException() << msg.str();
 	}
 	if (result_pointer == nullptr) {
-		throw storm::exceptions::WrongFileFormatException() << "Syntax error in formula";
+		throw storm::exceptions::WrongFormatException() << "Syntax error in formula";
 	}
 
 	formula = result_pointer;

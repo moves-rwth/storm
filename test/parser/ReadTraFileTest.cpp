@@ -10,7 +10,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 #include "src/utility/IoUtility.h"
 
@@ -75,13 +75,13 @@ TEST(ReadTraFileTest, ParseFileTest1) {
 }
 
 TEST(ReadTraFileTest, WrongFormatTestHeader1) {
-   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header1.tra"), storm::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header1.tra"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadTraFileTest, WrongFormatTestHeader2) {
-   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header2.tra"), storm::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_header2.tra"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadTraFileTest, WrongFormatTestTransition) {
-   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_transition.tra"), storm::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/wrong_format_transition.tra"), storm::exceptions::WrongFormatException);
 }

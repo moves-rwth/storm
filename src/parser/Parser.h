@@ -17,7 +17,7 @@
 
 #include <boost/integer/integer_mask.hpp>
 #include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
 

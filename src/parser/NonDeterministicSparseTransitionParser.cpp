@@ -23,7 +23,7 @@
 
 #include "src/utility/Settings.h"
 #include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "boost/integer/integer_mask.hpp"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -179,7 +179,7 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 	 */
 	if (nonzero == 0) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
-		throw storm::exceptions::WrongFileFormatException();
+		throw storm::exceptions::WrongFormatException();
 	}
 
 	/*
@@ -288,7 +288,7 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 		curRow++;
 	}
 
-	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 
 	/*
 	 * Finalize matrix.

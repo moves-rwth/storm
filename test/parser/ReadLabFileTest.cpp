@@ -10,7 +10,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/AtomicPropositionLabelingParser.h"
 #include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 #include <memory>
 
@@ -86,14 +86,14 @@ TEST(ReadLabFileTest, ParseTest) {
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest1) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), storm::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest2) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), storm::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadLabFileTest, WrongPropositionTest) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), storm::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), storm::exceptions::WrongFormatException);
 }
 

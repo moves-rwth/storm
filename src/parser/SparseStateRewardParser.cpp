@@ -20,7 +20,7 @@
 #include <vector>
 #include <clocale>
 
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/utility/OsDetection.h"
 #include "log4cplus/logger.h"
@@ -59,7 +59,7 @@ SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::
 			reward = checked_strtod(buf, &buf);
 			if (reward < 0.0) {
 				LOG4CPLUS_ERROR(logger, "Expected positive reward value but got \"" << reward << "\".");
-				throw storm::exceptions::WrongFileFormatException() << "State reward file specifies illegal reward value.";
+				throw storm::exceptions::WrongFormatException() << "State reward file specifies illegal reward value.";
 			}
 
 			(*this->stateRewards)[state] = reward;

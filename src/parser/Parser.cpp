@@ -5,7 +5,7 @@
 #include <string>
 
 #include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -14,7 +14,7 @@ extern log4cplus::Logger logger;
 /*!
  *	Calls strtol() internally and checks if the new pointer is different
  *	from the original one, i.e. if str != *end. If they are the same, a
- *	storm::exceptions::WrongFileFormatException will be thrown.
+ *	storm::exceptions::WrongFormatException will be thrown.
  *	@param str String to parse
  *	@param end New pointer will be written there
  *	@return Result of strtol()
@@ -24,7 +24,7 @@ uint_fast64_t storm::parser::Parser::checked_strtol(const char* str, char** end)
 	if (str == *end) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing integer. Next input token is not a number.");
 		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
-		throw storm::exceptions::WrongFileFormatException("Error while parsing integer. Next input token is not a number.");
+		throw storm::exceptions::WrongFormatException("Error while parsing integer. Next input token is not a number.");
 	}
 	return res;
 }
@@ -32,7 +32,7 @@ uint_fast64_t storm::parser::Parser::checked_strtol(const char* str, char** end)
 /*!
  *	Calls strtod() internally and checks if the new pointer is different
  *	from the original one, i.e. if str != *end. If they are the same, a
- *	storm::exceptions::WrongFileFormatException will be thrown.
+ *	storm::exceptions::WrongFormatException will be thrown.
  *	@param str String to parse
  *	@param end New pointer will be written there
  *	@return Result of strtod()
@@ -42,7 +42,7 @@ double storm::parser::Parser::checked_strtod(const char* str, char** end) {
 	if (str == *end) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing floating point. Next input token is not a number.");
 		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
-		throw storm::exceptions::WrongFileFormatException("Error while parsing floating point. Next input token is not a number.");
+		throw storm::exceptions::WrongFormatException("Error while parsing floating point. Next input token is not a number.");
 	}
 	return res;
 }

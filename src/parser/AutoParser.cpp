@@ -3,7 +3,7 @@
 #include <string>
 #include <cctype>
 
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "src/models/AbstractModel.h"
 #include "src/parser/DeterministicModelParser.h"
 #include "src/parser/MdpParser.h"
@@ -19,7 +19,7 @@ AutoParser::AutoParser(std::string const & transitionSystemFile, std::string con
 	if (type == storm::models::Unknown) {
 		LOG4CPLUS_ERROR(logger, "Could not determine file type of " << transitionSystemFile << ".");
 		LOG4CPLUS_ERROR(logger, "The first line of the file should contain a format hint. Please fix your file and try again.");
-		throw storm::exceptions::WrongFileFormatException() << "Could not determine type of file " << transitionSystemFile;
+		throw storm::exceptions::WrongFormatException() << "Could not determine type of file " << transitionSystemFile;
 	} else {
 		LOG4CPLUS_INFO(logger, "Model type seems to be " << type);
 	}

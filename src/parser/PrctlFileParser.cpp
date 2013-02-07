@@ -14,7 +14,6 @@ PrctlFileParser::PrctlFileParser(std::string filename) {
 	// Open file and initialize result.
 	std::ifstream inputFileStream(filename, std::ios::in);
 
-	// Prepare iterators to input.
 	// TODO: Right now, this parses the whole contents of the file into a string first.
 	// While this is usually not necessary, because there exist adapters that make an input stream
 	// iterable in both directions without storing it into a string, using the corresponding

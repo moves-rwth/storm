@@ -134,7 +134,7 @@ TEST(PrctlParserTest, wrongProbabilisticFormulaTest) {
 	storm::parser::PrctlParser* prctlParser = nullptr;
 	ASSERT_THROW(
 			prctlParser = new storm::parser::PrctlParser("P > 0.5 [ a ]"),
-			storm::exceptions::WrongFileFormatException
+			storm::exceptions::WrongFormatException
 	);
 
 	delete prctlParser;
@@ -144,7 +144,7 @@ TEST(PrctlParserTest, wrongFormulaTest) {
 	storm::parser::PrctlParser* prctlParser = nullptr;
 	ASSERT_THROW(
 			prctlParser = new storm::parser::PrctlFileParser("& a"),
-			storm::exceptions::WrongFileFormatException
+			storm::exceptions::WrongFormatException
 	);
 	delete prctlParser;
 }
@@ -153,7 +153,7 @@ TEST(PrctlParserTest, wrongFormulaTest2) {
 	storm::parser::PrctlParser* prctlParser = nullptr;
 	ASSERT_THROW(
 			prctlParser = new storm::parser::PrctlFileParser("P>0 [ F & a ]"),
-			storm::exceptions::WrongFileFormatException
+			storm::exceptions::WrongFormatException
 	);
 	delete prctlParser;
 }
