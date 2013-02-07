@@ -8,6 +8,14 @@
 #ifndef STORM_UTILITY_CONSTTEMPLATES_H_
 #define STORM_UTILITY_CONSTTEMPLATES_H_
 
+#ifdef max
+#	undef max
+#endif
+
+#ifdef min
+#	undef min
+#endif
+
 #include <limits>
 
 namespace storm {
