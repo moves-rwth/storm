@@ -8,28 +8,15 @@
 #ifndef STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
 
-namespace storm {
-
-namespace modelChecker {
-
-/* The formula classes need to reference a model checker for the check function,
- * which is used to infer the correct type of formula,
- * so the model checker class is declared here already.
- *
- */
-template <class Type>
-class DtmcPrctlModelChecker;
-}
-
-}
-
 #include "src/formula/Formulas.h"
+#include "src/utility/Vector.h"
+#include "src/storage/SparseMatrix.h"
 
 #include "src/models/Dtmc.h"
 #include "src/storage/BitVector.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/utility/Vector.h"
-#include "src/modelChecker/AbstractModelChecker.h"
+#include "src/modelchecker/AbstractModelChecker.h"
 #include <vector>
 
 #include "log4cplus/logger.h"
@@ -54,8 +41,7 @@ template<class Type>
 class DtmcPrctlModelChecker : 
 	public virtual AbstractModelChecker<Type>, 
 	public virtual storm::formula::INoBoundOperatorModelChecker<Type>,
-	public virtual storm::formula::IReachabilityRewardModelChecker<Type>,
-	public virtual storm::formula::IEventuallyModelChecker<Type>
+	public virtual storm::formula::IReachabilityRewardModelChecker<Type>
 	{
 public:
 	/*!
@@ -130,7 +116,7 @@ public:
 	/*!
 	 * Checks the given operator (with no bound) on the DTMC and prints the result
 	 * (probability/rewards) for all initial states.
-	 * @param probabilisticNoBoundFormula The formula to be checked.
+	 * @param noBoundFormula The formula to be checked.
 	 */
 	void check(const storm::formula::NoBoundOperator<Type>& noBoundFormula) const {
 		std::cout << std::endl;
@@ -196,6 +182,7 @@ public:
 
 		if (!this->getModel().hasAtomicProposition(formula.getAp())) {
 			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
+			return nullptr;
 		}
 
 		return new storm::storage::BitVector(*this->getModel().getLabeledStates(formula.getAp()));
@@ -234,7 +221,7 @@ public:
 	 * @param formula The state formula to check
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
-	storm::storage::BitVector* checkBoundOperator(const storm::formula::BoundOperator<Type>& formula) const {
+	storm::storage::BitVector* checkPathBoundOperator(const storm::formula::PathBoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type>* quantitativeResult = this->checkPathFormula(formula.getPathFormula());
 

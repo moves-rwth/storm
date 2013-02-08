@@ -8,9 +8,11 @@
 #ifndef STORM_FORMULA_NOBOUNDOPERATOR_H_
 #define STORM_FORMULA_NOBOUNDOPERATOR_H_
 
-#include "AbstractFormula.h"
-#include "AbstractPathFormula.h"
+#include "src/formula/AbstractFormula.h"
+#include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
+
+#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 

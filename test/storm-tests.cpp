@@ -7,7 +7,7 @@
 #include "log4cplus/fileappender.h"
 
 #include "src/utility/Settings.h"
-#include "src/modelChecker/GmmxxDtmcPrctlModelChecker.h"
+#include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
 
 log4cplus::Logger logger;
 

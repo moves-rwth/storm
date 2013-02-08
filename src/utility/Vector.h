@@ -8,8 +8,8 @@
 #ifndef STORM_UTILITY_VECTOR_H_
 #define STORM_UTILITY_VECTOR_H_
 
-#include "Eigen/src/Core/Matrix.h"
-
+#include "Eigen/Core"
+#include "ConstTemplates.h"
 #include <iostream>
 
 namespace storm {

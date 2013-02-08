@@ -8,12 +8,12 @@
 #ifndef STORM_FORMULA_BOUNDEDEVENTUALLY_H_
 #define STORM_FORMULA_BOUNDEDEVENTUALLY_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
-#include "src/modelChecker/AbstractModelChecker.h"
+#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 

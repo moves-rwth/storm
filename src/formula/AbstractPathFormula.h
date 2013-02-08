@@ -13,8 +13,8 @@ template <class T> class AbstractPathFormula;
 }}
 
 #include "src/formula/AbstractFormula.h"
+#include "src/modelchecker/ForwardDeclarations.h"
 
-#include "modelChecker/AbstractModelChecker.h"
 #include <vector>
 #include <iostream>
 #include <typeinfo>

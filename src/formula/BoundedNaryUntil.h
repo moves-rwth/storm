@@ -10,13 +10,12 @@
 
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractStateFormula.h"
-#include "src/modelChecker/AbstractModelChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 #include <vector>
 #include <tuple>
 #include <sstream>
-#include "src/formula/AbstractFormulaChecker.h"
+#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace formula {
@@ -68,7 +67,7 @@ public:
 	 * Empty constructor
 	 */
 	BoundedNaryUntil() {
-		this->left = NULL;
+		this->left = nullptr;
 		this->right = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
 	}
 
@@ -77,7 +76,6 @@ public:
 	 *
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
-	 * @param bound The maximal number of steps
 	 */
 	BoundedNaryUntil(AbstractStateFormula<T>* left, std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right) {
 		this->left = left;
@@ -91,10 +89,10 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~BoundedNaryUntil() {
-	  if (left != NULL) {
+	  if (left != nullptr) {
 		  delete left;
 	  }
-	  if (right != NULL) {
+	  if (right != nullptr) {
 		  delete right;
 	  }
 	}
@@ -205,7 +203,6 @@ private:
 };
 
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_BOUNDEDNARYUNTIL_H_ */

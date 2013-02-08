@@ -10,7 +10,7 @@
 
 #include "src/formula/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/modelChecker/AbstractModelChecker.h"
+#include "src/modelchecker/ForwardDeclarations.h"
 #include <string>
 
 namespace storm {
@@ -129,7 +129,7 @@ public:
 	virtual std::string toString() const {
 		std::string result = "(";
 		result += left->toString();
-		result += " && ";
+		result += " & ";
 		result += right->toString();
 		result += ")";
 		return result;

@@ -8,9 +8,7 @@
 #ifndef STORM_FORMULA_FORMULAS_H_
 #define STORM_FORMULA_FORMULAS_H_
 
-#include "AbstractFormula.h"
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "modelchecker/ForwardDeclarations.h"
 
 #include "And.h"
 #include "Ap.h"
@@ -31,5 +29,12 @@
 #include "ReachabilityReward.h"
 #include "RewardBoundOperator.h"
 #include "RewardNoBoundOperator.h"
+#include "SteadyStateOperator.h"
+
+#include "AbstractFormula.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
+
+#include "modelchecker/DtmcPrctlModelChecker.h"
 
 #endif /* STORM_FORMULA_FORMULAS_H_ */

@@ -12,9 +12,7 @@ namespace storm { namespace modelChecker {
 template <class Type> class AbstractModelChecker;
 }}
 
-//#include "src/formula/Formulas.h"
-#include "src/formula/Or.h"
-#include "src/formula/Ap.h"
+#include "src/formula/Formulas.h"
 #include "src/storage/BitVector.h"
 
 #include <iostream>
@@ -33,8 +31,13 @@ namespace modelChecker {
  */
 template<class Type>
 class AbstractModelChecker :
-	public virtual storm::formula::IOrModelChecker<Type>,
-	public virtual storm::formula::IApModelChecker<Type>
+	public virtual storm::formula::IApModelChecker<Type>,
+	public virtual storm::formula::IAndModelChecker<Type>,
+	public virtual storm::formula::IEventuallyModelChecker<Type>,
+	public virtual storm::formula::IGloballyModelChecker<Type>,
+	public virtual storm::formula::INextModelChecker<Type>,
+	public virtual storm::formula::INotModelChecker<Type>,
+	public virtual storm::formula::IOrModelChecker<Type>
 	{
 	
 public:
