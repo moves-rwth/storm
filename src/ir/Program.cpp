@@ -24,7 +24,7 @@ Program::Program(ModelType modelType, std::map<std::string, std::shared_ptr<stor
 	// Nothing to do here.
 }
 
-ModelType Program::getModelType() const {
+Program::ModelType Program::getModelType() const {
 	return modelType;
 }
 

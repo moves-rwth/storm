@@ -241,12 +241,13 @@ int main(const int argc, const char* argv[]) {
 	// testChecking();
 
 	storm::parser::PrismParser parser;
-	std::shared_ptr<storm::ir::Program> program = parser.parseFile("test.input");
+	std::shared_ptr<storm::ir::Program> program = parser.parseFile("examples/dtmc/die/die.pm");
+	storm::adapters::ExplicitModelAdapter explicitModelAdapter(program);
+	std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = explicitModelAdapter.toSparseMatrix<double>();
 
-	std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = storm::adapters::ExplicitModelAdapter::toSparseMatrix<double>(*program);
-
-	//storm::adapters::SymbolicModelAdapter symbolicModelAdapter;
-	//symbolicAdapter.toMTBDD(*program);
+	std::shared_ptr<storm::ir::Program> secondProgram = parser.parseFile("examples/dtmc/crowds/crowds5_5.pm");
+	storm::adapters::ExplicitModelAdapter secondExplicitModelAdapter(secondProgram);
+	std::shared_ptr<storm::storage::SparseMatrix<double>> secondMatrix = secondExplicitModelAdapter.toSparseMatrix<double>();
 
 	cleanUp();
 	return 0;
