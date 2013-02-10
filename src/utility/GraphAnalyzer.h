@@ -5,8 +5,8 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_SOLVER_GRAPHANALYZER_H_
-#define STORM_SOLVER_GRAPHANALYZER_H_
+#ifndef STORM_UTILITY_GRAPHANALYZER_H_
+#define STORM_UTILITY_GRAPHANALYZER_H_
 
 #include "src/models/Dtmc.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -18,7 +18,7 @@ extern log4cplus::Logger logger;
 
 namespace storm {
 
-namespace solver {
+namespace utility {
 
 class GraphAnalyzer {
 public:
@@ -148,8 +148,8 @@ public:
 
 };
 
-} // namespace solver
+} // namespace utility
 
 } // namespace storm
 
-#endif /* STORM_SOLVER_GRAPHANALYZER_H_ */
+#endif /* STORM_UTILITY_GRAPHANALYZER_H_ */

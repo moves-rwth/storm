@@ -26,7 +26,6 @@
 #include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
-#include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/formula/Formulas.h"
 

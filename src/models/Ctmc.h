@@ -139,7 +139,7 @@ public:
 	 */
 	storm::models::GraphTransitions<T>& getBackwardTransitions() {
 		if (this->backwardTransitions == nullptr) {
-			this->backwardTransitions = new storm::models::GraphTransitions<T>(this->probabilityMatrix, false);
+			this->backwardTransitions = new storm::models::GraphTransitions<T>(this->rateMatrix, false);
 		}
 		return *this->backwardTransitions;
 	}

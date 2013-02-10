@@ -12,7 +12,7 @@
 
 #include "src/models/Dtmc.h"
 #include "src/modelchecker/DtmcPrctlModelChecker.h"
-#include "src/solver/GraphAnalyzer.h"
+#include "src/utility/GraphAnalyzer.h"
 #include "src/utility/Vector.h"
 #include "src/utility/ConstTemplates.h"
 #include "src/utility/Settings.h"
@@ -113,7 +113,7 @@ public:
 		// all states that have probability 0 and 1 of satisfying the until-formula.
 		storm::storage::BitVector notExistsPhiUntilPsiStates(this->getModel().getNumberOfStates());
 		storm::storage::BitVector alwaysPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		storm::solver::GraphAnalyzer::getPhiUntilPsiStates(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
+		storm::utility::GraphAnalyzer::getPhiUntilPsiStates(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
 		notExistsPhiUntilPsiStates.complement();
 
 		// Delete sub-results that are obsolete now.
@@ -253,7 +253,7 @@ public:
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector infinityStates(this->getModel().getNumberOfStates());
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		storm::solver::GraphAnalyzer::getAlwaysPhiUntilPsiStates(this->getModel(), trueStates, *targetStates, &infinityStates);
+		storm::utility::GraphAnalyzer::getAlwaysPhiUntilPsiStates(this->getModel(), trueStates, *targetStates, &infinityStates);
 		infinityStates.complement();
 
 		// Create resulting vector.
