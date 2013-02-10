@@ -210,7 +210,7 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
  */
 void testChecking() {
 	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::AutoParser parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
+	storm::parser::AutoParser<double> parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
 
 	if (parser.getType() == storm::models::DTMC) {
 		std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();

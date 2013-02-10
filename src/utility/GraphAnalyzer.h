@@ -8,7 +8,7 @@
 #ifndef STORM_UTILITY_GRAPHANALYZER_H_
 #define STORM_UTILITY_GRAPHANALYZER_H_
 
-#include "src/models/Dtmc.h"
+#include "src/models/AbstractDeterministicModel.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"
@@ -34,7 +34,7 @@ public:
 	 * a paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getExistsPhiUntilPsiStates(storm::models::Dtmc<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, storm::storage::BitVector* existsPhiUntilPsiStates) {
+	static void getExistsPhiUntilPsiStates(storm::models::AbstractDeterministicModel<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, storm::storage::BitVector* existsPhiUntilPsiStates) {
 		// Check for valid parameter.
 		if (existsPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'existsPhiUntilPhiStates' must not be null.");
@@ -81,7 +81,7 @@ public:
 	 * have paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getAlwaysPhiUntilPsiStates(storm::models::Dtmc<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, const storm::storage::BitVector& existsPhiUntilPsiStates, storm::storage::BitVector* alwaysPhiUntilPsiStates) {
+	static void getAlwaysPhiUntilPsiStates(storm::models::AbstractDeterministicModel<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, const storm::storage::BitVector& existsPhiUntilPsiStates, storm::storage::BitVector* alwaysPhiUntilPsiStates) {
 		// Check for valid parameter.
 		if (alwaysPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'alwaysPhiUntilPhiStates' must not be null.");
@@ -103,7 +103,7 @@ public:
 	 * have paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getAlwaysPhiUntilPsiStates(storm::models::Dtmc<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, storm::storage::BitVector* alwaysPhiUntilPsiStates) {
+	static void getAlwaysPhiUntilPsiStates(storm::models::AbstractDeterministicModel<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, storm::storage::BitVector* alwaysPhiUntilPsiStates) {
 		// Check for valid parameter.
 		if (alwaysPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'alwaysPhiUntilPhiStates' must not be null.");
@@ -130,7 +130,7 @@ public:
 	 * have paths satisfying phi until psi.
 	 */
 	template <class T>
-	static void getPhiUntilPsiStates(storm::models::Dtmc<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, storm::storage::BitVector* existsPhiUntilPsiStates, storm::storage::BitVector* alwaysPhiUntilPsiStates) {
+	static void getPhiUntilPsiStates(storm::models::AbstractDeterministicModel<T>& model, const storm::storage::BitVector& phiStates, const storm::storage::BitVector& psiStates, storm::storage::BitVector* existsPhiUntilPsiStates, storm::storage::BitVector* alwaysPhiUntilPsiStates) {
 		// Check for valid parameters.
 		if (existsPhiUntilPsiStates == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'existsPhiUntilPhiStates' must not be null.");

@@ -39,10 +39,7 @@ namespace modelChecker {
  */
 template<class Type>
 class DtmcPrctlModelChecker : 
-	public virtual AbstractModelChecker<Type>, 
-	public virtual storm::formula::INoBoundOperatorModelChecker<Type>,
-	public virtual storm::formula::IReachabilityRewardModelChecker<Type>
-	{
+	public virtual AbstractModelChecker<Type> {
 public:
 	/*!
 	 * Constructor

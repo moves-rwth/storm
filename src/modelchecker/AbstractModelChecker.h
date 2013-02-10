@@ -33,12 +33,19 @@ template<class Type>
 class AbstractModelChecker :
 	public virtual storm::formula::IApModelChecker<Type>,
 	public virtual storm::formula::IAndModelChecker<Type>,
+	public virtual storm::formula::IOrModelChecker<Type>,
+	public virtual storm::formula::INotModelChecker<Type>,
+	public virtual storm::formula::IUntilModelChecker<Type>,
 	public virtual storm::formula::IEventuallyModelChecker<Type>,
 	public virtual storm::formula::IGloballyModelChecker<Type>,
 	public virtual storm::formula::INextModelChecker<Type>,
-	public virtual storm::formula::INotModelChecker<Type>,
-	public virtual storm::formula::IOrModelChecker<Type>
-	{
+	public virtual storm::formula::IBoundedUntilModelChecker<Type>,
+	public virtual storm::formula::IBoundedEventuallyModelChecker<Type>,
+	public virtual storm::formula::INoBoundOperatorModelChecker<Type>,
+	public virtual storm::formula::IPathBoundOperatorModelChecker<Type>,
+	public virtual storm::formula::IReachabilityRewardModelChecker<Type>,
+	public virtual storm::formula::ICumulativeRewardModelChecker<Type>,
+	public virtual storm::formula::IInstantaneousRewardModelChecker<Type> {
 	
 public:
 	template <template <class T> class Target>

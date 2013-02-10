@@ -11,7 +11,6 @@
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/modelchecker/AbstractModelChecker.h"
 
 namespace storm {
 namespace formula {
