@@ -111,18 +111,17 @@ public:
 
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-		storm::storage::BitVector notExistsPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		storm::storage::BitVector alwaysPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		storm::utility::GraphAnalyzer::getPhiUntilPsiStates(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
-		notExistsPhiUntilPsiStates.complement();
+		storm::storage::BitVector statesWithProbability0(this->getModel().getNumberOfStates());
+		storm::storage::BitVector statesWithProbability1(this->getModel().getNumberOfStates());
+		storm::utility::GraphAnalyzer::performProb01(this->getModel(), *leftStates, *rightStates, &statesWithProbability0, &statesWithProbability1);
 
 		// Delete sub-results that are obsolete now.
 		delete leftStates;
 		delete rightStates;
 
-		LOG4CPLUS_INFO(logger, "Found " << notExistsPhiUntilPsiStates.getNumberOfSetBits() << " 'no' states.");
-		LOG4CPLUS_INFO(logger, "Found " << alwaysPhiUntilPsiStates.getNumberOfSetBits() << " 'yes' states.");
-		storm::storage::BitVector maybeStates = ~(notExistsPhiUntilPsiStates | alwaysPhiUntilPsiStates);
+		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
+		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
+		storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector.
@@ -149,7 +148,7 @@ public:
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
 			std::vector<Type> b(mayBeStatesSetBitCount);
-			this->getModel().getTransitionMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &b);
+			this->getModel().getTransitionMatrix()->getConstrainedRowCountVector(maybeStates, statesWithProbability1, &b);
 
 			// Solve the corresponding system of linear equations.
 			this->solveLinearEquationSystem(*gmmxxMatrix, x, b);
@@ -162,8 +161,8 @@ public:
 		}
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, storm::utility::constGetZero<Type>());
-		storm::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, storm::utility::constGetOne<Type>());
+		storm::utility::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
+		storm::utility::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
 
 		return result;
 	}
@@ -253,7 +252,7 @@ public:
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector infinityStates(this->getModel().getNumberOfStates());
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		storm::utility::GraphAnalyzer::getAlwaysPhiUntilPsiStates(this->getModel(), trueStates, *targetStates, &infinityStates);
+		storm::utility::GraphAnalyzer::performProb1(this->getModel(), trueStates, *targetStates, &infinityStates);
 		infinityStates.complement();
 
 		// Create resulting vector.

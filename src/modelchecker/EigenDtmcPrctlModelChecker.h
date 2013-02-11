@@ -126,17 +126,16 @@ public:
 
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-		storm::storage::BitVector notExistsPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		storm::storage::BitVector alwaysPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		storm::utility::GraphAnalyzer::getPhiUntilPsiStates<double>(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
-		notExistsPhiUntilPsiStates.complement();
+		storm::storage::BitVector statesWithProbability0(this->getModel().getNumberOfStates());
+		storm::storage::BitVector statesWithProbability1(this->getModel().getNumberOfStates());
+		storm::utility::GraphAnalyzer::performProb01(this->getModel(), *leftStates, *rightStates, &statesWithProbability0, &statesWithProbability1);
 
 		delete leftStates;
 		delete rightStates;
 
-		LOG4CPLUS_INFO(logger, "Found " << notExistsPhiUntilPsiStates.getNumberOfSetBits() << " 'no' states.");
-		LOG4CPLUS_INFO(logger, "Found " << alwaysPhiUntilPsiStates.getNumberOfSetBits() << " 'yes' states.");
-		storm::storage::BitVector maybeStates = ~(notExistsPhiUntilPsiStates | alwaysPhiUntilPsiStates);
+		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
+		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
+		storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector and set values accordingly.
@@ -175,7 +174,7 @@ public:
 			Type *pb = &(b[0]); // get the address storing the data for b
 			MapType vectorB(pb, b.size()); // vectorB shares data 
 
-			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &x);
+			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, statesWithProbability1, &x);
 
 			Eigen::BiCGSTAB<Eigen::SparseMatrix<Type, 1, int_fast32_t>> solver;
 			solver.compute(*eigenSubMatrix);
@@ -212,8 +211,8 @@ public:
 			delete eigenSubMatrix;
 		}
 
-		storm::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, storm::utility::constGetZero<Type>());
-		storm::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, storm::utility::constGetOne<Type>());
+		storm::utility::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
+		storm::utility::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
 
 		return result;
 	}
