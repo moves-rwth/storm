@@ -13,6 +13,7 @@
 #include "src/models/Ctmdp.h"
 
 namespace storm {
+
 namespace parser {
 
 /*!
@@ -23,9 +24,9 @@ namespace parser {
  *
  *	@note The labeling representation in the file may use at most as much nodes as are specified in the mdp.
  */
-class NonDeterministicModelParser: public storm::parser::Parser {
+class NondeterministicModelParser: public storm::parser::Parser {
 public:
-	NonDeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+	NondeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 			std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
 
 	std::shared_ptr<storm::models::Mdp<double>> getMdp() {
@@ -58,5 +59,7 @@ private:
 };
 
 } /* namespace parser */
+
 } /* namespace storm */
+
 #endif /* STORM_PARSER_NONDETERMINISTICMODELPARSER_H_ */

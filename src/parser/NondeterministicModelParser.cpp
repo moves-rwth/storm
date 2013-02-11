@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "src/parser/NonDeterministicSparseTransitionParser.h"
+#include "src/parser/NondeterministicSparseTransitionParser.h"
 #include "src/parser/AtomicPropositionLabelingParser.h"
 #include "src/parser/SparseStateRewardParser.h"
 
@@ -27,9 +27,9 @@ namespace parser {
  * @param stateRewardFile String containing the location of the state reward file (...srew)
  * @param transitionRewardFile String containing the location of the transition reward file (...trew)
  */
-NonDeterministicModelParser::NonDeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+NondeterministicModelParser::NondeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	storm::parser::NonDeterministicSparseTransitionParser tp(transitionSystemFile);
+	storm::parser::NondeterministicSparseTransitionParser tp(transitionSystemFile);
 	uint_fast64_t stateCount = tp.getMatrix()->getRowCount();
 
 	storm::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
@@ -38,7 +38,7 @@ NonDeterministicModelParser::NonDeterministicModelParser(std::string const & tra
 		this->stateRewards = srp.getStateRewards();
 	}
 	if (transitionRewardFile != "") {
-		storm::parser::NonDeterministicSparseTransitionParser trp(transitionRewardFile);
+		storm::parser::NondeterministicSparseTransitionParser trp(transitionRewardFile);
 		this->transitionRewardMatrix = trp.getMatrix();
 	}
 

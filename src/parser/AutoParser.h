@@ -7,7 +7,7 @@
 #include "src/exceptions/WrongFileFormatException.h"
 #include "src/models/AbstractModel.h"
 #include "src/parser/DeterministicModelParser.h"
-#include "src/parser/NonDeterministicModelParser.h"
+#include "src/parser/NondeterministicModelParser.h"
 
 #include <memory>
 #include <iostream>
@@ -57,12 +57,12 @@ class AutoParser : Parser {
 					break;
 				}
 				case storm::models::MDP: {
-					NonDeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+					NondeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
 					this->model = parser.getMdp();
 					break;
 				}
 				case storm::models::CTMDP: {
-					NonDeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+					NondeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
 					this->model = parser.getCtmdp();
 					break;
 				}

@@ -16,7 +16,7 @@ namespace models {
  *	This is base class defines a common interface for all non-deterministic models.
  */
 template<class T>
-class AbstractNonDeterministicModel: public AbstractModel<T> {
+class AbstractNondeterministicModel: public AbstractModel<T> {
 
 	public:
 		/*! Constructs an abstract non-determinstic model from the given parameters.
@@ -27,27 +27,27 @@ class AbstractNonDeterministicModel: public AbstractModel<T> {
 		 * @param stateRewardVector The reward values associated with the states.
 		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
 		 */
-		AbstractNonDeterministicModel(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix,
+		AbstractNondeterministicModel(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix,
 			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
-			std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices,
+			std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices,
 			std::shared_ptr<std::vector<T>> stateRewardVector,
 			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix)
 			: AbstractModel<T>(transitionMatrix, stateLabeling, stateRewardVector, transitionRewardMatrix),
-			  choiceIndices(choiceIndices) {
+			  nondeterministicChoiceIndices(nondeterministicChoiceIndices) {
 		}
 
 		/*!
 		 * Destructor.
 		 */
-		virtual ~AbstractNonDeterministicModel() {
+		virtual ~AbstractNondeterministicModel() {
 			// Intentionally left empty.
 		}
 
 		/*!
 		 * Copy Constructor.
 		 */
-		AbstractNonDeterministicModel(AbstractNonDeterministicModel const& other) : AbstractModel<T>(other),
-				choiceIndices(other.choiceIndices) {
+		AbstractNondeterministicModel(AbstractNondeterministicModel const& other) : AbstractModel<T>(other),
+				nondeterministicChoiceIndices(other.nondeterministicChoiceIndices) {
 			// Intentionally left empty.
 		}
 
@@ -57,12 +57,22 @@ class AbstractNonDeterministicModel: public AbstractModel<T> {
 		 * measured in bytes.
 		 */
 		virtual uint_fast64_t getSizeInMemory() const {
-			return AbstractModel<T>::getSizeInMemory() + choiceIndices->size() * sizeof(uint_fast64_t);
+			return AbstractModel<T>::getSizeInMemory() + nondeterministicChoiceIndices->size() * sizeof(uint_fast64_t);
+		}
+
+		/*!
+		 * Retrieves the vector indicating which matrix rows represent non-deterministic choices
+		 * of a certain state.
+		 * @param the vector indicating which matrix rows represent non-deterministic choices
+		 * of a certain state.
+		 */
+		std::shared_ptr<std::vector<uint_fast64_t>> getNondeterministicChoiceIndices() const {
+			return nondeterministicChoiceIndices;
 		}
 
 	private:
 		/*! A vector of indices mapping states to the choices (rows) in the transition matrix. */
-		std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices;
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices;
 };
 
 } // namespace models

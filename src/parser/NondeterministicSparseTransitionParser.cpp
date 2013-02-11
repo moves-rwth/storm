@@ -5,7 +5,7 @@
  *		Author: Gereon Kremer
  */
 
-#include "src/parser/NonDeterministicSparseTransitionParser.h"
+#include "src/parser/NondeterministicSparseTransitionParser.h"
 
 #include <errno.h>
 #include <time.h>
@@ -49,7 +49,7 @@ namespace parser {
  *	@param maxnode Is set to highest id of all nodes.
  *	@return The number of non-zero elements.
  */
-uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode) {
+uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode) {
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
@@ -154,7 +154,7 @@ uint_fast64_t NonDeterministicSparseTransitionParser::firstPass(char* buf, uint_
  *	@return a pointer to the created sparse matrix.
  */
 
-NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(std::string const &filename)
+NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(std::string const &filename)
 	: matrix(nullptr) {
 	/*
 	 *	Enforce locale where decimal point is '.'.

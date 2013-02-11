@@ -16,7 +16,7 @@
 #include "AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/Settings.h"
-#include "src/models/AbstractNonDeterministicModel.h"
+#include "src/models/AbstractNondeterministicModel.h"
 
 namespace storm {
 
@@ -27,7 +27,7 @@ namespace models {
  * labeled with atomic propositions.
  */
 template <class T>
-class Mdp : public storm::models::AbstractNonDeterministicModel<T> {
+class Mdp : public storm::models::AbstractNondeterministicModel<T> {
 
 public:
 	//! Constructor
@@ -44,7 +44,7 @@ public:
 			std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices,
 			std::shared_ptr<std::vector<T>> stateRewardVector = nullptr,
 			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix = nullptr)
-			: AbstractNonDeterministicModel<T>(probabilityMatrix, stateLabeling, choiceIndices, stateRewardVector, transitionRewardMatrix) {
+			: AbstractNondeterministicModel<T>(probabilityMatrix, stateLabeling, choiceIndices, stateRewardVector, transitionRewardMatrix) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
@@ -56,7 +56,7 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given MDP.
 	 * @param mdp A reference to the MDP that is to be copied.
 	 */
-	Mdp(const Mdp<T> &mdp) : AbstractNonDeterministicModel<T>(mdp) {
+	Mdp(const Mdp<T> &mdp) : AbstractNondeterministicModel<T>(mdp) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";

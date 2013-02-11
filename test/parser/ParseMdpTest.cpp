@@ -8,12 +8,12 @@
 
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/parser/NonDeterministicModelParser.h"
+#include "src/parser/NondeterministicModelParser.h"
 #include "src/utility/IoUtility.h"
 
 TEST(ParseMdpTest, parseAndOutput) {
-	storm::parser::NonDeterministicModelParser* mdpParser = nullptr;
-	ASSERT_NO_THROW(mdpParser = new storm::parser::NonDeterministicModelParser(
+	storm::parser::NondeterministicModelParser* mdpParser = nullptr;
+	ASSERT_NO_THROW(mdpParser = new storm::parser::NondeterministicModelParser(
 			STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_general_input_01.tra",
 			STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
 

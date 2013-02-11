@@ -9,7 +9,7 @@
 #define STORM_UTILITY_GRAPHANALYZER_H_
 
 #include "src/models/AbstractDeterministicModel.h"
-#include "src/models/AbstractNonDeterministicModel.h"
+#include "src/models/AbstractNondeterministicModel.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"
@@ -149,7 +149,7 @@ public:
 	}
 
 	template <class T>
-	static void performProb01Max(storm::models::AbstractNonDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb01Max(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -166,17 +166,47 @@ public:
 	}
 
 	template <class T>
-	static void performProb0A(storm::models::AbstractNonDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
+	static void performProb0A(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
+		// Check for valid parameter.
+		if (statesWithProbability0 == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
+			throw storm::exceptions::InvalidArgumentException("Parameter 'statesWithProbability0' must not be null.");
+		}
+
+		// Get the backwards transition relation from the model to ease the search.
+		storm::models::GraphTransitions<T> backwardTransitions(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), false);
+
+		// Add all psi states as the already satisfy the condition.
+		*statesWithProbability0 |= psiStates;
+
+		// Initialize the stack used for the DFS with the states
+		std::vector<uint_fast64_t> stack;
+		stack.reserve(model.getNumberOfStates());
+		psiStates.getList(stack);
+
+		// Perform the actual DFS.
+		while(!stack.empty()) {
+			uint_fast64_t currentState = stack.back();
+			stack.pop_back();
+
+			for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+				if (phiStates.get(*it) && !statesWithProbability0->get(*it)) {
+					statesWithProbability0->set(*it, true);
+					stack.push_back(*it);
+				}
+			}
+		}
+
+		statesWithProbability0->complement();
+	}
+
+	template <class T>
+	static void performProb1E(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
 
 	}
 
 	template <class T>
-	static void performProb1E(storm::models::AbstractNonDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
-
-	}
-
-	template <class T>
-	static void performProb01Min(storm::models::AbstractNonDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb01Min(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -193,12 +223,12 @@ public:
 	}
 
 	template <class T>
-	static void performProb0E(storm::models::AbstractNonDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
+	static void performProb0E(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
 
 	}
 
 	template <class T>
-	static void performProb1A(storm::models::AbstractNonDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb1A(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
 		// This result is a rough guess and does not compute all states with probability 1.
 		// TODO: Check whether it makes sense to implement the precise but complicated algorithm here.
 		*statesWithProbability1 = psiStates;

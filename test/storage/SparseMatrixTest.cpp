@@ -80,7 +80,7 @@ TEST(SparseMatrixTest, Test) {
 	int position_row[50] = {
 		2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
 		2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-		2, 2, 2, 2, /* first row empty, one full row ��������� 25 minus the diagonal entry */
+		2, 2, 2, 2, /* first row empty, one full row 25 minus the diagonal entry */
 		4, 4, /* one empty row, then first and last column */
 		13, 13, 13, 13, /* a few empty rows, middle columns */
 		24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
@@ -288,9 +288,9 @@ TEST(SparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest) {
 
 	ASSERT_EQ(ssm->getState(), storm::storage::SparseMatrix<int>::MatrixStatus::ReadReady);
 	
-	const std::vector<uint_fast64_t> rowP = ssm->getRowIndicationsPointer();
-	const std::vector<uint_fast64_t> colP = ssm->getColumnIndicationsPointer();
-	const std::vector<int> valP = ssm->getStoragePointer();
+	const std::vector<uint_fast64_t> rowP = ssm->getRowIndications();
+	const std::vector<uint_fast64_t> colP = ssm->getColumnIndications();
+	const std::vector<int> valP = ssm->getStorage();
 
 	int target = -1;
 	for (auto &coeff: tripletList) {
