@@ -39,8 +39,8 @@ public:
 	 * @param forward If set to true, this objects will store the graph structure
 	 * of the backwards transition relation.
 	 */
-	GraphTransitions(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix, uint_fast64_t numberOfStates, bool forward)
-			: successorList(nullptr), stateIndications(nullptr), numberOfStates(numberOfStates), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
+	GraphTransitions(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix, bool forward)
+			: successorList(nullptr), stateIndications(nullptr), numberOfStates(transitionMatrix->getColumnCount()), numberOfNonZeroTransitions(transitionMatrix->getNonZeroEntryCount()) {
 		if (forward) {
 			this->initializeForward(transitionMatrix);
 		} else {

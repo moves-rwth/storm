@@ -214,7 +214,7 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 	/*
 	 *	Create row mapping.
 	 */
-	this->rowMapping = std::shared_ptr<std::vector<uint_fast64_t>>(new std::vector<uint_fast64_t>(maxnode+1,0));
+	this->rowMapping = std::shared_ptr<std::vector<uint_fast64_t>>(new std::vector<uint_fast64_t>(maxnode+2,0));
 
 	/*
 	 *	Parse file content.
@@ -287,6 +287,8 @@ NonDeterministicSparseTransitionParser::NonDeterministicSparseTransitionParser(s
 		}
 		curRow++;
 	}
+
+	this->rowMapping->at(maxnode+1) = curRow;
 
 	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 
