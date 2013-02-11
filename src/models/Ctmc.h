@@ -8,17 +8,12 @@
 #ifndef STORM_MODELS_CTMC_H_
 #define STORM_MODELS_CTMC_H_
 
-#include <ostream>
-#include <iostream>
 #include <memory>
-#include <cstdlib>
-
-#include "AtomicPropositionsLabeling.h"
-#include "GraphTransitions.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include <vector>
 
 #include "AbstractDeterministicModel.h"
+#include "AtomicPropositionsLabeling.h"
+#include "src/storage/SparseMatrix.h"
 
 namespace storm {
 
@@ -57,26 +52,7 @@ public:
 		// Intentionally left empty.
 	}
 
-	/*!
-	 * Prints information about the model to the specified stream.
-	 * @param out The stream the information is to be printed to.
-	 */
-	void printModelInformationToStream(std::ostream& out) const {
-		out << "-------------------------------------------------------------- "
-			<< std::endl;
-		out << "Model type: \t\tCTMC" << std::endl;
-		out << "States: \t\t" << this->getNumberOfStates() << std::endl;
-		out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
-		this->getStateLabeling()->printAtomicPropositionsInformationToStream(out);
-		out << "Size in memory: \t"
-			<< (this->getTransitionMatrix()->getSizeInMemory() +
-				this->stateLabeling()->getSizeInMemory() +
-				sizeof(*this))/1024 << " kbytes" << std::endl;
-		out << "-------------------------------------------------------------- "
-			<< std::endl;
-	}
-
-	storm::models::ModelType getType() {
+	storm::models::ModelType getType() const {
 		return CTMC;
 	}
 };

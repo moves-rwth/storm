@@ -4,6 +4,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
+#include "src/utility/CommandLine.h"
 
 #include <memory>
 #include <vector>
@@ -49,7 +50,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		}
 
 		/*!
-		 * Destructors.
+		 * Destructor.
 		 */
 		virtual ~AbstractModel() {
 			// Intentionally left empty.
@@ -82,7 +83,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 *
 		 *	@return	Type of the model.
 		 */
-		virtual ModelType getType() = 0;
+		virtual ModelType getType() const = 0;
 
 		/*!
 		 * Returns the state space size of the model.
@@ -176,6 +177,39 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 */
 		bool hasTransitionRewards() const {
 			return transitionRewardMatrix != nullptr;
+		}
+
+		/*!
+		 * Retrieves the size of the internal representation of the model in memory.
+		 * @return the size of the internal representation of the model in memory
+		 * measured in bytes.
+		 */
+		virtual uint_fast64_t getSizeInMemory() const {
+			uint_fast64_t result = transitionMatrix->getSizeInMemory() + stateLabeling->getSizeInMemory();
+			if (stateRewardVector != nullptr) {
+				result += stateRewardVector->size() * sizeof(T);
+			}
+			if (transitionRewardMatrix != nullptr) {
+				result += transitionRewardMatrix->getSizeInMemory();
+			}
+			return result;
+		}
+
+		/*!
+		 * Prints information about the model to the specified stream.
+		 * @param out The stream the information is to be printed to.
+		 */
+		void printModelInformationToStream(std::ostream& out) const {
+			out << "-------------------------------------------------------------- "
+				<< std::endl;
+			out << "Model type: \t\t" << this->getType() << std::endl;
+			out << "States: \t\t" << this->getNumberOfStates() << std::endl;
+			out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
+			this->getStateLabeling()->printAtomicPropositionsInformationToStream(out);
+			out << "Size in memory: \t"
+				<< (this->getSizeInMemory())/1024 << " kbytes" << std::endl;
+			out << "-------------------------------------------------------------- "
+				<< std::endl;
 		}
 
 	private:

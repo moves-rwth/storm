@@ -62,6 +62,16 @@ public:
 	}
 
 	/*!
+	 * Retrieves the size of the internal representation of the graph transitions in memory.
+	 * @return the size of the internal representation of the graph transitions in memory
+	 * measured in bytes.
+	 */
+	virtual uint_fast64_t getSizeInMemory() const {
+		uint_fast64_t result = sizeof(this) + (numberOfStates + numberOfNonZeroTransitions + 1) * sizeof(uint_fast64_t);
+		return result;
+	}
+
+	/*!
 	 * Returns an iterator to the successors of the given state.
 	 * @param state The state for which to get the successor iterator.
 	 * @return An iterator to the predecessors of the given states.

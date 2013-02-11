@@ -8,19 +8,13 @@
 #ifndef STORM_MODELS_CTMDP_H_
 #define STORM_MODELS_CTMDP_H_
 
-#include <ostream>
-#include <iostream>
 #include <memory>
-#include <cstdlib>
+#include <vector>
 
 #include "AtomicPropositionsLabeling.h"
-#include "GraphTransitions.h"
+#include "AbstractNonDeterministicModel.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/utility/CommandLine.h"
 #include "src/utility/Settings.h"
-#include "src/models/AbstractNonDeterministicModel.h"
-#include "src/parser/NonDeterministicSparseTransitionParser.h"
 
 namespace storm {
 
@@ -74,27 +68,8 @@ public:
 	~Ctmdp() {
 		// Intentionally left empty.
 	}
-	
-	/*!
-	 * Prints information about the model to the specified stream.
-	 * @param out The stream the information is to be printed to.
-	 */
-	void printModelInformationToStream(std::ostream& out) const {
-		storm::utility::printSeparationLine(out);
-		out << std::endl;
-		out << "Model type: \t\tCTMDP" << std::endl;
-		out << "States: \t\t" << this->getNumberOfStates() << std::endl;
-		out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
-		this->getStateLabeling()->printAtomicPropositionsInformationToStream(out);
-		out << "Size in memory: \t"
-			<< (this->getTransitionMatrix()->getSizeInMemory() +
-				this->getStateLabeling()->getSizeInMemory() +
-				sizeof(*this))/1024 << " kbytes" << std::endl;
-		out << std::endl;
-		storm::utility::printSeparationLine(out);
-	}
-	
-	storm::models::ModelType getType() {
+
+	storm::models::ModelType getType() const {
 		return CTMDP;
 	}
 
