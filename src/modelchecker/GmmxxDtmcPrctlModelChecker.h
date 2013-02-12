@@ -12,7 +12,7 @@
 
 #include "src/models/Dtmc.h"
 #include "src/modelchecker/DtmcPrctlModelChecker.h"
-#include "src/solver/GraphAnalyzer.h"
+#include "src/utility/GraphAnalyzer.h"
 #include "src/utility/Vector.h"
 #include "src/utility/ConstTemplates.h"
 #include "src/utility/Settings.h"
@@ -49,7 +49,7 @@ public:
 		storm::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
 
 		// Copy the matrix before we make any changes.
-		storm::storage::SparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionProbabilityMatrix());
+		storm::storage::SparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionMatrix());
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
 		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
@@ -84,7 +84,7 @@ public:
 		storm::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionProbabilityMatrix());
+		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionMatrix());
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> x(this->getModel().getNumberOfStates());
@@ -111,18 +111,17 @@ public:
 
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-		storm::storage::BitVector notExistsPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		storm::storage::BitVector alwaysPhiUntilPsiStates(this->getModel().getNumberOfStates());
-		storm::solver::GraphAnalyzer::getPhiUntilPsiStates(this->getModel(), *leftStates, *rightStates, &notExistsPhiUntilPsiStates, &alwaysPhiUntilPsiStates);
-		notExistsPhiUntilPsiStates.complement();
+		storm::storage::BitVector statesWithProbability0(this->getModel().getNumberOfStates());
+		storm::storage::BitVector statesWithProbability1(this->getModel().getNumberOfStates());
+		storm::utility::GraphAnalyzer::performProb01(this->getModel(), *leftStates, *rightStates, &statesWithProbability0, &statesWithProbability1);
 
 		// Delete sub-results that are obsolete now.
 		delete leftStates;
 		delete rightStates;
 
-		LOG4CPLUS_INFO(logger, "Found " << notExistsPhiUntilPsiStates.getNumberOfSetBits() << " 'no' states.");
-		LOG4CPLUS_INFO(logger, "Found " << alwaysPhiUntilPsiStates.getNumberOfSetBits() << " 'yes' states.");
-		storm::storage::BitVector maybeStates = ~(notExistsPhiUntilPsiStates | alwaysPhiUntilPsiStates);
+		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
+		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
+		storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector.
@@ -132,7 +131,7 @@ public:
 		uint_fast64_t mayBeStatesSetBitCount = maybeStates.getNumberOfSetBits();
 		if (mayBeStatesSetBitCount > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
+			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
 			// system. That is, we go from x = A*x + b to (I-A)x = b.
 			submatrix->convertToEquationSystem();
@@ -149,7 +148,7 @@ public:
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
 			std::vector<Type> b(mayBeStatesSetBitCount);
-			this->getModel().getTransitionProbabilityMatrix()->getConstrainedRowCountVector(maybeStates, alwaysPhiUntilPsiStates, &b);
+			this->getModel().getTransitionMatrix()->getConstrainedRowCountVector(maybeStates, statesWithProbability1, &b);
 
 			// Solve the corresponding system of linear equations.
 			this->solveLinearEquationSystem(*gmmxxMatrix, x, b);
@@ -162,8 +161,8 @@ public:
 		}
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::setVectorValues<Type>(result, notExistsPhiUntilPsiStates, storm::utility::constGetZero<Type>());
-		storm::utility::setVectorValues<Type>(result, alwaysPhiUntilPsiStates, storm::utility::constGetOne<Type>());
+		storm::utility::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
+		storm::utility::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
 
 		return result;
 	}
@@ -176,10 +175,10 @@ public:
 		}
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionProbabilityMatrix());
+		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionMatrix());
 
 		// Initialize result to state rewards of the model.
-		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewards());
+		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
 		std::vector<Type>* swap = nullptr;
@@ -205,17 +204,17 @@ public:
 		}
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionProbabilityMatrix());
+		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionMatrix());
 
 		// Compute the reward vector to add in each step based on the available reward models.
 		std::vector<Type>* totalRewardVector = nullptr;
 		if (this->getModel().hasTransitionRewards()) {
-			totalRewardVector = this->getModel().getTransitionProbabilityMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
+			totalRewardVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
 			if (this->getModel().hasStateRewards()) {
-				gmm::add(*this->getModel().getStateRewards(), *totalRewardVector);
+				gmm::add(*this->getModel().getStateRewardVector(), *totalRewardVector);
 			}
 		} else {
-			totalRewardVector = new std::vector<Type>(*this->getModel().getStateRewards());
+			totalRewardVector = new std::vector<Type>(*this->getModel().getStateRewardVector());
 		}
 
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
@@ -253,7 +252,7 @@ public:
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector infinityStates(this->getModel().getNumberOfStates());
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		storm::solver::GraphAnalyzer::getAlwaysPhiUntilPsiStates(this->getModel(), trueStates, *targetStates, &infinityStates);
+		storm::utility::GraphAnalyzer::performProb1(this->getModel(), trueStates, *targetStates, &infinityStates);
 		infinityStates.complement();
 
 		// Create resulting vector.
@@ -264,7 +263,7 @@ public:
 		const int maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
 		if (maybeStatesSetBitCount > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionProbabilityMatrix()->getSubmatrix(maybeStates);
+			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
 			// system. That is, we go from x = A*x + b to (I-A)x = b.
 			submatrix->convertToEquationSystem();
@@ -283,7 +282,7 @@ public:
 				// If a transition-based reward model is available, we initialize the right-hand
 				// side to the vector resulting from summing the rows of the pointwise product
 				// of the transition probability matrix and the transition reward matrix.
-				std::vector<Type>* pointwiseProductRowSumVector = this->getModel().getTransitionProbabilityMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
+				std::vector<Type>* pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
 				storm::utility::selectVectorValues(b, maybeStates, *pointwiseProductRowSumVector);
 				delete pointwiseProductRowSumVector;
 
@@ -293,7 +292,7 @@ public:
 					// that we still consider (i.e. maybeStates), we need to extract these values
 					// first.
 					std::vector<Type>* subStateRewards = new std::vector<Type>(maybeStatesSetBitCount);
-					storm::utility::setVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewards());
+					storm::utility::setVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
 					gmm::add(*subStateRewards, *b);
 					delete subStateRewards;
 				}
@@ -302,7 +301,7 @@ public:
 				// right-hand side. As the state reward vector contains entries not just for the
 				// states that we still consider (i.e. maybeStates), we need to extract these values
 				// first.
-				storm::utility::setVectorValues(b, maybeStates, *this->getModel().getStateRewards());
+				storm::utility::setVectorValues(b, maybeStates, *this->getModel().getStateRewardVector());
 			}
 
 			// Solve the corresponding system of linear equations.
