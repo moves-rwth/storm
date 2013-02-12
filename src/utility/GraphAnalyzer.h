@@ -224,7 +224,62 @@ public:
 
 	template <class T>
 	static void performProb0E(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
+		// Check for valid parameter.
+		if (statesWithProbability0 == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
+			throw storm::exceptions::InvalidArgumentException("Parameter 'statesWithProbability0' must not be null.");
+		}
 
+		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+
+		// Get the backwards transition relation from the model to ease the search.
+		storm::models::GraphTransitions<T> backwardTransitions(transitionMatrix, nondeterministicChoiceIndices, false);
+
+		// Add all psi states as the already satisfy the condition.
+		*statesWithProbability0 |= psiStates;
+
+		// Initialize the stack used for the DFS with the states
+		std::vector<uint_fast64_t> stack;
+		stack.reserve(model.getNumberOfStates());
+		psiStates.getList(stack);
+
+		// Perform the actual DFS.
+		while(!stack.empty()) {
+			uint_fast64_t currentState = stack.back();
+			stack.pop_back();
+
+			for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+				if (phiStates.get(*it) && !statesWithProbability0->get(*it)) {
+
+					// Check whether the predecessor has at least one successor in the current state
+					// set for every nondeterministic choice.
+					bool addToStatesWithProbability0 = true;
+					for (auto rowIt = nondeterministicChoiceIndices->begin() + *it; rowIt != nondeterministicChoiceIndices->begin() + *it + 1; ++rowIt) {
+						bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
+						for (auto colIt = transitionMatrix->beginConstColumnIterator(*rowIt); colIt != transitionMatrix->endConstColumnIterator(); ++colIt) {
+							if (statesWithProbability0->get(*colIt)) {
+								hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
+								break;
+							}
+						}
+						if (!hasAtLeastOneSuccessorWithProbabilityGreater0) {
+							addToStatesWithProbability0 = false;
+							break;
+						}
+					}
+
+					// If we need to add the state, then actually add it and perform further search
+					// from the state.
+					if (addToStatesWithProbability0) {
+						statesWithProbability0->set(*it, true);
+						stack.push_back(*it);
+					}
+				}
+			}
+		}
+
+		statesWithProbability0->complement();
 	}
 
 	template <class T>

@@ -205,6 +205,10 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 	delete mc;
 }
 
+void testCheckingDice(storm::models::Mdp<double> mdp) {
+
+}
+
 /*!
  * Simple testing procedure.
  */
@@ -220,7 +224,14 @@ void testChecking() {
 		// testCheckingCrowds(*dtmc);
 		// testCheckingSynchronousLeader(*dtmc, 4);
 	}
-	else std::cout << "Input is not DTMC" << std::endl;
+	else if (parser.getType() == storm::models::MDP) {
+		std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
+		mdp->printModelInformationToStream(std::cout);
+
+		// testCheckingDice(*mdp);
+	} else {
+		std::cout << "Input is neither a DTMC nor an MDP." << std::endl;
+	}
 }
 
 /*!

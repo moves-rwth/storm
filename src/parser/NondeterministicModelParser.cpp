@@ -5,7 +5,7 @@
  *      Author: Philipp Berger
  */
 
-#include "src/parser/NonDeterministicModelParser.h"
+#include "src/parser/NondeterministicModelParser.h"
 
 #include <string>
 #include <vector>

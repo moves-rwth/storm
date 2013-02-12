@@ -70,14 +70,14 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 	 *	Parse number of transitions.
 	 *	We will not actually use this value, but we will compare it to the
 	 *	number of transitions we count and issue a warning if this parsed
-	 *	vlaue is wrong.
+	 *	value is wrong.
 	 */
 	uint_fast64_t parsed_nonzero = strtol(buf, &buf, 10);
 
 	/*
 	 *	Read all transitions.
 	 */
-	int_fast64_t source, target;
+	int_fast64_t source, target, choice, lastchoice = -1;
 	int_fast64_t lastsource = -1;
 	uint_fast64_t nonzero = 0;
 	double val;
@@ -85,54 +85,56 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 	maxnode = 0;
 	while (buf[0] != '\0') {
 		/*
-		 *	Read source node.
-		 *	Check if current source node is larger than current maximum node id.
-		 *	Increase number of choices.
-		 *	Check if we have skipped any source node, i.e. if any node has no
-		 *	outgoing transitions. If so, increase nonzero (and
-		 *	parsed_nonzero).
+		 *	Read source state and choice.
 		 */
 		source = checked_strtol(buf, &buf);
-		if (source > maxnode) maxnode = source;
-		choices++;
+
+		// Read the name of the nondeterministic choice.
+		choice = checked_strtol(buf, &buf);
+
+		// Check if we encountered a state index that is bigger than all previously seen.
+		if (source > maxnode) {
+			maxnode = source;
+		}
+
+		// If we have skipped some states, we need to reserve the space for the self-loop insertion
+		// in the second pass.
 		if (source > lastsource + 1) {
 			nonzero += source - lastsource - 1;
 			choices += source - lastsource - 1;
 			parsed_nonzero += source - lastsource - 1;
+		} else if (source != lastsource || choice != lastchoice) {
+			// If we have switched the source state or the nondeterministic choice, we need to
+			// reserve one row more.
+			++choices;
 		}
+
+		// Read target and check if we encountered a state index that is bigger than all previously
+		// seen.
+		target = checked_strtol(buf, &buf);
+		if (target > maxnode) {
+			maxnode = target;
+		}
+
+		// Read value and check whether it's positive.
+		val = checked_strtod(buf, &buf);
+		if ((val < 0.0) || (val > 1.0)) {
+			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
+			return 0;
+		}
+
+		lastchoice = choice;
 		lastsource = source;
-		buf = trimWhitespaces(buf);  // Skip to name of choice
-		buf += strcspn(buf, " \t\n\r");  // Skip name of choice.
 
 		/*
-		 *	Read all targets for this choice.
+		 *	Increase number of non-zero values.
+		 */
+		nonzero++;
+
+		/*
+		 *	Proceed to beginning of next line.
 		 */
 		buf = trimWhitespaces(buf);
-		while (buf[0] == '*') {
-			buf++;
-			/*
-			 *	Read target node and transition value.
-			 *	Check if current target node is larger than current maximum node id.
-			 *	Check if the transition value is a valid probability.
-			 */
-			target = checked_strtol(buf, &buf);
-			if (target > maxnode) maxnode = target;
-			val = checked_strtod(buf, &buf);
-			if ((val < 0.0) || (val > 1.0)) {
-				LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
-				return 0;
-			}
-
-			/*
-			 *	Increase number of non-zero values.
-			 */
-			nonzero++;
-
-			/*
-			 *	Proceed to beginning of next line.
-			 */
-			buf = trimWhitespaces(buf);
-		}
 	}
 
 	/*
@@ -219,9 +221,8 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	/*
 	 *	Parse file content.
 	 */
-	int_fast64_t source, target, lastsource = -1;
-	uint_fast64_t curRow = 0;
-	std::string choice;
+	int_fast64_t source, target, lastsource = -1, choice, lastchoice = -1;
+	uint_fast64_t curRow = -1;
 	double val;
 	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
 	bool hadDeadlocks = false;
@@ -231,11 +232,16 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	 */
 	while (buf[0] != '\0') {
 		/*
-		 *	Read source node and choice name.
+		 *	Read source state and choice.
 		 */
 		source = checked_strtol(buf, &buf);
-		buf = trimWhitespaces(buf);  // Skip to name of choice
-		choice = std::string(buf, strcspn(buf, " \t\n\r"));
+		choice = checked_strtol(buf, &buf);
+
+		// Increase line count if we have either finished reading the transitions of a certain state
+		// or we have finished reading one nondeterministic choice of a state.
+		if ((source != lastsource || choice != lastchoice)) {
+			++curRow;
+		}
 
 		/*
 		 *	Check if we have skipped any source node, i.e. if any node has no
@@ -247,7 +253,7 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 			if (fixDeadlocks) {
 				this->rowMapping->at(node) = curRow;
 				this->matrix->addNextValue(curRow, node, 1);
-				curRow++;
+				++curRow;
 				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
 			} else {
 				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
@@ -259,33 +265,19 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 			 */
 			this->rowMapping->at(source) = curRow;
 		}
+
+		// Read target and value and write it to the matrix.
+		target = checked_strtol(buf, &buf);
+		val = checked_strtod(buf, &buf);
+		this->matrix->addNextValue(curRow, target, val);
+
 		lastsource = source;
+		lastchoice = choice;
 
 		/*
-		 *	Skip name of choice.
-		 */
-		buf += strcspn(buf, " \t\n\r");
-
-		/*
-		 *	Read all targets for this choice.
+		 *	Proceed to beginning of next line in file and next row in matrix.
 		 */
 		buf = trimWhitespaces(buf);
-		while (buf[0] == '*') {
-			buf++;
-			/*
-			 *	Read target node and transition value.
-			 *	Put it into the matrix.
-			 */
-			target = checked_strtol(buf, &buf);
-			val = checked_strtod(buf, &buf);
-			this->matrix->addNextValue(curRow, target, val);
-
-			/*
-			 *	Proceed to beginning of next line in file and next row in matrix.
-			 */
-			buf = trimWhitespaces(buf);
-		}
-		curRow++;
 	}
 
 	this->rowMapping->at(maxnode+1) = curRow;
