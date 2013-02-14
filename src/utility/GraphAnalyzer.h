@@ -257,7 +257,7 @@ public:
 					bool addToStatesWithProbability0 = true;
 					for (auto rowIt = nondeterministicChoiceIndices->begin() + *it; rowIt != nondeterministicChoiceIndices->begin() + *it + 1; ++rowIt) {
 						bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
-						for (auto colIt = transitionMatrix->beginConstColumnIterator(*rowIt); colIt != transitionMatrix->endConstColumnIterator(); ++colIt) {
+						for (auto colIt = transitionMatrix->beginConstColumnIterator(*rowIt); colIt != transitionMatrix->endConstColumnIterator(*rowIt); ++colIt) {
 							if (statesWithProbability0->get(*colIt)) {
 								hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
 								break;

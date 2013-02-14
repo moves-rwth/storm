@@ -205,8 +205,21 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 	delete mc;
 }
 
-void testCheckingDice(storm::models::Mdp<double> mdp) {
+void testCheckingDice(storm::models::Mdp<double>& mdp) {
+	storm::storage::BitVector* targetStates = mdp.getLabeledStates(std::string("two"));
+	*targetStates |= *mdp.getLabeledStates(std::string("three"));
 
+	storm::storage::BitVector* trueStates = new storm::storage::BitVector(mdp.getNumberOfStates(), true);
+	storm::storage::BitVector* statesWithProbability0 = new storm::storage::BitVector(mdp.getNumberOfStates());
+	storm::storage::BitVector* statesWithProbability1 = new storm::storage::BitVector(mdp.getNumberOfStates());
+
+	storm::utility::GraphAnalyzer::performProb01Max(mdp, *trueStates, *targetStates, statesWithProbability0, statesWithProbability1);
+
+	std::cout << statesWithProbability0->toString() << std::endl << statesWithProbability1->toString() << std::endl;
+
+	delete statesWithProbability0;
+	delete statesWithProbability1;
+	delete trueStates;
 }
 
 /*!

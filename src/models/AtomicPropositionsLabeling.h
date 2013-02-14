@@ -15,6 +15,11 @@
 #include <unordered_map>
 #include <set>
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+
+extern log4cplus::Logger logger;
+
 namespace storm {
 
 namespace models {
@@ -82,9 +87,11 @@ public:
 	 */
 	uint_fast64_t addAtomicProposition(std::string ap) {
 		if (nameToLabelingMap.count(ap) != 0) {
+			LOG4CPLUS_ERROR(logger, "Atomic Proposition already exists.");
 			throw storm::exceptions::OutOfRangeException("Atomic Proposition already exists.");
 		}
 		if (apsCurrent >= apCountMax) {
+			LOG4CPLUS_ERROR(logger, "Added more atomic propositions than previously declared.");
 			throw storm::exceptions::OutOfRangeException("Added more atomic propositions than"
 					"previously declared.");
 		}
@@ -110,9 +117,11 @@ public:
 	 */
 	void addAtomicPropositionToState(std::string ap, const uint_fast64_t state) {
 		if (nameToLabelingMap.count(ap) == 0) {
+			LOG4CPLUS_ERROR(logger, "Atomic Proposition '" << ap << "' unknown.");
 			throw storm::exceptions::OutOfRangeException() << "Atomic Proposition '" << ap << "' unknown.";
 		}
 		if (state >= stateCount) {
+			LOG4CPLUS_ERROR(logger, "State index out of range.");
 			throw storm::exceptions::OutOfRangeException("State index out of range.");
 		}
 		this->singleLabelings[nameToLabelingMap[ap]]->set(state, true);
@@ -125,6 +134,7 @@ public:
 	 */
 	std::set<std::string> getPropositionsForState(uint_fast64_t state) {
 		if (state >= stateCount) {
+			LOG4CPLUS_ERROR(logger, "State index out of range.");
 			throw storm::exceptions::OutOfRangeException("State index out of range.");
 		}
 		std::set<std::string> result;
@@ -165,6 +175,11 @@ public:
 	 * represents the labeling of the states with the given atomic proposition.
 	 */
 	storm::storage::BitVector* getAtomicProposition(std::string ap) {
+		if (!this->containsAtomicProposition(ap)) {
+			LOG4CPLUS_ERROR(logger, "The atomic proposition " << ap << " is invalid for the labeling of the model.");
+			throw storm::exceptions::InvalidArgumentException() << "The atomic proposition " << ap
+					<< " is invalid for the labeling of the model.";
+		}
 		return (this->singleLabelings[nameToLabelingMap[ap]]);
 	}
 
