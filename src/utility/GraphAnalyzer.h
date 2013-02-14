@@ -79,7 +79,7 @@ public:
 		// Initialize the stack used for the DFS with the states
 		std::vector<uint_fast64_t> stack;
 		stack.reserve(model.getNumberOfStates());
-		psiStates.getList(stack);
+		psiStates.addSetIndicesToList(stack);
 
 		// Perform the actual DFS.
 		while(!stack.empty()) {
@@ -182,7 +182,7 @@ public:
 		// Initialize the stack used for the DFS with the states
 		std::vector<uint_fast64_t> stack;
 		stack.reserve(model.getNumberOfStates());
-		psiStates.getList(stack);
+		psiStates.addSetIndicesToList(stack);
 
 		// Perform the actual DFS.
 		while(!stack.empty()) {
@@ -202,7 +202,71 @@ public:
 
 	template <class T>
 	static void performProb1E(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
+		// Check for valid parameters.
+		if (statesWithProbability1 == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
+			throw storm::exceptions::InvalidArgumentException("Parameter 'statesWithProbability1' must not be null.");
+		}
 
+		// Get some temporaries for convenience.
+		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+
+		// Get the backwards transition relation from the model to ease the search.
+		storm::models::GraphTransitions<T> backwardTransitions(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), false);
+
+		storm::storage::BitVector* currentStates = new storm::storage::BitVector(model.getNumberOfStates(), true);
+
+		std::vector<uint_fast64_t> stack;
+		stack.reserve(model.getNumberOfStates());
+
+		bool done = false;
+		while (!done) {
+			stack.clear();
+			storm::storage::BitVector* nextStates = new storm::storage::BitVector(psiStates);
+			psiStates.addSetIndicesToList(stack);
+
+			while (!stack.empty()) {
+				uint_fast64_t currentState = stack.back();
+				stack.pop_back();
+
+				for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+					if (phiStates.get(*it) && !nextStates->get(*it)) {
+
+						// Check whether the predecessor has at only successors in the current state set for one of the
+						// nondeterminstic choices.
+						for (auto rowIt = nondeterministicChoiceIndices->begin() + *it; rowIt != nondeterministicChoiceIndices->begin() + *it + 1; ++rowIt) {
+							bool allSuccessorsInCurrentStates = true;
+							for (auto colIt = transitionMatrix->beginConstColumnIterator(*rowIt); colIt != transitionMatrix->endConstColumnIterator(*rowIt); ++colIt) {
+								if (currentStates->get(*colIt)) {
+									allSuccessorsInCurrentStates = false;
+									break;
+								}
+							}
+
+							// If all successors for a given nondeterministic choice are in the current state set, we
+							// add it to the set of states for the next iteration and perform a backward search from
+							// that state.
+							if (allSuccessorsInCurrentStates) {
+								nextStates->set(*it, true);
+								stack.push_back(*it);
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			// Check whether we need to perform an additional iteration.
+			if (*currentStates == *nextStates) {
+				done = true;
+			} else {
+				*currentStates = *nextStates;
+			}
+		}
+
+		*statesWithProbability1 = *currentStates;
+		delete currentStates;
 	}
 
 	template <class T>
@@ -230,6 +294,7 @@ public:
 			throw storm::exceptions::InvalidArgumentException("Parameter 'statesWithProbability0' must not be null.");
 		}
 
+		// Get some temporaries for convenience.
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
 
@@ -242,7 +307,7 @@ public:
 		// Initialize the stack used for the DFS with the states
 		std::vector<uint_fast64_t> stack;
 		stack.reserve(model.getNumberOfStates());
-		psiStates.getList(stack);
+		psiStates.addSetIndicesToList(stack);
 
 		// Perform the actual DFS.
 		while(!stack.empty()) {

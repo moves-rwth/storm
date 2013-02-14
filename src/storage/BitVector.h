@@ -136,7 +136,7 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given bit vector.
 	 * @param bv A reference to the bit vector to be copied.
 	 */
-	BitVector(const BitVector &bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
+	BitVector(BitVector const& bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
 		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
 		bucketArray = new uint64_t[bucketCount];
 		std::copy(bv.bucketArray, bv.bucketArray + this->bucketCount, this->bucketArray);
@@ -152,6 +152,25 @@ public:
 		}
 	}
 
+	// Equality Operator
+	/*!
+	 * Compares the given bit vector with the current one.
+	 */
+	bool operator==(BitVector const& bv) {
+		// If the lengths of the vectors do not match, they are considered unequal.
+		if (this->bitCount != bv.bitCount) return false;
+
+		// If the lengths match, we compare the buckets one by one.
+		for (uint_fast64_t index = 0; index < this->bucketCount; ++index) {
+			if (this->bucketArray[index] != bv.bucketArray[index]) {
+				return false;
+			}
+		}
+
+		// All buckets were equal, so the bit vectors are equal.
+		return true;
+	}
+
 	//! Assignment Operator
 	/*!
 	 * Assigns the given bit vector to the current bit vector by a deep copy.
@@ -159,7 +178,7 @@ public:
 	 * @return A reference to this bit vector after it has been assigned the
 	 * given bit vector by means of a deep copy.
 	 */
-	BitVector& operator=(const BitVector& bv) {
+	BitVector& operator=(BitVector const& bv) {
 		if (this->bucketArray != nullptr) {
 			delete[] this->bucketArray;
 		}
@@ -239,7 +258,7 @@ public:
 	 * @param bv A reference to the bit vector to use for the operation.
 	 * @return A bit vector corresponding to the logical "and" of the two bit vectors.
 	 */
-	BitVector operator &(const BitVector &bv) const {
+	BitVector operator&(BitVector const& bv) const {
 		uint_fast64_t minSize =	(bv.bitCount < this->bitCount) ? bv.bitCount : this->bitCount;
 
 		// Create resulting bit vector and perform the operation on the individual elements.
@@ -259,7 +278,7 @@ public:
 	 * @return A reference to the current bit vector corresponding to the logical "and"
 	 * of the two bit vectors.
 	 */
-	BitVector operator &=(const BitVector bv) {
+	BitVector operator&=(BitVector const& bv) {
 		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		for (uint_fast64_t i = 0; i < minSize; ++i) {
@@ -276,7 +295,7 @@ public:
 	 * @param bv A reference to the bit vector to use for the operation.
 	 * @return A bit vector corresponding to the logical "or" of the two bit vectors.
 	 */
-	BitVector operator |(const BitVector &bv) const {
+	BitVector operator|(BitVector const& bv) const {
 		uint_fast64_t minSize =	(bv.bitCount < this->bitCount) ? bv.bitCount : this->bitCount;
 
 		// Create resulting bit vector and perform the operation on the individual elements.
@@ -297,7 +316,7 @@ public:
 	 * @return A reference to the current bit vector corresponding to the logical "or"
 	 * of the two bit vectors.
 	 */
-	BitVector& operator |=(const BitVector bv) {
+	BitVector& operator|=(BitVector const& bv) {
 		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		for (uint_fast64_t i = 0; i < minSize; ++i) {
@@ -315,7 +334,7 @@ public:
 	 * @param bv A reference to the bit vector to use for the operation.
 	 * @return A bit vector corresponding to the logical "xor" of the two bit vectors.
 	 */
-	BitVector operator ^(const BitVector &bv) const {
+	BitVector operator^(BitVector const& bv) const {
 		uint_fast64_t minSize =	(bv.bitCount < this->bitCount) ? bv.bitCount : this->bitCount;
 
 		// Create resulting bit vector and perform the operation on the individual elements.
@@ -332,7 +351,7 @@ public:
 	 * Performs a logical "not" on the bit vector.
 	 * @return A bit vector corresponding to the logical "not" of the bit vector.
 	 */
-	BitVector operator ~() const {
+	BitVector operator~() const {
 		// Create resulting bit vector and perform the operation on the individual elements.
 		BitVector result(this->bitCount);
 		for (uint_fast64_t i = 0; i < this->bucketCount; ++i) {
@@ -360,7 +379,7 @@ public:
 	 * @param bv A reference to the bit vector to use for the operation.
 	 * @return A bit vector corresponding to the logical "implies" of the two bit vectors.
 	 */
-	BitVector implies(const BitVector& bv) const {
+	BitVector implies(BitVector const& bv) const {
 		uint_fast64_t minSize =	(bv.bitCount < this->bitCount) ? bv.bitCount : this->bitCount;
 
 		// Create resulting bit vector and perform the operation on the individual elements.
@@ -377,7 +396,7 @@ public:
 	 * Adds all indices of bits set to one to the provided list.
 	 * @param list The list to which to append the indices.
 	 */
-	void getList(std::vector<uint_fast64_t>& list) const {
+	void addSetIndicesToList(std::vector<uint_fast64_t>& list) const {
 		for (auto index : *this) {
 			list.push_back(index);
 		}

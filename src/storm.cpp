@@ -215,8 +215,6 @@ void testCheckingDice(storm::models::Mdp<double>& mdp) {
 
 	storm::utility::GraphAnalyzer::performProb01Max(mdp, *trueStates, *targetStates, statesWithProbability0, statesWithProbability1);
 
-	std::cout << statesWithProbability0->toString() << std::endl << statesWithProbability1->toString() << std::endl;
-
 	delete statesWithProbability0;
 	delete statesWithProbability1;
 	delete trueStates;
@@ -255,10 +253,15 @@ int main(const int argc, const char* argv[]) {
 	if (!parseOptions(argc, argv)) {
 		return 0;
 	}
+
+	LOG4CPLUS_INFO(logger, "StoRM was invoked.");
 	printHeader(argc, argv);
 
 	testChecking();
 
 	cleanUp();
+
+	LOG4CPLUS_INFO(logger, "StoRM quit.");
+
 	return 0;
 }
