@@ -51,7 +51,7 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticNoBoundOperator() : NoBoundOperator<T>(nullptr), optimalityOperator(false), minimumOperator(false) {
+	ProbabilisticNoBoundOperator() : NoBoundOperator<T>(nullptr) {
 		// Intentionally left empty
 	}
 
@@ -60,18 +60,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula) : NoBoundOperator<T>(pathFormula),
-			optimalityOperator(false), minimumOperator(false) {
-		// Intentionally left empty
-	}
-
-	/*!
-	 * Constructor
-	 *
-	 * @param pathFormula The child node.
-	 */
-	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : NoBoundOperator<T>(pathFormula),
-			optimalityOperator(true), minimumOperator(minimumOperator) {
+	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula) : NoBoundOperator<T>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -80,8 +69,8 @@ public:
 	 */
 	virtual std::string toString() const {
 		std::string result = "P";
-		if (optimalityOperator) {
-			if (minimumOperator) {
+		if (this->isOptimalityOperator()) {
+			if (this->isMinimumOperator()) {
 				result += "min";
 			} else {
 				result += "max";
@@ -92,15 +81,6 @@ public:
 		result += "]";
 		return result;
 	}
-
-private:
-	// A flag that indicates whether this operator is meant as an optimizing (i.e. min/max) operator
-	// over a nondeterministic model.
-	bool optimalityOperator;
-
-	// In the case this operator is an optimizing operator, this flag indicates whether it is
-	// looking for the minimum or the maximum value.
-	bool minimumOperator;
 };
 
 } /* namespace formula */

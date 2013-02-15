@@ -1,18 +1,18 @@
 /*
- * DtmcPrctlModelChecker.h
+ * MdpPrctlModelChecker.h
  *
- *  Created on: 22.10.2012
- *      Author: Thomas Heinemann
+ *  Created on: 15.02.2013
+ *      Author: Christian Dehnert
  */
 
-#ifndef STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
-#define STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_MDPPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_MDPPRCTLMODELCHECKER_H_
 
 #include "src/formula/Formulas.h"
 #include "src/utility/Vector.h"
 #include "src/storage/SparseMatrix.h"
 
-#include "src/models/Dtmc.h"
+#include "src/models/Mdp.h"
 #include "src/storage/BitVector.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/utility/Vector.h"
@@ -38,7 +38,7 @@ namespace modelChecker {
  * @attention This class is abstract.
  */
 template<class Type>
-class DtmcPrctlModelChecker : 
+class MdpPrctlModelChecker :
 	public virtual AbstractModelChecker<Type> {
 public:
 	/*!
@@ -46,7 +46,7 @@ public:
 	 *
 	 * @param model The dtmc model which is checked.
 	 */
-	explicit DtmcPrctlModelChecker(storm::models::Dtmc<Type>& model) : model(model) {
+	explicit MdpPrctlModelChecker(storm::models::Mdp<Type>& model) : model(model), minimumOperatorStack() {
 
 	}
 
@@ -55,21 +55,21 @@ public:
 	 *
 	 * @param modelChecker The model checker that is copied.
 	 */
-	explicit DtmcPrctlModelChecker(const storm::modelChecker::DtmcPrctlModelChecker<Type>* modelChecker) {
-		this->model = new storm::models::Dtmc<Type>(modelChecker->getModel());
+	explicit MdpPrctlModelChecker(const storm::modelChecker::MdpPrctlModelChecker<Type>* modelChecker) : model(new storm::models::Mdp<Type>(modelChecker->getModel())),  minimumOperatorStack() {
+
 	}
 
 	/*!
 	 * Destructor
 	 */
-	virtual ~DtmcPrctlModelChecker() {
+	virtual ~MdpPrctlModelChecker() {
 		// Intentionally left empty.
 	}
 
 	/*!
 	 * @returns A reference to the dtmc of the model checker.
 	 */
-	storm::models::Dtmc<Type>& getModel() const {
+	storm::models::Mdp<Type>& getModel() const {
 		return this->model;
 	}
 
@@ -77,7 +77,7 @@ public:
 	 * Sets the DTMC model which is checked
 	 * @param model
 	 */
-	void setModel(storm::models::Dtmc<Type>& model) {
+	void setModel(storm::models::Mdp<Type>& model) {
 		this->model = &model;
 	}
 
@@ -247,11 +247,15 @@ public:
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
 	std::vector<Type>* checkNoBoundOperator(const storm::formula::NoBoundOperator<Type>& formula) const {
-		// Check if the operator was an optimality operator and report a warning in that case.
-		if (formula.isOptimalityOperator()) {
-			LOG4CPLUS_WARN(logger, "Formula contains min/max operator which is not meaningful over deterministic models.");
+		// Check if the operator was an non-optimality operator and report an error in that case.
+		if (!formula.isOptimalityOperator()) {
+			LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+			throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
 		}
-		return formula.getPathFormula().check(*this);
+		minimumOperatorStack.push(formula.isMinimumOperator());
+		std::vector<Type>* result = formula.getPathFormula().check(*this);
+		minimumOperatorStack.pop();
+		return result;
 	}
 
 	/*!
@@ -357,8 +361,11 @@ public:
 	 */
 	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula) const = 0;
 
+protected:
+	std::stack<bool> minimumOperatorStack;
+
 private:
-	storm::models::Dtmc<Type>& model;
+	storm::models::Mdp<Type>& model;
 };
 
 } //namespace modelChecker

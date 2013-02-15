@@ -53,6 +53,48 @@ void subtractFromConstantOneVector(std::vector<T>* vector) {
 	}
 }
 
+template<class T>
+void reduceVectorMin(std::vector<T> const& source, std::vector<T>* target, std::vector<uint_fast64_t> const& filter) {
+	uint_fast64_t currentSourceRow = 0;
+	uint_fast64_t currentTargetRow = 0;
+	for (auto it = source->cbegin(); it != source->cend(); ++it, ++currentSourceRow) {
+		// Check whether we have considered all from rows for the current to row.
+		if (filter[currentTargetRow + 1] <= currentSourceRow) {
+			++currentTargetRow;
+			(*target)[currentTargetRow] = (*source)[currentSourceRow];
+			continue;
+		}
+
+
+		// We have to minimize the value, so only overwrite the current value if the
+		// value is actually lower.
+		if (*it < (*target)[currentTargetRow]) {
+			(*source)[currentTargetRow] = *it;
+		}
+	}
+}
+
+template<class T>
+void reduceVectorMax(std::vector<T> const& source, std::vector<T>* target, std::vector<uint_fast64_t> const& filter) {
+	uint_fast64_t currentSourceRow = 0;
+	uint_fast64_t currentTargetRow = 0;
+	for (auto it = source->cbegin(); it != source->cend(); ++it, ++currentSourceRow) {
+		// Check whether we have considered all from rows for the current to row.
+		if (filter[currentTargetRow + 1] <= currentSourceRow) {
+			++currentTargetRow;
+			(*target)[currentTargetRow] = (*source)[currentSourceRow];
+			continue;
+		}
+
+
+		// We have to maximize the value, so only overwrite the current value if the
+		// value is actually greater.
+		if (*it > (*target)[currentTargetRow]) {
+			(*source)[currentTargetRow] = *it;
+		}
+	}
+}
+
 } //namespace utility
 
 } //namespace storm
