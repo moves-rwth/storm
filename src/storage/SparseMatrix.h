@@ -641,11 +641,28 @@ public:
 	bool makeRowsAbsorbing(const storm::storage::BitVector rows) {
 		bool result = true;
 		for (auto row : rows) {
-			result &= makeRowAbsorbing(row);
+			result &= makeRowAbsorbing(row, row);
 		}
 
 		return result;
 	}
+
+	/*!
+	 * This function makes the groups of rows given by the bit vector absorbing.
+	 * @param rows A bit vector indicating which row groups to make absorbing.
+	 * @return True iff the operation was successful.
+	 */
+	bool makeRowsAbsorbing(const storm::storage::BitVector rows, std::vector<uint_fast64_t> const& nondeterministicChoices) {
+		bool result = true;
+		for (auto index : rows) {
+			for (uint_fast64_t row = nondeterministicChoices[index]; row < nondeterministicChoices[index + 1]; ++row) {
+				result &= makeRowAbsorbing(row, index);
+			}
+		}
+
+		return result;
+	}
+
 
 	/*!
 	 * This function makes the given row absorbing. This means that all
@@ -654,7 +671,7 @@ public:
 	 * @param row The row to be made absorbing.
 	 * @returns True iff the operation was successful.
 	 */
-	bool makeRowAbsorbing(const uint_fast64_t row) {
+	bool makeRowAbsorbing(const uint_fast64_t row, const uint_fast64_t column) {
 		// Check whether the accessed state exists.
 		if (row > rowCount) {
 			LOG4CPLUS_ERROR(logger, "Trying to make an illegal row " << row << " absorbing.");
@@ -668,28 +685,16 @@ public:
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 
 		if (rowStart >= rowEnd) {
-			LOG4CPLUS_ERROR(logger, "Cannot make row absorbing, because there is no entry in this row.");
-			throw storm::exceptions::InvalidStateException("Cannot make row absorbing, because there is no entry in this row.");
-		}
-		uint_fast64_t pseudoDiagonal = row % colCount;
-
-		bool foundDiagonal = false;
-		while (rowStart < rowEnd) {
-			if (!foundDiagonal && columnIndications[rowStart] >= pseudoDiagonal) {
-				foundDiagonal = true;
-				// insert/replace the diagonal entry
-				columnIndications[rowStart] = pseudoDiagonal;
-				valueStorage[rowStart] = storm::utility::constGetOne<T>();
-			} else {
-				valueStorage[rowStart] = storm::utility::constGetZero<T>();
-			}
-			++rowStart;
+			LOG4CPLUS_ERROR(logger, "Cannot make row " << row << " absorbing, because there is no entry in this row.");
+			throw storm::exceptions::InvalidStateException() << "Cannot make row " << row << " absorbing, because there is no entry in this row.";
 		}
 
-		if (!foundDiagonal) {
-			--rowStart;
-			columnIndications[rowStart] = pseudoDiagonal;
-			valueStorage[rowStart] = storm::utility::constGetOne<T>();
+		valueStorage[rowStart] = storm::utility::constGetOne<T>();
+		columnIndications[rowStart] = column;
+
+		for (uint_fast64_t index = rowStart + 1; index < rowEnd; ++index) {
+			valueStorage[index] = storm::utility::constGetZero<T>();
+			columnIndications[index] = 0;
 		}
 
 		return true;

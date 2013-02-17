@@ -226,19 +226,33 @@ void testCheckingDice(storm::models::Mdp<double>& mdp) {
 void testCheckingAsynchLeader(storm::models::Mdp<double>& mdp) {
 	storm::formula::Ap<double>* electedFormula = new storm::formula::Ap<double>("elected");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probMaxFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probMinFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
 
 	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+
+	mc->check(*probMinFormula);
+	delete probMinFormula;
+
+	electedFormula = new storm::formula::Ap<double>("elected");
+	eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probMaxFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
 
 	mc->check(*probMaxFormula);
 	delete probMaxFormula;
 
 	electedFormula = new storm::formula::Ap<double>("elected");
-	eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probMinFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+	storm::formula::BoundedEventually<double>* boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(electedFormula, 50);
+	probMinFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
 
 	mc->check(*probMinFormula);
 	delete probMinFormula;
+
+	electedFormula = new storm::formula::Ap<double>("elected");
+	boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(electedFormula, 50);
+	probMaxFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
+
+	mc->check(*probMaxFormula);
+	delete probMaxFormula;
 
 	delete mc;
 }

@@ -56,7 +56,7 @@ public:
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
-		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
+		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates, *nondeterministicChoiceIndices);
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
 		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(tmpMatrix);
@@ -67,12 +67,11 @@ public:
 
 		// Create vector for result of multiplication, which is reduced to the result vector after
 		// each multiplication.
-		std::vector<Type>* multiplyResult = new std::vector<Type>(this->getModel().getTransitionMatrix()->getRowCount());
+		std::vector<Type>* multiplyResult = new std::vector<Type>(this->getModel().getTransitionMatrix()->getRowCount(), 0);
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
 		for (uint_fast64_t i = 0; i < formula.getBound(); ++i) {
 			gmm::mult(*gmmxxMatrix, *result, *multiplyResult);
-
 			if (this->minimumOperatorStack.top()) {
 				storm::utility::reduceVectorMin(*multiplyResult, result, *nondeterministicChoiceIndices);
 			} else {

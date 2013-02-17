@@ -131,7 +131,7 @@ public:
 
 		// Only try to solve system if there are states for which the probability is unknown.
 		uint_fast64_t mayBeStatesSetBitCount = maybeStates.getNumberOfSetBits();
-		if (mayBeStatesSetBitCount > 0) {
+		if (mayBeStatesSetBitCount > 0 && !qualitative) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
 			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
@@ -160,6 +160,10 @@ public:
 
 			// Delete temporary matrix.
 			delete gmmxxMatrix;
+		} else if (qualitative) {
+			// If we only need a qualitative result, we can safely assume that the results will only be compared to
+			// bounds which are either 0 or 1. Setting the value to 0.5 is thus safe.
+			storm::utility::setVectorValues<Type>(result, maybeStates, Type(0.5));
 		}
 
 		// Set values of resulting vector that are known exactly.
