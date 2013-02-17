@@ -216,7 +216,7 @@ private:
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
-			for (uint_fast64_t j = choiceIndices->at(i); j < choiceIndices->at(i + 1); ++j) {
+			for (uint_fast64_t j = (*choiceIndices)[i]; j < (*choiceIndices)[i + 1]; ++j) {
 				for (auto rowIt = transitionMatrix->beginConstColumnIterator(j); rowIt != transitionMatrix->endConstColumnIterator(j); ++rowIt) {
 					this->successorList[nextIndicesList[*rowIt]++] = i;
 				}

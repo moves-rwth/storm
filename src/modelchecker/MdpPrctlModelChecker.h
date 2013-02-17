@@ -18,6 +18,7 @@
 #include "src/utility/Vector.h"
 #include "src/modelchecker/AbstractModelChecker.h"
 #include <vector>
+#include <stack>
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -361,11 +362,11 @@ public:
 	 */
 	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula) const = 0;
 
-protected:
-	std::stack<bool> minimumOperatorStack;
-
 private:
 	storm::models::Mdp<Type>& model;
+
+protected:
+	mutable std::stack<bool> minimumOperatorStack;
 };
 
 } //namespace modelChecker

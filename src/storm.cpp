@@ -24,6 +24,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelchecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
+#include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/utility/Settings.h"
@@ -125,6 +126,10 @@ bool parseOptions(const int argc, const char* argv[]) {
 	return true;
 }
 
+void setUp() {
+	std::cout.precision(10);
+}
+
 /*!
  * Function to perform some cleanup.
  */
@@ -206,18 +211,36 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 }
 
 void testCheckingDice(storm::models::Mdp<double>& mdp) {
-	storm::storage::BitVector* targetStates = mdp.getLabeledStates(std::string("two"));
-	*targetStates |= *mdp.getLabeledStates(std::string("three"));
+	storm::formula::Ap<double>* threeFormula = new storm::formula::Ap<double>("three");
+	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(threeFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
 
-	storm::storage::BitVector* trueStates = new storm::storage::BitVector(mdp.getNumberOfStates(), true);
-	storm::storage::BitVector* statesWithProbability0 = new storm::storage::BitVector(mdp.getNumberOfStates());
-	storm::storage::BitVector* statesWithProbability1 = new storm::storage::BitVector(mdp.getNumberOfStates());
+	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
 
-	storm::utility::GraphAnalyzer::performProb01Max(mdp, *trueStates, *targetStates, statesWithProbability0, statesWithProbability1);
+	mc->check(*probFormula);
+	delete probFormula;
 
-	delete statesWithProbability0;
-	delete statesWithProbability1;
-	delete trueStates;
+	delete mc;
+}
+
+void testCheckingAsynchLeader(storm::models::Mdp<double>& mdp) {
+	storm::formula::Ap<double>* electedFormula = new storm::formula::Ap<double>("elected");
+	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probMaxFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+
+	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+
+	mc->check(*probMaxFormula);
+	delete probMaxFormula;
+
+	electedFormula = new storm::formula::Ap<double>("elected");
+	eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probMinFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+
+	mc->check(*probMinFormula);
+	delete probMinFormula;
+
+	delete mc;
 }
 
 /*!
@@ -240,6 +263,7 @@ void testChecking() {
 		mdp->printModelInformationToStream(std::cout);
 
 		// testCheckingDice(*mdp);
+		// testCheckingAsynchLeader(*mdp);
 	} else {
 		std::cout << "Input is neither a DTMC nor an MDP." << std::endl;
 	}
@@ -253,6 +277,7 @@ int main(const int argc, const char* argv[]) {
 	if (!parseOptions(argc, argv)) {
 		return 0;
 	}
+	setUp();
 
 	LOG4CPLUS_INFO(logger, "StoRM was invoked.");
 	printHeader(argc, argv);

@@ -148,7 +148,7 @@ public:
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
 			std::vector<Type> b(mayBeStatesSetBitCount);
-			this->getModel().getTransitionMatrix()->getConstrainedRowCountVector(maybeStates, statesWithProbability1, &b);
+			this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, statesWithProbability1, &b);
 
 			// Solve the corresponding system of linear equations.
 			this->solveLinearEquationSystem(*gmmxxMatrix, x, b);
@@ -346,9 +346,10 @@ public:
 	 */
 	static void putOptions(boost::program_options::options_description* desc) {
 		desc->add_options()("lemethod", boost::program_options::value<std::string>()->default_value("bicgstab")->notifier(&validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, qmr}.");
-		desc->add_options()("lemaxiter", boost::program_options::value<unsigned>()->default_value(10000), "Sets the maximal number of iterations for iterative linear equation solving.");
-		desc->add_options()("precision", boost::program_options::value<double>()->default_value(10e-6), "Sets the precision for iterative linear equation solving.");
+		desc->add_options()("maxiter", boost::program_options::value<unsigned>()->default_value(10000), "Sets the maximal number of iterations for iterative equation solving.");
+		desc->add_options()("precision", boost::program_options::value<double>()->default_value(1e-6), "Sets the precision for iterative equation solving.");
 		desc->add_options()("precond", boost::program_options::value<std::string>()->default_value("ilu")->notifier(&validatePreconditioner), "Sets the preconditioning technique for linear equation solving. Must be in {ilu, diagonal, ildlt, none}.");
+		desc->add_options()("relative", boost::program_options::value<bool>()->default_value(true), "Sets whether the relative or absolute error is considered for detecting convergence.");
 	}
 
 	/*!
@@ -388,7 +389,7 @@ private:
 
 		// Prepare an iteration object that determines the accuracy, maximum number of iterations
 		// and the like.
-		gmm::iteration iter(s->get<double>("precision"), 0, s->get<unsigned>("lemaxiter"));
+		gmm::iteration iter(s->get<double>("precision"), 0, s->get<unsigned>("maxiter"));
 
 		// Now do the actual solving.
 		LOG4CPLUS_INFO(logger, "Starting iterative solver.");

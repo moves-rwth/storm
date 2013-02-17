@@ -232,13 +232,12 @@ public:
 
 				for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
 					if (phiStates.get(*it) && !nextStates->get(*it)) {
-
-						// Check whether the predecessor has at only successors in the current state set for one of the
+						// Check whether the predecessor has only successors in the current state set for one of the
 						// nondeterminstic choices.
-						for (auto rowIt = nondeterministicChoiceIndices->begin() + *it; rowIt != nondeterministicChoiceIndices->begin() + *it + 1; ++rowIt) {
+						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
 							bool allSuccessorsInCurrentStates = true;
-							for (auto colIt = transitionMatrix->beginConstColumnIterator(*rowIt); colIt != transitionMatrix->endConstColumnIterator(*rowIt); ++colIt) {
-								if (currentStates->get(*colIt)) {
+							for (auto colIt = transitionMatrix->beginConstColumnIterator(row); colIt != transitionMatrix->endConstColumnIterator(row); ++colIt) {
+								if (!currentStates->get(*colIt)) {
 									allSuccessorsInCurrentStates = false;
 									break;
 								}
@@ -316,7 +315,6 @@ public:
 
 			for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
 				if (phiStates.get(*it) && !statesWithProbability0->get(*it)) {
-
 					// Check whether the predecessor has at least one successor in the current state
 					// set for every nondeterministic choice.
 					bool addToStatesWithProbability0 = true;
@@ -349,9 +347,70 @@ public:
 
 	template <class T>
 	static void performProb1A(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
-		// This result is a rough guess and does not compute all states with probability 1.
-		// TODO: Check whether it makes sense to implement the precise but complicated algorithm here.
-		*statesWithProbability1 = psiStates;
+		// Check for valid parameters.
+		if (statesWithProbability1 == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
+			throw storm::exceptions::InvalidArgumentException("Parameter 'statesWithProbability1' must not be null.");
+		}
+
+		// Get some temporaries for convenience.
+		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+
+		// Get the backwards transition relation from the model to ease the search.
+		storm::models::GraphTransitions<T> backwardTransitions(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), false);
+
+		storm::storage::BitVector* currentStates = new storm::storage::BitVector(model.getNumberOfStates(), true);
+
+		std::vector<uint_fast64_t> stack;
+		stack.reserve(model.getNumberOfStates());
+
+		bool done = false;
+		while (!done) {
+			stack.clear();
+			storm::storage::BitVector* nextStates = new storm::storage::BitVector(psiStates);
+			psiStates.addSetIndicesToList(stack);
+
+			while (!stack.empty()) {
+				uint_fast64_t currentState = stack.back();
+				stack.pop_back();
+
+				for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+					if (phiStates.get(*it) && !nextStates->get(*it)) {
+						// Check whether the predecessor has only successors in the current state set for all of the
+						// nondeterminstic choices.
+						bool allSuccessorsInCurrentStatesForAllChoices = true;
+						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
+							for (auto colIt = transitionMatrix->beginConstColumnIterator(row); colIt != transitionMatrix->endConstColumnIterator(row); ++colIt) {
+								if (!currentStates->get(*colIt)) {
+									allSuccessorsInCurrentStatesForAllChoices = false;
+									goto afterCheckLoop;
+								}
+							}
+						}
+
+				afterCheckLoop:
+						// If all successors for all nondeterministic choices are in the current state set, we
+						// add it to the set of states for the next iteration and perform a backward search from
+						// that state.
+						if (allSuccessorsInCurrentStatesForAllChoices) {
+							nextStates->set(*it, true);
+							stack.push_back(*it);
+						}
+					}
+				}
+			}
+
+			// Check whether we need to perform an additional iteration.
+			if (*currentStates == *nextStates) {
+				done = true;
+			} else {
+				*currentStates = *nextStates;
+			}
+		}
+
+		*statesWithProbability1 = *currentStates;
+		delete currentStates;
 	}
 };
 

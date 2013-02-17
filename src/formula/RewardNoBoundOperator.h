@@ -65,10 +65,27 @@ public:
 	}
 
 	/*!
+	 * Constructor
+	 *
+	 * @param pathFormula The child node.
+	 */
+	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : NoBoundOperator<T>(pathFormula, minimumOperator) {
+		// Intentionally left empty
+	}
+
+	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "R = ? [";
+		std::string result = "R";
+		if (this->isOptimalityOperator()) {
+			if (this->isMinimumOperator()) {
+				result += "min";
+			} else {
+				result += "max";
+			}
+		}
+		result += "=? [";
 		result += this->getPathFormula().toString();
 		result += "]";
 		return result;

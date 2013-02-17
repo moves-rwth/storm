@@ -131,9 +131,17 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 		 */
 		nonzero++;
 
+		// The PRISM output format lists the name of the transition in the fourth column,
+		// but omits the fourth column if it is an internal action. In either case, however, the third column
+		// is followed by a space. We need to skip over that space first (instead of trimming whitespaces),
+		// before we can skip to the line end, because trimming the white spaces will proceed to the next line
+		// in case there is no action label in the fourth column.
+		++buf;
+
 		/*
 		 *	Proceed to beginning of next line.
 		 */
+		buf += strcspn(buf, " \t\n\r");
 		buf = trimWhitespaces(buf);
 	}
 
@@ -277,10 +285,12 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 		/*
 		 *	Proceed to beginning of next line in file and next row in matrix.
 		 */
+		++buf;
+		buf += strcspn(buf, " \t\n\r");
 		buf = trimWhitespaces(buf);
 	}
 
-	this->rowMapping->at(maxnode+1) = curRow;
+	this->rowMapping->at(maxnode+1) = curRow + 1;
 
 	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 
