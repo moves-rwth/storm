@@ -34,7 +34,7 @@ class IBoundedUntilModelChecker {
          *  @param obj Formula object with subformulas.
          *  @return Result of the formula for every node.
          */
-        virtual std::vector<T>* checkBoundedUntil(const BoundedUntil<T>& obj) const = 0;
+        virtual std::vector<T>* checkBoundedUntil(const BoundedUntil<T>& obj, bool qualitative) const = 0;
 };
 
 /*!
@@ -186,8 +186,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IBoundedUntilModelChecker>()->checkBoundedUntil(*this);
+	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
+		return modelChecker.template as<IBoundedUntilModelChecker>()->checkBoundedUntil(*this, qualitative);
 	}
 	
 	/*!

@@ -161,17 +161,6 @@ public:
 	}
 
 	/*!
-	 * The check method for a state formula; Will infer the actual type of formula and delegate it
-	 * to the specialized method
-	 *
-	 * @param formula The state formula to check
-	 * @returns The set of states satisfying the formula, represented by a bit vector
-	 */
-	storm::storage::BitVector* checkStateFormula(const storm::formula::AbstractStateFormula<Type>& formula) const {
-		return formula.check(*this);
-	}
-
-	/*!
 	 * The check method for a state formula with a probabilistic operator node without bounds as root
 	 * in its formula tree
 	 *
@@ -183,18 +172,7 @@ public:
 		if (formula.isOptimalityOperator()) {
 			LOG4CPLUS_WARN(logger, "Formula contains min/max operator which is not meaningful over deterministic models.");
 		}
-		return formula.getPathFormula().check(*this);
-	}
-
-	/*!
-	 * The check method for a path formula; Will infer the actual type of formula and delegate it
-	 * to the specialized method
-	 *
-	 * @param formula The path formula to check
-	 * @returns for each state the probability that the path formula holds.
-	 */
-	std::vector<Type>* checkPathFormula(const storm::formula::AbstractPathFormula<Type>& formula) const {
-		return formula.check(*this);
+		return formula.getPathFormula().check(*this, false);
 	}
 
 	/*!
@@ -203,7 +181,7 @@ public:
 	 * @param formula The Bounded Until path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<Type>* checkBoundedUntil(const storm::formula::BoundedUntil<Type>& formula) const = 0;
+	virtual std::vector<Type>* checkBoundedUntil(const storm::formula::BoundedUntil<Type>& formula, bool qualitative) const = 0;
 
 	/*!
 	 * The check method for a path formula with a Next operator node as root in its formula tree
@@ -211,7 +189,7 @@ public:
 	 * @param formula The Next path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<Type>* checkNext(const storm::formula::Next<Type>& formula) const = 0;
+	virtual std::vector<Type>* checkNext(const storm::formula::Next<Type>& formula, bool qualitative) const = 0;
 
 	/*!
 	 * The check method for a path formula with a Bounded Eventually operator node as root in its
@@ -220,10 +198,10 @@ public:
 	 * @param formula The Bounded Eventually path formula to check
 	 * @returns for each state the probability that the path formula holds
 	 */
-	virtual std::vector<Type>* checkBoundedEventually(const storm::formula::BoundedEventually<Type>& formula) const {
+	virtual std::vector<Type>* checkBoundedEventually(const storm::formula::BoundedEventually<Type>& formula, bool qualitative) const {
 		// Create equivalent temporary bounded until formula and check it.
 		storm::formula::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::formula::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
-		return this->checkBoundedUntil(temporaryBoundedUntilFormula);
+		return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
 	}
 
 	/*!
@@ -232,10 +210,10 @@ public:
 	 * @param formula The Eventually path formula to check
 	 * @returns for each state the probability that the path formula holds
 	 */
-	virtual std::vector<Type>* checkEventually(const storm::formula::Eventually<Type>& formula) const {
+	virtual std::vector<Type>* checkEventually(const storm::formula::Eventually<Type>& formula, bool qualitative) const {
 		// Create equivalent temporary until formula and check it.
 		storm::formula::Until<Type> temporaryUntilFormula(new storm::formula::Ap<Type>("true"), formula.getChild().clone());
-		return this->checkUntil(temporaryUntilFormula);
+		return this->checkUntil(temporaryUntilFormula, qualitative);
 	}
 
 	/*!
@@ -244,10 +222,10 @@ public:
 	 * @param formula The Globally path formula to check
 	 * @returns for each state the probability that the path formula holds
 	 */
-	virtual std::vector<Type>* checkGlobally(const storm::formula::Globally<Type>& formula) const {
+	virtual std::vector<Type>* checkGlobally(const storm::formula::Globally<Type>& formula, bool qualitative) const {
 		// Create "equivalent" temporary eventually formula and check it.
 		storm::formula::Eventually<Type> temporaryEventuallyFormula(new storm::formula::Not<Type>(formula.getChild().clone()));
-		std::vector<Type>* result = this->checkEventually(temporaryEventuallyFormula);
+		std::vector<Type>* result = this->checkEventually(temporaryEventuallyFormula, qualitative);
 
 		// Now subtract the resulting vector from the constant one vector to obtain final result.
 		storm::utility::subtractFromConstantOneVector(result);
@@ -260,7 +238,7 @@ public:
 	 * @param formula The Until path formula to check
 	 * @returns for each state the probability that the path formula holds.
 	 */
-	virtual std::vector<Type>* checkUntil(const storm::formula::Until<Type>& formula) const = 0;
+	virtual std::vector<Type>* checkUntil(const storm::formula::Until<Type>& formula, bool qualitative) const = 0;
 
 	/*!
 	 * The check method for a path formula with an Instantaneous Reward operator node as root in its
@@ -269,7 +247,7 @@ public:
 	 * @param formula The Instantaneous Reward formula to check
 	 * @returns for each state the reward that the instantaneous reward yields
 	 */
-	virtual std::vector<Type>* checkInstantaneousReward(const storm::formula::InstantaneousReward<Type>& formula) const = 0;
+	virtual std::vector<Type>* checkInstantaneousReward(const storm::formula::InstantaneousReward<Type>& formula, bool qualitative) const = 0;
 
 	/*!
 	 * The check method for a path formula with a Cumulative Reward operator node as root in its
@@ -278,7 +256,7 @@ public:
 	 * @param formula The Cumulative Reward formula to check
 	 * @returns for each state the reward that the cumulative reward yields
 	 */
-	virtual std::vector<Type>* checkCumulativeReward(const storm::formula::CumulativeReward<Type>& formula) const = 0;
+	virtual std::vector<Type>* checkCumulativeReward(const storm::formula::CumulativeReward<Type>& formula, bool qualitative) const = 0;
 
 	/*!
 	 * The check method for a path formula with a Reachability Reward operator node as root in its
@@ -287,7 +265,7 @@ public:
 	 * @param formula The Reachbility Reward formula to check
 	 * @returns for each state the reward that the reachability reward yields
 	 */
-	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula) const = 0;
+	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula, bool qualitative) const = 0;
 
 private:
 	storm::models::Dtmc<Type>& model;

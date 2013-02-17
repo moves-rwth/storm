@@ -110,7 +110,7 @@ public:
 	 */
 	storm::storage::BitVector* checkProbabilisticBoundOperator(const storm::formula::ProbabilisticBoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<Type>* quantitativeResult = formula.getPathFormula().check(*this);
+		std::vector<Type>* quantitativeResult = formula.getPathFormula().check(*this, false);
 
 		// Create resulting bit vector, which will hold the yes/no-answer for every state.
 		storm::storage::BitVector* result = new storm::storage::BitVector(quantitativeResult->size());
@@ -137,7 +137,7 @@ public:
 	 */
 	storm::storage::BitVector* checkRewardBoundOperator(const storm::formula::RewardBoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<Type>* quantitativeResult = formula.getPathFormula().check(*this);
+		std::vector<Type>* quantitativeResult = formula.getPathFormula().check(*this, false);
 
 		// Create resulting bit vector, which will hold the yes/no-answer for every state.
 		storm::storage::BitVector* result = new storm::storage::BitVector(quantitativeResult->size());

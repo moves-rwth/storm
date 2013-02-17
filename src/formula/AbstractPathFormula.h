@@ -61,7 +61,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const = 0;
+	virtual std::vector<T>* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const = 0;
 };
 
 } //namespace formula

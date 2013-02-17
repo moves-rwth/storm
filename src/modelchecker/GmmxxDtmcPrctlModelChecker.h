@@ -45,10 +45,10 @@ public:
 
 	virtual ~GmmxxDtmcPrctlModelChecker() { }
 
-	virtual std::vector<Type>* checkBoundedUntil(const storm::formula::BoundedUntil<Type>& formula) const {
+	virtual std::vector<Type>* checkBoundedUntil(const storm::formula::BoundedUntil<Type>& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-		storm::storage::BitVector* leftStates = this->checkStateFormula(formula.getLeft());
-		storm::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
+		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
+		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
 
 		// Copy the matrix before we make any changes.
 		storm::storage::SparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionMatrix());
@@ -81,9 +81,9 @@ public:
 		return result;
 	}
 
-	virtual std::vector<Type>* checkNext(const storm::formula::Next<Type>& formula) const {
+	virtual std::vector<Type>* checkNext(const storm::formula::Next<Type>& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formula of the next-formula.
-		storm::storage::BitVector* nextStates = this->checkStateFormula(formula.getChild());
+		storm::storage::BitVector* nextStates = formula.getChild().check(*this);
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
 		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionMatrix());
@@ -106,10 +106,10 @@ public:
 		return result;
 	}
 
-	virtual std::vector<Type>* checkUntil(const storm::formula::Until<Type>& formula) const {
+	virtual std::vector<Type>* checkUntil(const storm::formula::Until<Type>& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-		storm::storage::BitVector* leftStates = this->checkStateFormula(formula.getLeft());
-		storm::storage::BitVector* rightStates = this->checkStateFormula(formula.getRight());
+		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
+		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
 
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
@@ -169,7 +169,7 @@ public:
 		return result;
 	}
 
-	virtual std::vector<Type>* checkInstantaneousReward(const storm::formula::InstantaneousReward<Type>& formula) const {
+	virtual std::vector<Type>* checkInstantaneousReward(const storm::formula::InstantaneousReward<Type>& formula, bool qualitative) const {
 		// Only compute the result if the model has a state-based reward model.
 		if (!this->getModel().hasStateRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing (state-based) reward model for formula.");
@@ -198,7 +198,7 @@ public:
 		return result;
 	}
 
-	virtual std::vector<Type>* checkCumulativeReward(const storm::formula::CumulativeReward<Type>& formula) const {
+	virtual std::vector<Type>* checkCumulativeReward(const storm::formula::CumulativeReward<Type>& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
@@ -241,7 +241,7 @@ public:
 		return result;
 	}
 
-	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula) const {
+	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
@@ -249,7 +249,7 @@ public:
 		}
 
 		// Determine the states for which the target predicate holds.
-		storm::storage::BitVector* targetStates = this->checkStateFormula(formula.getChild());
+		storm::storage::BitVector* targetStates = formula.getChild().check(*this);
 
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector infinityStates(this->getModel().getNumberOfStates());
