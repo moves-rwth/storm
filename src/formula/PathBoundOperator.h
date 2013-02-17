@@ -21,18 +21,6 @@ namespace formula {
 template <class T> class PathBoundOperator;
 
 /*!
- *  @brief Interface class for model checkers that support PathBoundOperator.
- *   
- *  All model checkers that support the formula class PathBoundOperator must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IPathBoundOperatorModelChecker {
-    public:
-        virtual storm::storage::BitVector* checkPathBoundOperator(const PathBoundOperator<T>& obj) const = 0;
-};
-
-/*!
  * @brief
  * Class for a Abstract formula tree with a P (probablistic) operator node over a probability interval
  * as root.
@@ -132,10 +120,10 @@ public:
 	virtual std::string toString() const {
 		std::string result = "";
 		switch (comparisonOperator) {
-		case LESS: result += "< "; break;
-		case LESS_EQUAL: result += "<= "; break;
-		case GREATER: result += "> "; break;
-		case GREATER_EQUAL: result += ">= "; break;
+		case LESS: result += "<"; break;
+		case LESS_EQUAL: result += "<="; break;
+		case GREATER: result += ">"; break;
+		case GREATER_EQUAL: result += ">="; break;
 		}
 		result += std::to_string(bound);
 		result += " [";
@@ -163,19 +151,6 @@ public:
 	 */
 	virtual AbstractStateFormula<T>* clone() const = 0;
 
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
-	 */
-	virtual storm::storage::BitVector *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IPathBoundOperatorModelChecker>()->checkPathBoundOperator(*this);
-	}
-	
 	/*!
      *  @brief Checks if the subtree conforms to some logic.
      * 

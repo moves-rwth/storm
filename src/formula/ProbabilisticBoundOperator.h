@@ -16,6 +16,20 @@
 namespace storm {
 namespace formula {
 
+template <class T> class ProbabilisticBoundOperator;
+
+/*!
+ *  @brief Interface class for model checkers that support ProbabilisticBoundOperator.
+ *
+ *  All model checkers that support the formula class PathBoundOperator must inherit
+ *  this pure virtual class.
+ */
+template <class T>
+class IProbabilisticBoundOperatorModelChecker {
+    public:
+        virtual storm::storage::BitVector* checkProbabilisticBoundOperator(const ProbabilisticBoundOperator<T>& obj) const = 0;
+};
+
 /*!
  * @brief
  * Class for a Abstract formula tree with a P (probablistic) operator node over a probability interval
@@ -85,6 +99,19 @@ public:
 		result->setBound(this->getBound());
 		result->setPathFormula(this->getPathFormula().clone());
 		return result;
+	}
+
+	/*!
+	 * Calls the model checker to check this formula.
+	 * Needed to infer the correct type of formula class.
+	 *
+	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
+	 *       the methods of the model checker should be used.
+	 *
+	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
+	 */
+	virtual storm::storage::BitVector* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<IProbabilisticBoundOperatorModelChecker>()->checkProbabilisticBoundOperator(*this);
 	}
 };
 
