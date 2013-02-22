@@ -36,10 +36,12 @@ namespace modelChecker {
  * A model checking engine that makes use of the gmm++ backend.
  */
 template <class Type>
-class GmmxxDtmcPrctlModelChecker : public DtmcPrctlModelChecker<Type> {
+class GmmxxDtmcPrctlModelChecker
+	: public DtmcPrctlModelChecker<Type> {
 
 public:
-	explicit GmmxxDtmcPrctlModelChecker(storm::models::Dtmc<Type>& dtmc) : DtmcPrctlModelChecker<Type>(dtmc) {
+	explicit GmmxxDtmcPrctlModelChecker(storm::models::Dtmc<Type>& dtmc)
+		: DtmcPrctlModelChecker<Type>(dtmc) {
 		// Intentionally left empty.
 	}
 

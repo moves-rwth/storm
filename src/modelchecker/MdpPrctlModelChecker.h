@@ -40,15 +40,22 @@ namespace modelChecker {
  */
 template<class Type>
 class MdpPrctlModelChecker :
-	public virtual AbstractModelChecker<Type> {
+	public AbstractModelChecker<Type> {
+
+private:
+	/*!
+	 *	Make default constructor private.
+	 */
+	explicit MdpPrctlModelChecker() {}
+
 public:
 	/*!
 	 * Constructor
 	 *
 	 * @param model The dtmc model which is checked.
 	 */
-	explicit MdpPrctlModelChecker(storm::models::Mdp<Type>& model) : model(model), minimumOperatorStack() {
-
+	explicit MdpPrctlModelChecker(storm::models::Mdp<Type>& model)
+		: AbstractModelChecker<Type>(model), minimumOperatorStack() {
 	}
 
 	/*!
@@ -56,7 +63,8 @@ public:
 	 *
 	 * @param modelChecker The model checker that is copied.
 	 */
-	explicit MdpPrctlModelChecker(const storm::modelChecker::MdpPrctlModelChecker<Type>* modelChecker) : model(new storm::models::Mdp<Type>(modelChecker->getModel())),  minimumOperatorStack() {
+	explicit MdpPrctlModelChecker(const storm::modelChecker::MdpPrctlModelChecker<Type>* modelChecker)
+		: AbstractModelChecker<Type>(modelChecker),  minimumOperatorStack() {
 
 	}
 
@@ -71,7 +79,7 @@ public:
 	 * @returns A reference to the dtmc of the model checker.
 	 */
 	storm::models::Mdp<Type>& getModel() const {
-		return this->model;
+		return AbstractModelChecker<Type>::template getModel<storm::models::Mdp<Type>>();
 	}
 
 	/*!
@@ -79,7 +87,7 @@ public:
 	 * @param model
 	 */
 	void setModel(storm::models::Mdp<Type>& model) {
-		this->model = &model;
+		AbstractModelChecker<Type>::setModel(model);
 	}
 
 	/*!
@@ -272,9 +280,6 @@ public:
 	 * @returns for each state the reward that the reachability reward yields
 	 */
 	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula, bool qualitative) const = 0;
-
-private:
-	storm::models::Mdp<Type>& model;
 
 protected:
 	mutable std::stack<bool> minimumOperatorStack;

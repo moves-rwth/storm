@@ -15,6 +15,7 @@ template <class Type> class AbstractModelChecker;
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/formula/Formulas.h"
 #include "src/storage/BitVector.h"
+#include "src/models/AbstractModel.h"
 
 #include <iostream>
 
@@ -50,6 +51,15 @@ class AbstractModelChecker :
 	public virtual storm::formula::IInstantaneousRewardModelChecker<Type> {
 	
 public:
+	explicit AbstractModelChecker(storm::models::AbstractModel<Type>& model)
+		: model(model) {
+		// Nothing to do here...
+	}
+	
+	explicit AbstractModelChecker(AbstractModelChecker<Type>* modelChecker)
+		: model(modelChecker->model) {
+	}
+	
 	template <template <class T> class Target>
 	const Target<Type>* as() const {
 		try {
@@ -154,6 +164,19 @@ public:
 		delete quantitativeResult;
 		return result;
 	}
+	
+	void setModel(storm::models::AbstractModel<Type>& model) {
+		this->model = model;
+	}
+	
+	template <class Model>
+	Model& getModel() const {
+		return *dynamic_cast<Model*>(&this->model);
+	}
+
+private:
+	storm::models::AbstractModel<Type>& model;
+
 };
 
 } //namespace modelChecker

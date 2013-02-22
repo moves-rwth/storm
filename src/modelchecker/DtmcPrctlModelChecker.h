@@ -39,14 +39,22 @@ namespace modelChecker {
  */
 template<class Type>
 class DtmcPrctlModelChecker : 
-	public virtual AbstractModelChecker<Type> {
+	public AbstractModelChecker<Type> {
+
+private:
+	/*!
+	 *	Make default constructor private.
+	 */
+	explicit DtmcPrctlModelChecker() {}
+
 public:
 	/*!
 	 * Constructor
 	 *
 	 * @param model The dtmc model which is checked.
 	 */
-	explicit DtmcPrctlModelChecker(storm::models::Dtmc<Type>& model) : model(model) {
+	explicit DtmcPrctlModelChecker(storm::models::Dtmc<Type>& model)
+		: AbstractModelChecker<Type>(model) {
 		// Intentionally left empty.
 	}
 
@@ -55,8 +63,7 @@ public:
 	 *
 	 * @param modelChecker The model checker that is copied.
 	 */
-	explicit DtmcPrctlModelChecker(const storm::modelChecker::DtmcPrctlModelChecker<Type>* modelChecker) {
-		this->model = new storm::models::Dtmc<Type>(modelChecker->getModel());
+	explicit DtmcPrctlModelChecker(const storm::modelChecker::DtmcPrctlModelChecker<Type>* modelChecker) : AbstractModelChecker<Type>(modelChecker) {
 	}
 
 	/*!
@@ -70,7 +77,7 @@ public:
 	 * @returns A reference to the dtmc of the model checker.
 	 */
 	storm::models::Dtmc<Type>& getModel() const {
-		return this->model;
+		return AbstractModelChecker<Type>::template getModel<storm::models::Dtmc<Type>>();
 	}
 
 	/*!
@@ -78,7 +85,7 @@ public:
 	 * @param model
 	 */
 	void setModel(storm::models::Dtmc<Type>& model) {
-		this->model = &model;
+		AbstractModelChecker<Type>::setModel(model);
 	}
 
 	/*!
@@ -268,7 +275,7 @@ public:
 	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula, bool qualitative) const = 0;
 
 private:
-	storm::models::Dtmc<Type>& model;
+//	storm::models::Dtmc<Type>& model;
 };
 
 } //namespace modelChecker
