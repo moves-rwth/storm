@@ -41,12 +41,6 @@ template<class Type>
 class DtmcPrctlModelChecker : 
 	public AbstractModelChecker<Type> {
 
-private:
-	/*!
-	 *	Make default constructor private.
-	 */
-	explicit DtmcPrctlModelChecker() {}
-
 public:
 	/*!
 	 * Constructor

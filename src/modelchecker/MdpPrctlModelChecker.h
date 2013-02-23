@@ -42,12 +42,6 @@ template<class Type>
 class MdpPrctlModelChecker :
 	public AbstractModelChecker<Type> {
 
-private:
-	/*!
-	 *	Make default constructor private.
-	 */
-	explicit MdpPrctlModelChecker() {}
-
 public:
 	/*!
 	 * Constructor
