@@ -62,6 +62,7 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 
 if(CMAKE_COMPILER_IS_GNUCC)
+    message(STATUS "Using GCC")
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
     set (CMAKE_CXX_FLAGS "-std=c++0x -Wall -pedantic")
@@ -74,9 +75,11 @@ if(CMAKE_COMPILER_IS_GNUCC)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
     endif(USE_POPCNT)
 elseif(MSVC)
+    message(STATUS "Using MSVC")
 	# required for GMM to compile, ugly error directive in their code
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE)
 else(CLANG)
+    message(STATUS "Using CLANG")
     # Set standard flags for clang
     set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -funroll-loops -O4")
     set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic -Wno-unused-variable")
