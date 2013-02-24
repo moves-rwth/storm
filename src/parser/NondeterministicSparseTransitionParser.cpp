@@ -136,7 +136,9 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 		// is followed by a space. We need to skip over that space first (instead of trimming whitespaces),
 		// before we can skip to the line end, because trimming the white spaces will proceed to the next line
 		// in case there is no action label in the fourth column.
-		++buf;
+		if (buf[0] == ' ') {
+			++buf;
+		}
 
 		/*
 		 *	Proceed to beginning of next line.
@@ -285,7 +287,9 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 		/*
 		 *	Proceed to beginning of next line in file and next row in matrix.
 		 */
-		++buf;
+		if (buf[0] == ' ') {
+			++buf;
+		}
 		buf += strcspn(buf, " \t\n\r");
 		buf = trimWhitespaces(buf);
 	}
