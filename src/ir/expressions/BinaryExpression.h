@@ -9,6 +9,7 @@
 #define STORM_IR_EXPRESSIONS_BINARYEXPRESSION_H_
 
 #include "BaseExpression.h"
+#include <memory>
 
 namespace storm {
 
