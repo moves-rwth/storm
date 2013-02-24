@@ -30,10 +30,16 @@ public:
 
 	/*!
 	 * Creates a command with the given name, guard and updates.
-	 * @param commandName the name of the command.
+	 * @param actionName the action name of the command.
 	 * @param guardExpression the expression that defines the guard of the command.
 	 */
-	Command(std::string commandName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> updates);
+	Command(std::string actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> updates);
+	
+	/*!
+	 * Retrieves the action name of this command.
+	 * @returns the action name of this command.
+	 */
+	std::string const& getActionName() const;
 
 	/*!
 	 * Retrieves a reference to the guard of the command.
@@ -61,7 +67,7 @@ public:
 
 private:
 	// The name of the command.
-	std::string commandName;
+	std::string actionName;
 
 	// The expression that defines the guard of the command.
 	std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression;
