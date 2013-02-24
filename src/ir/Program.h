@@ -18,6 +18,7 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include <set>
 
 namespace storm {
 
@@ -77,6 +78,20 @@ public:
 	 * @returns a string representation of this program.
 	 */
 	std::string toString() const;
+	
+	/*!
+	 * Retrieves the set of actions present in this module.
+	 * @returns the set of actions present in this module.
+	 */
+	std::set<std::string> const& getActions() const;
+	
+	/*!
+	 * Retrieved the indices of all Modules within this program that contain
+	 * commands that are labelled with the given action.
+	 * @param action Name of the action.
+	 * @returns Indices of all matching modules.
+	 */
+	std::shared_ptr<std::set<uint_fast64_t>> const getModulesByAction(std::string const& action) const;
 
 private:
 	// The type of the model.
@@ -88,7 +103,7 @@ private:
 	// A map of undefined integer constants to their expressions nodes.
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions;
 
-	// A mpa of undefined double constants to their expressions nodes.
+	// A map of undefined double constants to their expressions nodes.
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions;
 
 	// The modules associated with the program.
@@ -99,6 +114,12 @@ private:
 
 	// The labels that are defined for this model.
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels;
+	
+	// The set of actions present in this program.
+	std::set<std::string> actions;
+	
+	// A map of actions to the set of modules containing commands labelled with this action.
+	std::map<std::string, std::shared_ptr<std::set<uint_fast64_t>>> actionsToModuleIndexMap;
 };
 
 } // namespace ir

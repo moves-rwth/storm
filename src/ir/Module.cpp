@@ -17,7 +17,7 @@ namespace ir {
 
 // Initializes all members with their default constructors.
 Module::Module() : moduleName(), booleanVariables(), integerVariables(), booleanVariablesToIndexMap(),
-		  integerVariablesToIndexMap(), commands(), actionsToCommandIndexMap() {
+		  integerVariablesToIndexMap(), commands(), actions(), actionsToCommandIndexMap() {
 	// Nothing to do here.
 }
 
@@ -29,12 +29,13 @@ Module::Module(std::string moduleName, std::vector<storm::ir::BooleanVariable> b
 		std::vector<storm::ir::Command> commands)
 	: moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables),
 	  booleanVariablesToIndexMap(booleanVariableToIndexMap),
-	  integerVariablesToIndexMap(integerVariableToIndexMap), commands(commands), actionsToCommandIndexMap() {
+	  integerVariablesToIndexMap(integerVariableToIndexMap), commands(commands), actions(), actionsToCommandIndexMap() {
 	// Build actionsToCommandIndexMap
 	for (unsigned int id = 0; id < this->commands.size(); id++) {
 		std::string action = this->commands[id].getActionName();
 		if (action != "") {
 			this->actionsToCommandIndexMap[action]->insert(id);
+			this->actions.insert(action);
 		}
 	}  
 }
@@ -106,7 +107,12 @@ std::string Module::toString() const {
 	return result.str();
 }
 
-// Return Commands with given action.
+// Return set of actions.
+std::set<std::string> const& Module::getActions() const {
+	return this->actions;
+}
+
+// Return commands with given action.
 std::shared_ptr<std::set<uint_fast64_t>> const Module::getCommandsByAction(std::string const& action) const {
 	auto res = this->actionsToCommandIndexMap.find(action);
 	if (res == this->actionsToCommandIndexMap.end()) {

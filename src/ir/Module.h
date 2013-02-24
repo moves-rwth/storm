@@ -102,10 +102,16 @@ public:
 	std::string toString() const;
 	
 	/*!
-	 * Retrieves the indices of all Commands within this module that are labelled
+	 * Retrieves the set of actions present in this module.
+	 * @returns the set of actions present in this module.
+	 */
+	std::set<std::string> const& getActions() const;
+	
+	/*!
+	 * Retrieves the indices of all commands within this module that are labelled
 	 * by the given action.
-	 * @param action Name of the action
-	 * @returns Indices of all matching Commands.
+	 * @param action Name of the action.
+	 * @returns Indices of all matching commands.
 	 */
 	std::shared_ptr<std::set<uint_fast64_t>> const getCommandsByAction(std::string const& action) const;
 
@@ -127,6 +133,9 @@ private:
 
 	// The commands associated with the module.
 	std::vector<storm::ir::Command> commands;
+	
+	// The set of actions present in this module.
+	std::set<std::string> actions;
 	
 	// A map of actions to the set of commands labelled with this action.
 	std::map<std::string, std::shared_ptr<std::set<uint_fast64_t>>> actionsToCommandIndexMap;
