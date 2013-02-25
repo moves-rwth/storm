@@ -449,9 +449,11 @@ std::shared_ptr<storm::ir::Program> PrismParser::parse(std::istream& inputStream
 		// Construct the error message including a caret display of the position in the
 		// erroneous line.
 		std::stringstream msg;
+		std::string line = e.first.get_currentline();
+		while (line.find('\t') != std::string::npos) line.replace(line.find('\t'),1," ");
 		msg << pos.file << ", line " << pos.line << ", column " << pos.column
 				<< ": parse error: expected " << e.what_ << std::endl << "\t"
-				<< e.first.get_currentline() << std::endl << "\t";
+				<< line << std::endl << "\t";
 		int i = 0;
 		for (i = 0; i < pos.column; ++i) {
 			msg << "-";
