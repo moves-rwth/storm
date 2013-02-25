@@ -245,7 +245,6 @@ private:
 						}
 					}
 					// Move new states to resultStates.
-					// resultStates = newStates;
 					resultStates.clear();
 					resultStates.insert(newStates.begin(), newStates.end());
 					// Delete old result states.
@@ -382,6 +381,60 @@ private:
 		// Determine the matrix content for every row (i.e. reachable state).
 		for (StateType* currentState : allStates) {
 			bool hasTransition = false;
+			
+			std::map<uint_fast64_t, double> stateIndexToProbabilityMap;
+			
+			for (std::string action : this->program->getActions()) {
+				std::unique_ptr<std::list<std::list<storm::ir::Command>>> cmds = this->getActiveCommandsByAction(currentState, action);
+				std::unordered_map<StateType*, double, StateHash, StateCompare> resultStates;
+				resultStates[currentState] = 1;
+				std::queue<StateType*> deleteQueue;
+				
+				for (std::list<storm::ir::Command> module : *cmds) {
+					std::unordered_map<StateType*, double, StateHash, StateCompare> newStates;
+					for (storm::ir::Command command : module) {
+						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
+							storm::ir::Update const& update = command.getUpdate(k);
+							for (auto it : resultStates) {
+								StateType* newState = this->applyUpdate(it.first, update);
+								auto s = newStates.find(newState);
+                                if (s == newStates.end()) {
+                                    newStates[newState] = it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
+                                } else {
+                                    newStates[newState] += it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
+                                }
+                                deleteQueue.push(it.first);
+							}
+						}
+					}
+					resultStates.clear();
+					resultStates.insert(newStates.begin(), newStates.end());
+					while (!deleteQueue.empty()) {
+                        if (deleteQueue.front() != currentState) {
+                            delete deleteQueue.front();
+                        }
+                        deleteQueue.pop();
+                    }
+				}
+				for (auto it : resultStates) {
+					hasTransition = true;
+					uint_fast64_t targetIndex = stateToIndexMap[it.first];
+					auto s = stateIndexToProbabilityMap.find(targetIndex);
+					if (s == stateIndexToProbabilityMap.end()) {
+                        stateIndexToProbabilityMap[targetIndex] = it.second;
+                    } else {
+                    	stateIndexToProbabilityMap[targetIndex] += it.second;
+                        deleteQueue.push(it.first);
+                    }
+				}
+				while (!deleteQueue.empty()) {  
+                    delete deleteQueue.front(); 
+                    deleteQueue.pop();
+                }
+			}
+			for (auto targetIndex : stateIndexToProbabilityMap) {
+				resultMatrix->addNextValue(currentIndex, targetIndex.first, targetIndex.second);
+			}
 
 			// Iterate over all modules.
 			for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
@@ -390,6 +443,7 @@ private:
 				// Iterate over all commands.
 				for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
 					storm::ir::Command const& command = module.getCommand(j);
+					if (command.getActionName() != "") continue;
 
 					// Check if this command is enabled in the current state.
 					if (command.getGuard()->getValueAsBool(currentState)) {
