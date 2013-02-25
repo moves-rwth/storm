@@ -489,6 +489,9 @@ private:
 	}
 
 	void clearReachableStateSpace() {
+		for (auto it : allStates) {
+			delete it;
+		}
 		allStates.clear();
 		stateToIndexMap.clear();
 	}
