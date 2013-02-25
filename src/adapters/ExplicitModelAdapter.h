@@ -421,16 +421,12 @@ private:
 					uint_fast64_t targetIndex = stateToIndexMap[it.first];
 					auto s = stateIndexToProbabilityMap.find(targetIndex);
 					if (s == stateIndexToProbabilityMap.end()) {
-                        stateIndexToProbabilityMap[targetIndex] = it.second;
-                    } else {
-                    	stateIndexToProbabilityMap[targetIndex] += it.second;
-                        deleteQueue.push(it.first);
-                    }
+						stateIndexToProbabilityMap[targetIndex] = it.second;
+					} else {
+						stateIndexToProbabilityMap[targetIndex] += it.second;
+					}
+					delete it.first;
 				}
-				while (!deleteQueue.empty()) {  
-                    delete deleteQueue.front(); 
-                    deleteQueue.pop();
-                }
 			}
 			for (auto targetIndex : stateIndexToProbabilityMap) {
 				resultMatrix->addNextValue(currentIndex, targetIndex.first, targetIndex.second);
