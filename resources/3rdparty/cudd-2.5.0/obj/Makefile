@@ -18,6 +18,7 @@ ICFLAGS =
 XCFLAGS =
 #CXXFLAGS = 
 CXXFLAGS = -O3 -std=c++11 -stdlib=libc++
+#CXXFLAGS = -O3 -std=c++0x
 CFLAGS	= $(ICFLAGS) $(MFLAG) $(XCFLAGS) $(CXXFLAGS)
 DDDEBUG =
 
@@ -61,7 +62,7 @@ UBJ	= $(SRC:.cc=.u)
 #------------------------------------------------------
 
 lib$(P).a: $(POBJ)
-	ar rv $@ $?
+	ar rv $@ $? ../cudd/*.o ../dddmp/*.o ../epd/*.o ../mtr/*.o ../st/*.o ../util/*.o
 	$(RANLIB) $@
 
 .cc.o: $(PHDR)
