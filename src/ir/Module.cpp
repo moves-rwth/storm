@@ -34,6 +34,9 @@ Module::Module(std::string moduleName, std::vector<storm::ir::BooleanVariable> b
 	for (unsigned int id = 0; id < this->commands.size(); id++) {
 		std::string action = this->commands[id].getActionName();
 		if (action != "") {
+			if (this->actionsToCommandIndexMap.count(action) == 0) {
+				this->actionsToCommandIndexMap[action] = std::shared_ptr<std::set<uint_fast64_t>>(new std::set<uint_fast64_t>());
+			}
 			this->actionsToCommandIndexMap[action]->insert(id);
 			this->actions.insert(action);
 		}

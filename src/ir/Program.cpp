@@ -24,6 +24,9 @@ Program::Program(ModelType modelType, std::map<std::string, std::shared_ptr<stor
 	// Build actionsToModuleIndexMap
     for (unsigned int id = 0; id < this->modules.size(); id++) {
 		for (auto action : this->modules[id].getActions()) {
+			if (this->actionsToModuleIndexMap.count(action) == 0) {
+				this->actionsToModuleIndexMap[action] = std::shared_ptr<std::set<uint_fast64_t>>(new std::set<uint_fast64_t>());
+			}
             this->actionsToModuleIndexMap[action]->insert(id);
             this->actions.insert(action);
         }
