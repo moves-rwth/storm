@@ -49,7 +49,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 				phoenix::new_<storm::formula::Not<double>>(qi::_1)];
 		notFormula.name("state formula");
 
-		//This block defines rules for atomic state formulas
+		//This block defines rules for "atomic" state formulas
 		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
 		atomicStateFormula %= probabilisticBoundOperator | rewardBoundOperator | atomicProposition | qi::lit("(") >> stateFormula >> qi::lit(")");
 		atomicStateFormula.name("state formula");

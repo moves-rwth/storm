@@ -23,9 +23,10 @@ namespace parser {
 class PrctlFileParser: public storm::parser::PrctlParser {
 public:
 	/*!
-	 * Reads the formula from the given file and parses it into the formula tree
+	 * Reads the formula from the given file and parses it into a formula tree, consisting of
+	 * classes in the namespace storm::formula.
 	 *
-	 * If the contents of the file could not be parsed successfully, it will throw a wrongFileFormatException.
+	 * If the contents of the file could not be parsed successfully, it will throw a wrongFormatException.
 	 *
 	 * @param filename The name of the file to parse
 	 * @throw wrongFormatException If the input could not be parsed successfully
@@ -43,4 +44,5 @@ public:
 
 } /* namespace parser */
 } /* namespace storm */
+
 #endif /* STORM_PARSER_PRCTLFILEPARSER_H_ */

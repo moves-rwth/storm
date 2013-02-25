@@ -22,7 +22,8 @@ class PrctlParser : Parser
 {
 	public:
 		/*!
-		 * Reads a PRCTL formula from its string representation and parses it into the formula tree
+		 * Reads a PRCTL formula from its string representation and parses it into a formula tree, consisting of
+		 * classes in the namespace storm::formula.
 		 *
 		 * If the string could not be parsed successfully, it will throw a wrongFormatException.
 		 *
@@ -43,18 +44,25 @@ class PrctlParser : Parser
 		/*!
 		 * Empty constructor.
 		 *
-		 * Some subclasses do not get a formula string as input (E.g. PrctlFileFormat), hence they should not
+		 * Some subclasses do not get a formula string as input (E.g. PrctlFileParser), hence they should not
 		 * call the usual constructor of this class.
 		 *
-		 * However, this constructor should never be called directly (only as constructor of the super class),
-		 * as it will not parse anything (and formula will point to nullptr then), so it is protected.
+		 * However, this constructor should never be called directly (only during construction of an object of
+		 * a subclass), as it will not parse anything (and formula will point to nullptr then); hence, it is
+		 * protected.
 		 */
 		PrctlParser() {
 			formula = nullptr;
 		}
 
 		/*!
-		 * Parses a formula and stores the result in the field "formula"
+		 * Does the actual parsing.
+		 *
+		 * Is to be called once in a constructor, and never from any other location.
+		 * The function is not included in the constructor, as sub classes may use constructors
+		 * that calculate the string representation of the formula (e.g. read it from a file), hence they
+		 * cannot hand it over to a constructor of this class.
+		 *
 		 * @param formula The string representation of the formula to parse
 		 */
 		void parse(std::string formula);
