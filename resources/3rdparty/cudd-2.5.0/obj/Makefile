@@ -62,7 +62,7 @@ UBJ	= $(SRC:.cc=.u)
 #------------------------------------------------------
 
 lib$(P).a: $(POBJ)
-	ar rv $@ $? ../cudd/*.o ../dddmp/*.o ../epd/*.o ../mtr/*.o ../st/*.o ../util/*.o
+	ar rv $@ $?
 	$(RANLIB) $@
 
 .cc.o: $(PHDR)

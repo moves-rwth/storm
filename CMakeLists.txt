@@ -224,7 +224,7 @@ if (LOG4CPLUS_INCLUDE_DIR)
 endif(LOG4CPLUS_INCLUDE_DIR)
 
 if (CUDD_LIBRARY_DIRS)
-    target_link_libraries(storm "-lcudd -lmtr -lst -lutil -lepd -lobj")
+    target_link_libraries(storm "-lobj -lcudd -lmtr -lst -lutil -lepd")
 endif(CUDD_LIBRARY_DIRS)
 
 if (THREADS_FOUND)
