@@ -142,7 +142,7 @@ private:
 	 * @params update Update to be applied.
 	 * @return Resulting state.
 	 */
-	StateType* applyUpdate(StateType const * state, storm::ir::Update const & update) {
+	StateType* applyUpdate(StateType const * const state, storm::ir::Update const & update) {
 		StateType* newState = new StateType(*state);
 		for (auto assignedVariable : update.getBooleanAssignments()) {
 			setValue(newState, this->booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(state));
@@ -245,16 +245,20 @@ private:
 						}
 					}
 					// Move new states to resultStates.
-					resultStates = newStates;
+					// resultStates = newStates;
+					resultStates.clear();
+					resultStates.insert(newStates.begin(), newStates.end());
 					// Delete old result states.
 					while (!deleteQueue.empty()) {
-						delete deleteQueue.front();
+						if (deleteQueue.front() != currentState) {
+							delete deleteQueue.front();
+						}
 						deleteQueue.pop();
 					}
 				}
-				
 				// Now add our final result states to our global result.
 				for (auto it : resultStates) {
+					hasTransition = true;
 					auto s = stateToIndexMap.find(it.first);
 					if (s == stateToIndexMap.end()) {
 						stateQueue.push(it.first);
