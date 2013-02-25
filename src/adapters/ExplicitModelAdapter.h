@@ -18,6 +18,7 @@
 #include <queue>
 #include <iostream>
 #include <memory>
+#include <list>
 
 typedef std::pair<std::vector<bool>, std::vector<int_fast64_t>> StateType;
 
@@ -89,8 +90,8 @@ private:
 			numberOfBooleanVariables += program->getModule(i).getNumberOfBooleanVariables();
 		}
 
-		booleanVariables.resize(numberOfBooleanVariables);
-		integerVariables.resize(numberOfIntegerVariables);
+		this->booleanVariables.resize(numberOfBooleanVariables);
+		this->integerVariables.resize(numberOfIntegerVariables);
 
 		uint_fast64_t nextBooleanVariableIndex = 0;
 		uint_fast64_t nextIntegerVariableIndex = 0;
@@ -98,16 +99,58 @@ private:
 			storm::ir::Module const& module = program->getModule(i);
 
 			for (uint_fast64_t j = 0; j < module.getNumberOfBooleanVariables(); ++j) {
-				booleanVariables[nextBooleanVariableIndex] = module.getBooleanVariable(j);
-				booleanVariableToIndexMap[module.getBooleanVariable(j).getName()] = nextBooleanVariableIndex;
+				this->booleanVariables[nextBooleanVariableIndex] = module.getBooleanVariable(j);
+				this->booleanVariableToIndexMap[module.getBooleanVariable(j).getName()] = nextBooleanVariableIndex;
 				++nextBooleanVariableIndex;
 			}
 			for (uint_fast64_t j = 0; j < module.getNumberOfIntegerVariables(); ++j) {
-				integerVariables[nextIntegerVariableIndex] = module.getIntegerVariable(j);
-				integerVariableToIndexMap[module.getIntegerVariable(j).getName()] = nextIntegerVariableIndex;
+				this->integerVariables[nextIntegerVariableIndex] = module.getIntegerVariable(j);
+				this->integerVariableToIndexMap[module.getIntegerVariable(j).getName()] = nextIntegerVariableIndex;
 				++nextIntegerVariableIndex;
 			}
 		}
+	}
+	
+	std::unique_ptr<std::list<std::list<storm::ir::Command>>> getActiveCommandsByAction(StateType const * state, std::string& action) {
+		std::unique_ptr<std::list<std::list<storm::ir::Command>>> res = std::unique_ptr<std::list<std::list<storm::ir::Command>>>(new std::list<std::list<storm::ir::Command>>());
+		
+		// Iterate over all modules.
+		for (uint_fast64_t i = 0; i < this->program->getNumberOfModules(); ++i) {
+			storm::ir::Module const& module = this->program->getModule(i);
+			
+			std::shared_ptr<std::set<uint_fast64_t>> ids = module.getCommandsByAction(action);
+			std::list<storm::ir::Command> commands;
+			
+			// Look up commands by their id. Add, if guard holds.
+			for (uint_fast64_t id : *ids) {
+				storm::ir::Command cmd = module.getCommand(id);
+				if (cmd.getGuard()->getValueAsBool(state)) {
+					commands.push_back(module.getCommand(id));
+				}
+			}
+			res->push_back(commands);
+		}
+		// Sort the result in the vague hope that having small lists at the beginning will speed up the expanding.
+		// This is how lambdas may look like in C++...
+		res->sort([](const std::list<storm::ir::Command>& a, const std::list<storm::ir::Command>& b){ return a.size() < b.size(); });
+		return res;
+	}
+	
+	/*!
+	 * Apply an update to the given state and return resulting state.
+	 * @params state Current state.
+	 * @params update Update to be applied.
+	 * @return Resulting state.
+	 */
+	StateType* applyUpdate(StateType const * state, storm::ir::Update const & update) {
+		StateType* newState = new StateType(*state);
+		for (auto assignedVariable : update.getBooleanAssignments()) {
+			setValue(newState, this->booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(state));
+		}
+		for (auto assignedVariable : update.getIntegerAssignments()) {
+			setValue(newState, this->integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(state));
+		}
+		return newState;
 	}
 
 	void computeReachableStateSpace() {
@@ -124,25 +167,25 @@ private:
 		// Now initialize all fields in the value vectors of the state according to the initial
 		// values provided by the input program.
 		for (uint_fast64_t i = 0; i < booleanVariables.size(); ++i) {
-			bool initialValue = booleanVariables[i].getInitialValue()->getValueAsBool(initialState);
+			bool initialValue = this->booleanVariables[i].getInitialValue()->getValueAsBool(initialState);
 			std::get<0>(*initialState)[i] = initialValue;
 		}
 		for (uint_fast64_t i = 0; i < integerVariables.size(); ++i) {
-			int_fast64_t initialValue = integerVariables[i].getInitialValue()->getValueAsInt(initialState);
+			int_fast64_t initialValue = this->integerVariables[i].getInitialValue()->getValueAsInt(initialState);
 			std::get<1>(*initialState)[i] = initialValue;
 		}
 
 		// Now set up the environment for a breadth-first search starting from the initial state.
 		uint_fast64_t nextIndex = 1;
-		allStates.clear();
-		stateToIndexMap.clear();
+		this->allStates.clear();
+		this->stateToIndexMap.clear();
 		std::queue<StateType*> stateQueue;
 
-		allStates.push_back(initialState);
+		this->allStates.push_back(initialState);
 		stateQueue.push(initialState);
-		stateToIndexMap[initialState] = 0;
+		this->stateToIndexMap[initialState] = 0;
 
-		numberOfTransitions = 0;
+		this->numberOfTransitions = 0;
 		while (!stateQueue.empty()) {
 			// Get first state in queue.
 			StateType* currentState = stateQueue.front();
@@ -151,7 +194,91 @@ private:
 			// Remember whether the state has at least one transition such that transitions can be
 			// inserted upon detection of a deadlock state.
 			bool hasTransition = false;
+			
+			// First expand all transitions for commands labelled with some
+			// action. For every module, we determine all commands with this
+			// action whose guard holds. Then, we add a transition for each
+			// combination of all updates of those commands.
+			for (std::string action : this->program->getActions()) {
+				// Get list of all commands.
+				// This list contains a list for every module that has commands labelled by action.
+				// Each such list contains all commands whose guards are fulfilled.
+				// If no guard is fulfilled (i.e. there is no way to perform this action), the list will be empty!
+				std::unique_ptr<std::list<std::list<storm::ir::Command>>> cmds = this->getActiveCommandsByAction(currentState, action);
+				
+				// Start with current state.
+				std::unordered_map<StateType*, double, StateHash, StateCompare> resultStates;
+				resultStates[currentState] = 1;
+				std::queue<StateType*> deleteQueue;
+				
+				// Iterate over all modules (represented by the list of commands with the current action).
+				// We will now combine every state in resultStates with every additional update in the next module.
+				// The final result will be this map after we are done with all modules.
+				for (std::list<storm::ir::Command> module : *cmds) {
+					// If no states are left, we are done.
+					// This happens, if there is a module where commands existed, but no guard was fulfilled.
+					if (resultStates.size() == 0) break;
+					// Put all new states in this new map.
+					std::unordered_map<StateType*, double, StateHash, StateCompare> newStates;
+					
+					// Iterate over all commands within this module.
+					for (storm::ir::Command command : module) {
+						// Iterate over all updates of this command.
+						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
+							storm::ir::Update const& update = command.getUpdate(k);
+							
+							// Iterate over all resultStates.
+							for (auto it : resultStates) {
+								// Apply the new update and get resulting state.
+								StateType* newState = this->applyUpdate(it.first, update);
+								// Insert the new state into newStates array.
+								// Take care of calculation of likelihood, combine identical states.
+								auto s = newStates.find(newState);
+								if (s == newStates.end()) {
+									newStates[newState] = it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
+								} else {
+									newStates[newState] += it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
+								}
+								// No matter what happened, we must delete the states of the previous iteration.
+								deleteQueue.push(it.first);
+							} 
+						}
+					}
+					// Move new states to resultStates.
+					resultStates = newStates;
+					// Delete old result states.
+					while (!deleteQueue.empty()) {
+						delete deleteQueue.front();
+						deleteQueue.pop();
+					}
+				}
+				
+				// Now add our final result states to our global result.
+				for (auto it : resultStates) {
+					auto s = stateToIndexMap.find(it.first);
+					if (s == stateToIndexMap.end()) {
+						stateQueue.push(it.first);
+						// Add state to list of all reachable states.
+						allStates.push_back(it.first);
+						// Give a unique index to the newly found state.
+						stateToIndexMap[it.first] = nextIndex;
+						++nextIndex;
+					} else {
+						deleteQueue.push(it.first);
+					}
+				}
+				// Delete states we already had.
+				while (!deleteQueue.empty()) {
+					delete deleteQueue.front();
+					deleteQueue.pop();
+				}
+				this->numberOfTransitions += resultStates.size();
+			}
+			
 
+			// Now, expand all transitions for commands not labelled with
+			// some action. Those commands each build a transition for
+			// themselves.
 			// Iterate over all modules.
 			for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
 				storm::ir::Module const& module = program->getModule(i);
@@ -159,6 +286,7 @@ private:
 				// Iterate over all commands.
 				for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
 					storm::ir::Command const& command = module.getCommand(j);
+					if (command.getActionName() != "") continue;
 
 					// Check if this command is enabled in the current state.
 					if (command.getGuard()->getValueAsBool(currentState)) {
@@ -183,15 +311,7 @@ private:
 							// Now copy the current state and only overwrite the entries in the
 							// vectors if there is an assignment to that variable in the current
 							// update.
-							StateType* newState = new StateType(*currentState);
-							std::map<std::string, storm::ir::Assignment> const& booleanAssignmentMap = update.getBooleanAssignments();
-							for (auto assignedVariable : booleanAssignmentMap) {
-								setValue(newState, booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(currentState));
-							}
-							std::map<std::string, storm::ir::Assignment> const& integerAssignmentMap = update.getIntegerAssignments();
-							for (auto assignedVariable : integerAssignmentMap) {
-								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(currentState));
-							}
+							StateType* newState = this->applyUpdate(currentState, update);
 
 							// If we have already found the target state of the update, we must not
 							// increase the transition count.
@@ -274,16 +394,7 @@ private:
 						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
 							storm::ir::Update const& update = command.getUpdate(k);
 
-							StateType* newState = new StateType(*currentState);
-
-							std::map<std::string, storm::ir::Assignment> const& booleanAssignmentMap = update.getBooleanAssignments();
-							for (auto assignedVariable : booleanAssignmentMap) {
-								setValue(newState, booleanVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsBool(currentState));
-							}
-							std::map<std::string, storm::ir::Assignment> const& integerAssignmentMap = update.getIntegerAssignments();
-							for (auto assignedVariable : integerAssignmentMap) {
-								setValue(newState, integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(currentState));
-							}
+							StateType* newState = this->applyUpdate(*currentState, update);
 
 							uint_fast64_t targetIndex = (*stateToIndexMap.find(newState)).second;
 							delete newState;
