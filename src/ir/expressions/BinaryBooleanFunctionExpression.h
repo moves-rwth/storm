@@ -10,8 +10,6 @@
 
 #include "src/ir/expressions/BinaryExpression.h"
 
-#include "src/utility/CuddUtility.h"
-
 #include <memory>
 #include <sstream>
 

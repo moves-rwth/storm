@@ -10,8 +10,6 @@
 
 #include "src/ir/expressions/BaseExpression.h"
 
-#include "src/utility/CuddUtility.h"
-
 namespace storm {
 
 namespace ir {

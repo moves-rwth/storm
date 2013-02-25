@@ -10,8 +10,6 @@
 
 #include "ConstantExpression.h"
 
-#include "src/utility/CuddUtility.h"
-
 #include <boost/lexical_cast.hpp>
 
 namespace storm {

@@ -12,7 +12,6 @@
 #include "src/exceptions/NotImplementedException.h"
 
 #include "ExpressionVisitor.h"
-#include "src/utility/CuddUtility.h"
 
 #include <string>
 #include <vector>
