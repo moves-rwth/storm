@@ -476,7 +476,7 @@ public:
 	 * Returns a pointer to the value storage of the matrix.
 	 * @return A pointer to the value storage of the matrix.
 	 */
-	std::vector<T> const & getStoragePointer() const {
+	std::vector<T> const& getStorage() const {
 		return valueStorage;
 	}
 
@@ -486,7 +486,7 @@ public:
 	 * @return A pointer to the array that stores the start indices of non-zero
 	 * entries in the value storage for each row.
 	 */
-	std::vector<uint_fast64_t> const & getRowIndicationsPointer() const {
+	std::vector<uint_fast64_t> const& getRowIndications() const {
 		return rowIndications;
 	}
 
@@ -496,7 +496,7 @@ public:
 	 * @return A pointer to an array that stores the column of each non-zero
 	 * element.
 	 */
-	std::vector<uint_fast64_t> const & getColumnIndicationsPointer() const {
+	std::vector<uint_fast64_t> const& getColumnIndications() const {
 		return columnIndications;
 	}
 
@@ -641,11 +641,28 @@ public:
 	bool makeRowsAbsorbing(const storm::storage::BitVector rows) {
 		bool result = true;
 		for (auto row : rows) {
-			result &= makeRowAbsorbing(row);
+			result &= makeRowAbsorbing(row, row);
 		}
 
 		return result;
 	}
+
+	/*!
+	 * This function makes the groups of rows given by the bit vector absorbing.
+	 * @param rows A bit vector indicating which row groups to make absorbing.
+	 * @return True iff the operation was successful.
+	 */
+	bool makeRowsAbsorbing(const storm::storage::BitVector rows, std::vector<uint_fast64_t> const& nondeterministicChoices) {
+		bool result = true;
+		for (auto index : rows) {
+			for (uint_fast64_t row = nondeterministicChoices[index]; row < nondeterministicChoices[index + 1]; ++row) {
+				result &= makeRowAbsorbing(row, index);
+			}
+		}
+
+		return result;
+	}
+
 
 	/*!
 	 * This function makes the given row absorbing. This means that all
@@ -654,7 +671,7 @@ public:
 	 * @param row The row to be made absorbing.
 	 * @returns True iff the operation was successful.
 	 */
-	bool makeRowAbsorbing(const uint_fast64_t row) {
+	bool makeRowAbsorbing(const uint_fast64_t row, const uint_fast64_t column) {
 		// Check whether the accessed state exists.
 		if (row > rowCount) {
 			LOG4CPLUS_ERROR(logger, "Trying to make an illegal row " << row << " absorbing.");
@@ -668,29 +685,16 @@ public:
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 
 		if (rowStart >= rowEnd) {
-			this->print();
-			LOG4CPLUS_ERROR(logger, "Cannot make row absorbing, because there is no entry in this row.");
-			throw storm::exceptions::InvalidStateException("Cannot make row absorbing, because there is no entry in this row.");
-		}
-		uint_fast64_t pseudoDiagonal = row % colCount;
-
-		bool foundDiagonal = false;
-		while (rowStart < rowEnd) {
-			if (!foundDiagonal && columnIndications[rowStart] >= pseudoDiagonal) {
-				foundDiagonal = true;
-				// insert/replace the diagonal entry
-				columnIndications[rowStart] = pseudoDiagonal;
-				valueStorage[rowStart] = storm::utility::constGetOne<T>();
-			} else {
-				valueStorage[rowStart] = storm::utility::constGetZero<T>();
-			}
-			++rowStart;
+			LOG4CPLUS_ERROR(logger, "Cannot make row " << row << " absorbing, because there is no entry in this row.");
+			throw storm::exceptions::InvalidStateException() << "Cannot make row " << row << " absorbing, because there is no entry in this row.";
 		}
 
-		if (!foundDiagonal) {
-			--rowStart;
-			columnIndications[rowStart] = pseudoDiagonal;
-			valueStorage[rowStart] = storm::utility::constGetOne<T>();
+		valueStorage[rowStart] = storm::utility::constGetOne<T>();
+		columnIndications[rowStart] = column;
+
+		for (uint_fast64_t index = rowStart + 1; index < rowEnd; ++index) {
+			valueStorage[index] = storm::utility::constGetZero<T>();
+			columnIndications[index] = 0;
 		}
 
 		return true;
@@ -722,10 +726,27 @@ public:
 	 * @param resultVector A pointer to the resulting vector that has at least
 	 * as many elements as there are bits set to true in the constraint.
 	 */
-	void getConstrainedRowCountVector(const storm::storage::BitVector& rowConstraint, const storm::storage::BitVector& columnConstraint, std::vector<T>* resultVector) const {
+	void getConstrainedRowSumVector(const storm::storage::BitVector& rowConstraint, const storm::storage::BitVector& columnConstraint, std::vector<T>* resultVector) const {
 		uint_fast64_t currentRowCount = 0;
 		for (auto row : rowConstraint) {
 			(*resultVector)[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
+		}
+	}
+
+	/*!
+	 * Computes a vector in which each element is the sum of those elements in the
+	 * corresponding row whose column bits are set to one in the given constraint.
+	 * @param rowConstraint A bit vector that indicates for which rows to perform summation.
+	 * @param columnConstraint A bit vector that indicates which columns to add.
+	 * @param resultVector A pointer to the resulting vector that has at least
+	 * as many elements as there are bits set to true in the constraint.
+	 */
+	void getConstrainedRowSumVector(const storm::storage::BitVector& rowConstraint, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, const storm::storage::BitVector& columnConstraint, std::vector<T>* resultVector) const {
+		uint_fast64_t currentRowCount = 0;
+		for (auto index : rowConstraint) {
+			for (uint_fast64_t row = nondeterministicChoiceIndices[index]; row < nondeterministicChoiceIndices[index + 1]; ++row) {
+				(*resultVector)[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
+			}
 		}
 	}
 
@@ -761,7 +782,7 @@ public:
 
 		// Create a temporary array that stores for each index whose bit is set
 		// to true the number of bits that were set before that particular index.
-		uint_fast64_t* bitsSetBeforeIndex = new uint_fast64_t[rowCount];
+		uint_fast64_t* bitsSetBeforeIndex = new uint_fast64_t[colCount];
 		uint_fast64_t lastIndex = 0;
 		uint_fast64_t currentNumberOfSetBits = 0;
 		for (auto index : constraint) {
@@ -781,6 +802,70 @@ public:
 			}
 
 			++rowCount;
+		}
+
+		// Dispose of the temporary array.
+		delete[] bitsSetBeforeIndex;
+
+		// Finalize sub-matrix and return result.
+		result->finalize();
+		LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
+		return result;
+	}
+
+	SparseMatrix* getSubmatrix(storm::storage::BitVector& constraint, std::vector<uint_fast64_t> const& rowIndices) const {
+		LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix (of unknown size).");
+
+		// Check for valid constraint.
+		if (constraint.getNumberOfSetBits() == 0) {
+			LOG4CPLUS_ERROR(logger, "Trying to create a sub-matrix of size 0.");
+			throw storm::exceptions::InvalidArgumentException("Trying to create a sub-matrix of size 0.");
+		}
+
+		// First, we need to determine the number of non-zero entries and the number of rows of the
+		// sub-matrix.
+		uint_fast64_t subNonZeroEntries = 0;
+		uint_fast64_t subRowCount = 0;
+		for (auto index : constraint) {
+			subRowCount += rowIndices[index + 1] - rowIndices[index];
+			for (uint_fast64_t i = rowIndices[index]; i < rowIndices[index + 1]; ++i) {
+				for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
+					if (constraint.get(columnIndications[j])) {
+						++subNonZeroEntries;
+					}
+				}
+			}
+		}
+
+		LOG4CPLUS_DEBUG(logger, "Determined size of submatrix to be " << subRowCount << "x" << constraint.getNumberOfSetBits() << ".");
+
+		// Create and initialize resulting matrix.
+		SparseMatrix* result = new SparseMatrix(subRowCount, constraint.getNumberOfSetBits());
+		result->initialize(subNonZeroEntries);
+
+		// Create a temporary array that stores for each index whose bit is set
+		// to true the number of bits that were set before that particular index.
+		uint_fast64_t* bitsSetBeforeIndex = new uint_fast64_t[colCount];
+		uint_fast64_t lastIndex = 0;
+		uint_fast64_t currentNumberOfSetBits = 0;
+		for (auto index : constraint) {
+			while (lastIndex <= index) {
+				bitsSetBeforeIndex[lastIndex++] = currentNumberOfSetBits;
+			}
+			++currentNumberOfSetBits;
+		}
+
+		// Copy over selected entries.
+		uint_fast64_t rowCount = 0;
+		for (auto index : constraint) {
+			for (uint_fast64_t i = rowIndices[index]; i < rowIndices[index + 1]; ++i) {
+				for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
+					if (constraint.get(columnIndications[j])) {
+						result->addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[j]], valueStorage[j]);
+					}
+				}
+				++rowCount;
+			}
 		}
 
 		// Dispose of the temporary array.
@@ -1005,11 +1090,82 @@ public:
 		return true;
 	}
 
-	void print() const {
-		std::cout << "entries in (" << rowCount << "x" << colCount << " matrix):" << std::endl;
-		std::cout << rowIndications << std::endl;
-		std::cout << columnIndications << std::endl;
-		std::cout << valueStorage << std::endl;
+	/*!
+	 * Retrieves a compressed string representation of the matrix.
+	 * @return a compressed string representation of the matrix.
+	 */
+	std::string toStringCompressed() const {
+		std::stringstream result;
+		result << rowIndications << std::endl;
+		result << columnIndications << std::endl;
+		result << valueStorage << std::endl;
+		return result.str();
+	}
+
+	/*!
+	 * Retrieves a (non-compressed) string representation of the matrix.
+	 * Note: the matrix is presented densely. That is, all zeros are filled in and are part of the string
+	 * representation.
+	 * @param nondeterministicChoiceIndices A vector indicating which rows belong together. If given, rows belonging
+	 * to separate groups will be separated by a dashed line.
+	 * @return a (non-compressed) string representation of the matrix.
+	 */
+	std::string toString(std::shared_ptr<std::vector<std::uint_fast64_t>> nondeterministicChoiceIndices) const {
+		std::stringstream result;
+		uint_fast64_t currentNondeterministicChoiceIndex = 0;
+
+		// Print column numbers in header.
+		result << "\t\t";
+		for (uint_fast64_t i = 0; i < colCount; ++i) {
+			result << i << "\t";
+		}
+		result << std::endl;
+
+		// Iterate over all rows.
+		for (uint_fast64_t i = 0; i < rowCount; ++i) {
+			uint_fast64_t nextIndex = rowIndications[i];
+
+			// If we need to group of rows, print a dashed line in case we have moved to the next group of rows.
+			if (nondeterministicChoiceIndices != nullptr) {
+				if (i == (*nondeterministicChoiceIndices)[currentNondeterministicChoiceIndex]) {
+					if (i != 0) {
+						result << "\t(\t";
+						for (uint_fast64_t j = 0; j < colCount - 2; ++j) {
+							result << "----";
+							if (j == 1) {
+								result << "\t" << currentNondeterministicChoiceIndex << "\t";
+							}
+						}
+						result << "\t)" << std::endl;
+					}
+					++currentNondeterministicChoiceIndex;
+				}
+			}
+
+			// Print the actual row.
+			result << i << "\t(\t";
+			uint_fast64_t currentRealIndex = 0;
+			while (currentRealIndex < colCount) {
+				if (currentRealIndex == columnIndications[nextIndex] && nextIndex < rowIndications[i + 1]) {
+					result << valueStorage[nextIndex] << "\t";
+					++nextIndex;
+				} else {
+					result << "0\t";
+				}
+				++currentRealIndex;
+			}
+			result << "\t)\t" << i << std::endl;
+		}
+
+		// Print column numbers in footer.
+		result << "\t\t";
+		for (uint_fast64_t i = 0; i < colCount; ++i) {
+			result << i << "\t";
+		}
+		result << std::endl;
+
+		// Return final result.
+		return result.str();
 	}
 
 private:

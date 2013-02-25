@@ -13,7 +13,7 @@ template <class T> class AbstractPathFormula;
 }}
 
 #include "src/formula/AbstractFormula.h"
-#include "src/modelchecker/AbstractModelChecker.h"
+#include "src/modelchecker/ForwardDeclarations.h"
 
 #include <vector>
 #include <iostream>
@@ -61,7 +61,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const = 0;
+	virtual std::vector<T>* check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const = 0;
 };
 
 } //namespace formula

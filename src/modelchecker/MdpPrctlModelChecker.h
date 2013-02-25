@@ -1,23 +1,24 @@
 /*
- * DtmcPrctlModelChecker.h
+ * MdpPrctlModelChecker.h
  *
- *  Created on: 22.10.2012
- *      Author: Thomas Heinemann
+ *  Created on: 15.02.2013
+ *      Author: Christian Dehnert
  */
 
-#ifndef STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
-#define STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_MDPPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_MDPPRCTLMODELCHECKER_H_
 
 #include "src/formula/Formulas.h"
 #include "src/utility/Vector.h"
 #include "src/storage/SparseMatrix.h"
 
-#include "src/models/Dtmc.h"
+#include "src/models/Mdp.h"
 #include "src/storage/BitVector.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/utility/Vector.h"
 #include "src/modelchecker/AbstractModelChecker.h"
 #include <vector>
+#include <stack>
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -38,7 +39,7 @@ namespace modelChecker {
  * @attention This class is abstract.
  */
 template<class Type>
-class DtmcPrctlModelChecker : 
+class MdpPrctlModelChecker :
 	public AbstractModelChecker<Type> {
 
 public:
@@ -47,9 +48,8 @@ public:
 	 *
 	 * @param model The dtmc model which is checked.
 	 */
-	explicit DtmcPrctlModelChecker(storm::models::Dtmc<Type>& model)
-		: AbstractModelChecker<Type>(model) {
-		// Intentionally left empty.
+	explicit MdpPrctlModelChecker(storm::models::Mdp<Type>& model)
+		: AbstractModelChecker<Type>(model), minimumOperatorStack() {
 	}
 
 	/*!
@@ -57,50 +57,31 @@ public:
 	 *
 	 * @param modelChecker The model checker that is copied.
 	 */
-	explicit DtmcPrctlModelChecker(const storm::modelChecker::DtmcPrctlModelChecker<Type>* modelChecker) : AbstractModelChecker<Type>(modelChecker) {
+	explicit MdpPrctlModelChecker(const storm::modelChecker::MdpPrctlModelChecker<Type>* modelChecker)
+		: AbstractModelChecker<Type>(modelChecker),  minimumOperatorStack() {
+
 	}
 
 	/*!
 	 * Destructor
 	 */
-	virtual ~DtmcPrctlModelChecker() {
+	virtual ~MdpPrctlModelChecker() {
 		// Intentionally left empty.
 	}
 
 	/*!
 	 * @returns A reference to the dtmc of the model checker.
 	 */
-	storm::models::Dtmc<Type>& getModel() const {
-		return AbstractModelChecker<Type>::template getModel<storm::models::Dtmc<Type>>();
+	storm::models::Mdp<Type>& getModel() const {
+		return AbstractModelChecker<Type>::template getModel<storm::models::Mdp<Type>>();
 	}
 
 	/*!
 	 * Sets the DTMC model which is checked
 	 * @param model
 	 */
-	void setModel(storm::models::Dtmc<Type>& model) {
+	void setModel(storm::models::Mdp<Type>& model) {
 		AbstractModelChecker<Type>::setModel(model);
-	}
-
-	/*!
-	 * The check method for a formula with an AP node as root in its formula tree
-	 *
-	 * @param formula The Ap state formula to check
-	 * @returns The set of states satisfying the formula, represented by a bit vector
-	 */
-	storm::storage::BitVector* checkAp(const storm::formula::Ap<Type>& formula) const {
-		if (formula.getAp().compare("true") == 0) {
-			return new storm::storage::BitVector(this->getModel().getNumberOfStates(), true);
-		} else if (formula.getAp().compare("false") == 0) {
-			return new storm::storage::BitVector(this->getModel().getNumberOfStates());
-		}
-
-		if (!this->getModel().hasAtomicProposition(formula.getAp())) {
-			LOG4CPLUS_ERROR(logger, "Atomic proposition '" << formula.getAp() << "' is invalid.");
-			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
-		}
-
-		return new storm::storage::BitVector(*this->getModel().getLabeledStates(formula.getAp()));
 	}
 
 	/*!
@@ -162,6 +143,28 @@ public:
 	}
 
 	/*!
+	 * The check method for a formula with an AP node as root in its formula tree
+	 *
+	 * @param formula The Ap state formula to check
+	 * @returns The set of states satisfying the formula, represented by a bit vector
+	 */
+	storm::storage::BitVector* checkAp(const storm::formula::Ap<Type>& formula) const {
+		if (formula.getAp().compare("true") == 0) {
+			return new storm::storage::BitVector(this->getModel().getNumberOfStates(), true);
+		} else if (formula.getAp().compare("false") == 0) {
+			return new storm::storage::BitVector(this->getModel().getNumberOfStates());
+		}
+
+		if (!this->getModel().hasAtomicProposition(formula.getAp())) {
+			LOG4CPLUS_ERROR(logger, "Atomic proposition '" << formula.getAp() << "' is invalid.");
+			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
+			return nullptr;
+		}
+
+		return new storm::storage::BitVector(*this->getModel().getLabeledStates(formula.getAp()));
+	}
+
+	/*!
 	 * The check method for a state formula with a probabilistic operator node without bounds as root
 	 * in its formula tree
 	 *
@@ -169,11 +172,15 @@ public:
 	 * @returns The set of states satisfying the formula, represented by a bit vector
 	 */
 	std::vector<Type>* checkNoBoundOperator(const storm::formula::NoBoundOperator<Type>& formula) const {
-		// Check if the operator was an optimality operator and report a warning in that case.
-		if (formula.isOptimalityOperator()) {
-			LOG4CPLUS_WARN(logger, "Formula contains min/max operator which is not meaningful over deterministic models.");
+		// Check if the operator was an non-optimality operator and report an error in that case.
+		if (!formula.isOptimalityOperator()) {
+			LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+			throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
 		}
-		return formula.getPathFormula().check(*this, false);
+		minimumOperatorStack.push(formula.isMinimumOperator());
+		std::vector<Type>* result = formula.getPathFormula().check(*this, false);
+		minimumOperatorStack.pop();
+		return result;
 	}
 
 	/*!
@@ -268,8 +275,8 @@ public:
 	 */
 	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula, bool qualitative) const = 0;
 
-private:
-//	storm::models::Dtmc<Type>& model;
+protected:
+	mutable std::stack<bool> minimumOperatorStack;
 };
 
 } //namespace modelChecker

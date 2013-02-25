@@ -10,13 +10,12 @@
 
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractStateFormula.h"
-#include "src/modelchecker/AbstractModelChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 #include <vector>
 #include <tuple>
 #include <sstream>
-#include "src/formula/AbstractFormulaChecker.h"
+#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace formula {
@@ -38,7 +37,7 @@ class IBoundedNaryUntilModelChecker {
          *  @param obj Formula object with subformulas.
          *  @return Result of the formula for every node.
          */
-        virtual std::vector<T>* checkBoundedNaryUntil(const BoundedNaryUntil<T>& obj) const = 0;
+        virtual std::vector<T>* checkBoundedNaryUntil(const BoundedNaryUntil<T>& obj, bool qualitative) const = 0;
 };
 
 /*!
@@ -180,8 +179,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IBoundedNaryUntilModelChecker>()->checkBoundedNaryUntil(*this);
+	virtual std::vector<T> *check(const storm::modelChecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
+		return modelChecker.template as<IBoundedNaryUntilModelChecker>()->checkBoundedNaryUntil(*this, qualitative);
 	}
 	
 	/*!

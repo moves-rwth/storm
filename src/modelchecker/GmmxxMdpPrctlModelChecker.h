@@ -5,13 +5,13 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_
-#define STORM_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_GMMXXMDPPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_GMMXXMDPPRCTLMODELCHECKER_H_
 
 #include <cmath>
 
-#include "src/models/Dtmc.h"
-#include "src/modelchecker/DtmcPrctlModelChecker.h"
+#include "src/models/Mdp.h"
+#include "src/modelchecker/MdpPrctlModelChecker.h"
 #include "src/utility/GraphAnalyzer.h"
 #include "src/utility/Vector.h"
 #include "src/utility/ConstTemplates.h"
@@ -36,16 +36,12 @@ namespace modelChecker {
  * A model checking engine that makes use of the gmm++ backend.
  */
 template <class Type>
-class GmmxxDtmcPrctlModelChecker
-	: public DtmcPrctlModelChecker<Type> {
+class GmmxxMdpPrctlModelChecker : public MdpPrctlModelChecker<Type> {
 
 public:
-	explicit GmmxxDtmcPrctlModelChecker(storm::models::Dtmc<Type>& dtmc)
-		: DtmcPrctlModelChecker<Type>(dtmc) {
-		// Intentionally left empty.
-	}
+	explicit GmmxxMdpPrctlModelChecker(storm::models::Mdp<Type>& mdp) : MdpPrctlModelChecker<Type>(mdp) { }
 
-	virtual ~GmmxxDtmcPrctlModelChecker() { }
+	virtual ~GmmxxMdpPrctlModelChecker() { }
 
 	virtual std::vector<Type>* checkBoundedUntil(const storm::formula::BoundedUntil<Type>& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
@@ -55,8 +51,12 @@ public:
 		// Copy the matrix before we make any changes.
 		storm::storage::SparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionMatrix());
 
+		// Get the starting row indices for the non-deterministic choices to reduce the resulting
+		// vector properly.
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
+
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
-		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
+		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates, *nondeterministicChoiceIndices);
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
 		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(tmpMatrix);
@@ -65,16 +65,20 @@ public:
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 		storm::utility::setVectorValues(result, *rightStates, storm::utility::constGetOne<Type>());
 
+		// Create vector for result of multiplication, which is reduced to the result vector after
+		// each multiplication.
+		std::vector<Type>* multiplyResult = new std::vector<Type>(this->getModel().getTransitionMatrix()->getRowCount(), 0);
+
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
-		std::vector<Type>* swap = nullptr;
-		std::vector<Type>* tmpResult = new std::vector<Type>(this->getModel().getNumberOfStates());
 		for (uint_fast64_t i = 0; i < formula.getBound(); ++i) {
-			gmm::mult(*gmmxxMatrix, *result, *tmpResult);
-			swap = tmpResult;
-			tmpResult = result;
-			result = swap;
+			gmm::mult(*gmmxxMatrix, *result, *multiplyResult);
+			if (this->minimumOperatorStack.top()) {
+				storm::utility::reduceVectorMin(*multiplyResult, result, *nondeterministicChoiceIndices);
+			} else {
+				storm::utility::reduceVectorMax(*multiplyResult, result, *nondeterministicChoiceIndices);
+			}
 		}
-		delete tmpResult;
+		delete multiplyResult;
 
 		// Delete intermediate results and return result.
 		delete gmmxxMatrix;
@@ -91,20 +95,31 @@ public:
 		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionMatrix());
 
 		// Create the vector with which to multiply and initialize it correctly.
-		std::vector<Type> x(this->getModel().getNumberOfStates());
-		storm::utility::setVectorValues(&x, *nextStates, storm::utility::constGetOne<Type>());
+		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		storm::utility::setVectorValues(result, *nextStates, storm::utility::constGetOne<Type>());
 
 		// Delete obsolete sub-result.
 		delete nextStates;
 
 		// Create resulting vector.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		std::vector<Type>* temporaryResult = new std::vector<Type>(this->getModel().getTransitionMatrix()->getRowCount());
 
 		// Perform the actual computation, namely matrix-vector multiplication.
-		gmm::mult(*gmmxxMatrix, x, *result);
+		gmm::mult(*gmmxxMatrix, *result, *temporaryResult);
 
-		// Delete temporary matrix and return result.
+		// Get the starting row indices for the non-deterministic choices to reduce the resulting
+		// vector properly.
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
+
+		if (this->minimumOperatorStack.top()) {
+			storm::utility::reduceVectorMin(*temporaryResult, result, *nondeterministicChoiceIndices);
+		} else {
+			storm::utility::reduceVectorMax(*temporaryResult, result, *nondeterministicChoiceIndices);
+		}
+
+		// Delete temporary matrix plus temporary result and return result.
 		delete gmmxxMatrix;
+		delete temporaryResult;
 		return result;
 	}
 
@@ -117,7 +132,11 @@ public:
 		// all states that have probability 0 and 1 of satisfying the until-formula.
 		storm::storage::BitVector statesWithProbability0(this->getModel().getNumberOfStates());
 		storm::storage::BitVector statesWithProbability1(this->getModel().getNumberOfStates());
-		storm::utility::GraphAnalyzer::performProb01(this->getModel(), *leftStates, *rightStates, &statesWithProbability0, &statesWithProbability1);
+		if (this->minimumOperatorStack.top()) {
+			storm::utility::GraphAnalyzer::performProb01Min(this->getModel(), *leftStates, *rightStates, &statesWithProbability0, &statesWithProbability1);
+		} else {
+			storm::utility::GraphAnalyzer::performProb01Max(this->getModel(), *leftStates, *rightStates, &statesWithProbability0, &statesWithProbability1);
+		}
 
 		// Delete sub-results that are obsolete now.
 		delete leftStates;
@@ -132,40 +151,36 @@ public:
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
 		// Only try to solve system if there are states for which the probability is unknown.
-		uint_fast64_t mayBeStatesSetBitCount = maybeStates.getNumberOfSetBits();
-		if (mayBeStatesSetBitCount > 0 && !qualitative) {
-			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
-			// Converting the matrix from the fixpoint notation to the form needed for the equation
-			// system. That is, we go from x = A*x + b to (I-A)x = b.
-			submatrix->convertToEquationSystem();
+		uint_fast64_t maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
+		if (maybeStatesSetBitCount > 0) {
+			// First, we can eliminate the rows and columns from the original transition probability matrix for states
+			// whose probabilities are already known.
+			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates, *this->getModel().getNondeterministicChoiceIndices());
 
-			// Transform the submatrix to the gmm++ format to use its solvers.
+			// Get the "new" nondeterministic choice indices for the submatrix.
+			std::shared_ptr<std::vector<uint_fast64_t>> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
+
+			// Transform the submatrix to the gmm++ format to use its capabilities.
 			gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*submatrix);
-			delete submatrix;
 
-			// Initialize the x vector with 0.5 for each element. This is the initial guess for
-			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
-			// probability is strictly larger than 0.
-			std::vector<Type> x(mayBeStatesSetBitCount, Type(0.5));
+			// Create vector for results for maybe states.
+			std::vector<Type>* x = new std::vector<Type>(maybeStatesSetBitCount);
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
-			std::vector<Type> b(mayBeStatesSetBitCount);
-			this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, statesWithProbability1, &b);
+			std::vector<Type> b(submatrix->getRowCount());
+			this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, *this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, &b);
+			delete submatrix;
 
-			// Solve the corresponding system of linear equations.
-			this->solveLinearEquationSystem(*gmmxxMatrix, x, b);
+			// Solve the corresponding system of equations.
+			this->solveEquationSystem(*gmmxxMatrix, x, b, *subNondeterministicChoiceIndices);
 
 			// Set values of resulting vector according to result.
-			storm::utility::setVectorValues<Type>(result, maybeStates, x);
+			storm::utility::setVectorValues<Type>(result, maybeStates, *x);
 
-			// Delete temporary matrix.
+			// Delete temporary matrix and vector.
 			delete gmmxxMatrix;
-		} else if (qualitative) {
-			// If we only need a qualitative result, we can safely assume that the results will only be compared to
-			// bounds which are either 0 or 1. Setting the value to 0.5 is thus safe.
-			storm::utility::setVectorValues<Type>(result, maybeStates, Type(0.5));
+			delete x;
 		}
 
 		// Set values of resulting vector that are known exactly.
@@ -260,7 +275,8 @@ public:
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector infinityStates(this->getModel().getNumberOfStates());
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		storm::utility::GraphAnalyzer::performProb1(this->getModel(), trueStates, *targetStates, &infinityStates);
+		// TODO: just commented out to make it compile
+		//storm::utility::GraphAnalyzer::performProb1(this->getModel(), trueStates, *targetStates, &infinityStates);
 		infinityStates.complement();
 
 		// Create resulting vector.
@@ -313,7 +329,8 @@ public:
 			}
 
 			// Solve the corresponding system of linear equations.
-			this->solveLinearEquationSystem(*gmmxxMatrix, x, *b);
+			// TODO: just commented out to make it compile
+			// this->solveEquationSystem(*gmmxxMatrix, x, *b);
 
 			// Set values of resulting vector according to result.
 			storm::utility::setVectorValues<Type>(result, maybeStates, x);
@@ -332,186 +349,81 @@ public:
 		return result;
 	}
 
-	/*!
-	 * Returns the name of this module.
-	 * @return The name of this module.
-	 */
-	static std::string getModuleName() {
-		return "gmm++det";
-	}
-
-	/*!
-	 * Returns a trigger such that if the option "matrixlib" is set to "gmm++", this model checker
-	 * is to be used.
-	 * @return An option trigger for this module.
-	 */
-	static std::pair<std::string, std::string> getOptionTrigger() {
-		return std::pair<std::string, std::string>("matrixlib", "gmm++");
-	}
-
-	/*!
-	 * Registers all options associated with the gmm++ matrix library.
-	 */
-	static void putOptions(boost::program_options::options_description* desc) {
-		desc->add_options()("lemethod", boost::program_options::value<std::string>()->default_value("bicgstab")->notifier(&validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, qmr}.");
-		desc->add_options()("maxiter", boost::program_options::value<unsigned>()->default_value(10000), "Sets the maximal number of iterations for iterative equation solving.");
-		desc->add_options()("precision", boost::program_options::value<double>()->default_value(1e-6), "Sets the precision for iterative equation solving.");
-		desc->add_options()("precond", boost::program_options::value<std::string>()->default_value("ilu")->notifier(&validatePreconditioner), "Sets the preconditioning technique for linear equation solving. Must be in {ilu, diagonal, ildlt, none}.");
-		desc->add_options()("relative", boost::program_options::value<bool>()->default_value(true), "Sets whether the relative or absolute error is considered for detecting convergence.");
-	}
-
-	/*!
-	 * Validates whether the given lemethod matches one of the available ones.
-	 * Throws an exception of type InvalidSettings in case the selected method is illegal.
-	 */
-	static void validateLeMethod(const std::string& lemethod) {
-		if ((lemethod != "bicgstab") && (lemethod != "qmr")) {
-			throw exceptions::InvalidSettingsException() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
-		}
-	}
-
-	/*!
-	 * Validates whether the given preconditioner matches one of the available ones.
-	 * Throws an exception of type InvalidSettings in case the selected preconditioner is illegal.
-	 */
-	static void validatePreconditioner(const std::string& preconditioner) {
-		if ((preconditioner != "ilu") && (preconditioner != "diagonal") && (preconditioner != "ildlt") && (preconditioner != "none")) {
-			throw exceptions::InvalidSettingsException() << "Argument " << preconditioner << " for option 'precond' is invalid.";
-		}
-	}
-
 private:
 	/*!
-	 * Solves the linear equation system Ax=b with the given parameters.
+	 * Solves the given equation system under the given parameters using the power method.
 	 *
-	 * @param A The matrix A specifying the coefficients of the linear equations.
+	 * @param A The matrix A specifying the coefficients of the equations.
 	 * @param x The vector x for which to solve the equations. The initial value of the elements of
 	 * this vector are used as the initial guess and might thus influence performance and convergence.
 	 * @param b The vector b specifying the values on the right-hand-sides of the equations.
 	 * @return The solution of the system of linear equations in form of the elements of the vector
 	 * x.
 	 */
-	void solveLinearEquationSystem(gmm::csr_matrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const {
-		// Get the settings object to customize linear solving.
+	void solveEquationSystem(gmm::csr_matrix<Type> const& A, std::vector<Type>* x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+		// Get the settings object to customize solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
-		// Prepare an iteration object that determines the accuracy, maximum number of iterations
-		// and the like.
-		gmm::iteration iter(s->get<double>("precision"), 0, s->get<unsigned>("maxiter"));
+		// Get relevant user-defined settings for solving the equations.
+		double precision = s->get<double>("precision");
+		unsigned maxIterations = s->get<unsigned>("maxiter");
+		bool relative = s->get<bool>("relative");
 
-		// Now do the actual solving.
-		LOG4CPLUS_INFO(logger, "Starting iterative solver.");
-		const std::string& precond = s->getString("precond");
-		if (precond == "ilu") {
-			LOG4CPLUS_INFO(logger, "Using ILU preconditioner.");
-		} else if (precond == "diagonal") {
-			LOG4CPLUS_INFO(logger, "Using diagonal preconditioner.");
-		} else if (precond == "ildlt") {
-			LOG4CPLUS_INFO(logger, "Using ILDLT preconditioner.");
-		} else if (precond == "none") {
-			LOG4CPLUS_INFO(logger, "Using no preconditioner.");
+		// Set up the environment for the power method.
+		std::vector<Type>* temporaryResult = new std::vector<Type>(b.size());
+		std::vector<Type>* newX = new std::vector<Type>(x->size());
+		std::vector<Type>* swap = nullptr;
+		bool converged = false;
+		uint_fast64_t iterations = 0;
+
+		// Proceed with the iterations as long as the method did not converge or reach the
+		// user-specified maximum number of iterations.
+		while (!converged && iterations < maxIterations) {
+			// Compute x' = A*x + b.
+			gmm::mult(A, *x, *temporaryResult);
+			gmm::add(b, *temporaryResult);
+
+			// Reduce the vector x' by applying min/max for all non-deterministic choices.
+			if (this->minimumOperatorStack.top()) {
+				storm::utility::reduceVectorMin(*temporaryResult, newX, nondeterministicChoiceIndices);
+			} else {
+				storm::utility::reduceVectorMax(*temporaryResult, newX, nondeterministicChoiceIndices);
+			}
+
+			// Determine whether the method converged.
+			converged = storm::utility::equalModuloPrecision(*x, *newX, precision, relative);
+
+			// Update environment variables.
+			swap = x;
+			x = newX;
+			newX = swap;
+			++iterations;
 		}
 
-		if (s->getString("lemethod") == "bicgstab") {
-			LOG4CPLUS_INFO(logger, "Using BiCGStab method.");
-			if (precond == "ilu") {
-				gmm::bicgstab(A, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(A), iter);
-			} else if (precond == "diagonal") {
-				gmm::bicgstab(A, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(A), iter);
-			} else if (precond == "ildlt") {
-				gmm::bicgstab(A, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(A), iter);
-			} else if (precond == "none") {
-				gmm::bicgstab(A, x, b, gmm::identity_matrix(), iter);
-			}
-		// FIXME: gmres has been disabled, because it triggers gmm++ compilation errors
-		/* } else if (s->getString("lemethod").compare("gmres") == 0) {
-			LOG4CPLUS_INFO(logger, "Using GMRES method.");
-			if (precond.compare("ilu")) {
-				gmm::gmres(A, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(A), s->get<unsigned>("restart"), iter);
-			} else if (precond == "diagonal") {
-				gmm::gmres(A, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(A), s->get<unsigned>("restart"), iter);
-			} else if (precond == "ildlt") {
-				gmm::gmres(A, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(A), s->get<unsigned>("restart"), iter);
-			} else if (precond == "none") {
-				gmm::gmres(A, x, b, gmm::identity_matrix(), s->get<unsigned>("restart"), iter);
-			} */
-		} else if (s->getString("lemethod") == "qmr") {
-			LOG4CPLUS_INFO(logger, "Using QMR method.");
-			if (precond == "ilu") {
-				gmm::qmr(A, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(A), iter);
-			} else if (precond == "diagonal") {
-				gmm::qmr(A, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(A), iter);
-			} else if (precond == "ildlt") {
-				gmm::qmr(A, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(A), iter);
-			} else if (precond == "none") {
-				gmm::qmr(A, x, b, gmm::identity_matrix(), iter);
-			}
-		}
+		delete temporaryResult;
 
 		// Check if the solver converged and issue a warning otherwise.
-		if (iter.converged()) {
-			LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
+		if (converged) {
+			LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
 		} else {
 			LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
 		}
 	}
 
-	/*!
-	 * Solves the linear equation system Ax=b with the given parameters
-	 * using the Jacobi Method and therefor the Jacobi Decomposition of A.
-	 *
-	 * @param A The matrix A specifying the coefficients of the linear equations.
-	 * @param x The vector x for which to solve the equations. The initial value of the elements of
-	 * this vector are used as the initial guess and might thus influence performance and convergence.
-	 * @param b The vector b specifying the values on the right-hand-sides of the equations.
-	 * @return The solution of the system of linear equations in form of the elements of the vector
-	 * x.
-	 */
-	void solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const {
-		// Get the settings object to customize linear solving.
-		storm::settings::Settings* s = storm::settings::instance();
-
-		double precision = s->get<double>("precision");
-		if (precision <= 0) {
-			LOG4CPLUS_ERROR(logger, "Selected precision for linear equation solving must be strictly greater than zero for Jacobi method.");
+	std::shared_ptr<std::vector<uint_fast64_t>> computeNondeterministicChoiceIndicesForConstraint(storm::storage::BitVector constraint) const {
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
+		std::shared_ptr<std::vector<uint_fast64_t>> subNondeterministicChoiceIndices(new std::vector<uint_fast64_t>(constraint.getNumberOfSetBits() + 1));
+		uint_fast64_t currentRowCount = 0;
+		uint_fast64_t currentIndexCount = 1;
+		(*subNondeterministicChoiceIndices)[0] = 0;
+		for (auto index : constraint) {
+			(*subNondeterministicChoiceIndices)[currentIndexCount] = currentRowCount + (*nondeterministicChoiceIndices)[index + 1] - (*nondeterministicChoiceIndices)[index];
+			currentRowCount += (*nondeterministicChoiceIndices)[index + 1] - (*nondeterministicChoiceIndices)[index];
+			++currentIndexCount;
 		}
-			
-		// Get a Jacobi Decomposition of the Input Matrix A
-		storm::storage::JacobiDecomposition<Type>* jacobiDecomposition = A.getJacobiDecomposition();
+		(*subNondeterministicChoiceIndices)[constraint.getNumberOfSetBits()] = currentRowCount;
 
-		// Convert the Diagonal matrix to GMM format
-		gmm::csr_matrix<Type>* gmmxxDiagonalInverted = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiDInv());
-		// Convert the LU Matrix to GMM format
-		gmm::csr_matrix<Type>* gmmxxLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiLU());
-
-		delete jacobiDecomposition;
-
-		LOG4CPLUS_INFO(logger, "Starting iterative Jacobi Solver.");
-		
-		// x_(k + 1) = D^-1 * (b  - R * x_k)
-		std::vector<Type>* xNext = new std::vector<Type>(x.size());
-		const std::vector<Type>* xCopy = xNext;
-		std::vector<Type>* xCurrent = &x;
-
-		uint_fast64_t iterationCount = 0;
-		do {
-			// R * x_k -> xCurrent
-			gmm::mult(*gmmxxLU, *xCurrent, *xNext);
-			// b - R * x_k
-			gmm::add(b, gmm::scaled(*xNext, -1.0), *xNext);
-			// D^-1 * (b - R * x_k)
-			gmm::mult(*gmmxxDiagonalInverted, *xNext, *xNext);
-			
-			std::vector<Type>* swap = xNext;
-			xNext = xCurrent;
-			xCurrent = swap;
-
-			++iterationCount;
-		} while (gmm::vect_norminf(*xCurrent) > precision);
-
-		delete xCopy;
-
-		LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterationCount << " iterations.");
+		return subNondeterministicChoiceIndices;
 	}
 };
 
@@ -519,4 +431,4 @@ private:
 
 } //namespace storm
 
-#endif /* STORM_MODELCHECKER_GMMXXDTMCPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_GMMXXMDPPRCTLMODELCHECKER_H_ */

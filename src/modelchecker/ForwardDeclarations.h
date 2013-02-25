@@ -14,6 +14,9 @@ namespace storm {
 namespace modelChecker {
 
 template <class Type>
+class AbstractModelChecker;
+
+template <class Type>
 class DtmcPrctlModelChecker;
 
 } //namespace modelChecker

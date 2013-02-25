@@ -65,12 +65,20 @@ public:
 	}
 
 	/*!
+	 * Constructor
+	 *
+	 * @param pathFormula The child node.
+	 */
+	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : NoBoundOperator<T>(pathFormula, minimumOperator) {
+		// Intentionally left empty
+	}
+
+	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "P = ? [";
-		result += this->getPathFormula().toString();
-		result += "]";
+		std::string result = "P";
+		result += NoBoundOperator<T>::toString();
 		return result;
 	}
 };

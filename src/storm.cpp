@@ -24,9 +24,9 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelchecker/EigenDtmcPrctlModelChecker.h"
 #include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
+#include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
-#include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/formula/Formulas.h"
 
@@ -126,6 +126,10 @@ bool parseOptions(const int argc, const char* argv[]) {
 	return true;
 }
 
+void setUp() {
+	std::cout.precision(10);
+}
+
 /*!
  * Function to perform some cleanup.
  */
@@ -206,12 +210,59 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 	delete mc;
 }
 
+void testCheckingDice(storm::models::Mdp<double>& mdp) {
+	storm::formula::Ap<double>* threeFormula = new storm::formula::Ap<double>("three");
+	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(threeFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+
+	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	delete mc;
+}
+
+void testCheckingAsynchLeader(storm::models::Mdp<double>& mdp) {
+	storm::formula::Ap<double>* electedFormula = new storm::formula::Ap<double>("elected");
+	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probMinFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+
+	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+
+	mc->check(*probMinFormula);
+	delete probMinFormula;
+
+	electedFormula = new storm::formula::Ap<double>("elected");
+	eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probMaxFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+
+	mc->check(*probMaxFormula);
+	delete probMaxFormula;
+
+	electedFormula = new storm::formula::Ap<double>("elected");
+	storm::formula::BoundedEventually<double>* boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(electedFormula, 50);
+	probMinFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
+
+	mc->check(*probMinFormula);
+	delete probMinFormula;
+
+	electedFormula = new storm::formula::Ap<double>("elected");
+	boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(electedFormula, 50);
+	probMaxFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
+
+	mc->check(*probMaxFormula);
+	delete probMaxFormula;
+
+	delete mc;
+}
+
 /*!
  * Simple testing procedure.
  */
 void testChecking() {
 	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::AutoParser parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
+	storm::parser::AutoParser<double> parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
 
 	if (parser.getType() == storm::models::DTMC) {
 		std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
@@ -221,7 +272,15 @@ void testChecking() {
 		// testCheckingCrowds(*dtmc);
 		// testCheckingSynchronousLeader(*dtmc, 4);
 	}
-	else std::cout << "Input is not DTMC" << std::endl;
+	else if (parser.getType() == storm::models::MDP) {
+		std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
+		mdp->printModelInformationToStream(std::cout);
+
+		// testCheckingDice(*mdp);
+		// testCheckingAsynchLeader(*mdp);
+	} else {
+		std::cout << "Input is neither a DTMC nor an MDP." << std::endl;
+	}
 }
 
 /*!
@@ -232,10 +291,16 @@ int main(const int argc, const char* argv[]) {
 	if (!parseOptions(argc, argv)) {
 		return 0;
 	}
+	setUp();
+
+	LOG4CPLUS_INFO(logger, "StoRM was invoked.");
 	printHeader(argc, argv);
 
 	testChecking();
 
 	cleanUp();
+
+	LOG4CPLUS_INFO(logger, "StoRM quit.");
+
 	return 0;
 }
