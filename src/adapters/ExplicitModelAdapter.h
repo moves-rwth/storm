@@ -394,7 +394,7 @@ private:
 						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
 							storm::ir::Update const& update = command.getUpdate(k);
 
-							StateType* newState = this->applyUpdate(*currentState, update);
+							StateType* newState = this->applyUpdate(currentState, update);
 
 							uint_fast64_t targetIndex = (*stateToIndexMap.find(newState)).second;
 							delete newState;
