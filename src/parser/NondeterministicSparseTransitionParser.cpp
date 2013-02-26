@@ -54,18 +54,7 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 	 *	Check file header and extract number of transitions.
 	 */
 	buf = strchr(buf, '\n') + 1;  // skip format hint
-	if (strncmp(buf, "STATES ", 7) != 0) {
-		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
-		return 0;
-	}
-	buf += 7;  // skip "STATES "
-	if (strtol(buf, &buf, 10) == 0) return 0;
-	buf = trimWhitespaces(buf);
-	if (strncmp(buf, "TRANSITIONS ", 12) != 0) {
-		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
-		return 0;
-	}
-	buf += 12;  // skip "TRANSITIONS "
+
 	/*
 	 *	Parse number of transitions.
 	 *	We will not actually use this value, but we will compare it to the

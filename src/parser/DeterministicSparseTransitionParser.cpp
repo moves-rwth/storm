@@ -46,24 +46,10 @@ namespace parser {
  */
 uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast64_t& maxnode) {
 	uint_fast64_t nonZeroEntryCount = 0;
-	uint_fast64_t inputFileNonZeroEntryCount = 0;
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
 	buf = strchr(buf, '\n') + 1;  // skip format hint
-	if (strncmp(buf, "STATES ", 7) != 0) {
-		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
-		return 0;
-	}
-	buf += 7;  // skip "STATES "
-	if (strtol(buf, &buf, 10) == 0) return 0;
-	buf = trimWhitespaces(buf);
-	if (strncmp(buf, "TRANSITIONS ", 12) != 0) {
-		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
-		return 0;
-	}
-	buf += 12;  // skip "TRANSITIONS "
-	if ((inputFileNonZeroEntryCount = strtol(buf, &buf, 10)) == 0) return 0;
 
     /*
      * Check all transitions for non-zero diagonal entries and deadlock states.
@@ -123,11 +109,6 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
     	++nonZeroEntryCount;
     }
 
-	if (inputFileNonZeroEntryCount != readTransitionCount) {
-		LOG4CPLUS_ERROR(logger, "Input File TRANSITIONS line stated " << inputFileNonZeroEntryCount << " but there were " << readTransitionCount << " transitions afterwards.");
-		return 0;
-	}
-
     return nonZeroEntryCount;
 }
 
@@ -180,11 +161,6 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	 *	Read file header, extract number of states.
 	 */
 	buf = strchr(buf, '\n') + 1;  // skip format hint
-	buf += 7;  // skip "STATES "
-	checked_strtol(buf, &buf);
-	buf = trimWhitespaces(buf);
-	buf += 12;  // skip "TRANSITIONS "
-	checked_strtol(buf, &buf);
 
 	/*
 	 *	Creating matrix here.

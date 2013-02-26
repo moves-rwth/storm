@@ -1110,7 +1110,7 @@ public:
 	 * to separate groups will be separated by a dashed line.
 	 * @return a (non-compressed) string representation of the matrix.
 	 */
-	std::string toString(std::shared_ptr<std::vector<std::uint_fast64_t>> nondeterministicChoiceIndices) const {
+	std::string toString(std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices) const {
 		std::stringstream result;
 		uint_fast64_t currentNondeterministicChoiceIndex = 0;
 
