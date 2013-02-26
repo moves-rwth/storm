@@ -932,14 +932,19 @@ public:
 
 	/*!
 	 * Calculates the Jacobi-Decomposition of this sparse matrix.
+	 * The source Sparse Matrix must be square.
 	 * @return A pointer to a class containing the matrix L+U and the inverted diagonal matrix D^-1
 	 */
 	storm::storage::JacobiDecomposition<T>* getJacobiDecomposition() const {
 		uint_fast64_t rowCount = this->getRowCount();
-		SparseMatrix<T> *resultLU = new SparseMatrix<T>(this);
-		SparseMatrix<T> *resultDinv = new SparseMatrix<T>(rowCount);
-		// no entries apart from those on the diagonal
-		resultDinv->initialize(0);
+		uint_fast64_t colCount = this->getColumnCount();
+		if (rowCount != colCount) {
+			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::getJacobiDecomposition requires the Matrix to be square!";
+		}
+		storm::storage::SparseMatrix<T> *resultLU = new storm::storage::SparseMatrix<T>(*this);
+		storm::storage::SparseMatrix<T> *resultDinv = new storm::storage::SparseMatrix<T>(rowCount, colCount);
+		// no entries apart from those on the diagonal (rowCount)
+		resultDinv->initialize(rowCount);
 
 		// constant 1 for diagonal inversion
 		T constOne = storm::utility::constGetOne<T>();

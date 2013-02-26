@@ -353,7 +353,7 @@ public:
 	 * Registers all options associated with the gmm++ matrix library.
 	 */
 	static void putOptions(boost::program_options::options_description* desc) {
-		desc->add_options()("lemethod", boost::program_options::value<std::string>()->default_value("bicgstab")->notifier(&validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, qmr}.");
+		desc->add_options()("lemethod", boost::program_options::value<std::string>()->default_value("bicgstab")->notifier(&validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, qmr, jacobi}.");
 		desc->add_options()("maxiter", boost::program_options::value<unsigned>()->default_value(10000), "Sets the maximal number of iterations for iterative equation solving.");
 		desc->add_options()("precision", boost::program_options::value<double>()->default_value(1e-6), "Sets the precision for iterative equation solving.");
 		desc->add_options()("precond", boost::program_options::value<std::string>()->default_value("ilu")->notifier(&validatePreconditioner), "Sets the preconditioning technique for linear equation solving. Must be in {ilu, diagonal, ildlt, none}.");
@@ -365,7 +365,7 @@ public:
 	 * Throws an exception of type InvalidSettings in case the selected method is illegal.
 	 */
 	static void validateLeMethod(const std::string& lemethod) {
-		if ((lemethod != "bicgstab") && (lemethod != "qmr")) {
+		if ((lemethod != "bicgstab") && (lemethod != "qmr") && (lemethod != "jacobi")) {
 			throw exceptions::InvalidSettingsException() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
 		}
 	}
@@ -423,6 +423,13 @@ private:
 			} else if (precond == "none") {
 				gmm::bicgstab(A, x, b, gmm::identity_matrix(), iter);
 			}
+
+			// Check if the solver converged and issue a warning otherwise.
+			if (iter.converged()) {
+				LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
+			} else {
+				LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+			}
 		// FIXME: gmres has been disabled, because it triggers gmm++ compilation errors
 		/* } else if (s->getString("lemethod").compare("gmres") == 0) {
 			LOG4CPLUS_INFO(logger, "Using GMRES method.");
@@ -446,13 +453,16 @@ private:
 			} else if (precond == "none") {
 				gmm::qmr(A, x, b, gmm::identity_matrix(), iter);
 			}
-		}
 
-		// Check if the solver converged and issue a warning otherwise.
-		if (iter.converged()) {
-			LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
-		} else {
-			LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+			// Check if the solver converged and issue a warning otherwise.
+			if (iter.converged()) {
+				LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
+			} else {
+				LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+			}
+		} else if (s->getString("lemethod") == "jacobi") {
+			LOG4CPLUS_INFO(logger, "Using Jacobi method.");
+			solveLinearEquationSystemWithJacobi(A, x, b);
 		}
 	}
 
@@ -467,7 +477,7 @@ private:
 	 * @return The solution of the system of linear equations in form of the elements of the vector
 	 * x.
 	 */
-	void solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const {
+	void solveLinearEquationSystemWithJacobi(gmm::csr_matrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const {
 		// Get the settings object to customize linear solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
@@ -475,41 +485,68 @@ private:
 		if (precision <= 0) {
 			LOG4CPLUS_ERROR(logger, "Selected precision for linear equation solving must be strictly greater than zero for Jacobi method.");
 		}
-			
+
+		// Convert the Source Matrix to Storm format for Decomposition
+		storm::storage::SparseMatrix<Type>* stormFormatA = storm::adapters::GmmxxAdapter::fromGmmxxSparseMatrix(A);
+
 		// Get a Jacobi Decomposition of the Input Matrix A
-		storm::storage::JacobiDecomposition<Type>* jacobiDecomposition = A.getJacobiDecomposition();
+		storm::storage::JacobiDecomposition<Type>* jacobiDecomposition = stormFormatA->getJacobiDecomposition();
+
+		// The Storm Version is not needed after the decomposition step
+		delete stormFormatA;
 
 		// Convert the Diagonal matrix to GMM format
-		gmm::csr_matrix<Type>* gmmxxDiagonalInverted = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiDInv());
+		gmm::csr_matrix<Type>* gmmxxDiagonalInverted = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiDInvReference());
 		// Convert the LU Matrix to GMM format
-		gmm::csr_matrix<Type>* gmmxxLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiLU());
+		gmm::csr_matrix<Type>* gmmxxLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiLUReference());
 
-		delete jacobiDecomposition;
 
 		LOG4CPLUS_INFO(logger, "Starting iterative Jacobi Solver.");
 		
 		// x_(k + 1) = D^-1 * (b  - R * x_k)
+		// In x we keep a copy of the result for swapping in the loop (e.g. less copy-back)
 		std::vector<Type>* xNext = new std::vector<Type>(x.size());
 		const std::vector<Type>* xCopy = xNext;
 		std::vector<Type>* xCurrent = &x;
 
+		// Target vector for precision calculation
+		std::vector<Type>* residuum = new std::vector<Type>(x.size());
+
 		uint_fast64_t iterationCount = 0;
 		do {
-			// R * x_k -> xCurrent
+			// R * x_k (xCurrent is x_k) -> xNext
 			gmm::mult(*gmmxxLU, *xCurrent, *xNext);
-			// b - R * x_k
+			// b - R * x_k (xNext contains R * x_k) -> xNext
 			gmm::add(b, gmm::scaled(*xNext, -1.0), *xNext);
-			// D^-1 * (b - R * x_k)
+			// D^-1 * (b - R * x_k) -> xNext
 			gmm::mult(*gmmxxDiagonalInverted, *xNext, *xNext);
 			
+			// swap xNext with xCurrent so that the next iteration can use xCurrent again without having to copy the vector
 			std::vector<Type>* swap = xNext;
 			xNext = xCurrent;
 			xCurrent = swap;
 
 			++iterationCount;
-		} while (gmm::vect_norminf(*xCurrent) > precision);
+			// Precision calculation via ||A * x_k - b|| < precision
+			gmm::mult(A, *xCurrent, *residuum);
+			gmm::add(gmm::scaled(*residuum, -1.0), b, *residuum);
+		} while (gmm::vect_norminf(*residuum) > precision);
 
+		// If the last iteration did not write to the original x
+		// we have to swith them
+		if (xCurrent == xCopy) {
+			x.swap(*xCurrent);
+		}
+
+		// xCopy always points to the Swap-Copy of x we created
 		delete xCopy;
+		// Delete the residuum vector
+		delete residuum;
+		// Delete the decompositions
+		delete jacobiDecomposition;
+		// and the GMM Matrices
+		delete gmmxxDiagonalInverted;
+		delete gmmxxLU;
 
 		LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterationCount << " iterations.");
 	}
