@@ -115,7 +115,7 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, storm::ir::Program(), q
 
 		// This block defines all expressions of type boolean.
 		relativeExpression = (integerExpression >> relations_ >> integerExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryRelationExpression>(qi::_1, qi::_3, qi::_2))];
-		relativeExpression.name("boolean expression");
+		relativeExpression.name("relative expression");
 		atomicBooleanExpression %= (relativeExpression | booleanVariableExpression | qi::lit("(") >> booleanExpression >> qi::lit(")") | booleanConstantExpression);
 		atomicBooleanExpression.name("boolean expression");
 		notExpression = atomicBooleanExpression[qi::_val = qi::_1] | (qi::lit("!") >> atomicBooleanExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::UnaryBooleanFunctionExpression>>(phoenix::new_<storm::ir::expressions::UnaryBooleanFunctionExpression>(qi::_1, storm::ir::expressions::UnaryBooleanFunctionExpression::NOT))];
