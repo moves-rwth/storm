@@ -56,14 +56,6 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 	buf = strchr(buf, '\n') + 1;  // skip format hint
 
 	/*
-	 *	Parse number of transitions.
-	 *	We will not actually use this value, but we will compare it to the
-	 *	number of transitions we count and issue a warning if this parsed
-	 *	value is wrong.
-	 */
-	uint_fast64_t parsed_nonzero = strtol(buf, &buf, 10);
-
-	/*
 	 *	Read all transitions.
 	 */
 	int_fast64_t source, target, choice, lastchoice = -1;
@@ -91,7 +83,6 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 		if (source > lastsource + 1) {
 			nonzero += source - lastsource - 1;
 			choices += source - lastsource - 1;
-			parsed_nonzero += source - lastsource - 1;
 		} else if (source != lastsource || choice != lastchoice) {
 			// If we have switched the source state or the nondeterministic choice, we need to
 			// reserve one row more.
@@ -136,12 +127,6 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 		buf = trimWhitespaces(buf);
 	}
 
-	/*
-	 *	Check if the number of transitions given in the file is correct.
-	 */
-	if (nonzero != parsed_nonzero) {
-		LOG4CPLUS_WARN(logger, "File states to have " << parsed_nonzero << " transitions, but I counted " << nonzero << ". Maybe want to fix your file?");
-	}
 	return nonzero;
 }
 
@@ -190,14 +175,9 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	 */
 
 	/*
-	 *	Read file header, ignore values within.
+	 *	Skip file header.
 	 */
 	buf = strchr(buf, '\n') + 1;  // skip format hint
-	buf += 7;  // skip "STATES "
-	checked_strtol(buf, &buf);
-	buf = trimWhitespaces(buf);
-	buf += 12;  // skip "TRANSITIONS "
-	checked_strtol(buf, &buf);
 
 	/*
 	 *	Create and initialize matrix.
