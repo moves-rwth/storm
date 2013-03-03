@@ -30,7 +30,7 @@ namespace parser {
 NondeterministicModelParser::NondeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	storm::parser::NondeterministicSparseTransitionParser tp(transitionSystemFile);
-	uint_fast64_t stateCount = tp.getMatrix()->getRowCount();
+	uint_fast64_t stateCount = tp.getMatrix()->getColumnCount();
 
 	storm::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
 	if (stateRewardFile != "") {
