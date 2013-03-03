@@ -197,24 +197,32 @@ public:
 			throw storm::exceptions::InvalidPropertyException() << "Missing (state-based) reward model for formula.";
 		}
 
+		// Get the starting row indices for the non-deterministic choices to reduce the resulting
+		// vector properly.
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
+
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
 		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(*this->getModel().getTransitionMatrix());
 
 		// Initialize result to state rewards of the model.
 		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
 
+		// Create vector for result of multiplication, which is reduced to the result vector after
+		// each multiplication.
+		std::vector<Type>* multiplyResult = new std::vector<Type>(this->getModel().getTransitionMatrix()->getRowCount(), 0);
+
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
-		std::vector<Type>* swap = nullptr;
-		std::vector<Type>* tmpResult = new std::vector<Type>(this->getModel().getNumberOfStates());
 		for (uint_fast64_t i = 0; i < formula.getBound(); ++i) {
-			gmm::mult(*gmmxxMatrix, *result, *tmpResult);
-			swap = tmpResult;
-			tmpResult = result;
-			result = swap;
+			gmm::mult(*gmmxxMatrix, *result, *multiplyResult);
+			if (this->minimumOperatorStack.top()) {
+				storm::utility::reduceVectorMin(*multiplyResult, result, *nondeterministicChoiceIndices);
+			} else {
+				storm::utility::reduceVectorMax(*multiplyResult, result, *nondeterministicChoiceIndices);
+			}
 		}
+		delete multiplyResult;
 
 		// Delete temporary variables and return result.
-		delete tmpResult;
 		delete gmmxxMatrix;
 		return result;
 	}
