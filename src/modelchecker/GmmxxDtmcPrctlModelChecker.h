@@ -225,7 +225,7 @@ public:
 			totalRewardVector = new std::vector<Type>(*this->getModel().getStateRewardVector());
 		}
 
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
 		std::vector<Type>* swap = nullptr;
