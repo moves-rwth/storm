@@ -50,10 +50,11 @@ public:
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
 		}
 		if (this->getTransitionRewardMatrix() != nullptr) {
-			if (!this->getTransitionRewardMatrix()->isSubmatrixOf(*(this->getTransitionMatrix()))) {
-				LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
-				throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
-			}
+			// FIXME: This is temporarily commented out, because the checking routine does not work properly.
+			//if (!this->getTransitionRewardMatrix()->isSubmatrixOf(*(this->getTransitionMatrix()))) {
+			//	LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+			//	throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
+			//}
 		}
 	}
 
