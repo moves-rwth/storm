@@ -23,7 +23,7 @@ endmodule
 module die2 = die1 [ s1=s2, s2=s1, d1=d2 ] endmodule
 
 rewards "coinflips"
-	s1<7 | s2<7 : 1;
+	[] s1<7 | s2<7 : 1;
 endrewards
 
 label "done" = s1=7 & s2=7;
