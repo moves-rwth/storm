@@ -38,7 +38,7 @@ NondeterministicModelParser::NondeterministicModelParser(std::string const & tra
 		this->stateRewards = srp.getStateRewards();
 	}
 	if (transitionRewardFile != "") {
-		storm::parser::NondeterministicSparseTransitionParser trp(transitionRewardFile);
+		storm::parser::NondeterministicSparseTransitionParser trp(transitionRewardFile, true, tp.getRowMapping());
 		this->transitionRewardMatrix = trp.getMatrix();
 	}
 
