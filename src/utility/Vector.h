@@ -52,6 +52,18 @@ void selectVectorValues(std::vector<T>* vector, const storm::storage::BitVector&
 }
 
 template<class T>
+void selectVectorValues(std::vector<T>* vector, const storm::storage::BitVector& positions, const std::vector<uint_fast64_t>& rowMapping, std::vector<T> const& values) {
+	uint_fast64_t oldPosition = 0;
+	uint_fast64_t rowMappingPosition = 0;
+	for (auto position : positions) {
+		for (uint_fast64_t i = rowMapping[rowMappingPosition]; i < rowMapping[rowMappingPosition + 1]; ++i) {
+			(*vector)[oldPosition++] = values[position];
+		}
+		++rowMappingPosition;
+	}
+}
+
+template<class T>
 void subtractFromConstantOneVector(std::vector<T>* vector) {
 	for (auto it = vector->begin(); it != vector->end(); ++it) {
 		*it = storm::utility::constGetOne<T>() - *it;
@@ -101,7 +113,7 @@ void reduceVectorMax(std::vector<T> const& source, std::vector<T>* target, std::
 template<class T>
 bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, T precision, bool relativeError) {
 	if (vectorLeft.size() != vectorRight.size()) {
-		LOG4CPLUS_ERROR(logger, "Length of vectors does not match and makes comparison impossible.");
+		LOG4CPLUS_ERROR(logger, "Lengths of vectors does not match and makes comparison impossible.");
 		throw storm::exceptions::InvalidArgumentException() << "Length of vectors does not match and makes comparison impossible.";
 	}
 

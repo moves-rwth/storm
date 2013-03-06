@@ -1151,7 +1151,7 @@ public:
 			result << i << "\t(\t";
 			uint_fast64_t currentRealIndex = 0;
 			while (currentRealIndex < colCount) {
-				if (currentRealIndex == columnIndications[nextIndex] && nextIndex < rowIndications[i + 1]) {
+				if (nextIndex < rowIndications[i + 1] && currentRealIndex == columnIndications[nextIndex]) {
 					result << valueStorage[nextIndex] << "\t";
 					++nextIndex;
 				} else {

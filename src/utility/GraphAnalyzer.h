@@ -262,6 +262,8 @@ public:
 			} else {
 				*currentStates = *nextStates;
 			}
+
+			delete nextStates;
 		}
 
 		*statesWithProbability1 = *currentStates;
@@ -407,6 +409,7 @@ public:
 			} else {
 				*currentStates = *nextStates;
 			}
+			delete nextStates;
 		}
 
 		*statesWithProbability1 = *currentStates;

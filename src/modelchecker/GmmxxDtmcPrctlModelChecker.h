@@ -300,7 +300,7 @@ public:
 					// that we still consider (i.e. maybeStates), we need to extract these values
 					// first.
 					std::vector<Type>* subStateRewards = new std::vector<Type>(maybeStatesSetBitCount);
-					storm::utility::setVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
+					storm::utility::selectVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
 					gmm::add(*subStateRewards, *b);
 					delete subStateRewards;
 				}
@@ -309,7 +309,7 @@ public:
 				// right-hand side. As the state reward vector contains entries not just for the
 				// states that we still consider (i.e. maybeStates), we need to extract these values
 				// first.
-				storm::utility::setVectorValues(b, maybeStates, *this->getModel().getStateRewardVector());
+				storm::utility::selectVectorValues(b, maybeStates, *this->getModel().getStateRewardVector());
 			}
 
 			// Solve the corresponding system of linear equations.

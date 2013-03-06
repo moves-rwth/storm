@@ -292,17 +292,21 @@ public:
 		storm::storage::BitVector infinityStates(this->getModel().getNumberOfStates());
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
 		if (this->minimumOperatorStack.top()) {
-			storm::utility::GraphAnalyzer::performProb1A(this->getModel(), *trueStates, *targetStates, &infinityStates);
+			storm::utility::GraphAnalyzer::performProb1A(this->getModel(), trueStates, *targetStates, &infinityStates);
 		} else {
-			storm::utility::GraphAnalyzer::performProb1E(this->getModel(), *trueStates, *targetStates, &infinityStates);
+			storm::utility::GraphAnalyzer::performProb1E(this->getModel(), trueStates, *targetStates, &infinityStates);
 		}
 		infinityStates.complement();
+
+		LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
+		LOG4CPLUS_INFO(logger, "Found " << targetStates->getNumberOfSetBits() << " 'target' states.");
+		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
+		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
 		// Check whether there are states for which we have to compute the result.
-		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
 		const int maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
 		if (maybeStatesSetBitCount > 0) {
 			// First, we can eliminate the rows and columns from the original transition probability matrix for states
@@ -328,7 +332,7 @@ public:
 				// side to the vector resulting from summing the rows of the pointwise product
 				// of the transition probability matrix and the transition reward matrix.
 				std::vector<Type>* pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
-				storm::utility::selectVectorValues(b, maybeStates, *pointwiseProductRowSumVector);
+				storm::utility::selectVectorValues(&b, maybeStates, *pointwiseProductRowSumVector);
 				delete pointwiseProductRowSumVector;
 
 				if (this->getModel().hasStateRewards()) {
@@ -338,7 +342,7 @@ public:
 					// first.
 					std::vector<Type>* subStateRewards = new std::vector<Type>(maybeStatesSetBitCount);
 					storm::utility::setVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
-					gmm::add(*subStateRewards, *b);
+					gmm::add(*subStateRewards, b);
 					delete subStateRewards;
 				}
 			} else {
@@ -346,7 +350,7 @@ public:
 				// right-hand side. As the state reward vector contains entries not just for the
 				// states that we still consider (i.e. maybeStates), we need to extract these values
 				// first.
-				storm::utility::setVectorValues(b, maybeStates, *this->getModel().getStateRewardVector());
+				storm::utility::selectVectorValues(&b, maybeStates, *subNondeterministicChoiceIndices, *this->getModel().getStateRewardVector());
 			}
 
 			// Solve the corresponding system of equations.
@@ -355,6 +359,7 @@ public:
 			// Set values of resulting vector according to result.
 			storm::utility::setVectorValues<Type>(result, maybeStates, *x);
 			delete x;
+			delete gmmxxMatrix;
 		}
 
 		// Set values of resulting vector that are known exactly.
@@ -417,6 +422,11 @@ private:
 			++iterations;
 		}
 
+		if (iterations % 2 == 1) {
+			delete x;
+		} else {
+			delete newX;
+		}
 		delete temporaryResult;
 
 		// Check if the solver converged and issue a warning otherwise.
