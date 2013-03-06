@@ -54,12 +54,20 @@ void selectVectorValues(std::vector<T>* vector, const storm::storage::BitVector&
 template<class T>
 void selectVectorValues(std::vector<T>* vector, const storm::storage::BitVector& positions, const std::vector<uint_fast64_t>& rowMapping, std::vector<T> const& values) {
 	uint_fast64_t oldPosition = 0;
-	uint_fast64_t rowMappingPosition = 0;
 	for (auto position : positions) {
-		for (uint_fast64_t i = rowMapping[rowMappingPosition]; i < rowMapping[rowMappingPosition + 1]; ++i) {
+		for (uint_fast64_t i = rowMapping[position]; i < rowMapping[position + 1]; ++i) {
+			(*vector)[oldPosition++] = values[i];
+		}
+	}
+}
+
+template<class T>
+void selectVectorValuesRepeatedly(std::vector<T>* vector, const storm::storage::BitVector& positions, const std::vector<uint_fast64_t>& rowMapping, std::vector<T> const& values) {
+	uint_fast64_t oldPosition = 0;
+	for (auto position : positions) {
+		for (uint_fast64_t i = rowMapping[position]; i < rowMapping[position + 1]; ++i) {
 			(*vector)[oldPosition++] = values[position];
 		}
-		++rowMappingPosition;
 	}
 }
 
