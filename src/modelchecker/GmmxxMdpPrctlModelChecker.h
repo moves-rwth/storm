@@ -306,6 +306,10 @@ public:
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
+		// Get the starting row indices for the non-deterministic choices to reduce the resulting
+		// vector properly.
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
+
 		// Check whether there are states for which we have to compute the result.
 		const int maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
 		if (maybeStatesSetBitCount > 0) {
@@ -332,7 +336,7 @@ public:
 				// side to the vector resulting from summing the rows of the pointwise product
 				// of the transition probability matrix and the transition reward matrix.
 				std::vector<Type>* pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
-				storm::utility::selectVectorValues(&b, maybeStates, *pointwiseProductRowSumVector);
+				storm::utility::selectVectorValues(&b, maybeStates, *nondeterministicChoiceIndices, *pointwiseProductRowSumVector);
 				delete pointwiseProductRowSumVector;
 
 				if (this->getModel().hasStateRewards()) {
@@ -340,8 +344,8 @@ public:
 					// as well. As the state reward vector contains entries not just for the states
 					// that we still consider (i.e. maybeStates), we need to extract these values
 					// first.
-					std::vector<Type>* subStateRewards = new std::vector<Type>(maybeStatesSetBitCount);
-					storm::utility::setVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
+					std::vector<Type>* subStateRewards = new std::vector<Type>(b.size());
+					storm::utility::selectVectorValuesRepeatedly(subStateRewards, maybeStates, *nondeterministicChoiceIndices, *this->getModel().getStateRewardVector());
 					gmm::add(*subStateRewards, b);
 					delete subStateRewards;
 				}
@@ -350,7 +354,7 @@ public:
 				// right-hand side. As the state reward vector contains entries not just for the
 				// states that we still consider (i.e. maybeStates), we need to extract these values
 				// first.
-				storm::utility::selectVectorValues(&b, maybeStates, *subNondeterministicChoiceIndices, *this->getModel().getStateRewardVector());
+				storm::utility::selectVectorValuesRepeatedly(&b, maybeStates, *nondeterministicChoiceIndices, *this->getModel().getStateRewardVector());
 			}
 
 			// Solve the corresponding system of equations.
