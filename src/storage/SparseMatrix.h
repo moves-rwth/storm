@@ -29,6 +29,7 @@ namespace storm {
 	namespace adapters{ 
 		class GmmxxAdapter; 
 		class EigenAdapter; 
+		class StormAdapter;
 	} 
 }
 
@@ -48,6 +49,7 @@ public:
 	 */
 	friend class storm::adapters::GmmxxAdapter;
 	friend class storm::adapters::EigenAdapter;
+	friend class storm::adapters::StormAdapter;
 
 	/*!
 	 * If we only want to iterate over the columns of the non-zero entries of
@@ -145,8 +147,7 @@ public:
 	 * Initializes the sparse matrix with the given number of non-zero entries
 	 * and prepares it for use with addNextValue() and finalize().
 	 * NOTE: Calling this method before any other member function is mandatory.
-	 * This version is to be used together with addNextValue(). For
-	 * initialization from an Eigen SparseMatrix, use initialize(Eigen::SparseMatrix<T> &).
+	 * This version is to be used together with addNextValue().
 	 * @param nonZeroEntries The number of non-zero entries that are not on the
 	 * diagonal.
 	 */
@@ -177,135 +178,6 @@ public:
 				setState(MatrixStatus::Initialized);
 			}
 		}
-	}
-
-	/*!
-	 * Initializes the sparse matrix with the given Eigen sparse matrix.
-	 * NOTE: Calling this method before any other member function is mandatory.
-	 * This version is only to be used when copying an Eigen sparse matrix. For
-	 * initialization with addNextValue() and finalize() use initialize(uint_fast32_t)
-	 * instead.
-	 * @param eigenSparseMatrix The Eigen sparse matrix to be copied.
-	 * *NOTE* Has to be in compressed form!
-	 */
-	template<int _Options, typename _Index>
-	void initialize(const Eigen::SparseMatrix<T, _Options, _Index>& eigenSparseMatrix) {
-		// Throw an error in case the matrix is not in compressed format.
-		if (!eigenSparseMatrix.isCompressed()) {
-			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that is not in compressed form.");
-			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that is not in compressed form.");
-		}
-
-		if (static_cast<uint_fast64_t>(eigenSparseMatrix.rows()) > this->rowCount) {
-			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that has more rows than the target matrix.");
-			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that has more rows than the target matrix.");
-		}
-		if (static_cast<uint_fast64_t>(eigenSparseMatrix.cols()) > this->colCount) {
-			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to initialize from an Eigen matrix that has more columns than the target matrix.");
-			throw storm::exceptions::InvalidArgumentException("Trying to initialize from an Eigen matrix that has more columns than the target matrix.");
-		}
-
-		const uint_fast64_t entryCount = eigenSparseMatrix.nonZeros();
-		nonZeroEntryCount = entryCount;
-		lastRow = 0;
-
-		// Try to prepare the internal storage and throw an error in case of
-		// failure.
-
-		// Get necessary pointers to the contents of the Eigen matrix.
-		const T* valuePtr = eigenSparseMatrix.valuePtr();
-		const _Index* indexPtr = eigenSparseMatrix.innerIndexPtr();
-		const _Index* outerPtr = eigenSparseMatrix.outerIndexPtr();
-
-		// If the given matrix is in RowMajor format, copying can simply
-		// be done by adding all values in order.
-		// Direct copying is, however, prevented because we have to
-		// separate the diagonal entries from others.
-		if (isEigenRowMajor(eigenSparseMatrix)) {
-			// Because of the RowMajor format outerSize evaluates to the
-			// number of rows.
-			if (!prepareInternalStorage(false)) {
-				triggerErrorState();
-				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
-				throw std::bad_alloc();
-			} else {
-				if ((static_cast<uint_fast64_t>(eigenSparseMatrix.innerSize()) > nonZeroEntryCount) || (static_cast<uint_fast64_t>(entryCount) > nonZeroEntryCount)) {
-					triggerErrorState();
-					LOG4CPLUS_ERROR(logger, "Invalid internal composition of Eigen Sparse Matrix");
-					throw storm::exceptions::InvalidArgumentException("Invalid internal composition of Eigen Sparse Matrix");
-				}
-				std::vector<uint_fast64_t> eigenColumnTemp;
-				std::vector<uint_fast64_t> eigenRowTemp;
-				std::vector<T> eigenValueTemp;
-				uint_fast64_t outerSize = eigenSparseMatrix.outerSize() + 1;
-
-				uint_fast64_t entryCountUnsigned = static_cast<uint_fast64_t>(entryCount);
-				for (uint_fast64_t i = 0; i < entryCountUnsigned; ++i) {
-					eigenColumnTemp.push_back(indexPtr[i]);
-					eigenValueTemp.push_back(valuePtr[i]);
-				}
-				for (uint_fast64_t i = 0; i < outerSize; ++i) {
-					eigenRowTemp.push_back(outerPtr[i]);
-				}
-
-				std::copy(eigenRowTemp.begin(), eigenRowTemp.end(), std::back_inserter(this->rowIndications));
-				std::copy(eigenColumnTemp.begin(), eigenColumnTemp.end(), std::back_inserter(this->columnIndications));
-				std::copy(eigenValueTemp.begin(), eigenValueTemp.end(), std::back_inserter(this->valueStorage));
-
-				currentSize = entryCount;
-				lastRow = rowCount;
-			}
-		} else {
-			if (!prepareInternalStorage()) {
-				triggerErrorState();
-				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
-				throw std::bad_alloc();
-			} else {
-				// Because of the ColMajor format outerSize evaluates to the
-				// number of columns.
-				const _Index colCount = eigenSparseMatrix.outerSize();
-
-				// Create an array to remember which elements have to still
-				// be searched in each column and initialize it with the starting
-				// index for every column.
-				_Index* positions = new _Index[colCount]();
-				for (_Index i = 0; i < colCount; ++i) {
-					positions[i] = outerPtr[i];
-				}
-
-				// Now copy the elements. As the matrix is in ColMajor format,
-				// we need to iterate over the columns to find the next non-zero
-				// entry.
-				uint_fast64_t i = 0;
-				int currentRow = 0;
-				int currentColumn = 0;
-				while (i < entryCount) {
-					// If the current element belongs the the current column,
-					// add it in case it is also in the current row.
-					if ((positions[currentColumn] < outerPtr[currentColumn + 1])
-							&& (indexPtr[positions[currentColumn]] == currentRow)) {
-						addNextValue(currentRow, currentColumn,	valuePtr[positions[currentColumn]]);
-						// Remember that we found one more non-zero element.
-						++i;
-						// Mark this position as "used".
-						++positions[currentColumn];
-					}
-
-					// Now we can advance to the next column and also row,
-					// in case we just iterated through the last column.
-					++currentColumn;
-					if (currentColumn == colCount) {
-						currentColumn = 0;
-						++currentRow;
-					}
-				}
-				delete[] positions;
-			}
-		}
-		setState(MatrixStatus::Initialized);
 	}
 
 	/*!
@@ -533,96 +405,6 @@ public:
 	 */
 	bool hasError() const {
 		return (internalStatus == MatrixStatus::Error);
-	}
-
-	/*!
-	 * Exports this sparse matrix to Eigens sparse matrix format.
-	 * NOTE: this requires this matrix to be in the ReadReady state.
-	 * @return The sparse matrix in Eigen format.
-	 */
-	Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>* toEigenSparseMatrix() {
-		// Check whether it is safe to export this matrix.
-		if (!isReadReady()) {
-			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
-			throw storm::exceptions::InvalidStateException("Trying to convert a matrix that is not in a readable state to an Eigen matrix.");
-		} else {
-			// Create the resulting matrix.
-			int_fast32_t eigenRows = static_cast<int_fast32_t>(rowCount);
-			Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>* mat = new Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>(eigenRows, eigenRows);
-
-			// There are two ways of converting this matrix to Eigen's format.
-			// 1. Compute a list of triplets (row, column, value) for all
-			// non-zero elements and pass it to Eigen to create a sparse matrix.
-			// 2. Tell Eigen to reserve the average number of non-zero elements
-			// per row in advance and insert the values via a call to Eigen's
-			// insert method then. As the given reservation number is only an
-			// estimate, the actual number may be different and Eigen may have
-			// to shift a lot.
-			// In most cases, the second alternative is faster (about 1/2 of the
-			// first, but if there are "heavy" rows that are several times larger
-			// than an average row, the other solution might be faster.
-			// The desired conversion method may be set by an appropriate define.
-
-#define STORM_USE_TRIPLETCONVERT
-#			ifdef STORM_USE_TRIPLETCONVERT
-
-			// Prepare the triplet storage.
-			typedef Eigen::Triplet<T> IntTriplet;
-			std::vector<IntTriplet> tripletList;
-			tripletList.reserve(nonZeroEntryCount + rowCount);
-
-			// First, iterate over all elements that are not on the diagonal
-			// and add the corresponding triplet.
-			uint_fast64_t rowStart;
-			uint_fast64_t rowEnd;
-			uint_fast64_t zeroCount = 0;
-			for (uint_fast64_t row = 0; row < rowCount; ++row) {
-				rowStart = rowIndications[row];
-				rowEnd = rowIndications[row + 1];
-				while (rowStart < rowEnd) {
-					if (valueStorage[rowStart] == 0) zeroCount++;
-					tripletList.push_back(IntTriplet(static_cast<int_fast32_t>(row), static_cast<int_fast32_t>(columnIndications[rowStart]), valueStorage[rowStart]));
-					++rowStart;
-				}
-			}
-
-			// Let Eigen create a matrix from the given list of triplets.
-			mat->setFromTriplets(tripletList.begin(), tripletList.end());
-
-#			else // NOT STORM_USE_TRIPLETCONVERT
-
-			// Reserve the average number of non-zero elements per row for each
-			// row.
-			mat->reserve(Eigen::VectorXi::Constant(eigenRows, static_cast<int_fast32_t>((nonZeroEntryCount + rowCount) / eigenRows)));
-
-			// Iterate over the all non-zero elements in this matrix and add
-			// them to the matrix individually.
-			uint_fast64_t rowStart;
-			uint_fast64_t rowEnd;
-			uint_fast64_t count = 0;
-			for (uint_fast64_t row = 0; row < rowCount; ++row) {
-				rowStart = rowIndications[row];
-				rowEnd = rowIndications[row + 1];
-
-				// Insert the elements that are not on the diagonal
-				while (rowStart < rowEnd) {
-					mat->insert(row, columnIndications[rowStart]) = valueStorage[rowStart];
-					count++;
-					++rowStart;
-				}
-			}
-#			endif // STORM_USE_TRIPLETCONVERT
-
-			// Make the matrix compressed, i.e. remove remaining zero-entries.
-			mat->makeCompressed();
-
-			return mat;
-		}
-
-		// This point can never be reached as both if-branches end in a return
-		// statement.
-		return nullptr;
 	}
 
 	/*!
@@ -1274,29 +1056,6 @@ private:
 	 */
 	bool prepareInternalStorage() {
 		return this->prepareInternalStorage(true);
-	}
-
-	/*!
-	 * Helper function to determine whether the given Eigen matrix is in RowMajor
-	 * format. Always returns true, but is overloaded, so the compiler will
-	 * only call it in case the Eigen matrix is in RowMajor format.
-	 * @return True.
-	 */
-	template<typename _Scalar, typename _Index>
-	bool isEigenRowMajor(Eigen::SparseMatrix<_Scalar, Eigen::RowMajor, _Index>) {
-		return true;
-	}
-
-	/*!
-	 * Helper function to determine whether the given Eigen matrix is in RowMajor
-	 * format. Always returns false, but is overloaded, so the compiler will
-	 * only call it in case the Eigen matrix is in ColMajor format.
-	 * @return False.
-	 */
-	template<typename _Scalar, typename _Index>
-	bool isEigenRowMajor(
-			Eigen::SparseMatrix<_Scalar, Eigen::ColMajor, _Index>) {
-		return false;
 	}
 
 };
