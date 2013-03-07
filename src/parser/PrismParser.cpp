@@ -124,8 +124,8 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 		constantDoubleExpression.name("constant double expression");
 
 		// This block defines all expressions of type boolean.
-		relativeExpression = (integerExpression >> relations_ >> integerExpression)[qi::_val = phoenix::construct<std::shared_ptr<BaseExpression>>(phoenix::new_<BinaryRelationExpression>(qi::_1, qi::_3, qi::_2))];
-		relativeExpression.name("boolean expression");
+		relativeExpression = (integerExpression >> relations_ >> integerExpression)[qi::_val = phoenix::construct<std::shared_ptr<storm::ir::expressions::BaseExpression>>(phoenix::new_<storm::ir::expressions::BinaryRelationExpression>(qi::_1, qi::_3, qi::_2))];
+		relativeExpression.name("relative expression");
 		atomicBooleanExpression %= (relativeExpression | booleanVariableExpression | qi::lit("(") >> booleanExpression >> qi::lit(")") | booleanConstantExpression);
 		atomicBooleanExpression.name("boolean expression");
 		notExpression = atomicBooleanExpression[qi::_val = qi::_1] | (qi::lit("!") >> atomicBooleanExpression)[qi::_val = phoenix::construct<std::shared_ptr<UnaryBooleanFunctionExpression>>(phoenix::new_<UnaryBooleanFunctionExpression>(qi::_1, UnaryBooleanFunctionExpression::NOT))];
@@ -222,7 +222,7 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 		variableDefinition.name("variable declaration");
 
 		// This block defines all entities that are needed for parsing a module.
-		moduleDefinition = ((qi::lit("module")[phoenix::clear(phoenix::ref(localBooleanVariables_)), phoenix::clear(phoenix::ref(localIntegerVariables_))] > freeIdentifierName > *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) > +commandDefinition > qi::lit("endmodule"))[phoenix::bind(moduleNames_.add, qi::_1, qi::_1), qi::_val = phoenix::construct<Module>(qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2)];
+		moduleDefinition = (qi::lit("module")[phoenix::clear(phoenix::ref(localBooleanVariables_)), phoenix::clear(phoenix::ref(localIntegerVariables_))] > freeIdentifierName > *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) > +commandDefinition > qi::lit("endmodule"))[phoenix::bind(moduleNames_.add, qi::_1, qi::_1), qi::_val = phoenix::construct<Module>(qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2)];
 		moduleDefinition.name("module");
 		moduleDefinitionList %= +moduleDefinition;
 		moduleDefinitionList.name("module list");
@@ -291,7 +291,7 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 		integerVariableDefinition.name("integer variable declaration");
 
 		// Override module definition: allow already registered module names.
-		moduleDefinition = ((qi::lit("module")[phoenix::clear(phoenix::ref(localBooleanVariables_)), phoenix::clear(phoenix::ref(localIntegerVariables_))] > identifierName > *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) > +commandDefinition > qi::lit("endmodule"))[phoenix::bind(moduleNames_.add, qi::_1, qi::_1), qi::_val = phoenix::construct<Module>(qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2)];
+		moduleDefinition = (qi::lit("module")[phoenix::clear(phoenix::ref(localBooleanVariables_)), phoenix::clear(phoenix::ref(localIntegerVariables_))] > identifierName > *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) > +commandDefinition > qi::lit("endmodule"))[phoenix::bind(moduleNames_.add, qi::_1, qi::_1), qi::_val = phoenix::construct<Module>(qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2)];
 		moduleDefinition.name("module");
 	}
 	
