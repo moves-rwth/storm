@@ -44,12 +44,14 @@ namespace parser {
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast64_t& maxnode) {
+uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast64_t& maxnode, bool rewardFile) {
 	uint_fast64_t nonZeroEntryCount = 0;
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
-	buf = strchr(buf, '\n') + 1;  // skip format hint
+	if (!rewardFile) {
+		buf = strchr(buf, '\n') + 1;  // skip format hint
+	}
 
     /*
      * Check all transitions for non-zero diagonal entries and deadlock states.
@@ -66,24 +68,26 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
             row = checked_strtol(buf, &buf);
             col = checked_strtol(buf, &buf);
 
-			if (lastRow != row) {
-				if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
-					++nonZeroEntryCount;
-					rowHadDiagonalEntry = true;
+            if (!rewardFile) {
+				if (lastRow != row) {
+					if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
+						++nonZeroEntryCount;
+						rowHadDiagonalEntry = true;
+					}
+					for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
+						++nonZeroEntryCount;
+					}
+					lastRow = row;
+					rowHadDiagonalEntry = false;
 				}
-				for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
-					++nonZeroEntryCount;
-				}
-				lastRow = row;
-				rowHadDiagonalEntry = false;
-			}
 
-			if (col == row) {
-				rowHadDiagonalEntry = true;
-			} else if (col > row && !rowHadDiagonalEntry) {
-				rowHadDiagonalEntry = true;
-				++nonZeroEntryCount;
-			}
+				if (col == row) {
+					rowHadDiagonalEntry = true;
+				} else if (col > row && !rowHadDiagonalEntry) {
+					rowHadDiagonalEntry = true;
+					++nonZeroEntryCount;
+				}
+            }
 
             /*
              *      Check if one is larger than the current maximum id.
@@ -105,7 +109,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
             buf = trimWhitespaces(buf);
     }
 
-    if (!rowHadDiagonalEntry) {
+    if (!rowHadDiagonalEntry && !rewardFile) {
     	++nonZeroEntryCount;
     }
 
@@ -122,7 +126,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
  *	@return a pointer to the created sparse matrix.
  */
 
-DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing)
+DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing, bool rewardFile)
 	: matrix(nullptr) {
 	/*
 	 *	Enforce locale where decimal point is '.'.
@@ -139,7 +143,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	 *	Perform first pass, i.e. count entries that are not zero.
 	 */
 	int_fast64_t maxStateId;
-	uint_fast64_t nonZeroEntryCount = this->firstPass(file.data, maxStateId);
+	uint_fast64_t nonZeroEntryCount = this->firstPass(file.data, maxStateId, rewardFile);
 
 	LOG4CPLUS_INFO(logger, "First pass on " << filename << " shows " << nonZeroEntryCount << " NonZeros.");
 
@@ -160,7 +164,9 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	Read file header, extract number of states.
 	 */
-	buf = strchr(buf, '\n') + 1;  // skip format hint
+	if (!rewardFile) {
+		buf = strchr(buf, '\n') + 1;  // skip format hint
+	}
 
 	/*
 	 *	Creating matrix here.
@@ -198,7 +204,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 				if (insertDiagonalEntriesIfMissing) {
 					this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
 					LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
-				} else {
+				} else if (!rewardFile) {
 					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
 				}
 				// No increment for lastRow
@@ -206,11 +212,11 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 			}
 			for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
 				hadDeadlocks = true;
-				if (fixDeadlocks) {
+				if (fixDeadlocks && !rewardFile) {
 					this->matrix->addNextValue(skippedRow, skippedRow, storm::utility::constGetOne<double>());
 					rowHadDiagonalEntry = true;
 					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
-				} else {
+				} else if (!rewardFile) {
 					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
 					// FIXME Why no exception at this point? This will break the App.
 				}
@@ -223,10 +229,10 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 			rowHadDiagonalEntry = true;
 		} else if (col > row && !rowHadDiagonalEntry) {
 			rowHadDiagonalEntry = true;
-			if (insertDiagonalEntriesIfMissing) {
+			if (insertDiagonalEntriesIfMissing && !rewardFile) {
 				this->matrix->addNextValue(row, row, storm::utility::constGetZero<double>());
 				LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
-			} else {
+			} else if (!rewardFile) {
 				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
 			}
 		}
@@ -236,10 +242,10 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	}
 
 	if (!rowHadDiagonalEntry) {
-		if (insertDiagonalEntriesIfMissing) {
+		if (insertDiagonalEntriesIfMissing && !rewardFile) {
 			this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
 			LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
-		} else {
+		} else if (!rewardFile) {
 			LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
 		}
 	}

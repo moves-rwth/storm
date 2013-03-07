@@ -220,6 +220,14 @@ void testCheckingDice(storm::models::Mdp<double>& mdp) {
 	mc->check(*probFormula);
 	delete probFormula;
 
+	storm::formula::Ap<double>* doneFormula = new storm::formula::Ap<double>("done");
+	//storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(doneFormula);
+	storm::formula::InstantaneousReward<double>* reachabilityRewardFormula = new storm::formula::InstantaneousReward<double>(8);
+	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
+
+	mc->check(*rewardFormula);
+	delete rewardFormula;
+
 	delete mc;
 }
 
@@ -271,8 +279,7 @@ void testChecking() {
 		// testCheckingDie(*dtmc);
 		// testCheckingCrowds(*dtmc);
 		// testCheckingSynchronousLeader(*dtmc, 4);
-	}
-	else if (parser.getType() == storm::models::MDP) {
+	} else if (parser.getType() == storm::models::MDP) {
 		std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 		mdp->printModelInformationToStream(std::cout);
 

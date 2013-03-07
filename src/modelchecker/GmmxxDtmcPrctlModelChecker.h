@@ -225,7 +225,7 @@ public:
 			totalRewardVector = new std::vector<Type>(*this->getModel().getStateRewardVector());
 		}
 
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
 		std::vector<Type>* swap = nullptr;
@@ -300,7 +300,7 @@ public:
 					// that we still consider (i.e. maybeStates), we need to extract these values
 					// first.
 					std::vector<Type>* subStateRewards = new std::vector<Type>(maybeStatesSetBitCount);
-					storm::utility::setVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
+					storm::utility::selectVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
 					gmm::add(*subStateRewards, *b);
 					delete subStateRewards;
 				}
@@ -309,7 +309,7 @@ public:
 				// right-hand side. As the state reward vector contains entries not just for the
 				// states that we still consider (i.e. maybeStates), we need to extract these values
 				// first.
-				storm::utility::setVectorValues(b, maybeStates, *this->getModel().getStateRewardVector());
+				storm::utility::selectVectorValues(b, maybeStates, *this->getModel().getStateRewardVector());
 			}
 
 			// Solve the corresponding system of linear equations.

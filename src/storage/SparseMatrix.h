@@ -226,8 +226,8 @@ public:
 			throw storm::exceptions::InvalidStateException("Trying to finalize an uninitialized matrix.");
 		} else if (currentSize != nonZeroEntryCount) {
 			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to finalize a matrix that was initialized with more non-zero entries than given.");
-			throw storm::exceptions::InvalidStateException("Trying to finalize a matrix that was initialized with more non-zero entries than given.");
+			LOG4CPLUS_ERROR(logger, "Trying to finalize a matrix that was initialized with more non-zero entries than given (expected " << nonZeroEntryCount << " but got " << currentSize << " instead)");
+			throw storm::exceptions::InvalidStateException() << "Trying to finalize a matrix that was initialized with more non-zero entries than given (expected " << nonZeroEntryCount << " but got " << currentSize << " instead).";
 		} else {
 			// Fill in the missing entries in the row_indications array.
 			// (Can happen because of empty rows at the end.)
@@ -751,7 +751,7 @@ public:
 	 */
 	std::vector<T>* getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) {
 		// Prepare result.
-		std::vector<T>* result = new std::vector<T>(rowCount);
+		std::vector<T>* result = new std::vector<T>(rowCount, storm::utility::constGetZero<T>());
 
 		// Iterate over all elements of the current matrix and either continue with the next element
 		// in case the given matrix does not have a non-zero element at this column position, or
@@ -764,7 +764,7 @@ public:
 					// If the precondition of this method (i.e. that the given matrix is a submatrix
 					// of the current one) was fulfilled, we know now that the two elements are in
 					// the same column, so we can multiply and add them to the row sum vector.
-					(*result)[row] += otherMatrix.valueStorage[element] * valueStorage[nextOtherElement];
+					(*result)[row] += otherMatrix.valueStorage[nextOtherElement] * valueStorage[element];
 					++nextOtherElement;
 				}
 			}
@@ -866,6 +866,7 @@ public:
 	 *	@return True iff this is a submatrix of matrix.
 	 */
 	bool isSubmatrixOf(SparseMatrix<T> const & matrix) const {
+		// FIXME: THIS DOES NOT IMPLEMENT WHAT IS PROMISED.
 		if (this->getRowCount() != matrix.getRowCount()) return false;
 		if (this->getColumnCount() != matrix.getColumnCount()) return false;
 
@@ -933,7 +934,7 @@ public:
 			result << i << "\t(\t";
 			uint_fast64_t currentRealIndex = 0;
 			while (currentRealIndex < colCount) {
-				if (currentRealIndex == columnIndications[nextIndex] && nextIndex < rowIndications[i + 1]) {
+				if (nextIndex < rowIndications[i + 1] && currentRealIndex == columnIndications[nextIndex]) {
 					result << valueStorage[nextIndex] << "\t";
 					++nextIndex;
 				} else {
