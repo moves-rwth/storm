@@ -138,21 +138,36 @@ void cleanUp() {
 }
 
 void testCheckingDie(storm::models::Dtmc<double>& dtmc) {
+	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+
 	storm::formula::Ap<double>* oneFormula = new storm::formula::Ap<double>("one");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(oneFormula);
 	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	oneFormula = new storm::formula::Ap<double>("two");
+	eventuallyFormula = new storm::formula::Eventually<double>(oneFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	oneFormula = new storm::formula::Ap<double>("three");
+	eventuallyFormula = new storm::formula::Eventually<double>(oneFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+
+	mc->check(*probFormula);
+	delete probFormula;
 
 	storm::formula::Ap<double>* done = new storm::formula::Ap<double>("done");
 	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(done);
 	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
-	mc->check(*probFormula);
 	mc->check(*rewardFormula);
-
-	delete mc;
-	delete probFormula;
 	delete rewardFormula;
+	delete mc;
 }
 
 void testCheckingCrowds(storm::models::Dtmc<double>& dtmc) {
@@ -191,13 +206,10 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 	delete probFormula;
 
 	electedFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::BoundedUntil<double>* boundedUntilFormula = new storm::formula::BoundedUntil<double>(new storm::formula::Ap<double>("true"), electedFormula, 1);
+	storm::formula::BoundedUntil<double>* boundedUntilFormula = new storm::formula::BoundedUntil<double>(new storm::formula::Ap<double>("true"), electedFormula, n * 4);
 	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
 
-	for (uint_fast64_t L = 1; L < 5; ++L) {
-		boundedUntilFormula->setBound(L*(n + 1));
-		mc->check(*probFormula);
-	}
+	mc->check(*probFormula);
 	delete probFormula;
 
 	electedFormula = new storm::formula::Ap<double>("elected");
@@ -211,19 +223,88 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 }
 
 void testCheckingDice(storm::models::Mdp<double>& mdp) {
-	storm::formula::Ap<double>* threeFormula = new storm::formula::Ap<double>("three");
-	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(threeFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+	storm::formula::Ap<double>* twoFormula = new storm::formula::Ap<double>("two");
+	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
 
 	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
 
 	mc->check(*probFormula);
 	delete probFormula;
 
+	twoFormula = new storm::formula::Ap<double>("two");
+	eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	twoFormula = new storm::formula::Ap<double>("three");
+	eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	twoFormula = new storm::formula::Ap<double>("three");
+	eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	twoFormula = new storm::formula::Ap<double>("four");
+	eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	twoFormula = new storm::formula::Ap<double>("four");
+	eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	twoFormula = new storm::formula::Ap<double>("five");
+	eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	twoFormula = new storm::formula::Ap<double>("five");
+	eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	twoFormula = new storm::formula::Ap<double>("six");
+	eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	twoFormula = new storm::formula::Ap<double>("six");
+	eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
 	storm::formula::Ap<double>* doneFormula = new storm::formula::Ap<double>("done");
-	//storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(doneFormula);
-	storm::formula::InstantaneousReward<double>* reachabilityRewardFormula = new storm::formula::InstantaneousReward<double>(8);
+	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(doneFormula);
 	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
+
+	mc->check(*rewardFormula);
+	delete rewardFormula;
+
+	doneFormula = new storm::formula::Ap<double>("done");
+	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(doneFormula);
+	rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
 
 	mc->check(*rewardFormula);
 	delete rewardFormula;
@@ -249,18 +330,32 @@ void testCheckingAsynchLeader(storm::models::Mdp<double>& mdp) {
 	delete probMaxFormula;
 
 	electedFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::BoundedEventually<double>* boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(electedFormula, 50);
+	storm::formula::BoundedEventually<double>* boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(electedFormula, 25);
 	probMinFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
 
 	mc->check(*probMinFormula);
 	delete probMinFormula;
 
 	electedFormula = new storm::formula::Ap<double>("elected");
-	boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(electedFormula, 50);
+	boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(electedFormula, 25);
 	probMaxFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
 
 	mc->check(*probMaxFormula);
 	delete probMaxFormula;
+
+	electedFormula = new storm::formula::Ap<double>("elected");
+	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(electedFormula);
+	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
+
+	mc->check(*rewardFormula);
+	delete rewardFormula;
+
+	electedFormula = new storm::formula::Ap<double>("elected");
+	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(electedFormula);
+	rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
+
+	mc->check(*rewardFormula);
+	delete rewardFormula;
 
 	delete mc;
 }
@@ -278,7 +373,7 @@ void testChecking() {
 
 		// testCheckingDie(*dtmc);
 		// testCheckingCrowds(*dtmc);
-		// testCheckingSynchronousLeader(*dtmc, 4);
+		// testCheckingSynchronousLeader(*dtmc, 6);
 	} else if (parser.getType() == storm::models::MDP) {
 		std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 		mdp->printModelInformationToStream(std::cout);
