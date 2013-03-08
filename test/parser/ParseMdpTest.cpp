@@ -13,9 +13,9 @@
 
 TEST(ParseMdpTest, parseAndOutput) {
 	storm::parser::NondeterministicModelParser* mdpParser = nullptr;
-	/*ASSERT_NO_THROW(*/mdpParser = new storm::parser::NondeterministicModelParser(
+	ASSERT_NO_THROW(mdpParser = new storm::parser::NondeterministicModelParser(
 			STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_general_input_01.tra",
-			STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab")/*)*/;
+			STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = mdpParser->getMdp();
 	std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = mdp->getTransitionMatrix();
