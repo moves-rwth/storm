@@ -1,0 +1,3 @@
+P=? [ F "observe0Greater1" ]
+P=? [ F "observeIGreater1" ]
+P=? [ F "observeOnlyTrueSender" ]

@@ -1,0 +1,13 @@
+Pmin=? [ F "two" ]
+Pmax=? [ F "two" ]
+Pmin=? [ F "three" ]
+Pmax=? [ F "three" ]
+Pmin=? [ F "four" ]
+Pmax=? [ F "four" ]
+Pmin=? [ F "five" ]
+Pmax=? [ F "five" ]
+Pmin=? [ F "six" ]
+Pmax=? [ F "six" ]
+
+Rmin=? [ F "done" ]
+Rmax=? [ F "done" ]
