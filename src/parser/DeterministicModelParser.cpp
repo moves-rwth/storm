@@ -45,7 +45,9 @@ DeterministicModelParser::DeterministicModelParser(std::string const & transitio
 		this->stateRewards = srp.getStateRewards();
 	}
 	if (transitionRewardFile != "") {
-		storm::parser::DeterministicSparseTransitionParser trp(transitionRewardFile, false, true);
+		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(stateCount, stateCount, nullptr);
+		storm::parser::DeterministicSparseTransitionParser trp(transitionRewardFile, false, rewardMatrixInfo);
+		delete rewardMatrixInfo;
 		this->transitionRewards = trp.getMatrix();
 	}
 	this->dtmc = nullptr;
