@@ -393,6 +393,23 @@ public:
 	}
 
 	/*!
+	 * Checks whether all bits that are set in the current bit vector are also set in the given bit
+	 * vector.
+	 * @param bv A reference to the bit vector whose bits are (possibly) a superset of the bits of
+	 * the current bit vector.
+	 * @returns True iff all bits that are set in the current bit vector are also set in the given bit
+	 * vector.
+	 */
+	bool isContainedIn(BitVector const& bv) const {
+		for (uint_fast64_t i = 0; i < this->bucketCount; ++i) {
+			if ((this->bucketArray[i] & bv.bucketArray[i]) != bv.bucketArray[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/*!
 	 * Adds all indices of bits set to one to the provided list.
 	 * @param list The list to which to append the indices.
 	 */
