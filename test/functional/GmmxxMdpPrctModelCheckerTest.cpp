@@ -24,7 +24,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	std::vector<double>* result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 0.0277777612209320068) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0277777612209320068), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -35,7 +35,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 0.0277777612209320068) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0277777612209320068), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -46,7 +46,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 0.0555555224418640136) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0555555224418640136), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -57,7 +57,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 0.0555555224418640136) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0555555224418640136), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -68,7 +68,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 0.083333283662796020508) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.083333283662796020508), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -79,7 +79,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 0.083333283662796020508) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.083333283662796020508), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -90,7 +90,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 7.3333272933959960938) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333272933959960938), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -101,7 +101,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 7.3333272933959960938) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333272933959960938), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -120,7 +120,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(stateRewardModelChecker);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 7.3333272933959960938) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333272933959960938), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -131,7 +131,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(stateRewardModelChecker);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 7.3333272933959960938) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333272933959960938), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -150,7 +150,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(stateAndTransitionRewardModelChecker);
 
-	ASSERT_TRUE(std::abs((*result)[0] - (2 * 7.3333272933959960938)) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333272933959960938)), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -161,7 +161,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(stateAndTransitionRewardModelChecker);
 
-	ASSERT_TRUE(std::abs((*result)[0] - (2 * 7.3333272933959960938)) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333272933959960938)), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -186,7 +186,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	std::vector<double>* result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 1) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -197,7 +197,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 1) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -208,7 +208,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 0.0625) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -219,7 +219,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	result = probFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 0.0625) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -230,7 +230,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	result = rewardFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 4.28568908480604982) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 4.28568908480604982), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -241,7 +241,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	result = rewardFormula->check(mc);
 
-	ASSERT_TRUE(std::abs((*result)[0] - 4.2856904354441400784) < s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 4.2856904354441400784), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;

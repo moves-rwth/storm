@@ -1,11 +1,12 @@
+/*
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
 #include "src/utility/Settings.h"
-#include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
+#include "src/modelchecker/EigenDtmcPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
-TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
+TEST(EigenDtmcPrctModelCheckerTest, Die) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/die/die.tra", STORM_CPP_TESTS_BASE_PATH "/functional/die/die.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/die/die.coin_flips.trans.rew");
@@ -17,7 +18,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 14);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 28);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelChecker::EigenDtmcPrctlModelChecker<double> mc(*dtmc);
 
 	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("one");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
@@ -65,7 +66,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 	delete result;
 }
 
-TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
+TEST(EigenDtmcPrctModelCheckerTest, Crowds) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/crowds/crowds5_5.tra", STORM_CPP_TESTS_BASE_PATH "/functional/crowds/crowds5_5.lab", "", "");
@@ -77,7 +78,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 8608);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 22461);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelChecker::EigenDtmcPrctlModelChecker<double> mc(*dtmc);
 
 	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("observe0Greater1");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
@@ -113,7 +114,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	delete result;
 }
 
-TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
+TEST(EigenDtmcPrctModelCheckerTest, SynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/synchronous_leader/leader4_8.tra", STORM_CPP_TESTS_BASE_PATH "/functional/synchronous_leader/leader4_8.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/synchronous_leader/leader4_8.pick.trans.rew");
@@ -125,7 +126,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 12401);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 28895);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelChecker::EigenDtmcPrctlModelChecker<double> mc(*dtmc);
 
 	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("elected");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
@@ -160,3 +161,4 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	delete rewardFormula;
 	delete result;
 }
+*/

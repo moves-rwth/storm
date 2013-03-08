@@ -410,6 +410,23 @@ public:
 	}
 
 	/*!
+	 * Checks whether none of the bits that are set in the current bit vector are also set in the
+	 * given bit vector.
+	 * @param bv A reference to the bit vector whose bits are (possibly) disjoint from the bits in
+	 * the current bit vector.
+	 * @returns True iff none of the bits that are set in the current bit vector are also set in the
+	 * given bit vector.
+	 */
+	bool isDisjointFrom(BitVector const& bv) const {
+		for (uint_fast64_t i = 0; i < this->bucketCount; ++i) {
+			if ((this->bucketArray[i] & bv.bucketArray[i]) != 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/*!
 	 * Adds all indices of bits set to one to the provided list.
 	 * @param list The list to which to append the indices.
 	 */
