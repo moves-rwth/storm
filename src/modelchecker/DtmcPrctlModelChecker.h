@@ -115,7 +115,7 @@ public:
 		storm::utility::setVectorValues(result, *rightStates, storm::utility::constGetOne<Type>());
 
 		// Perform the matrix vector multiplication as often as required by the formula bound.
-		this->performMatrixVectorMultiplication(tmpMatrix, &result, nullptr, formula.getBound());
+		this->performMatrixVectorMultiplication(tmpMatrix, *result, nullptr, formula.getBound());
 
 		// Return result.
 		return result;
@@ -139,7 +139,7 @@ public:
 		delete nextStates;
 
 		// Perform one single matrix-vector multiplication.
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), &result);
+		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result);
 
 		// Return result.
 		return result;
@@ -228,20 +228,20 @@ public:
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
 			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
 			// probability is strictly larger than 0.
-			std::vector<Type>* x = new std::vector<Type>(maybeStatesSetBitCount, Type(0.5));
+			std::vector<Type> x(maybeStatesSetBitCount, Type(0.5));
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
 			std::vector<Type> b(maybeStatesSetBitCount);
 			this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, statesWithProbability1, &b);
 
-			this->solveEquationSystem(*submatrix, &x, b);
+			this->solveEquationSystem(*submatrix, x, b);
 
 			// Delete the created submatrix.
 			delete submatrix;
 
 			// Set values of resulting vector according to result.
-			storm::utility::setVectorValues<Type>(result, maybeStates, *x);
+			storm::utility::setVectorValues<Type>(result, maybeStates, x);
 		} else if (qualitative) {
 			// If we only need a qualitative result, we can safely assume that the results will only be compared to
 			// bounds which are either 0 or 1. Setting the value to 0.5 is thus safe.
@@ -273,7 +273,7 @@ public:
 		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
 
 		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), &result, nullptr, formula.getBound());
+		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, nullptr, formula.getBound());
 
 		// Return result.
 		return result;
@@ -306,7 +306,7 @@ public:
 
 		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
 
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), &result, totalRewardVector, formula.getBound());
+		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, totalRewardVector, formula.getBound());
 
 		// Delete temporary variables and return result.
 		delete totalRewardVector;
@@ -351,16 +351,16 @@ public:
 
 			// Initialize the x vector with 1 for each element. This is the initial guess for
 			// the iterative solvers.
-			std::vector<Type>* x = new std::vector<Type>(maybeStatesSetBitCount, storm::utility::constGetOne<Type>());
+			std::vector<Type> x(maybeStatesSetBitCount, storm::utility::constGetOne<Type>());
 
 			// Prepare the right-hand side of the equation system.
-			std::vector<Type>* b = new std::vector<Type>(maybeStatesSetBitCount);
+			std::vector<Type> b(maybeStatesSetBitCount);
 			if (this->getModel().hasTransitionRewards()) {
 				// If a transition-based reward model is available, we initialize the right-hand
 				// side to the vector resulting from summing the rows of the pointwise product
 				// of the transition probability matrix and the transition reward matrix.
 				std::vector<Type>* pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
-				storm::utility::selectVectorValues(b, maybeStates, *pointwiseProductRowSumVector);
+				storm::utility::selectVectorValues(&b, maybeStates, *pointwiseProductRowSumVector);
 				delete pointwiseProductRowSumVector;
 
 				if (this->getModel().hasStateRewards()) {
@@ -368,27 +368,25 @@ public:
 					// as well. As the state reward vector contains entries not just for the states
 					// that we still consider (i.e. maybeStates), we need to extract these values
 					// first.
-					std::vector<Type>* subStateRewards = new std::vector<Type>(maybeStatesSetBitCount);
-					storm::utility::selectVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
-					gmm::add(*subStateRewards, *b);
-					delete subStateRewards;
+					std::vector<Type> subStateRewards(maybeStatesSetBitCount);
+					storm::utility::selectVectorValues(&subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
+					gmm::add(subStateRewards, b);
 				}
 			} else {
 				// If only a state-based reward model is  available, we take this vector as the
 				// right-hand side. As the state reward vector contains entries not just for the
 				// states that we still consider (i.e. maybeStates), we need to extract these values
 				// first.
-				storm::utility::selectVectorValues(b, maybeStates, *this->getModel().getStateRewardVector());
+				storm::utility::selectVectorValues(&b, maybeStates, *this->getModel().getStateRewardVector());
 			}
 
-			this->solveEquationSystem(*submatrix, &x, *b);
+			this->solveEquationSystem(*submatrix, x, b);
 
 			// Set values of resulting vector according to result.
-			storm::utility::setVectorValues<Type>(result, maybeStates, *x);
+			storm::utility::setVectorValues<Type>(result, maybeStates, x);
 
 			// Delete temporary matrix and right-hand side.
 			delete submatrix;
-			delete b;
 		}
 
 		// Set values of resulting vector that are known exactly.
@@ -401,9 +399,9 @@ public:
 	}
 
 private:
-	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>** vector, std::vector<Type>* summand = nullptr, uint_fast64_t repetitions = 1) const = 0;
+	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type>* summand = nullptr, uint_fast64_t repetitions = 1) const = 0;
 
-	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>** vector, std::vector<Type>& b) const = 0;
+	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type> const& b) const = 0;
 };
 
 } //namespace modelChecker

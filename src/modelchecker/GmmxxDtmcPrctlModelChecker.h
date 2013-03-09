@@ -96,25 +96,33 @@ public:
 
 private:
 
-	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>** vector, std::vector<Type>* summand, uint_fast64_t repetitions = 1) const {
+	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type>* summand, uint_fast64_t repetitions = 1) const {
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
 		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(matrix);
 
 		// Now perform matrix-vector multiplication as long as we meet the bound.
 		std::vector<Type>* swap = nullptr;
-		std::vector<Type>* tmpResult = new std::vector<Type>(this->getModel().getNumberOfStates());
+		std::vector<Type>* currentVector = &vector;
+		std::vector<Type>* tmpVector = new std::vector<Type>(this->getModel().getNumberOfStates());
 		for (uint_fast64_t i = 0; i < repetitions; ++i) {
-			gmm::mult(*gmmxxMatrix, **vector, *tmpResult);
-			swap = tmpResult;
-			tmpResult = *vector;
-			*vector = swap;
+			gmm::mult(*gmmxxMatrix, *currentVector, *tmpVector);
+			swap = tmpVector;
+			tmpVector = currentVector;
+			currentVector = swap;
 
 			// If requested, add an offset to the current result vector.
 			if (summand != nullptr) {
-				gmm::add(*summand, **vector);
+				gmm::add(*summand, *currentVector);
 			}
 		}
-		delete tmpResult;
+
+		if (repetitions % 2 == 1) {
+			std::swap(vector, *currentVector);
+			delete currentVector;
+		} else {
+			delete tmpVector;
+		}
+
 		delete gmmxxMatrix;
 	}
 
@@ -128,7 +136,7 @@ private:
 	 * @return The solution of the system of linear equations in form of the elements of the vector
 	 * x.
 	 */
-	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>** vector, std::vector<Type>& b) const {
+	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type> const& b) const {
 		// Get the settings object to customize linear solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
@@ -155,13 +163,13 @@ private:
 		if (s->getString("lemethod") == "bicgstab") {
 			LOG4CPLUS_INFO(logger, "Using BiCGStab method.");
 			if (precond == "ilu") {
-				gmm::bicgstab(*A, **vector, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*A), iter);
+				gmm::bicgstab(*A, vector, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*A), iter);
 			} else if (precond == "diagonal") {
-				gmm::bicgstab(*A, **vector, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*A), iter);
+				gmm::bicgstab(*A, vector, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*A), iter);
 			} else if (precond == "ildlt") {
-				gmm::bicgstab(*A, **vector, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*A), iter);
+				gmm::bicgstab(*A, vector, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*A), iter);
 			} else if (precond == "none") {
-				gmm::bicgstab(*A, **vector, b, gmm::identity_matrix(), iter);
+				gmm::bicgstab(*A, vector, b, gmm::identity_matrix(), iter);
 			}
 
 			// Check if the solver converged and issue a warning otherwise.
@@ -173,13 +181,13 @@ private:
 		} else if (s->getString("lemethod") == "qmr") {
 			LOG4CPLUS_INFO(logger, "Using QMR method.");
 			if (precond == "ilu") {
-				gmm::qmr(*A, **vector, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*A), iter);
+				gmm::qmr(*A, vector, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*A), iter);
 			} else if (precond == "diagonal") {
-				gmm::qmr(*A, **vector, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*A), iter);
+				gmm::qmr(*A, vector, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*A), iter);
 			} else if (precond == "ildlt") {
-				gmm::qmr(*A, **vector, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*A), iter);
+				gmm::qmr(*A, vector, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*A), iter);
 			} else if (precond == "none") {
-				gmm::qmr(*A, **vector, b, gmm::identity_matrix(), iter);
+				gmm::qmr(*A, vector, b, gmm::identity_matrix(), iter);
 			}
 
 			// Check if the solver converged and issue a warning otherwise.
@@ -190,7 +198,7 @@ private:
 			}
 		} else if (s->getString("lemethod") == "jacobi") {
 			LOG4CPLUS_INFO(logger, "Using Jacobi method.");
-			solveLinearEquationSystemWithJacobi(*A, **vector, b);
+			solveLinearEquationSystemWithJacobi(*A, vector, b);
 		}
 
 		delete A;

@@ -90,7 +90,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(mc);
 
-	ASSERT_LT(std::abs((*result)[0] - 7.3333272933959960938), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -101,7 +101,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(mc);
 
-	ASSERT_LT(std::abs((*result)[0] - 7.3333272933959960938), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -120,7 +120,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(stateRewardModelChecker);
 
-	ASSERT_LT(std::abs((*result)[0] - 7.3333272933959960938), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -131,7 +131,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(stateRewardModelChecker);
 
-	ASSERT_LT(std::abs((*result)[0] - 7.3333272933959960938), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -150,7 +150,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(stateAndTransitionRewardModelChecker);
 
-	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333272933959960938)), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333294987678527832)), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -161,7 +161,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	result = rewardFormula->check(stateAndTransitionRewardModelChecker);
 
-	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333272933959960938)), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333294987678527832)), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
