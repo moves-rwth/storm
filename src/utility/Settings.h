@@ -70,6 +70,23 @@ namespace settings {
 			inline const bool isSet(std::string const & name) const {
 				return this->vm.count(name) > 0;
 			}
+			
+			/*!
+			 *	@brief	Set an option.
+			 */
+			inline void set(std::string const & name) {
+				bpo::variable_value val;
+				this->vm.insert( std::make_pair(name, val) );
+			}
+			
+			/*!
+			 *	@brief Set value for an option.
+			 */
+			template <typename T>
+			inline void set(std::string const & name, T const & value) {
+				bpo::variable_value val(value, false);
+				this->vm.insert( std::make_pair(name, val) );
+			}
 
 			/*!
 			 *	@brief	Register a new module.

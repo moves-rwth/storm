@@ -19,7 +19,7 @@ namespace parser {
  */
 class NondeterministicSparseTransitionParser : public Parser {
 	public:
-		NondeterministicSparseTransitionParser(std::string const &filename, bool rewardFile = false, std::shared_ptr<std::vector<uint_fast64_t>> const nondeterministicChoiceIndices = nullptr);
+		NondeterministicSparseTransitionParser(std::string const &filename, RewardMatrixInformationStruct* rewardMatrixInformation = nullptr);
 		
 		inline std::shared_ptr<storm::storage::SparseMatrix<double>> getMatrix() const {
 			return this->matrix;
@@ -33,7 +33,7 @@ class NondeterministicSparseTransitionParser : public Parser {
 		std::shared_ptr<storm::storage::SparseMatrix<double>> matrix;
 		std::shared_ptr<std::vector<uint_fast64_t>> rowMapping;
 		
-		uint_fast64_t firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode, bool rewardFile, std::shared_ptr<std::vector<uint_fast64_t>> const nondeterministicChoiceIndices);
+		uint_fast64_t firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation);
 	
 };
 		

@@ -14,6 +14,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <iostream>
+#include <memory>
+#include <vector>
 
 #include <boost/integer/integer_mask.hpp>
 #include "src/exceptions/FileIoException.h"
@@ -30,6 +32,21 @@ namespace storm {
  */
 namespace parser {
 	
+	struct RewardMatrixInformationStruct {
+		RewardMatrixInformationStruct() : rowCount(0), columnCount(0), nondeterministicChoiceIndices(nullptr) {
+			// Intentionally left empty.
+		}
+
+		RewardMatrixInformationStruct(uint_fast64_t rowCount, uint_fast64_t columnCount, std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices)
+		: rowCount(rowCount), columnCount(columnCount), nondeterministicChoiceIndices(nondeterministicChoiceIndices) {
+			// Intentionally left empty.
+		}
+
+		uint_fast64_t rowCount;
+		uint_fast64_t columnCount;
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices;
+	};
+
 	/*!
 	 *	@brief Opens a file and maps it to memory providing a char*
 	 *	containing the file content.

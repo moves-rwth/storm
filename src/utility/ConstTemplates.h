@@ -18,6 +18,9 @@
 
 #include <limits>
 
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storage/BitVector.h"
+
 namespace storm {
 
 namespace utility {

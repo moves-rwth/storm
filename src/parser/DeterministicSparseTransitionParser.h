@@ -17,7 +17,7 @@ namespace parser {
  */
 class DeterministicSparseTransitionParser : public Parser {
 	public:
-		DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing = true, bool rewardFile = false);
+		DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing = true, RewardMatrixInformationStruct* rewardMatrixInformation = nullptr);
 		
 		std::shared_ptr<storm::storage::SparseMatrix<double>> getMatrix() {
 			return this->matrix;
@@ -26,7 +26,7 @@ class DeterministicSparseTransitionParser : public Parser {
 	private:
 		std::shared_ptr<storm::storage::SparseMatrix<double>> matrix;
 		
-		uint_fast64_t firstPass(char* buf, int_fast64_t &maxnode, bool rewardFile);
+		uint_fast64_t firstPass(char* buf, int_fast64_t &maxnode, RewardMatrixInformationStruct* rewardMatrixInformation);
 	
 };
 		

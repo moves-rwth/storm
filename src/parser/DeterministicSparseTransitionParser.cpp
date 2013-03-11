@@ -44,12 +44,14 @@ namespace parser {
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast64_t& maxnode, bool rewardFile) {
+uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
+	bool isRewardMatrix = rewardMatrixInformation != nullptr;
+
 	uint_fast64_t nonZeroEntryCount = 0;
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
-	if (!rewardFile) {
+	if (!isRewardMatrix) {
 		buf = strchr(buf, '\n') + 1;  // skip format hint
 	}
 
@@ -68,7 +70,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
             row = checked_strtol(buf, &buf);
             col = checked_strtol(buf, &buf);
 
-            if (!rewardFile) {
+            if (!isRewardMatrix) {
 				if (lastRow != row) {
 					if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
 						++nonZeroEntryCount;
@@ -109,7 +111,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
             buf = trimWhitespaces(buf);
     }
 
-    if (!rowHadDiagonalEntry && !rewardFile) {
+    if (!rowHadDiagonalEntry && !isRewardMatrix) {
     	++nonZeroEntryCount;
     }
 
@@ -126,12 +128,14 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
  *	@return a pointer to the created sparse matrix.
  */
 
-DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing, bool rewardFile)
+DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing, RewardMatrixInformationStruct* rewardMatrixInformation)
 	: matrix(nullptr) {
 	/*
 	 *	Enforce locale where decimal point is '.'.
 	 */
 	setlocale(LC_NUMERIC, "C");
+
+	bool isRewardMatrix = rewardMatrixInformation != nullptr;
 
 	/*
 	 *	Open file.
@@ -143,7 +147,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	 *	Perform first pass, i.e. count entries that are not zero.
 	 */
 	int_fast64_t maxStateId;
-	uint_fast64_t nonZeroEntryCount = this->firstPass(file.data, maxStateId, rewardFile);
+	uint_fast64_t nonZeroEntryCount = this->firstPass(file.data, maxStateId, rewardMatrixInformation);
 
 	LOG4CPLUS_INFO(logger, "First pass on " << filename << " shows " << nonZeroEntryCount << " NonZeros.");
 
@@ -164,8 +168,19 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	Read file header, extract number of states.
 	 */
-	if (!rewardFile) {
+	if (!isRewardMatrix) {
 		buf = strchr(buf, '\n') + 1;  // skip format hint
+	}
+
+	// If the matrix that is being parsed is a reward matrix, it should match the size of the
+	// transition matrix.
+	if (isRewardMatrix) {
+		if (maxStateId + 1 > rewardMatrixInformation->rowCount || maxStateId + 1 > rewardMatrixInformation->columnCount) {
+			LOG4CPLUS_ERROR(logger, "Reward matrix has more rows or columns than transition matrix.");
+			throw storm::exceptions::WrongFileFormatException() << "Reward matrix has more rows or columns than transition matrix.";
+		} else {
+			maxStateId = rewardMatrixInformation->rowCount - 1;
+		}
 	}
 
 	/*
@@ -201,10 +216,10 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 
 		if (lastRow != row) {
 			if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
-				if (insertDiagonalEntriesIfMissing) {
+				if (insertDiagonalEntriesIfMissing && !isRewardMatrix) {
 					this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
 					LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
-				} else if (!rewardFile) {
+				} else if (!isRewardMatrix) {
 					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
 				}
 				// No increment for lastRow
@@ -212,11 +227,11 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 			}
 			for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
 				hadDeadlocks = true;
-				if (fixDeadlocks && !rewardFile) {
+				if (fixDeadlocks && !isRewardMatrix) {
 					this->matrix->addNextValue(skippedRow, skippedRow, storm::utility::constGetOne<double>());
 					rowHadDiagonalEntry = true;
 					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
-				} else if (!rewardFile) {
+				} else if (!isRewardMatrix) {
 					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
 					// FIXME Why no exception at this point? This will break the App.
 				}
@@ -229,10 +244,10 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 			rowHadDiagonalEntry = true;
 		} else if (col > row && !rowHadDiagonalEntry) {
 			rowHadDiagonalEntry = true;
-			if (insertDiagonalEntriesIfMissing && !rewardFile) {
+			if (insertDiagonalEntriesIfMissing && !isRewardMatrix) {
 				this->matrix->addNextValue(row, row, storm::utility::constGetZero<double>());
 				LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
-			} else if (!rewardFile) {
+			} else if (!isRewardMatrix) {
 				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
 			}
 		}
@@ -242,15 +257,15 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	}
 
 	if (!rowHadDiagonalEntry) {
-		if (insertDiagonalEntriesIfMissing && !rewardFile) {
+		if (insertDiagonalEntriesIfMissing && !isRewardMatrix) {
 			this->matrix->addNextValue(lastRow, lastRow, storm::utility::constGetZero<double>());
 			LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
-		} else if (!rewardFile) {
+		} else if (!isRewardMatrix) {
 			LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
 		}
 	}
 
-	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+	if (!fixDeadlocks && hadDeadlocks && !isRewardMatrix) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 
 	/*
 	 *	Finalize Matrix.
