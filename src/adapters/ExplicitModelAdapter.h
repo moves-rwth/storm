@@ -16,6 +16,7 @@
 #include <boost/functional/hash.hpp>
 #include <map>
 #include <queue>
+#include <set>
 #include <iostream>
 #include <memory>
 #include <list>
@@ -208,12 +209,8 @@ private:
 	 * @params state State to be expanded
 	 * @params res List of
 	 */
-	void addUnlabeledTransitions(const StateType* state, std::list<std::map<uint_fast64_t, double>>& res) {
-		std::cout << "exploring ( ";
-		for (auto it : state->first) std::cout << it << ", ";
-		for (auto it : state->second) std::cout << it << ", ";
-		std::cout << ")" << std::endl;
-		
+	void addUnlabeledTransitions(const uint_fast64_t stateID, std::list<std::map<uint_fast64_t, double>>& res) {
+		const StateType* state = this->allStates[stateID];
 		// Iterate over all modules.
 		for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
 			storm::ir::Module const& module = program->getModule(i);
@@ -241,10 +238,67 @@ private:
 						(*states)[newStateId] = update.getLikelihoodExpression()->getValueAsDouble(state);
 					} else {
 						(*states)[newStateId] += update.getLikelihoodExpression()->getValueAsDouble(state);
-					}					
+					}	
 				}
 			}
 		}
+	}
+
+	void addLabeledTransitions(const uint_fast64_t stateID, std::list<std::map<uint_fast64_t, double>>& res) {
+		// Create a copy of the current state, as we will free intermediate states...
+		StateType* state = new StateType(*this->allStates[stateID]);
+		for (std::string action : this->program->getActions()) {
+			std::unique_ptr<std::list<std::list<storm::ir::Command>>> cmds = this->getActiveCommandsByAction(state, action);
+
+			// Start with current state
+			std::unordered_map<StateType*, double, StateHash, StateCompare> resultStates;
+			resultStates[state] = 1.0;
+			
+			for (std::list<storm::ir::Command> module : *cmds) {
+				if (resultStates.size() == 0) break;
+				std::unordered_map<StateType*, double, StateHash, StateCompare> newStates;
+
+				// Iterate over all commands within this module.
+				for (storm::ir::Command command : module) {
+					// Iterate over all updates of this command.
+					for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
+						storm::ir::Update const& update = command.getUpdate(k);
+
+						// Iterate over all resultStates.
+						for (auto it : resultStates) {
+							// Apply the new update and get resulting state.
+							StateType* newState = this->applyUpdate(it.first, update);
+							// Insert the new state into newStates array.
+							// Take care of calculation of likelihood, combine identical states.
+							auto s = newStates.find(newState);
+							if (s == newStates.end()) {
+								newStates[newState] = it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
+							} else {
+								newStates[newState] += it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
+							}
+						}
+					}
+				}
+				for (auto it: resultStates) {
+					delete it.first;
+				}
+				// Move new states to resultStates.
+				resultStates.clear();
+				resultStates.insert(newStates.begin(), newStates.end());
+
+			}
+
+			res.emplace_back();
+			std::map<uint_fast64_t, double>* states = &res.back();
+
+			// Now add our final result states to our global result.
+			for (auto it : resultStates) {
+				uint_fast64_t newStateID = this->getOrAddStateId(it.first);
+				(*states)[newStateID] = it.second;
+			}
+			this->numberOfTransitions += states->size();
+		}
+
 	}
 
 	void dump(std::map<uint_fast64_t, double>& obj) {
@@ -262,6 +316,16 @@ private:
 	template<class T>
 	std::shared_ptr<storm::storage::SparseMatrix<T>> buildDTMCMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate) {
 		std::shared_ptr<storm::storage::SparseMatrix<T>> result(new storm::storage::SparseMatrix<T>(allStates.size()));
+		uint_fast64_t numberOfTransitions = 0;
+		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
+			std::set<uint_fast64_t> set;
+			for (auto choice : intermediate[state]) {
+				for (auto elem : choice) {
+					set.insert(elem.first);
+				}
+			}
+			numberOfTransitions += set.size();
+		}
 		result->initialize(numberOfTransitions);
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
 			//if (intermediate[state].size() > 1) WARNING;
@@ -272,6 +336,7 @@ private:
 					map[elem.first] += elem.second * factor;
 				}
 			}
+			std::cout << "adding " << map.size() << " elements" << std::endl;
 			for (auto it : map) {
 				result->addNextValue(state, it.first, it.second);
 			}
@@ -284,6 +349,7 @@ private:
 	/*!
 	 * Create matrix from intermediate mapping, assuming it is a mdp model.
 	 * @param intermediate Intermediate representation of transition mapping.
+	 * @param choices Overall number of choices for all nodes.
 	 * @return result matrix.
 	 */
 	template<class T>
@@ -313,7 +379,8 @@ private:
 		std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate;
 		for (uint_fast64_t curIndex = this->getOrAddStateId(this->buildInitialState()); curIndex < this->allStates.size(); curIndex++)
 		{
-			this->addUnlabeledTransitions(this->allStates[curIndex], intermediate[curIndex]);
+			this->addUnlabeledTransitions(curIndex, intermediate[curIndex]);
+			this->addLabeledTransitions(curIndex, intermediate[curIndex]);
 
 			choices += intermediate[curIndex].size();
 			if (intermediate[curIndex].size() == 0) {
@@ -329,6 +396,7 @@ private:
 			}
 		}
 
+		std::cout << "number of Transitions: " << this->numberOfTransitions << std::endl;
 		switch (this->program->getModelType()) {
 			case storm::ir::Program::DTMC:
 			case storm::ir::Program::CTMC:
