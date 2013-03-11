@@ -63,6 +63,7 @@ public:
 	std::shared_ptr<storm::storage::SparseMatrix<T>> toSparseMatrix() {
 		LOG4CPLUS_INFO(logger, "Creating sparse matrix for probabilistic program.");
 
+		this->computeReachableStateSpace2();
 		this->computeReachableStateSpace();
 		std::shared_ptr<storm::storage::SparseMatrix<T>> resultMatrix = this->buildMatrix<T>();
 
@@ -153,27 +154,126 @@ private:
 		return newState;
 	}
 
-	void computeReachableStateSpace() {
-		bool nondeterministicModel = program->getModelType() == storm::ir::Program::MDP || program->getModelType() == storm::ir::Program::CTMDP;
-
-		// Prepare some internal data structures, such as mappings from variables to indices and so on.
-		this->prepareAuxiliaryDatastructures();
-
+	/*!
+	 * Create a new state and initialize with initial values.
+	 * @return Pointer to initial state.
+	 */
+	StateType* buildInitialState() {
 		// Create a fresh state which can hold as many boolean and integer variables as there are.
 		StateType* initialState = new StateType();
-		initialState->first.resize(booleanVariables.size());
-		initialState->second.resize(integerVariables.size());
+		initialState->first.resize(this->booleanVariables.size());
+		initialState->second.resize(this->integerVariables.size());
 
 		// Now initialize all fields in the value vectors of the state according to the initial
 		// values provided by the input program.
-		for (uint_fast64_t i = 0; i < booleanVariables.size(); ++i) {
+		for (uint_fast64_t i = 0; i < this->booleanVariables.size(); ++i) {
 			bool initialValue = this->booleanVariables[i].getInitialValue()->getValueAsBool(initialState);
 			std::get<0>(*initialState)[i] = initialValue;
 		}
-		for (uint_fast64_t i = 0; i < integerVariables.size(); ++i) {
+		for (uint_fast64_t i = 0; i < this->integerVariables.size(); ++i) {
 			int_fast64_t initialValue = this->integerVariables[i].getInitialValue()->getValueAsInt(initialState);
 			std::get<1>(*initialState)[i] = initialValue;
 		}
+		return initialState;
+	}
+
+	/*!
+	 * Retrieves the state id of the given state.
+	 * If the state has not been hit yet, it will be added to allStates and given a new id.
+	 * In this case, the pointer must not be deleted, as it is used within allStates.
+	 * If the state is already known, the pointer is deleted and the old state id is returned.
+	 * Hence, the given state pointer should not be used afterwards.
+	 * @param state Pointer to state, shall not be used afterwards.
+	 * @returns State id of given state.
+	 */
+	uint_fast64_t getOrAddStateId(StateType * state) {
+		// Check, if we already know this state at all.
+		auto indexIt = this->stateToIndexMap.find(state);
+		if (indexIt == this->stateToIndexMap.end()) {
+			// No, add to allStates, initialize index.
+			allStates.push_back(state);
+			stateToIndexMap[state] = allStates.size()-1;
+			return allStates.size()-1;
+		} else {
+			// Yes, obtain index and delete state object.
+			delete state;
+			return indexIt->second;
+		}
+	}
+
+	/*!
+	 * Expands all unlabeled transitions for a given state and adds them to the given list of results.
+	 * There will be an additional map for each Command that is active.
+	 * Each such map will contain a probability distribution over the reachable states using this Command.
+	 * @params state State to be expanded
+	 * @params res List of
+	 */
+	void addUnlabeledTransitions(const StateType* state, std::list<std::map<uint_fast64_t, double>>& res) {
+		std::cout << "exploring ( ";
+		for (auto it : state->first) std::cout << it << ", ";
+		for (auto it : state->second) std::cout << it << ", ";
+		std::cout << ")" << std::endl;
+		
+		// Iterate over all modules.
+		for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
+			storm::ir::Module const& module = program->getModule(i);
+			// Iterate over all commands.
+			for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
+				storm::ir::Command const& command = module.getCommand(j);
+				// Only consider unlabeled commands.
+				if (command.getActionName() != "") continue;
+				// Omit, if command is not active.
+				if (!command.getGuard()->getValueAsBool(state)) continue;
+
+				// Add a new map and get pointer.
+				res.emplace_back();
+				std::map<uint_fast64_t, double>* states = &res.back();
+
+				// Iterate over all updates.
+				for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
+					// Obtain new state id.
+					storm::ir::Update const& update = command.getUpdate(k);
+					uint_fast64_t newStateId = this->getOrAddStateId(this->applyUpdate(state, update));
+
+					// Check, if we already know this state, add up probabilities for every state.
+					auto stateIt = states->find(newStateId);
+					if (stateIt == states->end()) {
+						(*states)[newStateId] = update.getLikelihoodExpression()->getValueAsDouble(state);
+					} else {
+						(*states)[newStateId] += update.getLikelihoodExpression()->getValueAsDouble(state);
+					}					
+				}
+			}
+		}
+	}
+
+	void dump(std::map<uint_fast64_t, double>& obj) {
+		std::cout << "Some map:" << std::endl;
+		for (auto it: obj) {
+			std::cout << "\t" << it.first << ": " << it.second << std::endl;
+		}
+	}
+
+	void computeReachableStateSpace2() {
+		this->prepareAuxiliaryDatastructures();
+		this->allStates.clear();
+		this->stateToIndexMap.clear();
+
+		for (uint_fast64_t curIndex = this->getOrAddStateId(this->buildInitialState()); curIndex < this->allStates.size(); curIndex++)
+		{
+			std::list<std::map<uint_fast64_t, double>> choices;
+			this->addUnlabeledTransitions(this->allStates[curIndex], choices);
+			std::cout << "Output:" << std::endl;
+			for (auto it: choices) this->dump(it);
+		}
+		std::cout << "got " << this->allStates.size() << " states" << std::endl;
+	}
+
+	void computeReachableStateSpace() {
+		// Prepare some internal data structures, such as mappings from variables to indices and so on.
+		this->prepareAuxiliaryDatastructures();
+		// Build initial state.
+		StateType* initialState = this->buildInitialState();
 
 		// Now set up the environment for a breadth-first search starting from the initial state.
 		uint_fast64_t nextIndex = 1;
