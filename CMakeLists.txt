@@ -120,6 +120,9 @@ source_group(Sources FILES ${STORM_TEST_SOURCES})
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
+# Add the resources/cmake folder to Module Search Path for FindTBB.cmake
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
+
 # Set required external packages
 find_package(Threads REQUIRED)
 find_package(Doxygen REQUIRED)
@@ -127,6 +130,7 @@ set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(TBB)
 
 if(Boost_FOUND)
     if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
@@ -139,6 +143,13 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
 endif(Boost_FOUND)
+
+# Intels Thread Building Blocks
+if (TBB_FOUND)
+	message(STATUS "Found TBB with Interface Version ${TBB_INTERFACE_VERSION}")
+	include_directories(${TBB_INCLUDE_DIRS})
+	link_directories(${TBB_LIBRARY_DIRS})
+endif(TBB_FOUND)
 
 # Add Eigen to the included directories
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -172,6 +183,8 @@ if (STORM_USE_COTIRE)
 	target_link_libraries(storm_unity ${Boost_LIBRARIES})
 	#cotire(storm-tests)
 endif()
+	
+	
 	
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
