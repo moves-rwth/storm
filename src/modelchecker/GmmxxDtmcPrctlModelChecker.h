@@ -140,9 +140,6 @@ private:
 		// Get the settings object to customize linear solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
-		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* A = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(matrix);
-
 		// Prepare an iteration object that determines the accuracy, maximum number of iterations
 		// and the like.
 		gmm::iteration iter(s->get<double>("precision"), 0, s->get<unsigned>("maxiter"));
@@ -162,6 +159,8 @@ private:
 
 		if (s->getString("lemethod") == "bicgstab") {
 			LOG4CPLUS_INFO(logger, "Using BiCGStab method.");
+			// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
+			gmm::csr_matrix<Type>* A = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(matrix);
 			if (precond == "ilu") {
 				gmm::bicgstab(*A, vector, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*A), iter);
 			} else if (precond == "diagonal") {
@@ -178,8 +177,11 @@ private:
 			} else {
 				LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
 			}
+			delete A;
 		} else if (s->getString("lemethod") == "qmr") {
 			LOG4CPLUS_INFO(logger, "Using QMR method.");
+			// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
+			gmm::csr_matrix<Type>* A = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(matrix);
 			if (precond == "ilu") {
 				gmm::qmr(*A, vector, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*A), iter);
 			} else if (precond == "diagonal") {
@@ -196,12 +198,11 @@ private:
 			} else {
 				LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
 			}
+			delete A;
 		} else if (s->getString("lemethod") == "jacobi") {
 			LOG4CPLUS_INFO(logger, "Using Jacobi method.");
-			solveLinearEquationSystemWithJacobi(*A, vector, b);
+			solveLinearEquationSystemWithJacobi(matrix, vector, b);
 		}
-
-		delete A;
 	}
 
 	/*!
@@ -215,7 +216,7 @@ private:
 	 * @return The solution of the system of linear equations in form of the elements of the vector
 	 * x.
 	 */
-	void solveLinearEquationSystemWithJacobi(gmm::csr_matrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const {
+	void solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& x, std::vector<Type> const& b) const {
 		// Get the settings object to customize linear solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
@@ -224,14 +225,11 @@ private:
 			LOG4CPLUS_ERROR(logger, "Selected precision for linear equation solving must be strictly greater than zero for Jacobi method.");
 		}
 
-		// Convert the Source Matrix to Storm format for Decomposition
-		storm::storage::SparseMatrix<Type>* stormFormatA = storm::adapters::GmmxxAdapter::fromGmmxxSparseMatrix(A);
+		// Get a Jacobi Decomposition of the Input Matrix
+		storm::storage::JacobiDecomposition<Type>* jacobiDecomposition = matrix.getJacobiDecomposition();
 
-		// Get a Jacobi Decomposition of the Input Matrix A
-		storm::storage::JacobiDecomposition<Type>* jacobiDecomposition = stormFormatA->getJacobiDecomposition();
-
-		// The Storm Version is not needed after the decomposition step
-		delete stormFormatA;
+		// Convert the Input Matrix to GMM Format so we can calculate the Residuum
+		gmm::csr_matrix<Type>* A = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(matrix);
 
 		// Convert the Diagonal matrix to GMM format
 		gmm::csr_matrix<Type>* gmmxxDiagonalInverted = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiDInvReference());
@@ -260,13 +258,13 @@ private:
 			gmm::mult(*gmmxxDiagonalInverted, *xNext, *xNext);
 			
 			// swap xNext with xCurrent so that the next iteration can use xCurrent again without having to copy the vector
-			std::vector<Type>* swap = xNext;
+			std::vector<Type> *const swap = xNext;
 			xNext = xCurrent;
 			xCurrent = swap;
 
 			++iterationCount;
 			// Precision calculation via ||A * x_k - b|| < precision
-			gmm::mult(A, *xCurrent, *residuum);
+			gmm::mult(*A, *xCurrent, *residuum);
 			gmm::add(gmm::scaled(*residuum, -1.0), b, *residuum);
 		} while (gmm::vect_norminf(*residuum) > precision);
 
