@@ -23,6 +23,10 @@ resources/3rdparty/gmm-4.2/
 *.lib
 *.sbr
 *.sdf
+*.tlog
+*.lastbuildstate
+*.pdb
+*.idb
 *.opensdf
 *.unsuccessfulbuild
 ipch/
