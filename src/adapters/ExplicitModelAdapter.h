@@ -63,7 +63,7 @@ public:
 	std::shared_ptr<storm::storage::SparseMatrix<T>> toSparseMatrix() {
 		LOG4CPLUS_INFO(logger, "Creating sparse matrix for probabilistic program.");
 
-		this->computeReachableStateSpace2();
+		this->buildMatrix2<T>();
 		this->computeReachableStateSpace();
 		std::shared_ptr<storm::storage::SparseMatrix<T>> resultMatrix = this->buildMatrix<T>();
 
@@ -254,19 +254,94 @@ private:
 		}
 	}
 
-	void computeReachableStateSpace2() {
+	/*!
+	 * Create matrix from intermediate mapping, assuming it is a dtmc model.
+	 * @param intermediate Intermediate representation of transition mapping.
+	 * @return result matrix.
+	 */
+	template<class T>
+	std::shared_ptr<storm::storage::SparseMatrix<T>> buildDTMCMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate) {
+		std::shared_ptr<storm::storage::SparseMatrix<T>> result(new storm::storage::SparseMatrix<T>(allStates.size()));
+		result->initialize(numberOfTransitions);
+		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
+			//if (intermediate[state].size() > 1) WARNING;
+			double factor = 1.0 / intermediate[state].size();
+			std::map<uint_fast64_t, double> map;
+			for (auto choice : intermediate[state]) {
+				for (auto elem : choice) {
+					map[elem.first] += elem.second * factor;
+				}
+			}
+			for (auto it : map) {
+				result->addNextValue(state, it.first, it.second);
+			}
+
+		}
+		result->finalize();
+		return result;
+	}
+
+	/*!
+	 * Create matrix from intermediate mapping, assuming it is a mdp model.
+	 * @param intermediate Intermediate representation of transition mapping.
+	 * @return result matrix.
+	 */
+	template<class T>
+	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMDPMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate, uint_fast64_t choices) {
+		std::shared_ptr<storm::storage::SparseMatrix<T>> result(new storm::storage::SparseMatrix<T>(allStates.size(), choices));
+		result->initialize(numberOfTransitions);
+		uint_fast64_t nextRow = 0;
+		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
+			for (auto choice : intermediate[state]) {
+				for (auto it : choice) {
+					result->addNextValue(nextRow, it.first, it.second);
+				}
+				nextRow++;
+			}
+		}
+		result->finalize();
+		return result;
+	}
+
+	template<class T>
+	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMatrix2() {
 		this->prepareAuxiliaryDatastructures();
 		this->allStates.clear();
 		this->stateToIndexMap.clear();
+		uint_fast64_t choices;
 
+		std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate;
 		for (uint_fast64_t curIndex = this->getOrAddStateId(this->buildInitialState()); curIndex < this->allStates.size(); curIndex++)
 		{
-			std::list<std::map<uint_fast64_t, double>> choices;
-			this->addUnlabeledTransitions(this->allStates[curIndex], choices);
-			std::cout << "Output:" << std::endl;
-			for (auto it: choices) this->dump(it);
+			this->addUnlabeledTransitions(this->allStates[curIndex], intermediate[curIndex]);
+
+			choices += intermediate[curIndex].size();
+			if (intermediate[curIndex].size() == 0) {
+				// This is a deadlock state.
+				if (storm::settings::instance()->isSet("fix-deadlocks")) {
+					this->numberOfTransitions++;
+					intermediate[curIndex].emplace_back();
+					intermediate[curIndex].back()[curIndex] = 1;
+				} else {
+					LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state.");
+					throw storm::exceptions::WrongFileFormatException() << "Error while creating sparse matrix from probabilistic program: found deadlock state.";
+				}
+			}
 		}
-		std::cout << "got " << this->allStates.size() << " states" << std::endl;
+
+		switch (this->program->getModelType()) {
+			case storm::ir::Program::DTMC:
+			case storm::ir::Program::CTMC:
+				return this->buildDTMCMatrix<T>(intermediate);
+			case storm::ir::Program::MDP:
+			case storm::ir::Program::CTMDP:
+				return this->buildMDPMatrix<T>(intermediate, choices);
+			default:
+				LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: We can't handle this model type.");
+				throw storm::exceptions::WrongFileFormatException() << "Error while creating sparse matrix from probabilistic program: We can't handle this model type.";
+				break;
+		}
+		return std::shared_ptr<storm::storage::SparseMatrix<T>>(nullptr);
 	}
 
 	void computeReachableStateSpace() {
