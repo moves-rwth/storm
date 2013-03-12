@@ -81,7 +81,10 @@ private:
 	static void setValue(StateType* state, uint_fast64_t index, int_fast64_t value) {
 		std::get<1>(*state)[index] = value;
 	}
-
+	
+	/*!
+	 * Initializes all internal variables.
+	 */
 	void prepareAuxiliaryDatastructures() {
 		uint_fast64_t numberOfIntegerVariables = 0;
 		uint_fast64_t numberOfBooleanVariables = 0;
@@ -111,6 +114,19 @@ private:
 		}
 	}
 	
+	/*!
+	 * Retrieves all active command labeled by some label, ordered by modules.
+	 *
+	 * This function will iterate over all modules and retrieve all commands that are labeled with the given action and active for the current state.
+	 * The result will be a list of lists of commands.
+	 *
+	 * For each module that has appropriately labeled commands, there will be a list.
+	 * If none of these commands is active, this list is empty.
+	 * Note the difference between *no list* and *empty list*: Modules that produce no list are not relevant for this action while an empty list means, that it is not possible to do anything with this label.
+	 * @param state Current state.
+	 * @param action Action label.
+	 * @return Active commands.
+	 */
 	std::unique_ptr<std::list<std::list<storm::ir::Command>>> getActiveCommandsByAction(StateType const * state, std::string& action) {
 		std::unique_ptr<std::list<std::list<storm::ir::Command>>> res = std::unique_ptr<std::list<std::list<storm::ir::Command>>>(new std::list<std::list<storm::ir::Command>>());
 		
@@ -237,10 +253,8 @@ private:
 
 	/*!
 	 * Expands all unlabeled transitions for a given state and adds them to the given list of results.
-	 * There will be an additional map for each Command that is active.
-	 * Each such map will contain a probability distribution over the reachable states using this Command.
-	 * @params state State to be expanded
-	 * @params res List of
+	 * @params state State to be explored.
+	 * @params res Intermediate transition map.
 	 */
 	void addUnlabeledTransitions(const uint_fast64_t stateID, std::list<std::map<uint_fast64_t, double>>& res) {
 		const StateType* state = this->allStates[stateID];
@@ -278,6 +292,12 @@ private:
 		}
 	}
 
+	/*!
+	 * Explores reachable state from given state by using labeled transitions.
+	 * Found transitions are stored in given map.
+	 * @param stateID State to be explored.
+	 * @param res Intermediate transition map.
+	 */
 	void addLabeledTransitions(const uint_fast64_t stateID, std::list<std::map<uint_fast64_t, double>>& res) {
 		// Create a copy of the current state, as we will free intermediate states...
 		for (std::string action : this->program->getActions()) {
@@ -337,13 +357,6 @@ private:
 
 	}
 
-	void dump(std::map<uint_fast64_t, double>& obj) {
-		std::cout << "Some map:" << std::endl;
-		for (auto it: obj) {
-			std::cout << "\t" << it.first << ": " << it.second << std::endl;
-		}
-	}
-
 	/*!
 	 * Create matrix from intermediate mapping, assuming it is a dtmc model.
 	 * @param intermediate Intermediate representation of transition mapping.
@@ -351,10 +364,12 @@ private:
 	 */
 	template<class T>
 	std::shared_ptr<storm::storage::SparseMatrix<T>> buildDTMCMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate) {
-		std::cout << "Building DTMC matrix" << std::endl;
 		std::shared_ptr<storm::storage::SparseMatrix<T>> result(new storm::storage::SparseMatrix<T>(allStates.size()));
+		// this->numberOfTransitions is meaningless, as we combine all choices into one for each state.
+		// Hence, we compute the correct number of transitions now.
 		uint_fast64_t numberOfTransitions = 0;
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
+			// Collect all target nodes in a set to get number of distinct nodes.
 			std::set<uint_fast64_t> set;
 			for (auto choice : intermediate[state]) {
 				for (auto elem : choice) {
@@ -363,18 +378,21 @@ private:
 			}
 			numberOfTransitions += set.size();
 		}
-		std::cout << "number of Transitions: " << numberOfTransitions << std::endl;
+		std::cout << "Building DTMC matrix with " << numberOfTransitions << " transitions." << std::endl;
+		// Now build matrix.
 		result->initialize(numberOfTransitions);
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
 			if (intermediate[state].size() > 1) {
 				std::cout << "Warning: state " << state << " has " << intermediate[state].size() << " overlapping guards in dtmc" << std::endl;
 			}
+			// Combine choices to one map.
 			std::map<uint_fast64_t, double> map;
 			for (auto choice : intermediate[state]) {
 				for (auto elem : choice) {
 					map[elem.first] += elem.second;
 				}
 			}
+			// Scale probabilities by number of choices.
 			double factor = 1.0 / intermediate[state].size();
 			for (auto it : map) {
 				result->addNextValue(state, it.first, it.second * factor);
@@ -393,8 +411,9 @@ private:
 	 */
 	template<class T>
 	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMDPMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate, uint_fast64_t choices) {
-		std::cout << "Building MDP matrix" << std::endl;
+		std::cout << "Building MDP matrix with " << this->numberOfTransitions << " transitions." << std::endl;
 		std::shared_ptr<storm::storage::SparseMatrix<T>> result(new storm::storage::SparseMatrix<T>(allStates.size(), choices));
+		// Build matrix.
 		result->initialize(this->numberOfTransitions);
 		uint_fast64_t nextRow = 0;
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
@@ -409,6 +428,12 @@ private:
 		return result;
 	}
 
+	/*!
+	 * Build matrix from model. Starts with all initial states and explores the reachable state space.
+	 * While exploring, the transitions are stored in a temporary map.
+	 * Afterwards, we transform this map into the actual matrix.
+	 * @return result matrix.
+	 */
 	template<class T>
 	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMatrix() {
 		this->prepareAuxiliaryDatastructures();
@@ -454,6 +479,9 @@ private:
 		return std::shared_ptr<storm::storage::SparseMatrix<T>>(nullptr);
 	}
 
+	/*!
+	 * Free all StateType objects and clear maps.
+	 */
 	void clearReachableStateSpace() {
 		for (auto it : allStates) {
 			delete it;
