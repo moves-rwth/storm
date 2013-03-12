@@ -113,7 +113,7 @@ public:
 	virtual AbstractStateFormula<T>* clone() const {
 		Not<T>* result = new Not<T>();
 		if (child != NULL) {
-			result->setChild(child);
+			result->setChild(child->clone());
 		}
 		return result;
 	}
