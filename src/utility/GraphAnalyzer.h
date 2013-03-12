@@ -415,6 +415,59 @@ public:
 		*statesWithProbability1 = *currentStates;
 		delete currentStates;
 	}
+
+	template <class T>
+	static uint_fast64_t performSccDecomposition(storm::models::AbstractNondeterministicModel<T>& model) {
+		// Get some temporaries for convenience.
+		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+		uint_fast64_t numberOfStates = model.getNumberOfStates();
+
+		// Get the forward transition relation from the model to ease the search.
+		storm::models::GraphTransitions<T> forwardTransitions(transitionMatrix, nondeterministicChoiceIndices, true);
+
+		std::vector<uint_fast64_t> tarjanStack;
+		tarjanStack.reserve(numberOfStates);
+		storm::storage::BitVector tarjanStackStates(numberOfStates);
+
+		std::vector<uint_fast64_t> stateIndices(numberOfStates);
+		std::vector<uint_fast64_t> lowlinks(numberOfStates);
+		storm::storage::BitVector visitedStates(numberOfStates);
+
+		uint_fast64_t currentIndex = 0;
+
+		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+			if (!visitedStates.get(i)) {
+				performSccDecompositionHelper(i, currentIndex, stateIndices, lowlinks, tarjanStack, visitedStates, forwardTransitions);
+			}
+		}
+
+
+		return 0;
+	}
+
+private:
+	template <class T>
+	static void performSccDecompositionHelper(uint_fast64_t currentState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::models::GraphTransitions<T>& forwardTransitions) {
+		std::vector<uint_fast64_t> recursionStack;
+		recursionStack.reserve(lowlinks.size());
+
+		stateIndices[currentState] = currentIndex;
+		lowlinks[currentState] = currentIndex;
+		++currentIndex;
+
+		tarjanStack.push_back(currentState);
+		tarjanStackStates.set(currentState, true);
+
+		for(auto it = forwardTransitions.beginStateSuccessorsIterator(currentState); it != forwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+			if (!visitedStates.get(*it)) {
+
+			} else if (tarjanStackStates.get(*it)) {
+				lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[*it]);
+			}
+		}
+
+	}
 };
 
 } // namespace utility
