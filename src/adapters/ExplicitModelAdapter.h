@@ -179,6 +179,65 @@ private:
 	}
 
 	/*!
+	 * Generates all initial states and adds them to allStates.
+	 */
+	void generateInitialStates() {
+		// Create a fresh state which can hold as many boolean and integer variables as there are.
+		std::vector<StateType*> states;
+		states.emplace_back();
+		states.back()->first.resize(this->booleanVariables.size());
+		states.back()->second.resize(this->integerVariables.size());
+
+		// Start with boolean variables.
+		for (uint_fast64_t i = 0; i < this->booleanVariables.size(); ++i) {
+			// Check if an initial value is given
+			if (this->booleanVariables[i].getInitialValue().get() == nullptr) {
+				// No initial value was given.
+				uint_fast64_t size = states.size();
+				for (uint_fast64_t pos = 0; pos < size; pos++) {
+					// Duplicate each state, one with true and one with false.
+					states.emplace_back(states[pos]);
+					std::get<0>(*states[pos])[i] = false;
+					std::get<0>(*states[size + pos])[i] = true;
+				}
+			} else {
+				// Initial value was given.
+				bool initialValue = this->booleanVariables[i].getInitialValue()->getValueAsBool(states[0]);
+				for (auto it : states) {
+					std::get<0>(*it)[i] = initialValue;
+				}
+			}
+		}
+		// Now process integer variables.
+		for (uint_fast64_t i = 0; i < this->integerVariables.size(); ++i) {
+			// Check if an initial value was given.
+			if (this->integerVariables[i].getInitialValue().get() == nullptr) {
+				// No initial value was given.
+				uint_fast64_t size = states.size();
+				int_fast64_t lower = this->integerVariables[i].getLowerBound()->getValueAsInt(states[0]);
+				int_fast64_t upper = this->integerVariables[i].getUpperBound()->getValueAsInt(states[0]);
+
+				// Duplicate all states for all values in variable interval.
+				for (int_fast64_t value = lower; value <= upper; value++) {
+					for (uint_fast64_t pos = 0; pos < size; pos++) {
+						// If value is lower bound, we reuse the existing state, otherwise we create a new one.
+						if (value > lower) states.emplace_back(states[pos]);
+						// Set value to current state.
+						std::get<1>(*states[(value - lower) * size + pos])[i] = value;
+					}
+				}
+			} else {
+				// Initial value was given.
+				int_fast64_t initialValue = this->integerVariables[i].getInitialValue()->getValueAsInt(states[0]);
+				for (auto it : states) {
+					std::get<1>(*it)[i] = initialValue;
+				}
+			}
+		}
+		
+	}
+
+	/*!
 	 * Retrieves the state id of the given state.
 	 * If the state has not been hit yet, it will be added to allStates and given a new id.
 	 * In this case, the pointer must not be deleted, as it is used within allStates.
@@ -385,7 +444,8 @@ private:
 		uint_fast64_t choices;
 
 		std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate;
-		for (uint_fast64_t curIndex = this->getOrAddStateId(this->buildInitialState()); curIndex < this->allStates.size(); curIndex++)
+		this->generateInitialStates();
+		for (uint_fast64_t curIndex = 0; curIndex < this->allStates.size(); curIndex++)
 		{
 			this->addUnlabeledTransitions(curIndex, intermediate[curIndex]);
 			this->addLabeledTransitions(curIndex, intermediate[curIndex]);
@@ -404,7 +464,7 @@ private:
 			}
 		}
 
-		std::cout << "number of Transitions: " << this->numberOfTransitions << std::endl;
+		
 		switch (this->program->getModelType()) {
 			case storm::ir::Program::DTMC:
 			case storm::ir::Program::CTMC:
