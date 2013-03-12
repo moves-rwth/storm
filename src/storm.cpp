@@ -360,6 +360,75 @@ void testCheckingAsynchLeader(storm::models::Mdp<double>& mdp) {
 	delete mc;
 }
 
+void testCheckingConsensus(storm::models::Mdp<double>& mdp) {
+	storm::formula::Ap<double>* finishedFormula = new storm::formula::Ap<double>("finished");
+	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(finishedFormula);
+	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+
+	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	finishedFormula = new storm::formula::Ap<double>("finished");
+	storm::formula::Ap<double>* allCoinsEqual0Formula = new storm::formula::Ap<double>("all_coins_equal_0");
+	storm::formula::And<double>* conjunctionFormula = new storm::formula::And<double>(finishedFormula, allCoinsEqual0Formula);
+	eventuallyFormula = new storm::formula::Eventually<double>(conjunctionFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	finishedFormula = new storm::formula::Ap<double>("finished");
+	storm::formula::Ap<double>* allCoinsEqual1Formula = new storm::formula::Ap<double>("all_coins_equal_1");
+	conjunctionFormula = new storm::formula::And<double>(finishedFormula, allCoinsEqual1Formula);
+	eventuallyFormula = new storm::formula::Eventually<double>(conjunctionFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	finishedFormula = new storm::formula::Ap<double>("finished");
+	storm::formula::Ap<double>* agree = new storm::formula::Ap<double>("agree");
+	storm::formula::Not<double>* notAgree = new storm::formula::Not<double>(agree);
+	conjunctionFormula = new storm::formula::And<double>(finishedFormula, notAgree);
+	eventuallyFormula = new storm::formula::Eventually<double>(conjunctionFormula);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	finishedFormula = new storm::formula::Ap<double>("finished");
+	storm::formula::BoundedEventually<double>* boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(finishedFormula, 50);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	finishedFormula = new storm::formula::Ap<double>("finished");
+	boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(finishedFormula, 50);
+	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
+
+	mc->check(*probFormula);
+	delete probFormula;
+
+	finishedFormula = new storm::formula::Ap<double>("finished");
+	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(finishedFormula);
+	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
+
+	mc->check(*rewardFormula);
+	delete rewardFormula;
+
+	finishedFormula = new storm::formula::Ap<double>("finished");
+	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(finishedFormula);
+	rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
+
+	mc->check(*rewardFormula);
+	delete rewardFormula;
+
+	delete mc;
+}
+
 /*!
  * Simple testing procedure.
  */
@@ -380,6 +449,7 @@ void testChecking() {
 
 		// testCheckingDice(*mdp);
 		// testCheckingAsynchLeader(*mdp);
+		// testCheckingConsensus(*mdp);
 	} else {
 		std::cout << "Input is neither a DTMC nor an MDP." << std::endl;
 	}
