@@ -64,9 +64,7 @@ public:
 	std::shared_ptr<storm::storage::SparseMatrix<T>> toSparseMatrix() {
 		LOG4CPLUS_INFO(logger, "Creating sparse matrix for probabilistic program.");
 
-		//this->buildMatrix2<T>();
-		//this->computeReachableStateSpace();
-		std::shared_ptr<storm::storage::SparseMatrix<T>> resultMatrix = this->buildMatrix2<T>();
+		std::shared_ptr<storm::storage::SparseMatrix<T>> resultMatrix = this->buildMatrix<T>();
 
 		LOG4CPLUS_INFO(logger, "Created sparse matrix with " << resultMatrix->getRowCount() << " reachable states and " << resultMatrix->getNonZeroEntryCount() << " transitions.");
 
@@ -153,29 +151,6 @@ private:
 			setValue(newState, this->integerVariableToIndexMap[assignedVariable.first], assignedVariable.second.getExpression()->getValueAsInt(state));
 		}
 		return newState;
-	}
-
-	/*!
-	 * Create a new state and initialize with initial values.
-	 * @return Pointer to initial state.
-	 */
-	StateType* buildInitialState() {
-		// Create a fresh state which can hold as many boolean and integer variables as there are.
-		StateType* initialState = new StateType();
-		initialState->first.resize(this->booleanVariables.size());
-		initialState->second.resize(this->integerVariables.size());
-
-		// Now initialize all fields in the value vectors of the state according to the initial
-		// values provided by the input program.
-		for (uint_fast64_t i = 0; i < this->booleanVariables.size(); ++i) {
-			bool initialValue = this->booleanVariables[i].getInitialValue()->getValueAsBool(initialState);
-			std::get<0>(*initialState)[i] = initialValue;
-		}
-		for (uint_fast64_t i = 0; i < this->integerVariables.size(); ++i) {
-			int_fast64_t initialValue = this->integerVariables[i].getInitialValue()->getValueAsInt(initialState);
-			std::get<1>(*initialState)[i] = initialValue;
-		}
-		return initialState;
 	}
 
 	/*!
@@ -305,8 +280,8 @@ private:
 
 	void addLabeledTransitions(const uint_fast64_t stateID, std::list<std::map<uint_fast64_t, double>>& res) {
 		// Create a copy of the current state, as we will free intermediate states...
-		StateType* state = new StateType(*this->allStates[stateID]);
 		for (std::string action : this->program->getActions()) {
+			StateType* state = new StateType(*this->allStates[stateID]);
 			std::unique_ptr<std::list<std::list<storm::ir::Command>>> cmds = this->getActiveCommandsByAction(state, action);
 
 			// Start with current state
@@ -435,14 +410,14 @@ private:
 	}
 
 	template<class T>
-	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMatrix2() {
+	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMatrix() {
 		this->prepareAuxiliaryDatastructures();
 		this->allStates.clear();
 		this->stateToIndexMap.clear();
 		this->numberOfTransitions = 0;
 		uint_fast64_t choices;
-
 		std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate;
+		
 		this->generateInitialStates();
 		for (uint_fast64_t curIndex = 0; curIndex < this->allStates.size(); curIndex++)
 		{
@@ -477,321 +452,6 @@ private:
 				break;
 		}
 		return std::shared_ptr<storm::storage::SparseMatrix<T>>(nullptr);
-	}
-
-	void computeReachableStateSpace() {
-		// Prepare some internal data structures, such as mappings from variables to indices and so on.
-		this->prepareAuxiliaryDatastructures();
-		// Build initial state.
-		StateType* initialState = this->buildInitialState();
-
-		// Now set up the environment for a breadth-first search starting from the initial state.
-		uint_fast64_t nextIndex = 1;
-		this->allStates.clear();
-		this->stateToIndexMap.clear();
-		std::queue<StateType*> stateQueue;
-
-		this->allStates.push_back(initialState);
-		stateQueue.push(initialState);
-		this->stateToIndexMap[initialState] = 0;
-
-		this->numberOfTransitions = 0;
-		while (!stateQueue.empty()) {
-			// Get first state in queue.
-			StateType* currentState = stateQueue.front();
-			stateQueue.pop();
-
-			// Remember whether the state has at least one transition such that transitions can be
-			// inserted upon detection of a deadlock state.
-			bool hasTransition = false;
-			
-			// First expand all transitions for commands labelled with some
-			// action. For every module, we determine all commands with this
-			// action whose guard holds. Then, we add a transition for each
-			// combination of all updates of those commands.
-			for (std::string action : this->program->getActions()) {
-				// Get list of all commands.
-				// This list contains a list for every module that has commands labelled by action.
-				// Each such list contains all commands whose guards are fulfilled.
-				// If no guard is fulfilled (i.e. there is no way to perform this action), the list will be empty!
-				std::unique_ptr<std::list<std::list<storm::ir::Command>>> cmds = this->getActiveCommandsByAction(currentState, action);
-				
-				// Start with current state.
-				std::unordered_map<StateType*, double, StateHash, StateCompare> resultStates;
-				resultStates[currentState] = 1;
-				std::queue<StateType*> deleteQueue;
-				
-				// Iterate over all modules (represented by the list of commands with the current action).
-				// We will now combine every state in resultStates with every additional update in the next module.
-				// The final result will be this map after we are done with all modules.
-				for (std::list<storm::ir::Command> module : *cmds) {
-					// If no states are left, we are done.
-					// This happens, if there is a module where commands existed, but no guard was fulfilled.
-					if (resultStates.size() == 0) break;
-					// Put all new states in this new map.
-					std::unordered_map<StateType*, double, StateHash, StateCompare> newStates;
-					
-					// Iterate over all commands within this module.
-					for (storm::ir::Command command : module) {
-						// Iterate over all updates of this command.
-						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
-							storm::ir::Update const& update = command.getUpdate(k);
-							
-							// Iterate over all resultStates.
-							for (auto it : resultStates) {
-								// Apply the new update and get resulting state.
-								StateType* newState = this->applyUpdate(it.first, update);
-								// Insert the new state into newStates array.
-								// Take care of calculation of likelihood, combine identical states.
-								auto s = newStates.find(newState);
-								if (s == newStates.end()) {
-									newStates[newState] = it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
-								} else {
-									newStates[newState] += it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
-								}
-								// No matter what happened, we must delete the states of the previous iteration.
-								deleteQueue.push(it.first);
-							} 
-						}
-					}
-					// Move new states to resultStates.
-					resultStates.clear();
-					resultStates.insert(newStates.begin(), newStates.end());
-					// Delete old result states.
-					while (!deleteQueue.empty()) {
-						if (deleteQueue.front() != currentState) {
-							delete deleteQueue.front();
-						}
-						deleteQueue.pop();
-					}
-				}
-				// Now add our final result states to our global result.
-				for (auto it : resultStates) {
-					hasTransition = true;
-					auto s = stateToIndexMap.find(it.first);
-					if (s == stateToIndexMap.end()) {
-						stateQueue.push(it.first);
-						// Add state to list of all reachable states.
-						allStates.push_back(it.first);
-						// Give a unique index to the newly found state.
-						stateToIndexMap[it.first] = nextIndex;
-						++nextIndex;
-					} else {
-						deleteQueue.push(it.first);
-					}
-				}
-				// Delete states we already had.
-				while (!deleteQueue.empty()) {
-					delete deleteQueue.front();
-					deleteQueue.pop();
-				}
-				this->numberOfTransitions += resultStates.size();
-			}
-			
-
-			// Now, expand all transitions for commands not labelled with
-			// some action. Those commands each build a transition for
-			// themselves.
-			// Iterate over all modules.
-			for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
-				storm::ir::Module const& module = program->getModule(i);
-
-				// Iterate over all commands.
-				for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
-					storm::ir::Command const& command = module.getCommand(j);
-					if (command.getActionName() != "") continue;
-
-					// Check if this command is enabled in the current state.
-					if (command.getGuard()->getValueAsBool(currentState)) {
-						hasTransition = true;
-
-						// Remember what states are targeted by an update of the current command
-						// in order to be able to sum those probabilities and not increase the
-						// transition count.
-						std::unordered_map<StateType*, double, StateHash, StateCompare> stateToProbabilityMap;
-
-						// Keep a queue of states to delete after the current command. When one
-						// command is processed and states are encountered which were already found
-						// before, we can only delete them after the command has been processed,
-						// because the stateToProbabilityMap will contain illegal values otherwise.
-						std::queue<StateType*> statesToDelete;
-
-						// Now iterate over all updates to see where the updates take the current
-						// state.
-						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
-							storm::ir::Update const& update = command.getUpdate(k);
-
-							// Now copy the current state and only overwrite the entries in the
-							// vectors if there is an assignment to that variable in the current
-							// update.
-							StateType* newState = this->applyUpdate(currentState, update);
-
-							// If we have already found the target state of the update, we must not
-							// increase the transition count.
-							auto probIt = stateToProbabilityMap.find(newState);
-							if (probIt != stateToProbabilityMap.end()) {
-								stateToProbabilityMap[newState] += update.getLikelihoodExpression()->getValueAsDouble(currentState);
-							} else {
-								++numberOfTransitions;
-								stateToProbabilityMap[newState] = update.getLikelihoodExpression()->getValueAsDouble(currentState);
-							}
-
-							// Depending on whether the state was found previously, we mark it for
-							// deletion or add it to the reachable state space and mark it for
-							// further exploration.
-							auto it = stateToIndexMap.find(newState);
-							if (it != stateToIndexMap.end()) {
-								// Queue the state object for deletion as we have already seen that
-								// state.
-								statesToDelete.push(newState);
-							} else {
-								// Add state to the queue of states that are still to be explored.
-								stateQueue.push(newState);
-
-								// Add state to list of all reachable states.
-								allStates.push_back(newState);
-
-								// Give a unique index to the newly found state.
-								stateToIndexMap[newState] = nextIndex;
-								++nextIndex;
-							}
-						}
-
-						// Now delete all states queued for deletion.
-						while (!statesToDelete.empty()) {
-							delete statesToDelete.front();
-							statesToDelete.pop();
-						}
-					}
-				}
-			}
-
-			// If the state is a deadlock state, and the corresponding flag is set, we tolerate that
-			// and increase the number of transitions by one, because a self-loop is going to be
-			// inserted in the next step. If the flag is not set, an exception is thrown.
-			if (!hasTransition) {
-				if (storm::settings::instance()->isSet("fix-deadlocks")) {
-					++numberOfTransitions;
-				} else {
-					LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state.");
-					throw storm::exceptions::WrongFileFormatException() << "Error while creating sparse matrix from probabilistic program: found deadlock state.";
-				}
-			}
-		}
-	}
-
-	template<class T>
-	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMatrix() {
-		std::shared_ptr<storm::storage::SparseMatrix<T>> resultMatrix(new storm::storage::SparseMatrix<T>(allStates.size()));
-		resultMatrix->initialize(numberOfTransitions);
-
-		// Keep track of the running index to insert values into correct matrix row.
-		uint_fast64_t currentIndex = 0;
-
-		// Determine the matrix content for every row (i.e. reachable state).
-		for (StateType* currentState : allStates) {
-			bool hasTransition = false;
-			
-			std::map<uint_fast64_t, double> stateIndexToProbabilityMap;
-			
-			for (std::string action : this->program->getActions()) {
-				std::unique_ptr<std::list<std::list<storm::ir::Command>>> cmds = this->getActiveCommandsByAction(currentState, action);
-				std::unordered_map<StateType*, double, StateHash, StateCompare> resultStates;
-				resultStates[currentState] = 1;
-				std::queue<StateType*> deleteQueue;
-				
-				for (std::list<storm::ir::Command> module : *cmds) {
-					std::unordered_map<StateType*, double, StateHash, StateCompare> newStates;
-					for (storm::ir::Command command : module) {
-						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
-							storm::ir::Update const& update = command.getUpdate(k);
-							for (auto it : resultStates) {
-								StateType* newState = this->applyUpdate(it.first, update);
-								auto s = newStates.find(newState);
-                                if (s == newStates.end()) {
-                                    newStates[newState] = it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
-                                } else {
-                                    newStates[newState] += it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
-                                }
-                                deleteQueue.push(it.first);
-							}
-						}
-					}
-					resultStates.clear();
-					resultStates.insert(newStates.begin(), newStates.end());
-					while (!deleteQueue.empty()) {
-                        if (deleteQueue.front() != currentState) {
-                            delete deleteQueue.front();
-                        }
-                        deleteQueue.pop();
-                    }
-				}
-				for (auto it : resultStates) {
-					hasTransition = true;
-					uint_fast64_t targetIndex = stateToIndexMap[it.first];
-					auto s = stateIndexToProbabilityMap.find(targetIndex);
-					if (s == stateIndexToProbabilityMap.end()) {
-						stateIndexToProbabilityMap[targetIndex] = it.second;
-					} else {
-						stateIndexToProbabilityMap[targetIndex] += it.second;
-					}
-					delete it.first;
-				}
-			}
-			for (auto targetIndex : stateIndexToProbabilityMap) {
-				resultMatrix->addNextValue(currentIndex, targetIndex.first, targetIndex.second);
-			}
-
-			// Iterate over all modules.
-			for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
-				storm::ir::Module const& module = program->getModule(i);
-
-				// Iterate over all commands.
-				for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
-					storm::ir::Command const& command = module.getCommand(j);
-					if (command.getActionName() != "") continue;
-
-					// Check if this command is enabled in the current state.
-					if (command.getGuard()->getValueAsBool(currentState)) {
-						hasTransition = true;
-						std::map<uint_fast64_t, double> stateIndexToProbabilityMap;
-						for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
-							storm::ir::Update const& update = command.getUpdate(k);
-
-							StateType* newState = this->applyUpdate(currentState, update);
-
-							uint_fast64_t targetIndex = (*stateToIndexMap.find(newState)).second;
-							delete newState;
-
-							auto probIt = stateIndexToProbabilityMap.find(targetIndex);
-							if (probIt != stateIndexToProbabilityMap.end()) {
-								stateIndexToProbabilityMap[targetIndex] += update.getLikelihoodExpression()->getValueAsDouble(currentState);
-							} else {
-								stateIndexToProbabilityMap[targetIndex] = update.getLikelihoodExpression()->getValueAsDouble(currentState);
-							}
-						}
-
-						// Now insert the actual values into the matrix.
-						for (auto targetIndex : stateIndexToProbabilityMap) {
-							resultMatrix->addNextValue(currentIndex, targetIndex.first, targetIndex.second);
-						}
-					}
-				}
-			}
-
-			// If the state is a deadlock state, a self-loop is inserted. Note that we do not have
-			// to check whether --fix-deadlocks is set, because if this was not the case an
-			// exception would have been thrown earlier.
-			if (!hasTransition) {
-				resultMatrix->addNextValue(currentIndex, currentIndex, 1);
-			}
-
-			++currentIndex;
-		}
-
-		// Finalize matrix and return it.
-		resultMatrix->finalize();
-		return resultMatrix;
 	}
 
 	void clearReachableStateSpace() {
