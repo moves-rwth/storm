@@ -56,9 +56,9 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 	 */
 	PrismGrammar() : PrismGrammar::base_type(start), nextBooleanVariableIndex(0), nextIntegerVariableIndex(0) {
 		// This rule defines all identifiers that have not been previously used.
-		identifierName %= qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_'))) - allConstantNames_ - keywords_]];
+		identifierName %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][ qi::_pass = phoenix::bind(&PrismGrammar<Iterator,Skipper>::isIdentifier, this, qi::_1) ];
 		identifierName.name("identifier");
-		freeIdentifierName %= qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_'))) - booleanVariableNames_ - integerVariableNames_ - allConstantNames_ - labelNames_ - moduleNames_ - keywords_]];
+		freeIdentifierName %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][ qi::_pass = phoenix::bind(&PrismGrammar<Iterator,Skipper>::isFreeIdentifier, this, qi::_1) ];
 		freeIdentifierName.name("unused identifier");
 
 		// This block defines all literal expressions.
@@ -254,14 +254,32 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 		start.name("probabilistic program declaration");
 	}
 	
+	bool isFreeIdentifier(std::string& s) const {
+		if (booleanVariableNames_.find(s) != nullptr) return false;
+		if (integerVariableNames_.find(s) != nullptr) return false;
+		if (allConstantNames_.find(s) != nullptr) return false;
+		if (labelNames_.find(s) != nullptr) return false;
+		if (moduleNames_.find(s) != nullptr) return false;
+		if (keywords_.find(s) != nullptr) return false;
+		return true;
+	}
+	bool isIdentifier(std::string& s) const {
+		if (allConstantNames_.find(s) != nullptr) return false;
+		if (keywords_.find(s) != nullptr) return false;
+		return true;
+	}
+	
 	void prepareForSecondRun() {
 		// Clear constants.
 		integerConstants_.clear();
 		booleanConstants_.clear();
 		doubleConstants_.clear();
+		allConstantNames_.clear();
 		// Reset variable indices.
 		nextIntegerVariableIndex = 0;
 		nextBooleanVariableIndex = 0;
+		// Clear module names
+		moduleNames_.clear();
 		
 		// Override variable expressions: only allow declared variables.
 		integerVariableExpression %= integerVariables_;
@@ -289,10 +307,6 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 				phoenix::ref(nextIntegerVariableIndex) = phoenix::ref(nextIntegerVariableIndex) + 1
 			];
 		integerVariableDefinition.name("integer variable declaration");
-
-		// Override module definition: allow already registered module names.
-		moduleDefinition = (qi::lit("module")[phoenix::clear(phoenix::ref(localBooleanVariables_)), phoenix::clear(phoenix::ref(localIntegerVariables_))] > identifierName > *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) > +commandDefinition > qi::lit("endmodule"))[phoenix::bind(moduleNames_.add, qi::_1, qi::_1), qi::_val = phoenix::construct<Module>(qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2)];
-		moduleDefinition.name("module");
 	}
 	
 	// The starting point of the grammar.
