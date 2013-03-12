@@ -33,7 +33,7 @@ public:
 	 * @param variableName the name of the variable.
 	 * @param initialValue the expression that defines the initial value of the variable.
 	 */
-	BooleanVariable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>(new storm::ir::expressions::BooleanLiteral(false)));
+	BooleanVariable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr));
 
 	/*!
 	 * Retrieves a string representation of this variable.
