@@ -64,9 +64,9 @@ public:
 	std::shared_ptr<storm::storage::SparseMatrix<T>> toSparseMatrix() {
 		LOG4CPLUS_INFO(logger, "Creating sparse matrix for probabilistic program.");
 
-		this->buildMatrix2<T>();
-		this->computeReachableStateSpace();
-		std::shared_ptr<storm::storage::SparseMatrix<T>> resultMatrix = this->buildMatrix<T>();
+		//this->buildMatrix2<T>();
+		//this->computeReachableStateSpace();
+		std::shared_ptr<storm::storage::SparseMatrix<T>> resultMatrix = this->buildMatrix2<T>();
 
 		LOG4CPLUS_INFO(logger, "Created sparse matrix with " << resultMatrix->getRowCount() << " reachable states and " << resultMatrix->getNonZeroEntryCount() << " transitions.");
 
@@ -236,6 +236,7 @@ private:
 					auto stateIt = states->find(newStateId);
 					if (stateIt == states->end()) {
 						(*states)[newStateId] = update.getLikelihoodExpression()->getValueAsDouble(state);
+						this->numberOfTransitions++;
 					} else {
 						(*states)[newStateId] += update.getLikelihoodExpression()->getValueAsDouble(state);
 					}	
@@ -288,15 +289,17 @@ private:
 
 			}
 
-			res.emplace_back();
-			std::map<uint_fast64_t, double>* states = &res.back();
+			if (resultStates.size() > 0) {
+				res.emplace_back();
+				std::map<uint_fast64_t, double>* states = &res.back();
 
-			// Now add our final result states to our global result.
-			for (auto it : resultStates) {
-				uint_fast64_t newStateID = this->getOrAddStateId(it.first);
-				(*states)[newStateID] = it.second;
+				// Now add our final result states to our global result.
+				for (auto it : resultStates) {
+					uint_fast64_t newStateID = this->getOrAddStateId(it.first);
+					(*states)[newStateID] = it.second;
+				}
+				this->numberOfTransitions += states->size();
 			}
-			this->numberOfTransitions += states->size();
 		}
 
 	}
@@ -315,6 +318,7 @@ private:
 	 */
 	template<class T>
 	std::shared_ptr<storm::storage::SparseMatrix<T>> buildDTMCMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate) {
+		std::cout << "Building DTMC matrix" << std::endl;
 		std::shared_ptr<storm::storage::SparseMatrix<T>> result(new storm::storage::SparseMatrix<T>(allStates.size()));
 		uint_fast64_t numberOfTransitions = 0;
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
@@ -326,19 +330,21 @@ private:
 			}
 			numberOfTransitions += set.size();
 		}
+		std::cout << "number of Transitions: " << numberOfTransitions << std::endl;
 		result->initialize(numberOfTransitions);
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
-			//if (intermediate[state].size() > 1) WARNING;
-			double factor = 1.0 / intermediate[state].size();
+			if (intermediate[state].size() > 1) {
+				std::cout << "Warning: state " << state << " has " << intermediate[state].size() << " overlapping guards in dtmc" << std::endl;
+			}
 			std::map<uint_fast64_t, double> map;
 			for (auto choice : intermediate[state]) {
 				for (auto elem : choice) {
-					map[elem.first] += elem.second * factor;
+					map[elem.first] += elem.second;
 				}
 			}
-			std::cout << "adding " << map.size() << " elements" << std::endl;
+			double factor = 1.0 / intermediate[state].size();
 			for (auto it : map) {
-				result->addNextValue(state, it.first, it.second);
+				result->addNextValue(state, it.first, it.second * factor);
 			}
 
 		}
@@ -354,8 +360,9 @@ private:
 	 */
 	template<class T>
 	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMDPMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate, uint_fast64_t choices) {
+		std::cout << "Building MDP matrix" << std::endl;
 		std::shared_ptr<storm::storage::SparseMatrix<T>> result(new storm::storage::SparseMatrix<T>(allStates.size(), choices));
-		result->initialize(numberOfTransitions);
+		result->initialize(this->numberOfTransitions);
 		uint_fast64_t nextRow = 0;
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
 			for (auto choice : intermediate[state]) {
@@ -374,6 +381,7 @@ private:
 		this->prepareAuxiliaryDatastructures();
 		this->allStates.clear();
 		this->stateToIndexMap.clear();
+		this->numberOfTransitions = 0;
 		uint_fast64_t choices;
 
 		std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate;
