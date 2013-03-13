@@ -18,7 +18,7 @@ namespace storm {
 namespace models {
 
 /*!
- * This class stores the predecessors of all states in a state space of the
+ * This class stores the successors of all states in a state space of the
  * given size.
  */
 template <class T>
@@ -28,7 +28,7 @@ public:
 	/*!
 	 * Just typedef the iterator as a pointer to the index type.
 	 */
-	typedef const uint_fast64_t * const statePredecessorIterator;
+	typedef const uint_fast64_t * stateSuccessorIterator;
 
 	//! Constructor
 	/*!
@@ -85,7 +85,7 @@ public:
 	 * @param state The state for which to get the successor iterator.
 	 * @return An iterator to the predecessors of the given states.
 	 */
-	statePredecessorIterator beginStateSuccessorsIterator(uint_fast64_t state) const {
+	stateSuccessorIterator beginStateSuccessorsIterator(uint_fast64_t state) const {
 		return this->successorList + this->stateIndications[state];
 	}
 
@@ -96,8 +96,28 @@ public:
 	 * @return An iterator referring to the element after the successors of
 	 * the given state.
 	 */
-	statePredecessorIterator endStateSuccessorsIterator(uint_fast64_t state) const {
+	stateSuccessorIterator endStateSuccessorsIterator(uint_fast64_t state) const {
 		return this->successorList + this->stateIndications[state + 1];
+	}
+
+	/*!
+	 * Returns a (naive) string representation of the transitions in this object.
+	 * @returns a (naive) string representation of the transitions in this object.
+	 */
+	std::string toString() const {
+		std::stringstream stream;
+
+		stream << "successorList (" << numberOfTransitions << ")" << std::endl;
+		for (uint_fast64_t i = 0; i < numberOfTransitions; ++i) {
+			stream << successorList[i] << " ";
+		}
+
+		stream << std::endl << std::endl << " stateIndications (" << numberOfStates + 1 << ")" << std::endl;
+		for (uint_fast64_t i = 0; i <= numberOfStates; ++i) {
+			stream << stateIndications[i] << " ";
+		}
+
+		return stream.str();
 	}
 
 private:
@@ -130,6 +150,7 @@ private:
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
 			this->stateIndications[i] = transitionMatrix->getRowIndications().at(choiceIndices->at(i));
 		}
+		this->stateIndications[numberOfStates] = numberOfTransitions;
 
 		// Now we can iterate over all rows of the transition matrix and record
 		// the target state.
