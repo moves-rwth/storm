@@ -37,6 +37,14 @@ std::string RewardModel::toString() const {
 	return result.str();
 }
 
+std::vector<storm::ir::StateReward> RewardModel::getStateRewards() const {
+	return this->stateRewards;
+}
+
+std::vector<storm::ir::TransitionReward> RewardModel::getTransitionRewards() const {
+	return this->transitionRewards;
+}
+
 } // namespace ir
 
 } // namespace storm

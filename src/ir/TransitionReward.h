@@ -43,6 +43,12 @@ public:
 	 */
 	std::string toString() const;
 
+	/*!
+	 * Retrieves reward for given transition.
+	 * Returns reward value if source state fulfills predicate and the transition is labeled correctly, zero otherwise.
+	 */
+	double getReward(std::string const & label, std::pair<std::vector<bool>, std::vector<int_fast64_t>> const * state) const;
+
 private:
 	// The name of the command this transition-based reward is attached to.
 	std::string commandName;

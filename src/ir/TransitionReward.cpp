@@ -30,6 +30,14 @@ std::string TransitionReward::toString() const {
 	return result.str();
 }
 
+double TransitionReward::getReward(std::string const & label, std::pair<std::vector<bool>, std::vector<int_fast64_t>> const * state) const {
+	if (this->commandName != label) return 0;
+	if (this->statePredicate->getValueAsBool(state)) {
+		return this->rewardValue->getValueAsDouble(state);
+	}
+	return 0;
+}
+
 } // namespace ir
 
 } // namespace storm

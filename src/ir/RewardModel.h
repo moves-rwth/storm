@@ -42,6 +42,18 @@ public:
 	 */
 	std::string toString() const;
 
+	/*!
+	 * Retrieve state rewards.
+	 * @return State rewards.
+	 */
+	std::vector<storm::ir::StateReward> getStateRewards() const;
+
+	/*!
+	 * Retrieve transition rewards.
+	 * @return Transition rewards.
+	 */
+	std::vector<storm::ir::TransitionReward> getTransitionRewards() const;
+
 private:
 	// The name of the reward model.
 	std::string rewardModelName;

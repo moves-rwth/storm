@@ -30,6 +30,13 @@ std::string StateReward::toString() const {
 	return result.str();
 }
 
+double StateReward::getReward(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const * state) const {
+	if (this->statePredicate->getValueAsBool(state)) {
+		return this->rewardValue->getValueAsDouble(state);
+	}
+	return 0;
+}
+
 } // namespace ir
 
 } // namespace storm

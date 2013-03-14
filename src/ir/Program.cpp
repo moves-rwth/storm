@@ -98,6 +98,18 @@ std::shared_ptr<std::set<uint_fast64_t>> const Program::getModulesByAction(std::
 	}
 }
 
+storm::ir::RewardModel Program::getRewardModel(std::string const & name) const {
+	auto it = this->rewards.find(name);
+	if (it == this->rewards.end()) {
+		// throw some exception here...
+	} else {
+		return it->second;
+	}
+}
+
+std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> Program::getLabels() const {
+	return this->labels;
+}
 
 } // namespace ir
 

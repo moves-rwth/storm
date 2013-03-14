@@ -42,6 +42,14 @@ public:
 	 */
 	std::string toString() const;
 
+	/*!
+	 * Returns the reward for the given state.
+	 * It the state fulfills the predicate, the reward value is returned, zero otherwise.
+	 * @param state State object.
+	 * @return Reward for given state.
+	 */
+	double getReward(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const * state) const;
+
 private:
 	// The predicate that characterizes the states that obtain this reward.
 	std::shared_ptr<storm::ir::expressions::BaseExpression> statePredicate;

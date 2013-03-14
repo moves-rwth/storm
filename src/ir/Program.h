@@ -93,6 +93,19 @@ public:
 	 */
 	std::shared_ptr<std::set<uint_fast64_t>> const getModulesByAction(std::string const& action) const;
 
+	/*!
+	 * Retrieve reward model with given name.
+	 * @param name Name of the reward model.
+	 * @return Reward model with given name.
+	 */
+	storm::ir::RewardModel getRewardModel(std::string const & name) const;
+
+	/*!
+	 * Retrieves all labels.
+	 * @return All labels.
+	 */
+	std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> getLabels() const;
+
 private:
 	// The type of the model.
 	ModelType modelType;
