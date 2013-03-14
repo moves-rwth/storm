@@ -417,21 +417,22 @@ public:
 	}
 
 	template <typename T>
-	static uint_fast64_t performSccDecomposition(storm::models::AbstractNondeterministicModel<T>& model, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents) {
-		LOG4CPLUS_INFO(logger, "Computing SCC decomposition...");
+	static uint_fast64_t performSccDecomposition(storm::models::AbstractNondeterministicModel<T>& model, std::vector<std::vector<uint_fast64_t>*>* stronglyConnectedComponents) {
+		LOG4CPLUS_INFO(logger, "Computing SCC decomposition.");
 
 		// Get the forward transition relation from the model to ease the search.
 		storm::models::GraphTransitions<T> forwardTransitions(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), true);
 
 		// Perform the actual SCC decomposition based on the graph-transitions of the system.
-		performSccDecomposition(model.getNumberOfStates(), model.getLabeledStates("init"), forwardTransitions, stronglyConnectedComponents);
+		uint_fast64_t result = performSccDecomposition(model.getNumberOfStates(), *model.getLabeledStates("init"), forwardTransitions, stronglyConnectedComponents);
 
-		LOG4CPLUS_INFO(logger, "Done computing SCCs.");
+		LOG4CPLUS_INFO(logger, "Done computing SCC decomposition.");
+		return result;
 	}
 
 private:
 	template <typename T>
-	static uint_fast64_t performSccDecomposition(uint_fast64_t numberOfStates, storm::storage::BitVector const* const initialStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents) {
+	static uint_fast64_t performSccDecomposition(uint_fast64_t numberOfStates, storm::storage::BitVector const& initialStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>*>* stronglyConnectedComponents) {
 		std::vector<uint_fast64_t> tarjanStack;
 		tarjanStack.reserve(numberOfStates);
 		storm::storage::BitVector tarjanStackStates(numberOfStates);
@@ -441,17 +442,17 @@ private:
 		storm::storage::BitVector visitedStates(numberOfStates);
 
 		uint_fast64_t currentIndex = 0;
-		for (auto state : *initialStates) {
+		for (auto state : initialStates) {
 			if (!visitedStates.get(state)) {
 				performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, forwardTransitions, stronglyConnectedComponents);
 			}
 		}
 
-		return stronglyConnectedComponents.size();
+		return stronglyConnectedComponents->size();
 	}
 
 	template <typename T>
-	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::models::GraphTransitions<T>& forwardTransitions, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents) {
+	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>*>* stronglyConnectedComponents) {
 		// Create the stacks needed for turning the recursive formulation of Tarjan's algorithm
 		// into an iterative version. In particular, we keep one stack for states and one stack
 		// for the iterators. The last one is not strictly needed, but reduces iteration work when
@@ -507,7 +508,9 @@ private:
 			// If the current state is the root of a SCC, we need to pop all states of the SCC from
 			// the algorithm's stack.
 			if (lowlinks[currentState] == stateIndices[currentState]) {
-				stronglyConnectedComponents.push_back(std::vector<uint_fast64_t>());
+				if (stronglyConnectedComponents != nullptr) {
+					stronglyConnectedComponents->push_back(new std::vector<uint_fast64_t>());
+				}
 
 				uint_fast64_t lastState = 0;
 				do {
@@ -516,8 +519,10 @@ private:
 					tarjanStack.pop_back();
 					tarjanStackStates.set(lastState, false);
 
-					// Add the state to the current SCC.
-					stronglyConnectedComponents.back().push_back(lastState);
+					if (stronglyConnectedComponents != nullptr) {
+						// Add the state to the current SCC.
+						stronglyConnectedComponents->back()->push_back(lastState);
+					}
 				} while (lastState != currentState);
 			}
 
