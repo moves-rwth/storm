@@ -59,6 +59,9 @@ private:
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
 		for (uint_fast64_t i = 0; i < repetitions; ++i) {
 			gmm::mult(*gmmxxMatrix, vector, multiplyResult);
+			if (summand != nullptr) {
+				gmm::add(*summand, multiplyResult);
+			}
 			if (this->minimumOperatorStack.top()) {
 				storm::utility::reduceVectorMin(multiplyResult, &vector, *nondeterministicChoiceIndices);
 			} else {
