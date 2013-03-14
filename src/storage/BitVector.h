@@ -547,7 +547,7 @@ private:
 		startingIndex >>= 6;
 		uint64_t* bucketPtr = this->bucketArray + startingIndex;
 
-		do {
+		while ((startingIndex << 6) < endIndex) {
 			// Compute the remaining bucket content by a right shift
 			// to the current bit.
 			uint_fast64_t remainingInBucket = *bucketPtr >> currentBitInByte;
@@ -570,7 +570,7 @@ private:
 
 			// Advance to the next bucket.
 			++startingIndex; ++bucketPtr; currentBitInByte = 0;
-		} while ((startingIndex << 6) < endIndex);
+		}
 		return endIndex;
 	}
 

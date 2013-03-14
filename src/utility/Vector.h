@@ -79,6 +79,15 @@ void subtractFromConstantOneVector(std::vector<T>* vector) {
 }
 
 template<class T>
+void addVectors(std::vector<uint_fast64_t> const& states, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<T>& original, std::vector<T> const& summand) {
+	for (auto stateIt = states.cbegin(), stateIte = states.cend(); stateIt != stateIte; ++stateIt) {
+		for (auto rowIt = nondeterministicChoiceIndices[*stateIt], rowIte = nondeterministicChoiceIndices[*stateIt + 1]; rowIt != rowIte; ++rowIt) {
+			original[rowIt] += summand[rowIt];
+		}
+	}
+}
+
+template<class T>
 void reduceVectorMin(std::vector<T> const& source, std::vector<T>* target, std::vector<uint_fast64_t> const& filter) {
 	uint_fast64_t currentSourceRow = 0;
 	uint_fast64_t currentTargetRow = -1;

@@ -62,6 +62,44 @@ public:
 	 */
 	typedef const T* const constIterator;
 
+	class constRowsIterator {
+	public:
+		constRowsIterator(SparseMatrix<T> const& matrix) : matrix(matrix), offset(0) {
+			// Intentionally left empty.
+		}
+
+		constRowsIterator& operator++() {
+			++offset;
+			return *this;
+		}
+
+		bool operator==(constRowsIterator const& other) const {
+			return offset == other.offset;
+		}
+
+		bool operator!=(uint_fast64_t offset) const {
+			return this->offset != offset;
+		}
+
+		uint_fast64_t column() const {
+			return matrix.columnIndications[offset];
+		}
+
+		T const& value() const {
+			return matrix.valueStorage[offset];
+		}
+
+		void setOffset(uint_fast64_t offset) {
+			this->offset = offset;
+		}
+
+	private:
+		SparseMatrix<T> const& matrix;
+		uint_fast64_t offset;
+	};
+
+	friend class constRowsIterator;
+
 	/*!
 	 * An enum representing the internal state of the Matrix.
 	 * After creating the Matrix using the Constructor, the Object is in state UnInitialized. After calling initialize(), that state changes to Initialized and after all entries have been entered and finalize() has been called, to ReadReady.
@@ -773,16 +811,42 @@ public:
 		return result;
 	}
 
-	T getRowVectorProduct(uint_fast64_t row, std::vector<T>& vector) {
-		T result = storm::utility::constGetZero<T>();;
-		auto valueIterator = valueStorage.begin() + rowIndications[row];
-		const auto valueIteratorEnd = valueStorage.begin() + rowIndications[row + 1];
-		auto columnIterator = columnIndications.begin() + rowIndications[row];
-		const auto columnIteratorEnd = columnIndications.begin() + rowIndications[row + 1];
-		for (; valueIterator != valueIteratorEnd; ++valueIterator, ++columnIterator) {
-			result += *valueIterator * vector[*columnIterator];
+	T multiplyRowWithVector(constRowsIterator& rowsIt, uint_fast64_t rowsIte, std::vector<T>& vector) const {
+		T result = storm::utility::constGetZero<T>();
+		for (; rowsIt != rowsIte; ++rowsIt) {
+			result += (rowsIt.value()) * vector[rowsIt.column()];
 		}
 		return result;
+	}
+
+	void multiplyWithVector(std::vector<T>& vector, std::vector<T>& result) const {
+		typename std::vector<T>::iterator resultIt = result.begin();
+		typename std::vector<T>::iterator resultIte = result.end();
+		constRowsIterator rowIt = this->constRowsIteratorBegin();
+		uint_fast64_t nextRow = 1;
+
+		for (; resultIt != resultIte; ++resultIt, ++nextRow) {
+			*resultIt = multiplyRowWithVector(rowIt, this->rowIndications[nextRow], vector);
+		}
+	}
+
+	void multiplyWithVector(std::vector<uint_fast64_t> const& states, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<T>& vector, std::vector<T>& result) const {
+		constRowsIterator rowsIt = this->constRowsIteratorBegin();
+		uint_fast64_t nextRow = 1;
+
+		std::cout << nondeterministicChoiceIndices << std::endl;
+		std::cout << rowCount << std::endl;
+
+		for (auto stateIt = states.cbegin(), stateIte = states.cend(); stateIt != stateIte; ++stateIt) {
+			std::cout << "stateIt " << *stateIt << std::endl;
+			std::cout << nondeterministicChoiceIndices[*stateIt] << std::endl;
+			std::cout << this->rowIndications[nondeterministicChoiceIndices[*stateIt]] << std::endl;
+			rowsIt.setOffset(this->rowIndications[nondeterministicChoiceIndices[*stateIt]]);
+			nextRow = nondeterministicChoiceIndices[*stateIt] + 1;
+			for (auto rowIt = nondeterministicChoiceIndices[*stateIt], rowIte = nondeterministicChoiceIndices[*stateIt + 1]; rowIt != rowIte; ++rowIt, ++nextRow) {
+				result[rowIt] = multiplyRowWithVector(rowsIt, this->rowIndications[nextRow], vector);
+			}
+		}
 	}
 
 	/*!
@@ -798,6 +862,10 @@ public:
 		// Add row_indications size.
 		size += sizeof(uint_fast64_t) * rowIndications.capacity();
 		return size;
+	}
+
+	constRowsIterator constRowsIteratorBegin() const {
+		return constRowsIterator(*this);
 	}
 
 	/*!
@@ -910,7 +978,7 @@ public:
 	 * to separate groups will be separated by a dashed line.
 	 * @return a (non-compressed) string representation of the matrix.
 	 */
-	std::string toString(std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices) const {
+	std::string toString(std::vector<uint_fast64_t> const* nondeterministicChoiceIndices) const {
 		std::stringstream result;
 		uint_fast64_t currentNondeterministicChoiceIndex = 0;
 

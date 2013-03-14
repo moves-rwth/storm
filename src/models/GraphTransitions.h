@@ -39,8 +39,8 @@ public:
 	 * @param forward If set to true, this objects will store the graph structure
 	 * of the backwards transition relation.
 	 */
-	GraphTransitions(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix, bool forward)
-			: successorList(nullptr), stateIndications(nullptr), numberOfStates(transitionMatrix->getColumnCount()), numberOfTransitions(transitionMatrix->getNonZeroEntryCount()) {
+	GraphTransitions(storm::storage::SparseMatrix<T> const& transitionMatrix, bool forward)
+			: successorList(nullptr), stateIndications(nullptr), numberOfStates(transitionMatrix.getColumnCount()), numberOfTransitions(transitionMatrix.getNonZeroEntryCount()) {
 		if (forward) {
 			this->initializeForward(transitionMatrix);
 		} else {
@@ -48,12 +48,12 @@ public:
 		}
 	}
 
-	GraphTransitions(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix, std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices, bool forward)
-		: successorList(nullptr), stateIndications(nullptr), numberOfStates(transitionMatrix->getColumnCount()), numberOfTransitions(transitionMatrix->getNonZeroEntryCount()) {
+	GraphTransitions(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, bool forward)
+		: successorList(nullptr), stateIndications(nullptr), numberOfStates(transitionMatrix.getColumnCount()), numberOfTransitions(transitionMatrix.getNonZeroEntryCount()) {
 		if (forward) {
-			this->initializeForward(transitionMatrix, choiceIndices);
+			this->initializeForward(transitionMatrix, nondeterministicChoiceIndices);
 		} else {
-			this->initializeBackward(transitionMatrix, choiceIndices);
+			this->initializeBackward(transitionMatrix, nondeterministicChoiceIndices);
 		}
 	}
 
@@ -126,37 +126,37 @@ private:
 	 * Initializes this graph transitions object using the forward transition
 	 * relation given by means of a sparse matrix.
 	 */
-	void initializeForward(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix) {
+	void initializeForward(storm::storage::SparseMatrix<T> const& transitionMatrix) {
 		this->successorList = new uint_fast64_t[numberOfTransitions];
 		this->stateIndications = new uint_fast64_t[numberOfStates + 1];
 
 		// First, we copy the index list from the sparse matrix as this will
 		// stay the same.
-		std::copy(transitionMatrix->getRowIndications().begin(), transitionMatrix->getRowIndications().end(), this->stateIndications);
+		std::copy(transitionMatrix.getRowIndications().begin(), transitionMatrix.getRowIndications().end(), this->stateIndications);
 
 		// Now we can iterate over all rows of the transition matrix and record
 		// the target state.
 		for (uint_fast64_t i = 0, currentNonZeroElement = 0; i < numberOfStates; i++) {
-			for (auto rowIt = transitionMatrix->beginConstColumnIterator(i); rowIt != transitionMatrix->endConstColumnIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
 				this->successorList[currentNonZeroElement++] = *rowIt;
 			}
 		}
 	}
 
-	void initializeForward(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix, std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices) {
+	void initializeForward(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
 		this->successorList = new uint_fast64_t[numberOfTransitions];
 		this->stateIndications = new uint_fast64_t[numberOfStates + 1];
 
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-			this->stateIndications[i] = transitionMatrix->getRowIndications().at(choiceIndices->at(i));
+			this->stateIndications[i] = transitionMatrix.getRowIndications().at(nondeterministicChoiceIndices[i]);
 		}
 		this->stateIndications[numberOfStates] = numberOfTransitions;
 
 		// Now we can iterate over all rows of the transition matrix and record
 		// the target state.
 		for (uint_fast64_t i = 0, currentNonZeroElement = 0; i < numberOfStates; i++) {
-			for (uint_fast64_t j = choiceIndices->at(i); j < choiceIndices->at(i + 1); ++j) {
-				for (auto rowIt = transitionMatrix->beginConstColumnIterator(j); rowIt != transitionMatrix->endConstColumnIterator(j); ++rowIt) {
+			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
+				for (auto rowIt = transitionMatrix.beginConstColumnIterator(j); rowIt != transitionMatrix.endConstColumnIterator(j); ++rowIt) {
 					this->successorList[currentNonZeroElement++] = *rowIt;
 				}
 			}
@@ -168,13 +168,13 @@ private:
 	 * relation, whose forward transition relation is given by means of a sparse
 	 * matrix.
 	 */
-	void initializeBackward(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix) {
+	void initializeBackward(storm::storage::SparseMatrix<T> const& transitionMatrix) {
 		this->successorList = new uint_fast64_t[numberOfTransitions];
 		this->stateIndications = new uint_fast64_t[numberOfStates + 1]();
 
 		// First, we need to count how many backward transitions each state has.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-			for (auto rowIt = transitionMatrix->beginConstColumnIterator(i); rowIt != transitionMatrix->endConstColumnIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
 				this->stateIndications[*rowIt + 1]++;
 			}
 		}
@@ -197,7 +197,7 @@ private:
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-			for (auto rowIt = transitionMatrix->beginConstColumnIterator(i); rowIt != transitionMatrix->endConstColumnIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
 				this->successorList[nextIndicesList[*rowIt]++] = i;
 			}
 		}
@@ -206,14 +206,14 @@ private:
 		delete[] nextIndicesList;
 	}
 
-	void initializeBackward(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix, std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices) {
+	void initializeBackward(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
 		this->successorList = new uint_fast64_t[numberOfTransitions];
 		this->stateIndications = new uint_fast64_t[numberOfStates + 1]();
 
 		// First, we need to count how many backward transitions each state has.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-			for (uint_fast64_t j = choiceIndices->at(i); j < choiceIndices->at(i + 1); ++j) {
-				for (auto rowIt = transitionMatrix->beginConstColumnIterator(j); rowIt != transitionMatrix->endConstColumnIterator(j); ++rowIt) {
+			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
+				for (auto rowIt = transitionMatrix.beginConstColumnIterator(j); rowIt != transitionMatrix.endConstColumnIterator(j); ++rowIt) {
 					this->stateIndications[*rowIt + 1]++;
 				}
 			}
@@ -237,8 +237,8 @@ private:
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
-			for (uint_fast64_t j = (*choiceIndices)[i]; j < (*choiceIndices)[i + 1]; ++j) {
-				for (auto rowIt = transitionMatrix->beginConstColumnIterator(j); rowIt != transitionMatrix->endConstColumnIterator(j); ++rowIt) {
+			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
+				for (auto rowIt = transitionMatrix.beginConstColumnIterator(j); rowIt != transitionMatrix.endConstColumnIterator(j); ++rowIt) {
 					this->successorList[nextIndicesList[*rowIt]++] = i;
 				}
 			}

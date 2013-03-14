@@ -500,10 +500,85 @@ protected:
 	mutable std::stack<bool> minimumOperatorStack;
 
 private:
-	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type>* summand = nullptr, uint_fast64_t repetitions = 1) const = 0;
+	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type>* summand = nullptr, uint_fast64_t repetitions = 1) const {
+		// Get the starting row indices for the non-deterministic choices to reduce the resulting
+		// vector properly.
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
 
-	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const = 0;
+		// Create vector for result of multiplication, which is reduced to the result vector after
+		// each multiplication.
+		std::vector<Type> multiplyResult(matrix.getRowCount());
 
+		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
+		for (uint_fast64_t i = 0; i < repetitions; ++i) {
+			matrix.multiplyWithVector(vector, multiplyResult);
+			if (summand != nullptr) {
+				gmm::add(*summand, multiplyResult);
+			}
+			if (this->minimumOperatorStack.top()) {
+				storm::utility::reduceVectorMin(multiplyResult, &vector, *nondeterministicChoiceIndices);
+			} else {
+				storm::utility::reduceVectorMax(multiplyResult, &vector, *nondeterministicChoiceIndices);
+			}
+		}
+	}
+
+	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+		// Get the settings object to customize solving.
+		storm::settings::Settings* s = storm::settings::instance();
+
+		// Get relevant user-defined settings for solving the equations.
+		double precision = s->get<double>("precision");
+		unsigned maxIterations = s->get<unsigned>("maxiter");
+		bool relative = s->get<bool>("relative");
+
+		// Set up the environment for the power method.
+		std::vector<Type> multiplyResult(matrix.getRowCount());
+		std::vector<Type>* currentX = &x;
+		std::vector<Type>* newX = new std::vector<Type>(x.size());
+		std::vector<Type>* swap = nullptr;
+		uint_fast64_t iterations = 0;
+		bool converged = false;
+
+		// Proceed with the iterations as long as the method did not converge or reach the
+		// user-specified maximum number of iterations.
+		while (!converged && iterations < maxIterations) {
+			// Compute x' = A*x + b.
+			matrix.multiplyWithVector(*currentX, multiplyResult);
+
+			gmm::add(b, multiplyResult);
+
+			// Reduce the vector x' by applying min/max for all non-deterministic choices.
+			if (this->minimumOperatorStack.top()) {
+				storm::utility::reduceVectorMin(multiplyResult, newX, nondeterministicChoiceIndices);
+			} else {
+				storm::utility::reduceVectorMax(multiplyResult, newX, nondeterministicChoiceIndices);
+			}
+
+			// Determine whether the method converged.
+			converged = storm::utility::equalModuloPrecision(*currentX, *newX, precision, relative);
+
+			// Update environment variables.
+			swap = currentX;
+			currentX = newX;
+			newX = swap;
+			++iterations;
+		}
+
+		if (iterations % 2 == 1) {
+			std::swap(x, *currentX);
+			delete currentX;
+		} else {
+			delete newX;
+		}
+
+		// Check if the solver converged and issue a warning otherwise.
+		if (converged) {
+			LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+		} else {
+			LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+		}
+	}
 
 	std::shared_ptr<std::vector<uint_fast64_t>> computeNondeterministicChoiceIndicesForConstraint(storm::storage::BitVector constraint) const {
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
