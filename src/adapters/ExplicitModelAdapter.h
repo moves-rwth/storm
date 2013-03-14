@@ -11,6 +11,15 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/Settings.h"
 
+#include "src/ir/RewardModel.h"
+#include "src/ir/StateReward.h"
+#include "src/ir/TransitionReward.h"
+
+#include "src/models/AbstractModel.h"
+#include "src/models/Dtmc.h"
+#include "src/models/Ctmc.h"
+#include "src/models/Mdp.h"
+
 #include <tuple>
 #include <unordered_map>
 #include <boost/functional/hash.hpp>
@@ -25,6 +34,7 @@ typedef std::pair<std::vector<bool>, std::vector<int_fast64_t>> StateType;
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
+#include "ir/Program.h"
 extern log4cplus::Logger logger;
 
 namespace storm {
@@ -60,11 +70,51 @@ public:
 
 	}
 
-	template<class T>
-	std::shared_ptr<storm::storage::SparseMatrix<T>> toSparseMatrix() {
+	std::shared_ptr<storm::models::AbstractModel> toModel(std::string const & rewardModelName = "") {
+		
+		std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->toSparseMatrix();
+
+		std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling = this->getStateLabeling(this->program->getLabels());
+		std::shared_ptr<std::vector<double>> stateRewards = nullptr;
+		std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewardMatrix = nullptr;
+
+		if (rewardModelName != "") {
+			storm::ir::RewardModel rewardModel = this->program->getRewardModel(rewardModelName);
+			stateRewards = this->getStateRewards(rewardModel.getStateRewards());
+		}
+
+		switch (this->program->getModelType())
+		{
+/*			std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix,
+			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
+			std::shared_ptr<std::vector<T>> stateRewards = nullptr,
+			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix = nullptr
+*/
+			case storm::ir::Program::DTMC:
+				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Dtmc<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
+				break;
+			case storm::ir::Program::CTMC:
+				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Ctmc<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
+				break;
+			case storm::ir::Program::MDP:
+				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Mdp<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
+				break;
+			case storm::ir::Program::CTMDP:
+				// Todo
+				//return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Ctmdp<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
+				break;
+			default:
+				// ERROR
+				break;
+		}
+
+		return std::shared_ptr<storm::models::AbstractModel>(nullptr);
+	}
+
+	std::shared_ptr<storm::storage::SparseMatrix<double>> toSparseMatrix() {
 		LOG4CPLUS_INFO(logger, "Creating sparse matrix for probabilistic program.");
 
-		std::shared_ptr<storm::storage::SparseMatrix<T>> resultMatrix = this->buildMatrix<T>();
+		std::shared_ptr<storm::storage::SparseMatrix<double>> resultMatrix = this->buildMatrix();
 
 		LOG4CPLUS_INFO(logger, "Created sparse matrix with " << resultMatrix->getRowCount() << " reachable states and " << resultMatrix->getNonZeroEntryCount() << " transitions.");
 
@@ -80,6 +130,31 @@ private:
 
 	static void setValue(StateType* state, uint_fast64_t index, int_fast64_t value) {
 		std::get<1>(*state)[index] = value;
+	}
+
+	std::shared_ptr<std::vector<double>> getStateRewards(std::vector<storm::ir::StateReward> const & rewards) {
+		std::shared_ptr<std::vector<double>> results(new std::vector<double>(this->allStates.size()));
+		for (uint_fast64_t index = 0; index < this->allStates.size(); index++) {
+			for (auto reward: rewards) {
+				(*results)[index] = reward.getReward(this->allStates[index]);
+			}
+		}
+		return results;
+	}
+
+	std::shared_ptr<storm::models::AtomicPropositionsLabeling> getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels) {
+		std::shared_ptr<storm::models::AtomicPropositionsLabeling> results(new storm::models::AtomicPropositionsLabeling(this->allStates.size(), labels.size()));
+		for (auto it: labels) {
+			results->addAtomicProposition(it.first);
+		}
+		for (uint_fast64_t index = 0; index < this->allStates.size(); index++) {
+			for (auto label: labels) {
+				if (label.second->getValueAsBool(this->allStates[index])) {
+					results->addAtomicPropositionToState(label.first, index);
+				}
+			}
+		}
+		return results;
 	}
 	
 	/*!
@@ -362,9 +437,8 @@ private:
 	 * @param intermediate Intermediate representation of transition mapping.
 	 * @return result matrix.
 	 */
-	template<class T>
-	std::shared_ptr<storm::storage::SparseMatrix<T>> buildDTMCMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate) {
-		std::shared_ptr<storm::storage::SparseMatrix<T>> result(new storm::storage::SparseMatrix<T>(allStates.size()));
+	std::shared_ptr<storm::storage::SparseMatrix<double>> buildDTMCMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate) {
+		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(allStates.size()));
 		// this->numberOfTransitions is meaningless, as we combine all choices into one for each state.
 		// Hence, we compute the correct number of transitions now.
 		uint_fast64_t numberOfTransitions = 0;
@@ -409,10 +483,9 @@ private:
 	 * @param choices Overall number of choices for all nodes.
 	 * @return result matrix.
 	 */
-	template<class T>
-	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMDPMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate, uint_fast64_t choices) {
+	std::shared_ptr<storm::storage::SparseMatrix<double>> buildMDPMatrix(std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> intermediate, uint_fast64_t choices) {
 		std::cout << "Building MDP matrix with " << this->numberOfTransitions << " transitions." << std::endl;
-		std::shared_ptr<storm::storage::SparseMatrix<T>> result(new storm::storage::SparseMatrix<T>(allStates.size(), choices));
+		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(allStates.size(), choices));
 		// Build matrix.
 		result->initialize(this->numberOfTransitions);
 		uint_fast64_t nextRow = 0;
@@ -434,8 +507,7 @@ private:
 	 * Afterwards, we transform this map into the actual matrix.
 	 * @return result matrix.
 	 */
-	template<class T>
-	std::shared_ptr<storm::storage::SparseMatrix<T>> buildMatrix() {
+	std::shared_ptr<storm::storage::SparseMatrix<double>> buildMatrix() {
 		this->prepareAuxiliaryDatastructures();
 		this->allStates.clear();
 		this->stateToIndexMap.clear();
@@ -467,16 +539,16 @@ private:
 		switch (this->program->getModelType()) {
 			case storm::ir::Program::DTMC:
 			case storm::ir::Program::CTMC:
-				return this->buildDTMCMatrix<T>(intermediate);
+				return this->buildDTMCMatrix(intermediate);
 			case storm::ir::Program::MDP:
 			case storm::ir::Program::CTMDP:
-				return this->buildMDPMatrix<T>(intermediate, choices);
+				return this->buildMDPMatrix(intermediate, choices);
 			default:
 				LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: We can't handle this model type.");
 				throw storm::exceptions::WrongFileFormatException() << "Error while creating sparse matrix from probabilistic program: We can't handle this model type.";
 				break;
 		}
-		return std::shared_ptr<storm::storage::SparseMatrix<T>>(nullptr);
+		return std::shared_ptr<storm::storage::SparseMatrix<double>>(nullptr);
 	}
 
 	/*!
