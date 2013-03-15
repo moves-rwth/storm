@@ -91,7 +91,7 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 
 			// If we skipped some states, we need to reserve empty rows for all their nondeterministic
 			// choices.
-			for (uint_fast64_t i = lastsource + 1; i < source; ++i) {
+			for (int_fast64_t i = lastsource + 1; i < source; ++i) {
 				choices += ((*rewardMatrixInformation->nondeterministicChoiceIndices)[i + 1] - (*rewardMatrixInformation->nondeterministicChoiceIndices)[i]);
 			}
 
@@ -221,7 +221,7 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	}
 
 	if (isRewardFile) {
-		if (choices > rewardMatrixInformation->rowCount || maxnode + 1 > rewardMatrixInformation->columnCount) {
+		if (choices > rewardMatrixInformation->rowCount || (uint_fast64_t)(maxnode + 1) > rewardMatrixInformation->columnCount) {
 			LOG4CPLUS_ERROR(logger, "Reward matrix size exceeds transition matrix size.");
 			throw storm::exceptions::WrongFileFormatException() << "Reward matrix size exceeds transition matrix size.";
 		} else if (choices != rewardMatrixInformation->rowCount) {
@@ -278,7 +278,7 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 
 			// If we skipped some states, we need to reserve empty rows for all their nondeterministic
 			// choices.
-			for (uint_fast64_t i = lastsource + 1; i < source; ++i) {
+			for (int_fast64_t i = lastsource + 1; i < source; ++i) {
 				curRow += ((*rewardMatrixInformation->nondeterministicChoiceIndices)[i + 1] - (*rewardMatrixInformation->nondeterministicChoiceIndices)[i]);
 			}
 

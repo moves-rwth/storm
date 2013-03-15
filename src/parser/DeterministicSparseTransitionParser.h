@@ -26,7 +26,7 @@ class DeterministicSparseTransitionParser : public Parser {
 	private:
 		std::shared_ptr<storm::storage::SparseMatrix<double>> matrix;
 		
-		uint_fast64_t firstPass(char* buf, int_fast64_t &maxnode, RewardMatrixInformationStruct* rewardMatrixInformation);
+		uint_fast64_t firstPass(char* buf, uint_fast64_t &maxnode, RewardMatrixInformationStruct* rewardMatrixInformation);
 	
 };
 		

@@ -44,7 +44,7 @@ namespace parser {
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
+uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
 	bool isRewardMatrix = rewardMatrixInformation != nullptr;
 
 	uint_fast64_t nonZeroEntryCount = 0;
@@ -58,7 +58,8 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
     /*
      * Check all transitions for non-zero diagonal entries and deadlock states.
      */
-    int_fast64_t row, lastRow = -1, col;
+    int_fast64_t lastRow = -1;
+    uint_fast64_t row, col;
 	uint_fast64_t readTransitionCount = 0;
     bool rowHadDiagonalEntry = false;
     double val;
@@ -71,12 +72,12 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, int_fast
             col = checked_strtol(buf, &buf);
 
             if (!isRewardMatrix) {
-				if (lastRow != row) {
+				if (lastRow != (int_fast64_t)row) {
 					if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
 						++nonZeroEntryCount;
 						rowHadDiagonalEntry = true;
 					}
-					for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
+					for (uint_fast64_t skippedRow = (uint_fast64_t)(lastRow + 1); skippedRow < row; ++skippedRow) {
 						++nonZeroEntryCount;
 					}
 					lastRow = row;
@@ -146,7 +147,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	/*
 	 *	Perform first pass, i.e. count entries that are not zero.
 	 */
-	int_fast64_t maxStateId;
+	uint_fast64_t maxStateId;
 	uint_fast64_t nonZeroEntryCount = this->firstPass(file.data, maxStateId, rewardMatrixInformation);
 
 	LOG4CPLUS_INFO(logger, "First pass on " << filename << " shows " << nonZeroEntryCount << " NonZeros.");
