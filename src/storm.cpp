@@ -458,20 +458,27 @@ void testChecking() {
  * Main entry point.
  */
 int main(const int argc, const char* argv[]) {
+	printHeader(argc, argv);
+
 	initializeLogger();
 	if (!parseOptions(argc, argv)) {
 		return 0;
 	}
 	setUp();
 
-	LOG4CPLUS_INFO(logger, "StoRM was invoked.");
-	printHeader(argc, argv);
+	try {
+		LOG4CPLUS_INFO(logger, "StoRM was invoked.");
 
-	testChecking();
+		testChecking();
 
-	cleanUp();
+		cleanUp();
 
-	LOG4CPLUS_INFO(logger, "StoRM quit.");
+		LOG4CPLUS_INFO(logger, "StoRM quit.");
 
-	return 0;
+		return 0;
+	} catch (std::exception& e) {
+		LOG4CPLUS_FATAL(logger, "An exception was thrown but not catched. All we can do now is show it to you and die in peace...");
+		LOG4CPLUS_FATAL(logger, "\t" << e.what());
+	}
+	return 1;
 }
