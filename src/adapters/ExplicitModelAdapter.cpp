@@ -36,7 +36,9 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 
 	std::shared_ptr<storm::models::AbstractModel> ExplicitModelAdapter::getModel(std::string const & rewardModelName) {
 		
-		this->rewardModel = this->program->getRewardModel(rewardModelName);
+		if (rewardModelName != "") {
+			this->rewardModel = this->program->getRewardModel(rewardModelName);
+		}
 
 		this->buildTransitionMap();
 
@@ -436,7 +438,9 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			double factor = 1.0 / transitionMap[state].size();
 			for (auto it : map) {
 				result->addNextValue(state, it.first, it.second * factor);
-				this->transitionRewards->addNextValue(state, it.first, rewardMap[it.first] * factor);
+				if (this->rewardModel.hasTransitionRewards()) {
+					this->transitionRewards->addNextValue(state, it.first, rewardMap[it.first] * factor);
+				}
 			}
 
 		}
