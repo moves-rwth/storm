@@ -6,8 +6,13 @@
  */
 
 #include "Program.h"
+#include "exceptions/InvalidArgumentException.h"
 
 #include <sstream>
+
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
 
 namespace storm {
 
@@ -101,7 +106,8 @@ std::shared_ptr<std::set<uint_fast64_t>> const Program::getModulesByAction(std::
 storm::ir::RewardModel Program::getRewardModel(std::string const & name) const {
 	auto it = this->rewards.find(name);
 	if (it == this->rewards.end()) {
-		// throw some exception here...
+		LOG4CPLUS_ERROR(logger, "The given reward model \"" << name << "\" does not exist. We will proceed without rewards.");
+		return RewardModel();
 	} else {
 		return it->second;
 	}
