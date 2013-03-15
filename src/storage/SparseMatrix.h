@@ -770,7 +770,7 @@ public:
 		T constOne = storm::utility::constGetOne<T>();
 
 		// copy diagonal entries to other matrix
-		for (int i = 0; i < rowCount; ++i) {
+		for (unsigned int i = 0; i < rowCount; ++i) {
 			resultDinv->addNextValue(i, i, constOne / resultLU->getValue(i, i));
 			resultLU->getValue(i, i) = storm::utility::constGetZero<T>();
 		}
