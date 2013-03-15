@@ -131,6 +131,7 @@ void Settings::initDescriptions() {
 	Settings::desc->add_options()
 		("help,h", "produce help message")
 		("verbose,v", "be verbose")
+		("debug", "be very verbose, intended for debugging")
 		("logfile,l", bpo::value<std::string>(), "name of the log file")
 		("configfile,c", bpo::value<std::string>(), "name of config file")
 		("test-prctl", bpo::value<std::string>(), "name of prctl file")
