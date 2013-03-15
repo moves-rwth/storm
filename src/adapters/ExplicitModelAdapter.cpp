@@ -26,29 +26,25 @@ namespace adapters {
 
 ExplicitModelAdapter::ExplicitModelAdapter(std::shared_ptr<storm::ir::Program> program) : program(program), 
 		booleanVariables(), integerVariables(), booleanVariableToIndexMap(), integerVariableToIndexMap(),
-		allStates(), stateToIndexMap(), numberOfTransitions(0), numberOfChoices(0), transitionMap() {
+		allStates(), stateToIndexMap(), numberOfTransitions(0), numberOfChoices(0), transitionRewards(nullptr), transitionMap() {
 	this->initializeVariables();
 }
 
 ExplicitModelAdapter::~ExplicitModelAdapter() {
-	for (auto it : allStates) {
-		delete it;
-	}
-	allStates.clear();
-	stateToIndexMap.clear();
+	this->clearInternalState();
 }
 
 	std::shared_ptr<storm::models::AbstractModel> ExplicitModelAdapter::getModel(std::string const & rewardModelName) {
 		
-		this->buildIntermediateRepresentation();
+		this->rewardModel = this->program->getRewardModel(rewardModelName);
+
+		this->buildTransitionMap();
 
 		std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling = this->getStateLabeling(this->program->getLabels());
 		std::shared_ptr<std::vector<double>> stateRewards = nullptr;
-		std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewardMatrix = nullptr;
 
-		if (rewardModelName != "") {
-			storm::ir::RewardModel rewardModel = this->program->getRewardModel(rewardModelName);
-			stateRewards = this->getStateRewards(rewardModel.getStateRewards());
+		if (this->rewardModel.hasStateRewards()) {
+			stateRewards = this->getStateRewards(this->rewardModel.getStateRewards());
 		}
 
 		switch (this->program->getModelType())
@@ -56,19 +52,19 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			case storm::ir::Program::DTMC:
 			{
 				std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->buildDeterministicMatrix();
-				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Dtmc<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
+				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Dtmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
 				break;
 			}
 			case storm::ir::Program::CTMC:
 			{
 				std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->buildDeterministicMatrix();
-				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Ctmc<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
+				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Ctmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
 				break;
 			}
 			case storm::ir::Program::MDP:
 			{
 				std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->buildNondeterministicMatrix();
-				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Mdp<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
+				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Mdp<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
 				break;
 			}
 			case storm::ir::Program::CTMDP:
@@ -289,7 +285,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 * @params state State to be explored.
 	 * @params res Intermediate transition map.
 	 */
-	void ExplicitModelAdapter::addUnlabeledTransitions(const uint_fast64_t stateID, std::list<std::map<uint_fast64_t, double>>& res) {
+	void ExplicitModelAdapter::addUnlabeledTransitions(const uint_fast64_t stateID, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>& res) {
 		const StateType* state = this->allStates[stateID];
 		// Iterate over all modules.
 		for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
@@ -304,7 +300,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 
 				// Add a new map and get pointer.
 				res.emplace_back();
-				std::map<uint_fast64_t, double>* states = &res.back();
+				std::map<uint_fast64_t, double>* states = &res.back().second;
 
 				// Iterate over all updates.
 				for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
@@ -331,7 +327,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 * @param stateID State to be explored.
 	 * @param res Intermediate transition map.
 	 */
-	void ExplicitModelAdapter::addLabeledTransitions(const uint_fast64_t stateID, std::list<std::map<uint_fast64_t, double>>& res) {
+	void ExplicitModelAdapter::addLabeledTransitions(const uint_fast64_t stateID, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>& res) {
 		// Create a copy of the current state, as we will free intermediate states...
 		for (std::string action : this->program->getActions()) {
 			StateType* state = new StateType(*this->allStates[stateID]);
@@ -376,8 +372,8 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			}
 
 			if (resultStates.size() > 0) {
-				res.emplace_back();
-				std::map<uint_fast64_t, double>* states = &res.back();
+				res.push_back(std::make_pair(action, std::map<uint_fast64_t, double>()));
+				std::map<uint_fast64_t, double>* states = &res.back().second;
 
 				// Now add our final result states to our global result.
 				for (auto it : resultStates) {
@@ -396,7 +392,6 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 * @return result matrix.
 	 */
 	std::shared_ptr<storm::storage::SparseMatrix<double>> ExplicitModelAdapter::buildDeterministicMatrix() {
-		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(allStates.size()));
 		// ***** ATTENTION *****
 		// this->numberOfTransitions is meaningless, as we combine all choices into one for each state.
 		// Hence, we compute the correct number of transitions now.
@@ -405,7 +400,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			// Collect all target nodes in a set to get number of distinct nodes.
 			std::set<uint_fast64_t> set;
 			for (auto choice : transitionMap[state]) {
-				for (auto elem : choice) {
+				for (auto elem : choice.second) {
 					set.insert(elem.first);
 				}
 			}
@@ -413,22 +408,35 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 		}
 		LOG4CPLUS_DEBUG(logger, "Building deterministic transition matrix with " << numberOfTransitions << " transitions now.");
 		// Now build matrix.
+
+		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(allStates.size()));
 		result->initialize(numberOfTransitions);
+		if (this->rewardModel.hasTransitionRewards()) {
+			this->transitionRewards = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(allStates.size()));
+			this->transitionRewards->initialize(numberOfTransitions);
+		}
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
 			if (transitionMap[state].size() > 1) {
-				std::cout << "Warning: state " << state << " has " << transitionMap[state].size() << " overlapping guards in dtmc" << std::endl;
+				LOG4CPLUS_WARN(logger, "State " << state << " has " << transitionMap[state].size() << " overlapping guards in deterministic model.");
 			}
 			// Combine choices to one map.
 			std::map<uint_fast64_t, double> map;
+			std::map<uint_fast64_t, double> rewardMap;
 			for (auto choice : transitionMap[state]) {
-				for (auto elem : choice) {
+				for (auto elem : choice.second) {
 					map[elem.first] += elem.second;
+					if (this->rewardModel.hasTransitionRewards()) {
+						for (storm::ir::TransitionReward reward : this->rewardModel.getTransitionRewards()) {
+							rewardMap[elem.first] += reward.getReward(choice.first, this->allStates[state]);
+						}
+					}
 				}
 			}
 			// Scale probabilities by number of choices.
 			double factor = 1.0 / transitionMap[state].size();
 			for (auto it : map) {
 				result->addNextValue(state, it.first, it.second * factor);
+				this->transitionRewards->addNextValue(state, it.first, rewardMap[it.first] * factor);
 			}
 
 		}
@@ -445,13 +453,24 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	std::shared_ptr<storm::storage::SparseMatrix<double>> ExplicitModelAdapter::buildNondeterministicMatrix() {
 		LOG4CPLUS_DEBUG(logger, "Building nondeterministic transition matrix with " << this->numberOfChoices << " choices and " << this->numberOfTransitions << " transitions now.");
 		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(allStates.size(), this->numberOfChoices));
-		// Build matrix.
 		result->initialize(this->numberOfTransitions);
+		if (this->rewardModel.hasTransitionRewards()) {
+			this->transitionRewards = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(allStates.size(), this->numberOfChoices));
+			this->transitionRewards->initialize(this->numberOfTransitions);
+		}
+		// Build matrix.
 		uint_fast64_t nextRow = 0;
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
 			for (auto choice : transitionMap[state]) {
-				for (auto it : choice) {
+				for (auto it : choice.second) {
 					result->addNextValue(nextRow, it.first, it.second);
+					if (this->rewardModel.hasTransitionRewards()) {
+						double rewardValue = 0;
+						for (storm::ir::TransitionReward reward : this->rewardModel.getTransitionRewards()) {
+							rewardValue = reward.getReward(choice.first, this->allStates[state]);
+						}
+						this->transitionRewards->addNextValue(nextRow, it.first, rewardValue);
+					}
 				}
 				nextRow++;
 			}
@@ -466,13 +485,9 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 * Afterwards, we transform this map into the actual matrix.
 	 * @return result matrix.
 	 */
-	void ExplicitModelAdapter::buildIntermediateRepresentation() {
+	void ExplicitModelAdapter::buildTransitionMap() {
 		LOG4CPLUS_DEBUG(logger, "Starting to create transition map from program...");
-		this->allStates.clear();
-		this->stateToIndexMap.clear();
-		this->numberOfTransitions = 0;
-		this->numberOfChoices = 0;
-		this->transitionMap.clear();
+		this->clearInternalState();
 		
 		this->generateInitialStates();
 		for (uint_fast64_t curIndex = 0; curIndex < this->allStates.size(); curIndex++)
@@ -486,7 +501,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 				if (storm::settings::instance()->isSet("fix-deadlocks")) {
 					this->numberOfTransitions++;
 					this->transitionMap[curIndex].emplace_back();
-					this->transitionMap[curIndex].back()[curIndex] = 1;
+					this->transitionMap[curIndex].back().second[curIndex] = 1;
 				} else {
 					LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state.");
 					throw storm::exceptions::WrongFileFormatException() << "Error while creating sparse matrix from probabilistic program: found deadlock state.";
@@ -494,6 +509,18 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			}
 		}
 		LOG4CPLUS_DEBUG(logger, "Finished creating transition map.");
+	}
+
+	void ExplicitModelAdapter::clearInternalState() {
+		for (auto it : allStates) {
+			delete it;
+		}
+		allStates.clear();
+		stateToIndexMap.clear();
+		this->numberOfTransitions = 0;
+		this->numberOfChoices = 0;
+		this->transitionRewards = nullptr;
+		this->transitionMap.clear();
 	}
 
 } // namespace adapters

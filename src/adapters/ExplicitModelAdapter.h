@@ -130,7 +130,7 @@ private:
 	 * @params state State to be explored.
 	 * @params res Intermediate transition map.
 	 */
-	void addUnlabeledTransitions(const uint_fast64_t stateID, std::list<std::map<uint_fast64_t, double>>& res);
+	void addUnlabeledTransitions(const uint_fast64_t stateID, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>& res);
 	
 	/*!
 	 * Explores reachable state from given state by using labeled transitions.
@@ -138,7 +138,7 @@ private:
 	 * @param stateID State to be explored.
 	 * @param res Intermediate transition map.
 	 */
-	void addLabeledTransitions(const uint_fast64_t stateID, std::list<std::map<uint_fast64_t, double>>& res);
+	void addLabeledTransitions(const uint_fast64_t stateID, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>& res);
 
 	/*!
 	 * Create matrix from intermediate mapping, assuming it is a dtmc model.
@@ -161,7 +161,9 @@ private:
 	 * Afterwards, we transform this map into the actual matrix.
 	 * @return result matrix.
 	 */
-	void buildIntermediateRepresentation();
+	void buildTransitionMap();
+	
+	void clearInternalState();
 
 	// Program that should be converted.
 	std::shared_ptr<storm::ir::Program> program;
@@ -171,15 +173,22 @@ private:
 	std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
 
 	// Members that are filled during the conversion.
+	storm::ir::RewardModel rewardModel;
 	std::vector<StateType*> allStates;
 	std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
 	uint_fast64_t numberOfTransitions;
 	uint_fast64_t numberOfChoices;
-	std::map<uint_fast64_t, std::list<std::map<uint_fast64_t, double>>> transitionMap;
+	std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewards;
+
+	/*!
+	 * Maps a source node to a list of probability distributions over target nodes.
+	 * Each such distribution corresponds to an unlabeled command or a feasible combination of labeled commands.
+	 * Therefore, each distribution is represented by a label and a mapping from target nodes to their probabilities.
+	 */
+	std::map<uint_fast64_t, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>> transitionMap;
 };
 
 } // namespace adapters
 } // namespace storm
 
 #endif	/* EXPLICITMODELADAPTER_H */
-
