@@ -37,8 +37,16 @@ std::string RewardModel::toString() const {
 	return result.str();
 }
 
+bool RewardModel::hasStateRewards() const {
+	return this->stateRewards.size() > 0;
+}
+
 std::vector<storm::ir::StateReward> RewardModel::getStateRewards() const {
 	return this->stateRewards;
+}
+
+bool RewardModel::hasTransitionRewards() const {
+	return this->transitionRewards.size() > 0;
 }
 
 std::vector<storm::ir::TransitionReward> RewardModel::getTransitionRewards() const {

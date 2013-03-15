@@ -43,10 +43,22 @@ public:
 	std::string toString() const;
 
 	/*!
+	 * Check, if there are any state rewards.
+	 * @return True, iff there are any state rewards.
+	 */
+	bool hasStateRewards() const;
+
+	/*!
 	 * Retrieve state rewards.
 	 * @return State rewards.
 	 */
 	std::vector<storm::ir::StateReward> getStateRewards() const;
+
+	/*!
+	 * Check, if there are any transition rewards.
+	 * @return True, iff there are any transition rewards.
+	 */
+	bool hasTransitionRewards() const;
 
 	/*!
 	 * Retrieve transition rewards.
