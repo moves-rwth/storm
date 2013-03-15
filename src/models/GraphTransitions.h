@@ -40,7 +40,7 @@ public:
 	 * of the backwards transition relation.
 	 */
 	GraphTransitions(storm::storage::SparseMatrix<T> const& transitionMatrix, bool forward)
-			: successorList(nullptr), stateIndications(nullptr), numberOfStates(transitionMatrix.getColumnCount()), numberOfTransitions(transitionMatrix.getNonZeroEntryCount()) {
+			: numberOfStates(transitionMatrix.getColumnCount()), numberOfTransitions(transitionMatrix.getNonZeroEntryCount()), successorList(numberOfTransitions), stateIndications(numberOfStates + 1) {
 		if (forward) {
 			this->initializeForward(transitionMatrix);
 		} else {
@@ -49,7 +49,7 @@ public:
 	}
 
 	GraphTransitions(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, bool forward)
-		: successorList(nullptr), stateIndications(nullptr), numberOfStates(transitionMatrix.getColumnCount()), numberOfTransitions(transitionMatrix.getNonZeroEntryCount()) {
+		: numberOfStates(transitionMatrix.getColumnCount()), numberOfTransitions(transitionMatrix.getNonZeroEntryCount()), successorList(numberOfTransitions), stateIndications(numberOfStates + 1) {
 		if (forward) {
 			this->initializeForward(transitionMatrix, nondeterministicChoiceIndices);
 		} else {
@@ -57,17 +57,36 @@ public:
 		}
 	}
 
+	GraphTransitions(GraphTransitions<T> const& transitions, std::vector<std::vector<std::uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap)
+		: numberOfStates(stronglyConnectedComponents.size()), numberOfTransitions(0), successorList(), stateIndications(numberOfStates + 1) {
+		this->initializeFromSccDecomposition(transitions, stronglyConnectedComponents, stateToSccMap);
+	}
+
+	GraphTransitions() : numberOfStates(0), numberOfTransitions(0), successorList(), stateIndications() {
+		// Intentionally left empty.
+	}
+
+	GraphTransitions(GraphTransitions<T>&& other) {
+		this->numberOfStates = other.numberOfStates;
+		this->numberOfTransitions = other.numberOfTransitions;
+		std::swap(successorList, other.successorList);
+		std::swap(stateIndications, other.stateIndications);
+	}
+
+	GraphTransitions<T>& operator=(GraphTransitions<T>&& other) {
+		this->numberOfStates = other.numberOfStates;
+		this->numberOfTransitions = other.numberOfTransitions;
+		std::swap(successorList, other.successorList);
+		std::swap(stateIndications, other.stateIndications);
+		return *this;
+	}
+
 	//! Destructor
 	/*!
 	 * Destructor. Frees the internal storage.
 	 */
 	~GraphTransitions() {
-		if (this->successorList != nullptr) {
-			delete[] this->successorList;
-		}
-		if (this->stateIndications != nullptr) {
-			delete[] this->stateIndications;
-		}
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -86,7 +105,7 @@ public:
 	 * @return An iterator to the predecessors of the given states.
 	 */
 	stateSuccessorIterator beginStateSuccessorsIterator(uint_fast64_t state) const {
-		return this->successorList + this->stateIndications[state];
+		return &this->successorList[this->stateIndications[state]];
 	}
 
 	/*!
@@ -97,7 +116,12 @@ public:
 	 * the given state.
 	 */
 	stateSuccessorIterator endStateSuccessorsIterator(uint_fast64_t state) const {
-		return this->successorList + this->stateIndications[state + 1];
+		std::cout << "size: " << this->stateIndications.size() << std::endl;
+		std::cout << "idx accessed " << state << std::endl;
+		std::cout << this->stateIndications[state + 1] << std::endl;
+		std::cout << "other size: " << this->successorList.size() << std::endl;
+		std::cout << this->successorList[this->stateIndications[state + 1]] << std::endl;
+		return &this->successorList[this->stateIndications[state + 1]];
 	}
 
 	/*!
@@ -106,36 +130,56 @@ public:
 	 */
 	std::string toString() const {
 		std::stringstream stream;
-
-		stream << "successorList (" << numberOfTransitions << ")" << std::endl;
-		for (uint_fast64_t i = 0; i < numberOfTransitions; ++i) {
-			stream << successorList[i] << " ";
-		}
-
-		stream << std::endl << std::endl << " stateIndications (" << numberOfStates + 1 << ")" << std::endl;
-		for (uint_fast64_t i = 0; i <= numberOfStates; ++i) {
-			stream << stateIndications[i] << " ";
-		}
-
+		stream << successorList << std::endl;
+		stream << stateIndications << std::endl;
 		return stream.str();
 	}
 
 private:
+	void initializeFromSccDecomposition(GraphTransitions<T> const& transitions, std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap) {
+		for (uint_fast64_t currentSccIndex = 0; currentSccIndex < stronglyConnectedComponents.size(); ++currentSccIndex) {
+			// Mark beginning of current SCC.
+			stateIndications[currentSccIndex] = successorList.size();
+
+			// Get the actual SCC.
+			std::vector<uint_fast64_t> const& scc = stronglyConnectedComponents[currentSccIndex];
+
+			// Now, we determine the SCCs which are reachable (in one step) from the current SCC.
+			std::set<uint_fast64_t> allTargetSccs;
+			for (auto state : scc) {
+				for (stateSuccessorIterator succIt = beginStateSuccessorsIterator(state), succIte = endStateSuccessorsIterator(state); succIt != succIte; ++succIt) {
+					uint_fast64_t targetScc = stateToSccMap.find(*succIt)->second;
+
+					// We only need to consider transitions that are actually leaving the SCC.
+					if (targetScc != currentSccIndex) {
+						allTargetSccs.insert(targetScc);
+					}
+				}
+			}
+
+			// Now we can just enumerate all the target SCCs and insert the corresponding transitions.
+			for (auto targetScc : allTargetSccs) {
+				successorList.push_back(targetScc);
+			}
+		}
+
+		// Put the sentinel element at the end and initialize the number of transitions.
+		stateIndications[numberOfStates] = successorList.size();
+		numberOfTransitions = successorList.size();
+
+		std::cout << this->toString() << std::endl;
+	}
 
 	/*!
 	 * Initializes this graph transitions object using the forward transition
 	 * relation given by means of a sparse matrix.
 	 */
 	void initializeForward(storm::storage::SparseMatrix<T> const& transitionMatrix) {
-		this->successorList = new uint_fast64_t[numberOfTransitions];
-		this->stateIndications = new uint_fast64_t[numberOfStates + 1];
-
 		// First, we copy the index list from the sparse matrix as this will
 		// stay the same.
-		std::copy(transitionMatrix.getRowIndications().begin(), transitionMatrix.getRowIndications().end(), this->stateIndications);
+		std::copy(transitionMatrix.getRowIndications().begin(), transitionMatrix.getRowIndications().end(), this->stateIndications.begin());
 
-		// Now we can iterate over all rows of the transition matrix and record
-		// the target state.
+		// Now we can iterate over all rows of the transition matrix and record the target state.
 		for (uint_fast64_t i = 0, currentNonZeroElement = 0; i < numberOfStates; i++) {
 			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
 				this->successorList[currentNonZeroElement++] = *rowIt;
@@ -144,9 +188,6 @@ private:
 	}
 
 	void initializeForward(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
-		this->successorList = new uint_fast64_t[numberOfTransitions];
-		this->stateIndications = new uint_fast64_t[numberOfStates + 1];
-
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
 			this->stateIndications[i] = transitionMatrix.getRowIndications().at(nondeterministicChoiceIndices[i]);
 		}
@@ -169,9 +210,6 @@ private:
 	 * matrix.
 	 */
 	void initializeBackward(storm::storage::SparseMatrix<T> const& transitionMatrix) {
-		this->successorList = new uint_fast64_t[numberOfTransitions];
-		this->stateIndications = new uint_fast64_t[numberOfStates + 1]();
-
 		// First, we need to count how many backward transitions each state has.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
 			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
@@ -191,25 +229,18 @@ private:
 
 		// Create an array that stores the next index for each state. Initially
 		// this corresponds to the previously computed accumulated offsets.
-		uint_fast64_t* nextIndicesList = new uint_fast64_t[numberOfStates];
-		std::copy(stateIndications, stateIndications + numberOfStates, nextIndicesList);
+		std::vector<uint_fast64_t> nextIndices = stateIndications;
 
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
 			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
-				this->successorList[nextIndicesList[*rowIt]++] = i;
+				this->successorList[nextIndices[*rowIt]++] = i;
 			}
 		}
-
-		// Now we can dispose of the auxiliary array.
-		delete[] nextIndicesList;
 	}
 
 	void initializeBackward(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
-		this->successorList = new uint_fast64_t[numberOfTransitions];
-		this->stateIndications = new uint_fast64_t[numberOfStates + 1]();
-
 		// First, we need to count how many backward transitions each state has.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
 			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
@@ -231,31 +262,18 @@ private:
 
 		// Create an array that stores the next index for each state. Initially
 		// this corresponds to the previously computed accumulated offsets.
-		uint_fast64_t* nextIndicesList = new uint_fast64_t[numberOfStates];
-		std::copy(stateIndications, stateIndications + numberOfStates, nextIndicesList);
+		std::vector<uint_fast64_t> nextIndices = stateIndications;
 
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
 			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
 				for (auto rowIt = transitionMatrix.beginConstColumnIterator(j); rowIt != transitionMatrix.endConstColumnIterator(j); ++rowIt) {
-					this->successorList[nextIndicesList[*rowIt]++] = i;
+					this->successorList[nextIndices[*rowIt]++] = i;
 				}
 			}
 		}
-
-		// Now we can dispose of the auxiliary array.
-		delete[] nextIndicesList;
 	}
-
-	/*! A list of successors for *all* states. */
-	uint_fast64_t* successorList;
-
-	/*!
-	 * A list of indices indicating at which position in the global array the
-	 * successors of a state can be found.
-	 */
-	uint_fast64_t* stateIndications;
 
 	/*!
 	 * Store the number of states to determine the highest index at which the
@@ -268,6 +286,15 @@ private:
 	 * index at which the predecessor_list may be accessed.
 	 */
 	uint_fast64_t numberOfTransitions;
+
+	/*! A list of successors for *all* states. */
+	std::vector<uint_fast64_t> successorList;
+
+	/*!
+	 * A list of indices indicating at which position in the global array the
+	 * successors of a state can be found.
+	 */
+	std::vector<uint_fast64_t> stateIndications;
 };
 
 } // namespace models

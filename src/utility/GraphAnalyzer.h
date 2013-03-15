@@ -417,25 +417,21 @@ public:
 	}
 
 	template <typename T>
-	static uint_fast64_t performSccDecomposition(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<std::vector<uint_fast64_t>*>* stronglyConnectedComponents) {
+	static void performSccDecomposition(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents, storm::models::GraphTransitions<T>& stronglyConnectedComponentsDependencyGraph) {
 		LOG4CPLUS_INFO(logger, "Computing SCC decomposition.");
 
 		// Get the forward transition relation from the model to ease the search.
 		storm::models::GraphTransitions<T> forwardTransitions(matrix, nondeterministicChoiceIndices, true);
 
-		std::cout << matrix.toString(&nondeterministicChoiceIndices) << std::endl;
-		std::cout << forwardTransitions.toString() << std::endl;
-
 		// Perform the actual SCC decomposition based on the graph-transitions of the system.
-		uint_fast64_t result = performSccDecomposition(nondeterministicChoiceIndices.size(), forwardTransitions, stronglyConnectedComponents);
+		performSccDecomposition(nondeterministicChoiceIndices.size(), forwardTransitions, stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
 
 		LOG4CPLUS_INFO(logger, "Done computing SCC decomposition.");
-		return result;
 	}
 
 private:
 	template <typename T>
-	static uint_fast64_t performSccDecomposition(uint_fast64_t numberOfStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>*>* stronglyConnectedComponents) {
+	static void performSccDecomposition(uint_fast64_t numberOfStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents, storm::models::GraphTransitions<T>& stronglyConnectedComponentsDependencyGraph) {
 		std::vector<uint_fast64_t> tarjanStack;
 		tarjanStack.reserve(numberOfStates);
 		storm::storage::BitVector tarjanStackStates(numberOfStates);
@@ -444,18 +440,20 @@ private:
 		std::vector<uint_fast64_t> lowlinks(numberOfStates);
 		storm::storage::BitVector visitedStates(numberOfStates);
 
+		std::map<uint_fast64_t, uint_fast64_t> stateToSccMap;
+
 		uint_fast64_t currentIndex = 0;
 		for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
 			if (!visitedStates.get(state)) {
-				performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, forwardTransitions, stronglyConnectedComponents);
+				performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, forwardTransitions, stronglyConnectedComponents, stateToSccMap);
 			}
 		}
 
-		return stronglyConnectedComponents->size();
+		stronglyConnectedComponentsDependencyGraph = storm::models::GraphTransitions<T>(forwardTransitions, stronglyConnectedComponents, stateToSccMap);
 	}
 
 	template <typename T>
-	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>*>* stronglyConnectedComponents) {
+	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t>& stateToSccMap) {
 		// Create the stacks needed for turning the recursive formulation of Tarjan's algorithm
 		// into an iterative version. In particular, we keep one stack for states and one stack
 		// for the iterators. The last one is not strictly needed, but reduces iteration work when
@@ -511,9 +509,7 @@ private:
 			// If the current state is the root of a SCC, we need to pop all states of the SCC from
 			// the algorithm's stack.
 			if (lowlinks[currentState] == stateIndices[currentState]) {
-				if (stronglyConnectedComponents != nullptr) {
-					stronglyConnectedComponents->push_back(new std::vector<uint_fast64_t>());
-				}
+				stronglyConnectedComponents.push_back(std::vector<uint_fast64_t>());
 
 				uint_fast64_t lastState = 0;
 				do {
@@ -522,10 +518,9 @@ private:
 					tarjanStack.pop_back();
 					tarjanStackStates.set(lastState, false);
 
-					if (stronglyConnectedComponents != nullptr) {
-						// Add the state to the current SCC.
-						stronglyConnectedComponents->back()->push_back(lastState);
-					}
+					// Add the state to the current SCC.
+					stronglyConnectedComponents.back().push_back(lastState);
+					stateToSccMap[lastState] = stronglyConnectedComponents.size() - 1;
 				} while (lastState != currentState);
 			}
 
