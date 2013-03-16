@@ -28,6 +28,7 @@
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/utility/Settings.h"
+#include "src/utility/ErrorHandling.h"
 #include "src/formula/Formulas.h"
 
 #include "log4cplus/logger.h"
@@ -458,6 +459,9 @@ void testChecking() {
  * Main entry point.
  */
 int main(const int argc, const char* argv[]) {
+	// Catch segfaults and display a backtrace.
+	installSignalHandler();
+
 	printHeader(argc, argv);
 
 	initializeLogger();
