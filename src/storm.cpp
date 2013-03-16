@@ -45,9 +45,10 @@ log4cplus::Logger logger;
  */
 void initializeLogger() {
 	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
-	logger.setLogLevel(log4cplus::WARN_LOG_LEVEL);
+	logger.setLogLevel(log4cplus::INFO_LOG_LEVEL);
 	log4cplus::SharedAppenderPtr consoleLogAppender(new log4cplus::ConsoleAppender());
 	consoleLogAppender->setName("mainConsoleAppender");
+	consoleLogAppender->setThreshold(log4cplus::WARN_LOG_LEVEL);
 	consoleLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %b:%L: %m%n")));
 	logger.addAppender(consoleLogAppender);
 }
@@ -113,12 +114,13 @@ bool parseOptions(const int argc, const char* argv[]) {
 	}
 	
 	if (s->isSet("verbose")) {
-		logger.setLogLevel(log4cplus::INFO_LOG_LEVEL);
+		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 		LOG4CPLUS_INFO(logger, "Enable verbose mode, log output gets printed to console.");
 	}
 	if (s->isSet("debug")) {
 		logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
-		LOG4CPLUS_INFO(logger, "Enable very verbose mode, log output gets printed to console.");
+		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL);
+		LOG4CPLUS_DEBUG(logger, "Enable very verbose mode, log output gets printed to console.");
 	}
 	if (s->isSet("logfile")) {
 		setUpFileLogging();
