@@ -424,9 +424,70 @@ public:
 		storm::models::GraphTransitions<T> forwardTransitions(matrix, nondeterministicChoiceIndices, true);
 
 		// Perform the actual SCC decomposition based on the graph-transitions of the system.
-		performSccDecomposition(nondeterministicChoiceIndices.size(), forwardTransitions, stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
+		performSccDecomposition(nondeterministicChoiceIndices.size() - 1, forwardTransitions, stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
 
 		LOG4CPLUS_INFO(logger, "Done computing SCC decomposition.");
+	}
+
+	template <typename T>
+	static void getTopologicalSort(storm::models::GraphTransitions<T> const& transitions, std::vector<uint_fast64_t>& topologicalSort) {
+		topologicalSort.reserve(transitions.getNumberOfStates());
+
+		std::vector<uint_fast64_t> recursionStack;
+		recursionStack.reserve(transitions.getNumberOfStates());
+
+		std::vector<typename storm::models::GraphTransitions<T>::stateSuccessorIterator> iteratorRecursionStack;
+		iteratorRecursionStack.reserve(transitions.getNumberOfStates());
+
+		storm::storage::BitVector visitedStates(transitions.getNumberOfStates());
+		for (uint_fast64_t state = 0; state < transitions.getNumberOfStates(); ++state) {
+			if (!visitedStates.get(state)) {
+				recursionStack.push_back(state);
+				iteratorRecursionStack.push_back(transitions.beginStateSuccessorsIterator(state));
+
+				recursionStepForward:
+				while (!recursionStack.empty()) {
+					uint_fast64_t currentState = recursionStack.back();
+					typename storm::models::GraphTransitions<T>::stateSuccessorIterator currentIt = iteratorRecursionStack.back();
+
+					visitedStates.set(currentState, true);
+
+					recursionStepBackward:
+					for (; currentIt != transitions.endStateSuccessorsIterator(currentState); ++currentIt) {
+						if (!visitedStates.get(*currentIt)) {
+							// Put unvisited successor on top of our recursion stack and remember that.
+							recursionStack.push_back(*currentIt);
+
+							// Save current iterator position so we can continue where we left off later.
+							iteratorRecursionStack.pop_back();
+							iteratorRecursionStack.push_back(currentIt + 1);
+
+							// Also, put initial value for iterator on corresponding recursion stack.
+							iteratorRecursionStack.push_back(transitions.beginStateSuccessorsIterator(*currentIt));
+
+							goto recursionStepForward;
+						}
+					}
+
+					topologicalSort.push_back(currentState);
+
+					// If we reach this point, we have completed the recursive descent for the current state.
+					// That is, we need to pop it from the recursion stacks.
+					recursionStack.pop_back();
+					iteratorRecursionStack.pop_back();
+
+					// If there is at least one state under the current one in our recursion stack, we need
+					// to restore the topmost state as the current state and jump to the part after the
+					// original recursive call.
+					if (recursionStack.size() > 0) {
+						currentState = recursionStack.back();
+						currentIt = iteratorRecursionStack.back();
+
+						goto recursionStepBackward;
+					}
+				}
+			}
+		}
 	}
 
 private:
@@ -482,24 +543,26 @@ private:
 			tarjanStackStates.set(currentState, true);
 
 			// Now, traverse all successors of the current state.
-			recursionStepBackward:
 			for(; currentIt != forwardTransitions.endStateSuccessorsIterator(currentState); ++currentIt) {
 				// If we have not visited the successor already, we need to perform the procedure
 				// recursively on the newly found state.
 				if (!visitedStates.get(*currentIt)) {
+					// Save current iterator position so we can continue where we left off later.
+					recursionIteratorStack.pop_back();
+					recursionIteratorStack.push_back(currentIt);
+
 					// Put unvisited successor on top of our recursion stack and remember that.
 					recursionStateStack.push_back(*currentIt);
 					statesInStack[*currentIt] = true;
-
-					// Save current iterator position so we can continue where we left off later.
-					recursionIteratorStack.pop_back();
-					recursionIteratorStack.push_back(currentIt + 1);
 
 					// Also, put initial value for iterator on corresponding recursion stack.
 					recursionIteratorStack.push_back(forwardTransitions.beginStateSuccessorsIterator(*currentIt));
 
 					// Perform the actual recursion step in an iterative way.
 					goto recursionStepForward;
+
+					recursionStepBackward:
+					lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[*currentIt]);
 				} else if (tarjanStackStates.get(*currentIt)) {
 					// Update the lowlink of the current state.
 					lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[*currentIt]);

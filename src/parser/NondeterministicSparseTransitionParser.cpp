@@ -337,7 +337,9 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 		buf = trimWhitespaces(buf);
 	}
 
-	this->rowMapping->at(maxnode+1) = curRow + 1;
+	for (int_fast64_t node = lastsource + 1; node <= maxnode + 1; node++) {
+		this->rowMapping->at(node) = curRow + 1;
+	}
 
 	if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 

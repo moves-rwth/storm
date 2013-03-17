@@ -834,13 +834,7 @@ public:
 		constRowsIterator rowsIt = this->constRowsIteratorBegin();
 		uint_fast64_t nextRow = 1;
 
-		std::cout << nondeterministicChoiceIndices << std::endl;
-		std::cout << rowCount << std::endl;
-
 		for (auto stateIt = states.cbegin(), stateIte = states.cend(); stateIt != stateIte; ++stateIt) {
-			std::cout << "stateIt " << *stateIt << std::endl;
-			std::cout << nondeterministicChoiceIndices[*stateIt] << std::endl;
-			std::cout << this->rowIndications[nondeterministicChoiceIndices[*stateIt]] << std::endl;
 			rowsIt.setOffset(this->rowIndications[nondeterministicChoiceIndices[*stateIt]]);
 			nextRow = nondeterministicChoiceIndices[*stateIt] + 1;
 			for (auto rowIt = nondeterministicChoiceIndices[*stateIt], rowIte = nondeterministicChoiceIndices[*stateIt + 1]; rowIt != rowIte; ++rowIt, ++nextRow) {

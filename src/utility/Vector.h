@@ -108,6 +108,21 @@ void reduceVectorMin(std::vector<T> const& source, std::vector<T>* target, std::
 }
 
 template<class T>
+void reduceVectorMin(std::vector<T> const& source, std::vector<T>* target, std::vector<uint_fast64_t> const& scc, std::vector<uint_fast64_t> const& filter) {
+	for (auto stateIt = scc.cbegin(); stateIt != scc.cend(); ++stateIt) {
+		(*target)[*stateIt] = source[filter[*stateIt]];
+
+		for (auto row = filter[*stateIt] + 1; row < filter[*stateIt + 1]; ++row) {
+			// We have to minimize the value, so only overwrite the current value if the
+			// value is actually lower.
+			if (source[row] < (*target)[*stateIt]) {
+				(*target)[*stateIt] = source[row];
+			}
+		}
+	}
+}
+
+template<class T>
 void reduceVectorMax(std::vector<T> const& source, std::vector<T>* target, std::vector<uint_fast64_t> const& filter) {
 	uint_fast64_t currentSourceRow = 0;
 	uint_fast64_t currentTargetRow = -1;
@@ -128,6 +143,21 @@ void reduceVectorMax(std::vector<T> const& source, std::vector<T>* target, std::
 }
 
 template<class T>
+void reduceVectorMax(std::vector<T> const& source, std::vector<T>* target, std::vector<uint_fast64_t> const& scc, std::vector<uint_fast64_t> const& filter) {
+	for (auto stateIt = scc.cbegin(); stateIt != scc.cend(); ++stateIt) {
+		(*target)[*stateIt] = source[filter[*stateIt]];
+
+		for (auto row = filter[*stateIt] + 1; row < filter[*stateIt + 1]; ++row) {
+			// We have to maximize the value, so only overwrite the current value if the
+			// value is actually lower.
+			if (source[row] > (*target)[*stateIt]) {
+				(*target)[*stateIt] = source[row];
+			}
+		}
+	}
+}
+
+template<class T>
 bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, T precision, bool relativeError) {
 	if (vectorLeft.size() != vectorRight.size()) {
 		LOG4CPLUS_ERROR(logger, "Lengths of vectors does not match and makes comparison impossible.");
@@ -139,6 +169,24 @@ bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const
 			if (std::abs(vectorLeft[i] - vectorRight[i])/vectorRight[i] > precision) return false;
 		} else {
 			if (std::abs(vectorLeft[i] - vectorRight[i]) > precision) return false;
+		}
+	}
+
+	return true;
+}
+
+template<class T>
+bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, std::vector<uint_fast64_t> const& scc, T precision, bool relativeError) {
+	if (vectorLeft.size() != vectorRight.size()) {
+		LOG4CPLUS_ERROR(logger, "Lengths of vectors does not match and makes comparison impossible.");
+		throw storm::exceptions::InvalidArgumentException() << "Length of vectors does not match and makes comparison impossible.";
+	}
+
+	for (uint_fast64_t state : scc) {
+		if (relativeError) {
+			if (std::abs(vectorLeft[state] - vectorRight[state])/vectorRight[state] > precision) return false;
+		} else {
+			if (std::abs(vectorLeft[state] - vectorRight[state]) > precision) return false;
 		}
 	}
 

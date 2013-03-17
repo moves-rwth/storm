@@ -67,47 +67,56 @@ private:
 		storm::models::GraphTransitions<Type> stronglyConnectedComponentsDependencyGraph;
 		storm::utility::GraphAnalyzer::performSccDecomposition(matrix, nondeterministicChoiceIndices, stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
 
+		std::vector<uint_fast64_t> topologicalSort;
+		storm::utility::GraphAnalyzer::getTopologicalSort(stronglyConnectedComponentsDependencyGraph, topologicalSort);
+
 		// Set up the environment for the power method.
 		std::vector<Type> multiplyResult(matrix.getRowCount());
 		std::vector<Type>* currentX = &x;
 		std::vector<Type>* newX = new std::vector<Type>(x.size());
 		std::vector<Type>* swap = nullptr;
-		uint_fast64_t iterations = 0;
-		bool converged = false;
+		uint_fast64_t currentMaxLocalIterations = 0;
+		uint_fast64_t localIterations = 0;
+		uint_fast64_t globalIterations = 0;
+		bool converged = true;
 
-		/*
-		for (auto sccIt = stronglyConnectedComponents.rbegin(), sccIte = stronglyConnectedComponents.rend(); sccIt != sccIte; ++sccIt) {
+		for (auto sccIndexIt = topologicalSort.begin(); sccIndexIt != topologicalSort.end() && converged; ++sccIndexIt) {
+			std::vector<uint_fast64_t> const& scc = stronglyConnectedComponents[*sccIndexIt];
+
+			localIterations = 0;
 			converged = false;
-
-			std::cout << "for scc! " << *sccIt << std::endl;
-			while (!converged && iterations < maxIterations) {
-				std::cout << "first line " << std::endl;
+			while (!converged && localIterations < maxIterations) {
 				// Compute x' = A*x + b.
-				matrix.multiplyWithVector(**sccIt, nondeterministicChoiceIndices, *currentX, multiplyResult);
-				std::cout << "after mult" << std::endl;
-				storm::utility::addVectors(**sccIt, nondeterministicChoiceIndices, multiplyResult, b);
-				std::cout << "after add " << std::endl;
+				matrix.multiplyWithVector(scc, nondeterministicChoiceIndices, *currentX, multiplyResult);
+				storm::utility::addVectors(scc, nondeterministicChoiceIndices, multiplyResult, b);
 
 				// Reduce the vector x' by applying min/max for all non-deterministic choices.
 				if (this->minimumOperatorStack.top()) {
-					storm::utility::reduceVectorMin(multiplyResult, newX, nondeterministicChoiceIndices);
+					storm::utility::reduceVectorMin(multiplyResult, newX, scc, nondeterministicChoiceIndices);
 				} else {
-					storm::utility::reduceVectorMax(multiplyResult, newX, nondeterministicChoiceIndices);
+					storm::utility::reduceVectorMax(multiplyResult, newX, scc, nondeterministicChoiceIndices);
 				}
 
-				std::cout << "comp" << std::endl;
 				// Determine whether the method converged.
+				// converged = storm::utility::equalModuloPrecision(*currentX, *newX, scc, precision, relative);
 				converged = storm::utility::equalModuloPrecision(*currentX, *newX, precision, relative);
 
 				// Update environment variables.
 				swap = currentX;
 				currentX = newX;
 				newX = swap;
-				++iterations;
+				++localIterations;
+				++globalIterations;
+			}
+
+			std::cout << "converged locally for scc of size " << scc.size() << std::endl;
+
+			if (localIterations > currentMaxLocalIterations) {
+				currentMaxLocalIterations = localIterations;
 			}
 		}
 
-		if (iterations % 2 == 1) {
+		if (globalIterations % 2 == 1) {
 			std::swap(x, *currentX);
 			delete currentX;
 		} else {
@@ -116,12 +125,10 @@ private:
 
 		// Check if the solver converged and issue a warning otherwise.
 		if (converged) {
-			LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+			LOG4CPLUS_INFO(logger, "Iterative solver converged after " << currentMaxLocalIterations << " iterations.");
 		} else {
 			LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
 		}
-
-		*/
 	}
 };
 
