@@ -830,21 +830,57 @@ public:
 		}
 	}
 
+	void multiplyWithVectorInPlace(std::vector<T>& vector) const {
+		typename std::vector<T>::iterator resultIt = vector.begin();
+		typename std::vector<T>::iterator resultIte = vector.end();
+		constRowsIterator rowIt = this->constRowsIteratorBegin();
+		uint_fast64_t nextRow = 1;
+
+		for (; resultIt != resultIte; ++resultIt, ++nextRow) {
+			*resultIt = multiplyRowWithVector(rowIt, this->rowIndications[nextRow], vector);
+		}
+	}
+
 	void multiplyWithVector(std::vector<uint_fast64_t> const& states, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<T>& vector, std::vector<T>& result) const {
 		constRowsIterator rowsIt = this->constRowsIteratorBegin();
 		uint_fast64_t nextRow = 1;
 
-		std::cout << nondeterministicChoiceIndices << std::endl;
-		std::cout << rowCount << std::endl;
-
 		for (auto stateIt = states.cbegin(), stateIte = states.cend(); stateIt != stateIte; ++stateIt) {
-			std::cout << "stateIt " << *stateIt << std::endl;
-			std::cout << nondeterministicChoiceIndices[*stateIt] << std::endl;
-			std::cout << this->rowIndications[nondeterministicChoiceIndices[*stateIt]] << std::endl;
 			rowsIt.setOffset(this->rowIndications[nondeterministicChoiceIndices[*stateIt]]);
 			nextRow = nondeterministicChoiceIndices[*stateIt] + 1;
 			for (auto rowIt = nondeterministicChoiceIndices[*stateIt], rowIte = nondeterministicChoiceIndices[*stateIt + 1]; rowIt != rowIte; ++rowIt, ++nextRow) {
 				result[rowIt] = multiplyRowWithVector(rowsIt, this->rowIndications[nextRow], vector);
+			}
+		}
+	}
+
+	void multiplyWithVectorInPlace(std::vector<uint_fast64_t> const& states, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<T>& vector) const {
+		constRowsIterator rowsIt = this->constRowsIteratorBegin();
+		uint_fast64_t nextRow = 1;
+
+		for (auto stateIt = states.cbegin(), stateIte = states.cend(); stateIt != stateIte; ++stateIt) {
+			rowsIt.setOffset(this->rowIndications[nondeterministicChoiceIndices[*stateIt]]);
+			nextRow = nondeterministicChoiceIndices[*stateIt] + 1;
+			for (auto rowIt = nondeterministicChoiceIndices[*stateIt], rowIte = nondeterministicChoiceIndices[*stateIt + 1]; rowIt != rowIte; ++rowIt, ++nextRow) {
+				vector[rowIt] = multiplyRowWithVector(rowsIt, this->rowIndications[nextRow], vector);
+			}
+		}
+	}
+
+	void multiplyAddAndReduceInPlace(std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<T>& vector, std::vector<T> const& summand, bool minimize) const {
+		constRowsIterator rowsIt = this->constRowsIteratorBegin();
+		uint_fast64_t nextRow = 1;
+
+		for (uint_fast64_t stateIt = 0, stateIte = nondeterministicChoiceIndices.size() - 1; stateIt < stateIte; ++stateIt) {
+			vector[stateIt] = multiplyRowWithVector(rowsIt, this->rowIndications[nextRow], vector) + summand[nondeterministicChoiceIndices[stateIt]];
+			++nextRow;
+			for (uint_fast64_t rowIt = nondeterministicChoiceIndices[stateIt] + 1, rowIte = nondeterministicChoiceIndices[stateIt + 1]; rowIt != rowIte; ++rowIt, ++nextRow) {
+				T value = multiplyRowWithVector(rowsIt, this->rowIndications[nextRow], vector) + summand[rowIt];
+				if (minimize && value < vector[stateIt]) {
+					vector[stateIt] = value;
+				} else if (!minimize && value > vector[stateIt]) {
+					vector[stateIt] = value;
+				}
 			}
 		}
 	}

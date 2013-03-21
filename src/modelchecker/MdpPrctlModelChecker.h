@@ -545,6 +545,7 @@ private:
 		while (!converged && iterations < maxIterations) {
 			// Compute x' = A*x + b.
 			matrix.multiplyWithVector(*currentX, multiplyResult);
+			// matrix.multiplyAddAndReduceInPlace(nondeterministicChoiceIndices, *currentX, b, this->minimumOperatorStack.top());
 
 			gmm::add(b, multiplyResult);
 
@@ -558,11 +559,15 @@ private:
 			// Determine whether the method converged.
 			converged = storm::utility::equalModuloPrecision(*currentX, *newX, precision, relative);
 
+
 			// Update environment variables.
 			swap = currentX;
 			currentX = newX;
 			newX = swap;
 			++iterations;
+
+			// *newX = *currentX,
+
 		}
 
 		if (iterations % 2 == 1) {

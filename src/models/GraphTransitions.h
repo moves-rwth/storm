@@ -99,13 +99,21 @@ public:
 		return result;
 	}
 
+	uint_fast64_t getNumberOfStates() const {
+		return numberOfStates;
+	}
+
+	uint_fast64_t getNumberOfTransitions() const {
+		return numberOfTransitions;
+	}
+
 	/*!
 	 * Returns an iterator to the successors of the given state.
 	 * @param state The state for which to get the successor iterator.
 	 * @return An iterator to the predecessors of the given states.
 	 */
 	stateSuccessorIterator beginStateSuccessorsIterator(uint_fast64_t state) const {
-		return &this->successorList[this->stateIndications[state]];
+		return &(this->successorList[0]) + this->stateIndications[state];
 	}
 
 	/*!
@@ -116,12 +124,7 @@ public:
 	 * the given state.
 	 */
 	stateSuccessorIterator endStateSuccessorsIterator(uint_fast64_t state) const {
-		std::cout << "size: " << this->stateIndications.size() << std::endl;
-		std::cout << "idx accessed " << state << std::endl;
-		std::cout << this->stateIndications[state + 1] << std::endl;
-		std::cout << "other size: " << this->successorList.size() << std::endl;
-		std::cout << this->successorList[this->stateIndications[state + 1]] << std::endl;
-		return &this->successorList[this->stateIndications[state + 1]];
+		return &(this->successorList[0]) + this->stateIndications[state + 1];
 	}
 
 	/*!
@@ -130,8 +133,11 @@ public:
 	 */
 	std::string toString() const {
 		std::stringstream stream;
-		stream << successorList << std::endl;
-		stream << stateIndications << std::endl;
+		for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+			for (auto succIt = this->beginStateSuccessorsIterator(state), succIte = this->endStateSuccessorsIterator(state); succIt != succIte; ++succIt) {
+				stream << state << " -> " << *succIt << std::endl;
+			}
+		}
 		return stream.str();
 	}
 
@@ -147,7 +153,7 @@ private:
 			// Now, we determine the SCCs which are reachable (in one step) from the current SCC.
 			std::set<uint_fast64_t> allTargetSccs;
 			for (auto state : scc) {
-				for (stateSuccessorIterator succIt = beginStateSuccessorsIterator(state), succIte = endStateSuccessorsIterator(state); succIt != succIte; ++succIt) {
+				for (stateSuccessorIterator succIt = transitions.beginStateSuccessorsIterator(state), succIte = transitions.endStateSuccessorsIterator(state); succIt != succIte; ++succIt) {
 					uint_fast64_t targetScc = stateToSccMap.find(*succIt)->second;
 
 					// We only need to consider transitions that are actually leaving the SCC.
@@ -166,8 +172,6 @@ private:
 		// Put the sentinel element at the end and initialize the number of transitions.
 		stateIndications[numberOfStates] = successorList.size();
 		numberOfTransitions = successorList.size();
-
-		std::cout << this->toString() << std::endl;
 	}
 
 	/*!
