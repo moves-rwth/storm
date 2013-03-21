@@ -48,14 +48,29 @@ public:
 	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
 
 	/*!
-	 * Constructor
+	 * Constructor for non-optimizing operator.
 	 *
 	 * @param comparisonOperator The relation for the bound.
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
 	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
-		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
+		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula),
+		  optimalityOperator(false), minimumOperator(false) {
+		// Intentionally left empty
+	}
+	
+	/*!
+	 * Constructor for optimizing operator.
+	 *
+	 * @param comparisonOperator The relation for the bound.
+	 * @param bound The bound for the probability
+	 * @param pathFormula The child node
+	 * @param minimumOperator Indicator, if operator should be minimum or maximum operator.
+	 */
+	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula),
+		  optimalityOperator(true), minimumOperator(minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -161,10 +176,36 @@ public:
         return checker.conforms(this->pathFormula);
     }
 
+	/*!
+	 * Retrieves whether the operator is to be interpreted as an optimizing (i.e. min/max) operator.
+	 * @returns True if the operator is an optimizing operator.
+	 */
+	bool isOptimalityOperator() const {
+		return optimalityOperator;
+	}
+
+	/*!
+	 * Retrieves whether the operator is a minimizing operator given that it is an optimality
+	 * operator.
+	 * @returns True if the operator is an optimizing operator and it is a minimizing operator and
+	 * false otherwise, i.e. if it is either not an optimizing operator or not a minimizing operator.
+	 */
+	bool isMinimumOperator() const {
+		return optimalityOperator && minimumOperator;
+	}
+
 private:
 	ComparisonType comparisonOperator;
 	T bound;
 	AbstractPathFormula<T>* pathFormula;
+
+	// A flag that indicates whether this operator is meant as an optimizing (i.e. min/max) operator
+	// over a nondeterministic model.
+	bool optimalityOperator;
+
+	// In the case this operator is an optimizing operator, this flag indicates whether it is
+	// looking for the minimum or the maximum value.
+	bool minimumOperator;
 };
 
 } //namespace formula
