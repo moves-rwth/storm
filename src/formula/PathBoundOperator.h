@@ -11,6 +11,9 @@
 #include "src/formula/AbstractStateFormula.h"
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
+
+#include "src/formula/OptimizingOperator.h"
+
 #include "src/modelchecker/ForwardDeclarations.h"
 #include "src/utility/ConstTemplates.h"
 
@@ -42,13 +45,13 @@ template <class T> class PathBoundOperator;
  * @see AbstractFormula
  */
 template<class T>
-class PathBoundOperator : public AbstractStateFormula<T> {
+class PathBoundOperator : public AbstractStateFormula<T>, public OptimizingOperator {
 
 public:
 	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
 
 	/*!
-	 * Constructor
+	 * Constructor for non-optimizing operator.
 	 *
 	 * @param comparisonOperator The relation for the bound.
 	 * @param bound The bound for the probability
@@ -56,6 +59,19 @@ public:
 	 */
 	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
+		// Intentionally left empty
+	}
+	
+	/*!
+	 * Constructor for optimizing operator.
+	 *
+	 * @param comparisonOperator The relation for the bound.
+	 * @param bound The bound for the probability
+	 * @param pathFormula The child node
+	 * @param minimumOperator Indicator, if operator should be minimum or maximum operator.
+	 */
+	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula), OptimizingOperator(minimumOperator) {
 		// Intentionally left empty
 	}
 

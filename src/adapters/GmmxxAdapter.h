@@ -22,7 +22,7 @@ namespace adapters {
 class GmmxxAdapter {
 public:
 	/*!
-	 * Converts a sparse matrix into the sparse matrix in the gmm++ format.
+	 * Converts a sparse matrix into a sparse matrix in the gmm++ format.
 	 * @return A pointer to a row-major sparse matrix in gmm++ format.
 	 */
 	template<class T>
@@ -43,6 +43,46 @@ public:
 		std::copy(matrix.valueStorage.begin(), matrix.valueStorage.end(), result->pr.begin());
 
 		LOG4CPLUS_DEBUG(logger, "Done converting matrix to gmm++ format.");
+
+		return result;
+	}
+
+	/*!
+	 * Converts a sparse matrix in the gmm++ format to Storm Sparse Matrix format.
+	 * @return A pointer to a row-major sparse matrix in our format.
+	 */
+	template<class T>
+	static storm::storage::SparseMatrix<T>* fromGmmxxSparseMatrix(gmm::csr_matrix<T> const& matrix) {
+		uint_fast64_t realNonZeros = gmm::nnz(matrix);
+		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros from gmm++ format into Storm.");
+
+		// Prepare the resulting matrix.
+		storm::storage::SparseMatrix<T>* result = new storm::storage::SparseMatrix<T>(matrix.nrows(), matrix.ncols());
+		
+		// Set internal NonZero Counter
+		result->nonZeroEntryCount = realNonZeros;
+		result->setState(result->Initialized);
+
+		if (!result->prepareInternalStorage(false)) {
+			LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage while converting GMM++ Matrix to Storm.");
+			delete result;
+			return nullptr;
+		} else {
+			
+			// Copy Row Indications
+			std::copy(matrix.jc.begin(), matrix.jc.end(), std::back_inserter(result->rowIndications));
+			// Copy Columns Indications
+			std::copy(matrix.ir.begin(), matrix.ir.end(), std::back_inserter(result->columnIndications));
+			// And do the same thing with the actual values.
+			std::copy(matrix.pr.begin(), matrix.pr.end(), std::back_inserter(result->valueStorage));
+
+			result->currentSize = realNonZeros;
+			result->lastRow = matrix.nrows() - 1;
+		}
+
+		result->finalize();
+
+		LOG4CPLUS_DEBUG(logger, "Done converting matrix to storm format.");
 
 		return result;
 	}

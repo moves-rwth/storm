@@ -11,6 +11,7 @@
 #include "src/formula/AbstractFormula.h"
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
+#include "src/formula/OptimizingOperator.h"
 
 #include "src/modelchecker/ForwardDeclarations.h"
 
@@ -69,7 +70,7 @@ class INoBoundOperatorModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class NoBoundOperator: public storm::formula::AbstractFormula<T> {
+class NoBoundOperator: public storm::formula::AbstractFormula<T>, public OptimizingOperator {
 public:
 	/*!
 	 * Empty constructor

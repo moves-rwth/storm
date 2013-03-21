@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstring>
 #include <string>
+#include <cerrno>
 
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -75,21 +76,21 @@ storm::parser::MappedFile::MappedFile(const char* filename) {
 #else
 	if (stat64(filename, &(this->st)) != 0) {
 #endif
-		LOG4CPLUS_ERROR(logger, "Error in stat(" << filename << ").");
-		throw exceptions::FileIoException("storm::parser::MappedFile Error in stat()");
+		LOG4CPLUS_ERROR(logger, "Error in stat(" << filename << "): " << std::strerror(errno));
+		throw exceptions::FileIoException() << "storm::parser::MappedFile Error in stat(): " << std::strerror(errno);
 	}
 	this->file = open(filename, O_RDONLY);
 
 	if (this->file < 0) {
-		LOG4CPLUS_ERROR(logger, "Error in open(" << filename << ").");
-		throw exceptions::FileIoException("storm::parser::MappedFile Error in open()");
+		LOG4CPLUS_ERROR(logger, "Error in open(" << filename << "): " << std::strerror(errno));
+		throw exceptions::FileIoException() << "storm::parser::MappedFile Error in open(): " << std::strerror(errno);
 	}
 
 	this->data = reinterpret_cast<char*>(mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0));
 	if (this->data == reinterpret_cast<char*>(-1)) {
 		close(this->file);
-		LOG4CPLUS_ERROR(logger, "Error in mmap(" << filename << ").");
-		throw exceptions::FileIoException("storm::parser::MappedFile Error in mmap()");
+		LOG4CPLUS_ERROR(logger, "Error in mmap(" << filename << "): " << std::strerror(errno));
+		throw exceptions::FileIoException() << "storm::parser::MappedFile Error in mmap(): " << std::strerror(errno);
 	}
 	this->dataend = this->data + this->st.st_size;
 #elif defined WINDOWS

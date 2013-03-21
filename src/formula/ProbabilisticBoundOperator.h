@@ -11,6 +11,7 @@
 #include "AbstractStateFormula.h"
 #include "AbstractPathFormula.h"
 #include "src/formula/PathBoundOperator.h"
+#include "src/formula/OptimizingOperator.h"
 #include "utility/ConstTemplates.h"
 
 namespace storm {
@@ -72,8 +73,14 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula) :
-				PathBoundOperator<T>(comparisonRelation, bound, pathFormula) {
+			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula)
+			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula) {
+		// Intentionally left empty
+	}
+
+	ProbabilisticBoundOperator(
+			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator){
 		// Intentionally left empty
 	}
 

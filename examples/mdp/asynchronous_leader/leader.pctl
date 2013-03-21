@@ -1,0 +1,8 @@
+Pmin=? [ F "elected" ]
+
+const int K = 25;
+Pmin=? [ F<=K "elected" ]
+Pmax=? [ F<=K "elected" ]
+
+Rmin=? [ F "elected" ]
+Rmax=? [ F "elected" ]

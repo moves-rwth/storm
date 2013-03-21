@@ -74,6 +74,12 @@ public:
 		// Intentionally left empty
 	}
 
+	RewardBoundOperator(
+			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator) {
+		// Intentionally left empty
+	}
+
 	/*!
 	 * @returns a string representation of the formula
 	 */

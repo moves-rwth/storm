@@ -28,6 +28,11 @@ template <class T>
 class JacobiDecomposition {
 
 public:
+	/*!
+	 *	Standard constructor
+	 * Initializes this object with the two given sparse matrices
+	 * Ownership of both matrices stay with THIS object.
+	 */
 	JacobiDecomposition(storm::storage::SparseMatrix<T> * const jacobiLuMatrix, storm::storage::SparseMatrix<T> * const jacobiDInvMatrix) : jacobiLuMatrix(jacobiLuMatrix), jacobiDInvMatrix(jacobiDInvMatrix) {
 	}
 

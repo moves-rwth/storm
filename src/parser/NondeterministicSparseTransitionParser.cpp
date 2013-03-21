@@ -49,30 +49,15 @@ namespace parser {
  *	@param maxnode Is set to highest id of all nodes.
  *	@return The number of non-zero elements.
  */
-uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode) {
+uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
+	bool isRewardFile = rewardMatrixInformation != nullptr;
+
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
-	buf = strchr(buf, '\n') + 1;  // skip format hint
-	if (strncmp(buf, "STATES ", 7) != 0) {
-		LOG4CPLUS_ERROR(logger, "Expected \"STATES\" but got \"" << std::string(buf, 0, 16) << "\".");
-		return 0;
+	if (!isRewardFile) {
+		buf = strchr(buf, '\n') + 1;  // skip format hint
 	}
-	buf += 7;  // skip "STATES "
-	if (strtol(buf, &buf, 10) == 0) return 0;
-	buf = trimWhitespaces(buf);
-	if (strncmp(buf, "TRANSITIONS ", 12) != 0) {
-		LOG4CPLUS_ERROR(logger, "Expected \"TRANSITIONS\" but got \"" << std::string(buf, 0, 16) << "\".");
-		return 0;
-	}
-	buf += 12;  // skip "TRANSITIONS "
-	/*
-	 *	Parse number of transitions.
-	 *	We will not actually use this value, but we will compare it to the
-	 *	number of transitions we count and issue a warning if this parsed
-	 *	value is wrong.
-	 */
-	uint_fast64_t parsed_nonzero = strtol(buf, &buf, 10);
 
 	/*
 	 *	Read all transitions.
@@ -97,16 +82,37 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 			maxnode = source;
 		}
 
-		// If we have skipped some states, we need to reserve the space for the self-loop insertion
-		// in the second pass.
-		if (source > lastsource + 1) {
-			nonzero += source - lastsource - 1;
-			choices += source - lastsource - 1;
-			parsed_nonzero += source - lastsource - 1;
-		} else if (source != lastsource || choice != lastchoice) {
-			// If we have switched the source state or the nondeterministic choice, we need to
-			// reserve one row more.
-			++choices;
+		if (isRewardFile) {
+			// If we have switched the source state, we possibly need to insert the rows of the last
+			// last source state.
+			if (source != lastsource && lastsource != -1) {
+				choices += lastchoice - ((*rewardMatrixInformation->nondeterministicChoiceIndices)[lastsource + 1] - (*rewardMatrixInformation->nondeterministicChoiceIndices)[lastsource] - 1);
+			}
+
+			// If we skipped some states, we need to reserve empty rows for all their nondeterministic
+			// choices.
+			for (int_fast64_t i = lastsource + 1; i < source; ++i) {
+				choices += ((*rewardMatrixInformation->nondeterministicChoiceIndices)[i + 1] - (*rewardMatrixInformation->nondeterministicChoiceIndices)[i]);
+			}
+
+			// If we advanced to the next state, but skipped some choices, we have to reserve rows
+			// for them
+			if (source != lastsource) {
+				choices += choice + 1;
+			} else if (choice != lastchoice) {
+				choices += choice - lastchoice;
+			}
+		} else {
+			// If we have skipped some states, we need to reserve the space for the self-loop insertion
+			// in the second pass.
+			if (source > lastsource + 1) {
+				nonzero += source - lastsource - 1;
+				choices += source - lastsource - 1;
+			} else if (source != lastsource || choice != lastchoice) {
+				// If we have switched the source state or the nondeterministic choice, we need to
+				// reserve one row more.
+				++choices;
+			}
 		}
 
 		// Read target and check if we encountered a state index that is bigger than all previously
@@ -147,12 +153,17 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
 		buf = trimWhitespaces(buf);
 	}
 
-	/*
-	 *	Check if the number of transitions given in the file is correct.
-	 */
-	if (nonzero != parsed_nonzero) {
-		LOG4CPLUS_WARN(logger, "File states to have " << parsed_nonzero << " transitions, but I counted " << nonzero << ". Maybe want to fix your file?");
+	if (isRewardFile) {
+		// If not all rows were filled for the last state, we need to insert them.
+		choices += lastchoice - ((*rewardMatrixInformation->nondeterministicChoiceIndices)[lastsource + 1] - (*rewardMatrixInformation->nondeterministicChoiceIndices)[lastsource] - 1);
+
+		// If we skipped some states, we need to reserve empty rows for all their nondeterministic
+		// choices.
+		for (uint_fast64_t i = lastsource + 1; i < rewardMatrixInformation->nondeterministicChoiceIndices->size() - 1; ++i) {
+			choices += ((*rewardMatrixInformation->nondeterministicChoiceIndices)[i + 1] - (*rewardMatrixInformation->nondeterministicChoiceIndices)[i]);
+		}
 	}
+
 	return nonzero;
 }
 
@@ -166,12 +177,14 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
  *	@return a pointer to the created sparse matrix.
  */
 
-NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(std::string const &filename)
+NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(std::string const &filename, RewardMatrixInformationStruct* rewardMatrixInformation)
 	: matrix(nullptr) {
 	/*
 	 *	Enforce locale where decimal point is '.'.
 	 */
 	setlocale(LC_NUMERIC, "C");
+
+	bool isRewardFile = rewardMatrixInformation != nullptr;
 
 	/*
 	 *	Open file.
@@ -184,7 +197,7 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	 */
 	int_fast64_t maxnode;
 	uint_fast64_t choices;
-	uint_fast64_t nonzero = this->firstPass(file.data, choices, maxnode);
+	uint_fast64_t nonzero = this->firstPass(file.data, choices, maxnode, rewardMatrixInformation);
 
 	/*
 	 *	If first pass returned zero, the file format was wrong.
@@ -201,14 +214,23 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	 */
 
 	/*
-	 *	Read file header, ignore values within.
+	 *	Skip file header.
 	 */
-	buf = strchr(buf, '\n') + 1;  // skip format hint
-	buf += 7;  // skip "STATES "
-	checked_strtol(buf, &buf);
-	buf = trimWhitespaces(buf);
-	buf += 12;  // skip "TRANSITIONS "
-	checked_strtol(buf, &buf);
+	if (!isRewardFile) {
+		buf = strchr(buf, '\n') + 1;  // skip format hint
+	}
+
+	if (isRewardFile) {
+		if (choices > rewardMatrixInformation->rowCount || (uint_fast64_t)(maxnode + 1) > rewardMatrixInformation->columnCount) {
+			LOG4CPLUS_ERROR(logger, "Reward matrix size exceeds transition matrix size.");
+			throw storm::exceptions::WrongFormatException() << "Reward matrix size exceeds transition matrix size.";
+		} else if (choices != rewardMatrixInformation->rowCount) {
+			LOG4CPLUS_ERROR(logger, "Reward matrix row count does not match transition matrix row count.");
+			throw storm::exceptions::WrongFormatException() << "Reward matrix row count does not match transition matrix row count.";
+		} else {
+			maxnode = rewardMatrixInformation->columnCount - 1;
+		}
+	}
 
 	/*
 	 *	Create and initialize matrix.
@@ -247,33 +269,54 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 		source = checked_strtol(buf, &buf);
 		choice = checked_strtol(buf, &buf);
 
-		// Increase line count if we have either finished reading the transitions of a certain state
-		// or we have finished reading one nondeterministic choice of a state.
-		if ((source != lastsource || choice != lastchoice)) {
-			++curRow;
-		}
-
-		/*
-		 *	Check if we have skipped any source node, i.e. if any node has no
-		 *	outgoing transitions. If so, insert a self-loop.
-		 *	Also add self-loops to rowMapping.
-		 */
-		for (int_fast64_t node = lastsource + 1; node < source; node++) {
-			hadDeadlocks = true;
-			if (fixDeadlocks) {
-				this->rowMapping->at(node) = curRow;
-				this->matrix->addNextValue(curRow, node, 1);
-				++curRow;
-				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
-			} else {
-				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
+		if (isRewardFile) {
+			// If we have switched the source state, we possibly need to insert the rows of the last
+			// last source state.
+			if (source != lastsource && lastsource != -1) {
+				curRow += lastchoice - ((*rewardMatrixInformation->nondeterministicChoiceIndices)[lastsource + 1] - (*rewardMatrixInformation->nondeterministicChoiceIndices)[lastsource] - 1);
 			}
-		}
-		if (source != lastsource) {
+
+			// If we skipped some states, we need to reserve empty rows for all their nondeterministic
+			// choices.
+			for (int_fast64_t i = lastsource + 1; i < source; ++i) {
+				curRow += ((*rewardMatrixInformation->nondeterministicChoiceIndices)[i + 1] - (*rewardMatrixInformation->nondeterministicChoiceIndices)[i]);
+			}
+
+			// If we advanced to the next state, but skipped some choices, we have to reserve rows
+			// for them
+			if (source != lastsource) {
+				curRow += choice + 1;
+			} else if (choice != lastchoice) {
+				curRow += choice - lastchoice;
+			}
+		} else {
+			// Increase line count if we have either finished reading the transitions of a certain state
+			// or we have finished reading one nondeterministic choice of a state.
+			if ((source != lastsource || choice != lastchoice)) {
+				++curRow;
+			}
 			/*
-			 *	Add this source to rowMapping, if this is the first choice we encounter for this state.
+			 *	Check if we have skipped any source node, i.e. if any node has no
+			 *	outgoing transitions. If so, insert a self-loop.
+			 *	Also add self-loops to rowMapping.
 			 */
-			this->rowMapping->at(source) = curRow;
+			for (int_fast64_t node = lastsource + 1; node < source; node++) {
+				hadDeadlocks = true;
+				if (fixDeadlocks) {
+					this->rowMapping->at(node) = curRow;
+					this->matrix->addNextValue(curRow, node, 1);
+					++curRow;
+					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+				} else {
+					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
+				}
+			}
+			if (source != lastsource) {
+				/*
+				 *	Add this source to rowMapping, if this is the first choice we encounter for this state.
+				 */
+				this->rowMapping->at(source) = curRow;
+			}
 		}
 
 		// Read target and value and write it to the matrix.
@@ -294,9 +337,11 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 		buf = trimWhitespaces(buf);
 	}
 
-	this->rowMapping->at(maxnode+1) = curRow + 1;
+	for (int_fast64_t node = lastsource + 1; node <= maxnode + 1; node++) {
+		this->rowMapping->at(node) = curRow + 1;
+	}
 
-	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+	if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 
 	/*
 	 * Finalize matrix.

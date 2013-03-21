@@ -32,9 +32,9 @@ public:
 		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to Eigen format.");
 
 		// Prepare the resulting matrix.
-		Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>* result = new Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>(matrix.rowCount, matrix.colCount);
+		Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>* result = new Eigen::SparseMatrix<T, Eigen::RowMajor, int_fast32_t>(static_cast<int>(matrix.rowCount), static_cast<int>(matrix.colCount));
 
-		result->resizeNonZeros(realNonZeros);
+		result->resizeNonZeros(static_cast<int>(realNonZeros));
 		//result->reserve(realNonZeros);
 
 		// Copy Row Indications
@@ -54,4 +54,4 @@ public:
 
 } //namespace storm
 
-#endif /* STORM_ADAPTERS_GMMXXADAPTER_H_ */
+#endif /* STORM_ADAPTERS_EIGENADAPTER_H_ */

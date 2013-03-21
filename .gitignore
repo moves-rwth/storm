@@ -1,8 +1,8 @@
 ##Third-Party libs
-resources/3rdparty/log4cplus-1.1.0/**
-resources/3rdparty/gtest-1.6.0/**
-resources/3rdparty/eigen/**
-resources/3rdparty/gmm-4.2/**
+resources/3rdparty/log4cplus-1.1.0/
+resources/3rdparty/gtest-1.6.0/
+resources/3rdparty/eigen/
+resources/3rdparty/gmm-4.2/
 #Visual Studio files
 *.[Oo]bj
 *.user
@@ -23,10 +23,12 @@ resources/3rdparty/gmm-4.2/**
 *.lib
 *.sbr
 *.sdf
+*.tlog
+*.lastbuildstate
+*.pdb
+*.idb
 *.opensdf
 *.unsuccessfulbuild
-# XCode directories and files
-storm/**
 ipch/
 obj/
 CMakeFiles/
