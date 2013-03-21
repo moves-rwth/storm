@@ -9,6 +9,7 @@
 #define STORM_PARSER_PRCTLFILEPARSER_H_
 
 #include "PrctlParser.h"
+#include "modelchecker/AbstractModelChecker.h"
 
 namespace storm {
 namespace parser {
@@ -20,7 +21,7 @@ namespace parser {
  * This class creates a PctlFormula object which can be accessed through the getFormula() method (of base
  * class PrctlParser). However, it will not delete this object.
  */
-class PrctlFileParser: public storm::parser::PrctlParser {
+class PrctlFileParser {
 public:
 	/*!
 	 * Reads the formula from the given file and parses it into a formula tree, consisting of
@@ -31,7 +32,7 @@ public:
 	 * @param filename The name of the file to parse
 	 * @throw wrongFormatException If the input could not be parsed successfully
 	 */
-	PrctlFileParser(std::string filename);
+	PrctlFileParser(std::string filename, storm::modelChecker::AbstractModelChecker<double>* modelChecker);
 
 	/*!
 	 * Destructor.

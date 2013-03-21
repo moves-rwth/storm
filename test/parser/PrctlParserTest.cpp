@@ -130,6 +130,7 @@ TEST(PrctlParserTest, parseComplexFormulaTest) {
 
 }
 
+
 TEST(PrctlParserTest, wrongProbabilisticFormulaTest) {
 	storm::parser::PrctlParser* prctlParser = nullptr;
 	ASSERT_THROW(
@@ -143,7 +144,7 @@ TEST(PrctlParserTest, wrongProbabilisticFormulaTest) {
 TEST(PrctlParserTest, wrongFormulaTest) {
 	storm::parser::PrctlParser* prctlParser = nullptr;
 	ASSERT_THROW(
-			prctlParser = new storm::parser::PrctlFileParser("& a"),
+			prctlParser = new storm::parser::PrctlFileParser("(a | b) & ü"),
 			storm::exceptions::WrongFormatException
 	);
 	delete prctlParser;

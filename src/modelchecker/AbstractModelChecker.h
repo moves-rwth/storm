@@ -112,6 +112,13 @@ public:
 	}
 
 	/*!
+	 * Checks the given state formula on the DTMC and prints the result (true/false) for all initial
+	 * states. (Abstract)
+	 * @param stateFormula The formula to be checked.
+	 */
+	virtual void check(const storm::formula::AbstractStateFormula<Type>& stateFormula) const = 0;
+
+	/*!
 	 * The check method for a state formula with a bound operator node as root in
 	 * its formula tree
 	 *

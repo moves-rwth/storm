@@ -7,10 +7,12 @@
 
 #include "PrctlFileParser.h"
 
+#define LINELENGTH 100
+
 namespace storm {
 namespace parser {
 
-PrctlFileParser::PrctlFileParser(std::string filename) {
+PrctlFileParser::PrctlFileParser(std::string filename, storm::modelChecker::AbstractModelChecker<double>* modelChecker) {
 	// Open file and initialize result.
 	std::ifstream inputFileStream(filename, std::ios::in);
 
@@ -18,8 +20,12 @@ PrctlFileParser::PrctlFileParser(std::string filename) {
 	// While this is usually not necessary, because there exist adapters that make an input stream
 	// iterable in both directions without storing it into a string, using the corresponding
 	// Boost classes gives an awful output under valgrind and is thus disabled for the time being.
-	std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
-	parse(fileContent);
+	while(!inputFileStream.eof()) {
+		char line[LINELENGTH];
+		inputFileStream.getline(line, LINELENGTH);
+
+	}
+
 }
 
 PrctlFileParser::~PrctlFileParser() {

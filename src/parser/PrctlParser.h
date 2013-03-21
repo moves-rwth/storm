@@ -39,33 +39,6 @@ class PrctlParser : Parser
 		{
 			return this->formula;
 		}
-	
-	protected:
-		/*!
-		 * Empty constructor.
-		 *
-		 * Some subclasses do not get a formula string as input (E.g. PrctlFileParser), hence they should not
-		 * call the usual constructor of this class.
-		 *
-		 * However, this constructor should never be called directly (only during construction of an object of
-		 * a subclass), as it will not parse anything (and formula will point to nullptr then); hence, it is
-		 * protected.
-		 */
-		PrctlParser() {
-			formula = nullptr;
-		}
-
-		/*!
-		 * Does the actual parsing.
-		 *
-		 * Is to be called once in a constructor, and never from any other location.
-		 * The function is not included in the constructor, as sub classes may use constructors
-		 * that calculate the string representation of the formula (e.g. read it from a file), hence they
-		 * cannot hand it over to a constructor of this class.
-		 *
-		 * @param formula The string representation of the formula to parse
-		 */
-		void parse(std::string formula);
 
 	private:
 		storm::formula::AbstractFormula<double>* formula;
