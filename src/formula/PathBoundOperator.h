@@ -11,6 +11,8 @@
 #include "src/formula/AbstractStateFormula.h"
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
+#include "src/formula/OptimizingOperator.h"
+
 #include "src/modelchecker/ForwardDeclarations.h"
 #include "src/utility/ConstTemplates.h"
 
@@ -42,7 +44,7 @@ template <class T> class PathBoundOperator;
  * @see AbstractFormula
  */
 template<class T>
-class PathBoundOperator : public AbstractStateFormula<T> {
+class PathBoundOperator : public AbstractStateFormula<T>, public OptimizingOperator {
 
 public:
 	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
@@ -55,8 +57,7 @@ public:
 	 * @param pathFormula The child node
 	 */
 	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
-		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula),
-		  optimalityOperator(false), minimumOperator(false) {
+		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
 	
@@ -69,8 +70,7 @@ public:
 	 * @param minimumOperator Indicator, if operator should be minimum or maximum operator.
 	 */
 	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
-		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula),
-		  optimalityOperator(true), minimumOperator(minimumOperator) {
+		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula), OptimizingOperator(minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -176,36 +176,10 @@ public:
         return checker.conforms(this->pathFormula);
     }
 
-	/*!
-	 * Retrieves whether the operator is to be interpreted as an optimizing (i.e. min/max) operator.
-	 * @returns True if the operator is an optimizing operator.
-	 */
-	bool isOptimalityOperator() const {
-		return optimalityOperator;
-	}
-
-	/*!
-	 * Retrieves whether the operator is a minimizing operator given that it is an optimality
-	 * operator.
-	 * @returns True if the operator is an optimizing operator and it is a minimizing operator and
-	 * false otherwise, i.e. if it is either not an optimizing operator or not a minimizing operator.
-	 */
-	bool isMinimumOperator() const {
-		return optimalityOperator && minimumOperator;
-	}
-
 private:
 	ComparisonType comparisonOperator;
 	T bound;
 	AbstractPathFormula<T>* pathFormula;
-
-	// A flag that indicates whether this operator is meant as an optimizing (i.e. min/max) operator
-	// over a nondeterministic model.
-	bool optimalityOperator;
-
-	// In the case this operator is an optimizing operator, this flag indicates whether it is
-	// looking for the minimum or the maximum value.
-	bool minimumOperator;
 };
 
 } //namespace formula

@@ -11,6 +11,7 @@
 #include "src/formula/AbstractFormula.h"
 #include "src/formula/AbstractPathFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
+#include "src/formula/OptimizingOperator.h"
 
 #include "src/modelchecker/ForwardDeclarations.h"
 
@@ -69,12 +70,12 @@ class INoBoundOperatorModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class NoBoundOperator: public storm::formula::AbstractFormula<T> {
+class NoBoundOperator: public storm::formula::AbstractFormula<T>, public OptimizingOperator {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	NoBoundOperator() : optimalityOperator(false), minimumOperator(false) {
+	NoBoundOperator() {
 		this->pathFormula = nullptr;
 	}
 
@@ -83,7 +84,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	NoBoundOperator(AbstractPathFormula<T>* pathFormula) : optimalityOperator(false), minimumOperator(false) {
+	NoBoundOperator(AbstractPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -95,7 +96,7 @@ public:
 	 * maximizing operator.
 	 */
 	NoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator)
-		: optimalityOperator(true), minimumOperator(minimumOperator) {
+		: OptimizingOperator(minimumOperator) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -154,34 +155,8 @@ public:
 		return checker.conforms(this->pathFormula);
 	}
 
-	/*!
-	 * Retrieves whether the operator is to be interpreted as an optimizing (i.e. min/max) operator.
-	 * @returns True if the operator is an optimizing operator.
-	 */
-	bool isOptimalityOperator() const {
-		return optimalityOperator;
-	}
-
-	/*!
-	 * Retrieves whether the operator is a minimizing operator given that it is an optimality
-	 * operator.
-	 * @returns True if the operator is an optimizing operator and it is a minimizing operator and
-	 * false otherwise, i.e. if it is either not an optimizing operator or not a minimizing operator.
-	 */
-	bool isMinimumOperator() const {
-		return optimalityOperator && minimumOperator;
-	}
-
 private:
 	AbstractPathFormula<T>* pathFormula;
-
-	// A flag that indicates whether this operator is meant as an optimizing (i.e. min/max) operator
-	// over a nondeterministic model.
-	bool optimalityOperator;
-
-	// In the case this operator is an optimizing operator, this flag indicates whether it is
-	// looking for the minimum or the maximum value.
-	bool minimumOperator;
 };
 
 } /* namespace formula */
