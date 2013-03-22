@@ -238,7 +238,7 @@ private:
 
 
 		LOG4CPLUS_INFO(logger, "Starting iterative Jacobi Solver.");
-		
+
 		// x_(k + 1) = D^-1 * (b  - R * x_k)
 		// In x we keep a copy of the result for swapping in the loop (e.g. less copy-back)
 		std::vector<Type>* xNext = new std::vector<Type>(x.size());
@@ -256,7 +256,7 @@ private:
 			gmm::add(b, gmm::scaled(*xNext, -1.0), *xNext);
 			// D^-1 * (b - R * x_k) -> xNext
 			gmm::mult(*gmmxxDiagonalInverted, *xNext, *xNext);
-			
+
 			// swap xNext with xCurrent so that the next iteration can use xCurrent again without having to copy the vector
 			std::vector<Type> *const swap = xNext;
 			xNext = xCurrent;

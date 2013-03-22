@@ -25,12 +25,12 @@
 extern log4cplus::Logger logger;
 
 // Forward declaration for adapter classes.
-namespace storm { 
-	namespace adapters{ 
-		class GmmxxAdapter; 
-		class EigenAdapter; 
-		class StormAdapter;
-	} 
+namespace storm {
+	namespace adapters {
+		class GmmxxAdapter;
+		class EigenAdapter;
+		class StormAdapter
+	}
 }
 
 namespace storm {

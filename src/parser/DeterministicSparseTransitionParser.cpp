@@ -55,68 +55,68 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 		buf = strchr(buf, '\n') + 1;  // skip format hint
 	}
 
-    /*
-     * Check all transitions for non-zero diagonal entries and deadlock states.
-     */
-    int_fast64_t lastRow = -1;
-    uint_fast64_t row, col;
+	/*
+	 * Check all transitions for non-zero diagonal entries and deadlock states.
+	 */
+	int_fast64_t lastRow = -1;
+	int_fast64_t row, col;
 	uint_fast64_t readTransitionCount = 0;
-    bool rowHadDiagonalEntry = false;
-    double val;
-    maxnode = 0;
-    while (buf[0] != '\0') {
-            /*
-             *      Read row and column.
-             */
-            row = checked_strtol(buf, &buf);
-            col = checked_strtol(buf, &buf);
+	bool rowHadDiagonalEntry = false;
+	double val;
+	maxnode = 0;
+	while (buf[0] != '\0') {
+		/*
+		 *      Read row and column.
+		 */
+		row = checked_strtol(buf, &buf);
+		col = checked_strtol(buf, &buf);
 
-            if (!isRewardMatrix) {
-				if (lastRow != (int_fast64_t)row) {
-					if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
-						++nonZeroEntryCount;
-						rowHadDiagonalEntry = true;
-					}
-					for (uint_fast64_t skippedRow = (uint_fast64_t)(lastRow + 1); skippedRow < row; ++skippedRow) {
-						++nonZeroEntryCount;
-					}
-					lastRow = row;
-					rowHadDiagonalEntry = false;
+		if (!isRewardMatrix) {
+			if (lastRow != (int_fast64_t)row) {
+				if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
+					++nonZeroEntryCount;
+					rowHadDiagonalEntry = true;
 				}
-
-				if (col == row) {
-					rowHadDiagonalEntry = true;
-				} else if (col > row && !rowHadDiagonalEntry) {
-					rowHadDiagonalEntry = true;
+				for (uint_fast64_t skippedRow = (uint_fast64_t)(lastRow + 1); skippedRow < row; ++skippedRow) {
 					++nonZeroEntryCount;
 				}
-            }
+				lastRow = row;
+				rowHadDiagonalEntry = false;
+			}
 
-            /*
-             *      Check if one is larger than the current maximum id.
-             */
-            if (row > maxnode) maxnode = row;
-            if (col > maxnode) maxnode = col;
+			if (col == row) {
+				rowHadDiagonalEntry = true;
+			} else if (col > row && !rowHadDiagonalEntry) {
+				rowHadDiagonalEntry = true;
+				++nonZeroEntryCount;
+			}
+		}
 
-            /*
-             *      Read probability of this transition.
-             *      Check, if the value is a probability, i.e. if it is between 0 and 1.
-             */
-            val = checked_strtod(buf, &buf);
-            if ((val < 0.0) || (val > 1.0)) {
-                    LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << val << "\".");
-                    return 0;
-            }
-			++nonZeroEntryCount;
-			++readTransitionCount;
-            buf = trimWhitespaces(buf);
-    }
+		/*
+		 *      Check if one is larger than the current maximum id.
+		 */
+		if (row > maxnode) maxnode = row;
+		if (col > maxnode) maxnode = col;
 
-    if (!rowHadDiagonalEntry && !isRewardMatrix) {
-    	++nonZeroEntryCount;
-    }
+		/*
+		 *      Read probability of this transition.
+		 *      Check, if the value is a probability, i.e. if it is between 0 and 1.
+		 */
+		val = checked_strtod(buf, &buf);
+		if ((val < 0.0) || (val > 1.0)) {
+			LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << val << "\".");
+			return 0;
+		}
+		++nonZeroEntryCount;
+		++readTransitionCount;
+		buf = trimWhitespaces(buf);
+	}
 
-    return nonZeroEntryCount;
+	if (!rowHadDiagonalEntry && !isRewardMatrix) {
+	++nonZeroEntryCount;
+	}
+
+	return nonZeroEntryCount;
 }
 
 

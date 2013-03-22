@@ -47,7 +47,7 @@ NondeterministicModelParser::NondeterministicModelParser(std::string const & tra
 	this->probabilityMatrix = tp.getMatrix();
 	this->stateLabeling = lp.getLabeling();
 	this->rowMapping = tp.getRowMapping();
-	
+
 	this->mdp = nullptr;
 	this->ctmdp = nullptr;
 }

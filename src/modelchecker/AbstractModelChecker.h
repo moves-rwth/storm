@@ -8,9 +8,11 @@
 #ifndef STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
 #define STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
 
-namespace storm { namespace modelChecker {
+namespace storm {
+namespace modelChecker {
 template <class Type> class AbstractModelChecker;
-}}
+}
+}
 
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/formula/Formulas.h"
@@ -49,17 +51,17 @@ class AbstractModelChecker :
 	public virtual storm::formula::IReachabilityRewardModelChecker<Type>,
 	public virtual storm::formula::ICumulativeRewardModelChecker<Type>,
 	public virtual storm::formula::IInstantaneousRewardModelChecker<Type> {
-	
+
 public:
 	explicit AbstractModelChecker(storm::models::AbstractModel<Type>& model)
 		: model(model) {
 		// Nothing to do here...
 	}
-	
+
 	explicit AbstractModelChecker(AbstractModelChecker<Type>* modelChecker)
 		: model(modelChecker->model) {
 	}
-	
+
 	template <template <class T> class Target>
 	const Target<Type>* as() const {
 		try {
@@ -243,11 +245,11 @@ public:
 		delete quantitativeResult;
 		return result;
 	}
-	
+
 	void setModel(storm::models::AbstractModel<Type>& model) {
 		this->model = model;
 	}
-	
+
 	template <class Model>
 	Model& getModel() const {
 		return *dynamic_cast<Model*>(&this->model);

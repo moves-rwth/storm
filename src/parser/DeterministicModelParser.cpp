@@ -31,12 +31,12 @@ DeterministicModelParser::DeterministicModelParser(std::string const & transitio
 		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	storm::parser::DeterministicSparseTransitionParser tp(transitionSystemFile);
 	this->transitionSystem = tp.getMatrix();
-	
+
 	uint_fast64_t stateCount = this->transitionSystem->getRowCount();
 
 	storm::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
 	this->labeling = lp.getLabeling();
-	
+
 	this->stateRewards = nullptr;
 	this->transitionRewards = nullptr;
 

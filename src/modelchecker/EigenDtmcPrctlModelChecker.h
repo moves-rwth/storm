@@ -123,7 +123,7 @@ private:
 			LOG4CPLUS_ERROR(logger, "Solving of Submatrix failed: InvalidInput");
 		} else if(solver.info() == Eigen::ComputationInfo::NoConvergence) {
 			// NoConvergence
- 			throw storm::exceptions::NoConvergenceException() << "Failed to converge within " << solver.iterations() << " out of a maximum of " << solver.maxIterations() << " iterations.";
+			throw storm::exceptions::NoConvergenceException() << "Failed to converge within " << solver.iterations() << " out of a maximum of " << solver.maxIterations() << " iterations.";
 		} else if(solver.info() == Eigen::ComputationInfo::NumericalIssue) {
 			// NumericalIssue
 			LOG4CPLUS_ERROR(logger, "Solving of Submatrix failed: NumericalIssue");

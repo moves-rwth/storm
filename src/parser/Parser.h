@@ -31,7 +31,7 @@ namespace storm {
  *	methods for efficient file access (see MappedFile).
  */
 namespace parser {
-	
+
 	struct RewardMatrixInformationStruct {
 		RewardMatrixInformationStruct() : rowCount(0), columnCount(0), nondeterministicChoiceIndices(nullptr) {
 			// Intentionally left empty.
@@ -61,7 +61,7 @@ namespace parser {
 #if !defined LINUX && !defined MACOSX && !defined WINDOWS
 	#error Platform not supported
 #endif
-	 
+
 	class MappedFile {
 		private:
 #if defined LINUX || defined MACOSX
@@ -73,7 +73,7 @@ namespace parser {
 			HANDLE file;
 			HANDLE mapping;
 #endif
-			
+
 #if defined LINUX
 			/*!
 			 *	@brief stat information about the file.
@@ -90,7 +90,7 @@ namespace parser {
 			 */
 			struct __stat64 st;
 #endif
-			
+
 		public:
 			/*!
 			 *	@brief pointer to actual file content.
@@ -112,7 +112,7 @@ namespace parser {
 		 */
 		~MappedFile();
 	};
-	
+
 	class Parser {
 		protected:
 			/*!

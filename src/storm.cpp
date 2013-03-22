@@ -103,7 +103,7 @@ bool parseOptions(const int argc, const char* argv[]) {
 		std::cout << std::endl << storm::settings::help;
 		return false;
 	}
-	
+
 	if (s->isSet("help")) {
 		std::cout << storm::settings::help;
 		return false;
@@ -112,7 +112,7 @@ bool parseOptions(const int argc, const char* argv[]) {
 		storm::parser::PrctlParser parser(s->getString("test-prctl").c_str());
 		return false;
 	}
-	
+
 	if (s->isSet("verbose")) {
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 		LOG4CPLUS_INFO(logger, "Enable verbose mode, log output gets printed to console.");

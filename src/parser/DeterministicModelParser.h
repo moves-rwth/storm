@@ -52,7 +52,7 @@ class DeterministicModelParser: public storm::parser::Parser {
 		std::shared_ptr<storm::models::AtomicPropositionsLabeling> labeling;
 		std::shared_ptr<std::vector<double>> stateRewards;
 		std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewards;
-	
+
 		std::shared_ptr<storm::models::Dtmc<double>> dtmc;
 		std::shared_ptr<storm::models::Ctmc<double>> ctmc;
 };

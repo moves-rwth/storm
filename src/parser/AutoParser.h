@@ -79,8 +79,11 @@ class AutoParser : Parser {
 		 *	@brief 	Returns the type of model that was parsed.
 		 */
 		storm::models::ModelType getType() {
-			if (this->model) return this->model->getType();
-			else return storm::models::Unknown;
+			if (this->model) {
+				return this->model->getType();
+			} else {
+				return storm::models::Unknown;
+			}
 		}
 		
 		/*!
@@ -90,7 +93,7 @@ class AutoParser : Parser {
 		std::shared_ptr<Model> getModel() {
 			return this->model->template as<Model>();
 		}
-		
+
 	private:
 		
 		/*!
