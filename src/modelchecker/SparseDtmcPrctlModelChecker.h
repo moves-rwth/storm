@@ -1,102 +1,84 @@
 /*
- * DtmcPrctlModelChecker.h
+ * SparseDtmcPrctlModelChecker.h
  *
  *  Created on: 22.10.2012
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
-#define STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_SPARSEDTMCPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_SPARSEDTMCPRCTLMODELCHECKER_H_
+
+#include "src/modelchecker/AbstractModelChecker.h"
+#include "src/models/Dtmc.h"
+#include "src/storage/SparseMatrix.h"
+#include "src/utility/Vector.h"
+#include "src/utility/GraphAnalyzer.h"
 
 #include <vector>
 
-#include "src/formula/Formulas.h"
-#include "src/utility/Vector.h"
-#include "src/storage/SparseMatrix.h"
-
-#include "src/models/Dtmc.h"
-#include "src/storage/BitVector.h"
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/utility/Vector.h"
-#include "src/utility/GraphAnalyzer.h"
-#include "src/modelchecker/AbstractModelChecker.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
 namespace storm {
-
 namespace modelChecker {
 
 /*!
  * @brief
- * Interface for model checker classes.
- *
- * This class provides basic functions that are the same for all subclasses, but mainly only declares
- * abstract methods that are to be implemented in concrete instances.
- *
- * @attention This class is abstract.
+ * Interface for all model checkers that can verify PRCTL formulae over DTMCs represented as a sparse matrix.
  */
 template<class Type>
-class DtmcPrctlModelChecker : public AbstractModelChecker<Type> {
+class SparseDtmcPrctlModelChecker : public AbstractModelChecker<Type> {
 
 public:
 	/*!
-	 * Constructor
+	 * Constructs a SparseDtmcPrctlModelChecker with the given model.
 	 *
-	 * @param model The dtmc model which is checked.
+	 * @param model The DTMC to be checked.
 	 */
-	explicit DtmcPrctlModelChecker(storm::models::Dtmc<Type>& model) : AbstractModelChecker<Type>(model) {
+	explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model) : AbstractModelChecker<Type>(model) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Copy constructor
-	 *
-	 * @param modelChecker The model checker that is copied.
+	 * Copy constructs an SparseDtmcPrctlModelChecker from the given model checker. In particular, this means that the newly
+	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	explicit DtmcPrctlModelChecker(const storm::modelChecker::DtmcPrctlModelChecker<Type>* modelChecker) : AbstractModelChecker<Type>(modelChecker) {
+	explicit SparseDtmcPrctlModelChecker(storm::modelChecker::SparseDtmcPrctlModelChecker<Type> const& modelChecker) : AbstractModelChecker<Type>(modelChecker) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Destructor
+	 * Returns a constant reference to the DTMC associated with this model checker.
+	 * @returns A constant reference to the DTMC associated with this model checker.
 	 */
-	virtual ~DtmcPrctlModelChecker() {
-		// Intentionally left empty.
-	}
-
-	/*!
-	 * @returns A reference to the dtmc of the model checker.
-	 */
-	storm::models::Dtmc<Type>& getModel() const {
+	storm::models::Dtmc<Type> const& getModel() const {
 		return AbstractModelChecker<Type>::template getModel<storm::models::Dtmc<Type>>();
 	}
 
 	/*!
-	 * The check method for a state formula with a probabilistic operator node without bounds as root
-	 * in its formula tree
+	 * Checks the given formula that is a P/R operator without a bound.
 	 *
-	 * @param formula The state formula to check
-	 * @returns The set of states satisfying the formula, represented by a bit vector
+	 * @param formula The formula to check.
+	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	std::vector<Type>* checkNoBoundOperator(const storm::formula::NoBoundOperator<Type>& formula) const {
+	std::vector<Type>* checkNoBoundOperator(storm::formula::NoBoundOperator<Type> const& formula) const {
 		// Check if the operator was an optimality operator and report a warning in that case.
 		if (formula.isOptimalityOperator()) {
-			LOG4CPLUS_WARN(logger, "Formula contains min/max operator which is not meaningful over deterministic models.");
+			LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
 		}
 		return formula.getPathFormula().check(*this, false);
 	}
 
 	/*!
-	 * The check method for a path formula with a Bounded Until operator node as root in its formula tree
+	 * Checks the given formula that is a bounded-until formula.
 	 *
-	 * @param formula The Bounded Until path formula to check
-	 * @returns for each state the probability that the path formula holds.
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkBoundedUntil(const storm::formula::BoundedUntil<Type>& formula, bool qualitative) const {
-		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
+	virtual std::vector<Type>* checkBoundedUntil(storm::formula::BoundedUntil<Type> const& formula, bool qualitative) const {
+		// First, we need to compute the states that satisfy the sub-formulas of the bounded until-formula.
 		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
 		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
 
@@ -122,12 +104,17 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Next operator node as root in its formula tree
+	 * Checks the given formula that is a next formula.
 	 *
-	 * @param formula The Next path formula to check
-	 * @returns for each state the probability that the path formula holds.
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkNext(const storm::formula::Next<Type>& formula, bool qualitative) const {
+	virtual std::vector<Type>* checkNext(storm::formula::Next<Type> const& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the child formula of the next-formula.
 		storm::storage::BitVector* nextStates = formula.getChild().check(*this);
 
@@ -146,38 +133,52 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Bounded Eventually operator node as root in its
-	 * formula tree
+	 * Checks the given formula that is a bounded-eventually formula.
 	 *
-	 * @param formula The Bounded Eventually path formula to check
-	 * @returns for each state the probability that the path formula holds
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkBoundedEventually(const storm::formula::BoundedEventually<Type>& formula, bool qualitative) const {
+	virtual std::vector<Type>* checkBoundedEventually(storm::formula::BoundedEventually<Type> const& formula, bool qualitative) const {
 		// Create equivalent temporary bounded until formula and check it.
 		storm::formula::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::formula::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
 		return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
 	}
 
 	/*!
-	 * The check method for a path formula with an Eventually operator node as root in its formula tree
+	 * Checks the given formula that is an eventually formula.
 	 *
-	 * @param formula The Eventually path formula to check
-	 * @returns for each state the probability that the path formula holds
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkEventually(const storm::formula::Eventually<Type>& formula, bool qualitative) const {
+	virtual std::vector<Type>* checkEventually(storm::formula::Eventually<Type> const& formula, bool qualitative) const {
 		// Create equivalent temporary until formula and check it.
 		storm::formula::Until<Type> temporaryUntilFormula(new storm::formula::Ap<Type>("true"), formula.getChild().clone());
 		return this->checkUntil(temporaryUntilFormula, qualitative);
 	}
 
 	/*!
-	 * The check method for a path formula with a Globally operator node as root in its formula tree
+	 * Checks the given formula that is a globally formula.
 	 *
-	 * @param formula The Globally path formula to check
-	 * @returns for each state the probability that the path formula holds
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkGlobally(const storm::formula::Globally<Type>& formula, bool qualitative) const {
-		// Create "equivalent" temporary eventually formula and check it.
+	virtual std::vector<Type>* checkGlobally(storm::formula::Globally<Type> const& formula, bool qualitative) const {
+		// Create "equivalent" (equivalent up to negation) temporary eventually formula and check it.
 		storm::formula::Eventually<Type> temporaryEventuallyFormula(new storm::formula::Not<Type>(formula.getChild().clone()));
 		std::vector<Type>* result = this->checkEventually(temporaryEventuallyFormula, qualitative);
 
@@ -187,12 +188,17 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with an Until operator node as root in its formula tree
+	 * Check the given formula that is an until formula.
 	 *
-	 * @param formula The Until path formula to check
-	 * @returns for each state the probability that the path formula holds.
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkUntil(const storm::formula::Until<Type>& formula, bool qualitative) const {
+	virtual std::vector<Type>* checkUntil(storm::formula::Until<Type> const& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
 		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
 		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
@@ -256,13 +262,17 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with an Instantaneous Reward operator node as root in its
-	 * formula tree
+	 * Checks the given formula that is an instantaneous reward formula.
 	 *
-	 * @param formula The Instantaneous Reward formula to check
-	 * @returns for each state the reward that the instantaneous reward yields
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bound 0. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bound 0.
+	 * @returns The reward values for the given formula for every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type>* checkInstantaneousReward(const storm::formula::InstantaneousReward<Type>& formula, bool qualitative) const {
+	virtual std::vector<Type>* checkInstantaneousReward(storm::formula::InstantaneousReward<Type> const& formula, bool qualitative) const {
 		// Only compute the result if the model has a state-based reward model.
 		if (!this->getModel().hasStateRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing (state-based) reward model for formula.");
@@ -280,13 +290,17 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Cumulative Reward operator node as root in its
-	 * formula tree
+	 * Check the given formula that is a cumulative reward formula.
 	 *
-	 * @param formula The Cumulative Reward formula to check
-	 * @returns for each state the reward that the cumulative reward yields
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bound 0. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bound 0.
+	 * @returns The reward values for the given formula for every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type>* checkCumulativeReward(const storm::formula::CumulativeReward<Type>& formula, bool qualitative) const {
+	virtual std::vector<Type>* checkCumulativeReward(storm::formula::CumulativeReward<Type> const& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
@@ -304,8 +318,15 @@ public:
 			totalRewardVector = new std::vector<Type>(*this->getModel().getStateRewardVector());
 		}
 
-		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
+		// Initialize result to either the state rewards of the model or the null vector.
+		std::vector<Type>* result = nullptr;
+		if (this->getModel().hasStateRewards()) {
+			result = new std::vector<Type>(*this->getModel().getStateRewardVector());
+		} else {
+			result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		}
 
+		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
 		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, totalRewardVector, formula.getBound());
 
 		// Delete temporary variables and return result.
@@ -314,13 +335,17 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Reachability Reward operator node as root in its
-	 * formula tree
+	 * Checks the given formula that is a reachability reward formula.
 	 *
-	 * @param formula The Reachbility Reward formula to check
-	 * @returns for each state the reward that the reachability reward yields
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bound 0. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bound 0.
+	 * @returns The reward values for the given formula for every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula, bool qualitative) const {
+	virtual std::vector<Type>* checkReachabilityReward(storm::formula::ReachabilityReward<Type> const& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
@@ -380,6 +405,7 @@ public:
 				storm::utility::selectVectorValues(&b, maybeStates, *this->getModel().getStateRewardVector());
 			}
 
+			// Now solve the resulting equation system.
 			this->solveEquationSystem(*submatrix, x, b);
 
 			// Set values of resulting vector according to result.
@@ -399,13 +425,33 @@ public:
 	}
 
 private:
+	/*!
+	 * Performs (repeated) matrix-vector multiplication with the given parameters.
+	 *
+	 * @param matrix The matrix that is to be multiplied against the vector.
+	 * @param vector The initial vector that is to be multiplied against the matrix. This is also the output parameter,
+	 * i.e. after the method returns, this vector will contain the computed values.
+	 * @param summand If not null, this vector is being added to the result after each matrix-vector multplication.
+	 * @param repetitions Specifies the number of iterations the matrix-vector multiplication is performed.
+	 * @returns The result of the repeated matrix-vector multiplication as the content of the parameter vector.
+	 */
 	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type>* summand = nullptr, uint_fast64_t repetitions = 1) const = 0;
 
-	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type> const& b) const = 0;
+
+	/*!
+	 * Solves the equation system A*x = b given by the parameters.
+	 *
+	 * @param A The matrix specifying the coefficients of the linear eqations.
+	 * @param x The solution vector x. The initial values of x represent a guess of the real values to the solver, but
+	 * may be ignored.
+	 * @param b The right-hand side of the equation system.
+	 * @returns The solution vector x of the system of linear equations as the content of the parameter x.
+	 */
+	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const = 0;
 };
 
 } //namespace modelChecker
 
 } //namespace storm
 
-#endif /* STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_SPARSEDTMCPRCTLMODELCHECKER_H_ */
