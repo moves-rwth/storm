@@ -1,175 +1,70 @@
 /*
- * MdpPrctlModelChecker.h
+ * SparseMdpPrctlModelChecker.h
  *
  *  Created on: 15.02.2013
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_MODELCHECKER_MDPPRCTLMODELCHECKER_H_
-#define STORM_MODELCHECKER_MDPPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_SPARSEMDPPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_SPARSEMDPPRCTLMODELCHECKER_H_
 
-#include "src/formula/Formulas.h"
-#include "src/utility/Vector.h"
-#include "src/storage/SparseMatrix.h"
-
-#include "src/models/Mdp.h"
-#include "src/storage/BitVector.h"
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/utility/Vector.h"
 #include "src/modelchecker/AbstractModelChecker.h"
+#include "src/models/Mdp.h"
+#include "src/utility/Vector.h"
+#include "src/utility/GraphAnalyzer.h"
+
 #include <vector>
 #include <stack>
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
-
 namespace storm {
-
-namespace modelChecker {
+namespace modelchecker {
 
 /*!
  * @brief
- * Interface for model checker classes.
- *
- * This class provides basic functions that are the same for all subclasses, but mainly only declares
- * abstract methods that are to be implemented in concrete instances.
- *
- * @attention This class is abstract.
+ * Interface for all model checkers that can verify PRCTL formulae over MDPs represented as a sparse matrix.
  */
 template<class Type>
-class MdpPrctlModelChecker :
-	public AbstractModelChecker<Type> {
+class SparseMdpPrctlModelChecker : public AbstractModelChecker<Type> {
 
 public:
 	/*!
-	 * Constructor
+	 * Constructs a SparseMdpPrctlModelChecker with the given model.
 	 *
-	 * @param model The dtmc model which is checked.
+	 * @param model The MDP to be checked.
 	 */
-	explicit MdpPrctlModelChecker(storm::models::Mdp<Type>& model)
-		: AbstractModelChecker<Type>(model), minimumOperatorStack() {
-	}
-
-	/*!
-	 * Copy constructor
-	 *
-	 * @param modelChecker The model checker that is copied.
-	 */
-	explicit MdpPrctlModelChecker(const storm::modelChecker::MdpPrctlModelChecker<Type>* modelChecker)
-		: AbstractModelChecker<Type>(modelChecker),  minimumOperatorStack() {
-
-	}
-
-	/*!
-	 * Destructor
-	 */
-	virtual ~MdpPrctlModelChecker() {
+	explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model) : AbstractModelChecker<Type>(model), minimumOperatorStack() {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * @returns A reference to the dtmc of the model checker.
+	 * Copy constructs a SparseMdpPrctlModelChecker from the given model checker. In particular, this means that the newly
+	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	storm::models::Mdp<Type>& getModel() const {
+	explicit SparseMdpPrctlModelChecker(storm::modelchecker::SparseMdpPrctlModelChecker<Type> const& modelchecker)
+		: AbstractModelChecker<Type>(modelchecker),  minimumOperatorStack() {
+		// Intentionally left empty.
+	}
+
+	/*!
+	 * Virtual destructor. Needs to be virtual, because this class has virtual methods.
+	 */
+	virtual ~SparseMdpPrctlModelChecker() {
+		// Intentionally left empty.
+	}
+
+	/*!
+	 * Returns a constant reference to the MDP associated with this model checker.
+	 * @returns A constant reference to the MDP associated with this model checker.
+	 */
+	storm::models::Mdp<Type> const& getModel() const {
 		return AbstractModelChecker<Type>::template getModel<storm::models::Mdp<Type>>();
 	}
 
 	/*!
-	 * Sets the DTMC model which is checked
-	 * @param model
-	 */
-	void setModel(storm::models::Mdp<Type>& model) {
-		AbstractModelChecker<Type>::setModel(model);
-	}
-
-	/*!
-	 * Checks the given state formula on the DTMC and prints the result (true/false) for all initial
-	 * states.
-	 * @param stateFormula The formula to be checked.
-	 */
-	void check(const storm::formula::AbstractStateFormula<Type>& stateFormula) const {
-		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << stateFormula.toString());
-		std::cout << "Model checking formula:\t" << stateFormula.toString() << std::endl;
-		storm::storage::BitVector* result = nullptr;
-		try {
-			result = stateFormula.check(*this);
-			LOG4CPLUS_INFO(logger, "Result for initial states:");
-			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : *this->getModel().getLabeledStates("init")) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
-			}
-			delete result;
-		} catch (std::exception& e) {
-			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
-			if (result != nullptr) {
-				delete result;
-			}
-		}
-		std::cout << std::endl;
-		storm::utility::printSeparationLine(std::cout);
-	}
-
-	/*!
-	 * Checks the given operator (with no bound) on the DTMC and prints the result
-	 * (probability/rewards) for all initial states.
-	 * @param noBoundFormula The formula to be checked.
-	 */
-	void check(const storm::formula::NoBoundOperator<Type>& noBoundFormula) const {
-		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << noBoundFormula.toString());
-		std::cout << "Model checking formula:\t" << noBoundFormula.toString() << std::endl;
-		std::vector<Type>* result = nullptr;
-		try {
-			result = noBoundFormula.check(*this);
-			LOG4CPLUS_INFO(logger, "Result for initial states:");
-			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : *this->getModel().getLabeledStates("init")) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
-				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
-			}
-			delete result;
-		} catch (std::exception& e) {
-			std::cout << "Error during computation: " << e.what() << " Skipping property." << std::endl;
-			if (result != nullptr) {
-				delete result;
-			}
-		}
-		std::cout << std::endl;
-		storm::utility::printSeparationLine(std::cout);
-	}
-
-	/*!
-	 * The check method for a formula with an AP node as root in its formula tree
+	 * Checks the given formula that is a P/R operator without a bound.
 	 *
-	 * @param formula The Ap state formula to check
-	 * @returns The set of states satisfying the formula, represented by a bit vector
-	 */
-	storm::storage::BitVector* checkAp(const storm::formula::Ap<Type>& formula) const {
-		if (formula.getAp().compare("true") == 0) {
-			return new storm::storage::BitVector(this->getModel().getNumberOfStates(), true);
-		} else if (formula.getAp().compare("false") == 0) {
-			return new storm::storage::BitVector(this->getModel().getNumberOfStates());
-		}
-
-		if (!this->getModel().hasAtomicProposition(formula.getAp())) {
-			LOG4CPLUS_ERROR(logger, "Atomic proposition '" << formula.getAp() << "' is invalid.");
-			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
-			return nullptr;
-		}
-
-		return new storm::storage::BitVector(*this->getModel().getLabeledStates(formula.getAp()));
-	}
-
-	/*!
-	 * The check method for a state formula with a probabilistic operator node without bounds as root
-	 * in its formula tree
-	 *
-	 * @param formula The state formula to check
-	 * @returns The set of states satisfying the formula, represented by a bit vector
+	 * @param formula The formula to check.
+	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
 	std::vector<Type>* checkNoBoundOperator(const storm::formula::NoBoundOperator<Type>& formula) const {
 		// Check if the operator was an non-optimality operator and report an error in that case.
@@ -184,10 +79,15 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Bounded Until operator node as root in its formula tree
+	 * Checks the given formula that is a bounded-until formula.
 	 *
-	 * @param formula The Bounded Until path formula to check
-	 * @returns for each state the probability that the path formula holds.
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type>* checkBoundedUntil(const storm::formula::BoundedUntil<Type>& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
@@ -213,10 +113,15 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Next operator node as root in its formula tree
+	 * Checks the given formula that is a next formula.
 	 *
-	 * @param formula The Next path formula to check
-	 * @returns for each state the probability that the path formula holds.
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type>* checkNext(const storm::formula::Next<Type>& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formula of the next-formula.
@@ -236,11 +141,15 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Bounded Eventually operator node as root in its
-	 * formula tree
+	 * Checks the given formula that is a bounded-eventually formula.
 	 *
-	 * @param formula The Bounded Eventually path formula to check
-	 * @returns for each state the probability that the path formula holds
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type>* checkBoundedEventually(const storm::formula::BoundedEventually<Type>& formula, bool qualitative) const {
 		// Create equivalent temporary bounded until formula and check it.
@@ -249,10 +158,15 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with an Eventually operator node as root in its formula tree
+	 * Checks the given formula that is an eventually formula.
 	 *
-	 * @param formula The Eventually path formula to check
-	 * @returns for each state the probability that the path formula holds
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type>* checkEventually(const storm::formula::Eventually<Type>& formula, bool qualitative) const {
 		// Create equivalent temporary until formula and check it.
@@ -261,10 +175,15 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Globally operator node as root in its formula tree
+	 * Checks the given formula that is a globally formula.
 	 *
-	 * @param formula The Globally path formula to check
-	 * @returns for each state the probability that the path formula holds
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type>* checkGlobally(const storm::formula::Globally<Type>& formula, bool qualitative) const {
 		// Create "equivalent" temporary eventually formula and check it.
@@ -277,10 +196,15 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with an Until operator node as root in its formula tree
+	 * Check the given formula that is an until formula.
 	 *
-	 * @param formula The Until path formula to check
-	 * @returns for each state the probability that the path formula holds.
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type>* checkUntil(const storm::formula::Until<Type>& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
@@ -317,7 +241,7 @@ public:
 			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates, *this->getModel().getNondeterministicChoiceIndices());
 
 			// Get the "new" nondeterministic choice indices for the submatrix.
-			std::shared_ptr<std::vector<uint_fast64_t>> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
+			std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
 
 			// Create vector for results for maybe states.
 			std::vector<Type> x(maybeStatesSetBitCount);
@@ -328,7 +252,7 @@ public:
 			this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, *this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, &b);
 
 			// Solve the corresponding system of equations.
-			this->solveEquationSystem(*submatrix, x, b, *subNondeterministicChoiceIndices);
+			this->solveEquationSystem(*submatrix, x, b, subNondeterministicChoiceIndices);
 
 			// Set values of resulting vector according to result.
 			storm::utility::setVectorValues<Type>(result, maybeStates, x);
@@ -345,11 +269,15 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with an Instantaneous Reward operator node as root in its
-	 * formula tree
+	 * Checks the given formula that is an instantaneous reward formula.
 	 *
-	 * @param formula The Instantaneous Reward formula to check
-	 * @returns for each state the reward that the instantaneous reward yields
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bound 0. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bound 0.
+	 * @returns The reward values for the given formula for every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
 	virtual std::vector<Type>* checkInstantaneousReward(const storm::formula::InstantaneousReward<Type>& formula, bool qualitative) const {
 		// Only compute the result if the model has a state-based reward model.
@@ -368,11 +296,15 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Cumulative Reward operator node as root in its
-	 * formula tree
+	 * Check the given formula that is a cumulative reward formula.
 	 *
-	 * @param formula The Cumulative Reward formula to check
-	 * @returns for each state the reward that the cumulative reward yields
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bound 0. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bound 0.
+	 * @returns The reward values for the given formula for every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
 	virtual std::vector<Type>* checkCumulativeReward(const storm::formula::CumulativeReward<Type>& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
@@ -392,7 +324,13 @@ public:
 			totalRewardVector = new std::vector<Type>(*this->getModel().getStateRewardVector());
 		}
 
-		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
+		// Initialize result to either the state rewards of the model or the null vector.
+		std::vector<Type>* result = nullptr;
+		if (this->getModel().hasStateRewards()) {
+			result = new std::vector<Type>(*this->getModel().getStateRewardVector());
+		} else {
+			result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		}
 
 		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, totalRewardVector, formula.getBound());
 
@@ -402,11 +340,15 @@ public:
 	}
 
 	/*!
-	 * The check method for a path formula with a Reachability Reward operator node as root in its
-	 * formula tree
+	 * Checks the given formula that is a reachability reward formula.
 	 *
-	 * @param formula The Reachbility Reward formula to check
-	 * @returns for each state the reward that the reachability reward yields
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bound 0. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bound 0.
+	 * @returns The reward values for the given formula for every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
 	virtual std::vector<Type>* checkReachabilityReward(const storm::formula::ReachabilityReward<Type>& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
@@ -444,7 +386,7 @@ public:
 			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates, *this->getModel().getNondeterministicChoiceIndices());
 
 			// Get the "new" nondeterministic choice indices for the submatrix.
-			std::shared_ptr<std::vector<uint_fast64_t>> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
+			std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
 
 			// Create vector for results for maybe states.
 			std::vector<Type> x(maybeStatesSetBitCount);
@@ -480,7 +422,7 @@ public:
 			}
 
 			// Solve the corresponding system of equations.
-			this->solveEquationSystem(*submatrix, x, b, *subNondeterministicChoiceIndices);
+			this->solveEquationSystem(*submatrix, x, b, subNondeterministicChoiceIndices);
 
 			// Set values of resulting vector according to result.
 			storm::utility::setVectorValues<Type>(result, maybeStates, x);
@@ -497,33 +439,62 @@ public:
 	}
 
 protected:
+	/*!
+	 * A stack used for storing whether we are currently computing min or max probabilities or rewards, respectively.
+	 * The topmost element is true if and only if we are currently computing minimum probabilities or rewards.
+	 */
 	mutable std::stack<bool> minimumOperatorStack;
 
 private:
-	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type>* summand = nullptr, uint_fast64_t repetitions = 1) const {
+	/*!
+	 * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes x[i+1] = A*x[i] + b
+	 * until x[n], where x[0] = x.
+	 *
+	 * @param A The matrix that is to be multiplied against the vector.
+	 * @param x The initial vector that is to be multiplied against the matrix. This is also the output parameter,
+	 * i.e. after the method returns, this vector will contain the computed values.
+	 * @param b If not null, this vector is being added to the result after each matrix-vector multiplication.
+	 * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
+	 * @returns The result of the repeated matrix-vector multiplication as the content of the parameter vector.
+	 */
+	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const {
 		// Get the starting row indices for the non-deterministic choices to reduce the resulting
 		// vector properly.
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
+		std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = *this->getModel().getNondeterministicChoiceIndices();
 
 		// Create vector for result of multiplication, which is reduced to the result vector after
 		// each multiplication.
-		std::vector<Type> multiplyResult(matrix.getRowCount());
+		std::vector<Type> multiplyResult(A.getRowCount());
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
-		for (uint_fast64_t i = 0; i < repetitions; ++i) {
-			matrix.multiplyWithVector(vector, multiplyResult);
-			if (summand != nullptr) {
-				gmm::add(*summand, multiplyResult);
+		for (uint_fast64_t i = 0; i < n; ++i) {
+			A.multiplyWithVector(x, multiplyResult);
+
+			// Add b if it is non-null.
+			if (b != nullptr) {
+				storm::utility::addVectors(multiplyResult, *b);
 			}
+
+			// Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
+			// element of the min/max operator stack.
 			if (this->minimumOperatorStack.top()) {
-				storm::utility::reduceVectorMin(multiplyResult, &vector, *nondeterministicChoiceIndices);
+				storm::utility::reduceVectorMin(multiplyResult, &x, nondeterministicChoiceIndices);
 			} else {
-				storm::utility::reduceVectorMax(multiplyResult, &vector, *nondeterministicChoiceIndices);
+				storm::utility::reduceVectorMax(multiplyResult, &x, nondeterministicChoiceIndices);
 			}
 		}
 	}
 
-	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+	/*!
+	 * Solves the equation system A*x = b given by the parameters.
+	 *
+	 * @param A The matrix specifying the coefficients of the linear equations.
+	 * @param x The solution vector x. The initial values of x represent a guess of the real values to the solver, but
+	 * may be ignored.
+	 * @param b The right-hand side of the equation system.
+	 * @returns The solution vector x of the system of linear equations as the content of the parameter x.
+	 */
+	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
 		// Get the settings object to customize solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
@@ -533,7 +504,7 @@ private:
 		bool relative = s->get<bool>("relative");
 
 		// Set up the environment for the power method.
-		std::vector<Type> multiplyResult(matrix.getRowCount());
+		std::vector<Type> multiplyResult(A.getRowCount());
 		std::vector<Type>* currentX = &x;
 		std::vector<Type>* newX = new std::vector<Type>(x.size());
 		std::vector<Type>* swap = nullptr;
@@ -544,12 +515,11 @@ private:
 		// user-specified maximum number of iterations.
 		while (!converged && iterations < maxIterations) {
 			// Compute x' = A*x + b.
-			matrix.multiplyWithVector(*currentX, multiplyResult);
-			// matrix.multiplyAddAndReduceInPlace(nondeterministicChoiceIndices, *currentX, b, this->minimumOperatorStack.top());
+			A.multiplyWithVector(*currentX, multiplyResult);
+			storm::utility::addVectors(multiplyResult, b);
 
-			gmm::add(b, multiplyResult);
-
-			// Reduce the vector x' by applying min/max for all non-deterministic choices.
+			// Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
+			// element of the min/max operator stack.
 			if (this->minimumOperatorStack.top()) {
 				storm::utility::reduceVectorMin(multiplyResult, newX, nondeterministicChoiceIndices);
 			} else {
@@ -559,17 +529,15 @@ private:
 			// Determine whether the method converged.
 			converged = storm::utility::equalModuloPrecision(*currentX, *newX, precision, relative);
 
-
 			// Update environment variables.
 			swap = currentX;
 			currentX = newX;
 			newX = swap;
 			++iterations;
-
-			// *newX = *currentX,
-
 		}
 
+		// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
+		// is currently stored in currentX, but x is the output vector.
 		if (iterations % 2 == 1) {
 			std::swap(x, *currentX);
 			delete currentX;
@@ -585,25 +553,41 @@ private:
 		}
 	}
 
-	std::shared_ptr<std::vector<uint_fast64_t>> computeNondeterministicChoiceIndicesForConstraint(storm::storage::BitVector constraint) const {
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
-		std::shared_ptr<std::vector<uint_fast64_t>> subNondeterministicChoiceIndices(new std::vector<uint_fast64_t>(constraint.getNumberOfSetBits() + 1));
+	/*!
+	 * Computes the nondeterministic choice indices vector resulting from reducing the full system to the states given
+	 * by the parameter constraint.
+	 *
+	 * @param constraint A bit vector specifying which states are kept.
+	 * @returns A vector of the nondeterministic choice indices of the subsystem induced by the given constraint.
+	 */
+	std::vector<uint_fast64_t> computeNondeterministicChoiceIndicesForConstraint(storm::storage::BitVector const& constraint) const {
+		// First, get a reference to the full nondeterministic choice indices.
+		std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = *this->getModel().getNondeterministicChoiceIndices();
+
+		// Reserve the known amount of slots for the resulting vector.
+		std::vector<uint_fast64_t> subNondeterministicChoiceIndices(constraint.getNumberOfSetBits() + 1);
 		uint_fast64_t currentRowCount = 0;
 		uint_fast64_t currentIndexCount = 1;
-		(*subNondeterministicChoiceIndices)[0] = 0;
+
+		// Set the first element as this will clearly begin at offset 0.
+		subNondeterministicChoiceIndices[0] = 0;
+
+		// Loop over all states that need to be kept and copy the relative indices of the nondeterministic choices over
+		// to the resulting vector.
 		for (auto index : constraint) {
-			(*subNondeterministicChoiceIndices)[currentIndexCount] = currentRowCount + (*nondeterministicChoiceIndices)[index + 1] - (*nondeterministicChoiceIndices)[index];
-			currentRowCount += (*nondeterministicChoiceIndices)[index + 1] - (*nondeterministicChoiceIndices)[index];
+			subNondeterministicChoiceIndices[currentIndexCount] = currentRowCount + nondeterministicChoiceIndices[index + 1] - nondeterministicChoiceIndices[index];
+			currentRowCount += nondeterministicChoiceIndices[index + 1] - nondeterministicChoiceIndices[index];
 			++currentIndexCount;
 		}
-		(*subNondeterministicChoiceIndices)[constraint.getNumberOfSetBits()] = currentRowCount;
+
+		// Put a sentinel element at the end.
+		subNondeterministicChoiceIndices[constraint.getNumberOfSetBits()] = currentRowCount;
 
 		return subNondeterministicChoiceIndices;
 	}
 };
 
-} //namespace modelChecker
+} // namespace modelchecker
+} // namespace storm
 
-} //namespace storm
-
-#endif /* STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_SPARSEMDPPRCTLMODELCHECKER_H_ */

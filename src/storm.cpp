@@ -96,7 +96,7 @@ void printFooter() {
 bool parseOptions(const int argc, const char* argv[]) {
 	storm::settings::Settings* s = nullptr;
 	try {
-		storm::settings::Settings::registerModule<storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>>();
+		storm::settings::Settings::registerModule<storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>>();
 		s = storm::settings::newInstance(argc, argv, nullptr);
 	} catch (storm::exceptions::InvalidSettingsException& e) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
@@ -140,7 +140,7 @@ void cleanUp() {
 }
 
 void testCheckingDie(storm::models::Dtmc<double>& dtmc) {
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 
 	storm::formula::Ap<double>* oneFormula = new storm::formula::Ap<double>("one");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(oneFormula);
@@ -177,7 +177,7 @@ void testCheckingCrowds(storm::models::Dtmc<double>& dtmc) {
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(observe0Greater1Formula);
 	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 	mc->check(*probFormula);
 	delete probFormula;
 
@@ -203,7 +203,7 @@ void testCheckingSynchronousLeader(storm::models::Dtmc<double>& dtmc, uint_fast6
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
 	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>* mc = new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 	mc->check(*probFormula);
 	delete probFormula;
 
@@ -229,7 +229,7 @@ void testCheckingDice(storm::models::Mdp<double>& mdp) {
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(twoFormula);
 	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
 
-	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+	storm::modelchecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
 
 	mc->check(*probFormula);
 	delete probFormula;
@@ -319,7 +319,7 @@ void testCheckingAsynchLeader(storm::models::Mdp<double>& mdp) {
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(electedFormula);
 	storm::formula::ProbabilisticNoBoundOperator<double>* probMinFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
 
-	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+	storm::modelchecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
 
 	mc->check(*probMinFormula);
 	delete probMinFormula;
@@ -367,7 +367,7 @@ void testCheckingConsensus(storm::models::Mdp<double>& mdp) {
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(finishedFormula);
 	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
 
-	storm::modelChecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+	storm::modelchecker::GmmxxMdpPrctlModelChecker<double>* mc = new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
 
 	mc->check(*probFormula);
 	delete probFormula;

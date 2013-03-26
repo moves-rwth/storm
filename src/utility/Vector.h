@@ -79,6 +79,18 @@ void subtractFromConstantOneVector(std::vector<T>* vector) {
 }
 
 template<class T>
+void addVectors(std::vector<T>& target, std::vector<T> const& summand) {
+	if (target.size() != target.size()) {
+		LOG4CPLUS_ERROR(logger, "Lengths of vectors does not match and makes operation impossible.");
+		throw storm::exceptions::InvalidArgumentException() << "Length of vectors does not match and makes operation impossible.";
+	}
+
+	for (uint_fast64_t i = 0; i < target.size(); ++i) {
+		target[i] += summand[i];
+	}
+}
+
+template<class T>
 void addVectors(std::vector<uint_fast64_t> const& states, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<T>& original, std::vector<T> const& summand) {
 	for (auto stateIt = states.cbegin(), stateIte = states.cend(); stateIt != stateIte; ++stateIt) {
 		for (auto rowIt = nondeterministicChoiceIndices[*stateIt], rowIte = nondeterministicChoiceIndices[*stateIt + 1]; rowIt != rowIte; ++rowIt) {

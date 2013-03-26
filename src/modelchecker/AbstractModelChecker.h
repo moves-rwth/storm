@@ -10,10 +10,8 @@
 
 // Forward declaration of abstract model checker class needed by the formula classes.
 namespace storm {
-namespace modelChecker {
-
+namespace modelchecker {
 	template <class Type> class AbstractModelChecker;
-
 }
 }
 
@@ -30,7 +28,7 @@ namespace modelChecker {
 extern log4cplus::Logger logger;
 
 namespace storm {
-namespace modelChecker {
+namespace modelchecker {
 
 /*!
  * @brief
@@ -73,10 +71,17 @@ public:
 	 * Copy constructs an AbstractModelChecker from the given model checker. In particular, this means that the newly
 	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	explicit AbstractModelChecker(AbstractModelChecker<Type> const& modelChecker) : model(modelChecker.model) {
+	explicit AbstractModelChecker(AbstractModelChecker<Type> const& modelchecker) : model(modelchecker.model) {
 		// Intentionally left empty.
 	}
 	
+	/*!
+	 * Virtual destructor. Needs to be virtual, because this class has virtual methods.
+	 */
+	virtual ~AbstractModelChecker() {
+		// Intentionally left empty.
+	}
+
 	/*!
 	 * Returns a pointer to the model checker object that is of the requested type as given by the template parameters.
 	 * @returns A pointer to the model checker object that is of the requested type as given by the template parameters.
@@ -110,7 +115,6 @@ public:
 			LOG4CPLUS_ERROR(logger, "Bad cast: tried to cast " << typeid(this->model).name() << " to " << typeid(Model).name() << ".");
 			throw bc;
 		}
-		return nullptr;
 	}
 
 	/*!
@@ -300,7 +304,6 @@ private:
 };
 
 } // namespace modelchecker
-
 } // namespace storm
 
 #endif /* STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_ */

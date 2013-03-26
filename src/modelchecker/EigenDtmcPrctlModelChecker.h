@@ -11,7 +11,7 @@
 #include "src/utility/Vector.h"
 
 #include "src/models/Dtmc.h"
-#include "src/modelchecker/DtmcPrctlModelChecker.h"
+#include "src/modelchecker/SparseDtmcPrctlModelChecker.h"
 #include "src/utility/GraphAnalyzer.h"
 #include "src/utility/ConstTemplates.h"
 #include "src/exceptions/NoConvergenceException.h"
@@ -29,20 +29,19 @@
 extern log4cplus::Logger logger;
 
 namespace storm {
-
-namespace modelChecker {
+namespace modelchecker {
 
 /*
  * A model checking engine that makes use of the eigen backend.
  */
 template <class Type>
-class EigenDtmcPrctlModelChecker : public DtmcPrctlModelChecker<Type> {
+class EigenDtmcPrctlModelChecker : public SparseDtmcPrctlModelChecker<Type> {
 
 typedef Eigen::Matrix<Type, -1, 1, 0, -1, 1> VectorType;
 typedef Eigen::Map<VectorType> MapType;
 
 public:
-	explicit EigenDtmcPrctlModelChecker(storm::models::Dtmc<Type>& dtmc) : DtmcPrctlModelChecker<Type>(dtmc) {
+	explicit EigenDtmcPrctlModelChecker(storm::models::Dtmc<Type>& dtmc) : SparseDtmcPrctlModelChecker<Type>(dtmc) {
 		// Intentionally left empty.
 	}
 
@@ -136,8 +135,7 @@ private:
 	}
 };
 
-} //namespace modelChecker
-
+} //namespace modelchecker
 } //namespace storm
 
 #endif /* STORM_MODELCHECKER_EIGENDTMCPRCTLMODELCHECKER_H_ */

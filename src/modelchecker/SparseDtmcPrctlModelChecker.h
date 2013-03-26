@@ -10,14 +10,13 @@
 
 #include "src/modelchecker/AbstractModelChecker.h"
 #include "src/models/Dtmc.h"
-#include "src/storage/SparseMatrix.h"
 #include "src/utility/Vector.h"
 #include "src/utility/GraphAnalyzer.h"
 
 #include <vector>
 
 namespace storm {
-namespace modelChecker {
+namespace modelchecker {
 
 /*!
  * @brief
@@ -37,10 +36,17 @@ public:
 	}
 
 	/*!
-	 * Copy constructs an SparseDtmcPrctlModelChecker from the given model checker. In particular, this means that the newly
+	 * Copy constructs a SparseDtmcPrctlModelChecker from the given model checker. In particular, this means that the newly
 	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	explicit SparseDtmcPrctlModelChecker(storm::modelChecker::SparseDtmcPrctlModelChecker<Type> const& modelChecker) : AbstractModelChecker<Type>(modelChecker) {
+	explicit SparseDtmcPrctlModelChecker(storm::modelchecker::SparseDtmcPrctlModelChecker<Type> const& modelChecker) : AbstractModelChecker<Type>(modelChecker) {
+		// Intentionally left empty.
+	}
+
+	/*!
+	 * Virtual destructor. Needs to be virtual, because this class has virtual methods.
+	 */
+	virtual ~SparseDtmcPrctlModelChecker() {
 		// Intentionally left empty.
 	}
 
@@ -426,22 +432,22 @@ public:
 
 private:
 	/*!
-	 * Performs (repeated) matrix-vector multiplication with the given parameters.
+	 * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes x[i+1] = A*x[i] + b
+	 * until x[n], where x[0] = x.
 	 *
-	 * @param matrix The matrix that is to be multiplied against the vector.
-	 * @param vector The initial vector that is to be multiplied against the matrix. This is also the output parameter,
+	 * @param A The matrix that is to be multiplied against the vector.
+	 * @param x The initial vector that is to be multiplied against the matrix. This is also the output parameter,
 	 * i.e. after the method returns, this vector will contain the computed values.
-	 * @param summand If not null, this vector is being added to the result after each matrix-vector multplication.
-	 * @param repetitions Specifies the number of iterations the matrix-vector multiplication is performed.
+	 * @param b If not null, this vector is being added to the result after each matrix-vector multiplication.
+	 * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
 	 * @returns The result of the repeated matrix-vector multiplication as the content of the parameter vector.
 	 */
-	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type>* summand = nullptr, uint_fast64_t repetitions = 1) const = 0;
-
+	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const = 0;
 
 	/*!
 	 * Solves the equation system A*x = b given by the parameters.
 	 *
-	 * @param A The matrix specifying the coefficients of the linear eqations.
+	 * @param A The matrix specifying the coefficients of the linear equations.
 	 * @param x The solution vector x. The initial values of x represent a guess of the real values to the solver, but
 	 * may be ignored.
 	 * @param b The right-hand side of the equation system.
@@ -450,8 +456,7 @@ private:
 	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const = 0;
 };
 
-} //namespace modelChecker
-
-} //namespace storm
+} // namespace modelchecker
+} // namespace storm
 
 #endif /* STORM_MODELCHECKER_SPARSEDTMCPRCTLMODELCHECKER_H_ */

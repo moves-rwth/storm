@@ -17,7 +17,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 13);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 27);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
 	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("one");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
@@ -77,7 +77,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 8607);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 22460);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
 	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("observe0Greater1");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
@@ -125,7 +125,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 12400);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 28894);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
 	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("elected");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);

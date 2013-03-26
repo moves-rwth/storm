@@ -35,7 +35,7 @@ public:
 	 * probability 1 after the invocation of the function.
 	 */
 	template <typename T>
-	static void performProb01(storm::models::AbstractDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb01(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -63,7 +63,7 @@ public:
 	 * a positive probability of satisfying phi until psi.
 	 */
 	template <typename T>
-	static void performProbGreater0(storm::models::AbstractDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbabilityGreater0) {
+	static void performProbGreater0(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbabilityGreater0) {
 		// Check for valid parameter.
 		if (statesWithProbabilityGreater0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbabilityGreater0' must not be null.");
@@ -110,7 +110,7 @@ public:
 	 * have paths satisfying phi until psi.
 	 */
 	template <typename T>
-	static void performProb1(storm::models::AbstractDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameter.
 		if (statesWithProbability1 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
@@ -134,7 +134,7 @@ public:
 	 * have paths satisfying phi until psi.
 	 */
 	template <typename T>
-	static void performProb1(storm::models::AbstractDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameter.
 		if (statesWithProbability1 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
@@ -149,7 +149,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb01Max(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb01Max(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -166,7 +166,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb0A(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
+	static void performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
 		// Check for valid parameter.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -201,7 +201,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb1E(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability1 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
@@ -271,7 +271,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb01Min(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb01Min(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -288,7 +288,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb0E(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
+	static void performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
 		// Check for valid parameter.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -348,7 +348,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb1A(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability1 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
