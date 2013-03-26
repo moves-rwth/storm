@@ -222,9 +222,9 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 		variableDefinition.name("variable declaration");
 
 		// This block defines all entities that are needed for parsing a module.
-		moduleDefinition = (qi::lit("module")
+		moduleDefinition = (qi::lit("module") >> freeIdentifierName
 				[phoenix::clear(phoenix::ref(localBooleanVariables_)), phoenix::clear(phoenix::ref(localIntegerVariables_))]
-				>> freeIdentifierName >> *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) > +commandDefinition > qi::lit("endmodule"))
+				>> *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) >> +commandDefinition > qi::lit("endmodule"))
 				[
 					phoenix::bind(moduleNames_.add, qi::_1, qi::_1),
 					qi::_val = phoenix::construct<Module>(qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2),
@@ -233,18 +233,18 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 
 		Module const * (qi::symbols<char, Module>::*moduleFinder)(const std::string&) const = &qi::symbols<char, Module>::find;
 		moduleDefinition.name("module");
-		moduleRenaming = (qi::lit("module")
-				[phoenix::clear(phoenix::ref(localRenamings_))]
-				>> freeIdentifierName >> qi::lit("=") > moduleNames_ > qi::lit("[") > *(
-						(identifierName > qi::lit("=") > identifierName)[phoenix::insert(phoenix::ref(localRenamings_), phoenix::construct<std::pair<std::string,std::string>>(qi::_1, qi::_2))]
+		moduleRenaming = (qi::lit("module")	>> freeIdentifierName >> qi::lit("=")
+				> moduleNames_ > qi::lit("[") > *(
+						(identifierName > qi::lit("=") > identifierName >> -qi::lit(","))[phoenix::insert(qi::_a, phoenix::construct<std::pair<std::string,std::string>>(qi::_1, qi::_2))]
 				) > qi::lit("]") > qi::lit("endmodule"))
 				[
 					phoenix::bind(moduleNames_.add, qi::_1, qi::_1),
-					qi::_val = phoenix::construct<Module>(*phoenix::bind(moduleFinder, moduleMap_, qi::_2), qi::_1, localRenamings_, VariableAdder(this)),
+					qi::_val = phoenix::construct<Module>(*phoenix::bind(moduleFinder, moduleMap_, qi::_2), qi::_1, qi::_a, VariableAdder(this)),
 					phoenix::bind(moduleMap_.add, qi::_1, qi::_val)
 
 				];
-		moduleDefinitionList %= +moduleDefinition;
+		moduleRenaming.name("renamed module");
+		moduleDefinitionList %= +(moduleDefinition | moduleRenaming);
 		moduleDefinitionList.name("module list");
 
 		// This block defines all entities that are needed for parsing constant definitions.
@@ -357,7 +357,7 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 
 	// Rules for module definition.
 	qi::rule<Iterator, Module(), qi::locals<std::vector<BooleanVariable>, std::vector<IntegerVariable>, std::map<std::string, uint_fast64_t>, std::map<std::string, uint_fast64_t>>, Skipper> moduleDefinition;
-	qi::rule<Iterator, Module(), qi::locals<std::vector<BooleanVariable>, std::vector<IntegerVariable>, std::map<std::string, uint_fast64_t>, std::map<std::string, uint_fast64_t>>, Skipper> moduleRenaming;
+	qi::rule<Iterator, Module(), qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
 
 	// Rules for variable definitions.
 	qi::rule<Iterator, qi::unused_type(std::vector<BooleanVariable>&, std::vector<IntegerVariable>&, std::map<std::string, uint_fast64_t>&, std::map<std::string, uint_fast64_t>&), Skipper> variableDefinition;
@@ -512,8 +512,6 @@ struct PrismParser::PrismGrammar : qi::grammar<Iterator, Program(), qi::locals<s
 	struct qi::symbols<char, std::shared_ptr<BaseExpression>> integerConstants_, booleanConstants_, doubleConstants_;
 	struct qi::symbols<char, Module> moduleMap_;
 
-	std::map<std::string, std::string> localRenamings_;
-
 	// A structure representing the identity function over identifier names.
 	struct variableNamesStruct : qi::symbols<char, std::string> { } integerVariableNames_, booleanVariableNames_, commandNames_, labelNames_, allConstantNames_, moduleNames_,
 		localBooleanVariables_, localIntegerVariables_, assignedLocalBooleanVariables_, assignedLocalIntegerVariables_;
@@ -575,6 +573,7 @@ std::shared_ptr<storm::ir::Program> PrismParser::parse(std::istream& inputStream
 		result = std::shared_ptr<storm::ir::Program>(new storm::ir::Program());
 		// Second run.
 		qi::phrase_parse(positionIteratorBegin2, positionIteratorEnd, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, *result);
+		std::cout << "Here is the parsed grammar: " << std::endl << result->toString() << std::endl;
 	} catch(const qi::expectation_failure<PositionIteratorType>& e) {
 		// If the parser expected content different than the one provided, display information
 		// about the location of the error.

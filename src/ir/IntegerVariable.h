@@ -37,7 +37,7 @@ public:
 	 */
 	IntegerVariable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr));
 
-	IntegerVariable(const IntegerVariable& var, const std::string& newName);
+	IntegerVariable(const IntegerVariable& var, const std::string& newName, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints);
 	
 	/*!
 	 * Retrieves the lower bound for this integer variable.

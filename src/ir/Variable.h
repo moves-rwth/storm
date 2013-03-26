@@ -40,7 +40,7 @@ public:
 	 * @param var Variable to copy.
 	 * @param newName New name of this variable.
 	 */
-	Variable(const Variable& var, const std::string& newName);
+	Variable(const Variable& var, const std::string& newName, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints);
 
 	/*!
 	 * Retrieves the name of the variable.

@@ -36,20 +36,32 @@ Module::Module(std::string moduleName, std::vector<storm::ir::BooleanVariable> b
 
 Module::Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, const VariableAdder& adder)
 	: moduleName(moduleName) {
+	std::cout << "Renaming module " << module.moduleName << " to " << moduleName << " with " << renaming.size() << " renamings:" << std::endl;
+	for (auto it: renaming) {
+		std::cout << "\t" << it.first << " -> " << it.second << std::endl;
+	}
 	this->booleanVariables.reserve(module.booleanVariables.size());
 	for (BooleanVariable it: module.booleanVariables) {
 		if (renaming.count(it.getName()) > 0) {
-			this->booleanVariables.emplace_back(it, renaming.at(it.getName()));
-			//this->booleanVariablesToIndexMap[renaming.at(it.getName())] = (*boolAdder)(it.getName(), it.getInitialValue());
 			this->booleanVariablesToIndexMap[renaming.at(it.getName())] = adder.addBooleanVariable(it.getName(), it.getInitialValue());
 		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
 	}
 	this->integerVariables.reserve(module.integerVariables.size());
 	for (IntegerVariable it: module.integerVariables) {
 		if (renaming.count(it.getName()) > 0) {
-			this->integerVariables.emplace_back(it, renaming.at(it.getName()));
-			//this->integerVariablesToIndexMap[renaming.at(it.getName())] = (*intAdder)(it.getName(), it.getLowerBound(), it.getUpperBound(), it.getInitialValue());
 			this->integerVariablesToIndexMap[renaming.at(it.getName())] = adder.addIntegerVariable(it.getName(), it.getLowerBound(), it.getUpperBound(), it.getInitialValue());
+		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
+	}
+	this->booleanVariables.reserve(module.booleanVariables.size());
+	for (BooleanVariable it: module.booleanVariables) {
+		if (renaming.count(it.getName()) > 0) {
+			this->booleanVariables.emplace_back(it, renaming.at(it.getName()), renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
+		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
+	}
+	this->integerVariables.reserve(module.integerVariables.size());
+	for (IntegerVariable it: module.integerVariables) {
+		if (renaming.count(it.getName()) > 0) {
+			this->integerVariables.emplace_back(it, renaming.at(it.getName()), renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
 		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
 	}
 	

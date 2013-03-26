@@ -35,7 +35,7 @@ public:
 	BooleanVariable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr));
 
 
-	BooleanVariable(const BooleanVariable& var, const std::string& newName);
+	BooleanVariable(const BooleanVariable& var, const std::string& newName, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints);
 
 	/*!
 	 * Retrieves a string representation of this variable.

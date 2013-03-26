@@ -9,6 +9,7 @@
 
 #include <sstream>
 #include <map>
+#include <iostream>
 
 namespace storm {
 
@@ -24,8 +25,9 @@ Variable::Variable(uint_fast64_t index, std::string variableName, std::shared_pt
 	// Nothing to do here.
 }
 
-Variable::Variable(const Variable& var, const std::string& newName) : Variable(var.index, newName, var.initialValue) {
-	// Nothing to do here
+Variable::Variable(const Variable& var, const std::string& newName, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints)
+	: Variable(var.index, newName, var.initialValue->clone(renaming, bools, ints)) {
+	std::cout << "Cloning Variable " << var.variableName << " to " << newName << std::endl;
 }
 
 // Return the name of the variable.

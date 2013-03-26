@@ -9,6 +9,7 @@
 #define BINARYRELATIONEXPRESSION_H_
 
 #include "src/ir/expressions/BinaryExpression.h"
+#include <iostream>
 
 namespace storm {
 
@@ -29,6 +30,7 @@ public:
 	}
 
 	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
+		std::cout << "Cloning " << this->getLeft()->toString() << " ~ " << this->getRight()->toString() << std::endl;
 		return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(renaming, bools, ints), this->getRight()->clone(renaming, bools, ints), this->relationType));
 	}
 

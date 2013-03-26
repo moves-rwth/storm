@@ -25,7 +25,8 @@ BooleanVariable::BooleanVariable(uint_fast64_t index, std::string variableName,
 	// Nothing to do here.
 }
 
-BooleanVariable::BooleanVariable(const BooleanVariable& var, const std::string& newName) : Variable(var, newName) {
+BooleanVariable::BooleanVariable(const BooleanVariable& var, const std::string& newName, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints)
+	: Variable(var, newName, renaming, bools, ints) {
 }
 
 // Build a string representation of the variable.

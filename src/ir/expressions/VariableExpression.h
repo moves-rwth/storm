@@ -34,6 +34,7 @@ public:
 	}
 
 	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
+		std::cout << "Cloning VarExpr " << this->variableName << std::endl;
 		if (renaming.count(this->variableName) > 0) {
 			std::string newName = renaming.at(this->variableName);
 			if (this->getType() == bool_) {
