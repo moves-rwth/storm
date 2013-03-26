@@ -24,6 +24,13 @@ Assignment::Assignment(std::string variableName, std::shared_ptr<storm::ir::expr
 	// Nothing to do here.
 }
 
+Assignment::Assignment(const Assignment& assignment, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints)
+	: variableName(assignment.variableName), expression(assignment.expression->clone(renaming, bools, ints)) {
+	if (renaming.count(assignment.variableName) > 0) {
+		this->variableName = renaming.at(assignment.variableName);
+	}
+}
+
 // Returns the name of the variable associated with this assignment.
 std::string const& Assignment::getVariableName() const {
 	return variableName;

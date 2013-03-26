@@ -20,8 +20,19 @@ Command::Command() : actionName(), guardExpression(), updates() {
 
 // Initializes all members according to the given values.
 Command::Command(std::string actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> updates)
-		: actionName(actionName), guardExpression(guardExpression), updates(updates) {
+	: actionName(actionName), guardExpression(guardExpression), updates(updates) {
 	// Nothing to do here.
+}
+
+Command::Command(const Command& cmd, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints)
+	: actionName(cmd.actionName), guardExpression(cmd.guardExpression->clone(renaming, bools, ints)) {
+	if (renaming.count(this->actionName) > 0) {
+		this->actionName = renaming.at(this->actionName);
+	}
+	this->updates.reserve(cmd.updates.size());
+	for (Update u : cmd.updates) {
+		this->updates.emplace_back(u, renaming, bools, ints);
+	}
 }
 
 // Return the action name.

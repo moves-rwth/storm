@@ -26,6 +26,24 @@ Update::Update(std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoo
 	// Nothing to do here.
 }
 
+Update::Update(const Update& update, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints) {
+	for (auto it : update.booleanAssignments) {
+		if (renaming.count(it.first) > 0) {
+			this->booleanAssignments[renaming.at(it.first)] = Assignment(it.second, renaming, bools, ints);
+		} else {
+			this->booleanAssignments[it.first] = Assignment(it.second, renaming, bools, ints);
+		}
+	}
+	for (auto it : update.integerAssignments) {
+		if (renaming.count(it.first) > 0) {
+			this->integerAssignments[renaming.at(it.first)] = Assignment(it.second, renaming, bools, ints);
+		} else {
+			this->integerAssignments[it.first] = Assignment(it.second, renaming, bools, ints);
+		}
+	}
+	this->likelihoodExpression = update.likelihoodExpression->clone(renaming, bools, ints);
+}
+
 // Return the expression for the likelihood of the update.
 std::shared_ptr<storm::ir::expressions::BaseExpression> const& Update::getLikelihoodExpression() const {
 	return likelihoodExpression;

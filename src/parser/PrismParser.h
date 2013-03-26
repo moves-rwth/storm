@@ -13,6 +13,7 @@
 
 // Used for file input.
 #include <istream>
+#include <memory>
 
 namespace storm {
 

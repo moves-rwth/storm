@@ -36,6 +36,8 @@ public:
 	 */
 	Update(std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression, std::map<std::string, storm::ir::Assignment> booleanAssignments, std::map<std::string, storm::ir::Assignment> integerAssignments);
 
+	Update(const Update& update, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints);
+
 	/*!
 	 * Retrieves the expression for the likelihood of this update.
 	 * @returns the expression for the likelihood of this update.

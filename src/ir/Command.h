@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 namespace storm {
 
@@ -34,7 +35,8 @@ public:
 	 * @param guardExpression the expression that defines the guard of the command.
 	 */
 	Command(std::string actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> updates);
-	
+
+	Command(const Command& cmd, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints);
 	/*!
 	 * Retrieves the action name of this command.
 	 * @returns the action name of this command.

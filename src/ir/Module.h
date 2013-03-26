@@ -22,6 +22,11 @@ namespace storm {
 
 namespace ir {
 
+	struct VariableAdder {
+		virtual uint_fast64_t addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) const = 0;
+		virtual uint_fast64_t addBooleanVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) const = 0;
+	};
+
 /*!
  * A class representing a module.
  */
@@ -44,6 +49,18 @@ public:
 			std::map<std::string, uint_fast64_t> booleanVariableToIndexMap,
 			std::map<std::string, uint_fast64_t> integerVariableToIndexMap,
 			std::vector<storm::ir::Command> commands);
+
+	typedef uint_fast64_t (*addIntegerVariablePtr)(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper, const std::shared_ptr<storm::ir::expressions::BaseExpression> init);
+	typedef uint_fast64_t (*addBooleanVariablePtr)(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init);
+	
+	/*!
+	 * Special copy constructor, implementing the module renaming functionality.
+	 * This will create a new module having all identifier renamed according to the given map.
+	 * @param module Module to be copied.
+	 * @param moduleName Name of the new module.
+	 * @param renaming Renaming map.
+	 */
+	Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, const VariableAdder& adder);
 
 	/*!
 	 * Retrieves the number of boolean variables in the module.
@@ -116,6 +133,9 @@ public:
 	std::shared_ptr<std::set<uint_fast64_t>> const getCommandsByAction(std::string const& action) const;
 
 private:
+
+	void collectActions();
+
 	// The name of the module.
 	std::string moduleName;
 
@@ -137,7 +157,7 @@ private:
 	// The set of actions present in this module.
 	std::set<std::string> actions;
 	
-	// A map of actions to the set of commands labelled with this action.
+	// A map of actions to the set of commands labeled with this action.
 	std::map<std::string, std::shared_ptr<std::set<uint_fast64_t>>> actionsToCommandIndexMap;
 };
 

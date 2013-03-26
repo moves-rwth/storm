@@ -27,6 +27,9 @@ IntegerVariable::IntegerVariable(uint_fast64_t index, std::string variableName, 
 	}
 }
 
+IntegerVariable::IntegerVariable(const IntegerVariable& var, const std::string& newName) : Variable(var, newName) {
+}
+
 // Return lower bound for variable.
 std::shared_ptr<storm::ir::expressions::BaseExpression> IntegerVariable::getLowerBound() const {
 	return this->lowerBound;

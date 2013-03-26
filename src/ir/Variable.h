@@ -36,6 +36,13 @@ public:
 	Variable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>());
 
 	/*!
+	 * Creates a copy of the given Variable and gives it a new name.
+	 * @param var Variable to copy.
+	 * @param newName New name of this variable.
+	 */
+	Variable(const Variable& var, const std::string& newName);
+
+	/*!
 	 * Retrieves the name of the variable.
 	 * @returns the name of the variable.
 	 */

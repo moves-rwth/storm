@@ -33,6 +33,23 @@ public:
 
 	}
 
+	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
+		if (renaming.count(this->variableName) > 0) {
+			std::string newName = renaming.at(this->variableName);
+			if (this->getType() == bool_) {
+				return std::shared_ptr<BaseExpression>(new VariableExpression(bool_, bools.at(newName), newName, this->lowerBound, this->upperBound));
+			} else if (this->getType() == int_) {
+				return std::shared_ptr<BaseExpression>(new VariableExpression(int_, ints.at(newName), newName, this->lowerBound, this->upperBound));
+			} else {
+				std::cerr << "ERROR: Renaming variable " << this->variableName << " that is neither bool nor int." << std::endl;
+				return std::shared_ptr<BaseExpression>(this);
+			}
+		} else {
+			return std::shared_ptr<BaseExpression>(this);
+		}
+	}
+
+
 	virtual void accept(ExpressionVisitor* visitor) {
 		visitor->visit(this);
 	}

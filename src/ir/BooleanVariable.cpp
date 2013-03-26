@@ -25,6 +25,9 @@ BooleanVariable::BooleanVariable(uint_fast64_t index, std::string variableName,
 	// Nothing to do here.
 }
 
+BooleanVariable::BooleanVariable(const BooleanVariable& var, const std::string& newName) : Variable(var, newName) {
+}
+
 // Build a string representation of the variable.
 std::string BooleanVariable::toString() const {
 	std::stringstream result;

@@ -8,7 +8,7 @@
 #ifndef STORM_IR_EXPRESSIONS_BINARYEXPRESSION_H_
 #define STORM_IR_EXPRESSIONS_BINARYEXPRESSION_H_
 
-#include "BaseExpression.h"
+#include "src/ir/expressions/BaseExpression.h"
 #include <memory>
 
 namespace storm {
@@ -19,7 +19,8 @@ namespace expressions {
 
 class BinaryExpression : public BaseExpression {
 public:
-	BinaryExpression(ReturnType type, std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right) : BaseExpression(type), left(left), right(right) {
+	BinaryExpression(ReturnType type, std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right)
+		: BaseExpression(type), left(left), right(right) {
 
 	}
 

@@ -8,10 +8,9 @@
 #ifndef STORM_IR_BOOLEANVARIABLE_H_
 #define STORM_IR_BOOLEANVARIABLE_H_
 
-#include "expressions/BooleanLiteral.h"
-
-#include "Variable.h"
+#include "src/ir/Variable.h"
 #include <memory>
+#include <map>
 
 namespace storm {
 
@@ -34,6 +33,9 @@ public:
 	 * @param initialValue the expression that defines the initial value of the variable.
 	 */
 	BooleanVariable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr));
+
+
+	BooleanVariable(const BooleanVariable& var, const std::string& newName);
 
 	/*!
 	 * Retrieves a string representation of this variable.

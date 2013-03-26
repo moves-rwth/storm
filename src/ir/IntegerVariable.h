@@ -9,7 +9,7 @@
 #define STORM_IR_INTEGERVARIABLE_H_
 
 #include "expressions/BaseExpression.h"
-#include "Variable.h"
+#include "src/ir/Variable.h"
 #include <memory>
 
 namespace storm {
@@ -37,6 +37,8 @@ public:
 	 */
 	IntegerVariable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr));
 
+	IntegerVariable(const IntegerVariable& var, const std::string& newName);
+	
 	/*!
 	 * Retrieves the lower bound for this integer variable.
 	 * @returns the lower bound for this integer variable.

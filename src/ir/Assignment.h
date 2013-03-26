@@ -33,6 +33,8 @@ public:
 	 */
 	Assignment(std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> expression);
 
+	Assignment(const Assignment& assignment, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints);
+
 	/*!
 	 * Retrieves the name of the variable that this assignment targets.
 	 * @returns the name of the variable that this assignment targets.

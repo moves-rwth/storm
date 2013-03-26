@@ -8,6 +8,7 @@
 #include "Variable.h"
 
 #include <sstream>
+#include <map>
 
 namespace storm {
 
@@ -21,6 +22,10 @@ Variable::Variable() : index(0), variableName(), initialValue() {
 // Initializes all members according to the given values.
 Variable::Variable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue) : index(index), variableName(variableName), initialValue(initialValue) {
 	// Nothing to do here.
+}
+
+Variable::Variable(const Variable& var, const std::string& newName) : Variable(var.index, newName, var.initialValue) {
+	// Nothing to do here
 }
 
 // Return the name of the variable.
