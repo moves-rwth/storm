@@ -41,6 +41,18 @@
 
 #include "src/exceptions/InvalidSettingsException.h"
 
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <iostream>
+
+void printUsage() {
+	struct rusage ru;
+	getrusage(RUSAGE_SELF, &ru);
+
+	std::cout << "Memory Usage: " << ru.ru_maxrss << "kB" << std::endl;
+}
+
+
 log4cplus::Logger logger;
 
 /*!
@@ -238,16 +250,17 @@ int main(const int argc, const char* argv[]) {
 	// printHeader(argc, argv);
 
 	// testChecking();
-
+	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::PrismParser parser;
-	std::shared_ptr<storm::ir::Program> program = parser.parseFile("examples/dtmc/die/die.pm");
+	std::shared_ptr<storm::ir::Program> program = parser.parseFile(s->getString("trafile"));
 	storm::adapters::ExplicitModelAdapter explicitModelAdapter(program);
-	std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = explicitModelAdapter.toSparseMatrix<double>();
+	std::shared_ptr<storm::models::AbstractModel> model = explicitModelAdapter.getModel();
+	if (model->getType() == storm::models::DTMC) {
+		std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->as<storm::models::Dtmc<double>>();
+		dtmc->printModelInformationToStream(std::cout);
+	}
 
-	std::shared_ptr<storm::ir::Program> secondProgram = parser.parseFile("examples/dtmc/crowds/crowds5_5.pm");
-	storm::adapters::ExplicitModelAdapter secondExplicitModelAdapter(secondProgram);
-	std::shared_ptr<storm::storage::SparseMatrix<double>> secondMatrix = secondExplicitModelAdapter.toSparseMatrix<double>();
-
+	printUsage();
 	cleanUp();
 	return 0;
 }
