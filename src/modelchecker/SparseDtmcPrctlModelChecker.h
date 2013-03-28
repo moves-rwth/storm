@@ -232,10 +232,10 @@ public:
 		uint_fast64_t maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
 		if (maybeStatesSetBitCount > 0 && !qualitative) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
+			storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
 			// system. That is, we go from x = A*x + b to (I-A)x = b.
-			submatrix->convertToEquationSystem();
+			submatrix.convertToEquationSystem();
 
 			// Initialize the x vector with 0.5 for each element. This is the initial guess for
 			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
@@ -244,13 +244,10 @@ public:
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
-			std::vector<Type> b(maybeStatesSetBitCount);
-			this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, statesWithProbability1, &b);
+			std::vector<Type> b = this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, statesWithProbability1);
 
-			this->solveEquationSystem(*submatrix, x, b);
-
-			// Delete the created submatrix.
-			delete submatrix;
+			// Now solve the created system of linear equations.
+			this->solveEquationSystem(submatrix, x, b);
 
 			// Set values of resulting vector according to result.
 			storm::utility::setVectorValues<Type>(result, maybeStates, x);
@@ -375,10 +372,10 @@ public:
 		const int maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
 		if (maybeStatesSetBitCount > 0) {
 			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
+			storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
 			// Converting the matrix from the fixpoint notation to the form needed for the equation
 			// system. That is, we go from x = A*x + b to (I-A)x = b.
-			submatrix->convertToEquationSystem();
+			submatrix.convertToEquationSystem();
 
 			// Initialize the x vector with 1 for each element. This is the initial guess for
 			// the iterative solvers.
@@ -390,9 +387,8 @@ public:
 				// If a transition-based reward model is available, we initialize the right-hand
 				// side to the vector resulting from summing the rows of the pointwise product
 				// of the transition probability matrix and the transition reward matrix.
-				std::vector<Type>* pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
-				storm::utility::selectVectorValues(&b, maybeStates, *pointwiseProductRowSumVector);
-				delete pointwiseProductRowSumVector;
+				std::vector<Type> pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
+				storm::utility::selectVectorValues(&b, maybeStates, pointwiseProductRowSumVector);
 
 				if (this->getModel().hasStateRewards()) {
 					// If a state-based reward model is also available, we need to add this vector
@@ -412,13 +408,10 @@ public:
 			}
 
 			// Now solve the resulting equation system.
-			this->solveEquationSystem(*submatrix, x, b);
+			this->solveEquationSystem(submatrix, x, b);
 
 			// Set values of resulting vector according to result.
 			storm::utility::setVectorValues<Type>(result, maybeStates, x);
-
-			// Delete temporary matrix and right-hand side.
-			delete submatrix;
 		}
 
 		// Set values of resulting vector that are known exactly.
