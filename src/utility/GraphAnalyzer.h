@@ -72,7 +72,7 @@ public:
 
 		// Get the backwards transition relation from the model to ease the search.
 		storm::models::GraphTransitions<T> backwardTransitions(*model.getTransitionMatrix(), false);
-
+        
 		// Add all psi states as the already satisfy the condition.
 		*statesWithProbabilityGreater0 |= psiStates;
 

@@ -275,7 +275,7 @@ public:
 		// error otherwise.
 		if ((row > rowCount) || (col > colCount)) {
 			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ").");
+			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ") in matrix of size (" << rowCount << ", " << colCount << ").");
 			throw storm::exceptions::OutOfRangeException("Trying to add a value at illegal position.");
 		}
 
@@ -717,7 +717,7 @@ public:
 		uint_fast64_t* bitsSetBeforeIndex = new uint_fast64_t[colCount];
 		uint_fast64_t lastIndex = 0;
 		uint_fast64_t currentNumberOfSetBits = 0;
-		for (auto index : rowGroupIndices) {
+		for (auto index : rowGroupConstraint) {
 			while (lastIndex <= index) {
 				bitsSetBeforeIndex[lastIndex++] = currentNumberOfSetBits;
 			}
@@ -726,7 +726,7 @@ public:
 
 		// Copy over selected entries.
 		uint_fast64_t rowCount = 0;
-		for (auto index : rowGroupIndices) {
+		for (auto index : rowGroupConstraint) {
 			for (uint_fast64_t i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
 				for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
 					if (rowGroupConstraint.get(columnIndications[j])) {
@@ -976,7 +976,7 @@ public:
 	 * @returns An iterator that points to the first element after the matrix.
 	 */
 	ConstIndexIterator constColumnIteratorEnd(uint_fast64_t row) const {
-		return &(this->columnIndications[0]) + this->rowIndications[row];
+		return &(this->columnIndications[0]) + this->rowIndications[row + 1];
 	}
 	
 	/*!

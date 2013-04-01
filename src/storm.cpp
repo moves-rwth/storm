@@ -449,7 +449,7 @@ void testChecking() {
 		std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 		mdp->printModelInformationToStream(std::cout);
 
-		// testCheckingDice(*mdp);
+        testCheckingDice(*mdp);
 		// testCheckingAsynchLeader(*mdp);
 		// testCheckingConsensus(*mdp);
 	} else {
