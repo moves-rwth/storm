@@ -236,7 +236,7 @@ public:
 						// nondeterminstic choices.
 						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
 							bool allSuccessorsInCurrentStates = true;
-							for (auto colIt = transitionMatrix->beginConstColumnIterator(row); colIt != transitionMatrix->endConstColumnIterator(row); ++colIt) {
+							for (auto colIt = transitionMatrix->constColumnIteratorBegin(row); colIt != transitionMatrix->constColumnIteratorEnd(row); ++colIt) {
 								if (!currentStates->get(*colIt)) {
 									allSuccessorsInCurrentStates = false;
 									break;
@@ -322,7 +322,7 @@ public:
 					bool addToStatesWithProbability0 = true;
 					for (auto rowIt = nondeterministicChoiceIndices->begin() + *it; rowIt != nondeterministicChoiceIndices->begin() + *it + 1; ++rowIt) {
 						bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
-						for (auto colIt = transitionMatrix->beginConstColumnIterator(*rowIt); colIt != transitionMatrix->endConstColumnIterator(*rowIt); ++colIt) {
+						for (auto colIt = transitionMatrix->constColumnIteratorBegin(*rowIt); colIt != transitionMatrix->constColumnIteratorEnd(*rowIt); ++colIt) {
 							if (statesWithProbability0->get(*colIt)) {
 								hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
 								break;
@@ -383,7 +383,7 @@ public:
 						// nondeterminstic choices.
 						bool allSuccessorsInCurrentStatesForAllChoices = true;
 						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
-							for (auto colIt = transitionMatrix->beginConstColumnIterator(row); colIt != transitionMatrix->endConstColumnIterator(row); ++colIt) {
+							for (auto colIt = transitionMatrix->constColumnIteratorBegin(row); colIt != transitionMatrix->constColumnIteratorEnd(row); ++colIt) {
 								if (!currentStates->get(*colIt)) {
 									allSuccessorsInCurrentStatesForAllChoices = false;
 									goto afterCheckLoop;

@@ -9,7 +9,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/NondeterministicModelParser.h"
-#include "src/utility/IoUtility.h"
 
 TEST(ParseMdpTest, parseAndOutput) {
 	storm::parser::NondeterministicModelParser* mdpParser = nullptr;

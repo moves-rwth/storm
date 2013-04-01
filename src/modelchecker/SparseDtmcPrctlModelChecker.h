@@ -311,14 +311,14 @@ public:
 		}
 
 		// Compute the reward vector to add in each step based on the available reward models.
-		std::vector<Type>* totalRewardVector = nullptr;
+		std::vector<Type> totalRewardVector;
 		if (this->getModel().hasTransitionRewards()) {
 			totalRewardVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
 			if (this->getModel().hasStateRewards()) {
-				gmm::add(*this->getModel().getStateRewardVector(), *totalRewardVector);
+				gmm::add(*this->getModel().getStateRewardVector(), totalRewardVector);
 			}
 		} else {
-			totalRewardVector = new std::vector<Type>(*this->getModel().getStateRewardVector());
+			totalRewardVector = std::vector<Type>(*this->getModel().getStateRewardVector());
 		}
 
 		// Initialize result to either the state rewards of the model or the null vector.
@@ -330,10 +330,9 @@ public:
 		}
 
 		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, totalRewardVector, formula.getBound());
+		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, &totalRewardVector, formula.getBound());
 
-		// Delete temporary variables and return result.
-		delete totalRewardVector;
+		// Return result.
 		return result;
 	}
 

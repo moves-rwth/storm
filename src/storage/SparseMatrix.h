@@ -136,7 +136,7 @@ public:
 		 * @returns The column of the current non-zero element this iterator points to.
          */
 		uint_fast64_t column() const {
-			return matrix.columnIndications[index];
+			return matrix.columnIndications[posIndex];
 		}
 		
 		/*!

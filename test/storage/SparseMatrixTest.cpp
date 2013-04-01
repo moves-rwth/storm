@@ -272,10 +272,6 @@ TEST(SparseMatrixTest, ConversionFromSparseEigen_RowMajor_SparseMatrixTest) {
 	ASSERT_NO_THROW(ssm = storm::adapters::StormAdapter::toStormSparseMatrix(esm));
 
 	ASSERT_EQ(ssm->getState(), storm::storage::SparseMatrix<int>::MatrixStatus::ReadReady);
-	
-	const std::vector<uint_fast64_t> rowP = ssm->getRowIndications();
-	const std::vector<uint_fast64_t> colP = ssm->getColumnIndications();
-	const std::vector<int> valP = ssm->getStorage();
 
 	int target = -1;
 	for (auto &coeff: tripletList) {

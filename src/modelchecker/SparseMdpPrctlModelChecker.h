@@ -238,7 +238,7 @@ public:
 		if (maybeStatesSetBitCount > 0) {
 			// First, we can eliminate the rows and columns from the original transition probability matrix for states
 			// whose probabilities are already known.
-			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates, *this->getModel().getNondeterministicChoiceIndices());
+			storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates, *this->getModel().getNondeterministicChoiceIndices());
 
 			// Get the "new" nondeterministic choice indices for the submatrix.
 			std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
@@ -248,17 +248,13 @@ public:
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
-			std::vector<Type> b(submatrix->getRowCount());
-			this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, *this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, &b);
+			std::vector<Type> b = this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, *this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, submatrix.getRowCount());
 
 			// Solve the corresponding system of equations.
-			this->solveEquationSystem(*submatrix, x, b, subNondeterministicChoiceIndices);
+			this->solveEquationSystem(submatrix, x, b, subNondeterministicChoiceIndices);
 
 			// Set values of resulting vector according to result.
 			storm::utility::setVectorValues<Type>(result, maybeStates, x);
-
-			// Delete temporary matrix.
-			delete submatrix;
 		}
 
 		// Set values of resulting vector that are known exactly.
@@ -314,14 +310,14 @@ public:
 		}
 
 		// Compute the reward vector to add in each step based on the available reward models.
-		std::vector<Type>* totalRewardVector = nullptr;
+		std::vector<Type> totalRewardVector;
 		if (this->getModel().hasTransitionRewards()) {
 			totalRewardVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
 			if (this->getModel().hasStateRewards()) {
-				gmm::add(*this->getModel().getStateRewardVector(), *totalRewardVector);
+				gmm::add(*this->getModel().getStateRewardVector(), totalRewardVector);
 			}
 		} else {
-			totalRewardVector = new std::vector<Type>(*this->getModel().getStateRewardVector());
+			totalRewardVector = std::vector<Type>(*this->getModel().getStateRewardVector());
 		}
 
 		// Initialize result to either the state rewards of the model or the null vector.
@@ -332,10 +328,9 @@ public:
 			result = new std::vector<Type>(this->getModel().getNumberOfStates());
 		}
 
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, totalRewardVector, formula.getBound());
+		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, &totalRewardVector, formula.getBound());
 
 		// Delete temporary variables and return result.
-		delete totalRewardVector;
 		return result;
 	}
 
@@ -383,7 +378,7 @@ public:
 		if (maybeStatesSetBitCount > 0) {
 			// First, we can eliminate the rows and columns from the original transition probability matrix for states
 			// whose probabilities are already known.
-			storm::storage::SparseMatrix<Type>* submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates, *this->getModel().getNondeterministicChoiceIndices());
+			storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates, *this->getModel().getNondeterministicChoiceIndices());
 
 			// Get the "new" nondeterministic choice indices for the submatrix.
 			std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
@@ -393,15 +388,14 @@ public:
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
-			std::vector<Type> b(submatrix->getRowCount());
+			std::vector<Type> b(submatrix.getRowCount());
 
 			if (this->getModel().hasTransitionRewards()) {
 				// If a transition-based reward model is available, we initialize the right-hand
 				// side to the vector resulting from summing the rows of the pointwise product
 				// of the transition probability matrix and the transition reward matrix.
-				std::vector<Type>* pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
-				storm::utility::selectVectorValues(&b, maybeStates, *this->getModel().getNondeterministicChoiceIndices(), *pointwiseProductRowSumVector);
-				delete pointwiseProductRowSumVector;
+				std::vector<Type> pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
+				storm::utility::selectVectorValues(&b, maybeStates, *this->getModel().getNondeterministicChoiceIndices(), pointwiseProductRowSumVector);
 
 				if (this->getModel().hasStateRewards()) {
 					// If a state-based reward model is also available, we need to add this vector
@@ -422,11 +416,10 @@ public:
 			}
 
 			// Solve the corresponding system of equations.
-			this->solveEquationSystem(*submatrix, x, b, subNondeterministicChoiceIndices);
+			this->solveEquationSystem(submatrix, x, b, subNondeterministicChoiceIndices);
 
 			// Set values of resulting vector according to result.
 			storm::utility::setVectorValues<Type>(result, maybeStates, x);
-			delete submatrix;
 		}
 
 		// Set values of resulting vector that are known exactly.

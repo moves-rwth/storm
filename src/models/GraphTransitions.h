@@ -220,7 +220,7 @@ private:
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix.constColumnIteratorBegin(i); rowIt != transitionMatrix.constColumnIteratorEnd(i); ++rowIt) {
 				this->successorList[nextIndices[*rowIt]++] = i;
 			}
 		}
@@ -230,7 +230,7 @@ private:
 		// First, we need to count how many backward transitions each state has.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
 			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
-				for (auto rowIt = transitionMatrix.beginConstColumnIterator(j); rowIt != transitionMatrix.endConstColumnIterator(j); ++rowIt) {
+				for (auto rowIt = transitionMatrix.constColumnIteratorBegin(j); rowIt != transitionMatrix.constColumnIteratorEnd(j); ++rowIt) {
 					this->stateIndications[*rowIt + 1]++;
 				}
 			}
@@ -254,7 +254,7 @@ private:
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
 			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
-				for (auto rowIt = transitionMatrix.beginConstColumnIterator(j); rowIt != transitionMatrix.endConstColumnIterator(j); ++rowIt) {
+				for (auto rowIt = transitionMatrix.constColumnIteratorBegin(j); rowIt != transitionMatrix.constColumnIteratorEnd(j); ++rowIt) {
 					this->successorList[nextIndices[*rowIt]++] = i;
 				}
 			}
