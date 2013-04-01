@@ -1005,7 +1005,7 @@ public:
 	 * @returns An iterator that points to the first element after the matrix.
 	 */
 	ConstValueIterator constValueIteratorEnd(uint_fast64_t row) const {
-		return &(this->valueStorage[0]) + this->rowIndications[row];
+		return &(this->valueStorage[0]) + this->rowIndications[row + 1];
 	}
 	
 	/*!
@@ -1071,7 +1071,7 @@ public:
 	 * given, rows of different groups will be separated by a dashed line.
 	 * @returns A (non-compressed) string representation of the matrix.
 	 */
-	std::string toString(std::vector<uint_fast64_t> const* rowGroupIndices) const {
+	std::string toString(std::vector<uint_fast64_t> const* rowGroupIndices = nullptr) const {
 		std::stringstream result;
 		uint_fast64_t currentNondeterministicChoiceIndex = 0;
 

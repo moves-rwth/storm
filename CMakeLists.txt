@@ -158,6 +158,9 @@ target_link_libraries(storm-tests ${Boost_LIBRARIES})
 set (STORM_USE_COTIRE ON)
 if (APPLE)
 	set(STORM_USE_COTIRE OFF)
+	
+	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
+	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 endif(APPLE)
 
 # Print Cotire Usage Status
