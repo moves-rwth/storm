@@ -11,7 +11,6 @@
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "boost/integer/integer_mask.hpp"
 #include <string>
 
 namespace storm {
@@ -64,7 +63,7 @@ public:
 	 *
 	 * @param bound The time bound of the reward formula
 	 */
-	CumulativeReward(uint_fast64_t bound) {
+	CumulativeReward(T bound) {
 		this->bound = bound;
 	}
 
@@ -78,7 +77,7 @@ public:
 	/*!
 	 * @returns the time instance for the instantaneous reward operator
 	 */
-	uint_fast64_t getBound() const {
+	T getBound() const {
 		return bound;
 	}
 
@@ -87,7 +86,7 @@ public:
 	 *
 	 * @param bound the new bound.
 	 */
-	void setBound(uint_fast64_t bound) {
+	void setBound(T bound) {
 		this->bound = bound;
 	}
 
@@ -95,7 +94,7 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "C<=";
+		std::string result = "C <= ";
 		result += std::to_string(bound);
 		return result;
 	}
@@ -138,7 +137,7 @@ public:
 	}
 
 private:
-	uint_fast64_t bound;
+	T bound;
 };
 
 } //namespace formula

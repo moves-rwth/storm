@@ -60,6 +60,10 @@ public:
 		: model(modelChecker->model) {
 	}
 	
+	virtual ~AbstractModelChecker() {
+		//intentionally left empty
+	}
+
 	template <template <class T> class Target>
 	const Target<Type>* as() const {
 		try {
@@ -72,8 +76,6 @@ public:
 	}
 
 	/*!
-<<<<<<< HEAD
-=======
 	 * Checks the given state formula on the DTMC and prints the result (true/false) for all initial
 	 * states.
 	 * @param stateFormula The formula to be checked.
@@ -87,9 +89,9 @@ public:
 			result = stateFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getLabeledStates("init")) {
+			for (auto initialState : *model.getLabeledStates("init")) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+				std::cout << "\t" << initialState << ": " << result->get(initialState) << std::endl;
 			}
 			delete result;
 		} catch (std::exception& e) {
@@ -153,7 +155,6 @@ public:
 	}
 
 	/*!
->>>>>>> master
 	 * The check method for a state formula with an And node as root in its formula tree
 	 *
 	 * @param formula The And formula to check

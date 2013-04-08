@@ -39,6 +39,14 @@ template <class T>
 class AbstractFormulaChecker {
 	public:
 		/*!
+		 * Virtual destructor
+		 * To ensure that the right destructor is called
+		 */
+		virtual ~AbstractFormulaChecker() {
+			//intentionally left empty
+		}
+
+		/*!
 		 *	@brief Checks if the given formula is valid in some logic.
 		 *
 		 *	Every subclass must implement this method and check, if the

@@ -19,6 +19,7 @@
 #include "Or.h"
 #include "ProbabilisticNoBoundOperator.h"
 #include "ProbabilisticBoundOperator.h"
+
 #include "Until.h"
 #include "Eventually.h"
 #include "Globally.h"
@@ -29,6 +30,8 @@
 #include "ReachabilityReward.h"
 #include "RewardBoundOperator.h"
 #include "RewardNoBoundOperator.h"
+#include "SteadyStateReward.h"
+
 #include "SteadyStateOperator.h"
 
 #include "AbstractFormula.h"
