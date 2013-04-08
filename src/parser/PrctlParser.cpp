@@ -90,25 +90,26 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 				phoenix::new_<storm::formula::RewardNoBoundOperator<double> >(qi::_1)];
 		rewardNoBoundOperator.name("no bound operator");
 
-		//This block defines rules for parsing path formulas
+		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (boundedEventually | eventually | globally | boundedUntil | until);
 		pathFormula.name("path formula");
 		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::BoundedEventually<double>>(qi::_2, qi::_1)];
-		boundedEventually.name("path formula");
+		boundedEventually.name("path formula (for probablistic operator)");
 		eventually = (qi::lit("F") > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Eventually<double> >(qi::_1)];
-		eventually.name("path formula");
+		eventually.name("path formula (for probablistic operator)");
 		globally = (qi::lit("G") > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Globally<double> >(qi::_1)];
-		globally.name("path formula");
+		globally.name("path formula (for probablistic operator)");
 		boundedUntil = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") >> qi::lit("<=") > qi::int_ > stateFormula)
 				[qi::_val = phoenix::new_<storm::formula::BoundedUntil<double>>(phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_3, qi::_2)];
-		boundedUntil.name("path formula");
+		boundedUntil.name("path formula (for probablistic operator)");
 		until = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Until<double>>(phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_2)];
-		until.name("path formula");
+		until.name("path formula (for probablistic operator)");
 
+		//This block defines rules for parsing reward path formulas
 		rewardPathFormula = (cumulativeReward | reachabilityReward | instantaneousReward | steadyStateReward);
 		rewardPathFormula.name("path formula (for reward operator)");
 		cumulativeReward = (qi::lit("C") > qi::lit("<=") > qi::double_)

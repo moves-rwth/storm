@@ -2,7 +2,7 @@
  * SteadyStateReward.h
  *
  *  Created on: 08.04.2013
- *      Author: thomas
+ *      Author: Thomas Heinemann
  */
 
 #ifndef STORM_FORMULA_STEADYSTATEREWARD_H_
@@ -103,4 +103,4 @@ public:
 
 } /* namespace formula */
 } /* namespace storm */
-#endif /* STEADYSTATEREWARD_H_ */
+#endif /* STORM_FORMULA_STEADYSTATEREWARD_H_ */
