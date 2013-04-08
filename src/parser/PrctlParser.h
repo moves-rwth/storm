@@ -4,7 +4,7 @@
 #include "src/parser/Parser.h"
 
 #include "src/formula/Formulas.h"
-#include <memory>
+//#include <memory>
 
 namespace storm {
 namespace parser {
