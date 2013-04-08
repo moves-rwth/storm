@@ -17,7 +17,7 @@ namespace storm {
 namespace parser {
 
 PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Dtmc<double>& dtmc, enum libraries library) {
-
+	//Here ,the model checker which uses the correct library is created and a reference stored in the pointer modelChecker:
 	storm::modelchecker::SparseDtmcPrctlModelChecker<double>* modelChecker = nullptr;
 	switch(library) {
 	//case EIGEN:
@@ -30,11 +30,14 @@ PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Dtmc<doubl
 		modelChecker = new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 		break;
 	}
+
+	//Now, the check function (which works on abstract model checkers) can parse the formulas and invoke the model checker:
 	check(filename, modelChecker);
 	delete modelChecker;
 }
 
 PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Mdp<double>& mdp, enum libraries library) {
+	//Here ,the model checker which uses the correct library is created and a reference stored in the pointer modelChecker:
 	storm::modelchecker::SparseMdpPrctlModelChecker<double>* modelChecker = nullptr;
 	switch(library) {
 	//case EIGEN:
@@ -46,6 +49,8 @@ PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Mdp<double
 		modelChecker = new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
 		break;
 	}
+
+	//Now, the check function (which works on abstract model checkers) can parse the formulas and invoke the model checker:
 	check(filename, modelChecker);
 	delete modelChecker;
 }

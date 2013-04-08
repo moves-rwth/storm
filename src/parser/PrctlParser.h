@@ -18,8 +18,7 @@ namespace parser {
  * This class creates a PctlFormula object which can be accessed through the getFormula() method (of base
  * class PrctlParser). However, it will not delete this object.
  */
-class PrctlParser : Parser
-{
+class PrctlParser : Parser {
 	public:
 		/*!
 		 * Reads a PRCTL formula from its string representation and parses it into a formula tree, consisting of
@@ -35,8 +34,7 @@ class PrctlParser : Parser
 		/*!
 		 *	@return a pointer to the parsed formula object
 		 */
-	storm::formula::AbstractFormula<double>* getFormula()
-		{
+		storm::formula::AbstractFormula<double>* getFormula() {
 			return this->formula;
 		}
 
