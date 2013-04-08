@@ -8,65 +8,73 @@
 #ifndef STORM_MODELCHECKER_GMMXXMDPPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_GMMXXMDPPRCTLMODELCHECKER_H_
 
-#include <cmath>
-
-#include "src/models/Mdp.h"
-#include "src/modelchecker/MdpPrctlModelChecker.h"
-#include "src/utility/GraphAnalyzer.h"
-#include "src/utility/Vector.h"
-#include "src/utility/ConstTemplates.h"
-#include "src/utility/Settings.h"
+#include "src/modelchecker/SparseMdpPrctlModelChecker.h"
 #include "src/adapters/GmmxxAdapter.h"
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/storage/JacobiDecomposition.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
+#include <cmath>
 
 namespace storm {
-
-namespace modelChecker {
+namespace modelchecker {
 
 /*
- * A model checking engine that makes use of the gmm++ backend.
+ * An implementation of the SparseMdpPrctlModelChecker interface that uses gmm++ as the solving backend.
  */
 template <class Type>
-class GmmxxMdpPrctlModelChecker : public MdpPrctlModelChecker<Type> {
+class GmmxxMdpPrctlModelChecker : public SparseMdpPrctlModelChecker<Type> {
 
 public:
-	explicit GmmxxMdpPrctlModelChecker(storm::models::Mdp<Type>& mdp) : MdpPrctlModelChecker<Type>(mdp) { }
+	/*!
+	 * Constructs a GmmxxMdpPrctlModelChecker with the given model.
+	 *
+	 * @param model The MDP to be checked.
+	 */
+	explicit GmmxxMdpPrctlModelChecker(storm::models::Mdp<Type> const& model) : SparseMdpPrctlModelChecker<Type>(model) {
+		// Intentionally left empty.
+	}
 
-	virtual ~GmmxxMdpPrctlModelChecker() { }
+	/*!
+	 * Copy constructs a GmmxxDtmcPrctlModelChecker from the given model checker. In particular, this means that the newly
+	 * constructed model checker will have the model of the given model checker as its associated model.
+	 */
+	explicit GmmxxMdpPrctlModelChecker(storm::modelchecker::GmmxxMdpPrctlModelChecker<Type> const& modelchecker) : SparseMdpPrctlModelChecker<Type>(modelchecker) {
+		// Intentionally left empty.
+	}
+
+	/*!
+	 * Virtual destructor. Needs to be virtual, because this class has virtual methods.
+	 */
+	virtual ~GmmxxMdpPrctlModelChecker() {
+		// Intentionally left empty.
+	}
 
 private:
-	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& vector, std::vector<Type>* summand = nullptr, uint_fast64_t repetitions = 1) const {
+
+	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const {
 		// Get the starting row indices for the non-deterministic choices to reduce the resulting
 		// vector properly.
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
+		std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = *this->getModel().getNondeterministicChoiceIndices();
 
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(matrix);
+		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
 
 		// Create vector for result of multiplication, which is reduced to the result vector after
 		// each multiplication.
-		std::vector<Type> multiplyResult(matrix.getRowCount());
+		std::vector<Type> multiplyResult(A.getRowCount());
 
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
-		for (uint_fast64_t i = 0; i < repetitions; ++i) {
-			gmm::mult(*gmmxxMatrix, vector, multiplyResult);
-			if (summand != nullptr) {
-				gmm::add(*summand, multiplyResult);
+		for (uint_fast64_t i = 0; i < n; ++i) {
+			gmm::mult(*gmmxxMatrix, x, multiplyResult);
+			if (b != nullptr) {
+				gmm::add(*b, multiplyResult);
 			}
 			if (this->minimumOperatorStack.top()) {
-				storm::utility::reduceVectorMin(multiplyResult, &vector, *nondeterministicChoiceIndices);
+				storm::utility::reduceVectorMin(multiplyResult, &x, nondeterministicChoiceIndices);
 			} else {
-				storm::utility::reduceVectorMax(multiplyResult, &vector, *nondeterministicChoiceIndices);
+				storm::utility::reduceVectorMax(multiplyResult, &x, nondeterministicChoiceIndices);
 			}
 		}
 
@@ -84,7 +92,7 @@ private:
 	 * @return The solution of the system of linear equations in form of the elements of the vector
 	 * x.
 	 */
-	void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+	void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
 		// Get the settings object to customize solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
@@ -95,18 +103,18 @@ private:
 
 
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(matrix);
+		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
 
 		// Set up the environment for the power method.
-		std::vector<Type> multiplyResult(matrix.getRowCount());
+		std::vector<Type> multiplyResult(A.getRowCount());
 		std::vector<Type>* currentX = &x;
 		std::vector<Type>* newX = new std::vector<Type>(x.size());
 		std::vector<Type>* swap = nullptr;
 		uint_fast64_t iterations = 0;
 		bool converged = false;
 
-		// Proceed with the iterations as long as the method did not converge or reach the
-		// user-specified maximum number of iterations.
+		// Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
+		// of iterations.
 		while (!converged && iterations < maxIterations) {
 			// Compute x' = A*x + b.
 			gmm::mult(*gmmxxMatrix, *currentX, multiplyResult);
@@ -129,6 +137,8 @@ private:
 			++iterations;
 		}
 
+		// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
+		// is currently stored in currentX, but x is the output vector.
 		if (iterations % 2 == 1) {
 			std::swap(x, *currentX);
 			delete currentX;
@@ -146,8 +156,7 @@ private:
 	}
 };
 
-} //namespace modelChecker
-
+} //namespace modelchecker
 } //namespace storm
 
 #endif /* STORM_MODELCHECKER_GMMXXMDPPRCTLMODELCHECKER_H_ */

@@ -18,16 +18,16 @@ namespace parser {
 
 PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Dtmc<double>& dtmc, enum libraries library) {
 
-	storm::modelChecker::DtmcPrctlModelChecker<double>* modelChecker = nullptr;
+	storm::modelchecker::SparseDtmcPrctlModelChecker<double>* modelChecker = nullptr;
 	switch(library) {
 	//case EIGEN:
 		//Eigen Model Checker is not completely implemented at the moment, thus using Eigen is not possible...
 		//Current behaviour: Fall back to GMMXX...
-		//modelChecker = new storm::modelChecker::EigenDtmcPrctlModelChecker<double>(dtmc);
+		//modelChecker = new storm::modelchecker::EigenDtmcPrctlModelChecker<double>(dtmc);
 	//	break;
 	case GMMXX:
 	default:					//Note: GMMXX is default, hence default branches here, too.
-		modelChecker = new storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+		modelChecker = new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 		break;
 	}
 	check(filename, modelChecker);
@@ -35,7 +35,7 @@ PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Dtmc<doubl
 }
 
 PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Mdp<double>& mdp, enum libraries library) {
-	storm::modelChecker::MdpPrctlModelChecker<double>* modelChecker = nullptr;
+	storm::modelchecker::SparseMdpPrctlModelChecker<double>* modelChecker = nullptr;
 	switch(library) {
 	//case EIGEN:
 		//Eigen MDP Model Checker is not implemented yet
@@ -43,7 +43,7 @@ PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Mdp<double
 	//	break;
 	case GMMXX:
 	default:					//Note: GMMXX is default, hence default branches here, too.
-		modelChecker = new storm::modelChecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+		modelChecker = new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
 		break;
 	}
 	check(filename, modelChecker);
@@ -54,7 +54,7 @@ PrctlFileParser::~PrctlFileParser() {
 	//intentionally left empty
 }
 
-void PrctlFileParser::check(std::string filename, storm::modelChecker::AbstractModelChecker<double>* modelChecker) {
+void PrctlFileParser::check(std::string filename, storm::modelchecker::AbstractModelChecker<double>* modelChecker) {
 	// Open file
 	std::ifstream inputFileStream(filename, std::ios::in);
 

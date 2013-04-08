@@ -37,7 +37,7 @@ void setUpLogging() {
 bool parseOptions(int const argc, char const * const argv[]) {
     storm::settings::Settings* s = nullptr;
     try {
-        storm::settings::Settings::registerModule<storm::modelChecker::GmmxxDtmcPrctlModelChecker<double>>();
+        storm::settings::Settings::registerModule<storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>>();
         s = storm::settings::newInstance(argc, argv, nullptr, true);
     } catch (storm::exceptions::InvalidSettingsException& e) {
         std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;

@@ -12,8 +12,6 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 
-#include "src/utility/IoUtility.h"
-
 TEST(ReadTraFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);

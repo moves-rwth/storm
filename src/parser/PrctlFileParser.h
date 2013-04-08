@@ -57,7 +57,7 @@ protected:
 	 * @param filename     The name of the file to parse
 	 * @param modelChecker The model checker that checks the formula (has to know its model!)
 	 */
-	void check(std::string filename, storm::modelChecker::AbstractModelChecker<double>* modelChecker);
+	void check(std::string filename, storm::modelchecker::AbstractModelChecker<double>* modelChecker);
 
 	/*!
 	 * Destructor.

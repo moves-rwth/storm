@@ -50,7 +50,7 @@ public:
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
 		}
 		if (this->getTransitionRewardMatrix() != nullptr) {
-			if (!this->getTransitionRewardMatrix()->isSubmatrixOf(*(this->getTransitionMatrix()))) {
+			if (!this->getTransitionRewardMatrix()->containsAllPositionsOf(*this->getTransitionMatrix())) {
 				LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
 				throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
 			}
@@ -62,7 +62,7 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given DTMC.
 	 * @param dtmc A reference to the DTMC that is to be copied.
 	 */
-	Dtmc(const Dtmc<T> &dtmc) : AbstractDeterministicModel<T>(dtmc) {
+	Dtmc(Dtmc<T> const& dtmc) : AbstractDeterministicModel<T>(dtmc) {
 		// Intentionally left empty.
 	}
 
@@ -95,7 +95,7 @@ private:
 			return false;
 		}
 
-		for (uint_fast64_t row = 0; row < this->getTransitionMatrix()->getRowCount(); row++) {
+		for (uint_fast64_t row = 0; row < this->getTransitionMatrix()->getRowCount(); ++row) {
 			T sum = this->getTransitionMatrix()->getRowSum(row);
 			if (sum == 0) {
 				LOG4CPLUS_ERROR(logger, "Row " << row << " has sum 0");

@@ -35,7 +35,7 @@ public:
 	 * probability 1 after the invocation of the function.
 	 */
 	template <typename T>
-	static void performProb01(storm::models::AbstractDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb01(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -63,7 +63,7 @@ public:
 	 * a positive probability of satisfying phi until psi.
 	 */
 	template <typename T>
-	static void performProbGreater0(storm::models::AbstractDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbabilityGreater0) {
+	static void performProbGreater0(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbabilityGreater0) {
 		// Check for valid parameter.
 		if (statesWithProbabilityGreater0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbabilityGreater0' must not be null.");
@@ -72,7 +72,7 @@ public:
 
 		// Get the backwards transition relation from the model to ease the search.
 		storm::models::GraphTransitions<T> backwardTransitions(*model.getTransitionMatrix(), false);
-
+        
 		// Add all psi states as the already satisfy the condition.
 		*statesWithProbabilityGreater0 |= psiStates;
 
@@ -110,7 +110,7 @@ public:
 	 * have paths satisfying phi until psi.
 	 */
 	template <typename T>
-	static void performProb1(storm::models::AbstractDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameter.
 		if (statesWithProbability1 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
@@ -134,7 +134,7 @@ public:
 	 * have paths satisfying phi until psi.
 	 */
 	template <typename T>
-	static void performProb1(storm::models::AbstractDeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameter.
 		if (statesWithProbability1 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
@@ -149,7 +149,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb01Max(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb01Max(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -166,7 +166,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb0A(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
+	static void performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
 		// Check for valid parameter.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -201,7 +201,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb1E(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability1 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
@@ -236,7 +236,7 @@ public:
 						// nondeterminstic choices.
 						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
 							bool allSuccessorsInCurrentStates = true;
-							for (auto colIt = transitionMatrix->beginConstColumnIterator(row); colIt != transitionMatrix->endConstColumnIterator(row); ++colIt) {
+							for (auto colIt = transitionMatrix->constColumnIteratorBegin(row); colIt != transitionMatrix->constColumnIteratorEnd(row); ++colIt) {
 								if (!currentStates->get(*colIt)) {
 									allSuccessorsInCurrentStates = false;
 									break;
@@ -270,7 +270,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb01Min(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb01Min(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -287,7 +287,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb0E(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
+	static void performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability0) {
 		// Check for valid parameter.
 		if (statesWithProbability0 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability0' must not be null.");
@@ -321,7 +321,7 @@ public:
 					bool addToStatesWithProbability0 = true;
 					for (auto rowIt = nondeterministicChoiceIndices->begin() + *it; rowIt != nondeterministicChoiceIndices->begin() + *it + 1; ++rowIt) {
 						bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
-						for (auto colIt = transitionMatrix->beginConstColumnIterator(*rowIt); colIt != transitionMatrix->endConstColumnIterator(*rowIt); ++colIt) {
+						for (auto colIt = transitionMatrix->constColumnIteratorBegin(*rowIt); colIt != transitionMatrix->constColumnIteratorEnd(*rowIt); ++colIt) {
 							if (statesWithProbability0->get(*colIt)) {
 								hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
 								break;
@@ -347,7 +347,7 @@ public:
 	}
 
 	template <typename T>
-	static void performProb1A(storm::models::AbstractNondeterministicModel<T>& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
+	static void performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector* statesWithProbability1) {
 		// Check for valid parameters.
 		if (statesWithProbability1 == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Parameter 'statesWithProbability1' must not be null.");
@@ -382,7 +382,7 @@ public:
 						// nondeterminstic choices.
 						bool allSuccessorsInCurrentStatesForAllChoices = true;
 						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
-							for (auto colIt = transitionMatrix->beginConstColumnIterator(row); colIt != transitionMatrix->endConstColumnIterator(row); ++colIt) {
+							for (auto colIt = transitionMatrix->constColumnIteratorBegin(row); colIt != transitionMatrix->constColumnIteratorEnd(row); ++colIt) {
 								if (!currentStates->get(*colIt)) {
 									allSuccessorsInCurrentStatesForAllChoices = false;
 									goto afterCheckLoop;

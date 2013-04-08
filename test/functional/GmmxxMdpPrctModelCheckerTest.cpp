@@ -16,7 +16,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 169);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 436);
 
-	storm::modelChecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
 
 	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("two");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
@@ -112,7 +112,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	std::shared_ptr<storm::models::Mdp<double>> stateRewardMdp = stateRewardParser.getModel<storm::models::Mdp<double>>();
 
-	storm::modelChecker::GmmxxMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
+	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
 
 	apFormula = new storm::formula::Ap<double>("done");
 	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
@@ -142,7 +142,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	std::shared_ptr<storm::models::Mdp<double>> stateAndTransitionRewardMdp = stateAndTransitionRewardParser.getModel<storm::models::Mdp<double>>();
 
-	storm::modelChecker::GmmxxMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
+	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
 
 	apFormula = new storm::formula::Ap<double>("done");
 	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
@@ -178,7 +178,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 3172);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144);
 
-	storm::modelChecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
 
 	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("elected");
 	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);

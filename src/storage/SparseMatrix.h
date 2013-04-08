@@ -38,8 +38,8 @@ namespace storage {
 
 /*!
  * A sparse matrix class with a constant number of non-zero entries.
- * NOTE: Addressing *is* zero-based, so the valid range for getValue and addNextValue is 0..(rows - 1)
- * where rows is the first argument to the constructor.
+ * NOTE: Addressing *is* zero-based, so the valid range for getValue and addNextValue is 0..(rows - 1) where rows is the
+ * first argument to the constructor.
  */
 template<class T>
 class SparseMatrix {
@@ -52,58 +52,148 @@ public:
 	friend class storm::adapters::StormAdapter;
 
 	/*!
-	 * If we only want to iterate over the columns of the non-zero entries of
+	 * If we only want to iterate over the columns or values of the non-zero entries of
 	 * a row, we can simply iterate over the array (part) itself.
 	 */
-	typedef const uint_fast64_t * const constIndexIterator;
+	typedef const uint_fast64_t* const ConstIndexIterator;
+	typedef const T* const ConstValueIterator;
 
 	/*!
-	 *	Iterator type if we want to iterate over elements.
+	 * Iterator class that is able to iterate over the non-zero elements of a matrix and return the position
+	 * (row, column) in addition to the value itself. This is a const iterator in the sense that it is not possible to
+	 * modify the matrix with it.
 	 */
-	typedef const T* const constIterator;
-
-	class constRowsIterator {
+	class ConstRowsIterator {
 	public:
-		constRowsIterator(SparseMatrix<T> const& matrix) : matrix(matrix), offset(0) {
+		/*!
+		 * Constructs an iterator over the elements of the given matrix.
+		 *
+		 * @param matrix The matrix on which this iterator operates.
+		 */
+		ConstRowsIterator(SparseMatrix<T> const& matrix, uint_fast64_t rowIndex = 0) : matrix(matrix), posIndex(0), rowIndex(0) {
 			// Intentionally left empty.
 		}
 
-		constRowsIterator& operator++() {
-			++offset;
+		/*!
+		 * Moves the iterator the next non-zero element of the matrix.
+		 *
+		 * @returns A reference to itself.
+		 */
+		ConstRowsIterator& operator++() {
+			++posIndex;
+			if (posIndex >= matrix.rowIndications[rowIndex + 1]) {
+				++rowIndex;
+			}
+			return *this;
+		}
+		
+		/*!
+		 * Dereferencing operator for this iterator. Actually returns a reference to itself. This is
+		 * needed, because the range-based for-loop in C++11 dereferences the iterator automatically.
+		 *
+		 * @returns A reference to itself.
+		 */
+		ConstRowsIterator& operator*() {
 			return *this;
 		}
 
-		bool operator==(constRowsIterator const& other) const {
-			return offset == other.offset;
+		/*!
+		 * Comparison operator that compares the current iterator with the given one in terms of
+         * the indices they point to. Note that this does not check whether the iterators are
+         * interpreted over the same matrix.
+		 *
+		 * @return True iff the given iterator points to the same index as the current iterator.
+		 */
+		bool operator==(ConstRowsIterator const& other) const {
+			return this->posIndex == other.posIndex;
 		}
 
-		bool operator!=(uint_fast64_t offset) const {
-			return this->offset != offset;
+		/*!
+		 * Comparison operator that compares the current iterator with the given one in terms of
+         * the indices they point to. Note that this does not check whether the iterators are
+         * interpreted over the same matrix.
+		 *
+		 * @return True iff the given iterator points to a differnent index as the current iterator.
+		 */
+		bool operator!=(ConstRowsIterator const& other) const {
+			return this->posIndex != other.posIndex;
 		}
 
+        /*!
+         * Retrieves the row that is associated with the current non-zero element this iterator
+         * points to.
+		 *
+		 * @returns The row of the current non-zero element this iterator points to.
+         */
+		uint_fast64_t row() const {
+			return this->rowIndex;
+		}
+
+        /*!
+         * Retrieves the column that is associated with the current non-zero element this iterator
+         * points to.
+		 *
+		 * @returns The column of the current non-zero element this iterator points to.
+         */
 		uint_fast64_t column() const {
-			return matrix.columnIndications[offset];
+			return matrix.columnIndications[posIndex];
 		}
-
+		
+		/*!
+		 * Retrieves the internal index of this iterator. This index corresponds to the position of
+		 * the current element in the vector of non-zero values of the matrix.
+		 */
+		uint_fast64_t index() const {
+			return this->posIndex;
+		}
+		
+        /*!
+         * Retrieves the value of the current non-zero element this iterator points to.
+		 *
+		 * @returns The value of the current non-zero element this iterator points to.
+         */
 		T const& value() const {
-			return matrix.valueStorage[offset];
+			return matrix.valueStorage[posIndex];
 		}
 
-		void setOffset(uint_fast64_t offset) {
-			this->offset = offset;
+        /*!
+         * Moves the iterator to the beginning of the given row.
+         *
+         * @param row The row this iterator is to be moved to.
+         */
+		void moveToRow(uint_fast64_t row) {
+			this->rowIndex = row;
+			this->posIndex = matrix.rowIndications[row];
+		}
+
+        /*!
+         * Moves the iterator to the beginning of the next row.
+         */
+		void moveToNextRow() {
+			moveToRow(rowIndex + 1);
 		}
 
 	private:
+        // A constant reference to the matrix this iterator is associated with.
 		SparseMatrix<T> const& matrix;
-		uint_fast64_t offset;
+        
+        // The current index in the list of all non-zero elements of the matrix this iterator points to.
+		uint_fast64_t posIndex;
+        
+        // The row of the element this iterator currently points to.
+		uint_fast64_t rowIndex;
 	};
 
-	friend class constRowsIterator;
+    // Declare the iterator as a friend class to grant access to private data members of the matrix.
+	friend class ConstRowsIterator;
 
 	/*!
-	 * An enum representing the internal state of the Matrix.
-	 * After creating the Matrix using the Constructor, the Object is in state UnInitialized. After calling initialize(), that state changes to Initialized and after all entries have been entered and finalize() has been called, to ReadReady.
+	 * An enum representing the internal state of the Matrix
+	 * After creating the Matrix using the Constructor, the Object is in state UnInitialized. After
+	 * calling initialize(), that state changes to Initialized and after all entries have been
+	 * entered and finalize() has been called, to ReadReady.
 	 * Should a critical error occur in any of the former functions, the state will change to Error.
+	 *
 	 * @see getState()
 	 * @see isReadReady()
 	 * @see isInitialized()
@@ -113,81 +203,34 @@ public:
 		Error = -1, UnInitialized = 0, Initialized = 1, ReadReady = 2
 	};
 
-	//! Constructor
 	/*!
 	 * Constructs a sparse matrix object with the given number of rows.
+     *
 	 * @param rows The number of rows of the matrix
 	 */
-	SparseMatrix(uint_fast64_t rows, uint_fast64_t cols)
-			: rowCount(rows), colCount(cols), nonZeroEntryCount(0),
-			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
+	SparseMatrix(uint_fast64_t rows, uint_fast64_t cols) : rowCount(rows), colCount(cols),
+		nonZeroEntryCount(0), internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) {
+    
+    }
 
-	/* Sadly, Delegate Constructors are not yet available with MSVC2012 */
-	//! Constructor
 	/*!
-	 * Constructs a square sparse matrix object with the given number rows
-	 * @param size The number of rows and cols in the matrix
-	 */ /*
-	SparseMatrix(uint_fast64_t size) : SparseMatrix(size, size) { }
-	*/
-
-	//! Constructor
-	/*!
-	 * Constructs a square sparse matrix object with the given number rows
-	 * @param size The number of rows and cols in the matrix
+	 * Constructs a square sparse matrix object with the given number rows.
+	 *
+	 * @param size The number of rows and columns of the matrix.
 	 */
 	SparseMatrix(uint_fast64_t size)
 			: rowCount(size), colCount(size), nonZeroEntryCount(0),
-			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) { }
-
-	//! Copy Constructor
-	/*!
-	 * Copy Constructor. Performs a deep copy of the given sparse matrix.
-	 * @param ssm A reference to the matrix to be copied.
-	 */
-	SparseMatrix(const SparseMatrix<T> &ssm)
-			: rowCount(ssm.rowCount), colCount(ssm.colCount), nonZeroEntryCount(ssm.nonZeroEntryCount),
-			  internalStatus(ssm.internalStatus), currentSize(ssm.currentSize), lastRow(ssm.lastRow) {
-		LOG4CPLUS_WARN(logger, "Invoking copy constructor.");
-		// Check whether copying the matrix is safe.
-		if (ssm.hasError()) {
-			LOG4CPLUS_ERROR(logger, "Trying to copy sparse matrix in error state.");
-			throw storm::exceptions::InvalidArgumentException("Trying to copy sparse matrix in error state.");
-		} else {
-			// Try to prepare the internal storage and throw an error in case
-			// of a failure.
-			if (!prepareInternalStorage()) {
-				LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage.");
-				throw std::bad_alloc();
-			} else {
-				std::copy(ssm.valueStorage.begin(), ssm.valueStorage.end(), valueStorage.begin());
-
-				// The elements that are not of the value type but rather the
-				// index type may be copied directly.
-				std::copy(ssm.columnIndications.begin(), ssm.columnIndications.end(), columnIndications.begin());
-				std::copy(ssm.rowIndications.begin(), ssm.rowIndications.end(), rowIndications.begin());
-			}
-		}
-	}
-
-	//! Destructor
-	/*!
-	 * Destructor. Performs deletion of the reserved storage arrays.
-	 */
-	~SparseMatrix() {
-		setState(MatrixStatus::UnInitialized);
-		valueStorage.resize(0);
-		columnIndications.resize(0);
-		rowIndications.resize(0);
+			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) {
+			  
 	}
 
 	/*!
 	 * Initializes the sparse matrix with the given number of non-zero entries
 	 * and prepares it for use with addNextValue() and finalize().
-	 * NOTE: Calling this method before any other member function is mandatory.
+	 * Note: Calling this method before any other member function is mandatory.
 	 * This version is to be used together with addNextValue().
-	 * @param nonZeroEntries The number of non-zero entries that are not on the
-	 * diagonal.
+	 *
+	 * @param nonZeroEntries The number of non-zero entries this matrix is going to hold.
 	 */
 	void initialize(uint_fast64_t nonZeroEntries) {
 		// Check whether initializing the matrix is safe.
@@ -221,17 +264,18 @@ public:
 	/*!
 	 * Sets the matrix element at the given row and column to the given value.
 	 * NOTE: This is a linear setter. It must be called consecutively for each element,
-	 * row by row *and* column by column. Only diagonal entries may be set at any time.
+	 * row by row *and* column by column.
+	 *
 	 * @param row The row in which the matrix element is to be set.
 	 * @param col The column in which the matrix element is to be set.
 	 * @param value The value that is to be set.
 	 */
-	void addNextValue(const uint_fast64_t row, const uint_fast64_t col,	const T& value) {
+	void addNextValue(const uint_fast64_t row, const uint_fast64_t col,	T const& value) {
 		// Check whether the given row and column positions are valid and throw
 		// error otherwise.
 		if ((row > rowCount) || (col > colCount)) {
 			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ").");
+			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ") in matrix of size (" << rowCount << ", " << colCount << ").");
 			throw storm::exceptions::OutOfRangeException("Trying to add a value at illegal position.");
 		}
 
@@ -287,12 +331,13 @@ public:
 
 	/*!
 	 * Gets the matrix element at the given row and column to the given value.
-	 * NOTE: This function does not check the internal status for errors for performance reasons.
+	 * Note: This function does not check the internal status for errors for performance reasons.
+	 *
 	 * @param row The row in which the element is to be read.
 	 * @param col The column in which the element is to be read.
 	 * @param target A pointer to the memory location where the read content is
 	 * to be put.
-	 * @return True iff the value is set in the matrix, false otherwise.
+	 * @returns True iff the value is set in the matrix, false otherwise.
 	 * On false, 0 will be written to *target.
 	 */
 	inline bool getValue(uint_fast64_t row, uint_fast64_t col, T* const target) const {
@@ -314,6 +359,7 @@ public:
 				*target = valueStorage[rowStart];
 				return true;
 			}
+			
 			// If the column of the current element is already larger than the
 			// requested column, the requested element cannot be contained
 			// in the matrix and we may therefore stop searching.
@@ -329,15 +375,16 @@ public:
 	}
 
 	/*!
-	 * Gets the matrix element at the given row and column to the given value.
-	 * NOTE: This function does not check the internal status for errors for performance reasons.
-	 * WARNING: It is possible to modify through this function. Usage only valid
-	 * for elements EXISTING in the sparse matrix! If the requested value does not exist,
+	 * Gets the matrix element at the given row and column in the form of a reference to it.
+	 * Note: This function does not check the internal status for errors for performance reasons.
+	 * Warning: It is possible to modify the matrix through this function. It may only be used
+	 * for elements that exist in the sparse matrix. If the value at the requested position does not exist,
 	 * an exception will be thrown.
+	 
 	 * @param row The row in which the element is to be read.
 	 * @param col The column in which the element is to be read.
 	 *
-	 * @return A reference to the value
+	 * @return A reference to the value at the given position.
 	 */
 	inline T& getValue(uint_fast64_t row, uint_fast64_t col) {
 		// Check for illegal access indices.
@@ -351,11 +398,11 @@ public:
 		uint_fast64_t rowStart = rowIndications[row];
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 		while (rowStart < rowEnd) {
-			// If the lement is found, write the content to the specified
-			// position and return true.
+			// If the lement is found, return it.
 			if (columnIndications[rowStart] == col) {
 				return valueStorage[rowStart];
 			}
+			
 			// If the column of the current element is already larger than the
 			// requested column, the requested element cannot be contained
 			// in the matrix and we may therefore stop searching.
@@ -370,6 +417,8 @@ public:
 
 	/*!
 	 * Returns the number of rows of the matrix.
+	 *
+	 * @returns The number of rows of the matrix.
 	 */
 	uint_fast64_t getRowCount() const {
 		return rowCount;
@@ -377,43 +426,18 @@ public:
 
 	/*!
 	 * Returns the number of columns of the matrix.
+	 *
+	 * @returns The number of columns of the matrix.
 	 */
 	uint_fast64_t getColumnCount() const {
 		return colCount;
 	}
 
 	/*!
-	 * Returns a pointer to the value storage of the matrix.
-	 * @return A pointer to the value storage of the matrix.
-	 */
-	std::vector<T> const& getStorage() const {
-		return valueStorage;
-	}
-
-	/*!
-	 * Returns a pointer to the array that stores the start indices of non-zero
-	 * entries in the value storage for each row.
-	 * @return A pointer to the array that stores the start indices of non-zero
-	 * entries in the value storage for each row.
-	 */
-	std::vector<uint_fast64_t> const& getRowIndications() const {
-		return rowIndications;
-	}
-
-	/*!
-	 * Returns a pointer to an array that stores the column of each non-zero
-	 * element.
-	 * @return A pointer to an array that stores the column of each non-zero
-	 * element.
-	 */
-	std::vector<uint_fast64_t> const& getColumnIndications() const {
-		return columnIndications;
-	}
-
-	/*!
 	 * Checks whether the internal status of the matrix makes it ready for
 	 * reading access.
-	 * @return True iff the internal status of the matrix makes it ready for
+	 *
+	 * @returns True iff the internal status of the matrix makes it ready for
 	 * reading access.
 	 */
 	bool isReadReady() {
@@ -423,7 +447,8 @@ public:
 	/*!
 	 * Checks whether the matrix was initialized previously. The matrix may
 	 * still require to be finalized, even if this check returns true.
-	 * @return True iff the matrix was initialized previously.
+	 *
+	 * @returns True iff the matrix was initialized previously.
 	 */
 	bool isInitialized() {
 		return (internalStatus == MatrixStatus::Initialized || internalStatus == MatrixStatus::ReadReady);
@@ -431,7 +456,8 @@ public:
 
 	/*!
 	 * Returns the internal state of the matrix.
-	 * @return The internal state of the matrix.
+	 *
+	 * @returns The internal state of the matrix.
 	 */
 	MatrixStatus getState() {
 		return internalStatus;
@@ -439,15 +465,17 @@ public:
 
 	/*!
 	 * Checks whether the internal state of the matrix signals an error.
-	 * @return True iff the internal state of the matrix signals an error.
+	 *
+	 * @returns True iff the internal state of the matrix signals an error.
 	 */
 	bool hasError() const {
 		return (internalStatus == MatrixStatus::Error);
 	}
 
 	/*!
-	 * Returns the number of non-zero entries that are not on the diagonal.
-	 * @returns The number of non-zero entries that are not on the diagonal.
+	 * Returns the number of non-zero entries in the matrix.
+	 *
+	 * @returns The number of non-zero entries in the matrix.
 	 */
 	uint_fast64_t getNonZeroEntryCount() const {
 		return nonZeroEntryCount;
@@ -455,40 +483,42 @@ public:
 
 	/*!
 	 * This function makes the rows given by the bit vector absorbing.
+	 *
 	 * @param rows A bit vector indicating which rows to make absorbing.
-	 * @return True iff the operation was successful.
+	 * @returns True iff the operation was successful.
 	 */
-	bool makeRowsAbsorbing(const storm::storage::BitVector rows) {
+	bool makeRowsAbsorbing(storm::storage::BitVector const& rows) {
 		bool result = true;
 		for (auto row : rows) {
 			result &= makeRowAbsorbing(row, row);
 		}
-
 		return result;
 	}
 
 	/*!
 	 * This function makes the groups of rows given by the bit vector absorbing.
-	 * @param rows A bit vector indicating which row groups to make absorbing.
+	 *
+	 * @param rowGroupConstraint A bit vector indicating which row groups to make absorbing.
+	 * @param rowGroupIndices A vector indicating which rows belong to a given row group.
 	 * @return True iff the operation was successful.
 	 */
-	bool makeRowsAbsorbing(const storm::storage::BitVector rows, std::vector<uint_fast64_t> const& nondeterministicChoices) {
+	bool makeRowsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices) {
 		bool result = true;
-		for (auto index : rows) {
-			for (uint_fast64_t row = nondeterministicChoices[index]; row < nondeterministicChoices[index + 1]; ++row) {
-				result &= makeRowAbsorbing(row, index);
+		for (auto rowGroup : rowGroupConstraint) {
+			for (uint_fast64_t row = rowGroupIndices[rowGroup]; row < rowGroupIndices[rowGroup + 1]; ++row) {
+				result &= makeRowAbsorbing(row, rowGroup);
 			}
 		}
-
 		return result;
 	}
 
 
 	/*!
-	 * This function makes the given row absorbing. This means that all
-	 * entries in will be set to 0 and the value 1 will be written
-	 * to the element on the (pseudo-) diagonal.
+	 * This function makes the given row absorbing. This means that all entries will be set to 0
+	 * except the one at the specified column, which is set to 1 instead.
+	 *
 	 * @param row The row to be made absorbing.
+	 * @param column The index of the column whose value is to be set to 1.
 	 * @returns True iff the operation was successful.
 	 */
 	bool makeRowAbsorbing(const uint_fast64_t row, const uint_fast64_t column) {
@@ -504,14 +534,18 @@ public:
 		uint_fast64_t rowStart = rowIndications[row];
 		uint_fast64_t rowEnd = rowIndications[row + 1];
 
+		// If the row has no elements in it, we cannot make it absorbing, because we would need to
+		// move all elements in the vector of nonzeros otherwise.
 		if (rowStart >= rowEnd) {
 			LOG4CPLUS_ERROR(logger, "Cannot make row " << row << " absorbing, because there is no entry in this row.");
 			throw storm::exceptions::InvalidStateException() << "Cannot make row " << row << " absorbing, because there is no entry in this row.";
 		}
 
+		// If there is at least one nonzero entry in this row, we can just set it to one, modify its
+		// column indication to the one given by the parameter and set all subsequent elements of this
+		// row to zero.
 		valueStorage[rowStart] = storm::utility::constGetOne<T>();
 		columnIndications[rowStart] = column;
-
 		for (uint_fast64_t index = rowStart + 1; index < rowEnd; ++index) {
 			valueStorage[index] = storm::utility::constGetZero<T>();
 			columnIndications[index] = 0;
@@ -521,14 +555,15 @@ public:
 	}
 
 	/*
-	 * Computes the sum of the elements in the given row whose column bits
-	 * are set to one on the given constraint.
+	 * Computes the sum of the elements in the given row whose column bits are set to one on the
+	 * given constraint.
+	 *
 	 * @param row The row whose elements to add.
 	 * @param constraint A bit vector that indicates which columns to add.
-	 * @return The sum of the elements in the given row whose column bits
+	 * @returns The sum of the elements in the given row whose column bits
 	 * are set to one on the given constraint.
 	 */
-	T getConstrainedRowSum(const uint_fast64_t row, const storm::storage::BitVector& constraint) const {
+	T getConstrainedRowSum(uint_fast64_t row, storm::storage::BitVector const& constraint) const {
 		T result(0);
 		for (uint_fast64_t i = rowIndications[row]; i < rowIndications[row + 1]; ++i) {
 			if (constraint.get(columnIndications[i])) {
@@ -539,44 +574,55 @@ public:
 	}
 
 	/*!
-	 * Computes a vector in which each element is the sum of those elements in the
-	 * corresponding row whose column bits are set to one in the given constraint.
+	 * Computes a vector whose ith element is the sum of the elements in the ith row where only
+	 * those elements are added whose bits are set to true in the given column constraint and only
+	 * those rows are treated whose bits are set to true in the given row constraint.
+	 *
 	 * @param rowConstraint A bit vector that indicates for which rows to perform summation.
 	 * @param columnConstraint A bit vector that indicates which columns to add.
-	 * @param resultVector A pointer to the resulting vector that has at least
-	 * as many elements as there are bits set to true in the constraint.
+	 *
+	 * @returns A vector whose ith element is the sum of the elements in the ith row where only
+	 * those elements are added whose bits are set to true in the given column constraint and only
+	 * those rows are treated whose bits are set to true in the given row constraint.
 	 */
-	void getConstrainedRowSumVector(const storm::storage::BitVector& rowConstraint, const storm::storage::BitVector& columnConstraint, std::vector<T>* resultVector) const {
+	std::vector<T> getConstrainedRowSumVector(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint) const {
+		std::vector<T> result(rowConstraint.getNumberOfSetBits());
 		uint_fast64_t currentRowCount = 0;
 		for (auto row : rowConstraint) {
-			(*resultVector)[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
+			result[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
 		}
+		return result;
 	}
 
 	/*!
-	 * Computes a vector in which each element is the sum of those elements in the
-	 * corresponding row whose column bits are set to one in the given constraint.
-	 * @param rowConstraint A bit vector that indicates for which rows to perform summation.
+	 * Computes a vector whose elements represent the sums of selected (given by the column
+	 * constraint) entries for all rows in selected row groups given by the row group constraint.
+	 *
+	 * @param rowGroupConstraint A bit vector that indicates which row groups are to be considered.
+	 * @param rowGroupIndices A vector indicating which rows belong to a given row group.
 	 * @param columnConstraint A bit vector that indicates which columns to add.
-	 * @param resultVector A pointer to the resulting vector that has at least
-	 * as many elements as there are bits set to true in the constraint.
+	 * @returns 
 	 */
-	void getConstrainedRowSumVector(const storm::storage::BitVector& rowConstraint, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, const storm::storage::BitVector& columnConstraint, std::vector<T>* resultVector) const {
+	std::vector<T> getConstrainedRowSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint, uint_fast64_t numberOfRows) const {
+		std::vector<T> result(numberOfRows);
 		uint_fast64_t currentRowCount = 0;
-		for (auto index : rowConstraint) {
-			for (uint_fast64_t row = nondeterministicChoiceIndices[index]; row < nondeterministicChoiceIndices[index + 1]; ++row) {
-				(*resultVector)[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
+		for (auto rowGroup : rowGroupConstraint) {
+			for (uint_fast64_t row = rowGroupIndices[rowGroup]; row < rowGroupIndices[rowGroup + 1]; ++row) {
+				result[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
 			}
 		}
+		return result;
 	}
 
 	/*!
-	 * Creates a sub-matrix of the current matrix by dropping all rows and
-	 * columns whose bits are not set to one in the given bit vector.
-	 * @param constraint A bit vector indicating which rows and columns to drop.
-	 * @return A pointer to a sparse matrix that is a sub-matrix of the current one.
+	 * Creates a submatrix of the current matrix by dropping all rows and columns whose bits are not
+	 * set to one in the given bit vector.
+	 *
+	 * @param constraint A bit vector indicating which rows and columns to keep.
+	 * @returns A matrix corresponding to a submatrix of the current matrix in which only rows and
+	 * columns given by the constraint are kept and all others are dropped.
 	 */
-	SparseMatrix* getSubmatrix(storm::storage::BitVector& constraint) const {
+	SparseMatrix getSubmatrix(storm::storage::BitVector const& constraint) const {
 		LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix with " << constraint.getNumberOfSetBits() << " rows.");
 
 		// Check for valid constraint.
@@ -597,8 +643,8 @@ public:
 		}
 
 		// Create and initialize resulting matrix.
-		SparseMatrix* result = new SparseMatrix(constraint.getNumberOfSetBits());
-		result->initialize(subNonZeroEntries);
+		SparseMatrix result(constraint.getNumberOfSetBits());
+		result.initialize(subNonZeroEntries);
 
 		// Create a temporary array that stores for each index whose bit is set
 		// to true the number of bits that were set before that particular index.
@@ -617,7 +663,7 @@ public:
 		for (auto rowIndex : constraint) {
 			for (uint_fast64_t i = rowIndications[rowIndex]; i < rowIndications[rowIndex + 1]; ++i) {
 				if (constraint.get(columnIndications[i])) {
-					result->addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[i]], valueStorage[i]);
+					result.addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[i]], valueStorage[i]);
 				}
 			}
 
@@ -628,47 +674,50 @@ public:
 		delete[] bitsSetBeforeIndex;
 
 		// Finalize sub-matrix and return result.
-		result->finalize();
+		result.finalize();
 		LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
 		return result;
 	}
 
-	SparseMatrix* getSubmatrix(storm::storage::BitVector& constraint, std::vector<uint_fast64_t> const& rowIndices) const {
+	/*!
+	 * Creates a submatrix of the current matrix by keeping only row groups and columns in the given
+	 * row group constraint.
+	 *
+	 * @param rowGroupConstraint A bit vector indicating which row groups and columns to keep.
+	 * @param rowGroupIndices A vector indicating which rows belong to a given row group.
+	 * @returns A matrix corresponding to a submatrix of the current matrix in which only row groups
+	 * and columns given by the row group constraint are kept and all others are dropped.
+	 */
+	SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices) const {
 		LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix (of unknown size).");
-
-		// Check for valid constraint.
-		if (constraint.getNumberOfSetBits() == 0) {
-			LOG4CPLUS_ERROR(logger, "Trying to create a sub-matrix of size 0.");
-			throw storm::exceptions::InvalidArgumentException("Trying to create a sub-matrix of size 0.");
-		}
 
 		// First, we need to determine the number of non-zero entries and the number of rows of the
 		// sub-matrix.
 		uint_fast64_t subNonZeroEntries = 0;
 		uint_fast64_t subRowCount = 0;
-		for (auto index : constraint) {
-			subRowCount += rowIndices[index + 1] - rowIndices[index];
-			for (uint_fast64_t i = rowIndices[index]; i < rowIndices[index + 1]; ++i) {
+		for (auto index : rowGroupConstraint) {
+			subRowCount += rowGroupIndices[index + 1] - rowGroupIndices[index];
+			for (uint_fast64_t i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
 				for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
-					if (constraint.get(columnIndications[j])) {
+					if (rowGroupConstraint.get(columnIndications[j])) {
 						++subNonZeroEntries;
 					}
 				}
 			}
 		}
 
-		LOG4CPLUS_DEBUG(logger, "Determined size of submatrix to be " << subRowCount << "x" << constraint.getNumberOfSetBits() << ".");
+		LOG4CPLUS_DEBUG(logger, "Determined size of submatrix to be " << subRowCount << "x" << rowGroupConstraint.getNumberOfSetBits() << ".");
 
 		// Create and initialize resulting matrix.
-		SparseMatrix* result = new SparseMatrix(subRowCount, constraint.getNumberOfSetBits());
-		result->initialize(subNonZeroEntries);
+		SparseMatrix result(subRowCount, rowGroupConstraint.getNumberOfSetBits());
+		result.initialize(subNonZeroEntries);
 
 		// Create a temporary array that stores for each index whose bit is set
 		// to true the number of bits that were set before that particular index.
 		uint_fast64_t* bitsSetBeforeIndex = new uint_fast64_t[colCount];
 		uint_fast64_t lastIndex = 0;
 		uint_fast64_t currentNumberOfSetBits = 0;
-		for (auto index : constraint) {
+		for (auto index : rowGroupConstraint) {
 			while (lastIndex <= index) {
 				bitsSetBeforeIndex[lastIndex++] = currentNumberOfSetBits;
 			}
@@ -677,11 +726,11 @@ public:
 
 		// Copy over selected entries.
 		uint_fast64_t rowCount = 0;
-		for (auto index : constraint) {
-			for (uint_fast64_t i = rowIndices[index]; i < rowIndices[index + 1]; ++i) {
+		for (auto index : rowGroupConstraint) {
+			for (uint_fast64_t i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
 				for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
-					if (constraint.get(columnIndications[j])) {
-						result->addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[j]], valueStorage[j]);
+					if (rowGroupConstraint.get(columnIndications[j])) {
+						result.addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[j]], valueStorage[j]);
 					}
 				}
 				++rowCount;
@@ -692,11 +741,16 @@ public:
 		delete[] bitsSetBeforeIndex;
 
 		// Finalize sub-matrix and return result.
-		result->finalize();
+		result.finalize();
 		LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
 		return result;
 	}
 
+	/*!
+	 * Performs a change to the matrix that is needed if this matrix is to be interpreted as a
+	 * set of linear equations. In particular, it transforms A to (1-A), meaning that the elements
+	 * on the diagonal are inverted with respect to addition and the other elements are negated.
+	 */
 	void convertToEquationSystem() {
 		invertDiagonal();
 		negateAllNonDiagonalElements();
@@ -704,28 +758,34 @@ public:
 
 	/*!
 	 * Inverts all elements on the diagonal, i.e. sets the diagonal values to 1 minus their previous
-	 * value.
-	 * Requires the matrix to contain each diagonal element AND to be square!
+	 * value. Requires the matrix to contain each diagonal element and to be square.
 	 */
 	void invertDiagonal() {
+		// Check if the matrix is square, because only then it makes sense to perform this
+		// transformation.
 		if (this->getRowCount() != this->getColumnCount()) {
 			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to be square!";
 		}
+		
+		// Now iterate over all rows and set the diagonal elements to the inverted value.
+		// If there is a row without the diagonal element, an exception is thrown.
 		T one = storm::utility::constGetOne<T>();
-		bool foundRow;
+		bool foundDiagonalElement = false;
 		for (uint_fast64_t row = 0; row < rowCount; ++row) {
 			uint_fast64_t rowStart = rowIndications[row];
 			uint_fast64_t rowEnd = rowIndications[row + 1];
-			foundRow = false;
+			foundDiagonalElement = false;
 			while (rowStart < rowEnd) {
 				if (columnIndications[rowStart] == row) {
 					valueStorage[rowStart] = one - valueStorage[rowStart];
-					foundRow = true;
+					foundDiagonalElement = true;
 					break;
 				}
 				++rowStart;
 			}
-			if (!foundRow) {
+			
+			// Throw an exception if a row did not have an element on the diagonal.
+			if (!foundDiagonalElement) {
 				throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to contain all diagonal entries!";
 			}
 		}
@@ -735,9 +795,13 @@ public:
 	 * Negates all non-zero elements that are not on the diagonal.
 	 */
 	void negateAllNonDiagonalElements() {
+		// Check if the matrix is square, because only then it makes sense to perform this
+		// transformation.
 		if (this->getRowCount() != this->getColumnCount()) {
 			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to be square!";
 		}
+		
+		// Iterate over all rows and negate all the elements that are not on the diagonal.
 		for (uint_fast64_t row = 0; row < rowCount; ++row) {
 			uint_fast64_t rowStart = rowIndications[row];
 			uint_fast64_t rowEnd = rowIndications[row + 1];
@@ -759,7 +823,7 @@ public:
 		uint_fast64_t rowCount = this->getRowCount();
 		uint_fast64_t colCount = this->getColumnCount();
 		if (rowCount != colCount) {
-			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::getJacobiDecomposition requires the Matrix to be square!";
+			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::getJacobiDecomposition requires the Matrix to be square.";
 		}
 		storm::storage::SparseMatrix<T> *resultLU = new storm::storage::SparseMatrix<T>(*this);
 		storm::storage::SparseMatrix<T> *resultDinv = new storm::storage::SparseMatrix<T>(rowCount, colCount);
@@ -781,15 +845,16 @@ public:
 	/*!
 	 * Performs a pointwise matrix multiplication of the matrix with the given matrix and returns a
 	 * vector containing the sum of the elements in each row of the resulting matrix.
+	 *
 	 * @param otherMatrix A reference to the matrix with which to perform the pointwise multiplication.
 	 * This matrix must be a submatrix of the current matrix in the sense that it may not have
 	 * non-zero entries at indices where there is a zero in the current matrix.
-	 * @return A vector containing the sum of the elements in each row of the matrix resulting from
+	 * @returns A vector containing the sum of the elements in each row of the matrix resulting from
 	 * pointwise multiplication of the current matrix with the given matrix.
 	 */
-	std::vector<T>* getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) {
+	std::vector<T> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) {
 		// Prepare result.
-		std::vector<T>* result = new std::vector<T>(rowCount, storm::utility::constGetZero<T>());
+		std::vector<T> result(rowCount, storm::utility::constGetZero<T>());
 
 		// Iterate over all elements of the current matrix and either continue with the next element
 		// in case the given matrix does not have a non-zero element at this column position, or
@@ -802,7 +867,7 @@ public:
 					// If the precondition of this method (i.e. that the given matrix is a submatrix
 					// of the current one) was fulfilled, we know now that the two elements are in
 					// the same column, so we can multiply and add them to the row sum vector.
-					(*result)[row] += otherMatrix.valueStorage[nextOtherElement] * valueStorage[element];
+					result[row] += otherMatrix.valueStorage[nextOtherElement] * valueStorage[element];
 					++nextOtherElement;
 				}
 			}
@@ -810,84 +875,39 @@ public:
 
 		return result;
 	}
-
-	T multiplyRowWithVector(constRowsIterator& rowsIt, uint_fast64_t rowsIte, std::vector<T>& vector) const {
-		T result = storm::utility::constGetZero<T>();
-		for (; rowsIt != rowsIte; ++rowsIt) {
-			result += (rowsIt.value()) * vector[rowsIt.column()];
-		}
-		return result;
-	}
-
-	void multiplyWithVector(std::vector<T>& vector, std::vector<T>& result) const {
-		typename std::vector<T>::iterator resultIt = result.begin();
-		typename std::vector<T>::iterator resultIte = result.end();
-		constRowsIterator rowIt = this->constRowsIteratorBegin();
-		uint_fast64_t nextRow = 1;
-
-		for (; resultIt != resultIte; ++resultIt, ++nextRow) {
-			*resultIt = multiplyRowWithVector(rowIt, this->rowIndications[nextRow], vector);
-		}
-	}
-
-	void multiplyWithVectorInPlace(std::vector<T>& vector) const {
-		typename std::vector<T>::iterator resultIt = vector.begin();
-		typename std::vector<T>::iterator resultIte = vector.end();
-		constRowsIterator rowIt = this->constRowsIteratorBegin();
-		uint_fast64_t nextRow = 1;
-
-		for (; resultIt != resultIte; ++resultIt, ++nextRow) {
-			*resultIt = multiplyRowWithVector(rowIt, this->rowIndications[nextRow], vector);
-		}
-	}
-
-	void multiplyWithVector(std::vector<uint_fast64_t> const& states, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<T>& vector, std::vector<T>& result) const {
-		constRowsIterator rowsIt = this->constRowsIteratorBegin();
-		uint_fast64_t nextRow = 1;
-
-		for (auto stateIt = states.cbegin(), stateIte = states.cend(); stateIt != stateIte; ++stateIt) {
-			rowsIt.setOffset(this->rowIndications[nondeterministicChoiceIndices[*stateIt]]);
-			nextRow = nondeterministicChoiceIndices[*stateIt] + 1;
-			for (auto rowIt = nondeterministicChoiceIndices[*stateIt], rowIte = nondeterministicChoiceIndices[*stateIt + 1]; rowIt != rowIte; ++rowIt, ++nextRow) {
-				result[rowIt] = multiplyRowWithVector(rowsIt, this->rowIndications[nextRow], vector);
-			}
-		}
-	}
-
-	void multiplyWithVectorInPlace(std::vector<uint_fast64_t> const& states, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<T>& vector) const {
-		constRowsIterator rowsIt = this->constRowsIteratorBegin();
-		uint_fast64_t nextRow = 1;
-
-		for (auto stateIt = states.cbegin(), stateIte = states.cend(); stateIt != stateIte; ++stateIt) {
-			rowsIt.setOffset(this->rowIndications[nondeterministicChoiceIndices[*stateIt]]);
-			nextRow = nondeterministicChoiceIndices[*stateIt] + 1;
-			for (auto rowIt = nondeterministicChoiceIndices[*stateIt], rowIte = nondeterministicChoiceIndices[*stateIt + 1]; rowIt != rowIte; ++rowIt, ++nextRow) {
-				vector[rowIt] = multiplyRowWithVector(rowsIt, this->rowIndications[nextRow], vector);
-			}
-		}
-	}
-
-	void multiplyAddAndReduceInPlace(std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<T>& vector, std::vector<T> const& summand, bool minimize) const {
-		constRowsIterator rowsIt = this->constRowsIteratorBegin();
-		uint_fast64_t nextRow = 1;
-
-		for (uint_fast64_t stateIt = 0, stateIte = nondeterministicChoiceIndices.size() - 1; stateIt < stateIte; ++stateIt) {
-			vector[stateIt] = multiplyRowWithVector(rowsIt, this->rowIndications[nextRow], vector) + summand[nondeterministicChoiceIndices[stateIt]];
-			++nextRow;
-			for (uint_fast64_t rowIt = nondeterministicChoiceIndices[stateIt] + 1, rowIte = nondeterministicChoiceIndices[stateIt + 1]; rowIt != rowIte; ++rowIt, ++nextRow) {
-				T value = multiplyRowWithVector(rowsIt, this->rowIndications[nextRow], vector) + summand[rowIt];
-				if (minimize && value < vector[stateIt]) {
-					vector[stateIt] = value;
-				} else if (!minimize && value > vector[stateIt]) {
-					vector[stateIt] = value;
-				}
+	
+	/*!
+	 * Multiplies the matrix with the given vector and writes the result to given result vector.
+	 *
+	 * @param vector The vector with which to multiply the matrix.
+	 * @param result The vector that is supposed to hold the result of the multiplication after the
+	 * operation.
+	 * @returns The product of the matrix and the given vector as the content of the given result
+	 * vector.
+	 */
+	void multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const {
+		// Initialize two iterators that 
+		ConstRowsIterator elementIt(*this);
+		ConstRowsIterator elementIte(*this, 1);
+		
+		// Iterate over all positions of the result vector and compute its value as the scalar
+		// product of the corresponding row with the input vector.
+		// Note that only the end iterator has to be moved by one row, because the other iterator
+		// is automatically moved forward one row by the inner loop.
+		for (uint_fast64_t i = 0; i < result.size(); ++i, elementIte.moveToNextRow()) {
+			result[i] = storm::utility::constGetZero<T>();
+			
+			// Perform the scalar product.
+			for (; elementIt != elementIte; ++elementIt) {
+				result[i] += elementIt.value() * vector[elementIt.column()];
 			}
 		}
 	}
 
 	/*!
 	 * Returns the size of the matrix in memory measured in bytes.
-	 * @return The size of the matrix in memory measured in bytes.
+	 *
+	 * @returns The size of the matrix in memory measured in bytes.
 	 */
 	uint_fast64_t getSizeInMemory() const {
 		uint_fast64_t size = sizeof(*this);
@@ -900,87 +920,122 @@ public:
 		return size;
 	}
 
-	constRowsIterator constRowsIteratorBegin() const {
-		return constRowsIterator(*this);
+	/*!
+	 * Returns a const iterator to the elements of the matrix.
+	 * @param row If given, this specifies the starting row of the iterator.
+	 *
+	 * @returns An iterator to the elements of the matrix that cannot be used for modifying the
+	 * contents.
+	 */
+	ConstRowsIterator begin(uint_fast64_t row = 0) const {
+		return ConstRowsIterator(*this, row);
+	}
+	
+	/*!
+	 * Returns a const iterator that points to the first element after the matrix.
+	 *
+	 * @returns A const iterator that points past the last element of the matrix.
+	 */
+	ConstRowsIterator end() const {
+		return ConstRowsIterator(this->rowCount);
+	}
+	
+	/*!
+	 * Returns a const iterator that points to the first element after the given row.
+	 *
+	 * @returns row The row past which this iterator has to point.
+	 * @returns A const iterator that points to the first element after the given row.
+	 */
+	ConstRowsIterator end(uint_fast64_t row) const {
+		return ConstRowsIterator(row + 1);
 	}
 
 	/*!
-	 * Returns an iterator to the columns of the non-zero entries of the given
-	 * row.
-	 * @param row The row whose columns the iterator will return.
-	 * @return An iterator to the columns of the non-zero entries of the given
-	 * row.
+	 * Returns an iterator to the columns of the non-zero entries of the matrix.
+	 *
+	 * @param row If given, the iterator will start at the specified row.
+	 * @returns An iterator to the columns of the non-zero entries of the matrix.
 	 */
-	constIndexIterator beginConstColumnIterator(uint_fast64_t row) const {
+	ConstIndexIterator constColumnIteratorBegin(uint_fast64_t row = 0) const {
 		return &(this->columnIndications[0]) + this->rowIndications[row];
 	}
 
 	/*!
-	 * Returns an iterator referring to the element after the given row.
-	 * @param row The row for which the iterator should point to the past-the-end
-	 * element.
+	 * Returns an iterator that points to the first element after the matrix.
+	 *
+	 * @returns An iterator that points to the first element after the matrix.
 	 */
-	constIndexIterator endConstColumnIterator(uint_fast64_t row) const {
+	ConstIndexIterator constColumnIteratorEnd() const {
+		return &(this->columnIndications[0]) + this->rowIndications[rowCount];
+	}
+	
+	/*!
+	 * Returns an iterator that points to the first element after the given row.
+	 *
+	 * @param row The row past which this iterator has to point.
+	 * @returns An iterator that points to the first element after the matrix.
+	 */
+	ConstIndexIterator constColumnIteratorEnd(uint_fast64_t row) const {
 		return &(this->columnIndications[0]) + this->rowIndications[row + 1];
 	}
-
+	
 	/*!
-	 *	Returns an iterator over the elements of the given row. The iterator
-	 *	will include no zero entries.
-	 *	@param row The row whose elements the iterator will return.
-	 *	@return An iterator over the elements of the given row.
+	 * Returns an iterator to the values of the non-zero entries of the matrix.
+	 *
+	 * @param row If given, the iterator will start at the specified row.
+	 * @returns An iterator to the values of the non-zero entries of the matrix.
 	 */
-	constIterator beginConstIterator(uint_fast64_t row) const {
+	ConstValueIterator constValueIteratorBegin(uint_fast64_t row = 0) const {
 		return &(this->valueStorage[0]) + this->rowIndications[row];
 	}
+	
 	/*!
-	 *	Returns an iterator pointing to the first element after the given
-	 *	row.
-	 *	@param row The row for which the iterator should point to the
-	 *	past-the-end element.
-	 *	@return An iterator to the element after the given row.
+	 * Returns an iterator that points to the first element after the matrix.
+	 *
+	 * @returns An iterator that points to the first element after the matrix.
 	 */
-	constIterator endConstIterator(uint_fast64_t row) const {
+	ConstValueIterator constValueIteratorEnd() const {
+		return &(this->valueStorage[0]) + this->rowIndications[rowCount];
+	}
+	
+	/*!
+	 * Returns an iterator that points to the first element after the given row.
+	 *
+	 * @param row The row past which this iterator has to point.
+	 * @returns An iterator that points to the first element after the matrix.
+	 */
+	ConstValueIterator constValueIteratorEnd(uint_fast64_t row) const {
 		return &(this->valueStorage[0]) + this->rowIndications[row + 1];
 	}
-
+	
 	/*!
-	 *	@brief Calculate sum of all entries in given row.
+	 * Computes the sum of the elements in a given row.
 	 *
-	 *	Adds up all values in the given row
-	 *	and returns the sum.
-	 *	@param row The row that should be added up.
-	 *	@return Sum of the row.
+	 * @param row The row that should be summed.
+	 * @return Sum of the row.
 	 */
 	T getRowSum(uint_fast64_t row) const {
 		T sum = storm::utility::constGetZero<T>();
-		for (auto it = this->beginConstIterator(row); it != this->endConstIterator(row); it++) {
+		for (auto it = this->constValueIteratorBegin(row), ite = this->constValueIteratorEnd(row); it != ite; ++it) {
 			sum += *it;
 		}
 		return sum;
 	}
 
 	/*!
-	 *	@brief Checks if it is a submatrix of the given matrix.
+	 * Checks if the given matrix is a submatrix of the current matrix, where A matrix A is called a
+	 * submatrix of B if a value in A is only nonzero, if the value in B at the same position is
+	 * also nonzero. Furthermore, A and B have to have the same size.
 	 *
-	 *	A matrix A is a submatrix of B if a value in A is only nonzero, if
-	 *	the value in B at the same position is also nonzero. Furthermore, A
-	 *	and B have to have the same size.
-	 *	@param matrix Matrix to check against.
-	 *	@return True iff this is a submatrix of matrix.
+	 * @param matrix The matrix that is possibly a submatrix of the current matrix.
+	 * @returns True iff the given matrix is a submatrix of the current matrix.
 	 */
-	bool isSubmatrixOf(SparseMatrix<T> const& matrix) const {
+	bool containsAllPositionsOf(SparseMatrix<T> const& matrix) const {
+		// Check for mismatching sizes.
 		if (this->getRowCount() != matrix.getRowCount()) return false;
 		if (this->getColumnCount() != matrix.getColumnCount()) return false;
 
-		/*
-		for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
-			for (uint_fast64_t elem = rowIndications[row], elem2 = matrix.rowIndications[row]; elem < rowIndications[row + 1] && elem < matrix.rowIndications[row + 1]; ++elem, ++elem2) {
-				if (columnIndications[elem] < matrix.columnIndications[elem2]) return false;
-			}
-		}
-		*/
-
+		// Check the subset property for all rows individually.
 		for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
 			for (uint_fast64_t elem = rowIndications[row], elem2 = matrix.rowIndications[row]; elem < rowIndications[row + 1] && elem < matrix.rowIndications[row + 1]; ++elem) {
 				// Skip over all entries of the other matrix that are before the current entry in
@@ -996,7 +1051,8 @@ public:
 
 	/*!
 	 * Retrieves a compressed string representation of the matrix.
-	 * @return a compressed string representation of the matrix.
+	 *
+	 * @returns a compressed string representation of the matrix.
 	 */
 	std::string toStringCompressed() const {
 		std::stringstream result;
@@ -1008,13 +1064,14 @@ public:
 
 	/*!
 	 * Retrieves a (non-compressed) string representation of the matrix.
-	 * Note: the matrix is presented densely. That is, all zeros are filled in and are part of the string
-	 * representation.
-	 * @param nondeterministicChoiceIndices A vector indicating which rows belong together. If given, rows belonging
-	 * to separate groups will be separated by a dashed line.
-	 * @return a (non-compressed) string representation of the matrix.
+	 * Note: the matrix is presented densely. That is, all zeros are filled in and are part of the
+	 * string representation, so calling this method on big matrices should be done with care.
+	 *
+	 * @param rowGroupIndices A vector indicating to which group of rows a given row belongs. If
+	 * given, rows of different groups will be separated by a dashed line.
+	 * @returns A (non-compressed) string representation of the matrix.
 	 */
-	std::string toString(std::vector<uint_fast64_t> const* nondeterministicChoiceIndices) const {
+	std::string toString(std::vector<uint_fast64_t> const* rowGroupIndices = nullptr) const {
 		std::stringstream result;
 		uint_fast64_t currentNondeterministicChoiceIndex = 0;
 
@@ -1029,9 +1086,9 @@ public:
 		for (uint_fast64_t i = 0; i < rowCount; ++i) {
 			uint_fast64_t nextIndex = rowIndications[i];
 
-			// If we need to group of rows, print a dashed line in case we have moved to the next group of rows.
-			if (nondeterministicChoiceIndices != nullptr) {
-				if (i == (*nondeterministicChoiceIndices)[currentNondeterministicChoiceIndex]) {
+			// If we need to group rows, print a dashed line in case we have moved to the next group of rows.
+			if (rowGroupIndices != nullptr) {
+				if (i == (*rowGroupIndices)[currentNondeterministicChoiceIndex]) {
 					if (i != 0) {
 						result << "\t(\t";
 						for (uint_fast64_t j = 0; j < colCount - 2; ++j) {
@@ -1140,45 +1197,36 @@ private:
 	}
 
 	/*!
-	 * Prepares the internal CSR storage. For this, it requires
-	 * non_zero_entry_count and row_count to be set correctly.
-	 * @param alsoPerformAllocation If set to true, all entries are pre-allocated. This is the default.
+	 * Prepares the internal storage. For this, it requires the number of non-zero entries and the
+	 * amount of rows to be set correctly.
+	 *
+	 * @param initializeElements If set to true, all entries are initialized.
 	 * @return True on success, false otherwise (allocation failed).
 	 */
-	bool prepareInternalStorage(const bool alsoPerformAllocation) {
-		if (alsoPerformAllocation) {
+	bool prepareInternalStorage(bool initializeElements = true) {
+		if (initializeElements) {
 			// Set up the arrays for the elements that are not on the diagonal.
 			valueStorage.resize(nonZeroEntryCount, storm::utility::constGetZero<T>());
 			columnIndications.resize(nonZeroEntryCount, 0);
 
-			// Set up the row_indications vector and reserve one element more than
-			// there are rows in order to put a sentinel element at the end,
-			// which eases iteration process.
+			// Set up the rowIndications vector and reserve one element more than there are rows in
+			// order to put a sentinel element at the end, which eases iteration process.
 			rowIndications.resize(rowCount + 1, 0);
 
 			// Return whether all the allocations could be made without error.
 			return ((valueStorage.capacity() >= nonZeroEntryCount) && (columnIndications.capacity() >= nonZeroEntryCount)
 				&& (rowIndications.capacity() >= (rowCount + 1)));
 		} else {
+			// If it was not requested to initialize the elements, we simply reserve the space.
 			valueStorage.reserve(nonZeroEntryCount);
 			columnIndications.reserve(nonZeroEntryCount);
 			rowIndications.reserve(rowCount + 1);
 			return true;
 		}
 	}
-
-	/*!
-	 * Shorthand for prepareInternalStorage(true)
-	 * @see prepareInternalStorage(const bool)
-	 */
-	bool prepareInternalStorage() {
-		return this->prepareInternalStorage(true);
-	}
-
 };
 
 } // namespace storage
-
 } // namespace storm
 
 #endif // STORM_STORAGE_SPARSEMATRIX_H_
