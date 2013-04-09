@@ -78,11 +78,7 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "(";
-		result += " S ";
-		result += StateBoundOperator<T>::toString();
-		result += ")";
-		return result;
+		return "S" + StateBoundOperator<T>::toString();
 	}
 
 	/*!

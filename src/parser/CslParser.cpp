@@ -77,13 +77,13 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::formula::AbstractFor
 		probabilisticBoundOperator.name("state formula");
 		steadyStateBoundOperator = (
 				(qi::lit("S") >> qi::lit(">") >> qi::double_ > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::formula::SteadyStateBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER, qi::_1, qi::_2)] |
+										phoenix::new_<storm::formula::SteadyStateBoundOperator<double> >(storm::formula::StateBoundOperator<double>::GREATER, qi::_1, qi::_2)] |
 				(qi::lit("S") >> qi::lit(">=") >> qi::double_ > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::formula::SteadyStateBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
+										phoenix::new_<storm::formula::SteadyStateBoundOperator<double> >(storm::formula::StateBoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
 				(qi::lit("S") >> qi::lit("<") >> qi::double_ > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::formula::SteadyStateBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS, qi::_1, qi::_2)] |
+										phoenix::new_<storm::formula::SteadyStateBoundOperator<double> >(storm::formula::StateBoundOperator<double>::LESS, qi::_1, qi::_2)] |
 				(qi::lit("S") > qi::lit("<=") >> qi::double_ > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::formula::SteadyStateBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
+										phoenix::new_<storm::formula::SteadyStateBoundOperator<double> >(storm::formula::StateBoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 		steadyStateBoundOperator.name("state formula");
 
@@ -102,19 +102,19 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::formula::AbstractFor
 		pathFormula.name("path formula");
 		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::BoundedEventually<double>>(qi::_2, qi::_1)];
-		boundedEventually.name("path formula (for probablistic operator)");
+		boundedEventually.name("path formula (for probabilistic operator)");
 		eventually = (qi::lit("F") > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Eventually<double> >(qi::_1)];
-		eventually.name("path formula (for probablistic operator)");
+		eventually.name("path formula (for probabilistic operator)");
 		globally = (qi::lit("G") > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Globally<double> >(qi::_1)];
-		globally.name("path formula (for probablistic operator)");
+		globally.name("path formula (for probabilistic operator)");
 		boundedUntil = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") >> qi::lit("<=") > qi::int_ > stateFormula)
 				[qi::_val = phoenix::new_<storm::formula::BoundedUntil<double>>(phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_3, qi::_2)];
-		boundedUntil.name("path formula (for probablistic operator)");
+		boundedUntil.name("path formula (for probabilistic operator)");
 		until = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Until<double>>(phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_2)];
-		until.name("path formula (for probablistic operator)");
+		until.name("path formula (for probabilistic operator)");
 
 		start = (noBoundOperator | stateFormula);
 		start.name("CSL formula");
@@ -156,12 +156,61 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::formula::AbstractFor
 };
 
 CslParser::CslParser(std::string formulaString) {
-	// TODO Auto-generated constructor stub
+	// Prepare iterators to input.
+	BaseIteratorType stringIteratorBegin = formulaString.begin();
+	BaseIteratorType stringIteratorEnd = formulaString.end();
+	PositionIteratorType positionIteratorBegin(stringIteratorBegin, stringIteratorEnd, formulaString);
+	PositionIteratorType positionIteratorEnd;
 
+
+	// Prepare resulting intermediate representation of input.
+	storm::formula::AbstractFormula<double>* result_pointer = nullptr;
+
+	CslGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
+
+	// Now, parse the formula from the given string
+	try {
+		qi::phrase_parse(positionIteratorBegin, positionIteratorEnd, grammar, boost::spirit::ascii::space, result_pointer);
+	} catch(const qi::expectation_failure<PositionIteratorType>& e) {
+		// If the parser expected content different than the one provided, display information
+		// about the location of the error.
+		const boost::spirit::classic::file_position_base<std::string>& pos = e.first.get_position();
+
+		// Construct the error message including a caret display of the position in the
+		// erroneous line.
+		std::stringstream msg;
+		msg << pos.file << ", line " << pos.line << ", column " << pos.column
+				<< ": parse error: expected " << e.what_ << std::endl << "\t"
+				<< e.first.get_currentline() << std::endl << "\t";
+		int i = 0;
+		for (i = 0; i < pos.column; ++i) {
+			msg << "-";
+		}
+		msg << "^";
+		for (; i < 80; ++i) {
+			msg << "-";
+		}
+		msg << std::endl;
+
+		std::cerr << msg.str();
+
+		// Now propagate exception.
+		throw storm::exceptions::WrongFormatException() << msg.str();
+	}
+
+	// The syntax can be so wrong that no rule can be matched at all
+	// In that case, no expectation failure is thrown, but the parser just returns nullptr
+	// Then, of course the result is not usable, hence we throw a WrongFormatException, too.
+	if (result_pointer == nullptr) {
+		throw storm::exceptions::WrongFormatException() << "Syntax error in formula";
+	}
+
+	formula = result_pointer;
 }
 
 CslParser::~CslParser() {
-	// TODO Auto-generated destructor stub
+	// Intentionally left empty
+	// Parsed formula is not deleted with the parser!
 }
 
 } /* namespace parser */

@@ -129,7 +129,7 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "";
+		std::string result = " ";
 		switch (comparisonOperator) {
 		case LESS: result += "< "; break;
 		case LESS_EQUAL: result += "<= "; break;
