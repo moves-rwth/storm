@@ -88,14 +88,14 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::formula::AbstractFor
 		steadyStateBoundOperator.name("state formula");
 
 		//This block defines rules for parsing formulas with noBoundOperators
-		noBoundOperator = (probabilisticNoBoundOperator | rewardNoBoundOperator);
+		noBoundOperator = (probabilisticNoBoundOperator | steadyStateNoBoundOperator);
 		noBoundOperator.name("no bound operator");
 		probabilisticNoBoundOperator = (qi::lit("P") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
 				phoenix::new_<storm::formula::ProbabilisticNoBoundOperator<double> >(qi::_1)];
 		probabilisticNoBoundOperator.name("no bound operator");
-		rewardNoBoundOperator = (qi::lit("R") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> rewardPathFormula >> qi::lit("]"))[qi::_val =
-				phoenix::new_<storm::formula::RewardNoBoundOperator<double> >(qi::_1)];
-		rewardNoBoundOperator.name("no bound operator");
+		steadyStateNoBoundOperator = (qi::lit("S") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> stateFormula >> qi::lit("]"))[qi::_val =
+				phoenix::new_<storm::formula::SteadyStateNoBoundOperator<double> >(qi::_1)];
+		steadyStateNoBoundOperator.name("no bound operator");
 
 		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (boundedEventually | eventually | globally | boundedUntil | until);
@@ -116,23 +116,8 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::formula::AbstractFor
 				phoenix::new_<storm::formula::Until<double>>(phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_2)];
 		until.name("path formula (for probablistic operator)");
 
-		//This block defines rules for parsing reward path formulas
-		rewardPathFormula = (cumulativeReward | reachabilityReward | instantaneousReward | steadyStateReward);
-		rewardPathFormula.name("path formula (for reward operator)");
-		cumulativeReward = (qi::lit("C") > qi::lit("<=") > qi::double_)
-				[qi::_val = phoenix::new_<storm::formula::CumulativeReward<double>>(qi::_1)];
-		cumulativeReward.name("path formula (for reward operator)");
-		reachabilityReward = (qi::lit("F") > stateFormula)[qi::_val =
-				phoenix::new_<storm::formula::ReachabilityReward<double>>(qi::_1)];
-		reachabilityReward.name("path formula (for reward operator)");
-		instantaneousReward = (qi::lit("I") > qi::lit("=") > qi::double_)
-						[qi::_val = phoenix::new_<storm::formula::InstantaneousReward<double>>(qi::_1)];
-		instantaneousReward.name("path formula (for reward operator)");
-		steadyStateReward = (qi::lit("S"))[qi::_val = phoenix::new_<storm::formula::SteadyStateReward<double>>()];
-
-
 		start = (noBoundOperator | stateFormula);
-		start.name("PRCTL formula");
+		start.name("CSL formula");
 	}
 
 	qi::rule<Iterator, storm::formula::AbstractFormula<double>*(), Skipper> start;
@@ -148,9 +133,9 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::formula::AbstractFor
 	qi::rule<Iterator, storm::formula::SteadyStateBoundOperator<double>*(), Skipper> steadyStateBoundOperator;
 	qi::rule<Iterator, storm::formula::RewardBoundOperator<double>*(), Skipper> rewardBoundOperator;
 
-	qi::rule<Iterator, storm::formula::PathNoBoundOperator<double>*(), Skipper> noBoundOperator;
+	qi::rule<Iterator, storm::formula::AbstractFormula<double>*(), Skipper> noBoundOperator;
 	qi::rule<Iterator, storm::formula::PathNoBoundOperator<double>*(), Skipper> probabilisticNoBoundOperator;
-	qi::rule<Iterator, storm::formula::PathNoBoundOperator<double>*(), Skipper> rewardNoBoundOperator;
+	qi::rule<Iterator, storm::formula::StateNoBoundOperator<double>*(), Skipper> steadyStateNoBoundOperator;
 
 	qi::rule<Iterator, storm::formula::AbstractPathFormula<double>*(), Skipper> pathFormula;
 	qi::rule<Iterator, storm::formula::BoundedEventually<double>*(), Skipper> boundedEventually;

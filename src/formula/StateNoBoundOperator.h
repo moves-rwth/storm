@@ -2,7 +2,7 @@
  * StateNoBoundOperator.h
  *
  *  Created on: 09.04.2013
- *      Author: thomas
+ *      Author: Thomas Heinemann
  */
 
 #ifndef STATENOBOUNDOPERATOR_H_
@@ -95,8 +95,8 @@ public:
 		}
 	}
 
-	const AbstractStateFormula<T>& getStateFormula() {
-		return *stateFormula;
+	const AbstractStateFormula<T>& getStateFormula() const {
+		return *(this->stateFormula);
 	}
 
 	void setStateFormula(AbstractStateFormula<T>* stateFormula) {

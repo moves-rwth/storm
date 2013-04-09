@@ -30,7 +30,7 @@ class ISteadyStateNoBoundOperatorModelChecker {
          *  @param obj Formula object with subformulas.
          *  @return Result of the formula for every node.
          */
-        virtual storm::storage::BitVector* checkSteadyStateNoBoundOperator(const SteadyStateNoBoundOperator<T>& obj) const = 0;
+        virtual std::vector<T>*  checkSteadyStateNoBoundOperator(const SteadyStateNoBoundOperator<T>& obj) const = 0;
 };
 
 template <class T>
@@ -71,11 +71,12 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
+	/* TODO: Add clone method to StateNoBoundOperator and use matching return type
 	virtual AbstractStateFormula<T>* clone() const {
 		SteadyStateNoBoundOperator<T>* result = new SteadyStateNoBoundOperator<T>();
 		result->setStateFormula(this->getStateFormula().clone());
 		return result;
-	}
+	}*/
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -86,7 +87,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T>*  check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<ISteadyStateNoBoundOperatorModelChecker>()->checkSteadyStateNoBoundOperator(*this);
 	}
 
