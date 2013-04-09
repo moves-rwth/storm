@@ -1,5 +1,5 @@
 /*
- * NoBoundOperator.h
+ * PathNoBoundOperator.h
  *
  *  Created on: 27.12.2012
  *      Author: Christian Dehnert
@@ -19,7 +19,7 @@ namespace storm {
 
 namespace formula {
 
-template <class T> class NoBoundOperator;
+template <class T> class PathNoBoundOperator;
 
 /*!
  *  @brief Interface class for model checkers that support NoBoundOperator.
@@ -28,7 +28,7 @@ template <class T> class NoBoundOperator;
  *  this pure virtual class.
  */
 template <class T>
-class INoBoundOperatorModelChecker {
+class IPathNoBoundOperatorModelChecker {
     public:
 		/*!
          *  @brief Evaluates NoBoundOperator formula within a model checker.
@@ -36,7 +36,7 @@ class INoBoundOperatorModelChecker {
          *  @param obj Formula object with subformulas.
          *  @return Result of the formula for every node.
          */
-        virtual std::vector<T>* checkNoBoundOperator(const NoBoundOperator<T>& obj) const = 0;
+        virtual std::vector<T>* checkPathNoBoundOperator(const PathNoBoundOperator<T>& obj) const = 0;
 };
 
 /*!
@@ -70,12 +70,12 @@ class INoBoundOperatorModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class NoBoundOperator: public storm::formula::AbstractFormula<T>, public OptimizingOperator {
+class PathNoBoundOperator: public storm::formula::AbstractFormula<T>, public OptimizingOperator {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	NoBoundOperator() : optimalityOperator(false), minimumOperator(false) {
+	PathNoBoundOperator() : optimalityOperator(false), minimumOperator(false) {
 		this->pathFormula = nullptr;
 	}
 
@@ -84,7 +84,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	NoBoundOperator(AbstractPathFormula<T>* pathFormula) : optimalityOperator(false), minimumOperator(false) {
+	PathNoBoundOperator(AbstractPathFormula<T>* pathFormula) : optimalityOperator(false), minimumOperator(false) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -95,7 +95,7 @@ public:
 	 * @param minimumOperator A flag indicating whether this operator is a minimizing or a
 	 * maximizing operator.
 	 */
-	NoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+	PathNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator)
 		: optimalityOperator(true), minimumOperator(minimumOperator) {
 		this->pathFormula = pathFormula;
 	}
@@ -103,7 +103,7 @@ public:
 	/*!
 	 * Destructor
 	 */
-	virtual ~NoBoundOperator() {
+	virtual ~PathNoBoundOperator() {
 		if (pathFormula != NULL) {
 			delete pathFormula;
 		}
@@ -137,7 +137,7 @@ public:
 	 * @returns A vector indicating all states that satisfy the formula represented by the called object.
 	 */
 	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<INoBoundOperatorModelChecker>()->checkNoBoundOperator(*this);
+		return modelChecker.template as<IPathNoBoundOperatorModelChecker>()->checkPathNoBoundOperator(*this);
 	}
 
 	/*!

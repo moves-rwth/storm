@@ -148,9 +148,9 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::formula::AbstractFor
 	qi::rule<Iterator, storm::formula::SteadyStateBoundOperator<double>*(), Skipper> steadyStateBoundOperator;
 	qi::rule<Iterator, storm::formula::RewardBoundOperator<double>*(), Skipper> rewardBoundOperator;
 
-	qi::rule<Iterator, storm::formula::NoBoundOperator<double>*(), Skipper> noBoundOperator;
-	qi::rule<Iterator, storm::formula::NoBoundOperator<double>*(), Skipper> probabilisticNoBoundOperator;
-	qi::rule<Iterator, storm::formula::NoBoundOperator<double>*(), Skipper> rewardNoBoundOperator;
+	qi::rule<Iterator, storm::formula::PathNoBoundOperator<double>*(), Skipper> noBoundOperator;
+	qi::rule<Iterator, storm::formula::PathNoBoundOperator<double>*(), Skipper> probabilisticNoBoundOperator;
+	qi::rule<Iterator, storm::formula::PathNoBoundOperator<double>*(), Skipper> rewardNoBoundOperator;
 
 	qi::rule<Iterator, storm::formula::AbstractPathFormula<double>*(), Skipper> pathFormula;
 	qi::rule<Iterator, storm::formula::BoundedEventually<double>*(), Skipper> boundedEventually;

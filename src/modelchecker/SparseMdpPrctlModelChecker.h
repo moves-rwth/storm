@@ -66,7 +66,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	std::vector<Type>* checkNoBoundOperator(const storm::formula::NoBoundOperator<Type>& formula) const {
+	std::vector<Type>* checkPathNoBoundOperator(const storm::formula::PathNoBoundOperator<Type>& formula) const {
 		// Check if the operator was an non-optimality operator and report an error in that case.
 		if (!formula.isOptimalityOperator()) {
 			LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");

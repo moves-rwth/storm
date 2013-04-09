@@ -52,7 +52,7 @@ class AbstractModelChecker :
 	public virtual storm::formula::INextModelChecker<Type>,
 	public virtual storm::formula::IBoundedUntilModelChecker<Type>,
 	public virtual storm::formula::IBoundedEventuallyModelChecker<Type>,
-	public virtual storm::formula::INoBoundOperatorModelChecker<Type>,
+	public virtual storm::formula::IPathNoBoundOperatorModelChecker<Type>,
 	public virtual storm::formula::IProbabilisticBoundOperatorModelChecker<Type>,
 	public virtual storm::formula::IRewardBoundOperatorModelChecker<Type>,
 	public virtual storm::formula::IReachabilityRewardModelChecker<Type>,
@@ -154,7 +154,7 @@ public:
 	 *
 	 * @param noBoundFormula The formula to be checked.
 	 */
-	void check(storm::formula::NoBoundOperator<Type> const& noBoundFormula) const {
+	void check(storm::formula::PathNoBoundOperator<Type> const& noBoundFormula) const {
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << noBoundFormula.toString());
 		std::cout << "Model checking formula:\t" << noBoundFormula.toString() << std::endl;

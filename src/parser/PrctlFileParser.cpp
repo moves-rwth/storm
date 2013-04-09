@@ -67,7 +67,7 @@ void PrctlFileParser::check(std::string filename, storm::modelchecker::AbstractM
 			if (stateFormula != nullptr) {
 				modelChecker->check(*stateFormula);
 			}
-			storm::formula::NoBoundOperator<double>* noBoundFormula = dynamic_cast<storm::formula::NoBoundOperator<double>*>(parser.getFormula());
+			storm::formula::PathNoBoundOperator<double>* noBoundFormula = dynamic_cast<storm::formula::PathNoBoundOperator<double>*>(parser.getFormula());
 			if (noBoundFormula != nullptr) {
 				modelChecker->check(*noBoundFormula);
 			}

@@ -10,7 +10,7 @@
 
 #include "AbstractFormula.h"
 #include "AbstractPathFormula.h"
-#include "NoBoundOperator.h"
+#include "PathNoBoundOperator.h"
 
 namespace storm {
 namespace formula {
@@ -46,12 +46,12 @@ namespace formula {
  * @see AbstractFormula
  */
 template <class T>
-class ProbabilisticNoBoundOperator: public NoBoundOperator<T> {
+class ProbabilisticNoBoundOperator: public PathNoBoundOperator<T> {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticNoBoundOperator() : NoBoundOperator<T>(nullptr) {
+	ProbabilisticNoBoundOperator() : PathNoBoundOperator<T>(nullptr) {
 		// Intentionally left empty
 	}
 
@@ -60,7 +60,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula) : NoBoundOperator<T>(pathFormula) {
+	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -69,7 +69,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : NoBoundOperator<T>(pathFormula, minimumOperator) {
+	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -78,7 +78,7 @@ public:
 	 */
 	virtual std::string toString() const {
 		std::string result = "P";
-		result += NoBoundOperator<T>::toString();
+		result += PathNoBoundOperator<T>::toString();
 		return result;
 	}
 };
