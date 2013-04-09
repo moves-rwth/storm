@@ -22,7 +22,7 @@ namespace formula {
 template <class T> class PathNoBoundOperator;
 
 /*!
- *  @brief Interface class for model checkers that support NoBoundOperator.
+ *  @brief Interface class for model checkers that support PathNoBoundOperator.
  *   
  *  All model checkers that support the formula class NoBoundOperator must inherit
  *  this pure virtual class.

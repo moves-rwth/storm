@@ -32,6 +32,7 @@
 #include "RewardNoBoundOperator.h"
 #include "SteadyStateReward.h"
 
+#include "SteadyStateNoBoundOperator.h"
 #include "SteadyStateBoundOperator.h"
 
 #include "AbstractFormula.h"
