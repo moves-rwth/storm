@@ -17,7 +17,7 @@ namespace storm {
 
 namespace formula {
 
-template <class T> class SteadyStateOperator;
+template <class T> class SteadyStateBoundOperator;
 
 /*!
  *  @brief Interface class for model checkers that support SteadyStateOperator.
@@ -26,7 +26,7 @@ template <class T> class SteadyStateOperator;
  *  this pure virtual class.
  */
 template <class T>
-class ISteadyStateOperatorModelChecker {
+class ISteadyStateBoundOperatorModelChecker {
     public:
 		/*!
          *  @brief Evaluates SteadyStateOperator formula within a model checker.
@@ -34,12 +34,12 @@ class ISteadyStateOperatorModelChecker {
          *  @param obj Formula object with subformulas.
          *  @return Result of the formula for every node.
          */
-        virtual storm::storage::BitVector* checkSteadyStateOperator(const SteadyStateOperator<T>& obj) const = 0;
+        virtual storm::storage::BitVector* checkSteadyStateBoundOperator(const SteadyStateBoundOperator<T>& obj) const = 0;
 };
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a SteadyStateOperator node as root.
+ * Class for an Abstract (path) formula tree with a SteadyStateOperator node as root.
  *
  * Has two Abstract state formulas as sub formulas/trees.
  *
@@ -53,13 +53,13 @@ class ISteadyStateOperatorModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class SteadyStateOperator : public StateBoundOperator<T> {
+class SteadyStateBoundOperator : public StateBoundOperator<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	SteadyStateOperator() : StateBoundOperator<T>
+	SteadyStateBoundOperator() : StateBoundOperator<T>
 		(StateBoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
@@ -69,7 +69,7 @@ public:
 	 *
 	 * @param stateFormula The child node
 	 */
-	SteadyStateOperator(
+	SteadyStateBoundOperator(
 		typename StateBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* stateFormula) :
 			StateBoundOperator<T>(comparisonRelation, bound, stateFormula) {
 	}
@@ -93,7 +93,7 @@ public:
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
 	virtual AbstractStateFormula<T>* clone() const {
-		SteadyStateOperator<T>* result = new SteadyStateOperator<T>();
+		SteadyStateBoundOperator<T>* result = new SteadyStateBoundOperator<T>();
 		result->setStateFormula(this->getStateFormula().clone());
 		return result;
 	}
@@ -108,7 +108,7 @@ public:
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
 	virtual storm::storage::BitVector* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<ISteadyStateOperatorModelChecker>()->checkSteadyStateOperator(*this);
+		return modelChecker.template as<ISteadyStateBoundOperatorModelChecker>()->checkSteadyStateOperator(*this);
 	}
 	
 };

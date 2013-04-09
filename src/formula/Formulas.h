@@ -32,7 +32,7 @@
 #include "RewardNoBoundOperator.h"
 #include "SteadyStateReward.h"
 
-#include "SteadyStateOperator.h"
+#include "SteadyStateBoundOperator.h"
 
 #include "AbstractFormula.h"
 #include "AbstractPathFormula.h"
