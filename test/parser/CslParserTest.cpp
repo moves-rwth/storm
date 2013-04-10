@@ -65,7 +65,7 @@ TEST(CslParserTest, parseProbabilisticFormulaTest) {
 TEST(CslParserTest, parseSteadyStateBoundFormulaTest) {
 	storm::parser::CslParser* cslParser = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("S >= 15 [ a & b ]")
+			cslParser = new storm::parser::CslParser("S >= 15 [ P < 0.2 [ a U<=3 b ] ]")
 	);
 
 	ASSERT_NE(cslParser->getFormula(), nullptr);
@@ -75,7 +75,7 @@ TEST(CslParserTest, parseSteadyStateBoundFormulaTest) {
 	ASSERT_EQ(storm::formula::StateBoundOperator<double>::GREATER_EQUAL, op->getComparisonOperator());
 	ASSERT_EQ(15.0, op->getBound());
 
-	ASSERT_EQ("S >= 15.000000 [(a & b)]", cslParser->getFormula()->toString());
+	ASSERT_EQ("S >= 15.000000 [P < 0.200000 [a U[0.000000,3.000000] b]]", cslParser->getFormula()->toString());
 
 	delete cslParser->getFormula();
 	delete cslParser;
@@ -100,13 +100,13 @@ TEST(CslParserTest, parseSteadyStateNoBoundFormulaTest) {
 TEST(CslParserTest, parseProbabilisticNoBoundFormulaTest) {
 	storm::parser::CslParser* cslParser = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("P = ? [ a U <= 4 b & (!c) ]")
+			cslParser = new storm::parser::CslParser("P = ? [ a U [3,4] b & (!c) ]")
 	);
 
 	ASSERT_NE(cslParser->getFormula(), nullptr);
 
 
-	ASSERT_EQ(cslParser->getFormula()->toString(), "P = ? [a U<=4 (b & !c)]");
+	ASSERT_EQ(cslParser->getFormula()->toString(), "P = ? [a U[3.000000,4.000000] (b & !c)]");
 
 	delete cslParser->getFormula();
 	delete cslParser;
@@ -116,13 +116,15 @@ TEST(CslParserTest, parseProbabilisticNoBoundFormulaTest) {
 TEST(CslParserTest, parseComplexFormulaTest) {
 	storm::parser::CslParser* cslParser = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("S<=0.5 [ P <= 0.5 [ a U c ] ] & (P > 0.5 [ G b] | !P < 0.4 [ G P>0.9 [F<=7 a & b] ])")
+			cslParser = new storm::parser::CslParser("S<=0.5 [ P <= 0.5 [ a U c ] ] & (P > 0.5 [ G b] | !P < 0.4 [ G P>0.9 [F >=7 a & b] ])")
 	);
 
 	ASSERT_NE(cslParser->getFormula(), nullptr);
 
-
-	ASSERT_EQ("(S <= 0.500000 [P <= 0.500000 [a U c]] & (P > 0.500000 [G b] | !P < 0.400000 [G P > 0.900000 [F<=7 (a & b)]]))", cslParser->getFormula()->toString());
+	//NOTE: This test case is dependent on the string output of the double value infinity.
+	//		  In g++ and clang++ on Linux, it is "inf". If some compiler (or library) uses a different output, please
+	//		  notify me and I will restructure this test case.
+	ASSERT_EQ("(S <= 0.500000 [P <= 0.500000 [a U c]] & (P > 0.500000 [G b] | !P < 0.400000 [G P > 0.900000 [F[7.000000,inf] (a & b)]]))", cslParser->getFormula()->toString());
 	delete cslParser->getFormula();
 	delete cslParser;
 

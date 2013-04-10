@@ -87,7 +87,8 @@ public:
 	virtual std::string toString() const {
 		std::string result = "[";
 		result += std::to_string(lowerBound);
-		result += ";";
+		result += ",";
+		result += std::to_string(upperBound);
 		result += "]";
 		return result;
 	}

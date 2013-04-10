@@ -100,8 +100,14 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::formula::AbstractFor
 		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (timeBoundedEventually | eventually | globally | timeBoundedUntil | until);
 		pathFormula.name("path formula");
-		timeBoundedEventually = (qi::lit("F") >> qi::lit("[") > qi::double_ > qi::lit(",") > qi::double_ > qi::lit("]") > stateFormula)[qi::_val =
-				phoenix::new_<storm::formula::TimeBoundedEventually<double>>(qi::_1, qi::_2, qi::_3)];
+		timeBoundedEventually = (
+				(qi::lit("F") >> qi::lit("[") > qi::double_ > qi::lit(",") > qi::double_ > qi::lit("]") > stateFormula)[qi::_val =
+				phoenix::new_<storm::formula::TimeBoundedEventually<double>>(qi::_1, qi::_2, qi::_3)] |
+				(qi::lit("F") >> (qi::lit("<=") | qi::lit("<")) > qi::double_ > stateFormula)[qi::_val =
+								phoenix::new_<storm::formula::TimeBoundedEventually<double>>(0, qi::_1, qi::_2)] |
+				(qi::lit("F") >> (qi::lit(">=") | qi::lit(">")) > qi::double_ > stateFormula)[qi::_val =
+								phoenix::new_<storm::formula::TimeBoundedEventually<double>>(qi::_1, std::numeric_limits<double>::infinity(), qi::_2)]
+				);
 		timeBoundedEventually.name("path formula (for probabilistic operator)");
 		eventually = (qi::lit("F") > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Eventually<double> >(qi::_1)];
@@ -109,8 +115,14 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::formula::AbstractFor
 		globally = (qi::lit("G") > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Globally<double> >(qi::_1)];
 		globally.name("path formula (for probabilistic operator)");
-		timeBoundedUntil = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") >> qi::lit("[") > qi::double_ > qi::lit(",") > qi::double_ > qi::lit("]")  > stateFormula)
-				[qi::_val = phoenix::new_<storm::formula::TimeBoundedUntil<double>>(qi::_2, qi::_3, phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_4)];
+		timeBoundedUntil = (
+					(stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") >> qi::lit("[") > qi::double_ > qi::lit(",") > qi::double_ > qi::lit("]")  > stateFormula)
+					[qi::_val = phoenix::new_<storm::formula::TimeBoundedUntil<double>>(qi::_2, qi::_3, phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_4)] |
+					(stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") >> (qi::lit("<=") | qi::lit("<")) > qi::double_  > stateFormula)
+					[qi::_val = phoenix::new_<storm::formula::TimeBoundedUntil<double>>(0, qi::_2, phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_3)] |
+					(stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") >> (qi::lit(">=") | qi::lit(">")) > qi::double_  > stateFormula)
+					[qi::_val = phoenix::new_<storm::formula::TimeBoundedUntil<double>>(qi::_2, std::numeric_limits<double>::infinity(), phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_3)]
+				);
 		timeBoundedUntil.name("path formula (for probabilistic operator)");
 		until = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") > stateFormula)[qi::_val =
 				phoenix::new_<storm::formula::Until<double>>(phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_2)];
