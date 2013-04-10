@@ -121,10 +121,7 @@ TEST(CslParserTest, parseComplexFormulaTest) {
 
 	ASSERT_NE(cslParser->getFormula(), nullptr);
 
-	//NOTE: This test case is dependent on the string output of the double value infinity.
-	//		  In g++ and clang++ on Linux, it is "inf". If some compiler (or library) uses a different output, please
-	//		  notify me and I will restructure this test case.
-	ASSERT_EQ("(S <= 0.500000 [P <= 0.500000 [a U c]] & (P > 0.500000 [G b] | !P < 0.400000 [G P > 0.900000 [F[7.000000,inf] (a & b)]]))", cslParser->getFormula()->toString());
+	ASSERT_EQ("(S <= 0.500000 [P <= 0.500000 [a U c]] & (P > 0.500000 [G b] | !P < 0.400000 [G P > 0.900000 [F>=7.000000 (a & b)]]))", cslParser->getFormula()->toString());
 	delete cslParser->getFormula();
 	delete cslParser;
 

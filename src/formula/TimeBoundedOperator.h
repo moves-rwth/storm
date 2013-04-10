@@ -8,6 +8,8 @@
 #ifndef TIMEBOUNDEDOPERATOR_H_
 #define TIMEBOUNDEDOPERATOR_H_
 
+#include <limits>
+
 #include "AbstractPathFormula.h"
 #include "exceptions/InvalidArgumentException.h"
 
@@ -85,11 +87,16 @@ public:
 	 * 			May be used in subclasses to simplify string output.
 	 */
 	virtual std::string toString() const {
-		std::string result = "[";
-		result += std::to_string(lowerBound);
-		result += ",";
-		result += std::to_string(upperBound);
-		result += "]";
+		std::string result = "";
+		if (upperBound == std::numeric_limits<double>::infinity()) {
+			result = ">=" + std::to_string(lowerBound);
+		} else {
+			result = "[";
+			result += std::to_string(lowerBound);
+			result += ",";
+			result += std::to_string(upperBound);
+			result += "]";
+		}
 		return result;
 	}
 
