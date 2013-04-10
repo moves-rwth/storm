@@ -5,8 +5,8 @@
  *      Author: thomas
  */
 
-#ifndef STEADYSTATENOBOUNDOPERATOR_H_
-#define STEADYSTATENOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_STEADYSTATENOBOUNDOPERATOR_H_
+#define STORM_FORMULA_STEADYSTATENOBOUNDOPERATOR_H_
 
 #include "StateNoBoundOperator.h"
 
@@ -91,4 +91,4 @@ public:
 
 } /* namespace formula */
 } /* namespace storm */
-#endif /* STEADYSTATENOBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_STEADYSTATENOBOUNDOPERATOR_H_ */

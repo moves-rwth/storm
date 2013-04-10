@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STATENOBOUNDOPERATOR_H_
-#define STATENOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_STATENOBOUNDOPERATOR_H_
+#define STORM_FORMULA_STATENOBOUNDOPERATOR_H_
 
 #include "src/formula/AbstractFormula.h"
 #include "src/formula/AbstractPathFormula.h"
@@ -145,4 +145,4 @@ private:
 
 } /* namespace formula */
 } /* namespace storm */
-#endif /* STATENOBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_STATENOBOUNDOPERATOR_H_ */
