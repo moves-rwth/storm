@@ -35,6 +35,9 @@
 #include "SteadyStateNoBoundOperator.h"
 #include "SteadyStateBoundOperator.h"
 
+#include "TimeBoundedUntil.h"
+#include "TimeBoundedEventually.h"
+
 #include "AbstractFormula.h"
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
