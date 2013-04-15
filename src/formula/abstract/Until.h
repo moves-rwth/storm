@@ -5,35 +5,16 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_UNTIL_H_
-#define STORM_FORMULA_UNTIL_H_
+#ifndef STORM_FORMULA_ABSTRACT_UNTIL_H_
+#define STORM_FORMULA_ABSTRACT_UNTIL_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 namespace formula {
-
-template <class T> class Until;
-
-/*!
- *  @brief Interface class for model checkers that support Until.
- *
- *  All model checkers that support the formula class Until must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IUntilModelChecker {
-    public:
-		/*!
-         *  @brief Evaluates Until formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
-        virtual std::vector<T>* checkUntil(const Until<T>& obj, bool qualitative) const = 0;
-};
+namespace abstract {
 
 /*!
  * @brief
@@ -48,11 +29,11 @@ class IUntilModelChecker {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see AbstractPathFormula
+ * @see AbstractFormula
  * @see AbstractFormula
  */
 template <class T>
-class Until : public AbstractPathFormula<T> {
+class Until : public AbstractFormula<T> {
 
 public:
 	/*!
@@ -69,7 +50,7 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	Until(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) {
+	Until(AbstractFormula<T>* left, AbstractFormula<T>* right) {
 		this->left = left;
 		this->right = right;
 	}
@@ -90,38 +71,6 @@ public:
 	}
 
 	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft the new left child.
-	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
-		left = newLeft;
-	}
-
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
-	 */
-	void setRight(AbstractStateFormula<T>* newRight) {
-		right = newRight;
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
-	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	const AbstractStateFormula<T>& getRight() const {
-		return *right;
-	}
-
-	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
@@ -132,37 +81,6 @@ public:
 	}
 
 	/*!
-	 * Clones the called object.
-	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
-	 */
-	virtual AbstractPathFormula<T>* clone() const {
-		Until<T>* result = new Until();
-		if (left != NULL) {
-			result->setLeft(left->clone());
-		}
-		if (right != NULL) {
-			result->setRight(right->clone());
-		}
-		return result;
-	}
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @returns A vector indicating the probability that the formula holds for each state.
-	 */
-	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
-		return modelChecker.template as<IUntilModelChecker>()->checkUntil(*this, qualitative);
-	}
-	
-	/*!
      *  @brief Checks if all subtrees conform to some logic.
      *
      *  @param checker Formula checker object.
@@ -172,13 +90,48 @@ public:
         return checker.conforms(this->left) && checker.conforms(this->right);
     }
 
+protected:
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(AbstractFormula<T>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const AbstractFormula<T>& getRight() const {
+		return *right;
+	}
+
 private:
-	AbstractStateFormula<T>* left;
-	AbstractStateFormula<T>* right;
+	AbstractFormula<T>* left;
+	AbstractFormula<T>* right;
 };
+
+} //namespace abstract
 
 } //namespace formula
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_UNTIL_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_UNTIL_H_ */

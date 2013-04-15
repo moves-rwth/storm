@@ -5,11 +5,10 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_BOUNDEDNARYUNTIL_H_
-#define STORM_FORMULA_BOUNDEDNARYUNTIL_H_
+#ifndef STORM_FORMULA_ABSTRACT_BOUNDEDNARYUNTIL_H_
+#define STORM_FORMULA_ABSTRACT_BOUNDEDNARYUNTIL_H_
 
-#include "src/formula/AbstractPathFormula.h"
-#include "src/formula/AbstractStateFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 #include <vector>
@@ -19,26 +18,7 @@
 
 namespace storm {
 namespace formula {
-
-template <class T> class BoundedNaryUntil;
-
-/*!
- *  @brief Interface class for model checkers that support BoundedNaryUntil.
- *   
- *  All model checkers that support the formula class BoundedNaryUntil must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IBoundedNaryUntilModelChecker {
-    public:
-		/*!
-         *  @brief Evaluates BoundedNaryUntil formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
-        virtual std::vector<T>* checkBoundedNaryUntil(const BoundedNaryUntil<T>& obj, bool qualitative) const = 0;
-};
+namespace abstract {
 
 /*!
  * @brief
@@ -56,11 +36,11 @@ class IBoundedNaryUntilModelChecker {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see AbstractPathFormula
+ * @see AbstractFormula
  * @see AbstractFormula
  */
 template <class T>
-class BoundedNaryUntil : public AbstractPathFormula<T> {
+class BoundedNaryUntil : public AbstractFormula<T> {
 
 public:
 	/*!
@@ -68,7 +48,7 @@ public:
 	 */
 	BoundedNaryUntil() {
 		this->left = nullptr;
-		this->right = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
+		this->right = new std::vector<std::tuple<AbstractFormula<T>*,T,T>>();
 	}
 
 	/*!
@@ -77,7 +57,7 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	BoundedNaryUntil(AbstractStateFormula<T>* left, std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right) {
+	BoundedNaryUntil(AbstractFormula<T>* left, std::vector<std::tuple<AbstractFormula<T>*,T,T>>* right) {
 		this->left = left;
 		this->right = right;
 	}
@@ -98,43 +78,6 @@ public:
 	}
 
 	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft the new left child.
-	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
-		left = newLeft;
-	}
-
-	void setRight(std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* newRight) {
-		right = newRight;
-	}
-
-
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
-	 */
-	void addRight(AbstractStateFormula<T>* newRight, T upperBound, T lowerBound) {
-		this->right->push_back(std::tuple<AbstractStateFormula<T>*,T,T>(newRight, upperBound, lowerBound));
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
-	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child nodes.
-	 */
-	const std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>& getRight() const {
-		return *right;
-	}
-
-	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
@@ -148,44 +91,8 @@ public:
 	}
 
 	/*!
-	 * Clones the called object.
-	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-	 *
-	 * @returns a new BoundedNaryUntil-object that is identical the called object.
-	 */
-	virtual AbstractPathFormula<T>* clone() const {
-		BoundedNaryUntil<T>* result = new BoundedNaryUntil<T>();
-		if (left != NULL) {
-			result->setLeft(left->clone());
-		}
-		if (right != NULL) {
-			std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* newright = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
-			for (auto it = this->right->begin(); it != this->right->end(); ++it) {
-				newright->push_back(std::tuple<AbstractStateFormula<T>*,T,T>(std::get<0>(*it)->clone(), std::get<1>(*it), std::get<2>(*it)));
-			}
-			result->setRight(newright);
-		}
-		return result;
-	}
-
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @returns A vector indicating the probability that the formula holds for each state.
-	 */
-	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
-		return modelChecker.template as<IBoundedNaryUntilModelChecker>()->checkBoundedNaryUntil(*this, qualitative);
-	}
-	
-	/*!
      *  @brief Checks if all subtrees conform to some logic.
-     * 
+     *
      *  @param checker Formula checker object.
      *  @return true iff all subtrees conform to some logic.
      */
@@ -197,12 +104,52 @@ public:
 		return res;
 	}
 
+protected:
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	void setRight(std::vector<std::tuple<AbstractFormula<T>*,T,T>>* newRight) {
+		right = newRight;
+	}
+
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void addRight(AbstractFormula<T>* newRight, T upperBound, T lowerBound) {
+		this->right->push_back(std::tuple<AbstractFormula<T>*,T,T>(newRight, upperBound, lowerBound));
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child nodes.
+	 */
+	const std::vector<std::tuple<AbstractFormula<T>*,T,T>>& getRight() const {
+		return *right;
+	}
+
+
 private:
-	AbstractStateFormula<T>* left;
-	std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right;
+	AbstractFormula<T>* left;
+	std::vector<std::tuple<AbstractFormula<T>*,T,T>>* right;
 };
 
+} //namespace abstract
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_BOUNDEDNARYUNTIL_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_BOUNDEDNARYUNTIL_H_ */

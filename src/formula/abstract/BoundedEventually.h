@@ -5,11 +5,10 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_BOUNDEDEVENTUALLY_H_
-#define STORM_FORMULA_BOUNDEDEVENTUALLY_H_
+#ifndef STORM_FORMULA_ABSTRACT_BOUNDEDEVENTUALLY_H_
+#define STORM_FORMULA_ABSTRACT_BOUNDEDEVENTUALLY_H_
 
-#include "src/formula/AbstractPathFormula.h"
-#include "src/formula/AbstractStateFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
@@ -19,25 +18,7 @@ namespace storm {
 
 namespace formula {
 
-template <class T> class BoundedEventually;
-
-/*!
- *  @brief Interface class for model checkers that support BoundedEventually.
- *   
- *  All model checkers that support the formula class BoundedEventually must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IBoundedEventuallyModelChecker {
-    public:
-		/*!
-         *  @brief Evaluates BoundedEventually formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
-        virtual std::vector<T>* checkBoundedEventually(const BoundedEventually<T>& obj, bool qualitative) const = 0;
-};
+namespace abstract {
 
 /*!
  * @brief
@@ -51,11 +32,11 @@ class IBoundedEventuallyModelChecker {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see AbstractPathFormula
+ * @see AbstractFormula
  * @see AbstractFormula
  */
 template <class T>
-class BoundedEventually : public AbstractPathFormula<T> {
+class BoundedEventually : public AbstractFormula<T> {
 
 public:
 	/*!
@@ -72,7 +53,7 @@ public:
 	 * @param child The child formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedEventually(AbstractStateFormula<T>* child, uint_fast64_t bound) {
+	BoundedEventually(AbstractFormula<T>* child, uint_fast64_t bound) {
 		this->child = child;
 		this->bound = bound;
 	}
@@ -87,21 +68,6 @@ public:
 	  if (child != nullptr) {
 		  delete child;
 	  }
-	}
-
-	/*!
-	 * @returns the child node
-	 */
-	const AbstractStateFormula<T>& getChild() const {
-		return *child;
-	}
-
-	/*!
-	 * Sets the subtree
-	 * @param child the new child node
-	 */
-	void setChild(AbstractStateFormula<T>* child) {
-		this->child = child;
 	}
 
 	/*!
@@ -130,36 +96,6 @@ public:
 		result += child->toString();
 		return result;
 	}
-
-	/*!
-	 * Clones the called object.
-	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
-	 */
-	virtual AbstractPathFormula<T>* clone() const {
-		BoundedEventually<T>* result = new BoundedEventually<T>();
-		result->setBound(bound);
-		if (child != nullptr) {
-			result->setChild(child->clone());
-		}
-		return result;
-	}
-
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @returns A vector indicating the probability that the formula holds for each state.
-	 */
-	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
-		return modelChecker.template as<IBoundedEventuallyModelChecker>()->checkBoundedEventually(*this, qualitative);
-	}
 	
 	/*!
      *  @brief Checks if the subtree conforms to some logic.
@@ -171,13 +107,32 @@ public:
 		return checker.conforms(this->child);
 	}
 
+protected:
+	/*!
+	 * @returns the child node
+	 */
+	const AbstractFormula<T>& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(AbstractFormula<T>* child) {
+		this->child = child;
+	}
+
+
 private:
-	AbstractStateFormula<T>* child;
+	AbstractFormula<T>* child;
 	uint_fast64_t bound;
 };
+
+} //namespace abstract
 
 } //namespace formula
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_BOUNDEDUNTIL_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_BOUNDEDEVENTUALLY_H_ */

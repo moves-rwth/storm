@@ -5,31 +5,18 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_STATEBOUNDOPERATOR_H_
-#define STORM_FORMULA_STATEBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_ABSTRACT_STATEBOUNDOPERATOR_H_
+#define STORM_FORMULA_ABSTRACT_STATEBOUNDOPERATOR_H_
 
-#include "src/formula/AbstractStateFormula.h"
-#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/AbstractModelChecker.h"
 #include "src/utility/ConstTemplates.h"
 
 namespace storm {
 namespace formula {
-
-template <class T> class StateBoundOperator;
-
-/*!
- *  @brief Interface class for model checkers that support StateBoundOperator.
- *   
- *  All model checkers that support the formula class StateBoundOperator must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IStateBoundOperatorModelChecker {
-    public:
-        virtual storm::storage::BitVector* checkStateBoundOperator(const StateBoundOperator<T>& obj) const = 0;
-};
+namespace abstract {
 
 /*!
  * @brief
@@ -46,14 +33,14 @@ class IStateBoundOperatorModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see AbstractStateFormula
- * @see AbstractPathFormula
+ * @see AbstractFormula
+ * @see AbstractFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
  * @see AbstractFormula
  */
 template<class T>
-class StateBoundOperator : public AbstractStateFormula<T> {
+class StateBoundOperator : public AbstractFormula<T> {
 
 public:
 	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
@@ -65,7 +52,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param stateFormula The child node
 	 */
-	StateBoundOperator(ComparisonType comparisonOperator, T bound, AbstractStateFormula<T>* stateFormula)
+	StateBoundOperator(ComparisonType comparisonOperator, T bound, AbstractFormula<T>* stateFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), stateFormula(stateFormula) {
 		// Intentionally left empty
 	}
@@ -80,22 +67,6 @@ public:
 	 if (stateFormula != nullptr) {
 		 delete stateFormula;
 	 }
-	}
-
-	/*!
-	 * @returns the child node (representation of a Abstract state formula)
-	 */
-	const AbstractStateFormula<T>& getStateFormula () const {
-		return *stateFormula;
-	}
-
-	/*!
-	 * Sets the child node
-	 *
-	 * @param stateFormula the state formula that becomes the new child node
-	 */
-	void setStateFormula(AbstractStateFormula<T>* stateFormula) {
-		this->stateFormula = stateFormula;
 	}
 
 	/*!
@@ -154,28 +125,6 @@ public:
 	}
 
 	/*!
-	 * Clones the called object.
-	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-	 *
-	 * @returns a new AND-object that is identical the called object.
-	 */
-	virtual AbstractStateFormula<T>* clone() const = 0;
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
-	 */
-	virtual storm::storage::BitVector *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IStateBoundOperatorModelChecker>()->checkStateBoundOperator(*this);
-	}
-	
-	/*!
      *  @brief Checks if the subtree conforms to some logic.
      * 
      *  @param checker Formula checker object.
@@ -185,13 +134,31 @@ public:
         return checker.conforms(this->stateFormula);
     }
 
+protected:
+	/*!
+	 * @returns the child node (representation of a Abstract state formula)
+	 */
+	const AbstractFormula<T>& getStateFormula () const {
+		return *stateFormula;
+	}
+
+	/*!
+	 * Sets the child node
+	 *
+	 * @param stateFormula the state formula that becomes the new child node
+	 */
+	void setStateFormula(AbstractFormula<T>* stateFormula) {
+		this->stateFormula = stateFormula;
+	}
+
 private:
 	ComparisonType comparisonOperator;
 	T bound;
-	AbstractStateFormula<T>* stateFormula;
+	AbstractFormula<T>* stateFormula;
 };
 
+} //namespace abstract
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_STATEBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_STATEBOUNDOPERATOR_H_ */

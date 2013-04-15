@@ -5,31 +5,17 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_
-#define STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_ABSTRACT_PROBABILISTICBOUNDOPERATOR_H_
+#define STORM_FORMULA_ABSTRACT_PROBABILISTICBOUNDOPERATOR_H_
 
-#include "AbstractStateFormula.h"
-#include "AbstractPathFormula.h"
-#include "src/formula/PathBoundOperator.h"
-#include "src/formula/OptimizingOperator.h"
+#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/abstract/PathBoundOperator.h"
+#include "src/formula/abstract/OptimizingOperator.h"
 #include "utility/ConstTemplates.h"
 
 namespace storm {
 namespace formula {
-
-template <class T> class ProbabilisticBoundOperator;
-
-/*!
- *  @brief Interface class for model checkers that support ProbabilisticBoundOperator.
- *
- *  All model checkers that support the formula class PathBoundOperator must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IProbabilisticBoundOperatorModelChecker {
-    public:
-        virtual storm::storage::BitVector* checkProbabilisticBoundOperator(const ProbabilisticBoundOperator<T>& obj) const = 0;
-};
+namespace abstract {
 
 /*!
  * @brief
@@ -46,8 +32,8 @@ class IProbabilisticBoundOperatorModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see AbstractStateFormula
- * @see AbstractPathFormula
+ * @see AbstractFormula
+ * @see AbstractFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
  * @see AbstractFormula
@@ -73,14 +59,29 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula)
+			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractFormula<T>* pathFormula)
 			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
+	/*!
+	 * Constructor
+	 *
+	 * @param comparisonRelation
+	 * @param bound
+	 * @param pathFormula
+	 * @param minimumOperator
+	 */
 	ProbabilisticBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractFormula<T>* pathFormula, bool minimumOperator)
 			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator){
+		// Intentionally left empty
+	}
+
+	/*!
+	 * Destructor
+	 */
+	virtual ~ProbabilisticBoundOperator() {
 		// Intentionally left empty
 	}
 
@@ -92,37 +93,10 @@ public:
 		result += PathBoundOperator<T>::toString();
 		return result;
 	}
-
-	/*!
-	 * Clones the called object.
-	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-	 *
-	 * @returns a new AND-object that is identical the called object.
-	 */
-	virtual AbstractStateFormula<T>* clone() const {
-		ProbabilisticBoundOperator<T>* result = new ProbabilisticBoundOperator<T>();
-		result->setComparisonOperator(this->getComparisonOperator());
-		result->setBound(this->getBound());
-		result->setPathFormula(this->getPathFormula().clone());
-		return result;
-	}
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
-	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IProbabilisticBoundOperatorModelChecker>()->checkProbabilisticBoundOperator(*this);
-	}
 };
 
+} //namespace abstract
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_PROBABILISTICBOUNDOPERATOR_H_ */

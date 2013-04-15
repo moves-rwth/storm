@@ -5,15 +5,16 @@
  *      Author: thomas
  */
 
-#ifndef STORM_FORMULA_PROBABILISTICNOBOUNDOPERATOR_H_
-#define STORM_FORMULA_PROBABILISTICNOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_ABSTRACT_PROBABILISTICNOBOUNDOPERATOR_H_
+#define STORM_FORMULA_ABSTRACT_PROBABILISTICNOBOUNDOPERATOR_H_
 
 #include "AbstractFormula.h"
-#include "AbstractPathFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "PathNoBoundOperator.h"
 
 namespace storm {
 namespace formula {
+namespace abstract {
 
 /*!
  * @brief
@@ -39,8 +40,8 @@ namespace formula {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see AbstractStateFormula
- * @see AbstractPathFormula
+ * @see AbstractFormula
+ * @see AbstractFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticIntervalOperator
  * @see AbstractFormula
@@ -60,7 +61,14 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
+	ProbabilisticNoBoundOperator(AbstractFormula<T>* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
+		// Intentionally left empty
+	}
+
+	/*!
+	 * Destructor
+	 */
+	virtual ~ProbabilisticNoBoundOperator() {
 		// Intentionally left empty
 	}
 
@@ -69,7 +77,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
+	ProbabilisticNoBoundOperator(AbstractFormula<T>* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -83,7 +91,8 @@ public:
 	}
 };
 
-} /* namespace formula */
-} /* namespace storm */
+} //namespace abstract
+} //namespace formula
+} //namespace storm
 
-#endif /* STORM_FORMULA_PROBABILISTICNOBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_PROBABILISTICNOBOUNDOPERATOR_H_ */

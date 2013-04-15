@@ -5,38 +5,17 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_STATENOBOUNDOPERATOR_H_
-#define STORM_FORMULA_STATENOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_ABSTRACT_STATENOBOUNDOPERATOR_H_
+#define STORM_FORMULA_ABSTRACT_STATENOBOUNDOPERATOR_H_
 
-#include "src/formula/AbstractFormula.h"
-#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace formula {
-
-template <class T> class StateNoBoundOperator;
-
-/*!
- *  @brief Interface class for model checkers that support PathNoBoundOperator.
- *
- *  All model checkers that support the formula class NoBoundOperator must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IStateNoBoundOperatorModelChecker {
-    public:
-		/*!
-         *  @brief Evaluates NoBoundOperator formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
-        virtual std::vector<T>* checkStateNoBoundOperator(const StateNoBoundOperator<T>& obj) const = 0;
-};
-
+namespace abstract {
 
 /*!
  * @brief
@@ -62,8 +41,8 @@ class IStateNoBoundOperatorModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see AbstractStateFormula
- * @see AbstractPathFormula
+ * @see AbstractFormula
+ * @see AbstractFormula
  * @see SteadyStateNoBoundOperator
  * @see AbstractFormula
  */
@@ -80,7 +59,7 @@ public:
 	/*!
 	 * Constructor
 	 */
-	StateNoBoundOperator(AbstractStateFormula<T>* stateFormula) {
+	StateNoBoundOperator(AbstractFormula<T>* stateFormula) {
 		this->stateFormula = stateFormula;
 	}
 
@@ -93,14 +72,6 @@ public:
 		if (stateFormula != nullptr) {
 			delete stateFormula;
 		}
-	}
-
-	const AbstractStateFormula<T>& getStateFormula() const {
-		return *(this->stateFormula);
-	}
-
-	void setStateFormula(AbstractStateFormula<T>* stateFormula) {
-		this->stateFormula = stateFormula;
 	}
 
 	/*!
@@ -139,10 +110,20 @@ public:
 		return checker.conforms(this->stateFormula);
 	}
 
+protected:
+	const AbstractFormula<T>& getStateFormula() const {
+		return *(this->stateFormula);
+	}
+
+	void setStateFormula(AbstractFormula<T>* stateFormula) {
+		this->stateFormula = stateFormula;
+	}
+
 private:
-	AbstractStateFormula<T>* stateFormula;
+	AbstractFormula<T>* stateFormula;
 };
 
-} /* namespace formula */
-} /* namespace storm */
-#endif /* STORM_FORMULA_STATENOBOUNDOPERATOR_H_ */
+} //namespace abstract
+} //namespace formula
+} //namespace storm
+#endif /* STORM_FORMULA_ABSTRACT_STATENOBOUNDOPERATOR_H_ */

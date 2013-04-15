@@ -15,26 +15,7 @@
 
 namespace storm {
 namespace formula {
-
-template <class T> class And;
-
-/*!
- *	@brief Interface class for model checkers that support And.
- *
- *	All model checkers that support the formula class And must inherit
- *	this pure virtual class.
- */
-template <class T>
-class IAndModelChecker {
-	public:
-		/*!
-		 *	@brief Evaluates And formula within a model checker.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual storm::storage::BitVector* checkAnd(const And<T>& obj) const = 0;
-};
+namespace abstract {
 
 /*!
  * @brief
@@ -48,7 +29,7 @@ class IAndModelChecker {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see AbstractStateFormula
+ * @see AbstractFormula
  * @see AbstractFormula
  */
 template <class T>
@@ -92,38 +73,6 @@ public:
 	}
 
 	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft the new left child.
-	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
-		left = newLeft;
-	}
-
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
-	 */
-	void setRight(AbstractStateFormula<T>* newRight) {
-		right = newRight;
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
-	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	const AbstractStateFormula<T>& getRight() const {
-		return *right;
-	}
-
-	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
@@ -136,37 +85,6 @@ public:
 	}
 
 	/*!
-	 * Clones the called object.
-	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-	 *
-	 * @returns a new AND-object that is identical the called object.
-	 */
-	virtual AbstractStateFormula<T>* clone() const {
-		And<T>* result = new And();
-		if (this->left != NULL) {
-		  result->setLeft(left->clone());
-		}
-		if (this->right != NULL) {
-		  result->setRight(right->clone());
-		}
-		return result;
-	}
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
-	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
-	}
-	
-	/*!
 	 *	@brief Checks if all subtrees conform to some logic.
 	 *
 	 *	@param checker Formula checker object.
@@ -176,10 +94,45 @@ public:
         return checker.conforms(this->left) && checker.conforms(this->right);
     }
 
+protected:
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(AbstractFormula<T>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const AbstractFormula<T>& getRight() const {
+		return *right;
+	}
+
 private:
 	AbstractFormula<T>* left;
 	AbstractFormula<T>* right;
 };
+
+} //namespace abstract
 
 } //namespace formula
 

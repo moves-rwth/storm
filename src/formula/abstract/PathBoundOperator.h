@@ -5,14 +5,14 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_PATHBOUNDOPERATOR_H_
-#define STORM_FORMULA_PATHBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_ABSTRACT_PATHBOUNDOPERATOR_H_
+#define STORM_FORMULA_ABSTRACT_PATHBOUNDOPERATOR_H_
 
-#include "src/formula/AbstractStateFormula.h"
-#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
-#include "src/formula/OptimizingOperator.h"
+#include "src/formula/abstract/OptimizingOperator.h"
 
 #include "src/modelchecker/ForwardDeclarations.h"
 #include "src/utility/ConstTemplates.h"
@@ -20,6 +20,8 @@
 namespace storm {
 
 namespace formula {
+
+namespace abstract {
 
 template <class T> class PathBoundOperator;
 
@@ -38,14 +40,14 @@ template <class T> class PathBoundOperator;
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see AbstractStateFormula
- * @see AbstractPathFormula
+ * @see AbstractFormula
+ * @see AbstractFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
  * @see AbstractFormula
  */
 template<class T>
-class PathBoundOperator : public AbstractStateFormula<T>, public OptimizingOperator {
+class PathBoundOperator : public AbstractFormula<T>, public OptimizingOperator {
 
 public:
 	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
@@ -57,7 +59,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
+	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractFormula<T>* pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
@@ -70,7 +72,7 @@ public:
 	 * @param pathFormula The child node
 	 * @param minimumOperator Indicator, if operator should be minimum or maximum operator.
 	 */
-	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractFormula<T>* pathFormula, bool minimumOperator)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula), OptimizingOperator(minimumOperator) {
 		// Intentionally left empty
 	}
@@ -85,22 +87,6 @@ public:
 	 if (pathFormula != nullptr) {
 		 delete pathFormula;
 	 }
-	}
-
-	/*!
-	 * @returns the child node (representation of a Abstract path formula)
-	 */
-	const AbstractPathFormula<T>& getPathFormula () const {
-		return *pathFormula;
-	}
-
-	/*!
-	 * Sets the child node
-	 *
-	 * @param pathFormula the path formula that becomes the new child node
-	 */
-	void setPathFormula(AbstractPathFormula<T>* pathFormula) {
-		this->pathFormula = pathFormula;
 	}
 
 	/*!
@@ -160,15 +146,6 @@ public:
 	}
 
 	/*!
-	 * Clones the called object.
-	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-	 *
-	 * @returns a new AND-object that is identical the called object.
-	 */
-	virtual AbstractStateFormula<T>* clone() const = 0;
-
-	/*!
      *  @brief Checks if the subtree conforms to some logic.
      * 
      *  @param checker Formula checker object.
@@ -178,14 +155,34 @@ public:
         return checker.conforms(this->pathFormula);
     }
 
+protected:
+	/*!
+	 * @returns the child node (representation of a Abstract path formula)
+	 */
+	const AbstractFormula<T>& getPathFormula () const {
+		return *pathFormula;
+	}
+
+	/*!
+	 * Sets the child node
+	 *
+	 * @param pathFormula the path formula that becomes the new child node
+	 */
+	void setPathFormula(AbstractFormula<T>* pathFormula) {
+		this->pathFormula = pathFormula;
+	}
+
+
 private:
 	ComparisonType comparisonOperator;
 	T bound;
-	AbstractPathFormula<T>* pathFormula;
+	AbstractFormula<T>* pathFormula;
 };
+
+} //namespace abstract
 
 } //namespace formula
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_PATHBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_PATHBOUNDOPERATOR_H_ */

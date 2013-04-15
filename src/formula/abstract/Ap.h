@@ -5,35 +5,16 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_AP_H_
-#define STORM_FORMULA_AP_H_
+#ifndef STORM_FORMULA_ABSTRACT_AP_H_
+#define STORM_FORMULA_ABSTRACT_AP_H_
 
-#include "src/formula/AbstractStateFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace formula {
-
-template <class T> class Ap;
-
-/*!
- *  @brief Interface class for model checkers that support Ap.
- *
- *  All model checkers that support the formula class Ap must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IApModelChecker {
-    public:
-		/*!
-         *  @brief Evaluates Ap formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
-        virtual storm::storage::BitVector* checkAp(const Ap<T>& obj) const = 0;
-};
+namespace abstract {
 
 /*!
  * @brief
@@ -41,11 +22,11 @@ class IApModelChecker {
  *
  * This class represents the leaves in the formula tree.
  *
- * @see AbstractStateFormula
+ * @see AbstractFormula
  * @see AbstractFormula
  */
 template <class T>
-class Ap : public AbstractStateFormula<T> {
+class Ap : public AbstractFormula<T> {
 
 public:
 	/*!
@@ -79,28 +60,6 @@ public:
 	virtual std::string toString() const {
 		return getAp();
 	}
-
-	/*!
-	 * Clones the called object.
-	 *
-	 * @returns a new Ap-object that is identical the called object.
-	 */
-	virtual AbstractStateFormula<T>* clone() const {
-	  return new Ap(ap);
-	}
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
-	 */
-	virtual storm::storage::BitVector *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IApModelChecker>()->checkAp(*this);
-	}
 	
 	/*!
      *  @brief Checks if all subtrees conform to some logic.
@@ -118,8 +77,10 @@ private:
 	std::string ap;
 };
 
+} //namespace abstract
+
 } //namespace formula
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_AP_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_ABSTRCT_AP_H_ */

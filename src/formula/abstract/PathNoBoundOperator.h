@@ -5,13 +5,13 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_NOBOUNDOPERATOR_H_
-#define STORM_FORMULA_NOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_ABSTRACT_NOBOUNDOPERATOR_H_
+#define STORM_FORMULA_ABSTRACT_NOBOUNDOPERATOR_H_
 
-#include "src/formula/AbstractFormula.h"
-#include "src/formula/AbstractPathFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/formula/OptimizingOperator.h"
+#include "src/formula/abstract/OptimizingOperator.h"
 
 #include "src/modelchecker/ForwardDeclarations.h"
 
@@ -19,26 +19,7 @@ namespace storm {
 
 namespace formula {
 
-template <class T> class PathNoBoundOperator;
-
-/*!
- *  @brief Interface class for model checkers that support PathNoBoundOperator.
- *   
- *  All model checkers that support the formula class NoBoundOperator must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IPathNoBoundOperatorModelChecker {
-    public:
-		/*!
-         *  @brief Evaluates NoBoundOperator formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
-        virtual std::vector<T>* checkPathNoBoundOperator(const PathNoBoundOperator<T>& obj) const = 0;
-};
-
+namespace abstract {
 /*!
  * @brief
  * Class for a Abstract formula tree with a P (probablistic) operator without declaration of probabilities
@@ -63,8 +44,8 @@ class IPathNoBoundOperatorModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  *
- * @see AbstractStateFormula
- * @see AbstractPathFormula
+ * @see AbstractFormula
+ * @see AbstractFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticIntervalOperator
  * @see AbstractFormula
@@ -84,7 +65,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	PathNoBoundOperator(AbstractPathFormula<T>* pathFormula) : optimalityOperator(false), minimumOperator(false) {
+	PathNoBoundOperator(AbstractFormula<T>* pathFormula) : optimalityOperator(false), minimumOperator(false) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -95,7 +76,7 @@ public:
 	 * @param minimumOperator A flag indicating whether this operator is a minimizing or a
 	 * maximizing operator.
 	 */
-	PathNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+	PathNoBoundOperator(AbstractFormula<T>* pathFormula, bool minimumOperator)
 		: optimalityOperator(true), minimumOperator(minimumOperator) {
 		this->pathFormula = pathFormula;
 	}
@@ -107,37 +88,6 @@ public:
 		if (pathFormula != NULL) {
 			delete pathFormula;
 		}
-	}
-
-	/*!
-	 * @returns the child node (representation of a Abstract path formula)
-	 */
-	const AbstractPathFormula<T>& getPathFormula () const {
-		return *pathFormula;
-	}
-
-	/*!
-	 * Sets the child node
-	 *
-	 * @param pathFormula the path formula that becomes the new child node
-	 */
-	void setPathFormula(AbstractPathFormula<T>* pathFormula) {
-		this->pathFormula = pathFormula;
-	}
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @note This function is not implemented in this class.
-	 *
-	 * @returns A vector indicating all states that satisfy the formula represented by the called object.
-	 */
-	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IPathNoBoundOperatorModelChecker>()->checkPathNoBoundOperator(*this);
 	}
 
 	/*!
@@ -186,8 +136,25 @@ public:
 		return optimalityOperator && minimumOperator;
 	}
 
+protected:
+	/*!
+	 * @returns the child node (representation of a Abstract path formula)
+	 */
+	const AbstractFormula<T>& getPathFormula () const {
+		return *pathFormula;
+	}
+
+	/*!
+	 * Sets the child node
+	 *
+	 * @param pathFormula the path formula that becomes the new child node
+	 */
+	void setPathFormula(AbstractFormula<T>* pathFormula) {
+		this->pathFormula = pathFormula;
+	}
+
 private:
-	AbstractPathFormula<T>* pathFormula;
+	AbstractFormula<T>* pathFormula;
 
 	// A flag that indicates whether this operator is meant as an optimizing (i.e. min/max) operator
 	// over a nondeterministic model.
@@ -198,8 +165,10 @@ private:
 	bool minimumOperator;
 };
 
-} /* namespace formula */
+} //namespace abstract
 
-} /* namespace storm */
+} //namespace formula
 
-#endif /* STORM_FORMULA_NOBOUNDOPERATOR_H_ */
+} //namespace storm
+
+#endif /* STORM_FORMULA_ABSTRACT_NOBOUNDOPERATOR_H_ */

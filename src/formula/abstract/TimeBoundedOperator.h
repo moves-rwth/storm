@@ -5,16 +5,17 @@
  *      Author: thomas
  */
 
-#ifndef TIMEBOUNDEDOPERATOR_H_
-#define TIMEBOUNDEDOPERATOR_H_
+#ifndef STORM_FORMULA_ABSTRACT_TIMEBOUNDEDOPERATOR_H_
+#define STORM_FORMULA_ABSTRACT_TIMEBOUNDEDOPERATOR_H_
 
 #include <limits>
 
-#include "AbstractPathFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "exceptions/InvalidArgumentException.h"
 
 namespace storm {
 namespace formula {
+namespace abstract {
 
 /*!
  * @brief
@@ -24,12 +25,12 @@ namespace formula {
  * This class does not provide support for sub formulas; this has to be done in concretizations of this abstract class.
  *
  *
- * @see AbstractStateFormula
- * @see AbstractPathFormula
+ * @see AbstractFormula
+ * @see AbstractFormula
  * @see AbstractFormula
  */
 template<class T>
-class TimeBoundedOperator: public storm::formula::AbstractPathFormula<T> {
+class TimeBoundedOperator: public storm::formula::AbstractFormula<T> {
 public:
 	/**
 	 * Constructor
@@ -104,6 +105,8 @@ private:
 	T lowerBound, upperBound;
 };
 
-} /* namespace formula */
-} /* namespace storm */
-#endif /* TIMEBOUNDEDOPERATOR_H_ */
+} //namespace abstract
+} //namespace formula
+} //namespace storm
+
+#endif /* STORM_FORMULA_ABSTRACT_TIMEBOUNDEDOPERATOR_H_ */

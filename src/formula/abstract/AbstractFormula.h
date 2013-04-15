@@ -32,7 +32,7 @@ namespace abstract {
  *	@attention This class is abstract.
  *	@note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
  * 	   the syntax conflicts with copy constructors for unary operators. To produce an identical object, the classes
- * 	   AbstractPathFormula and AbstractStateFormula offer the method clone().
+ * 	   AbstractFormula and AbstractFormula offer the method clone().
  *
  *	This is the base class for every formula class in every logic.
  */

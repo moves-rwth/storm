@@ -1,9 +1,11 @@
-#ifndef STORM_FORMULA_OPTIMIZINGOPERATOR_H_
-#define STORM_FORMULA_OPTIMIZINGOPERATOR_H_
+#ifndef STORM_FORMULA_ABSTRACT_OPTIMIZINGOPERATOR_H_
+#define STORM_FORMULA_ABSTRACT_OPTIMIZINGOPERATOR_H_
 
 namespace storm {
 
 namespace formula {
+
+namespace abstract {
 
 class OptimizingOperator {
 public:
@@ -49,8 +51,10 @@ private:
 	bool minimumOperator;
 };
 
-} /* namespace formula */
+} //namespace abstract
 
-} /* namespace storm */
+} //namespace formula
 
-#endif /* STORM_FORMULA_OPTIMIZINGOPERATOR_H_ */
+} //namespace storm
+
+#endif /* STORM_FORMULA_ABSTRACT_OPTIMIZINGOPERATOR_H_ */
