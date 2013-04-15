@@ -5,21 +5,25 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_ABSTRACTFORMULA_H_
-#define STORM_FORMULA_ABSTRACTFORMULA_H_
+#ifndef STORM_FORMULA_ABSTRACT_ABSTRACTFORMULA_H_
+#define STORM_FORMULA_ABSTRACT_ABSTRACTFORMULA_H_
 
 #include <string>
 
-namespace storm { namespace formula {
+namespace storm {
+namespace formula {
+namespace abstract {
 template <class T> class AbstractFormula;
-}}
+}
+}
+}
 
 #include "src/modelchecker/ForwardDeclarations.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 namespace formula {
-
+namespace abstract {
 
 //abstract
 /*!
@@ -67,7 +71,8 @@ public:
 	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const = 0;
 };
 
+} // namespace abstract
 } // namespace formula
 } // namespace storm
 
-#endif /* STORM_FORMULA_ABSTRACTFORMULA_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_ABSTRACTFORMULA_H_ */

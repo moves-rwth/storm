@@ -5,10 +5,10 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_AND_H_
-#define STORM_FORMULA_AND_H_
+#ifndef STORM_FORMULA_ABSTRACT_AND_H_
+#define STORM_FORMULA_ABSTRACT_AND_H_
 
-#include "src/formula/AbstractStateFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/ForwardDeclarations.h"
 #include <string>
@@ -52,7 +52,7 @@ class IAndModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class And : public AbstractStateFormula<T> {
+class And : public AbstractFormula<T> {
 
 public:
 	/*!
@@ -71,7 +71,7 @@ public:
 	 * @param left The left sub formula
 	 * @param right The right sub formula
 	 */
-	And(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) {
+	And(AbstractFormula<T>* left, AbstractFormula<T>* right) {
 		this->left = left;
 		this->right = right;
 	}
@@ -177,12 +177,12 @@ public:
     }
 
 private:
-	AbstractStateFormula<T>* left;
-	AbstractStateFormula<T>* right;
+	AbstractFormula<T>* left;
+	AbstractFormula<T>* right;
 };
 
 } //namespace formula
 
 } //namespace storm
 
-#endif /* STORM_FORMULA_AND_H_ */
+#endif /* STORM_FORMULA_ABSTRACT_AND_H_ */
