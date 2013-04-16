@@ -1,12 +1,12 @@
 /*
- * RewardNoBoundOperator.h
+ * ProbabilisticNoBoundOperator.h
  *
- *  Created on: 25.12.2012
- *      Author: Christian Dehnert
+ *  Created on: 12.12.2012
+ *      Author: thomas
  */
 
-#ifndef STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_
-#define STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_PROBABILISTICNOBOUNDOPERATOR_H_
+#define STORM_FORMULA_PROBABILISTICNOBOUNDOPERATOR_H_
 
 #include "AbstractFormula.h"
 #include "AbstractPathFormula.h"
@@ -14,14 +14,15 @@
 
 namespace storm {
 namespace formula {
+namespace prctl {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with a R (reward) operator without declaration of reward values
+ * Class for a Abstract formula tree with a P (probablistic) operator without declaration of probabilities
  * as root.
  *
- * Checking a formula with this operator as root returns the reward for the reward path formula for
- * each state
+ * Checking a formula with this operator as root returns the probabilities that the path formula holds
+ * (for each state)
  *
  * Has one Abstract path formula as sub formula/tree.
  *
@@ -33,7 +34,7 @@ namespace formula {
  * 	This class does not contain a check() method like the other formula classes.
  * 	The check method should only be called by the model checker to infer the correct check function for sub
  * 	formulas. As this operator can only appear at the root, the method is not useful here.
- * 	Use the checkRewardNoBoundOperator method from the DtmcPrctlModelChecker class instead.
+ * 	Use the checkProbabilisticNoBoundOperator method from the DtmcPrctlModelChecker class instead.
  *
  * The subtree is seen as part of the object and deleted with it
  * (this behavior can be prevented by setting them to NULL before deletion)
@@ -46,12 +47,12 @@ namespace formula {
  * @see AbstractFormula
  */
 template <class T>
-class RewardNoBoundOperator: public PathNoBoundOperator<T> {
+class ProbabilisticNoBoundOperator: public PathNoBoundOperator<T> {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	RewardNoBoundOperator() : PathNoBoundOperator<T>(nullptr) {
+	ProbabilisticNoBoundOperator() : PathNoBoundOperator<T>(nullptr) {
 		// Intentionally left empty
 	}
 
@@ -60,7 +61,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
+	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -69,7 +70,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
+	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -77,13 +78,14 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
-		std::string result = "R";
+		std::string result = "P";
 		result += PathNoBoundOperator<T>::toString();
 		return result;
 	}
 };
 
-} /* namespace formula */
-} /* namespace storm */
+} //namespace formula
+} //namespace formula
+} //namespace storm
 
-#endif /* STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_PROBABILISTICNOBOUNDOPERATOR_H_ */

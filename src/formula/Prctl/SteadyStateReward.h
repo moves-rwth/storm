@@ -15,6 +15,7 @@
 
 namespace storm {
 namespace formula {
+namespace prctl {
 
 template <class T> class SteadyStateReward;
 
@@ -101,6 +102,7 @@ public:
 	}
 };
 
-} /* namespace formula */
-} /* namespace storm */
+} //namespace prctl
+} //namespace formula
+} //namespace storm
 #endif /* STORM_FORMULA_STEADYSTATEREWARD_H_ */

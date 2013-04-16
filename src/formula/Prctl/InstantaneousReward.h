@@ -10,13 +10,14 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
+#include "src/formula/abstract/InstantaneousReward.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
 
 namespace storm {
-
 namespace formula {
+namespace prctl {
 
 template <class T> class InstantaneousReward;
 
@@ -49,14 +50,15 @@ class IInstantaneousRewardModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class InstantaneousReward : public AbstractPathFormula<T> {
+class InstantaneousReward : public storm::formula::abstract::InstantaneousReward,
+									 public AbstractPathFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
 	InstantaneousReward() {
-		bound = 0;
+		//intentionally left empty
 	}
 
 	/*!
@@ -64,8 +66,9 @@ public:
 	 *
 	 * @param bound The time instance of the reward formula
 	 */
-	InstantaneousReward(uint_fast64_t bound) {
-		this->bound = bound;
+	InstantaneousReward(uint_fast64_t bound) :
+		storm::formula::abstract::InstantaneousReward<T>(bound) {
+		//intentionally left empty
 	}
 
 	/*!
@@ -73,31 +76,6 @@ public:
 	 */
 	virtual ~InstantaneousReward() {
 		// Intentionally left empty.
-	}
-
-	/*!
-	 * @returns the time instance for the instantaneous reward operator
-	 */
-	uint_fast64_t getBound() const {
-		return bound;
-	}
-
-	/*!
-	 * Sets the the time instance for the instantaneous reward operator
-	 *
-	 * @param bound the new bound.
-	 */
-	void setBound(uint_fast64_t bound) {
-		this->bound = bound;
-	}
-
-	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		std::string result = "I=";
-		result += std::to_string(bound);
-		return result;
 	}
 
 	/*!
@@ -124,25 +102,10 @@ public:
 	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<IInstantaneousRewardModelChecker>()->checkInstantaneousReward(*this, qualitative);
 	}
-	
-	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *  
-     *  As InstantaneousReward formulas have no subformulas, we return true here.
-     * 
-     *  @param checker Formula checker object.
-     *  @return true
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return true;
-	}
-
-private:
-	uint_fast64_t bound;
 };
 
+} //namespace prctl
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_INSTANTANEOUSREWARD_H_ */

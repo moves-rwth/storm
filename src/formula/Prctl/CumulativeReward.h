@@ -10,12 +10,13 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
+#include "src/formula/abstract/CumulativeReward.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <string>
 
 namespace storm {
-
 namespace formula {
+namespace prctl {
 
 template <class T> class CumulativeReward;
 
@@ -48,7 +49,8 @@ class ICumulativeRewardModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class CumulativeReward : public AbstractPathFormula<T> {
+class CumulativeReward : public storm::formula::abstract::CumulativeReward<T>,
+								 public AbstractPathFormula<T> {
 
 public:
 	/*!
@@ -140,8 +142,8 @@ private:
 	T bound;
 };
 
+} //namespace prctl
 } //namespace formula
-
 } //namespace storm
 
 #endif /* STORM_FORMULA_INSTANTANEOUSREWARD_H_ */

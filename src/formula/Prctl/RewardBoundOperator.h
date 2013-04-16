@@ -15,6 +15,7 @@
 
 namespace storm {
 namespace formula {
+namespace prctl {
 
 template <class T> class RewardBoundOperator;
 
@@ -118,6 +119,7 @@ public:
 	}
 };
 
+} //namespace prctl
 } //namespace formula
 } //namespace storm
 

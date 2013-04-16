@@ -14,6 +14,7 @@
 
 namespace storm {
 namespace formula {
+namespace prctl {
 
 template <class T> class ReachabilityReward;
 
@@ -145,6 +146,7 @@ private:
 	AbstractStateFormula<T>* child;
 };
 
+} //namespace prctl
 } //namespace formula
 } //namespace storm
 
