@@ -5,8 +5,8 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_BOUNDEDEVENTUALLY_H_
-#define STORM_FORMULA_BOUNDEDEVENTUALLY_H_
+#ifndef STORM_FORMULA_PRCTL_BOUNDEDEVENTUALLY_H_
+#define STORM_FORMULA_PRCTL_BOUNDEDEVENTUALLY_H_
 
 #include "src/formula/abstract/BoundedEventually.h"
 #include "src/formula/Prctl/AbstractPathFormula.h"
@@ -123,4 +123,4 @@ public:
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_BOUNDEDUNTIL_H_ */
+#endif /* STORM_FORMULA_PRCTL_BOUNDEDUNTIL_H_ */

@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_ABSTRACTPATHFORMULA_H_
-#define STORM_FORMULA_ABSTRACTPATHFORMULA_H_
+#ifndef STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_
+#define STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_
 
 namespace storm { namespace formula {
 template <class T> class AbstractPathFormula;
@@ -69,4 +69,4 @@ public:
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_ABSTRACTPATHFORMULA_H_ */
+#endif /* STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_ */

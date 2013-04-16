@@ -5,10 +5,11 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_NOT_H_
-#define STORM_FORMULA_NOT_H_
+#ifndef STORM_FORMULA_PRCTL_NOT_H_
+#define STORM_FORMULA_PRCTL_NOT_H_
 
 #include "AbstractStateFormula.h"
+#include "src/formula/abstract/Not.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/ForwardDeclarations.h"
 
@@ -49,22 +50,24 @@ class INotModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class Not : public AbstractStateFormula<T> {
+class Not : public storm::formula::abstract::Not<T, AbstractStateFormula<T>>,
+			   public AbstractStateFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
 	Not() {
-		this->child = NULL;
+		//intentionally left empty
 	}
 
 	/*!
 	 * Constructor
 	 * @param child The child node
 	 */
-	Not(AbstractStateFormula<T>* child) {
-		this->child = child;
+	Not(AbstractStateFormula<T>* child) :
+		storm::formula::abstract::Not<T, AbstractStateFormula<T>>(child){
+		//intentionally left empty
 	}
 
 	/*!
@@ -74,33 +77,7 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~Not() {
-	  if (child != NULL) {
-		  delete child;
-	  }
-	}
-
-	/*!
-	 * @returns The child node
-	 */
-	const AbstractStateFormula<T>& getChild() const {
-		return *child;
-	}
-
-	/*!
-	 * Sets the subtree
-	 * @param child the new child node
-	 */
-	void setChild(AbstractStateFormula<T>* child) {
-		this->child = child;
-	}
-
-	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		std::string result = "!";
-		result += child->toString();
-		return result;
+	  //intentionally left empty
 	}
 
 	/*!
@@ -113,7 +90,7 @@ public:
 	virtual AbstractStateFormula<T>* clone() const {
 		Not<T>* result = new Not<T>();
 		if (child != NULL) {
-			result->setChild(child->clone());
+			result->setChild(getChild().clone());
 		}
 		return result;
 	}
@@ -130,23 +107,10 @@ public:
 	virtual storm::storage::BitVector *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);  
 	}
-	
-	/*!
-     *  @brief Checks if the subtree conforms to some logic.
-     * 
-     *  @param checker Formula checker object.
-     *  @return true iff the subtree conforms to some logic.
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return checker.conforms(this->child);
-	}
-
-private:
-	AbstractStateFormula<T>* child;
 };
 
 } //namespace prctl
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_NOT_H_ */
+#endif /* STORM_FORMULA_PRCTL_NOT_H_ */

@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_NEXT_H_
-#define STORM_FORMULA_NEXT_H_
+#ifndef STORM_FORMULA_PRCTL_NEXT_H_
+#define STORM_FORMULA_PRCTL_NEXT_H_
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
@@ -117,4 +117,4 @@ public:
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_NEXT_H_ */
+#endif /* STORM_FORMULA_PRCTL_NEXT_H_ */

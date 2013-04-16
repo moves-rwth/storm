@@ -5,10 +5,11 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_OR_H_
-#define STORM_FORMULA_OR_H_
+#ifndef STORM_FORMULA_PRCTL_OR_H_
+#define STORM_FORMULA_PRCTL_OR_H_
 
-#include "src/formula/AbstractStateFormula.h"
+#include "AbstractStateFormula.h"
+#include "src/formula/abstract/Or.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
@@ -51,28 +52,28 @@ class IOrModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class Or : public AbstractStateFormula<T> {
+class Or : public storm::formula::abstract::Or<T, AbstractStateFormula<T>>,
+			  public AbstractStateFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor.
-	 * Will create an AND-node without subnotes. Will not represent a complete formula!
+	 * Will create an OR-node without subnotes. The result does not represent a complete formula!
 	 */
 	Or() {
-		left = NULL;
-		right = NULL;
+		//intentionally left empty
 	}
 
 	/*!
 	 * Constructor.
-	 * Creates an AND note with the parameters as subtrees.
+	 * Creates an OR note with the parameters as subtrees.
 	 *
 	 * @param left The left sub formula
 	 * @param right The right sub formula
 	 */
-	Or(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) {
-		this->left = left;
-		this->right = right;
+	Or(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) :
+		storm::formula::abstract::Or<T, AbstractStateFormula<T>>(left, right) {
+		//intentionally left empty
 	}
 
 	/*!
@@ -82,56 +83,7 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~Or() {
-	  if (left != NULL) {
-		  delete left;
-	  }
-	  if (right != NULL) {
-		  delete right;
-	  }
-	}
-
-	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft the new left child.
-	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
-		left = newLeft;
-	}
-
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
-	 */
-	void setRight(AbstractStateFormula<T>* newRight) {
-		right = newRight;
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
-	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	const AbstractStateFormula<T>& getRight() const {
-		return *right;
-	}
-
-	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		std::string result = "(";
-		result += left->toString();
-		result += " | ";
-		result += right->toString();
-		result += ")";
-		return result;
+	  //intentionally left empty
 	}
 
 	/*!
@@ -144,10 +96,10 @@ public:
 	virtual AbstractStateFormula<T>* clone() const {
 		Or<T>* result = new Or();
 		if (this->left != NULL) {
-		  result->setLeft(left->clone());
+		  result->setLeft(getLeft().clone());
 		}
 		if (this->right != NULL) {
-		  result->setRight(right->clone());
+		  result->setRight(getLeft().clone());
 		}
 		return result;
 	}
@@ -164,24 +116,10 @@ public:
 	virtual storm::storage::BitVector *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
-	
-	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff all subtrees conform to some logic.
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-        return checker.conforms(this->left) && checker.conforms(this->right);
-    }
-
-private:
-	AbstractStateFormula<T>* left;
-	AbstractStateFormula<T>* right;
 };
 
 } //namespace prctl
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_OR_H_ */
+#endif /* STORM_FORMULA_PRCTL_OR_H_ */

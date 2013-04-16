@@ -5,11 +5,12 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_STEADYSTATEREWARD_H_
-#define STORM_FORMULA_STEADYSTATEREWARD_H_
+#ifndef STORM_FORMULA_PRCTL_STEADYSTATEREWARD_H_
+#define STORM_FORMULA_PRCTL_STEADYSTATEREWARD_H_
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
+#include "src/formula/abstract/SteadyStateReward.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <string>
 
@@ -45,7 +46,8 @@ class ISteadyStateRewardModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class SteadyStateReward: public storm::formula::AbstractPathFormula<T> {
+class SteadyStateReward: public storm::formula::abstract::SteadyStateReward<T>,
+								 public storm::formula::AbstractPathFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -56,13 +58,6 @@ public:
 	}
 	virtual ~SteadyStateReward() {
 		// Intentionally left empty
-	}
-
-	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		return "S";
 	}
 
 	/*!
@@ -88,21 +83,9 @@ public:
 	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<ISteadyStateRewardModelChecker>()->checkSteadyStateReward(*this, qualitative);
 	}
-
-	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *
-     *  As SteadyStateReward objects have no subformulas, we return true here.
-     *
-     *  @param checker Formula checker object.
-     *  @return true
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return true;
-	}
 };
 
 } //namespace prctl
 } //namespace formula
 } //namespace storm
-#endif /* STORM_FORMULA_STEADYSTATEREWARD_H_ */
+#endif /* STORM_FORMULA_PRCTL_STEADYSTATEREWARD_H_ */

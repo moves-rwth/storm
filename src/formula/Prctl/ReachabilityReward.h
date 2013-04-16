@@ -5,11 +5,12 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_REACHABILITYREWARD_H_
-#define STORM_FORMULA_REACHABILITYREWARD_H_
+#ifndef STORM_FORMULA_PRCTL_REACHABILITYREWARD_H_
+#define STORM_FORMULA_PRCTL_REACHABILITYREWARD_H_
 
-#include "src/formula/AbstractPathFormula.h"
-#include "src/formula/AbstractStateFormula.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
+#include "../abstract/Eventually.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
@@ -49,14 +50,15 @@ class IReachabilityRewardModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class ReachabilityReward : public AbstractPathFormula<T> {
+class ReachabilityReward : public storm::formula::abstract::Eventually<T, AbstractStateFormula<T>>,
+									public AbstractPathFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
 	ReachabilityReward() {
-		this->child = nullptr;
+		// Intentionally left empty
 	}
 
 	/*!
@@ -64,8 +66,9 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	ReachabilityReward(AbstractStateFormula<T>* child) {
-		this->child = child;
+	ReachabilityReward(AbstractStateFormula<T>* child) :
+		storm::formula::abstract::Eventually<T, AbstractStateFormula<T>>(child){
+		// Intentionally left empty
 	}
 
 	/*!
@@ -75,33 +78,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to nullptr before deletion)
 	 */
 	virtual ~ReachabilityReward() {
-	  if (child != nullptr) {
-		  delete child;
-	  }
-	}
-
-	/*!
-	 * @returns the child node
-	 */
-	const AbstractStateFormula<T>& getChild() const {
-		return *child;
-	}
-
-	/*!
-	 * Sets the subtree
-	 * @param child the new child node
-	 */
-	void setChild(AbstractStateFormula<T>* child) {
-		this->child = child;
-	}
-
-	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		std::string result = "F ";
-		result += child->toString();
-		return result;
+		// Intentionally left empty
 	}
 
 	/*!
@@ -113,8 +90,8 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		ReachabilityReward<T>* result = new ReachabilityReward<T>();
-		if (child != nullptr) {
-			result->setChild(child);
+		if (getChild() != nullptr) {
+			result->setChild(*getChild());
 		}
 		return result;
 	}
@@ -131,23 +108,10 @@ public:
 	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<IReachabilityRewardModelChecker>()->checkReachabilityReward(*this, qualitative);
 	}
-	
-	/*!
-     *  @brief Checks if the subtree conforms to some logic.
-     * 
-     *  @param checker Formula checker object.
-     *  @return true iff the subtree conforms to some logic.
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return checker.conforms(this->child);
-	}
-
-private:
-	AbstractStateFormula<T>* child;
 };
 
 } //namespace prctl
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_REACHABILITYREWARD_H_ */
+#endif /* STORM_FORMULA_PRCTL_REACHABILITYREWARD_H_ */

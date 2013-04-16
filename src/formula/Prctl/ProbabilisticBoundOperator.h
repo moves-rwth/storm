@@ -5,13 +5,12 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_
-#define STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_PRCTL_PROBABILISTICBOUNDOPERATOR_H_
+#define STORM_FORMULA_PRCTL_PROBABILISTICBOUNDOPERATOR_H_
 
 #include "AbstractStateFormula.h"
 #include "AbstractPathFormula.h"
-#include "src/formula/PathBoundOperator.h"
-#include "src/formula/OptimizingOperator.h"
+#include "src/formula/abstract/ProbabilisticBoundOperator.h"
 #include "utility/ConstTemplates.h"
 
 namespace storm {
@@ -54,7 +53,8 @@ class IProbabilisticBoundOperatorModelChecker {
  * @see AbstractFormula
  */
 template<class T>
-class ProbabilisticBoundOperator : public PathBoundOperator<T> {
+class ProbabilisticBoundOperator : public storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>,
+											  public AbstractStateFormula {
 
 public:
 	/*!
@@ -74,24 +74,29 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula)
-			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula) {
-		// Intentionally left empty
-	}
-
-	ProbabilisticBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
-			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator){
+			typename storm::formula::abstract::PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula)
+			: storm::formula::abstract::ProbabilisticBoundOperator<T>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 *
+	 * @param comparisonRelation
+	 * @param bound
+	 * @param pathFormula
+	 * @param minimumOperator
 	 */
-	virtual std::string toString() const {
-		std::string result = "P ";
-		result += PathBoundOperator<T>::toString();
-		return result;
+	ProbabilisticBoundOperator(
+			typename storm::formula::abstract::PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+			: storm::formula::abstract::ProbabilisticBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator){
+		// Intentionally left empty
+	}
+
+	/*!
+	 *
+	 */
+	virtual ~ProbabilisticBoundOperator() {
+		// Intentionally left empty
 	}
 
 	/*!
@@ -127,4 +132,4 @@ public:
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_PROBABILISTICBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_PRCTL_PROBABILISTICBOUNDOPERATOR_H_ */

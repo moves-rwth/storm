@@ -5,31 +5,17 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_REWARDBOUNDOPERATOR_H_
-#define STORM_FORMULA_REWARDBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_PRCTL_REWARDBOUNDOPERATOR_H_
+#define STORM_FORMULA_PRCTL_REWARDBOUNDOPERATOR_H_
 
-#include "AbstractStateFormula.h"
 #include "AbstractPathFormula.h"
-#include "PathBoundOperator.h"
+#include "AbstractStateFormula.h"
+#include "src/formula/abstract/RewardBoundOperator.h"
 #include "utility/ConstTemplates.h"
 
 namespace storm {
 namespace formula {
 namespace prctl {
-
-template <class T> class RewardBoundOperator;
-
-/*!
- *  @brief Interface class for model checkers that support RewardBoundOperator.
- *
- *  All model checkers that support the formula class PathBoundOperator must inherit
- *  this pure virtual class.
- */
-template <class T>
-class IRewardBoundOperatorModelChecker {
-    public:
-        virtual storm::storage::BitVector* checkRewardBoundOperator(const RewardBoundOperator<T>& obj) const = 0;
-};
 
 /*!
  * @brief
@@ -52,13 +38,14 @@ class IRewardBoundOperatorModelChecker {
  * @see AbstractFormula
  */
 template<class T>
-class RewardBoundOperator : public PathBoundOperator<T> {
+class RewardBoundOperator : public storm::formula::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>,
+									 public AbstractStateFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	RewardBoundOperator() : PathBoundOperator<T>(PathBoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+	RewardBoundOperator() {
 		// Intentionally left empty
 	}
 
@@ -70,24 +57,23 @@ public:
 	 * @param pathFormula The child node
 	 */
 	RewardBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula) :
-				PathBoundOperator<T>(comparisonRelation, bound, pathFormula) {
-		// Intentionally left empty
-	}
-
-	RewardBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
-			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator) {
+			typename storm::formula::abstract::PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula) :
+				storm::formula::abstract::RewardBoundOperator<T>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Constructor
+	 *
+	 * @param comparisonRelation
+	 * @param bound
+	 * @param pathFormula
+	 * @param minimumOperator
 	 */
-	virtual std::string toString() const {
-		std::string result = "R ";
-		result += PathBoundOperator<T>::toString();
-		return result;
+	RewardBoundOperator(
+			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator) {
+		// Intentionally left empty
 	}
 
 	/*!
@@ -123,4 +109,4 @@ public:
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_REWARDBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_PRCTL_REWARDBOUNDOPERATOR_H_ */

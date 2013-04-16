@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_ABSTRACTSTATEFORMULA_H_
-#define STORM_FORMULA_ABSTRACTSTATEFORMULA_H_
+#ifndef STORM_FORMULA_PRCTL_ABSTRACTSTATEFORMULA_H_
+#define STORM_FORMULA_PRCTL_ABSTRACTSTATEFORMULA_H_
 
 namespace storm { namespace formula {
 template <class T> class AbstractStateFormula;
@@ -67,4 +67,4 @@ public:
 } //namespace storm
 
 
-#endif /* STORM_FORMULA_AbstractSTATEFORMULA_H_ */
+#endif /* STORM_FORMULA_PRCTL_AbstractSTATEFORMULA_H_ */

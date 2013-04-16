@@ -5,11 +5,10 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_
-#define STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_PRCTL_REWARDNOBOUNDOPERATOR_H_
+#define STORM_FORMULA_PRCTL_REWARDNOBOUNDOPERATOR_H_
 
 #include "AbstractFormula.h"
-#include "AbstractPathFormula.h"
 #include "PathNoBoundOperator.h"
 
 namespace storm {
@@ -46,8 +45,8 @@ namespace prctl {
  * @see ProbabilisticIntervalOperator
  * @see AbstractFormula
  */
-template <class T>
-class RewardNoBoundOperator: public PathNoBoundOperator<T> {
+template <class T, class FormulaType>
+class RewardNoBoundOperator: public PathNoBoundOperator<T, FormulaType> {
 public:
 	/*!
 	 * Empty constructor
@@ -61,7 +60,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
+	RewardNoBoundOperator(FormulaType* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -70,7 +69,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
+	RewardNoBoundOperator(FormulaType* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -88,4 +87,4 @@ public:
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_REWARDNOBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_PRCTL_REWARDNOBOUNDOPERATOR_H_ */

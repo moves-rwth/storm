@@ -5,11 +5,12 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_UNTIL_H_
-#define STORM_FORMULA_UNTIL_H_
+#ifndef STORM_FORMULA_PRCTL_UNTIL_H_
+#define STORM_FORMULA_PRCTL_UNTIL_H_
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
+#include "src/formula/abstract/Until.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
@@ -53,15 +54,15 @@ class IUntilModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class Until : public AbstractPathFormula<T> {
+class Until : public storm::formula::abstract::Until<T, AbstractStateFormula<T>>,
+				  public AbstractPathFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
 	Until() {
-		this->left = NULL;
-		this->right = NULL;
+		// Intentionally left empty
 	}
 
 	/*!
@@ -70,9 +71,9 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	Until(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) {
-		this->left = left;
-		this->right = right;
+	Until(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right)
+		: storm::formula::abstract::Until<T, AbstractStateFormula<T>>(left, right) {
+		// Intentionally left empty
 	}
 
 	/*!
@@ -82,54 +83,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~Until() {
-	  if (left != NULL) {
-		  delete left;
-	  }
-	  if (right != NULL) {
-		  delete right;
-	  }
-	}
-
-	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft the new left child.
-	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
-		left = newLeft;
-	}
-
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
-	 */
-	void setRight(AbstractStateFormula<T>* newRight) {
-		right = newRight;
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
-	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	const AbstractStateFormula<T>& getRight() const {
-		return *right;
-	}
-
-	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		std::string result = left->toString();
-		result += " U ";
-		result += right->toString();
-		return result;
+	  // Intentionally left empty
 	}
 
 	/*!
@@ -162,24 +116,10 @@ public:
 	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<IUntilModelChecker>()->checkUntil(*this, qualitative);
 	}
-	
-	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff all subtrees conform to some logic.
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-        return checker.conforms(this->left) && checker.conforms(this->right);
-    }
-
-private:
-	AbstractStateFormula<T>* left;
-	AbstractStateFormula<T>* right;
 };
 
 } //namespace prctl
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_UNTIL_H_ */
+#endif /* STORM_FORMULA_PRCTL_UNTIL_H_ */

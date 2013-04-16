@@ -5,12 +5,12 @@
  *      Author: thomas
  */
 
-#ifndef STORM_FORMULA_PROBABILISTICNOBOUNDOPERATOR_H_
-#define STORM_FORMULA_PROBABILISTICNOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_PRCTL_PROBABILISTICNOBOUNDOPERATOR_H_
+#define STORM_FORMULA_PRCTL_PROBABILISTICNOBOUNDOPERATOR_H_
 
 #include "AbstractFormula.h"
 #include "AbstractPathFormula.h"
-#include "PathNoBoundOperator.h"
+#include "src/formula/abstract/ProbabilisticNoBoundOperator.h"
 
 namespace storm {
 namespace formula {
@@ -47,12 +47,13 @@ namespace prctl {
  * @see AbstractFormula
  */
 template <class T>
-class ProbabilisticNoBoundOperator: public PathNoBoundOperator<T> {
+class ProbabilisticNoBoundOperator: public storm::formula::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>,
+												public AbstractStateFormula<T> {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticNoBoundOperator() : PathNoBoundOperator<T>(nullptr) {
+	ProbabilisticNoBoundOperator() {
 		// Intentionally left empty
 	}
 
@@ -61,7 +62,8 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
+	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula)
+		: storm::formula::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -70,17 +72,16 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
+	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+		: storm::formula::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Destructor
 	 */
-	virtual std::string toString() const {
-		std::string result = "P";
-		result += PathNoBoundOperator<T>::toString();
-		return result;
+	virtual ~ProbabilisticNoBoundOperator() {
+		// Intentionally left empty
 	}
 };
 
@@ -88,4 +89,4 @@ public:
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_PROBABILISTICNOBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_PRCTL_PROBABILISTICNOBOUNDOPERATOR_H_ */
