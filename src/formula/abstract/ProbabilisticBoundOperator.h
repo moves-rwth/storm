@@ -38,7 +38,7 @@ namespace abstract {
  * @see ProbabilisticNoBoundsOperator
  * @see AbstractFormula
  */
-template<class T>
+template<class T, class FormulaType>
 class ProbabilisticBoundOperator : public PathBoundOperator<T> {
 
 public:
@@ -59,7 +59,7 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractFormula<T>* pathFormula)
+			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, FormulaType* pathFormula)
 			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
@@ -73,7 +73,7 @@ public:
 	 * @param minimumOperator
 	 */
 	ProbabilisticBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractFormula<T>* pathFormula, bool minimumOperator)
+			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, FormulaType* pathFormula, bool minimumOperator)
 			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator){
 		// Intentionally left empty
 	}

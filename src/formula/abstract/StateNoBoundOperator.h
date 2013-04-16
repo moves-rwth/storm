@@ -46,7 +46,7 @@ namespace abstract {
  * @see SteadyStateNoBoundOperator
  * @see AbstractFormula
  */
-template <class T>
+template <class T, class FormulaType>
 class StateNoBoundOperator: public storm::formula::AbstractFormula<T> {
 public:
 	/*!
@@ -59,7 +59,7 @@ public:
 	/*!
 	 * Constructor
 	 */
-	StateNoBoundOperator(AbstractFormula<T>* stateFormula) {
+	StateNoBoundOperator(FormulaType* stateFormula) {
 		this->stateFormula = stateFormula;
 	}
 
@@ -72,6 +72,14 @@ public:
 		if (stateFormula != nullptr) {
 			delete stateFormula;
 		}
+	}
+
+	const FormulaType& getStateFormula() const {
+		return *(this->stateFormula);
+	}
+
+	void setStateFormula(FormulaType* stateFormula) {
+		this->stateFormula = stateFormula;
 	}
 
 	/*!
@@ -110,17 +118,8 @@ public:
 		return checker.conforms(this->stateFormula);
 	}
 
-protected:
-	const AbstractFormula<T>& getStateFormula() const {
-		return *(this->stateFormula);
-	}
-
-	void setStateFormula(AbstractFormula<T>* stateFormula) {
-		this->stateFormula = stateFormula;
-	}
-
 private:
-	AbstractFormula<T>* stateFormula;
+	FormulaType* stateFormula;
 };
 
 } //namespace abstract

@@ -46,7 +46,7 @@ namespace abstract {
  * @see ProbabilisticIntervalOperator
  * @see AbstractFormula
  */
-template <class T>
+template <class T, class FormulaType>
 class ProbabilisticNoBoundOperator: public PathNoBoundOperator<T> {
 public:
 	/*!
@@ -61,7 +61,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(AbstractFormula<T>* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
+	ProbabilisticNoBoundOperator(FormulaType* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -77,7 +77,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(AbstractFormula<T>* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
+	ProbabilisticNoBoundOperator(FormulaType* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 

@@ -39,7 +39,7 @@ namespace abstract {
  * @see AbstractFormula
  * @see AbstractFormula
  */
-template <class T>
+template <class T, class FormulaType>
 class BoundedNaryUntil : public AbstractFormula<T> {
 
 public:
@@ -48,7 +48,7 @@ public:
 	 */
 	BoundedNaryUntil() {
 		this->left = nullptr;
-		this->right = new std::vector<std::tuple<AbstractFormula<T>*,T,T>>();
+		this->right = new std::vector<std::tuple<FormulaType*,T,T>>();
 	}
 
 	/*!
@@ -57,7 +57,7 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	BoundedNaryUntil(AbstractFormula<T>* left, std::vector<std::tuple<AbstractFormula<T>*,T,T>>* right) {
+	BoundedNaryUntil(FormulaType* left, std::vector<std::tuple<FormulaType*,T,T>>* right) {
 		this->left = left;
 		this->right = right;
 	}
@@ -75,6 +75,43 @@ public:
 	  if (right != nullptr) {
 		  delete right;
 	  }
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(FormulaType* newLeft) {
+		left = newLeft;
+	}
+
+	void setRight(std::vector<std::tuple<FormulaType*,T,T>>* newRight) {
+		right = newRight;
+	}
+
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void addRight(FormulaType* newRight, T upperBound, T lowerBound) {
+		this->right->push_back(std::tuple<FormulaType*,T,T>(newRight, upperBound, lowerBound));
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const FormulaType& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child nodes.
+	 */
+	const std::vector<std::tuple<FormulaType*,T,T>>& getRight() const {
+		return *right;
 	}
 
 	/*!
@@ -104,48 +141,10 @@ public:
 		return res;
 	}
 
-protected:
-	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft the new left child.
-	 */
-	void setLeft(AbstractFormula<T>* newLeft) {
-		left = newLeft;
-	}
-
-	void setRight(std::vector<std::tuple<AbstractFormula<T>*,T,T>>* newRight) {
-		right = newRight;
-	}
-
-
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
-	 */
-	void addRight(AbstractFormula<T>* newRight, T upperBound, T lowerBound) {
-		this->right->push_back(std::tuple<AbstractFormula<T>*,T,T>(newRight, upperBound, lowerBound));
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
-	 */
-	const AbstractFormula<T>& getLeft() const {
-		return *left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child nodes.
-	 */
-	const std::vector<std::tuple<AbstractFormula<T>*,T,T>>& getRight() const {
-		return *right;
-	}
-
 
 private:
-	AbstractFormula<T>* left;
-	std::vector<std::tuple<AbstractFormula<T>*,T,T>>* right;
+	FormulaType* left;
+	std::vector<std::tuple<FormulaType*,T,T>>* right;
 };
 
 } //namespace abstract

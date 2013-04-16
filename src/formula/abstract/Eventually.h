@@ -32,7 +32,7 @@ namespace abstract {
  * @see AbstractFormula
  * @see AbstractFormula
  */
-template <class T>
+template <class T, class FormulaType>
 class Eventually : public AbstractFormula<T> {
 
 public:
@@ -48,7 +48,7 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Eventually(AbstractFormula<T>* child) {
+	Eventually(FormulaType* child) {
 		this->child = child;
 	}
 
@@ -62,6 +62,21 @@ public:
 	  if (child != nullptr) {
 		  delete child;
 	  }
+	}
+
+	/*!
+	 * @returns the child node
+	 */
+	const FormulaType& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(FormulaType* child) {
+		this->child = child;
 	}
 
 	/*!
@@ -83,24 +98,8 @@ public:
 		return checker.conforms(this->child);
 	}
 
-protected:
-	/*!
-	 * @returns the child node
-	 */
-	const AbstractFormula<T>& getChild() const {
-		return *child;
-	}
-
-	/*!
-	 * Sets the subtree
-	 * @param child the new child node
-	 */
-	void setChild(AbstractFormula<T>* child) {
-		this->child = child;
-	}
-
 private:
-	AbstractFormula<T>* child;
+	FormulaType* child;
 };
 
 } //namespace abstract

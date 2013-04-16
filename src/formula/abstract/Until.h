@@ -32,7 +32,7 @@ namespace abstract {
  * @see AbstractFormula
  * @see AbstractFormula
  */
-template <class T>
+template <class T, class FormulaType>
 class Until : public AbstractFormula<T> {
 
 public:
@@ -50,7 +50,7 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	Until(AbstractFormula<T>* left, AbstractFormula<T>* right) {
+	Until(FormulaType* left, FormulaType* right) {
 		this->left = left;
 		this->right = right;
 	}
@@ -68,6 +68,38 @@ public:
 	  if (right != NULL) {
 		  delete right;
 	  }
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(FormulaType* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(FormulaType* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const FormulaType& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const FormulaType& getRight() const {
+		return *right;
 	}
 
 	/*!
@@ -90,42 +122,9 @@ public:
         return checker.conforms(this->left) && checker.conforms(this->right);
     }
 
-protected:
-	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft the new left child.
-	 */
-	void setLeft(AbstractFormula<T>* newLeft) {
-		left = newLeft;
-	}
-
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
-	 */
-	void setRight(AbstractFormula<T>* newRight) {
-		right = newRight;
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
-	 */
-	const AbstractFormula<T>& getLeft() const {
-		return *left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	const AbstractFormula<T>& getRight() const {
-		return *right;
-	}
-
 private:
-	AbstractFormula<T>* left;
-	AbstractFormula<T>* right;
+	FormulaType* left;
+	FormulaType* right;
 };
 
 } //namespace abstract

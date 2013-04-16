@@ -52,7 +52,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param stateFormula The child node
 	 */
-	StateBoundOperator(ComparisonType comparisonOperator, T bound, AbstractFormula<T>* stateFormula)
+	StateBoundOperator(ComparisonType comparisonOperator, T bound, FormulaType* stateFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), stateFormula(stateFormula) {
 		// Intentionally left empty
 	}
@@ -67,6 +67,22 @@ public:
 	 if (stateFormula != nullptr) {
 		 delete stateFormula;
 	 }
+	}
+
+	/*!
+	 * @returns the child node (representation of a Abstract state formula)
+	 */
+	const FormulaType& getStateFormula () const {
+		return *stateFormula;
+	}
+
+	/*!
+	 * Sets the child node
+	 *
+	 * @param stateFormula the state formula that becomes the new child node
+	 */
+	void setStateFormula(FormulaType* stateFormula) {
+		this->stateFormula = stateFormula;
 	}
 
 	/*!
@@ -134,27 +150,10 @@ public:
         return checker.conforms(this->stateFormula);
     }
 
-protected:
-	/*!
-	 * @returns the child node (representation of a Abstract state formula)
-	 */
-	const AbstractFormula<T>& getStateFormula () const {
-		return *stateFormula;
-	}
-
-	/*!
-	 * Sets the child node
-	 *
-	 * @param stateFormula the state formula that becomes the new child node
-	 */
-	void setStateFormula(AbstractFormula<T>* stateFormula) {
-		this->stateFormula = stateFormula;
-	}
-
 private:
 	ComparisonType comparisonOperator;
 	T bound;
-	AbstractFormula<T>* stateFormula;
+	FormulaType* stateFormula;
 };
 
 } //namespace abstract

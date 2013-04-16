@@ -23,8 +23,6 @@ namespace formula {
 
 namespace abstract {
 
-template <class T> class PathBoundOperator;
-
 /*!
  * @brief
  * Class for a Abstract formula tree with a P (probablistic) operator node over a probability interval
@@ -46,7 +44,7 @@ template <class T> class PathBoundOperator;
  * @see ProbabilisticNoBoundsOperator
  * @see AbstractFormula
  */
-template<class T>
+template<class T, class FormulaType>
 class PathBoundOperator : public AbstractFormula<T>, public OptimizingOperator {
 
 public:
@@ -59,7 +57,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractFormula<T>* pathFormula)
+	PathBoundOperator(ComparisonType comparisonOperator, T bound, FormulaType* pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
@@ -72,7 +70,7 @@ public:
 	 * @param pathFormula The child node
 	 * @param minimumOperator Indicator, if operator should be minimum or maximum operator.
 	 */
-	PathBoundOperator(ComparisonType comparisonOperator, T bound, AbstractFormula<T>* pathFormula, bool minimumOperator)
+	PathBoundOperator(ComparisonType comparisonOperator, T bound, FormulaType* pathFormula, bool minimumOperator)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula), OptimizingOperator(minimumOperator) {
 		// Intentionally left empty
 	}
@@ -87,6 +85,22 @@ public:
 	 if (pathFormula != nullptr) {
 		 delete pathFormula;
 	 }
+	}
+
+	/*!
+	 * @returns the child node (representation of a Abstract path formula)
+	 */
+	const FormulaType& getPathFormula () const {
+		return *pathFormula;
+	}
+
+	/*!
+	 * Sets the child node
+	 *
+	 * @param pathFormula the path formula that becomes the new child node
+	 */
+	void setPathFormula(FormulaType* pathFormula) {
+		this->pathFormula = pathFormula;
 	}
 
 	/*!
@@ -155,28 +169,10 @@ public:
         return checker.conforms(this->pathFormula);
     }
 
-protected:
-	/*!
-	 * @returns the child node (representation of a Abstract path formula)
-	 */
-	const AbstractFormula<T>& getPathFormula () const {
-		return *pathFormula;
-	}
-
-	/*!
-	 * Sets the child node
-	 *
-	 * @param pathFormula the path formula that becomes the new child node
-	 */
-	void setPathFormula(AbstractFormula<T>* pathFormula) {
-		this->pathFormula = pathFormula;
-	}
-
-
 private:
 	ComparisonType comparisonOperator;
 	T bound;
-	AbstractFormula<T>* pathFormula;
+	FormulaType* pathFormula;
 };
 
 } //namespace abstract

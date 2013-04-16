@@ -35,7 +35,7 @@ namespace abstract {
  * @see AbstractFormula
  * @see AbstractFormula
  */
-template <class T>
+template <class T, class FormulaType>
 class BoundedEventually : public AbstractFormula<T> {
 
 public:
@@ -53,7 +53,7 @@ public:
 	 * @param child The child formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedEventually(AbstractFormula<T>* child, uint_fast64_t bound) {
+	BoundedEventually(FormulaType* child, uint_fast64_t bound) {
 		this->child = child;
 		this->bound = bound;
 	}
@@ -68,6 +68,21 @@ public:
 	  if (child != nullptr) {
 		  delete child;
 	  }
+	}
+
+	/*!
+	 * @returns the child node
+	 */
+	const FormulaType& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(FormulaType* child) {
+		this->child = child;
 	}
 
 	/*!
@@ -107,25 +122,9 @@ public:
 		return checker.conforms(this->child);
 	}
 
-protected:
-	/*!
-	 * @returns the child node
-	 */
-	const AbstractFormula<T>& getChild() const {
-		return *child;
-	}
-
-	/*!
-	 * Sets the subtree
-	 * @param child the new child node
-	 */
-	void setChild(AbstractFormula<T>* child) {
-		this->child = child;
-	}
-
 
 private:
-	AbstractFormula<T>* child;
+	FormulaType* child;
 	uint_fast64_t bound;
 };
 

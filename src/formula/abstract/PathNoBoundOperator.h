@@ -50,7 +50,7 @@ namespace abstract {
  * @see ProbabilisticIntervalOperator
  * @see AbstractFormula
  */
-template <class T>
+template <class T, class FormulaType>
 class PathNoBoundOperator: public storm::formula::AbstractFormula<T>, public OptimizingOperator {
 public:
 	/*!
@@ -65,7 +65,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	PathNoBoundOperator(AbstractFormula<T>* pathFormula) : optimalityOperator(false), minimumOperator(false) {
+	PathNoBoundOperator(FormulaType* pathFormula) : optimalityOperator(false), minimumOperator(false) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -76,7 +76,7 @@ public:
 	 * @param minimumOperator A flag indicating whether this operator is a minimizing or a
 	 * maximizing operator.
 	 */
-	PathNoBoundOperator(AbstractFormula<T>* pathFormula, bool minimumOperator)
+	PathNoBoundOperator(FormulaType* pathFormula, bool minimumOperator)
 		: optimalityOperator(true), minimumOperator(minimumOperator) {
 		this->pathFormula = pathFormula;
 	}
@@ -88,6 +88,22 @@ public:
 		if (pathFormula != NULL) {
 			delete pathFormula;
 		}
+	}
+
+	/*!
+	 * @returns the child node (representation of a Abstract path formula)
+	 */
+	const FormulaType& getPathFormula () const {
+		return *pathFormula;
+	}
+
+	/*!
+	 * Sets the child node
+	 *
+	 * @param pathFormula the path formula that becomes the new child node
+	 */
+	void setPathFormula(FormulaType* pathFormula) {
+		this->pathFormula = pathFormula;
 	}
 
 	/*!
@@ -136,25 +152,8 @@ public:
 		return optimalityOperator && minimumOperator;
 	}
 
-protected:
-	/*!
-	 * @returns the child node (representation of a Abstract path formula)
-	 */
-	const AbstractFormula<T>& getPathFormula () const {
-		return *pathFormula;
-	}
-
-	/*!
-	 * Sets the child node
-	 *
-	 * @param pathFormula the path formula that becomes the new child node
-	 */
-	void setPathFormula(AbstractFormula<T>* pathFormula) {
-		this->pathFormula = pathFormula;
-	}
-
 private:
-	AbstractFormula<T>* pathFormula;
+	FormulaType* pathFormula;
 
 	// A flag that indicates whether this operator is meant as an optimizing (i.e. min/max) operator
 	// over a nondeterministic model.
