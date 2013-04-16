@@ -2,7 +2,7 @@
  * ProbabilisticNoBoundOperator.h
  *
  *  Created on: 12.12.2012
- *      Author: thomas
+ *      Author: Thomas Heinemann
  */
 
 #ifndef STORM_FORMULA_ABSTRACT_PROBABILISTICNOBOUNDOPERATOR_H_

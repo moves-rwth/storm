@@ -83,6 +83,14 @@ public:
 	}
 
 	/*!
+	 *
+	 * @return True if the state formula is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool stateFormulaIsSet() const {
+		return stateFormula != nullptr;
+	}
+
+	/*!
 	 * Calls the model checker to check this formula.
 	 * Needed to infer the correct type of formula class.
 	 *

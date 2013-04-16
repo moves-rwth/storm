@@ -108,6 +108,22 @@ public:
 	}
 
 	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+	/*!
 	 * @returns the maximally allowed number of steps for the bounded until operator
 	 */
 	uint_fast64_t getBound() const {

@@ -86,6 +86,14 @@ public:
 	}
 
 	/*!
+	 *
+	 * @return True if the state formula is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool stateFormulaIsSet() const {
+		return stateFormula != nullptr;
+	}
+
+	/*!
 	 * @returns the comparison relation
 	 */
 	const ComparisonType getComparisonOperator() const {

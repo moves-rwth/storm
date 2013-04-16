@@ -104,6 +104,14 @@ public:
 	}
 
 	/*!
+	 *
+	 * @return True if the path formula is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool pathFormulaIsSet() const {
+		return pathFormula != nullptr;
+	}
+
+	/*!
 	 * @returns the comparison relation
 	 */
 	const ComparisonType getComparisonOperator() const {

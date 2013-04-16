@@ -39,7 +39,7 @@ namespace abstract {
  * @see AbstractFormula
  */
 template<class T, class FormulaType>
-class ProbabilisticBoundOperator : public PathBoundOperator<T> {
+class ProbabilisticBoundOperator : public PathBoundOperator<T, FormulaType> {
 
 public:
 	/*!

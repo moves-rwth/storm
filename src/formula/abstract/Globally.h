@@ -81,6 +81,14 @@ public:
 	}
 
 	/*!
+	 *
+	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool childIsSet() const {
+		return child != nullptr;
+	}
+
+	/*!
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const {
