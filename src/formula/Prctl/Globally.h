@@ -94,9 +94,9 @@ public:
 	 * @returns a new Globally-object that is identical the called object.
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
-		Next<T>* result = new Next<T>();
-		if (child != nullptr) {
-			result->setChild(child);
+		Globally<T>* result = new Globally<T>();
+		if (this->childIsSet()) {
+			result->setChild(this->getChild().clone());
 		}
 		return result;
 	}

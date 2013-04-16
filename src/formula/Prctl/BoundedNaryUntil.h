@@ -105,10 +105,10 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		BoundedNaryUntil<T>* result = new BoundedNaryUntil<T>();
-		if (left != NULL) {
-			result->setLeft(left->clone());
+		if (this->leftIsSet()) {
+			result->setLeft(this->getLeft().clone());
 		}
-		if (right != NULL) {
+		if (this->rightIsSet()) {
 			std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* newright = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
 			for (auto it = this->right->begin(); it != this->right->end(); ++it) {
 				newright->push_back(std::tuple<AbstractStateFormula<T>*,T,T>(std::get<0>(*it)->clone(), std::get<1>(*it), std::get<2>(*it)));

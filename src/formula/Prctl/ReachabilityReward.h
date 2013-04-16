@@ -90,8 +90,8 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		ReachabilityReward<T>* result = new ReachabilityReward<T>();
-		if (getChild() != nullptr) {
-			result->setChild(*getChild());
+		if (this->childIsSet()) {
+			result->setChild(this->getChild().clone());
 		}
 		return result;
 	}

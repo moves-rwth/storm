@@ -95,11 +95,11 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		Until<T>* result = new Until();
-		if (left != NULL) {
-			result->setLeft(left->clone());
+		if (this->leftIsSet()) {
+		  result->setLeft(this->getLeft().clone());
 		}
-		if (right != NULL) {
-			result->setRight(right->clone());
+		if (this->rightIsSet()) {
+		  result->setRight(this->getRight().clone());
 		}
 		return result;
 	}

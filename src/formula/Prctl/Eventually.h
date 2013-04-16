@@ -93,8 +93,8 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		Eventually<T>* result = new Eventually<T>();
-		if (child != nullptr) {
-			result->setChild(child);
+		if (this->childIsSet()) {
+			result->setChild(this->getChild().clone());
 		}
 		return result;
 	}

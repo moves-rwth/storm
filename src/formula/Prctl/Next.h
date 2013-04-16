@@ -93,8 +93,8 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		Next<T>* result = new Next<T>();
-		if (child != NULL) {
-			result->setChild(child);
+		if (this->childIsSet()) {
+			result->setChild(this->getChild().clone());
 		}
 		return result;
 	}

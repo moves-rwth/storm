@@ -50,7 +50,7 @@ class IInstantaneousRewardModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class InstantaneousReward : public storm::formula::abstract::InstantaneousReward,
+class InstantaneousReward : public storm::formula::abstract::InstantaneousReward<T>,
 									 public AbstractPathFormula<T> {
 
 public:
@@ -86,7 +86,7 @@ public:
 	 * @returns a new InstantaneousReward-object that is identical the called object.
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
-		return new InstantaneousReward(bound);
+		return new InstantaneousReward(this->getBound());
 	}
 
 

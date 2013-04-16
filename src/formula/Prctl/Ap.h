@@ -47,7 +47,7 @@ class IApModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class Ap : public storm::formula::abstract::Ap<T>, public AbstractFormula<T> {
+class Ap : public storm::formula::abstract::Ap<T>, public AbstractStateFormula<T> {
 
 public:
 	/*!
@@ -78,7 +78,7 @@ public:
 	 * @returns a new AND-object that is identical the called object.
 	 */
 	virtual AbstractStateFormula<T>* clone() const {
-		return new Ap(getAp());
+		return new Ap(this->getAp());
 	}
 
 	/*!

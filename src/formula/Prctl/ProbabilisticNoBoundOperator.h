@@ -8,7 +8,6 @@
 #ifndef STORM_FORMULA_PRCTL_PROBABILISTICNOBOUNDOPERATOR_H_
 #define STORM_FORMULA_PRCTL_PROBABILISTICNOBOUNDOPERATOR_H_
 
-#include "AbstractFormula.h"
 #include "AbstractPathFormula.h"
 #include "src/formula/abstract/ProbabilisticNoBoundOperator.h"
 

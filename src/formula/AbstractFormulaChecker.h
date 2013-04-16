@@ -1,7 +1,7 @@
 #ifndef STORM_FORMULA_ABSTRACTFORMULACHECKER_H_
 #define STORM_FORMULA_ABSTRACTFORMULACHECKER_H_
 
-#include "src/formula/AbstractFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 
 namespace storm {
 namespace formula {

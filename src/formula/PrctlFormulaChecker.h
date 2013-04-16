@@ -2,7 +2,7 @@
 #define STORM_FORMULA_PRCTLFORMULACHECKER_H_
 
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/formula/Formulas.h"
+#include "src/formula/Prctl.h"
 
 #include <iostream>
 

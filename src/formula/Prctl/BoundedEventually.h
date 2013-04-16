@@ -97,9 +97,9 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		BoundedEventually<T>* result = new BoundedEventually<T>();
-		result->setBound(bound);
-		if (child != nullptr) {
-			result->setChild(child->clone());
+		result->setBound(this->getBound());
+		if (this->childIsSet()) {
+			result->setChild(this->getChild().clone());
 		}
 		return result;
 	}

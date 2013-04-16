@@ -10,14 +10,6 @@
 
 #include <string>
 
-namespace storm {
-namespace formula {
-namespace abstract {
-template <class T> class AbstractFormula;
-}
-}
-}
-
 #include "src/modelchecker/ForwardDeclarations.h"
 #include "src/formula/AbstractFormulaChecker.h"
 

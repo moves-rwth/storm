@@ -95,11 +95,11 @@ public:
 	 */
 	virtual AbstractStateFormula<T>* clone() const {
 		Or<T>* result = new Or();
-		if (this->left != NULL) {
-		  result->setLeft(getLeft().clone());
+		if (this->leftIsSet()) {
+		  result->setLeft(this->getLeft().clone());
 		}
-		if (this->right != NULL) {
-		  result->setRight(getLeft().clone());
+		if (this->rightIsSet()) {
+		  result->setRight(this->getRight().clone());
 		}
 		return result;
 	}

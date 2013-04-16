@@ -57,10 +57,13 @@ public:
 	 * @param pathFormula The child node
 	 */
 	RewardBoundOperator(
-			typename storm::formula::abstract::PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula) :
-				storm::formula::abstract::RewardBoundOperator<T>(comparisonRelation, bound, pathFormula) {
+			typename storm::formula::abstract::PathBoundOperator<T, AbstractPathFormula<T>>::ComparisonType comparisonRelation,
+			T bound,
+			AbstractPathFormula<T>* pathFormula) :
+				storm::formula::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
+
 
 	/*!
 	 * Constructor
@@ -71,8 +74,11 @@ public:
 	 * @param minimumOperator
 	 */
 	RewardBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
-			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator) {
+			typename storm::formula::abstract::PathBoundOperator<T, AbstractPathFormula<T>>::ComparisonType comparisonRelation,
+			T bound,
+			AbstractPathFormula<T>* pathFormula,
+			bool minimumOperator)
+			: storm::formula::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 

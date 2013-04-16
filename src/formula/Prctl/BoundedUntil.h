@@ -56,7 +56,7 @@ class IBoundedUntilModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class BoundedUntil : public storm::formula::abstract::BoundedUntil<T, AbstractStateFormula>,
+class BoundedUntil : public storm::formula::abstract::BoundedUntil<T, AbstractStateFormula<T>>,
 							public AbstractPathFormula<T> {
 
 public:
@@ -76,7 +76,7 @@ public:
 	 */
 	BoundedUntil(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right,
 					 uint_fast64_t bound) :
-					 storm::formula::abstract::BoundedUntil<T, AbstractStateFormula>(left,right,bound) {
+					 storm::formula::abstract::BoundedUntil<T, AbstractStateFormula<T>>(left,right,bound) {
 		//intentionally left empty
 	}
 
@@ -99,12 +99,12 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		BoundedUntil<T>* result = new BoundedUntil<T>();
-		result->setBound(bound);
-		if (left != NULL) {
-			result->setLeft(left->clone());
+		result->setBound(this->getBound());
+		if (this->leftIsSet()) {
+			result->setLeft(this->getLeft().clone());
 		}
-		if (right != NULL) {
-			result->setRight(right->clone());
+		if (this->rightIsSet()) {
+			result->setRight(this->getRight().clone());
 		}
 		return result;
 	}

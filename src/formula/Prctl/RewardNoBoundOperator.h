@@ -8,8 +8,8 @@
 #ifndef STORM_FORMULA_PRCTL_REWARDNOBOUNDOPERATOR_H_
 #define STORM_FORMULA_PRCTL_REWARDNOBOUNDOPERATOR_H_
 
-#include "AbstractFormula.h"
-#include "PathNoBoundOperator.h"
+#include "AbstractPathFormula.h"
+#include "src/formula/abstract/RewardNoBoundOperator.h"
 
 namespace storm {
 namespace formula {
@@ -45,13 +45,13 @@ namespace prctl {
  * @see ProbabilisticIntervalOperator
  * @see AbstractFormula
  */
-template <class T, class FormulaType>
-class RewardNoBoundOperator: public PathNoBoundOperator<T, FormulaType> {
+template <class T>
+class RewardNoBoundOperator: public storm::formula::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>> {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	RewardNoBoundOperator() : PathNoBoundOperator<T>(nullptr) {
+	RewardNoBoundOperator()  {
 		// Intentionally left empty
 	}
 
@@ -60,7 +60,8 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundOperator(FormulaType* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
+	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula)
+		: storm::formula::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -69,18 +70,12 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundOperator(FormulaType* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
+	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+		: storm::formula::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
-	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		std::string result = "R";
-		result += PathNoBoundOperator<T>::toString();
-		return result;
-	}
+	//TODO: Clone?
 };
 
 } //namespace prctl

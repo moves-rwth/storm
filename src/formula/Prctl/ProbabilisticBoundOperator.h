@@ -54,14 +54,13 @@ class IProbabilisticBoundOperatorModelChecker {
  */
 template<class T>
 class ProbabilisticBoundOperator : public storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>,
-											  public AbstractStateFormula {
+											  public AbstractStateFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticBoundOperator() : PathBoundOperator<T>
-		(PathBoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+	ProbabilisticBoundOperator()  {
 		// Intentionally left empty
 	}
 
@@ -74,8 +73,10 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			typename storm::formula::abstract::PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula)
-			: storm::formula::abstract::ProbabilisticBoundOperator<T>(comparisonRelation, bound, pathFormula) {
+			typename storm::formula::abstract::PathBoundOperator<T, AbstractPathFormula<T>>::ComparisonType comparisonRelation,
+			T bound,
+			AbstractPathFormula<T>* pathFormula)
+			: storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -87,8 +88,11 @@ public:
 	 * @param minimumOperator
 	 */
 	ProbabilisticBoundOperator(
-			typename storm::formula::abstract::PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
-			: storm::formula::abstract::ProbabilisticBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator){
+			typename storm::formula::abstract::PathBoundOperator<T, AbstractPathFormula<T>>::ComparisonType comparisonRelation,
+			T bound,
+			AbstractPathFormula<T>* pathFormula,
+			bool minimumOperator)
+			: storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator){
 		// Intentionally left empty
 	}
 
