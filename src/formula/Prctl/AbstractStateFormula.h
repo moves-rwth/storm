@@ -8,11 +8,11 @@
 #ifndef STORM_FORMULA_PRCTL_ABSTRACTSTATEFORMULA_H_
 #define STORM_FORMULA_PRCTL_ABSTRACTSTATEFORMULA_H_
 
-namespace storm { namespace formula {
+namespace storm { namespace formula { namespace prctl {
 template <class T> class AbstractStateFormula;
-}}
+}}}
 
-#include "src/formula/abstract/AbstractFormula.h"
+#include "AbstractPrctlFormula.h"
 #include "src/storage/BitVector.h"
 #include "src/modelchecker/ForwardDeclarations.h"
 
@@ -30,13 +30,15 @@ namespace prctl {
  * 	   clone().
  */
 template <class T>
-class AbstractStateFormula : public storm::formula::abstract::AbstractFormula<T> {
+class AbstractStateFormula : public AbstractPrctlFormula<T> {
 
 public:
 	/*!
 	 * empty destructor
 	 */
-	virtual ~AbstractStateFormula() = 0;
+	virtual ~AbstractStateFormula() {
+		// Intentionally left empty
+	}
 
 	/*!
 	 * Clones the called object.
@@ -59,7 +61,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const = 0; // {
+	virtual storm::storage::BitVector *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const = 0;
 };
 
 } //namespace prctl

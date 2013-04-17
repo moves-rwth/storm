@@ -55,7 +55,7 @@ class AbstractFormulaChecker {
 		 *	@param formula A pointer to some formula object.
 		 *	@return true iff the formula is valid.
 		 */
-		virtual bool conforms(const AbstractFormula<T>* formula) const = 0;
+		virtual bool conforms(const storm::formula::abstract::AbstractFormula<T>* formula) const = 0;
 };
 
 } // namespace formula

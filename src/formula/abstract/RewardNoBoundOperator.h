@@ -51,7 +51,7 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	RewardNoBoundOperator() : PathNoBoundOperator<T>(nullptr) {
+	RewardNoBoundOperator() : PathNoBoundOperator<T, FormulaType>(nullptr) {
 		// Intentionally left empty
 	}
 
@@ -60,7 +60,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundOperator(FormulaType* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
+	RewardNoBoundOperator(FormulaType* pathFormula) : PathNoBoundOperator<T, FormulaType>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -69,7 +69,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	RewardNoBoundOperator(FormulaType* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
+	RewardNoBoundOperator(FormulaType* pathFormula, bool minimumOperator) : PathNoBoundOperator<T, FormulaType>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -78,7 +78,7 @@ public:
 	 */
 	virtual std::string toString() const {
 		std::string result = "R";
-		result += PathNoBoundOperator<T>::toString();
+		result += PathNoBoundOperator<T, FormulaType>::toString();
 		return result;
 	}
 };

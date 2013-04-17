@@ -47,7 +47,7 @@ class ISteadyStateRewardModelChecker {
  */
 template <class T>
 class SteadyStateReward: public storm::formula::abstract::SteadyStateReward<T>,
-								 public storm::formula::AbstractPathFormula<T> {
+								 public AbstractPathFormula<T> {
 public:
 	/*!
 	 * Empty constructor

@@ -10,7 +10,7 @@
 
 #include "models/Dtmc.h"
 #include "models/Mdp.h"
-#include "formula/Formulas.h"
+#include "formula/Prctl.h"
 #include "modelchecker/AbstractModelChecker.h"
 
 namespace storm {

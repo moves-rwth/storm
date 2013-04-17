@@ -47,12 +47,12 @@ namespace abstract {
  * @see AbstractFormula
  */
 template <class T, class FormulaType>
-class ProbabilisticNoBoundOperator: public PathNoBoundOperator<T> {
+class ProbabilisticNoBoundOperator: public PathNoBoundOperator<T, FormulaType> {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticNoBoundOperator() : PathNoBoundOperator<T>(nullptr) {
+	ProbabilisticNoBoundOperator() : PathNoBoundOperator<T, FormulaType>(nullptr) {
 		// Intentionally left empty
 	}
 
@@ -61,7 +61,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(FormulaType* pathFormula) : PathNoBoundOperator<T>(pathFormula) {
+	ProbabilisticNoBoundOperator(FormulaType* pathFormula) : PathNoBoundOperator<T, FormulaType>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -77,7 +77,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	ProbabilisticNoBoundOperator(FormulaType* pathFormula, bool minimumOperator) : PathNoBoundOperator<T>(pathFormula, minimumOperator) {
+	ProbabilisticNoBoundOperator(FormulaType* pathFormula, bool minimumOperator) : PathNoBoundOperator<T, FormulaType>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -86,7 +86,7 @@ public:
 	 */
 	virtual std::string toString() const {
 		std::string result = "P";
-		result += PathNoBoundOperator<T>::toString();
+		result += PathNoBoundOperator<T, FormulaType>::toString();
 		return result;
 	}
 };

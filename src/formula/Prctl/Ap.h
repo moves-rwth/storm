@@ -47,7 +47,8 @@ class IApModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class Ap : public storm::formula::abstract::Ap<T>, public AbstractStateFormula<T> {
+class Ap : public storm::formula::abstract::Ap<T>,
+			  public AbstractStateFormula<T> {
 
 public:
 	/*!

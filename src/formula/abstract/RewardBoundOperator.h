@@ -42,7 +42,7 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	RewardBoundOperator() : PathBoundOperator<T>(PathBoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+	RewardBoundOperator() : PathBoundOperator<T, FormulaType>(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 
@@ -54,14 +54,19 @@ public:
 	 * @param pathFormula The child node
 	 */
 	RewardBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, FormulaType* pathFormula) :
-				PathBoundOperator<T>(comparisonRelation, bound, pathFormula) {
+			storm::formula::ComparisonType comparisonRelation,
+			T bound,
+			FormulaType* pathFormula) :
+				PathBoundOperator<T, FormulaType>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
 	RewardBoundOperator(
-			typename PathBoundOperator<T>::ComparisonType comparisonRelation, T bound, FormulaType* pathFormula, bool minimumOperator)
-			: PathBoundOperator<T>(comparisonRelation, bound, pathFormula, minimumOperator) {
+			storm::formula::ComparisonType comparisonRelation,
+			T bound,
+			FormulaType* pathFormula,
+			bool minimumOperator)
+			: PathBoundOperator<T, FormulaType>(comparisonRelation, bound, pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -70,7 +75,7 @@ public:
 	 */
 	virtual std::string toString() const {
 		std::string result = "R ";
-		result += PathBoundOperator<T>::toString();
+		result += PathBoundOperator<T, FormulaType>::toString();
 		return result;
 	}
 };

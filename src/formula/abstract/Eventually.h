@@ -33,7 +33,7 @@ namespace abstract {
  * @see AbstractFormula
  */
 template <class T, class FormulaType>
-class Eventually : public AbstractFormula<T> {
+class Eventually : public virtual AbstractFormula<T> {
 
 public:
 	/*!

@@ -61,7 +61,7 @@ public:
 	 * Empty constructor
 	 */
 	Eventually() {
-		this->child = nullptr;
+		// Intentionally left empty
 	}
 
 	/*!

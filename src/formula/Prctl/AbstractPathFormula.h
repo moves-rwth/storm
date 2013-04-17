@@ -8,9 +8,9 @@
 #ifndef STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_
 #define STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_
 
-namespace storm { namespace formula {
+namespace storm { namespace formula { namespace prctl {
 template <class T> class AbstractPathFormula;
-}}
+}}}
 
 #include "src/formula/abstract/AbstractFormula.h"
 #include "src/modelchecker/ForwardDeclarations.h"
@@ -39,7 +39,9 @@ public:
 	/*!
 	 * empty destructor
 	 */
-	virtual ~AbstractPathFormula() = 0;
+	virtual ~AbstractPathFormula() {
+		// Intentionally left empty
+	}
 
 	/*!
 	 * Clones the called object.

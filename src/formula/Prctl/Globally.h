@@ -113,16 +113,6 @@ public:
 	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<IGloballyModelChecker>()->checkGlobally(*this, qualitative);
 	}
-	
-	/*!
-     *  @brief Checks if the subtree conforms to some logic.
-     * 
-     *  @param checker Formula checker object.
-     *  @return true iff the subtree conforms to some logic.
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return checker.conforms(this->child);
-	}
 };
 
 } //namespace prctl

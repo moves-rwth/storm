@@ -33,7 +33,7 @@ namespace storm {
 namespace parser {
 
 template<typename Iterator, typename Skipper>
-struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::AbstractFormula<double>*(), Skipper > {
+struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::prctl::AbstractPrctlFormula<double>*(), Skipper > {
 	PrctlGrammar() : PrctlGrammar::base_type(start) {
 		freeIdentifierName = qi::lexeme[+(qi::alpha | qi::char_('_'))];
 
@@ -41,13 +41,13 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 		stateFormula %= orFormula;
 		stateFormula.name("state formula");
 		orFormula = andFormula[qi::_val = qi::_1] > *(qi::lit("|") > andFormula)[qi::_val =
-				phoenix::new_<storm::formula::Or<double>>(qi::_val, qi::_1)];
+				phoenix::new_<storm::formula::prctl::Or<double>>(qi::_val, qi::_1)];
 		orFormula.name("state formula");
 		andFormula = notFormula[qi::_val = qi::_1] > *(qi::lit("&") > notFormula)[qi::_val =
-				phoenix::new_<storm::formula::And<double>>(qi::_val, qi::_1)];
+				phoenix::new_<storm::formula::prctl::And<double>>(qi::_val, qi::_1)];
 		andFormula.name("state formula");
 		notFormula = atomicStateFormula[qi::_val = qi::_1] | (qi::lit("!") > atomicStateFormula)[qi::_val =
-				phoenix::new_<storm::formula::Not<double>>(qi::_1)];
+				phoenix::new_<storm::formula::prctl::Not<double>>(qi::_1)];
 		notFormula.name("state formula");
 
 		//This block defines rules for "atomic" state formulas
@@ -55,28 +55,28 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 		atomicStateFormula %= probabilisticBoundOperator | rewardBoundOperator | atomicProposition | qi::lit("(") >> stateFormula >> qi::lit(")");
 		atomicStateFormula.name("state formula");
 		atomicProposition = (freeIdentifierName)[qi::_val =
-				phoenix::new_<storm::formula::Ap<double>>(qi::_1)];
+				phoenix::new_<storm::formula::prctl::Ap<double>>(qi::_1)];
 		atomicProposition.name("state formula");
 		probabilisticBoundOperator = (
 				(qi::lit("P") >> qi::lit(">") >> qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER, qi::_1, qi::_2)] |
+						phoenix::new_<storm::formula::prctl::ProbabilisticBoundOperator<double> >(storm::formula::GREATER, qi::_1, qi::_2)] |
 				(qi::lit("P") >> qi::lit(">=") > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
+						phoenix::new_<storm::formula::prctl::ProbabilisticBoundOperator<double> >(storm::formula::GREATER_EQUAL, qi::_1, qi::_2)] |
 				(qi::lit("P") >> qi::lit("<") >> qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
-								phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS, qi::_1, qi::_2)] |
+								phoenix::new_<storm::formula::prctl::ProbabilisticBoundOperator<double> >(storm::formula::LESS, qi::_1, qi::_2)] |
 				(qi::lit("P") >> qi::lit("<=") > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::ProbabilisticBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
+						phoenix::new_<storm::formula::prctl::ProbabilisticBoundOperator<double> >(storm::formula::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 		probabilisticBoundOperator.name("state formula");
 		rewardBoundOperator = (
 				(qi::lit("R") >> qi::lit(">") >> qi::double_ >> qi::lit("[") >> rewardPathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER, qi::_1, qi::_2)] |
+						phoenix::new_<storm::formula::prctl::RewardBoundOperator<double> >(storm::formula::GREATER, qi::_1, qi::_2)] |
 				(qi::lit("R") >> qi::lit(">=") >> qi::double_ >> qi::lit("[") >> rewardPathFormula >> qi::lit("]"))[qi::_val =
-								phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::PathBoundOperator<double>::GREATER_EQUAL, qi::_1, qi::_2)] |
+								phoenix::new_<storm::formula::prctl::RewardBoundOperator<double> >(storm::formula::GREATER_EQUAL, qi::_1, qi::_2)] |
 				(qi::lit("R") >> qi::lit("<") >> qi::double_ >> qi::lit("[") >> rewardPathFormula >> qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS, qi::_1, qi::_2)] |
+										phoenix::new_<storm::formula::prctl::RewardBoundOperator<double> >(storm::formula::LESS, qi::_1, qi::_2)] |
 				(qi::lit("R") >> qi::lit("<=")>> qi::double_ >> qi::lit("[") >> rewardPathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::formula::RewardBoundOperator<double> >(storm::formula::PathBoundOperator<double>::LESS_EQUAL, qi::_1, qi::_2)]
+						phoenix::new_<storm::formula::prctl::RewardBoundOperator<double> >(storm::formula::LESS_EQUAL, qi::_1, qi::_2)]
 				);
 		rewardBoundOperator.name("state formula");
 
@@ -84,78 +84,77 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::formula::Abstrac
 		noBoundOperator = (probabilisticNoBoundOperator | rewardNoBoundOperator);
 		noBoundOperator.name("no bound operator");
 		probabilisticNoBoundOperator = (qi::lit("P") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-				phoenix::new_<storm::formula::ProbabilisticNoBoundOperator<double> >(qi::_1)];
+				phoenix::new_<storm::formula::prctl::ProbabilisticNoBoundOperator<double> >(qi::_1)];
 		probabilisticNoBoundOperator.name("no bound operator");
 		rewardNoBoundOperator = (qi::lit("R") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> rewardPathFormula >> qi::lit("]"))[qi::_val =
-				phoenix::new_<storm::formula::RewardNoBoundOperator<double> >(qi::_1)];
+				phoenix::new_<storm::formula::prctl::RewardNoBoundOperator<double> >(qi::_1)];
 		rewardNoBoundOperator.name("no bound operator");
 
 		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (boundedEventually | eventually | globally | boundedUntil | until);
 		pathFormula.name("path formula");
 		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > stateFormula)[qi::_val =
-				phoenix::new_<storm::formula::BoundedEventually<double>>(qi::_2, qi::_1)];
+				phoenix::new_<storm::formula::prctl::BoundedEventually<double>>(qi::_2, qi::_1)];
 		boundedEventually.name("path formula (for probablistic operator)");
 		eventually = (qi::lit("F") > stateFormula)[qi::_val =
-				phoenix::new_<storm::formula::Eventually<double> >(qi::_1)];
+				phoenix::new_<storm::formula::prctl::Eventually<double> >(qi::_1)];
 		eventually.name("path formula (for probablistic operator)");
 		globally = (qi::lit("G") > stateFormula)[qi::_val =
-				phoenix::new_<storm::formula::Globally<double> >(qi::_1)];
+				phoenix::new_<storm::formula::prctl::Globally<double> >(qi::_1)];
 		globally.name("path formula (for probablistic operator)");
-		boundedUntil = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") >> qi::lit("<=") > qi::int_ > stateFormula)
-				[qi::_val = phoenix::new_<storm::formula::BoundedUntil<double>>(phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_3, qi::_2)];
+		boundedUntil = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::prctl::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") >> qi::lit("<=") > qi::int_ > stateFormula)
+				[qi::_val = phoenix::new_<storm::formula::prctl::BoundedUntil<double>>(phoenix::bind(&storm::formula::prctl::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::prctl::AbstractStateFormula<double>>::get, qi::_a)), qi::_3, qi::_2)];
 		boundedUntil.name("path formula (for probablistic operator)");
-		until = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") > stateFormula)[qi::_val =
-				phoenix::new_<storm::formula::Until<double>>(phoenix::bind(&storm::formula::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::AbstractStateFormula<double>>::get, qi::_a)), qi::_2)];
+		until = (stateFormula[qi::_a = phoenix::construct<std::shared_ptr<storm::formula::prctl::AbstractStateFormula<double>>>(qi::_1)] >> qi::lit("U") > stateFormula)[qi::_val =
+				phoenix::new_<storm::formula::prctl::Until<double>>(phoenix::bind(&storm::formula::prctl::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::formula::prctl::AbstractStateFormula<double>>::get, qi::_a)), qi::_2)];
 		until.name("path formula (for probablistic operator)");
 
 		//This block defines rules for parsing reward path formulas
 		rewardPathFormula = (cumulativeReward | reachabilityReward | instantaneousReward | steadyStateReward);
 		rewardPathFormula.name("path formula (for reward operator)");
 		cumulativeReward = (qi::lit("C") > qi::lit("<=") > qi::double_)
-				[qi::_val = phoenix::new_<storm::formula::CumulativeReward<double>>(qi::_1)];
+				[qi::_val = phoenix::new_<storm::formula::prctl::CumulativeReward<double>>(qi::_1)];
 		cumulativeReward.name("path formula (for reward operator)");
 		reachabilityReward = (qi::lit("F") > stateFormula)[qi::_val =
-				phoenix::new_<storm::formula::ReachabilityReward<double>>(qi::_1)];
+				phoenix::new_<storm::formula::prctl::ReachabilityReward<double>>(qi::_1)];
 		reachabilityReward.name("path formula (for reward operator)");
 		instantaneousReward = (qi::lit("I") > qi::lit("=") > qi::double_)
-						[qi::_val = phoenix::new_<storm::formula::InstantaneousReward<double>>(qi::_1)];
+						[qi::_val = phoenix::new_<storm::formula::prctl::InstantaneousReward<double>>(qi::_1)];
 		instantaneousReward.name("path formula (for reward operator)");
-		steadyStateReward = (qi::lit("S"))[qi::_val = phoenix::new_<storm::formula::SteadyStateReward<double>>()];
-
+		steadyStateReward = (qi::lit("S"))[qi::_val = phoenix::new_<storm::formula::prctl::SteadyStateReward<double>>()];
 
 		start = (noBoundOperator | stateFormula);
 		start.name("PRCTL formula");
 	}
 
-	qi::rule<Iterator, storm::formula::AbstractFormula<double>*(), Skipper> start;
+	qi::rule<Iterator, storm::formula::prctl::AbstractPrctlFormula<double>*(), Skipper> start;
 
-	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> stateFormula;
-	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> atomicStateFormula;
+	qi::rule<Iterator, storm::formula::prctl::AbstractStateFormula<double>*(), Skipper> stateFormula;
+	qi::rule<Iterator, storm::formula::prctl::AbstractStateFormula<double>*(), Skipper> atomicStateFormula;
 
-	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> andFormula;
-	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> atomicProposition;
-	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> orFormula;
-	qi::rule<Iterator, storm::formula::AbstractStateFormula<double>*(), Skipper> notFormula;
-	qi::rule<Iterator, storm::formula::ProbabilisticBoundOperator<double>*(), Skipper> probabilisticBoundOperator;
-	qi::rule<Iterator, storm::formula::RewardBoundOperator<double>*(), Skipper> rewardBoundOperator;
+	qi::rule<Iterator, storm::formula::prctl::AbstractStateFormula<double>*(), Skipper> andFormula;
+	qi::rule<Iterator, storm::formula::prctl::AbstractStateFormula<double>*(), Skipper> atomicProposition;
+	qi::rule<Iterator, storm::formula::prctl::AbstractStateFormula<double>*(), Skipper> orFormula;
+	qi::rule<Iterator, storm::formula::prctl::AbstractStateFormula<double>*(), Skipper> notFormula;
+	qi::rule<Iterator, storm::formula::prctl::ProbabilisticBoundOperator<double>*(), Skipper> probabilisticBoundOperator;
+	qi::rule<Iterator, storm::formula::prctl::RewardBoundOperator<double>*(), Skipper> rewardBoundOperator;
 
-	qi::rule<Iterator, storm::formula::PathNoBoundOperator<double>*(), Skipper> noBoundOperator;
-	qi::rule<Iterator, storm::formula::PathNoBoundOperator<double>*(), Skipper> probabilisticNoBoundOperator;
-	qi::rule<Iterator, storm::formula::PathNoBoundOperator<double>*(), Skipper> rewardNoBoundOperator;
+	qi::rule<Iterator, storm::formula::prctl::AbstractNoBoundOperator<double>*(), Skipper> noBoundOperator;
+	qi::rule<Iterator, storm::formula::prctl::AbstractNoBoundOperator<double>*(), Skipper> probabilisticNoBoundOperator;
+	qi::rule<Iterator, storm::formula::prctl::AbstractNoBoundOperator<double>*(), Skipper> rewardNoBoundOperator;
 
-	qi::rule<Iterator, storm::formula::AbstractPathFormula<double>*(), Skipper> pathFormula;
-	qi::rule<Iterator, storm::formula::BoundedEventually<double>*(), Skipper> boundedEventually;
-	qi::rule<Iterator, storm::formula::Eventually<double>*(), Skipper> eventually;
-	qi::rule<Iterator, storm::formula::Globally<double>*(), Skipper> globally;
-	qi::rule<Iterator, storm::formula::BoundedUntil<double>*(), qi::locals< std::shared_ptr<storm::formula::AbstractStateFormula<double>>>, Skipper> boundedUntil;
-	qi::rule<Iterator, storm::formula::Until<double>*(), qi::locals< std::shared_ptr<storm::formula::AbstractStateFormula<double>>>, Skipper> until;
+	qi::rule<Iterator, storm::formula::prctl::AbstractPathFormula<double>*(), Skipper> pathFormula;
+	qi::rule<Iterator, storm::formula::prctl::BoundedEventually<double>*(), Skipper> boundedEventually;
+	qi::rule<Iterator, storm::formula::prctl::Eventually<double>*(), Skipper> eventually;
+	qi::rule<Iterator, storm::formula::prctl::Globally<double>*(), Skipper> globally;
+	qi::rule<Iterator, storm::formula::prctl::BoundedUntil<double>*(), qi::locals< std::shared_ptr<storm::formula::prctl::AbstractStateFormula<double>>>, Skipper> boundedUntil;
+	qi::rule<Iterator, storm::formula::prctl::Until<double>*(), qi::locals< std::shared_ptr<storm::formula::prctl::AbstractStateFormula<double>>>, Skipper> until;
 
-	qi::rule<Iterator, storm::formula::AbstractPathFormula<double>*(), Skipper> rewardPathFormula;
-	qi::rule<Iterator, storm::formula::CumulativeReward<double>*(), Skipper> cumulativeReward;
-	qi::rule<Iterator, storm::formula::ReachabilityReward<double>*(), Skipper> reachabilityReward;
-	qi::rule<Iterator, storm::formula::InstantaneousReward<double>*(), Skipper> instantaneousReward;
-	qi::rule<Iterator, storm::formula::SteadyStateReward<double>*(), Skipper> steadyStateReward;
+	qi::rule<Iterator, storm::formula::prctl::AbstractPathFormula<double>*(), Skipper> rewardPathFormula;
+	qi::rule<Iterator, storm::formula::prctl::CumulativeReward<double>*(), Skipper> cumulativeReward;
+	qi::rule<Iterator, storm::formula::prctl::ReachabilityReward<double>*(), Skipper> reachabilityReward;
+	qi::rule<Iterator, storm::formula::prctl::InstantaneousReward<double>*(), Skipper> instantaneousReward;
+	qi::rule<Iterator, storm::formula::prctl::SteadyStateReward<double>*(), Skipper> steadyStateReward;
 
 
 	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
@@ -174,7 +173,7 @@ storm::parser::PrctlParser::PrctlParser(std::string formulaString) {
 
 
 	// Prepare resulting intermediate representation of input.
-	storm::formula::AbstractFormula<double>* result_pointer = nullptr;
+	storm::formula::prctl::AbstractPrctlFormula<double>* result_pointer = nullptr;
 
 	PrctlGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
 

@@ -27,7 +27,7 @@ namespace abstract {
  * @see AbstractFormula
  */
 template <class T>
-class CumulativeReward : public AbstractFormula<T> {
+class CumulativeReward : public virtual AbstractFormula<T> {
 
 public:
 	/*!

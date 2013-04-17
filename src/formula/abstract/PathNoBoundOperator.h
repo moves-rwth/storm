@@ -9,7 +9,6 @@
 #define STORM_FORMULA_ABSTRACT_NOBOUNDOPERATOR_H_
 
 #include "src/formula/abstract/AbstractFormula.h"
-#include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/formula/abstract/OptimizingOperator.h"
 
@@ -51,12 +50,13 @@ namespace abstract {
  * @see AbstractFormula
  */
 template <class T, class FormulaType>
-class PathNoBoundOperator: public storm::formula::AbstractFormula<T>, public OptimizingOperator {
+class PathNoBoundOperator: public virtual AbstractFormula<T>, public OptimizingOperator {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	PathNoBoundOperator() : optimalityOperator(false), minimumOperator(false) {
+	PathNoBoundOperator() :
+		OptimizingOperator(false) {
 		this->pathFormula = nullptr;
 	}
 
@@ -65,7 +65,8 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	PathNoBoundOperator(FormulaType* pathFormula) : optimalityOperator(false), minimumOperator(false) {
+	PathNoBoundOperator(FormulaType* pathFormula) :
+		OptimizingOperator(false) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -77,7 +78,7 @@ public:
 	 * maximizing operator.
 	 */
 	PathNoBoundOperator(FormulaType* pathFormula, bool minimumOperator)
-		: optimalityOperator(true), minimumOperator(minimumOperator) {
+		: OptimizingOperator(minimumOperator) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -142,34 +143,8 @@ public:
 		return checker.conforms(this->pathFormula);
 	}
 
-	/*!
-	 * Retrieves whether the operator is to be interpreted as an optimizing (i.e. min/max) operator.
-	 * @returns True if the operator is an optimizing operator.
-	 */
-	bool isOptimalityOperator() const {
-		return optimalityOperator;
-	}
-
-	/*!
-	 * Retrieves whether the operator is a minimizing operator given that it is an optimality
-	 * operator.
-	 * @returns True if the operator is an optimizing operator and it is a minimizing operator and
-	 * false otherwise, i.e. if it is either not an optimizing operator or not a minimizing operator.
-	 */
-	bool isMinimumOperator() const {
-		return optimalityOperator && minimumOperator;
-	}
-
 private:
 	FormulaType* pathFormula;
-
-	// A flag that indicates whether this operator is meant as an optimizing (i.e. min/max) operator
-	// over a nondeterministic model.
-	bool optimalityOperator;
-
-	// In the case this operator is an optimizing operator, this flag indicates whether it is
-	// looking for the minimum or the maximum value.
-	bool minimumOperator;
 };
 
 } //namespace abstract

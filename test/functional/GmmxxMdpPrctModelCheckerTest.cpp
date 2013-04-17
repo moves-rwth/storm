@@ -18,20 +18,22 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
 
-	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("two");
-	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+	storm::formula::prctl::Ap<double>* apFormula = new storm::formula::prctl::Ap<double>("two");
+	storm::formula::prctl::Eventually<double>* eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
+	storm::formula::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
 
 	std::vector<double>* result = probFormula->check(mc);
 
+	ASSERT_NE(nullptr, result);
+
 	ASSERT_LT(std::abs((*result)[0] - 0.0277777612209320068), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("two");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+	apFormula = new storm::formula::prctl::Ap<double>("two");
+	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
 
 	result = probFormula->check(mc);
 
@@ -40,9 +42,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("three");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+	apFormula = new storm::formula::prctl::Ap<double>("three");
+	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
 
 	result = probFormula->check(mc);
 
@@ -51,9 +53,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("three");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+	apFormula = new storm::formula::prctl::Ap<double>("three");
+	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
 
 	result = probFormula->check(mc);
 
@@ -62,9 +64,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("four");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+	apFormula = new storm::formula::prctl::Ap<double>("four");
+	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
 
 	result = probFormula->check(mc);
 
@@ -73,9 +75,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("four");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+	apFormula = new storm::formula::prctl::Ap<double>("four");
+	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
 
 	result = probFormula->check(mc);
 
@@ -84,9 +86,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("done");
-	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
+	apFormula = new storm::formula::prctl::Ap<double>("done");
+	storm::formula::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(apFormula);
+	storm::formula::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
 
 	result = rewardFormula->check(mc);
 
@@ -95,9 +97,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete rewardFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("done");
-	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
+	apFormula = new storm::formula::prctl::Ap<double>("done");
+	reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(apFormula);
+	rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
 
 	result = rewardFormula->check(mc);
 
@@ -114,9 +116,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
 
-	apFormula = new storm::formula::Ap<double>("done");
-	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
+	apFormula = new storm::formula::prctl::Ap<double>("done");
+	reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(apFormula);
+	rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
 
 	result = rewardFormula->check(stateRewardModelChecker);
 
@@ -125,9 +127,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete rewardFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("done");
-	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
+	apFormula = new storm::formula::prctl::Ap<double>("done");
+	reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(apFormula);
+	rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
 
 	result = rewardFormula->check(stateRewardModelChecker);
 
@@ -144,9 +146,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
 
-	apFormula = new storm::formula::Ap<double>("done");
-	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
+	apFormula = new storm::formula::prctl::Ap<double>("done");
+	reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(apFormula);
+	rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
 
 	result = rewardFormula->check(stateAndTransitionRewardModelChecker);
 
@@ -155,9 +157,9 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete rewardFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("done");
-	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
+	apFormula = new storm::formula::prctl::Ap<double>("done");
+	reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(apFormula);
+	rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
 
 	result = rewardFormula->check(stateAndTransitionRewardModelChecker);
 
@@ -180,53 +182,61 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
 
-	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+	storm::formula::prctl::Ap<double>* apFormula = new storm::formula::prctl::Ap<double>("elected");
+	storm::formula::prctl::Eventually<double>* eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
+	storm::formula::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
 
 	std::vector<double>* result = probFormula->check(mc);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
-
-	delete probFormula;
-	delete result;
-
-	apFormula = new storm::formula::Ap<double>("elected");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
-
-	result = probFormula->check(mc);
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::BoundedEventually<double>* boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(apFormula, 25);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
+	apFormula = new storm::formula::prctl::Ap<double>("elected");
+	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
 
 	result = probFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
+
+	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+
+	delete probFormula;
+	delete result;
+
+	apFormula = new storm::formula::prctl::Ap<double>("elected");
+	storm::formula::prctl::BoundedEventually<double>* boundedEventuallyFormula = new storm::formula::prctl::BoundedEventually<double>(apFormula, 25);
+	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
+
+	result = probFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("elected");
-	boundedEventuallyFormula = new storm::formula::BoundedEventually<double>(apFormula, 25);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
+	apFormula = new storm::formula::prctl::Ap<double>("elected");
+	boundedEventuallyFormula = new storm::formula::prctl::BoundedEventually<double>(apFormula, 25);
+	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
 
 	result = probFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
+	apFormula = new storm::formula::prctl::Ap<double>("elected");
+	storm::formula::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(apFormula);
+	storm::formula::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
 
 	result = rewardFormula->check(mc);
 
@@ -235,11 +245,13 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 	delete rewardFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("elected");
-	reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
+	apFormula = new storm::formula::prctl::Ap<double>("elected");
+	reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(apFormula);
+	rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
 
 	result = rewardFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 4.2856904354441400784), s->get<double>("precision"));
 

@@ -40,7 +40,7 @@ namespace abstract {
  * @see AbstractFormula
  */
 template<class T>
-class StateBoundOperator : public AbstractFormula<T> {
+class StateBoundOperator : public virtual AbstractFormula<T> {
 
 public:
 	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };

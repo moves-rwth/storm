@@ -1,13 +1,18 @@
 #ifndef STORM_FORMULA_ABSTRACT_OPTIMIZINGOPERATOR_H_
 #define STORM_FORMULA_ABSTRACT_OPTIMIZINGOPERATOR_H_
 
+#include "IOptimizingOperator.h"
+
 namespace storm {
 
 namespace formula {
 
 namespace abstract {
 
-class OptimizingOperator {
+/*!
+ *
+ */
+class OptimizingOperator : public virtual IOptimizingOperator {
 public:
 	/*!
 	 * Empty constructor
@@ -24,10 +29,17 @@ public:
 	}
 
 	/*!
+	 * Destructor
+	 */
+	virtual ~OptimizingOperator() {
+		// Intentionally left empty
+	}
+
+	/*!
 	 * Retrieves whether the operator is to be interpreted as an optimizing (i.e. min/max) operator.
 	 * @returns True if the operator is an optimizing operator.
 	 */
-	bool isOptimalityOperator() const {
+	virtual bool isOptimalityOperator() const {
 		return optimalityOperator;
 	}
 
@@ -37,7 +49,7 @@ public:
 	 * @returns True if the operator is an optimizing operator and it is a minimizing operator and
 	 * false otherwise, i.e. if it is either not an optimizing operator or not a minimizing operator.
 	 */
-	bool isMinimumOperator() const {
+	virtual bool isMinimumOperator() const {
 		return optimalityOperator && minimumOperator;
 	}
 

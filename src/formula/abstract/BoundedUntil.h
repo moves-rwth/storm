@@ -34,7 +34,7 @@ namespace abstract {
  * @see AbstractFormula
  */
 template <class T, class FormulaType>
-class BoundedUntil : public AbstractFormula<T> {
+class BoundedUntil : public virtual AbstractFormula<T> {
 
 public:
 	/*!

@@ -11,6 +11,7 @@
 #include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
+#include "src/formula/ComparisonType.h"
 
 #include "src/formula/abstract/OptimizingOperator.h"
 
@@ -45,11 +46,9 @@ namespace abstract {
  * @see AbstractFormula
  */
 template<class T, class FormulaType>
-class PathBoundOperator : public AbstractFormula<T>, public OptimizingOperator {
+class PathBoundOperator : public virtual AbstractFormula<T>, public OptimizingOperator {
 
 public:
-	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
-
 	/*!
 	 * Constructor for non-optimizing operator.
 	 *
@@ -57,7 +56,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	PathBoundOperator(ComparisonType comparisonOperator, T bound, FormulaType* pathFormula)
+	PathBoundOperator(storm::formula::ComparisonType comparisonOperator, T bound, FormulaType* pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
@@ -70,7 +69,7 @@ public:
 	 * @param pathFormula The child node
 	 * @param minimumOperator Indicator, if operator should be minimum or maximum operator.
 	 */
-	PathBoundOperator(ComparisonType comparisonOperator, T bound, FormulaType* pathFormula, bool minimumOperator)
+	PathBoundOperator(storm::formula::ComparisonType comparisonOperator, T bound, FormulaType* pathFormula, bool minimumOperator)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula), OptimizingOperator(minimumOperator) {
 		// Intentionally left empty
 	}
@@ -114,11 +113,11 @@ public:
 	/*!
 	 * @returns the comparison relation
 	 */
-	const ComparisonType getComparisonOperator() const {
+	const storm::formula::ComparisonType getComparisonOperator() const {
 		return comparisonOperator;
 	}
 
-	void setComparisonOperator(ComparisonType comparisonOperator) {
+	void setComparisonOperator(storm::formula::ComparisonType comparisonOperator) {
 		this->comparisonOperator = comparisonOperator;
 	}
 
@@ -178,7 +177,7 @@ public:
     }
 
 private:
-	ComparisonType comparisonOperator;
+	storm::formula::ComparisonType comparisonOperator;
 	T bound;
 	FormulaType* pathFormula;
 };

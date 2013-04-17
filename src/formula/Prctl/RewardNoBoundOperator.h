@@ -8,6 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_REWARDNOBOUNDOPERATOR_H_
 #define STORM_FORMULA_PRCTL_REWARDNOBOUNDOPERATOR_H_
 
+#include "AbstractNoBoundOperator.h"
 #include "AbstractPathFormula.h"
 #include "src/formula/abstract/RewardNoBoundOperator.h"
 
@@ -46,7 +47,8 @@ namespace prctl {
  * @see AbstractFormula
  */
 template <class T>
-class RewardNoBoundOperator: public storm::formula::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>> {
+class RewardNoBoundOperator: public storm::formula::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>>,
+									  public storm::formula::prctl::AbstractNoBoundOperator<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -75,7 +77,28 @@ public:
 		// Intentionally left empty
 	}
 
-	//TODO: Clone?
+	virtual AbstractNoBoundOperator<T>* clone() const {
+		RewardNoBoundOperator<T>* result = new RewardNoBoundOperator<T>();
+		if (this->pathFormulaIsSet()) {
+			result->setPathFormula(this->getPathFormula().clone());
+		}
+		return result;
+	}
+
+	/*!
+	 * Calls the model checker to check this formula.
+	 * Needed to infer the correct type of formula class.
+	 *
+	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
+	 *       the methods of the model checker should be used.
+	 *
+	 * @note This function is not implemented in this class.
+	 *
+	 * @returns A vector indicating the probability that the formula holds for each state.
+	 */
+	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const {
+		return this->getPathFormula().check(modelChecker, qualitative);
+	}
 };
 
 } //namespace prctl

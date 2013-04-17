@@ -73,7 +73,7 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			typename storm::formula::abstract::PathBoundOperator<T, AbstractPathFormula<T>>::ComparisonType comparisonRelation,
+			storm::formula::ComparisonType comparisonRelation,
 			T bound,
 			AbstractPathFormula<T>* pathFormula)
 			: storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
@@ -88,7 +88,7 @@ public:
 	 * @param minimumOperator
 	 */
 	ProbabilisticBoundOperator(
-			typename storm::formula::abstract::PathBoundOperator<T, AbstractPathFormula<T>>::ComparisonType comparisonRelation,
+			storm::formula::ComparisonType comparisonRelation,
 			T bound,
 			AbstractPathFormula<T>* pathFormula,
 			bool minimumOperator)

@@ -1,5 +1,5 @@
 /*
- * Formulas.h
+ * Prctl.h
  *
  *  Created on: 06.12.2012
  *      Author: chris
@@ -38,9 +38,12 @@
 
 #include "TimeBoundedUntil.h"
 #include "TimeBoundedEventually.h"
-
-#include "AbstractFormula.h"
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
 */
+#include "Prctl/AbstractPrctlFormula.h"
+#include "Prctl/AbstractStateFormula.h"
+#include "Prctl/AbstractNoBoundOperator.h"
+#include "Prctl/AbstractPathFormula.h"
+
+#include "modelchecker/AbstractModelChecker.h"
+
 #endif /* STORM_FORMULA_FORMULAS_H_ */

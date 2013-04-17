@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/CslParser.h"
-
+/*
 TEST(CslParserTest, parseApOnlyTest) {
 	std::string ap = "ap";
 	storm::parser::CslParser* cslParser = nullptr;
@@ -155,3 +155,4 @@ TEST(CslParserTest, wrongFormulaTest2) {
 	);
 	delete cslParser;
 }
+*/

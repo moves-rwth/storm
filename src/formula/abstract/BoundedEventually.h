@@ -36,7 +36,7 @@ namespace abstract {
  * @see AbstractFormula
  */
 template <class T, class FormulaType>
-class BoundedEventually : public AbstractFormula<T> {
+class BoundedEventually : public virtual AbstractFormula<T> {
 
 public:
 	/*!

@@ -3,7 +3,7 @@
 
 #include "src/parser/Parser.h"
 
-#include "src/formula/Formulas.h"
+#include "src/formula/Prctl.h"
 //#include <memory>
 
 namespace storm {
@@ -34,12 +34,12 @@ class PrctlParser : Parser {
 		/*!
 		 *	@return a pointer to the parsed formula object
 		 */
-		storm::formula::AbstractFormula<double>* getFormula() {
+		storm::formula::prctl::AbstractPrctlFormula<double>* getFormula() {
 			return this->formula;
 		}
 
 	private:
-		storm::formula::AbstractFormula<double>* formula;
+		storm::formula::prctl::AbstractPrctlFormula<double>* formula;
 
 		/*!
 		 * Struct for the Prctl grammar, that Boost::Spirit uses to parse the formulas.

@@ -24,7 +24,7 @@ namespace abstract {
  * @see AbstractFormula
  */
 template <class T>
-class SteadyStateReward: public AbstractFormula<T> {
+class SteadyStateReward: public virtual AbstractFormula<T> {
 public:
 	/*!
 	 * Empty constructor

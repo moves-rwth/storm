@@ -17,6 +17,20 @@ namespace storm {
 namespace formula {
 namespace prctl {
 
+template <class T> class RewardBoundOperator;
+
+/*!
+ *  @brief Interface class for model checkers that support RewardBoundOperator.
+ *
+ *  All model checkers that support the formula class PathBoundOperator must inherit
+ *  this pure virtual class.
+ */
+template <class T>
+class IRewardBoundOperatorModelChecker {
+    public:
+        virtual storm::storage::BitVector* checkRewardBoundOperator(const RewardBoundOperator<T>& obj) const = 0;
+};
+
 /*!
  * @brief
  * Class for a Abstract formula tree with a R (reward) operator node over a reward interval as root.
@@ -57,7 +71,7 @@ public:
 	 * @param pathFormula The child node
 	 */
 	RewardBoundOperator(
-			typename storm::formula::abstract::PathBoundOperator<T, AbstractPathFormula<T>>::ComparisonType comparisonRelation,
+			storm::formula::ComparisonType comparisonRelation,
 			T bound,
 			AbstractPathFormula<T>* pathFormula) :
 				storm::formula::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
@@ -74,7 +88,7 @@ public:
 	 * @param minimumOperator
 	 */
 	RewardBoundOperator(
-			typename storm::formula::abstract::PathBoundOperator<T, AbstractPathFormula<T>>::ComparisonType comparisonRelation,
+			storm::formula::ComparisonType comparisonRelation,
 			T bound,
 			AbstractPathFormula<T>* pathFormula,
 			bool minimumOperator)
