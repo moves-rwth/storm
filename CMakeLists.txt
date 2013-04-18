@@ -120,6 +120,14 @@ source_group(Sources FILES ${STORM_TEST_SOURCES})
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
+# Preset pathes for Intel TBB to internal copy in /resources/3rdParty/tbb41_20130314_mergedWindowsLinuxMacOSX
+set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb41_20130314_merged-win-lin-mac/")
+if(MSVC)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/vc11")
+else()
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/gcc4.4")
+endif()
+
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
 
