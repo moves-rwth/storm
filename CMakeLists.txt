@@ -48,6 +48,7 @@ message(STATUS "GMMXX_INCLUDE_DIR is ${GMMXX_INCLUDE_DIR}")
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
+option(USE_INTELTBB "Sets whether the Intel TBB Extensions should be used." OFF)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (DEBUG)
@@ -155,6 +156,11 @@ endif(Boost_FOUND)
 # Intels Thread Building Blocks
 if (TBB_FOUND)
 	message(STATUS "Found TBB with Interface Version ${TBB_INTERFACE_VERSION}")
+	
+	if(USE_INTELTBB)
+		add_definitions(-DGMM_USE_TBB)
+	endif()
+	
 	include_directories(${TBB_INCLUDE_DIRS})
 	link_directories(${TBB_LIBRARY_DIRS})
 endif(TBB_FOUND)

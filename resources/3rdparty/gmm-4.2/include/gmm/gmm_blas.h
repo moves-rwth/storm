@@ -38,6 +38,13 @@
 #ifndef GMM_BLAS_H__
 #define GMM_BLAS_H__
 
+#ifdef GMM_USE_TBB
+#	include <new> // This fixes a potential dependency ordering problem between GMM and TBB
+#	include "tbb/tbb.h"
+#	include <iterator>
+#endif
+
+
 #include "gmm_scaled.h"
 #include "gmm_transposed.h"
 #include "gmm_conjugated.h"
@@ -395,8 +402,6 @@ namespace gmm {
   }
   
 #ifdef GMM_USE_TBB
-#include "tbb/tbb.h"
-#include <iterator>
 	/* Official Intel Hint on blocked_range vs. linear iterators: http://software.intel.com/en-us/forums/topic/289505
 
 	 */
