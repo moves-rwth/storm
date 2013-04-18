@@ -38,6 +38,13 @@
 #ifndef GMM_BLAS_H__
 #define GMM_BLAS_H__
 
+#ifdef GMM_USE_TBB
+#	include <new> // This fixes a potential dependency ordering problem between GMM and TBB
+#	include "tbb/tbb.h"
+#	include <iterator>
+#endif
+
+
 #include "gmm_scaled.h"
 #include "gmm_transposed.h"
 #include "gmm_conjugated.h"
@@ -394,13 +401,77 @@ namespace gmm {
     return res;
   }
   
+#ifdef GMM_USE_TBB
+	/* Official Intel Hint on blocked_range vs. linear iterators: http://software.intel.com/en-us/forums/topic/289505
+
+	 */
+	template <typename IT1>
+class forward_range {
+    IT1 my_begin;
+    IT1 my_end;
+    size_t my_size;
+public:
+    IT1 begin() const {return my_begin;}
+    IT1 end() const {return my_end;}
+    bool empty() const {return my_begin==my_end;}
+    bool is_divisible() const {return my_size>1;}
+    forward_range( IT1 first, IT1 last, size_t size ) : my_begin(first), my_end(last), my_size(size) {
+        assert( size==size_t(std::distance( first,last )));
+    }
+	forward_range( IT1 first, IT1 last) : my_begin(first), my_end(last) {
+		my_size = std::distance( first,last );
+    }
+    forward_range( forward_range& r, tbb::split ) {
+        size_t h = r.my_size/2;
+        my_end = r.my_end;
+        my_begin = r.my_begin;
+        std::advance( my_begin, h ); // Might be scaling issue
+        my_size = r.my_size-h;
+        r.my_end = my_begin;
+        r.my_size = h;
+    }
+};
+
+	template <typename IT1, typename V>
+	class tbbHelper_vect_sp_sparse {
+		V const* my_v;
+		public:
+			 typename strongest_numeric_type<typename std::iterator_traits<IT1>::value_type,
+				typename linalg_traits<V>::value_type>::T my_sum; 
+			void operator()( const forward_range<IT1>& r ) {
+				V const* v = my_v;
+				typename strongest_numeric_type<typename std::iterator_traits<IT1>::value_type,
+				typename linalg_traits<V>::value_type>::T sum = my_sum;
+				IT1 end = r.end();
+				for( IT1 i=r.begin(); i!=end; ++i) { 
+					sum += (*i) * v->at(i.index());
+				}
+				my_sum = sum;    
+			}
+ 
+			tbbHelper_vect_sp_sparse( tbbHelper_vect_sp_sparse& x, tbb::split ) : my_v(x.my_v), my_sum(0) {}
+ 
+			void join( const tbbHelper_vect_sp_sparse& y ) {my_sum+=y.my_sum;}
+             
+			tbbHelper_vect_sp_sparse(V const* v) :
+				my_v(v), my_sum(0)
+			{}
+	};
+#endif
+
   template <typename IT1, typename V> inline
     typename strongest_numeric_type<typename std::iterator_traits<IT1>::value_type,
 				    typename linalg_traits<V>::value_type>::T
     vect_sp_sparse_(IT1 it, IT1 ite, const V &v) {
       typename strongest_numeric_type<typename std::iterator_traits<IT1>::value_type,
 	typename linalg_traits<V>::value_type>::T res(0);
+#if defined(GMM_USE_TBB) && defined(GMM_USE_TBB_FOR_INNER)
+	  tbbHelper_vect_sp_sparse<IT1, V> tbbHelper(&v);
+	  tbb::parallel_reduce(forward_range<IT1>(it, ite), tbbHelper);
+	  res = tbbHelper.my_sum;
+#else
     for (; it != ite; ++it) res += (*it) * v[it.index()];
+#endif
     return res;
   }
 
@@ -1678,15 +1749,85 @@ namespace gmm {
     }
   }
 
+#ifdef GMM_USE_TBB
+  /* Official Intel Hint on blocked_range vs. linear iterators: http://software.intel.com/en-us/forums/topic/289505
+
+	 */
+	template <typename IT1, typename IT2>
+class forward_range_mult {
+    IT1 my_begin;
+    IT1 my_end;
+	IT2 my_begin_row;
+    size_t my_size;
+public:
+    IT1 begin() const {return my_begin;}
+	IT2 begin_row() const {return my_begin_row;}
+    IT1 end() const {return my_end;}
+    bool empty() const {return my_begin==my_end;}
+    bool is_divisible() const {return my_size>1;}
+	forward_range_mult( IT1 first, IT1 last, IT2 row_first, size_t size ) : my_begin(first), my_end(last), my_begin_row(row_first), my_size(size) {
+        assert( size==size_t(std::distance( first,last )));
+    }
+	forward_range_mult( IT1 first, IT1 last, IT2 row_first) : my_begin(first), my_end(last), my_begin_row(row_first) {
+		my_size = std::distance( first,last );
+    }
+    forward_range_mult( forward_range_mult& r, tbb::split ) {
+        size_t h = r.my_size/2;
+        my_end = r.my_end;
+        my_begin = r.my_begin;
+		my_begin_row = r.my_begin_row;
+        std::advance( my_begin, h ); // Might be scaling issue
+		std::advance( my_begin_row, h );
+        my_size = r.my_size-h;
+        r.my_end = my_begin;
+        r.my_size = h;
+    }
+};
+
+
+  template <typename L1, typename L2, typename L3>
+	class tbbHelper_mult_by_row {
+		L2 const* my_l2;
+
+		// Typedefs for Iterator Types
+		typedef typename linalg_traits<L3>::iterator frm_IT1;
+		typedef typename linalg_traits<L1>::const_row_iterator frm_IT2;
+
+		public:
+			void operator()( const forward_range_mult<frm_IT1, frm_IT2>& r ) const {
+				L2 const& l2 = *my_l2;
+
+				frm_IT1 it = r.begin();
+				frm_IT1 ite = r.end();
+				frm_IT2 itr = r.begin_row();
+
+				for (; it != ite; ++it, ++itr) {
+					*it = vect_sp(linalg_traits<L1>::row(itr), l2,
+						typename linalg_traits<L1>::storage_type(),
+						typename linalg_traits<L2>::storage_type());
+				}
+			}
+		
+			tbbHelper_mult_by_row(L2 const* l2) :
+				my_l2(l2)
+			{}
+	};
+#endif
+
+
   template <typename L1, typename L2, typename L3>
   void mult_by_row(const L1& l1, const L2& l2, L3& l3, abstract_dense) {
     typename linalg_traits<L3>::iterator it=vect_begin(l3), ite=vect_end(l3);
     typename linalg_traits<L1>::const_row_iterator
       itr = mat_row_const_begin(l1); 
-    for (; it != ite; ++it, ++itr)
+#ifdef GMM_USE_TBB
+    tbb::parallel_for(forward_range_mult<typename linalg_traits<L3>::iterator, typename linalg_traits<L1>::const_row_iterator>(it, ite, itr), tbbHelper_mult_by_row<L1, L2, L3>(&l2));
+#else
+	for (; it != ite; ++it, ++itr)
       *it = vect_sp(linalg_traits<L1>::row(itr), l2,
 		    typename linalg_traits<L1>::storage_type(),
 		    typename linalg_traits<L2>::storage_type());
+#endif
   }
 
   template <typename L1, typename L2, typename L3>
