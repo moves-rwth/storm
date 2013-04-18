@@ -138,8 +138,10 @@ include_directories("${PROJECT_SOURCE_DIR}/src")
 set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb41_20130314_merged-win-lin-mac/")
 if(MSVC)
 	set(ENV{TBB_ARCH_PLATFORM} "intel64/vc11")
-else()
+elseif(CMAKE_COMPILER_IS_GNUCC)
 	set(ENV{TBB_ARCH_PLATFORM} "intel64/gcc4.4")
+else(CLANG)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/clang3.2")
 endif()
 
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
@@ -193,6 +195,11 @@ add_executable(storm-tests ${STORM_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${S
 target_link_libraries(storm ${Boost_LIBRARIES})   
 target_link_libraries(storm-tests ${Boost_LIBRARIES})
 
+if (USE_INTELTBB)
+	target_link_libraries(storm tbb tbbmalloc)
+	target_link_libraries(storm-tests tbb tbbmalloc) 
+endif(USE_INTELTBB)
+
 set (STORM_USE_COTIRE ON)
 if (APPLE)
 	set(STORM_USE_COTIRE OFF)
@@ -214,8 +221,6 @@ if (STORM_USE_COTIRE)
 	target_link_libraries(storm_unity ${Boost_LIBRARIES})
 	#cotire(storm-tests)
 endif()
-	
-	
 	
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
