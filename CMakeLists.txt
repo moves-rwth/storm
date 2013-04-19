@@ -48,6 +48,7 @@ message(STATUS "GMMXX_INCLUDE_DIR is ${GMMXX_INCLUDE_DIR}")
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
+option(USE_INTELTBB "Sets whether the Intel TBB Extensions should be used." OFF)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (DEBUG)
@@ -133,6 +134,19 @@ source_group(test FILES ${STORM_TEST_FILES})
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
+# Preset pathes for Intel TBB to internal copy in /resources/3rdParty/tbb41_20130314_mergedWindowsLinuxMacOSX
+set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb41_20130314_merged-win-lin-mac/")
+if(MSVC)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/vc11")
+elseif(CMAKE_COMPILER_IS_GNUCC)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/gcc4.4")
+else(CLANG)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/clang3.2")
+endif()
+
+# Add the resources/cmake folder to Module Search Path for FindTBB.cmake
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
+
 # Set required external packages
 find_package(Threads REQUIRED)
 find_package(Doxygen REQUIRED)
@@ -140,6 +154,7 @@ set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(TBB)
 
 if(Boost_FOUND)
     if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
@@ -152,6 +167,18 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
 endif(Boost_FOUND)
+
+# Intels Thread Building Blocks
+if (TBB_FOUND)
+	message(STATUS "Found TBB with Interface Version ${TBB_INTERFACE_VERSION}")
+	
+	if(USE_INTELTBB)
+		add_definitions(-DGMM_USE_TBB)
+	endif()
+	
+	include_directories(${TBB_INCLUDE_DIRS})
+	link_directories(${TBB_LIBRARY_DIRS})
+endif(TBB_FOUND)
 
 # Add Eigen to the included directories
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -167,6 +194,11 @@ add_executable(storm-tests ${STORM_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${S
 # Add target link deps for Boost program options
 target_link_libraries(storm ${Boost_LIBRARIES})   
 target_link_libraries(storm-tests ${Boost_LIBRARIES})
+
+if (USE_INTELTBB)
+	target_link_libraries(storm tbb tbbmalloc)
+	target_link_libraries(storm-tests tbb tbbmalloc) 
+endif(USE_INTELTBB)
 
 set (STORM_USE_COTIRE ON)
 if (APPLE)
