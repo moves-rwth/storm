@@ -11,6 +11,7 @@
 #include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
+#include "src/formula/ComparisonType.h"
 #include "src/modelchecker/AbstractModelChecker.h"
 #include "src/utility/ConstTemplates.h"
 
@@ -39,11 +40,10 @@ namespace abstract {
  * @see ProbabilisticNoBoundsOperator
  * @see AbstractFormula
  */
-template<class T>
+template<class T, class FormulaType>
 class StateBoundOperator : public virtual AbstractFormula<T> {
 
 public:
-	enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
 
 	/*!
 	 * Constructor
@@ -52,7 +52,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param stateFormula The child node
 	 */
-	StateBoundOperator(ComparisonType comparisonOperator, T bound, FormulaType* stateFormula)
+	StateBoundOperator(storm::formula::ComparisonType comparisonOperator, T bound, FormulaType* stateFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), stateFormula(stateFormula) {
 		// Intentionally left empty
 	}

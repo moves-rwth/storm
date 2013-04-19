@@ -5,8 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_PRCTL_PROBABILISTICBOUNDOPERATOR_H_
-#define STORM_FORMULA_PRCTL_PROBABILISTICBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_CSL_PROBABILISTICBOUNDOPERATOR_H_
+#define STORM_FORMULA_CSL_PROBABILISTICBOUNDOPERATOR_H_
 
 #include "AbstractStateFormula.h"
 #include "AbstractPathFormula.h"
@@ -15,7 +15,7 @@
 
 namespace storm {
 namespace formula {
-namespace prctl {
+namespace csl {
 
 template <class T> class ProbabilisticBoundOperator;
 
@@ -60,7 +60,8 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticBoundOperator()  {
+	ProbabilisticBoundOperator() : storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>
+		(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 
@@ -73,33 +74,14 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			storm::formula::ComparisonType comparisonRelation,
-			T bound,
-			AbstractPathFormula<T>* pathFormula)
+			storm::formula::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula)
 			: storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
-	/*!
-	 *
-	 * @param comparisonRelation
-	 * @param bound
-	 * @param pathFormula
-	 * @param minimumOperator
-	 */
 	ProbabilisticBoundOperator(
-			storm::formula::ComparisonType comparisonRelation,
-			T bound,
-			AbstractPathFormula<T>* pathFormula,
-			bool minimumOperator)
+			storm::formula::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
 			: storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator){
-		// Intentionally left empty
-	}
-
-	/*!
-	 *
-	 */
-	virtual ~ProbabilisticBoundOperator() {
 		// Intentionally left empty
 	}
 
@@ -132,8 +114,8 @@ public:
 	}
 };
 
-} //namespace prctl
+} //namespace csl
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_PRCTL_PROBABILISTICBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_CSL_PROBABILISTICBOUNDOPERATOR_H_ */

@@ -5,17 +5,18 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_STEADYSTATEOPERATOR_H_
-#define STORM_FORMULA_STEADYSTATEOPERATOR_H_
+#ifndef STORM_FORMULA_CSL_STEADYSTATEOPERATOR_H_
+#define STORM_FORMULA_CSL_STEADYSTATEOPERATOR_H_
 
-#include "src/formula/AbstractPathFormula.h"
-#include "src/formula/AbstractStateFormula.h"
-#include "src/formula/StateBoundOperator.h"
+#include "AbstractStateFormula.h"
+#include "src/formula/abstract/SteadyStateBoundOperator.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 
 namespace formula {
+
+namespace csl {
 
 template <class T> class SteadyStateBoundOperator;
 
@@ -53,14 +54,15 @@ class ISteadyStateBoundOperatorModelChecker {
  * @see AbstractFormula
  */
 template <class T>
-class SteadyStateBoundOperator : public StateBoundOperator<T> {
+class SteadyStateBoundOperator : public storm::formula::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>,
+											public AbstractStateFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	SteadyStateBoundOperator() : StateBoundOperator<T>
-		(StateBoundOperator<T>::LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+	SteadyStateBoundOperator() : storm::formula::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>
+		(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 
@@ -70,15 +72,15 @@ public:
 	 * @param stateFormula The child node
 	 */
 	SteadyStateBoundOperator(
-		typename StateBoundOperator<T>::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* stateFormula) :
-			StateBoundOperator<T>(comparisonRelation, bound, stateFormula) {
+		storm::formula::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* stateFormula) :
+			storm::formula::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>(comparisonRelation, bound, stateFormula) {
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Destructor
 	 */
-	virtual std::string toString() const {
-		return "S" + StateBoundOperator<T>::toString();
+	virtual ~SteadyStateBoundOperator() {
+		// Intentionally left empty
 	}
 
 	/*!
@@ -109,7 +111,8 @@ public:
 	
 };
 
+} //namespace csl
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_STEADYSTATEOPERATOR_H_ */
+#endif /* STORM_FORMULA_CSL_STEADYSTATEOPERATOR_H_ */

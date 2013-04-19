@@ -5,15 +5,15 @@
  *      Author: thomas
  */
 
-#ifndef STORM_FORMULA_PRCTL_ABSTRACTNOBOUNDOPERATOR_H_
-#define STORM_FORMULA_PRCTL_ABSTRACTNOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_CSL_ABSTRACTNOBOUNDOPERATOR_H_
+#define STORM_FORMULA_CSL_ABSTRACTNOBOUNDOPERATOR_H_
 
-#include "AbstractPrctlFormula.h"
+#include "AbstractCslFormula.h"
 #include "src/formula/abstract/IOptimizingOperator.h"
 
 namespace storm {
 namespace formula {
-namespace prctl {
+namespace csl {
 
 template <class T>
 class AbstractNoBoundOperator;
@@ -39,8 +39,8 @@ public:
 };
 
 template <class T>
-class AbstractNoBoundOperator: public AbstractPrctlFormula<T>,
-										 public virtual storm::formula::abstract::IOptimizingOperator {
+class AbstractNoBoundOperator: public AbstractCslFormula<T>/*,
+										 public virtual storm::formula::abstract::IOptimizingOperator*/ {
 public:
 	AbstractNoBoundOperator() {
 		// TODO Auto-generated constructor stub
@@ -74,7 +74,7 @@ public:
 	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const = 0;
 };
 
-} /* namespace prctl */
+} /* namespace csl */
 } /* namespace formula */
 } /* namespace storm */
-#endif /* STORM_FORMULA_PRCTL_ABSTRACTNOBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_CSL_ABSTRACTNOBOUNDOPERATOR_H_ */

@@ -5,8 +5,8 @@
  *      Author: thomas
  */
 
-#ifndef STORM_FORMULA_PRCTL_PROBABILISTICNOBOUNDOPERATOR_H_
-#define STORM_FORMULA_PRCTL_PROBABILISTICNOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_CSL_PROBABILISTICNOBOUNDOPERATOR_H_
+#define STORM_FORMULA_CSL_PROBABILISTICNOBOUNDOPERATOR_H_
 
 #include "AbstractPathFormula.h"
 #include "AbstractNoBoundOperator.h"
@@ -14,7 +14,7 @@
 
 namespace storm {
 namespace formula {
-namespace prctl {
+namespace csl {
 
 /*!
  * @brief
@@ -108,8 +108,8 @@ public:
 	}
 };
 
-} //namespace prctl
+} //namespace csl
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_PRCTL_PROBABILISTICNOBOUNDOPERATOR_H_ */
+#endif /* STORM_FORMULA_CSL_PROBABILISTICNOBOUNDOPERATOR_H_ */

@@ -5,14 +5,16 @@
  *      Author: thomas
  */
 
-#ifndef STORM_FORMULA_TIMEBOUNDEDEVENTUALLY_H_
-#define STORM_FORMULA_TIMEBOUNDEDEVENTUALLY_H_
+#ifndef STORM_FORMULA_CSL_TIMEBOUNDEDEVENTUALLY_H_
+#define STORM_FORMULA_CSL_TIMEBOUNDEDEVENTUALLY_H_
 
-#include "TimeBoundedOperator.h"
+#include "src/formula/abstract/TimeBoundedEventually.h"
+#include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
 
 namespace storm {
 namespace formula {
+namespace csl {
 
 template<class T> class TimeBoundedEventually;
 
@@ -36,7 +38,8 @@ class ITimeBoundedEventuallyModelChecker {
 
 
 template<class T>
-class TimeBoundedEventually: public storm::formula::TimeBoundedOperator<T> {
+class TimeBoundedEventually: public storm::formula::abstract::TimeBoundedEventually<T, AbstractStateFormula<T>>,
+									  public AbstractPathFormula<T> {
 public:
 	/**
 	 * Simple constructor: Only sets the bounds
@@ -44,46 +47,18 @@ public:
 	 * @param lowerBound
 	 * @param upperBound
 	 */
-	TimeBoundedEventually(T lowerBound, T upperBound) : TimeBoundedOperator<T>(lowerBound, upperBound) {
-		child = nullptr;
+	TimeBoundedEventually(T lowerBound, T upperBound)
+		: storm::formula::abstract::TimeBoundedEventually<T, AbstractStateFormula<T>>(lowerBound, upperBound) {
+		// Intentionally left empty
 	}
 
-	TimeBoundedEventually(T lowerBound, T upperBound, AbstractStateFormula<T>* child) :
-		TimeBoundedOperator<T>(lowerBound, upperBound) {
-		this->child = child;
+	TimeBoundedEventually(T lowerBound, T upperBound, AbstractStateFormula<T>* child)
+		: storm::formula::abstract::TimeBoundedEventually<T, AbstractStateFormula<T>>(lowerBound, upperBound, child) {
+		// Intentionally left empty
 	}
 
 	virtual ~TimeBoundedEventually() {
-		if (child != nullptr) {
-			delete child;
-		}
-	}
-
-
-	/*!
-	 * @returns the child node
-	 */
-	const AbstractStateFormula<T>& getChild() const {
-		return *child;
-	}
-
-	/*!
-	 * Sets the subtree
-	 * @param child the new child node
-	 */
-	void setChild(AbstractStateFormula<T>* child) {
-		this->child = child;
-	}
-
-	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		std::string result = "F";
-		result += TimeBoundedOperator<T>::toString();
-		result += " ";
-		result += child->toString();
-		return result;
+		// Intentionally left empty
 	}
 
 	/*!
@@ -95,8 +70,8 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		TimeBoundedEventually<T>* result = new TimeBoundedEventually<T>(this->getLowerBound(), this->getUpperBound());
-		if (child != nullptr) {
-			result->setChild(child->clone());
+		if (this->childIsSet()) {
+			result->setChild(this->getChild().clone());
 		}
 		return result;
 	}
@@ -113,21 +88,10 @@ public:
 	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<ITimeBoundedEventuallyModelChecker>()->checkTimeBoundedEventually(*this, qualitative);
 	}
-
-	/*!
-     *  @brief Checks if the subtree conforms to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff the subtree conforms to some logic.
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return checker.conforms(this->child);
-	}
-
-private:
-	AbstractStateFormula<T>* child;
 };
 
+} /* namespace csl */
 } /* namespace formula */
 } /* namespace storm */
-#endif /* STORM_FORMULA_TIMEBOUNDEDEVENTUALLY_H_ */
+
+#endif /* STORM_FORMULA_CSL_TIMEBOUNDEDEVENTUALLY_H_ */

@@ -5,13 +5,16 @@
  *      Author: thomas
  */
 
-#ifndef STORM_FORMULA_TIMEBOUNDEDUNTIL_H_
-#define STORM_FORMULA_TIMEBOUNDEDUNTIL_H_
+#ifndef STORM_FORMULA_CSL_TIMEBOUNDEDUNTIL_H_
+#define STORM_FORMULA_CSL_TIMEBOUNDEDUNTIL_H_
 
-#include "TimeBoundedOperator.h"
+#include "AbstractPathFormula.h"
+#include "AbstractStateFormula.h"
+#include "src/formula/abstract/TimeBoundedUntil.h"
 
 namespace storm {
 namespace formula {
+namespace csl {
 
 template <class T> class TimeBoundedUntil;
 
@@ -34,7 +37,8 @@ class ITimeBoundedUntilModelChecker {
 };
 
 template <class T>
-class TimeBoundedUntil: public storm::formula::TimeBoundedOperator<T> {
+class TimeBoundedUntil: public storm::formula::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>,
+								public AbstractPathFormula<T> {
 public:
 	/**
 	 * Constructor providing bounds only;
@@ -44,11 +48,9 @@ public:
 	 * @param upperBound
 	 */
 	TimeBoundedUntil(T lowerBound, T upperBound) :
-		TimeBoundedOperator<T>(lowerBound, upperBound) {
-		this->left = nullptr;
-		this->right = nullptr;
+		storm::formula::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>(lowerBound, upperBound) {
+		// Intentionally left empty
 	}
-
 
 	/**
 	 * Full constructor
@@ -58,62 +60,15 @@ public:
 	 * @param right
 	 */
 	TimeBoundedUntil(T lowerBound, T upperBound, AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) :
-		TimeBoundedOperator<T>(lowerBound, upperBound) {
-		this->left = left;
-		this->right = right;
+		storm::formula::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>(lowerBound, upperBound, left, right) {
+
 	}
 
+	/*!
+	 * Destructor
+	 */
 	virtual ~TimeBoundedUntil() {
-	   if (left != nullptr) {
-	   	delete left;
-	   }
-	   if (right != nullptr) {
-	   	delete right;
-	   }
-	}
-
-	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft the new left child.
-	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
-		left = newLeft;
-	}
-
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
-	 */
-	void setRight(AbstractStateFormula<T>* newRight) {
-		right = newRight;
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
-	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	const AbstractStateFormula<T>& getRight() const {
-		return *right;
-	}
-
-	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		std::string result = left->toString();
-		result += " U";
-		result += TimeBoundedOperator<T>::toString();
-		result += " ";
-		result += right->toString();
-		return result;
+	   // Intentionally left empty
 	}
 
 	/*!
@@ -125,11 +80,11 @@ public:
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
 		TimeBoundedUntil<T>* result = new TimeBoundedUntil<T>(this->getLowerBound(), this->getUpperBound());
-		if (left != nullptr) {
-			result->setLeft(left->clone());
+		if (this->leftIsSet()) {
+			result->setLeft(this->getLeft().clone());
 		}
-		if (right != nullptr) {
-			result->setRight(right->clone());
+		if (this->rightIsSet()) {
+			result->setRight(this->getRight().clone());
 		}
 		return result;
 	}
@@ -147,22 +102,10 @@ public:
 	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<ITimeBoundedUntilModelChecker>()->checkTimeBoundedUntil(*this, qualitative);
 	}
-
-	/*!
-     *  @brief Checks if the subtree conforms to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff the subtree conforms to some logic.
-     */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return checker.conforms(this->left) && checker.conforms(this->right);
-	}
-
-private:
-	AbstractStateFormula<T>* left;
-	AbstractStateFormula<T>* right;
 };
 
+} /* namespace csl */
 } /* namespace formula */
 } /* namespace storm */
-#endif /* STORM_FORMULA_TIMEBOUNDEDUNTIL_H_ */
+
+#endif /* STORM_FORMULA_CSL_TIMEBOUNDEDUNTIL_H_ */

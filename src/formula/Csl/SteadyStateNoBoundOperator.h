@@ -5,13 +5,16 @@
  *      Author: thomas
  */
 
-#ifndef STORM_FORMULA_STEADYSTATENOBOUNDOPERATOR_H_
-#define STORM_FORMULA_STEADYSTATENOBOUNDOPERATOR_H_
+#ifndef STORM_FORMULA_CSL_STEADYSTATENOBOUNDOPERATOR_H_
+#define STORM_FORMULA_CSL_STEADYSTATENOBOUNDOPERATOR_H_
 
-#include "StateNoBoundOperator.h"
+#include "AbstractStateFormula.h"
+#include "AbstractNoBoundOperator.h"
+#include "src/formula/abstract/SteadyStateNoBoundOperator.h"
 
 namespace storm {
 namespace formula {
+namespace csl {
 
 template <class T> class SteadyStateNoBoundOperator;
 
@@ -34,12 +37,13 @@ class ISteadyStateNoBoundOperatorModelChecker {
 };
 
 template <class T>
-class SteadyStateNoBoundOperator: public storm::formula::StateNoBoundOperator<T> {
+class SteadyStateNoBoundOperator: public storm::formula::abstract::SteadyStateNoBoundOperator<T, AbstractStateFormula<T>>,
+											 public AbstractNoBoundOperator<T> {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	SteadyStateNoBoundOperator() : StateNoBoundOperator<T>() {
+	SteadyStateNoBoundOperator() : storm::formula::abstract::SteadyStateNoBoundOperator<T, AbstractStateFormula<T>>() {
 		// Intentionally left empty
 
 	}
@@ -49,15 +53,16 @@ public:
 	 *
 	 * @param stateFormula The state formula that forms the subtree
 	 */
-	SteadyStateNoBoundOperator(AbstractStateFormula<T>* stateFormula) : StateNoBoundOperator<T>(stateFormula) {
+	SteadyStateNoBoundOperator(AbstractStateFormula<T>* stateFormula)
+		: storm::formula::abstract::SteadyStateNoBoundOperator<T, AbstractStateFormula<T>>(stateFormula) {
 		// Intentionally left empty
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Destructor
 	 */
-	virtual std::string toString() const {
-		return "S" + StateNoBoundOperator<T>::toString();
+	~SteadyStateNoBoundOperator() {
+		// Intentionally left empty
 	}
 
 	/*!
@@ -67,12 +72,11 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	/* TODO: Add clone method to StateNoBoundOperator and use matching return type
-	virtual AbstractStateFormula<T>* clone() const {
+	virtual AbstractNoBoundOperator <T>* clone() const {
 		SteadyStateNoBoundOperator<T>* result = new SteadyStateNoBoundOperator<T>();
 		result->setStateFormula(this->getStateFormula().clone());
 		return result;
-	}*/
+	}
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -83,12 +87,14 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>*  check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T>*  check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const {
 		return modelChecker.template as<ISteadyStateNoBoundOperatorModelChecker>()->checkSteadyStateNoBoundOperator(*this);
 	}
 
 };
 
+} /* namespace csl */
 } /* namespace formula */
 } /* namespace storm */
-#endif /* STORM_FORMULA_STEADYSTATENOBOUNDOPERATOR_H_ */
+
+#endif /* STORM_FORMULA_CSL_STEADYSTATENOBOUNDOPERATOR_H_ */

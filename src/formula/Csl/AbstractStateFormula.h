@@ -5,19 +5,24 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_ABSTRACTSTATEFORMULA_H_
-#define STORM_FORMULA_ABSTRACTSTATEFORMULA_H_
+#ifndef STORM_FORMULA_CSL_ABSTRACTSTATEFORMULA_H_
+#define STORM_FORMULA_CSL_ABSTRACTSTATEFORMULA_H_
 
-namespace storm { namespace formula {
-template <class T> class AbstractStateFormula;
-}}
+namespace storm {
+namespace formula {
+namespace csl {
+template<class T> class AbstractStateFormula;
+}
+}
+}
 
-#include "src/formula/AbstractFormula.h"
+#include "AbstractCslFormula.h"
 #include "src/storage/BitVector.h"
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace formula {
+namespace csl {
 
 /*!
  * @brief
@@ -29,13 +34,15 @@ namespace formula {
  * 	   clone().
  */
 template <class T>
-class AbstractStateFormula : public AbstractFormula<T> {
+class AbstractStateFormula : public AbstractCslFormula<T> {
 
 public:
 	/*!
 	 * empty destructor
 	 */
-	virtual ~AbstractStateFormula() { }
+	virtual ~AbstractStateFormula() {
+		// Intentionally left empty
+	}
 
 	/*!
 	 * Clones the called object.
@@ -58,11 +65,12 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const = 0; // {
+	virtual storm::storage::BitVector* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const = 0;
 };
 
+} //namespace csl
 } //namespace formula
 } //namespace storm
 
 
-#endif /* STORM_FORMULA_AbstractSTATEFORMULA_H_ */
+#endif /* STORM_FORMULA_CSL_AbstractSTATEFORMULA_H_ */

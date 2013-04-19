@@ -8,7 +8,7 @@
 #ifndef STORM_FORMULA_ABSTRACT_STATENOBOUNDOPERATOR_H_
 #define STORM_FORMULA_ABSTRACT_STATENOBOUNDOPERATOR_H_
 
-#include "src/formula/abstract/AbstractFormula.h"
+#include "AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 #include "src/modelchecker/ForwardDeclarations.h"
@@ -47,7 +47,7 @@ namespace abstract {
  * @see AbstractFormula
  */
 template <class T, class FormulaType>
-class StateNoBoundOperator: public storm::formula::AbstractFormula<T> {
+class StateNoBoundOperator: public virtual AbstractFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -88,21 +88,6 @@ public:
 	 */
 	bool stateFormulaIsSet() const {
 		return stateFormula != nullptr;
-	}
-
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @note This function is not implemented in this class.
-	 *
-	 * @returns A vector indicating all states that satisfy the formula represented by the called object.
-	 */
-	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<IStateNoBoundOperatorModelChecker>()->checkStateNoBoundOperator(*this);
 	}
 
 	/*!

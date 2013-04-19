@@ -5,14 +5,18 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_ABSTRACTPATHFORMULA_H_
-#define STORM_FORMULA_ABSTRACTPATHFORMULA_H_
+#ifndef STORM_FORMULA_CSL_ABSTRACTPATHFORMULA_H_
+#define STORM_FORMULA_CSL_ABSTRACTPATHFORMULA_H_
 
-namespace storm { namespace formula {
-template <class T> class AbstractPathFormula;
-}}
+namespace storm {
+namespace formula {
+namespace csl {
+template<class T> class AbstractPathFormula;
+} //namespace csl
+} //namespace formula
+} //namespace storm
 
-#include "src/formula/AbstractFormula.h"
+#include "src/formula/abstract/AbstractFormula.h"
 #include "src/modelchecker/ForwardDeclarations.h"
 
 #include <vector>
@@ -21,6 +25,7 @@ template <class T> class AbstractPathFormula;
 
 namespace storm {
 namespace formula {
+namespace csl {
 
 /*!
  * @brief
@@ -32,13 +37,15 @@ namespace formula {
  * 	   clone().
  */
 template <class T>
-class AbstractPathFormula : public virtual AbstractFormula<T> {
+class AbstractPathFormula : public virtual storm::formula::abstract::AbstractFormula<T> {
 
 public:
 	/*!
 	 * empty destructor
 	 */
-	virtual ~AbstractPathFormula() { }
+	virtual ~AbstractPathFormula() {
+		// Intentionally left empty
+	}
 
 	/*!
 	 * Clones the called object.
@@ -64,7 +71,8 @@ public:
 	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const = 0;
 };
 
+} //namespace csl
 } //namespace formula
 } //namespace storm
 
-#endif /* STORM_FORMULA_ABSTRACTPATHFORMULA_H_ */
+#endif /* STORM_FORMULA_CSL_ABSTRACTPATHFORMULA_H_ */

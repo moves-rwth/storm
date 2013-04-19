@@ -30,7 +30,7 @@ namespace abstract {
  * @see AbstractFormula
  */
 template<class T>
-class TimeBoundedOperator: public storm::formula::AbstractFormula<T> {
+class TimeBoundedOperator: public virtual AbstractFormula<T> {
 public:
 	/**
 	 * Constructor
