@@ -65,8 +65,7 @@ public:
 	 *
 	 * @param pathFormula The child node.
 	 */
-	PathNoBoundOperator(FormulaType* pathFormula) :
-		OptimizingOperator(false) {
+	PathNoBoundOperator(FormulaType* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
