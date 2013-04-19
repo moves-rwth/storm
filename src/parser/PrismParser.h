@@ -11,8 +11,14 @@
 // All classes of the intermediate representation are used.
 #include "src/ir/IR.h"
 #include "src/parser/PrismParser/Includes.h"
-#include "src/parser/PrismParser/UtilityGrammars.h"
+#include "src/parser/PrismParser/Tokens.h"
+#include "src/parser/PrismParser/IdentifierGrammars.h"
 #include "src/parser/PrismParser/VariableState.h"
+#include "src/parser/PrismParser/ConstBooleanExpressionGrammar.h"
+#include "src/parser/PrismParser/ConstDoubleExpressionGrammar.h"
+#include "src/parser/PrismParser/ConstIntegerExpressionGrammar.h"
+#include "src/parser/PrismParser/BooleanExpressionGrammar.h"
+#include "src/parser/PrismParser/IntegerExpressionGrammar.h"
 
 // Used for file input.
 #include <istream>
@@ -62,6 +68,7 @@ public:
 	qi::rule<Iterator, Module(), qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
 
 	// Rules for variable definitions.
+	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerLiteralExpression;
 	qi::rule<Iterator, qi::unused_type(std::vector<BooleanVariable>&, std::vector<IntegerVariable>&, std::map<std::string, uint_fast64_t>&, std::map<std::string, uint_fast64_t>&), Skipper> variableDefinition;
 	qi::rule<Iterator, qi::unused_type(std::vector<BooleanVariable>&, std::map<std::string, uint_fast64_t>&), qi::locals<uint_fast64_t, std::shared_ptr<BaseExpression>>, Skipper> booleanVariableDefinition;
 	qi::rule<Iterator, qi::unused_type(std::vector<IntegerVariable>&, std::map<std::string, uint_fast64_t>&), qi::locals<uint_fast64_t, std::shared_ptr<BaseExpression>>, Skipper> integerVariableDefinition;
@@ -74,8 +81,6 @@ public:
 	qi::rule<Iterator, qi::unused_type(std::map<std::string, Assignment>&, std::map<std::string, Assignment>&), Skipper> assignmentDefinition;
 
 	// Rules for variable/command names.
-	qi::rule<Iterator, std::string(), Skipper> integerVariableName;
-	qi::rule<Iterator, std::string(), Skipper> booleanVariableName;
 	qi::rule<Iterator, std::string(), Skipper> commandName;
 	qi::rule<Iterator, std::string(), Skipper> unassignedLocalBooleanVariableName;
 	qi::rule<Iterator, std::string(), Skipper> unassignedLocalIntegerVariableName;
@@ -91,7 +96,6 @@ public:
 	qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BaseExpression>>&), Skipper> labelDefinition;
 
 	// Rules for constant definitions.
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerLiteralExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> constantDefinition;
 	qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BooleanConstantExpression>>&, std::map<std::string, std::shared_ptr<IntegerConstantExpression>>&, std::map<std::string, std::shared_ptr<DoubleConstantExpression>>&), Skipper> undefinedConstantDefinition;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> definedConstantDefinition;
@@ -102,33 +106,13 @@ public:
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> definedIntegerConstantDefinition;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> definedDoubleConstantDefinition;
 
-	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
-	qi::rule<Iterator, std::string(), Skipper> identifierName;
+	qi::rule<Iterator, std::string(), Skipper, Skipper2> freeIdentifierName;
+	qi::rule<Iterator, std::string(), Skipper, Skipper2> identifierName;
 
-	// The starting point for arbitrary expressions.
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> expression;
-	// Rules with double result type.
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> constantDoubleExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), qi::locals<bool>, Skipper> constantDoublePlusExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), qi::locals<bool>, Skipper> constantDoubleMultExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> constantAtomicDoubleExpression;
 
 	// Rules for variable recognition.
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> booleanVariableExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> booleanVariableCreatorExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerVariableExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), qi::locals<std::shared_ptr<BaseExpression>>, Skipper> integerVariableCreatorExpression;
-
-	// Rules for constant recognition.
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> constantExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> booleanConstantExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerConstantExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> doubleConstantExpression;
-
-	// Rules for literal recognition.
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> literalExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> booleanLiteralExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> doubleLiteralExpression;
 
 	storm::parser::prism::keywordsStruct keywords_;
 	storm::parser::prism::modelTypeStruct modelType_;

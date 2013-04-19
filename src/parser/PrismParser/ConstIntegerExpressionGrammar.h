@@ -10,24 +10,23 @@
 
 #include "Includes.h"
 #include "VariableState.h"
+#include "IdentifierGrammars.h"
 
 namespace storm {
 namespace parser {
 namespace prism {
 
-class ConstIntegerExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Skipper> {
+class ConstIntegerExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused>, public BaseGrammar<ConstIntegerExpressionGrammar> {
 public:
 	ConstIntegerExpressionGrammar(std::shared_ptr<VariableState>& state);
 	
 private:
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerLiteralExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerConstantExpression;
-	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Skipper> constantIntegerExpression;
+	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused> constantIntegerExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), qi::locals<bool>, Skipper> constantIntegerPlusExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> constantIntegerMultExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> constantAtomicIntegerExpression;
-
-	std::shared_ptr<VariableState> state;
+	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerConstantExpression;
+	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerLiteralExpression;
 };
 
 

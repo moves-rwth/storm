@@ -8,6 +8,8 @@
 #ifndef BOOSTINCLUDES_H
 #define	BOOSTINCLUDES_H
 
+#define DEBUGPRISM
+
 // Used for Boost spirit.
 #include <boost/typeof/typeof.hpp>
 #include <boost/spirit/include/qi.hpp>
@@ -24,12 +26,12 @@ typedef std::string::const_iterator BaseIteratorType;
 typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
 typedef PositionIteratorType Iterator;
 typedef BOOST_TYPEOF(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol) Skipper;
+typedef BOOST_TYPEOF(qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol | boost::spirit::ascii::space) Skipper2;
+typedef boost::spirit::unused_type Unused;
 
 #include "src/ir/IR.h"
 using namespace storm::ir;
 using namespace storm::ir::expressions;
-
-#include "UtilityGrammars.h"
 
 #endif	/* BOOSTINCLUDES_H */
 

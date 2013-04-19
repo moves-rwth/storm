@@ -1,20 +1,33 @@
 /* 
- * File:   Keywords.h
+ * File:   Tokens.h
  * Author: nafur
  *
- * Created on April 10, 2013, 6:03 PM
+ * Created on April 19, 2013, 11:17 PM
  */
 
-#ifndef KEYWORDS_H
-#define	KEYWORDS_H
-
-#include "Includes.h"
+#ifndef TOKENS_H
+#define	TOKENS_H
 
 namespace storm {
 namespace parser {
 namespace prism {
 
-// A structure defining the keywords that are not allowed to be chosen as identifiers.
+
+	// A structure mapping the textual representation of a model type to the model type
+	// representation of the intermediate representation.
+	struct modelTypeStruct : qi::symbols<char, Program::ModelType> {
+		modelTypeStruct() {
+			add
+				("dtmc", Program::ModelType::DTMC)
+				("ctmc", Program::ModelType::CTMC)
+				("mdp", Program::ModelType::MDP)
+				("ctmdp", Program::ModelType::CTMDP)
+			;
+		}
+	};
+
+
+	// A structure defining the keywords that are not allowed to be chosen as identifiers.
 	struct keywordsStruct : qi::symbols<char, unsigned> {
 		keywordsStruct() {
 			add
@@ -34,20 +47,7 @@ namespace prism {
 			;
 		}
 	};
-
-	// A structure mapping the textual representation of a model type to the model type
-	// representation of the intermediate representation.
-	struct modelTypeStruct : qi::symbols<char, Program::ModelType> {
-		modelTypeStruct() {
-			add
-				("dtmc", Program::ModelType::DTMC)
-				("ctmc", Program::ModelType::CTMC)
-				("mdp", Program::ModelType::MDP)
-				("ctmdp", Program::ModelType::CTMDP)
-			;
-		}
-	};
-
+	
 	// A structure mapping the textual representation of a binary relation to the representation
 	// of the intermediate representation.
 	struct relationalOperatorStruct : qi::symbols<char, BinaryRelationExpression::RelationType> {
@@ -61,9 +61,9 @@ namespace prism {
 			;
 		}
 	};
+}
+}
+}
 
-}
-}
-}
-#endif	/* KEYWORDS_H */
+#endif	/* TOKENS_H */
 
