@@ -173,14 +173,14 @@ PrismParser::PrismGrammar::PrismGrammar() : PrismParser::PrismGrammar::base_type
 		// This block defines all entities that are needed for parsing a module.
 		moduleDefinition = (qi::lit("module") >> prism::FreeIdentifierGrammar::instance(this->state)[phoenix::bind(&prism::VariableState::startModule, *this->state)]
 				>> *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) >> +commandDefinition > qi::lit("endmodule"))
-				[phoenix::bind(&PrismParser::PrismGrammar::createModule, this, qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2)];
+				[qi::_val = phoenix::bind(&PrismParser::PrismGrammar::createModule, this, qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2)];
 
 		moduleDefinition.name("module");
 		moduleRenaming = (qi::lit("module")	>> prism::FreeIdentifierGrammar::instance(this->state) >> qi::lit("=")
 				> this->state->moduleNames_ > qi::lit("[") > *(
 						(prism::IdentifierGrammar::instance(this->state) > qi::lit("=") > prism::IdentifierGrammar::instance(this->state) >> -qi::lit(","))[phoenix::insert(qi::_a, phoenix::construct<std::pair<std::string,std::string>>(qi::_1, qi::_2))]
 				) > qi::lit("]") > qi::lit("endmodule"))
-				[phoenix::bind(&PrismParser::PrismGrammar::renameModule, this, qi::_1, qi::_2, qi::_a)];
+				[qi::_val = phoenix::bind(&PrismParser::PrismGrammar::renameModule, this, qi::_1, qi::_2, qi::_a)];
 		moduleRenaming.name("renamed module");
 		moduleDefinitionList %= +(moduleDefinition | moduleRenaming);
 		moduleDefinitionList.name("module list");

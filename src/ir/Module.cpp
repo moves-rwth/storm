@@ -23,7 +23,8 @@ Module::Module() : moduleName(), booleanVariables(), integerVariables(), boolean
 }
 
 // Initializes all members according to the given values.
-Module::Module(std::string moduleName, std::vector<storm::ir::BooleanVariable> booleanVariables,
+Module::Module(std::string moduleName, 
+		std::vector<storm::ir::BooleanVariable> booleanVariables,
 		std::vector<storm::ir::IntegerVariable> integerVariables,
 		std::map<std::string, uint_fast64_t> booleanVariableToIndexMap,
 		std::map<std::string, uint_fast64_t> integerVariableToIndexMap,
@@ -41,7 +42,6 @@ Module::Module(const Module& module, const std::string& moduleName, const std::m
 	for (auto it: renaming) {
 		std::cout << "\t" << it.first << " -> " << it.second << std::endl;
 	}
-	std::cout << "Current module " << &module << ":" << std::endl << module.toString() << std::endl;
 	this->booleanVariables.reserve(module.booleanVariables.size());
 	for (BooleanVariable it: module.booleanVariables) {
 		if (renaming.count(it.getName()) > 0) {
@@ -69,10 +69,9 @@ Module::Module(const Module& module, const std::string& moduleName, const std::m
 	
 	this->commands.reserve(module.commands.size());
 	for (std::shared_ptr<Command> cmd: module.commands) {
-		std::cout << "2: Current command: " << cmd->toString() << std::endl;
-		this->commands.emplace_back(new Command(*cmd, renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap));
+		Command* c = new Command(*cmd, renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
+		this->commands.emplace_back(c);
 	}
-
 	this->collectActions();
 }
 

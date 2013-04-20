@@ -30,17 +30,11 @@ public:
 	}
 
 	virtual ~VariableExpression() {
-
 	}
 
 	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
-		std::cout << this << " Cloning VarExpr " << this->variableName << " (" << renaming.size() << " renamings)" << std::endl;
-		for (auto it: renaming) {
-			std::cout << "\t" << it.first << " -> " << it.second << std::endl;
-		}
 		if (renaming.count(this->variableName) > 0) {
 			std::string newName = renaming.at(this->variableName);
-			std::cout << "index of " << newName << " are " << bools.at(newName) << " and " << ints.at(newName) << std::endl;
 			if (this->getType() == bool_) {
 				return std::shared_ptr<BaseExpression>(new VariableExpression(bool_, bools.at(newName), newName, this->lowerBound, this->upperBound));
 			} else if (this->getType() == int_) {

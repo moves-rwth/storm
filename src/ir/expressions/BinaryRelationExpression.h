@@ -22,7 +22,6 @@ public:
 	enum RelationType {EQUAL, NOT_EQUAL, LESS, LESS_OR_EQUAL, GREATER, GREATER_OR_EQUAL};
 
 	BinaryRelationExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, RelationType relationType) : BinaryExpression(bool_, left, right), relationType(relationType) {
-		std::cerr << "BinaryRelationExpression: " << left.get() << " " << relationType << " " << right.get() << " ?" << std::endl;
 	}
 
 	virtual ~BinaryRelationExpression() {
@@ -30,9 +29,7 @@ public:
 	}
 
 	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
-		auto res = std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(renaming, bools, ints), this->getRight()->clone(renaming, bools, ints), this->relationType));
-		std::cout << "Cloning " << this->toString() << " to " << res->toString() << std::endl;
-		return res;
+		return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(renaming, bools, ints), this->getRight()->clone(renaming, bools, ints), this->relationType));
 	}
 
 	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {

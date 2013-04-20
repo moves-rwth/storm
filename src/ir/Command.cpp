@@ -27,9 +27,6 @@ Command::Command(std::string actionName, std::shared_ptr<storm::ir::expressions:
 
 Command::Command(const Command& cmd, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints)
 	: actionName(cmd.actionName), guardExpression(cmd.guardExpression->clone(renaming, bools, ints)) {
-	std::cout << "Cloning command" << std::endl;
-	std::cout << cmd.guardExpression->dump("\t");
-	std::cout << this->guardExpression->dump("\t");
 	if (renaming.count(this->actionName) > 0) {
 		this->actionName = renaming.at(this->actionName);
 	}
