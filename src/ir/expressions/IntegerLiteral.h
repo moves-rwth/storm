@@ -21,7 +21,6 @@ public:
 	int_fast64_t value;
 
 	IntegerLiteral(int_fast64_t value) : BaseExpression(int_), value(value) {
-
 	}
 
 	virtual ~IntegerLiteral() {
@@ -42,6 +41,11 @@ public:
 	
 	virtual std::string toString() const {
 		return boost::lexical_cast<std::string>(value);
+	}
+	virtual std::string dump(std::string prefix) const {
+		std::stringstream result;
+		result << prefix << "IntegerLiteral " << this->toString() << std::endl;
+		return result.str();
 	}
 };
 

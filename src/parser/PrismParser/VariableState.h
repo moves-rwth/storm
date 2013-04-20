@@ -38,14 +38,14 @@ public:
 	// the intermediate representation.
 	struct qi::symbols<char, std::shared_ptr<VariableExpression>> integerVariables_, booleanVariables_;
 	struct qi::symbols<char, std::shared_ptr<BaseExpression>> integerConstants_, booleanConstants_, doubleConstants_;
-	struct qi::symbols<char, Module> moduleMap_;
+	struct qi::symbols<char, std::shared_ptr<Module>> moduleMap_;
 
 	// A structure representing the identity function over identifier names.
 	struct variableNamesStruct : qi::symbols<char, std::string> { } integerVariableNames_, booleanVariableNames_, commandNames_, labelNames_, allConstantNames_, moduleNames_,
 			localBooleanVariables_, localIntegerVariables_, assignedLocalBooleanVariables_, assignedLocalIntegerVariables_;
 
 	uint_fast64_t addBooleanVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) {
-		std::cerr << "adding boolean variable " << name << std::endl;
+		//std::cerr << "adding boolean variable " << name << std::endl;
 		if (firstRun) {
 			std::shared_ptr<VariableExpression> varExpr = std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::bool_, this->nextBooleanVariableIndex, name));
 			this->booleanVariables_.add(name, varExpr);
@@ -64,7 +64,7 @@ public:
 	}
 
 	uint_fast64_t addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) {
-		std::cerr << "adding integer variable " << name << std::endl;
+		//std::cerr << "adding integer variable " << name << std::endl;
 		if (firstRun) {
 			std::shared_ptr<VariableExpression> varExpr = std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::int_, this->nextIntegerVariableIndex, name, lower, upper));
 			this->integerVariables_.add(name, varExpr);
@@ -83,7 +83,7 @@ public:
 	}
 
 	std::shared_ptr<VariableExpression> getBooleanVariable(const std::string& name) {
-		std::cerr << "getting boolen variable " << name << std::endl;
+		//std::cerr << "getting boolen variable " << name << std::endl;
 		std::shared_ptr<VariableExpression> res = this->booleanVariables_.at(name);
 		if (res != nullptr) {
 			return res;
@@ -98,7 +98,7 @@ public:
 	}
 
 	std::shared_ptr<VariableExpression> getIntegerVariable(const std::string& name) {
-		std::cerr << "getting integer variable " << name << std::endl;
+		//std::cerr << "getting integer variable " << name << std::endl;
 		std::shared_ptr<VariableExpression> res = this->integerVariables_.at(name);
 		if (res != nullptr) {
 			return res;
@@ -113,13 +113,13 @@ public:
 	}
 
 	void startModule() {
-		std::cerr << "starting new module" << std::endl;
+		//std::cerr << "starting new module" << std::endl;
 		this->localBooleanVariables_.clear();
 		this->localIntegerVariables_.clear();
 	}
 
 	bool isFreeIdentifier(std::string& s) const {
-		std::cerr << "Checking if " << s << " is free" << std::endl;
+		//std::cerr << "Checking if " << s << " is free" << std::endl;
 		if (this->integerVariableNames_.find(s) != nullptr) return false;
 		if (this->allConstantNames_.find(s) != nullptr) return false;
 		if (this->labelNames_.find(s) != nullptr) return false;
@@ -128,7 +128,7 @@ public:
 		return true;
 	}
 	bool isIdentifier(std::string& s) const {
-		std::cerr << "Checking if " << s << " is identifier" << std::endl;
+		//std::cerr << "Checking if " << s << " is identifier" << std::endl;
 		if (this->allConstantNames_.find(s) != nullptr) return false;
 		if (this->keywords.find(s) != nullptr) return false;
 		return true;

@@ -27,29 +27,31 @@ Module::Module(std::string moduleName, std::vector<storm::ir::BooleanVariable> b
 		std::vector<storm::ir::IntegerVariable> integerVariables,
 		std::map<std::string, uint_fast64_t> booleanVariableToIndexMap,
 		std::map<std::string, uint_fast64_t> integerVariableToIndexMap,
-		std::vector<storm::ir::Command> commands)
+		std::vector<std::shared_ptr<storm::ir::Command>> commands)
 	: moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables),
 	  booleanVariablesToIndexMap(booleanVariableToIndexMap),
 	  integerVariablesToIndexMap(integerVariableToIndexMap), commands(commands), actions(), actionsToCommandIndexMap() {
+	std::cout << "Created module " << this << ":" << std::endl << this->toString() << std::endl;
 	this->collectActions();
 }
 
-Module::Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, const VariableAdder& adder)
+Module::Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, std::shared_ptr<VariableAdder> adder)
 	: moduleName(moduleName) {
 	std::cout << "Renaming module " << module.moduleName << " to " << moduleName << " with " << renaming.size() << " renamings:" << std::endl;
 	for (auto it: renaming) {
 		std::cout << "\t" << it.first << " -> " << it.second << std::endl;
 	}
+	std::cout << "Current module " << &module << ":" << std::endl << module.toString() << std::endl;
 	this->booleanVariables.reserve(module.booleanVariables.size());
 	for (BooleanVariable it: module.booleanVariables) {
 		if (renaming.count(it.getName()) > 0) {
-			this->booleanVariablesToIndexMap[renaming.at(it.getName())] = adder.addBooleanVariable(it.getName(), it.getInitialValue());
+			this->booleanVariablesToIndexMap[renaming.at(it.getName())] = adder->addBooleanVariable(renaming.at(it.getName()), it.getInitialValue());
 		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
 	}
 	this->integerVariables.reserve(module.integerVariables.size());
 	for (IntegerVariable it: module.integerVariables) {
 		if (renaming.count(it.getName()) > 0) {
-			this->integerVariablesToIndexMap[renaming.at(it.getName())] = adder.addIntegerVariable(it.getName(), it.getLowerBound(), it.getUpperBound(), it.getInitialValue());
+			this->integerVariablesToIndexMap[renaming.at(it.getName())] = adder->addIntegerVariable(renaming.at(it.getName()), it.getLowerBound(), it.getUpperBound(), it.getInitialValue());
 		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
 	}
 	this->booleanVariables.reserve(module.booleanVariables.size());
@@ -66,8 +68,9 @@ Module::Module(const Module& module, const std::string& moduleName, const std::m
 	}
 	
 	this->commands.reserve(module.commands.size());
-	for (Command cmd: module.commands) {
-		this->commands.emplace_back(cmd, renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
+	for (std::shared_ptr<Command> cmd: module.commands) {
+		std::cout << "2: Current command: " << cmd->toString() << std::endl;
+		this->commands.emplace_back(new Command(*cmd, renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap));
 	}
 
 	this->collectActions();
@@ -119,7 +122,7 @@ uint_fast64_t Module::getIntegerVariableIndex(std::string variableName) const {
 }
 
 // Return the requested command.
-storm::ir::Command const& Module::getCommand(uint_fast64_t index) const {
+std::shared_ptr<storm::ir::Command> const Module::getCommand(uint_fast64_t index) const {
 	return this->commands[index];
 }
 
@@ -134,7 +137,7 @@ std::string Module::toString() const {
 		result << "\t" << variable.toString() << std::endl;
 	}
 	for (auto command : commands) {
-		result << "\t" << command.toString() << std::endl;
+		result << "\t" << command->toString() << std::endl;
 	}
 	result << "endmodule" << std::endl;
 	return result.str();
@@ -157,7 +160,7 @@ std::shared_ptr<std::set<uint_fast64_t>> const Module::getCommandsByAction(std::
 
 void Module::collectActions() {
 	for (unsigned int id = 0; id < this->commands.size(); id++) {
-		std::string action = this->commands[id].getActionName();
+		std::string action = this->commands[id]->getActionName();
 		if (action != "") {
 			if (this->actionsToCommandIndexMap.count(action) == 0) {
 				this->actionsToCommandIndexMap[action] = std::shared_ptr<std::set<uint_fast64_t>>(new std::set<uint_fast64_t>());

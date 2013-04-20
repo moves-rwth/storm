@@ -86,6 +86,20 @@ public:
 
 		return result;
 	}
+	
+	virtual std::string dump(std::string prefix) const {
+		std::stringstream result;
+		result << prefix << "BinaryNumericalFunctionExpression" << std::endl;
+		result << this->getLeft()->dump(prefix + "\t");
+		switch (functionType) {
+		case PLUS: result << prefix << "+" << std::endl; break;
+		case MINUS: result << prefix << "-" << std::endl; break;
+		case TIMES: result << prefix << "*" << std::endl; break;
+		case DIVIDE: result << prefix << "/" << std::endl; break;
+		}
+		result << this->getRight()->dump(prefix + "\t");
+		return result.str();
+	}
 private:
 	FunctionType functionType;
 };

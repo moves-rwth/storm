@@ -23,8 +23,8 @@ namespace storm {
 namespace ir {
 
 	struct VariableAdder {
-		virtual uint_fast64_t addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) const = 0;
-		virtual uint_fast64_t addBooleanVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) const = 0;
+		virtual uint_fast64_t addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) = 0;
+		virtual uint_fast64_t addBooleanVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) = 0;
 	};
 
 /*!
@@ -48,7 +48,7 @@ public:
 			std::vector<storm::ir::IntegerVariable> integerVariables,
 			std::map<std::string, uint_fast64_t> booleanVariableToIndexMap,
 			std::map<std::string, uint_fast64_t> integerVariableToIndexMap,
-			std::vector<storm::ir::Command> commands);
+			std::vector<std::shared_ptr<storm::ir::Command>> commands);
 
 	typedef uint_fast64_t (*addIntegerVariablePtr)(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper, const std::shared_ptr<storm::ir::expressions::BaseExpression> init);
 	typedef uint_fast64_t (*addBooleanVariablePtr)(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init);
@@ -60,7 +60,7 @@ public:
 	 * @param moduleName Name of the new module.
 	 * @param renaming Renaming map.
 	 */
-	Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, const VariableAdder& adder);
+	Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, std::shared_ptr<VariableAdder> adder);
 
 	/*!
 	 * Retrieves the number of boolean variables in the module.
@@ -110,7 +110,7 @@ public:
 	 * Retrieves a reference to the command with the given index.
 	 * @returns a reference to the command with the given index.
 	 */
-	storm::ir::Command const& getCommand(uint_fast64_t index) const;
+	std::shared_ptr<storm::ir::Command> const getCommand(uint_fast64_t index) const;
 
 	/*!
 	 * Retrieves a string representation of this variable.
@@ -152,7 +152,7 @@ private:
 	std::map<std::string, uint_fast64_t> integerVariablesToIndexMap;
 
 	// The commands associated with the module.
-	std::vector<storm::ir::Command> commands;
+	std::vector<std::shared_ptr<storm::ir::Command>> commands;
 	
 	// The set of actions present in this module.
 	std::set<std::string> actions;

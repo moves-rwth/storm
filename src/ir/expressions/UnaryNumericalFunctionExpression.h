@@ -75,6 +75,16 @@ public:
 
 		return result;
 	}
+	
+	virtual std::string dump(std::string prefix) const {
+		std::stringstream result;
+		result << prefix << "UnaryNumericalFunctionExpression" << std::endl;
+		switch (functionType) {
+		case MINUS: result << prefix << "-" << std::endl; break;
+		}
+		result << this->getChild()->dump(prefix + "\t");
+		return result.str();
+	}
 
 private:
 	FunctionType functionType;

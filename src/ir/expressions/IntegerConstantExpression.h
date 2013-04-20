@@ -19,7 +19,6 @@ namespace expressions {
 class IntegerConstantExpression : public ConstantExpression {
 public:
 	IntegerConstantExpression(std::string constantName) : ConstantExpression(int_, constantName), defined(false), value(0) {
-
 	}
 
 	virtual ~IntegerConstantExpression() {
@@ -49,6 +48,11 @@ public:
 			result += "[" + boost::lexical_cast<std::string>(value) + "]";
 		}
 		return result;
+	}
+	virtual std::string dump(std::string prefix) const {
+		std::stringstream result;
+		result << prefix << "IntegerConstantExpression " << this->toString() << std::endl;
+		return result.str();
 	}
 
 	bool isDefined() {

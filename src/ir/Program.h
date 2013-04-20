@@ -53,7 +53,14 @@ public:
 	 * @param rewards The reward models of the program.
 	 * @param labels The labels defined for this model.
 	 */
-	Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules, std::map<std::string, storm::ir::RewardModel> rewards, std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
+	Program(
+				ModelType modelType,
+				std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions,
+				std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions,
+				std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions,
+				std::vector<std::shared_ptr<storm::ir::Module>> modules,
+				std::map<std::string, std::shared_ptr<storm::ir::RewardModel>> rewards,
+				std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
 
 	/*!
 	 * Retrieves the number of modules in the program.
@@ -65,7 +72,7 @@ public:
 	 * Retrieves a reference to the module with the given index.
 	 * @param index the index of the module to retrieve.
 	 */
-	storm::ir::Module const& getModule(uint_fast64_t index) const;
+	std::shared_ptr<storm::ir::Module> const& getModule(uint_fast64_t index) const;
 
 	/*!
 	 * Retrieves the model type of the model.
@@ -98,7 +105,7 @@ public:
 	 * @param name Name of the reward model.
 	 * @return Reward model with given name.
 	 */
-	storm::ir::RewardModel getRewardModel(std::string const & name) const;
+	std::shared_ptr<storm::ir::RewardModel> getRewardModel(std::string const & name) const;
 
 	/*!
 	 * Retrieves all labels.
@@ -120,10 +127,10 @@ private:
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions;
 
 	// The modules associated with the program.
-	std::vector<storm::ir::Module> modules;
+	std::vector<std::shared_ptr<storm::ir::Module>> modules;
 
 	// The reward models associated with the program.
-	std::map<std::string, storm::ir::RewardModel> rewards;
+	std::map<std::string, std::shared_ptr<storm::ir::RewardModel>> rewards;
 
 	// The labels that are defined for this model.
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels;

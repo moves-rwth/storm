@@ -45,6 +45,12 @@ public:
 			return std::string("false");
 		}
 	}
+	
+	virtual std::string dump(std::string prefix) const {
+		std::stringstream result;
+		result << prefix << "BooleanLiteral " << this->toString() << std::endl;
+		return result.str();
+	}
 };
 
 }

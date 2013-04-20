@@ -34,7 +34,7 @@ public:
 	 * @param actionName the action name of the command.
 	 * @param guardExpression the expression that defines the guard of the command.
 	 */
-	Command(std::string actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> updates);
+	Command(std::string actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<std::shared_ptr<storm::ir::Update>> updates);
 
 	Command(const Command& cmd, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints);
 	/*!
@@ -59,7 +59,7 @@ public:
 	 * Retrieves a reference to the update with the given index.
 	 * @returns a reference to the update with the given index.
 	 */
-	storm::ir::Update const& getUpdate(uint_fast64_t index) const;
+	std::shared_ptr<storm::ir::Update> const& getUpdate(uint_fast64_t index) const;
 
 	/*!
 	 * Retrieves a string representation of this command.
@@ -75,7 +75,7 @@ private:
 	std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression;
 
 	// The list of updates of the command.
-	std::vector<storm::ir::Update> updates;
+	std::vector<std::shared_ptr<storm::ir::Update>> updates;
 };
 
 } // namespace ir

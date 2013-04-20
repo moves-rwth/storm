@@ -22,7 +22,7 @@ public:
 	enum RelationType {EQUAL, NOT_EQUAL, LESS, LESS_OR_EQUAL, GREATER, GREATER_OR_EQUAL};
 
 	BinaryRelationExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, RelationType relationType) : BinaryExpression(bool_, left, right), relationType(relationType) {
-
+		std::cerr << "BinaryRelationExpression: " << left.get() << " " << relationType << " " << right.get() << " ?" << std::endl;
 	}
 
 	virtual ~BinaryRelationExpression() {
@@ -30,8 +30,9 @@ public:
 	}
 
 	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
-		std::cout << "Cloning " << this->getLeft()->toString() << " ~ " << this->getRight()->toString() << std::endl;
-		return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(renaming, bools, ints), this->getRight()->clone(renaming, bools, ints), this->relationType));
+		auto res = std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(renaming, bools, ints), this->getRight()->clone(renaming, bools, ints), this->relationType));
+		std::cout << "Cloning " << this->toString() << " to " << res->toString() << std::endl;
+		return res;
 	}
 
 	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
@@ -71,6 +72,21 @@ public:
 
 		return result;
 	}
+	virtual std::string dump(std::string prefix) const {
+        std::stringstream result;
+        result << prefix << "BinaryRelationExpression" << std::endl;
+        result << this->getLeft()->dump(prefix + "\t");
+        switch (relationType) {
+        case EQUAL: result << prefix << "=" << std::endl; break;
+        case NOT_EQUAL: result << prefix << "!=" << std::endl; break;
+        case LESS: result << prefix << "<" << std::endl; break;
+        case LESS_OR_EQUAL: result << prefix << "<=" << std::endl; break;
+        case GREATER: result << prefix << ">" << std::endl; break;
+        case GREATER_OR_EQUAL: result << prefix << ">=" << std::endl; break;
+        }
+        result << this->getRight()->dump(prefix + "\t");
+        return result.str();
+    }
 
 private:
 	RelationType relationType;

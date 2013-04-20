@@ -35,6 +35,12 @@ public:
 	virtual std::string toString() const {
 		return constantName;
 	}
+	
+	virtual std::string dump(std::string prefix) const {
+		std::stringstream result;
+		result << prefix << "ConstantExpression " << this->toString() << std::endl;
+		return result.str();
+	}
 };
 
 }

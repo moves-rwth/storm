@@ -50,6 +50,12 @@ public:
 		}
 		return result;
 	}
+	
+	virtual std::string dump(std::string prefix) const {
+		std::stringstream result;
+		result << prefix << "DoubleConstantExpression " << this->toString() << std::endl;
+		return result.str();
+	}
 
 	bool isDefined() {
 		return defined;

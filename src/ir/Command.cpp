@@ -8,6 +8,7 @@
 #include "Command.h"
 
 #include <sstream>
+#include <iostream>
 
 namespace storm {
 
@@ -19,19 +20,22 @@ Command::Command() : actionName(), guardExpression(), updates() {
 }
 
 // Initializes all members according to the given values.
-Command::Command(std::string actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> updates)
+Command::Command(std::string actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<std::shared_ptr<storm::ir::Update>> updates)
 	: actionName(actionName), guardExpression(guardExpression), updates(updates) {
 	// Nothing to do here.
 }
 
 Command::Command(const Command& cmd, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints)
 	: actionName(cmd.actionName), guardExpression(cmd.guardExpression->clone(renaming, bools, ints)) {
+	std::cout << "Cloning command" << std::endl;
+	std::cout << cmd.guardExpression->dump("\t");
+	std::cout << this->guardExpression->dump("\t");
 	if (renaming.count(this->actionName) > 0) {
 		this->actionName = renaming.at(this->actionName);
 	}
 	this->updates.reserve(cmd.updates.size());
-	for (Update u : cmd.updates) {
-		this->updates.emplace_back(u, renaming, bools, ints);
+	for (std::shared_ptr<Update> u : cmd.updates) {
+		this->updates.emplace_back(new Update(*u, renaming, bools, ints));
 	}
 }
 
@@ -51,7 +55,7 @@ uint_fast64_t Command::getNumberOfUpdates() const {
 }
 
 // Return the requested update.
-storm::ir::Update const& Command::getUpdate(uint_fast64_t index) const {
+std::shared_ptr<storm::ir::Update> const& Command::getUpdate(uint_fast64_t index) const {
 	return this->updates[index];
 }
 
@@ -60,7 +64,7 @@ std::string Command::toString() const {
 	std::stringstream result;
 	result << "[" << actionName << "] " << guardExpression->toString() << " -> ";
 	for (uint_fast64_t i = 0; i < updates.size(); ++i) {
-		result << updates[i].toString();
+		result << updates[i]->toString();
 		if (i < updates.size() - 1) {
 			result << " + ";
 		}

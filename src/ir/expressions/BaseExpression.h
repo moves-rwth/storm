@@ -86,6 +86,8 @@ public:
 	ReturnType getType() const {
 		return type;
 	}
+	
+	virtual std::string dump(std::string prefix) const = 0;
 
 private:
 	ReturnType type;

@@ -45,6 +45,12 @@ public:
 	virtual std::string toString() const {
 		return boost::lexical_cast<std::string>(value);
 	}
+	
+	virtual std::string dump(std::string prefix) const {
+		std::stringstream result;
+		result << prefix << "DoubleLiteral " << this->toString() << std::endl;
+		return result.str();
+	}
 };
 
 }

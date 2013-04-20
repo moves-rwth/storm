@@ -34,7 +34,7 @@ public:
 	 * @param stateRewards A vector of state-based reward.
 	 * @param transitionRewards A vector of transition-based reward.
 	 */
-	RewardModel(std::string rewardModelName, std::vector<storm::ir::StateReward> stateRewards, std::vector<storm::ir::TransitionReward> transitionRewards);
+	RewardModel(std::string rewardModelName, std::vector<std::shared_ptr<storm::ir::StateReward>> stateRewards, std::vector<std::shared_ptr<storm::ir::TransitionReward>> transitionRewards);
 
 	/*!
 	 * Retrieves a string representation of this variable.
@@ -52,7 +52,7 @@ public:
 	 * Retrieve state rewards.
 	 * @return State rewards.
 	 */
-	std::vector<storm::ir::StateReward> getStateRewards() const;
+	std::vector<std::shared_ptr<storm::ir::StateReward>> getStateRewards() const;
 
 	/*!
 	 * Check, if there are any transition rewards.
@@ -64,17 +64,17 @@ public:
 	 * Retrieve transition rewards.
 	 * @return Transition rewards.
 	 */
-	std::vector<storm::ir::TransitionReward> getTransitionRewards() const;
+	std::vector<std::shared_ptr<storm::ir::TransitionReward>> getTransitionRewards() const;
 
 private:
 	// The name of the reward model.
 	std::string rewardModelName;
 
 	// The state-based rewards associated with this reward model.
-	std::vector<storm::ir::StateReward> stateRewards;
+	std::vector<std::shared_ptr<storm::ir::StateReward>> stateRewards;
 
 	// The transition-based rewards associated with this reward model.
-	std::vector<storm::ir::TransitionReward> transitionRewards;
+	std::vector<std::shared_ptr<storm::ir::TransitionReward>> transitionRewards;
 };
 
 } // namespace ir

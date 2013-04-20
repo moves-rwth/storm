@@ -65,6 +65,18 @@ public:
 
 		return result.str();
 	}
+	
+	virtual std::string dump(std::string prefix) const {
+		std::stringstream result;
+		result << prefix << "BinaryBooleanFunctionExpression" << std::endl;
+		result << this->getLeft()->dump(prefix + "\t");
+		switch (functionType) {
+		case AND: result << prefix << "&" << std::endl; break;
+		case OR: result << prefix << "|" << std::endl; break;
+		}
+		result << this->getRight()->dump(prefix + "\t");
+		return result.str();
+	}
 
 private:
 	FunctionType functionType;

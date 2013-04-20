@@ -83,7 +83,7 @@ private:
 	 * @params update Update to be applied.
 	 * @return Resulting state.
 	 */
-	StateType* applyUpdate(StateType const * const state, storm::ir::Update const & update) const;
+	StateType* applyUpdate(StateType const * const state, std::shared_ptr<storm::ir::Update> const update) const;
 
 	/*!
 	 * Reads and combines variables from all program modules and stores them.
@@ -91,7 +91,7 @@ private:
 	 */
 	void initializeVariables();
 
-	std::shared_ptr<std::vector<double>> getStateRewards(std::vector<storm::ir::StateReward> const & rewards);
+	std::shared_ptr<std::vector<double>> getStateRewards(std::vector<std::shared_ptr<storm::ir::StateReward>> const & rewards);
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
 
 	/*!
@@ -107,7 +107,7 @@ private:
 	 * @param action Action label.
 	 * @return Active commands.
 	 */
-	std::unique_ptr<std::list<std::list<storm::ir::Command>>> getActiveCommandsByAction(StateType const * state, std::string& action);
+	std::unique_ptr<std::list<std::list<std::shared_ptr<storm::ir::Command>>>> getActiveCommandsByAction(StateType const * state, std::string& action);
 
 	/*!
 	 * Generates all initial states and adds them to allStates.
@@ -173,7 +173,7 @@ private:
 	std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
 
 	// Members that are filled during the conversion.
-	storm::ir::RewardModel rewardModel;
+	std::shared_ptr<storm::ir::RewardModel> rewardModel;
 	std::vector<StateType*> allStates;
 	std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
 	uint_fast64_t numberOfTransitions;
