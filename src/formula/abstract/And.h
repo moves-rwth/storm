@@ -19,9 +19,9 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with AND node as root.
+ * Logic-abstract Class for a Abstract formula tree with AND node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has two formulas as sub formulas/trees; the type is the template parameter FormulaType
  *
  * As AND is commutative, the order is \e theoretically not important, but will influence the order in which
  * the model checker works.
@@ -30,7 +30,10 @@ namespace abstract {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractFormula
- * @see AbstractFormula
+ *
+ * @tparam FormulaType The type of the subformula.
+ * 		  The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions
+ * 		  "toString" and "conforms" of the subformulas are needed.
  */
 template <class T, class FormulaType>
 class And : public virtual AbstractFormula<T> {

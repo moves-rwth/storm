@@ -24,7 +24,7 @@ namespace abstract {
  * Class for a Abstract formula tree with a P (probablistic) operator node over a probability interval
  * as root.
  *
- * Has one Abstract state formula as sub formula/tree.
+ * Has one formula as sub formula/tree.
  *
  * @par Semantics
  * 	  The formula holds iff the probability that the state formula holds is inside the bounds
@@ -33,12 +33,12 @@ namespace abstract {
  * The subtree is seen as part of the object and deleted with it
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
+ * @tparam FormulaType The type of the subformula.
+ * 		  The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions
+ * 		  "toString" and "conforms" of the subformulas are needed.
  *
  * @see AbstractFormula
- * @see AbstractFormula
- * @see ProbabilisticOperator
- * @see ProbabilisticNoBoundsOperator
- * @see AbstractFormula
+ * @see StateNoBoundOperator
  */
 template<class T, class FormulaType>
 class StateBoundOperator : public virtual AbstractFormula<T> {
@@ -70,7 +70,7 @@ public:
 	}
 
 	/*!
-	 * @returns the child node (representation of a Abstract state formula)
+	 * @returns the child node (representation of a formula)
 	 */
 	const FormulaType& getStateFormula () const {
 		return *stateFormula;

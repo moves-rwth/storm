@@ -17,9 +17,9 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with OR node as root.
+ * Class for an abstract formula tree with OR node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has two formulas as sub formulas/trees.
  *
  * As OR is commutative, the order is \e theoretically not important, but will influence the order in which
  * the model checker works.
@@ -27,7 +27,10 @@ namespace abstract {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see AbstractFormula
+ * @tparam FormulaType The type of the subformula.
+ * 		  The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions
+ * 		  "toString" and "conforms" of the subformulas are needed.
+ *
  * @see AbstractFormula
  */
 template <class T, class FormulaType>

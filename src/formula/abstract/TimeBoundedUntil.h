@@ -14,6 +14,15 @@ namespace storm {
 namespace formula {
 namespace abstract {
 
+
+/**
+ * @brief
+ * Class for a Abstract formula tree with an time bounded until operator as root.
+ *
+ * @tparam FormulaType The type of the subformula.
+ * 		  The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions
+ * 		  "toString" and "conforms" of the subformulas are needed.
+ */
 template <class T, class FormulaType>
 class TimeBoundedUntil: public TimeBoundedOperator<T> {
 public:

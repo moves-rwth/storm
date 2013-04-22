@@ -19,7 +19,7 @@ namespace abstract {
  * @brief
  * Class for an Abstract (path) formula tree with a SteadyStateOperator node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has two formulas as sub formulas/trees.
  *
  * @par Semantics
  * The formula holds iff \e child holds  SteadyStateOperator step, \e child holds
@@ -27,7 +27,6 @@ namespace abstract {
  * The subtree is seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see AbstractPathFormula
  * @see AbstractFormula
  */
 template <class T, class FormulaType>

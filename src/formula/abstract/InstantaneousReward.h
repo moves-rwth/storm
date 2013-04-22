@@ -24,7 +24,6 @@ namespace abstract {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see AbstractPathFormula
  * @see AbstractFormula
  */
 template <class T>

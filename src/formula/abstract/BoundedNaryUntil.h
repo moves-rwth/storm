@@ -24,7 +24,7 @@ namespace abstract {
  * @brief
  * Class for a Abstract (path) formula tree with a BoundedNaryUntil node as root.
  *
- * Has at least two Abstract state formulas as sub formulas and an interval
+ * Has at least two formulas as sub formulas and an interval
  * associated with all but the first sub formula. We'll call the first one
  * \e left and all other one \e right.
  *
@@ -36,7 +36,10 @@ namespace abstract {
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
- * @see AbstractFormula
+ * @tparam FormulaType The type of the subformula.
+ * 		  The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions
+ * 		  "toString" and "conforms" of the subformulas are needed.
+ *
  * @see AbstractFormula
  */
 template <class T, class FormulaType>

@@ -21,7 +21,7 @@ namespace abstract {
  * @brief
  * Class for a Abstract (path) formula tree with an Eventually node as root.
  *
- * Has one Abstract state formula as sub formula/tree.
+ * Has one formula as sub formula/tree.
  *
  * @par Semantics
  * The formula holds iff eventually \e child holds.
@@ -29,7 +29,10 @@ namespace abstract {
  * The subtree is seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to nullptr before deletion)
  *
- * @see AbstractFormula
+ * @tparam FormulaType The type of the subformula.
+ * 		  The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions
+ * 		  "toString" and "conforms" of the subformulas are needed.
+ *
  * @see AbstractFormula
  */
 template <class T, class FormulaType>

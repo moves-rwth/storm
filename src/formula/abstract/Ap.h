@@ -18,11 +18,10 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with atomic proposition as root.
+ * Logic-abstract Class for an abstract formula tree with atomic proposition as root.
  *
  * This class represents the leaves in the formula tree.
  *
- * @see AbstractFormula
  * @see AbstractFormula
  */
 template <class T>

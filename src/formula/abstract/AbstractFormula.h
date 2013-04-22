@@ -27,7 +27,19 @@ namespace abstract {
 
 //abstract
 /*!
- *	@brief Abstract base class for Abstract formulas in general.
+ *	@brief Abstract base class for logic Abstract formulas in general.
+ *
+ * The namespace storm::formula::abstract contains versions of the formula classes which are logic abstract, and contain
+ * the implementation which is not directly dependent on the logics.
+ * The classes for the subtrees are referenced by the template parameter FormulaType, which is typically instantiated in
+ * the derived classes of concrete logics.
+ *
+ * The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions "toString" and "conforms"
+ * of the subformulas are needed.
+ *
+ * @note
+ * 		Even though the namespace is called "abstract", its classes may be completely implemented; abstract here denotes
+ * 		the abstraction from a concrete logic.
  *
  *	@attention This class is abstract.
  *	@note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
@@ -43,7 +55,9 @@ public:
 	/*!
 	 * Virtual destructor.
 	 */
-	virtual ~AbstractFormula() { }
+	virtual ~AbstractFormula() {
+		// Intentionally left empty.
+	}
 	
 	/*!
 	 *	@brief Return string representation of this formula.

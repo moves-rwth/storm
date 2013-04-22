@@ -22,7 +22,7 @@ namespace abstract {
  * Class for a Abstract formula tree with a operator node as root that uses a time interval
  * (with upper and lower bound)
  *
- * This class does not provide support for sub formulas; this has to be done in concretizations of this abstract class.
+ * This class does not provide support for sub formulas; this has to be done in concrete subclasses of this abstract class.
  *
  *
  * @see AbstractFormula

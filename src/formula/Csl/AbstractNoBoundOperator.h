@@ -43,11 +43,11 @@ class AbstractNoBoundOperator: public AbstractCslFormula<T>/*,
 										 public virtual storm::formula::abstract::IOptimizingOperator*/ {
 public:
 	AbstractNoBoundOperator() {
-		// TODO Auto-generated constructor stub
+		// Intentionally left empty
 
 	}
 	virtual ~AbstractNoBoundOperator() {
-		// TODO Auto-generated destructor stub
+		// Intentionally left empty
 	}
 
 	/*!
