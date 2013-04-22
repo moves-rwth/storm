@@ -77,7 +77,7 @@ public:
 	/*!
 	 * Destructor
 	 */
-	virtual ~RewardBoundOperator() {
+	virtual ~RewardNoBoundOperator() {
 		// Intentionally left empty
 	}
 
