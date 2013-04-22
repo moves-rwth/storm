@@ -40,9 +40,9 @@ class IAndModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with AND node as root.
+ * Class for an abstract formula tree with AND node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has two Abstract LTL formulas as sub formulas/trees.
  *
  * As AND is commutative, the order is \e theoretically not important, but will influence the order in which
  * the model checker works.
@@ -51,7 +51,6 @@ class IAndModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractLtlFormula
- * @see AbstractFormula
  */
 template <class T>
 class And : public storm::formula::abstract::And<T, AbstractLtlFormula<T>>, public AbstractLtlFormula<T> {

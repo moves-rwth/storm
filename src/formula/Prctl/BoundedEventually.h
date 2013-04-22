@@ -42,7 +42,7 @@ class IBoundedEventuallyModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a BoundedEventually node as root.
+ * Class for an abstract (path) formula tree with a BoundedEventually node as root.
  *
  * Has one Abstract state formulas as sub formula/tree.
  *

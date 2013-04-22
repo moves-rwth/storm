@@ -40,7 +40,7 @@ class IAndModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with AND node as root.
+ * Class for an abstract formula tree with AND node as root.
  *
  * Has two Abstract state formulas as sub formulas/trees.
  *

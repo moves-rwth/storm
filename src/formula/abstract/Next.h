@@ -19,7 +19,7 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a Next node as root.
+ * Class for an abstract (path) formula tree with a Next node as root.
  *
  * Has two formulas as sub formulas/trees.
  *

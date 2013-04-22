@@ -41,7 +41,7 @@ class IBoundedUntilModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a BoundedUntil node as root.
+ * Class for an abstract (path) formula tree with a BoundedUntil node as root.
  *
  * Has two Abstract state formulas as sub formulas/trees.
  *

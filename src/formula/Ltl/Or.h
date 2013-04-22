@@ -35,6 +35,20 @@ class IOrModelChecker {
 		virtual std::vector<T>* checkOr(const Or<T>& obj) const = 0;
 };
 
+/*!
+ * @brief
+ * Class for an abstract formula tree with OR node as root.
+ *
+ * Has two LTL formulas as sub formulas/trees.
+ *
+ * As OR is commutative, the order is \e theoretically not important, but will influence the order in which
+ * the model checker works.
+ *
+ * The subtrees are seen as part of the object and deleted with the object
+ * (this behavior can be prevented by setting them to NULL before deletion)
+ *
+ * @see AbstractLtlFormula
+ */
 template <class T>
 class Or: public storm::formula::abstract::Or<T, AbstractLtlFormula<T>>,
 			 public storm::formula::ltl::AbstractLtlFormula<T> {

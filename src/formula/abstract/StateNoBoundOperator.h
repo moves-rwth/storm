@@ -19,7 +19,7 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with an operator without declaration of bounds.
+ * Class for an abstract formula tree with an operator without declaration of bounds.
  * as root.
  *
  * Checking a formula with this operator as root returns the probabilities that the path formula holds

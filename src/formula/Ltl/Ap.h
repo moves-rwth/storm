@@ -35,6 +35,14 @@ class IApModelChecker {
 		virtual std::vector<T>* checkAp(const Ap<T>& obj) const = 0;
 };
 
+/*!
+ * @brief
+ * Class for an abstract formula tree with atomic proposition as root.
+ *
+ * This class represents the leaves in the formula tree.
+ *
+ * @see AbstractLtlFormula
+ */
 template <class T>
 class Ap: public storm::formula::abstract::Ap<T>,
 		    public storm::formula::ltl::AbstractLtlFormula<T> {

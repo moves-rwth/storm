@@ -38,15 +38,14 @@ class INotModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with NOT node as root.
+ * Class for an abstract formula tree with NOT node as root.
  *
- * Has one Abstract state formula as sub formula/tree.
+ * Has one Abstract LTL formula as sub formula/tree.
  *
  * The subtree is seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractLtlFormula
- * @see AbstractFormula
  */
 template <class T>
 class Not : public storm::formula::abstract::Not<T, AbstractLtlFormula<T>>,

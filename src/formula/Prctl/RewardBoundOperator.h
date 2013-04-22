@@ -33,7 +33,7 @@ class IRewardBoundOperatorModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with a R (reward) operator node over a reward interval as root.
+ * Class for an abstract formula tree with a R (reward) operator node over a reward interval as root.
  *
  * Has a reward path formula as sub formula/tree.
  *

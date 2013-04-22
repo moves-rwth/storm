@@ -39,7 +39,7 @@ class IApModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with atomic proposition as root.
+ * Class for an abstract formula tree with atomic proposition as root.
  *
  * This class represents the leaves in the formula tree.
  *

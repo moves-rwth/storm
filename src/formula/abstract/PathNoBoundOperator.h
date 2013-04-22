@@ -21,7 +21,7 @@ namespace formula {
 namespace abstract {
 /*!
  * @brief
- * Class for a Abstract formula tree with a P (probablistic) operator without declaration of probabilities
+ * Class for an abstract formula tree with a P (probablistic) operator without declaration of probabilities
  * as root.
  *
  * Checking a formula with this operator as root returns the probabilities that the path formula holds
@@ -91,7 +91,7 @@ public:
 	}
 
 	/*!
-	 * @returns the child node (representation of a Abstract path formula)
+	 * @returns the child node (representation of an abstract path formula)
 	 */
 	const FormulaType& getPathFormula () const {
 		return *pathFormula;

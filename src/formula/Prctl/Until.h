@@ -39,7 +39,7 @@ class IUntilModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with an Until node as root.
+ * Class for an abstract (path) formula tree with an Until node as root.
  *
  * Has two Abstract state formulas as sub formulas/trees.
  *

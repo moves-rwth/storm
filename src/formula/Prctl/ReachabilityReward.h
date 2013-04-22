@@ -39,7 +39,7 @@ class IReachabilityRewardModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with an Reachability Reward node as root.
+ * Class for an abstract (path) formula tree with an Reachability Reward node as root.
  *
  * Has one Abstract state formula as sub formula/tree.
  *

@@ -45,7 +45,7 @@ class IBoundedNaryUntilModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a BoundedNaryUntil node as root.
+ * Class for an abstract (path) formula tree with a BoundedNaryUntil node as root.
  *
  * Has at least two Abstract state formulas as sub formulas and an interval
  * associated with all but the first sub formula. We'll call the first one

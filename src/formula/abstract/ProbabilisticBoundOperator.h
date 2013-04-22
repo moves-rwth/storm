@@ -19,7 +19,7 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with a P (probablistic) operator node over a probability interval
+ * Class for an abstract formula tree with a P (probablistic) operator node over a probability interval
  * as root.
  *
  * Has one Abstract path formula as sub formula/tree.

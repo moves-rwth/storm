@@ -19,7 +19,7 @@ namespace abstract {
 
 /*!
  * @brief
- * Logic-abstract Class for a Abstract formula tree with AND node as root.
+ * Logic-abstract Class for an abstract formula tree with AND node as root.
  *
  * Has two formulas as sub formulas/trees; the type is the template parameter FormulaType
  *

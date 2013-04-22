@@ -38,9 +38,9 @@ class IUntilModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with an Until node as root.
+ * Class for an abstract (path) formula tree with an Until node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has two Abstract LTL formulas as sub formulas/trees.
  *
  * @par Semantics
  * The formula holds iff eventually, formula \e right (the right subtree) holds, and before,
@@ -50,7 +50,6 @@ class IUntilModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractLtlFormula
- * @see AbstractFormula
  */
 template <class T>
 class Until : public storm::formula::abstract::Until<T, AbstractLtlFormula<T>>,

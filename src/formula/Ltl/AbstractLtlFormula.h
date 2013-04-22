@@ -16,6 +16,9 @@ namespace storm {
 namespace formula {
 namespace ltl {
 
+/*!
+ * Interface class for all LTL root formulas.
+ */
 template <class T>
 class AbstractLtlFormula : public virtual storm::formula::abstract::AbstractFormula<T> {
 public:

@@ -40,9 +40,9 @@ class IBoundedUntilModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a BoundedUntil node as root.
+ * Class for an abstract (path) formula tree with a BoundedUntil node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has two Abstract LTL formulas as sub formulas/trees.
  *
  * @par Semantics
  * The formula holds iff in at most \e bound steps, formula \e right (the right subtree) holds, and before,
@@ -52,7 +52,6 @@ class IBoundedUntilModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractLtlFormula
- * @see AbstractFormula
  */
 template <class T>
 class BoundedUntil : public storm::formula::abstract::BoundedUntil<T, AbstractLtlFormula<T>>,

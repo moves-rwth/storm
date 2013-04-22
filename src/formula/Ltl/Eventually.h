@@ -38,9 +38,9 @@ class IEventuallyModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with an Eventually node as root.
+ * Class for an abstract (path) formula tree with an Eventually node as root.
  *
- * Has one Abstract state formula as sub formula/tree.
+ * Has one Abstract LTL formula as sub formula/tree.
  *
  * @par Semantics
  * The formula holds iff eventually \e child holds.
@@ -49,7 +49,6 @@ class IEventuallyModelChecker {
  * (this behavior can be prevented by setting them to nullptr before deletion)
  *
  * @see AbstractLtlFormula
- * @see AbstractFormula
  */
 template <class T>
 class Eventually : public storm::formula::abstract::Eventually<T, AbstractLtlFormula<T>>,

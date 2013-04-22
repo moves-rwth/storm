@@ -20,7 +20,7 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with a Globally node as root.
+ * Class for an abstract formula tree with a Globally node as root.
  *
  * Has one formula as sub formula/tree.
  *

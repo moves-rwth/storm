@@ -18,7 +18,7 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a Cumulative Reward node as root.
+ * Class for an abstract (path) formula tree with a Cumulative Reward node as root.
  *
  * The subtrees are seen as part of the object and deleted with the object
  * (this behavior can be prevented by setting them to NULL before deletion)

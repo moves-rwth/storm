@@ -22,7 +22,7 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a BoundedEventually node as root.
+ * Class for an abstract (path) formula tree with a BoundedEventually node as root.
  *
  * Has one formula as sub formula/tree.
  *

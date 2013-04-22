@@ -40,7 +40,7 @@ class IGloballyModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a Globally node as root.
+ * Class for an abstract (path) formula tree with a Globally node as root.
  *
  * Has one Abstract state formula as sub formula/tree.
  *

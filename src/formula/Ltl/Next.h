@@ -38,9 +38,9 @@ class INextModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a Next node as root.
+ * Class for an abstract (path) formula tree with a Next node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has two Abstract LTL formulas as sub formulas/trees.
  *
  * @par Semantics
  * The formula holds iff in the next step, \e child holds
@@ -49,7 +49,6 @@ class INextModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractLtlFormula
- * @see AbstractFormula
  */
 template <class T>
 class Next : public storm::formula::abstract::Next<T, AbstractLtlFormula<T>>,

@@ -41,9 +41,9 @@ class IBoundedEventuallyModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a BoundedEventually node as root.
+ * Class for an abstract (path) formula tree with a BoundedEventually node as root.
  *
- * Has one Abstract state formulas as sub formula/tree.
+ * Has one Abstract LTL formulas as sub formula/tree.
  *
  * @par Semantics
  * The formula holds iff in at most \e bound steps, formula \e child holds.
@@ -52,7 +52,6 @@ class IBoundedEventuallyModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractLtlFormula
- * @see AbstractFormula
  */
 template <class T>
 class BoundedEventually : public storm::formula::abstract::BoundedEventually<T, AbstractLtlFormula<T>>,

@@ -17,7 +17,7 @@ namespace abstract {
 
 /**
  * @brief
- * Class for a Abstract formula tree with an time bounded until operator as root.
+ * Class for an abstract formula tree with an time bounded until operator as root.
  *
  * @tparam FormulaType The type of the subformula.
  * 		  The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions

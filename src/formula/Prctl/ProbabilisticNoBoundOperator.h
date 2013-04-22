@@ -18,7 +18,7 @@ namespace prctl {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with a P (probablistic) operator without declaration of probabilities
+ * Class for an abstract formula tree with a P (probablistic) operator without declaration of probabilities
  * as root.
  *
  * Checking a formula with this operator as root returns the probabilities that the path formula holds

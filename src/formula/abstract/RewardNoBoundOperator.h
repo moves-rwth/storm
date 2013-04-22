@@ -17,7 +17,7 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with a R (reward) operator without declaration of reward values
+ * Class for an abstract formula tree with a R (reward) operator without declaration of reward values
  * as root.
  *
  * Checking a formula with this operator as root returns the reward for the reward path formula for

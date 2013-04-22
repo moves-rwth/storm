@@ -40,7 +40,7 @@ class ISteadyStateRewardModelChecker {
 
 /*!
  * @brief
- * Class for a Abstract (path) formula tree with a Steady State Reward node as root.
+ * Class for an abstract (path) formula tree with a Steady State Reward node as root.
  *
  * @see AbstractPathFormula
  * @see AbstractPrctlFormula

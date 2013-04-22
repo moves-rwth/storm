@@ -20,7 +20,7 @@ namespace abstract {
 
 /*!
  * @brief
- * Class for a Abstract formula tree with NOT node as root.
+ * Class for an abstract formula tree with NOT node as root.
  *
  * Has one formula as sub formula/tree.
  *
