@@ -35,6 +35,9 @@ namespace csl {
  * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
  * 	   the syntax conflicts with copy constructors for unary operators. To produce an identical object, use the method
  * 	   clone().
+ *
+ * @note
+ * 		This class is intentionally not derived from AbstractCslFormula, as a path formula is not a complete CSL formula.
  */
 template <class T>
 class AbstractPathFormula : public virtual storm::formula::abstract::AbstractFormula<T> {

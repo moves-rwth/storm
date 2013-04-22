@@ -50,7 +50,7 @@ class INextModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractPathFormula
- * @see AbstractFormula
+ * @see AbstractPrctlFormula
  */
 template <class T>
 class Next : public storm::formula::abstract::Next<T, AbstractStateFormula<T>>,

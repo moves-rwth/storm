@@ -47,7 +47,7 @@ class IReachabilityRewardModelChecker {
  * (this behavior can be prevented by setting them to nullptr before deletion)
  *
  * @see AbstractPathFormula
- * @see AbstractFormula
+ * @see AbstractPrctlFormula
  */
 template <class T>
 class ReachabilityReward : public storm::formula::abstract::Eventually<T, AbstractStateFormula<T>>,

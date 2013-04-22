@@ -66,10 +66,9 @@ public:
 	 */
 	std::vector<Type>* checkNoBoundOperator(storm::formula::prctl::AbstractNoBoundOperator<Type> const& formula) const {
 		// Check if the operator was an optimality operator and report a warning in that case.
-		//if (formula.isOptimalityOperator()) {
-		//	LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
-		//}
-		// TODO: Reimplement warning
+		if (formula.isOptimalityOperator()) {
+			LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
+		}
 		return formula.check(*this, false);
 	}
 

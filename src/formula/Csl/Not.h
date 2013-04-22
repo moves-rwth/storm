@@ -47,7 +47,7 @@ class INotModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractStateFormula
- * @see AbstractFormula
+ * @see AbstractCslFormula
  */
 template <class T>
 class Not : public storm::formula::abstract::Not<T, AbstractStateFormula<T>>,

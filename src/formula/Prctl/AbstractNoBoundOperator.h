@@ -38,6 +38,9 @@ public:
 
 };
 
+/*!
+ * Interface class for all PRCTL No bound operators
+ */
 template <class T>
 class AbstractNoBoundOperator: public AbstractPrctlFormula<T>,
 										 public virtual storm::formula::abstract::IOptimizingOperator {

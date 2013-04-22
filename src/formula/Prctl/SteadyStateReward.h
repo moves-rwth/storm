@@ -43,7 +43,7 @@ class ISteadyStateRewardModelChecker {
  * Class for a Abstract (path) formula tree with a Steady State Reward node as root.
  *
  * @see AbstractPathFormula
- * @see AbstractFormula
+ * @see AbstractPrctlFormula
  */
 template <class T>
 class SteadyStateReward: public storm::formula::abstract::SteadyStateReward<T>,

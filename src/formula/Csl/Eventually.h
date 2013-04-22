@@ -50,7 +50,7 @@ class IEventuallyModelChecker {
  * (this behavior can be prevented by setting them to nullptr before deletion)
  *
  * @see AbstractPathFormula
- * @see AbstractFormula
+ * @see AbstractCslFormula
  */
 template <class T>
 class Eventually : public storm::formula::abstract::Eventually<T, AbstractStateFormula<T>>,

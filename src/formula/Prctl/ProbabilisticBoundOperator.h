@@ -50,7 +50,7 @@ class IProbabilisticBoundOperatorModelChecker {
  * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
- * @see AbstractFormula
+ * @see AbstractPrctlFormula
  */
 template<class T>
 class ProbabilisticBoundOperator : public storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>,

@@ -14,6 +14,9 @@ namespace storm {
 namespace formula {
 namespace csl {
 
+/*!
+ * Abstract base class for all CSL root formulas.
+ */
 template <class T>
 class AbstractCslFormula : public virtual storm::formula::abstract::AbstractFormula<T>{
 public:

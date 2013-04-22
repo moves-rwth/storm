@@ -60,7 +60,7 @@ class IBoundedNaryUntilModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractPathFormula
- * @see AbstractFormula
+ * @see AbstractPrctlFormula
  */
 template <class T>
 class BoundedNaryUntil : public storm::formula::abstract::BoundedNaryUntil<T, AbstractStateFormula<T>>,

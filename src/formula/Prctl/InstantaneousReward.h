@@ -47,7 +47,7 @@ class IInstantaneousRewardModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractPathFormula
- * @see AbstractFormula
+ * @see AbstractPrctlFormula
  */
 template <class T>
 class InstantaneousReward : public storm::formula::abstract::InstantaneousReward<T>,

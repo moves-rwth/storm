@@ -51,7 +51,7 @@ class IGloballyModelChecker {
  * (this behavior can be prevented by setting them to nullptr before deletion)
  *
  * @see AbstractPathFormula
- * @see AbstractFormula
+ * @see AbstractPrctlFormula
  */
 template <class T>
 class Globally : public storm::formula::abstract::Globally<T, AbstractStateFormula<T>>,

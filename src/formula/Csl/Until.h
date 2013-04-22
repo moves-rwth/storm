@@ -51,7 +51,7 @@ class IUntilModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractPathFormula
- * @see AbstractFormula
+ * @see AbstractCslFormula
  */
 template <class T>
 class Until : public storm::formula::abstract::Until<T, AbstractStateFormula<T>>,

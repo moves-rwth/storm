@@ -43,8 +43,8 @@ class IApModelChecker {
  *
  * This class represents the leaves in the formula tree.
  *
- * @see AbstractFormula
- * @see AbstractFormula
+ * @see AbstractCslFormula
+ * @see AbstractStateFormula
  */
 template <class T>
 class Ap : public storm::formula::abstract::Ap<T>,

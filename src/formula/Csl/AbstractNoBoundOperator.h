@@ -38,6 +38,9 @@ public:
 
 };
 
+/*!
+ * Interface class for all CSL No Bound operators.
+ */
 template <class T>
 class AbstractNoBoundOperator: public AbstractCslFormula<T>/*,
 										 public virtual storm::formula::abstract::IOptimizingOperator*/ {

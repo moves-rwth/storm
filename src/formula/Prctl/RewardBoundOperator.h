@@ -49,7 +49,7 @@ class IRewardBoundOperatorModelChecker {
  * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticNoBoundsOperator
- * @see AbstractFormula
+ * @see AbstractPrctlFormula
  */
 template<class T>
 class RewardBoundOperator : public storm::formula::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>,

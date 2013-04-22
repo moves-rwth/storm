@@ -51,7 +51,7 @@ class IAndModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractStateFormula
- * @see AbstractFormula
+ * @see AbstractCslFormula
  */
 template <class T>
 class And : public storm::formula::abstract::And<T, AbstractStateFormula<T>>, public AbstractStateFormula<T> {

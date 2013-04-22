@@ -14,6 +14,9 @@ namespace storm {
 namespace formula {
 namespace prctl {
 
+/*!
+ * Interface class for all PRCTL root formulas.
+ */
 template<class T>
 class AbstractPrctlFormula : public virtual storm::formula::abstract::AbstractFormula<T> {
 public:

@@ -44,7 +44,7 @@ namespace csl {
  * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticIntervalOperator
- * @see AbstractFormula
+ * @see AbstractCslFormula
  */
 template <class T>
 class ProbabilisticNoBoundOperator: public storm::formula::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>,

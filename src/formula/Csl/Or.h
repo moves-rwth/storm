@@ -49,7 +49,7 @@ class IOrModelChecker {
  * (this behavior can be prevented by setting them to NULL before deletion)
  *
  * @see AbstractStateFormula
- * @see AbstractFormula
+ * @see AbstractCslFormula
  */
 template <class T>
 class Or : public storm::formula::abstract::Or<T, AbstractStateFormula<T>>,

@@ -44,7 +44,7 @@ namespace prctl {
  * @see AbstractPathFormula
  * @see ProbabilisticOperator
  * @see ProbabilisticIntervalOperator
- * @see AbstractFormula
+ * @see AbstractPrctlFormula
  */
 template <class T>
 class ProbabilisticNoBoundOperator: public storm::formula::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>,
