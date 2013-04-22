@@ -15,7 +15,7 @@ namespace storm {
 namespace formula {
 namespace ltl {
 
-template <class T> class And;
+template <class T> class Or;
 
 /*!
  *	@brief Interface class for model checkers that support And.
@@ -32,7 +32,7 @@ class IOrModelChecker {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual std::vector<T>* checkOr(const And<T>& obj) const = 0;
+		virtual std::vector<T>* checkOr(const Or<T>& obj) const = 0;
 };
 
 template <class T>
@@ -54,7 +54,7 @@ public:
 	 * @param left The left subformula
 	 * @param right The right subformula
 	 */
-	Or(AbstractLtlFormula<T> left, AbstractLtlFormula<T> right)
+	Or(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right)
 		: storm::formula::abstract::Or<T,AbstractLtlFormula<T>>(left, right) {
 		// Intentionally left empty
 	}

@@ -11,7 +11,6 @@
 #include "AbstractLtlFormula.h"
 #include "src/formula/abstract/Not.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace formula {
@@ -104,8 +103,8 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
-		return modelChecker.template as<INotModelChecker>()->checkNot(*this);  
+	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
+		return modelChecker.template as<INotModelChecker>()->checkNot(*this);
 	}
 };
 

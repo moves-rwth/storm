@@ -10,13 +10,14 @@
 
 #include <vector>
 #include "src/modelchecker/ForwardDeclarations.h"
+#include "src/formula/abstract/AbstractFormula.h"
 
 namespace storm {
 namespace formula {
 namespace ltl {
 
 template <class T>
-class AbstractLtlFormula {
+class AbstractLtlFormula : public virtual storm::formula::abstract::AbstractFormula<T> {
 public:
 	/**
 	 * Empty destructor
@@ -36,7 +37,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const = 0;
+	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const = 0;
 
 	/*!
 	 * Clones the called object.

@@ -5,8 +5,10 @@
  *      Author: thomas
  */
 
-#ifndef LTL_H_
-#define LTL_H_
+#ifndef STORM_FORMULA_LTL_H_
+#define STORM_FORMULA_LTL_H_
+
+#include "src/modelchecker/ForwardDeclarations.h"
 
 #include "Ltl/And.h"
 #include "Ltl/Ap.h"
@@ -19,4 +21,6 @@
 #include "Ltl/Or.h"
 #include "Ltl/Until.h"
 
-#endif /* LTL_H_ */
+#include "modelchecker/AbstractModelChecker.h"
+
+#endif /* STORM_FORMULA_LTL_H_ */
