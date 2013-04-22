@@ -5,12 +5,17 @@
  *      Author: thomas
  */
 
-#ifndef ABSTRACTLTLFORMULA_H_
-#define ABSTRACTLTLFORMULA_H_
+#ifndef STORM_LTL_ABSTRACTLTLFORMULA_H_
+#define STORM_LTL_ABSTRACTLTLFORMULA_H_
+
+#include <vector>
+#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace formula {
+namespace ltl {
 
+template <class T>
 class AbstractLtlFormula {
 public:
 	/**
@@ -32,8 +37,18 @@ public:
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
 	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const = 0;
+
+	/*!
+	 * Clones the called object.
+	 *
+	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 *
+	 * @returns a new AND-object that is identical the called object.
+	 */
+	virtual AbstractLtlFormula<T>* clone() const = 0;
 };
 
+} /* namespace ltl */
 } /* namespace formula */
 } /* namespace storm */
-#endif /* ABSTRACTLTLFORMULA_H_ */
+#endif /* STORM_LTL_ABSTRACTLTLFORMULA_H_ */
