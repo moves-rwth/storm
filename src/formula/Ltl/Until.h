@@ -85,6 +85,18 @@ public:
 	}
 
 	/*!
+	 *	@brief Return string representation of this formula.
+	 *
+	 * In LTL, brackets are needed around the until, as Until may appear nested (in other logics, Until always is the
+	 * root of a path formula); hence this function is overwritten in this class.
+	 *
+	 * @return A string representation of the formula.
+	 */
+	virtual std::string toString() const {
+		return "(" + storm::formula::abstract::Until<T, AbstractLtlFormula<T>>::toString() + ")";
+	}
+
+	/*!
 	 * Clones the called object.
 	 *
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones

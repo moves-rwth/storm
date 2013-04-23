@@ -62,7 +62,7 @@ public:
 	/*!
 	 *	@brief Return string representation of this formula.
 	 *
-	 *	@note very subclass must implement this method.
+	 *	@note every subclass must implement this method.
 	 *
 	 *	@returns a string representation of the formula
 	 */

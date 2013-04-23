@@ -94,7 +94,6 @@ TEST(CslParserTest, parseSteadyStateNoBoundFormulaTest) {
 
 	delete cslParser->getFormula();
 	delete cslParser;
-
 }
 
 TEST(CslParserTest, parseProbabilisticNoBoundFormulaTest) {
