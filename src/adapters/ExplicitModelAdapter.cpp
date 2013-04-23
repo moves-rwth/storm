@@ -35,18 +35,21 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 }
 
 	std::shared_ptr<storm::models::AbstractModel> ExplicitModelAdapter::getModel(std::string const & rewardModelName) {
-		
-		if (rewardModelName != "") {
-			this->rewardModel = this->program->getRewardModel(rewardModelName);
-		}
+
 
 		this->buildTransitionMap();
 
 		std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling = this->getStateLabeling(this->program->getLabels());
 		std::shared_ptr<std::vector<double>> stateRewards = nullptr;
 
-		if (this->rewardModel->hasStateRewards()) {
-			stateRewards = this->getStateRewards(this->rewardModel->getStateRewards());
+		this->rewardModel = nullptr;
+		if (rewardModelName != "") {
+			this->rewardModel = this->program->getRewardModel(rewardModelName);
+			if (this->rewardModel != nullptr) {
+				if (this->rewardModel->hasStateRewards()) {
+					stateRewards = this->getStateRewards(this->rewardModel->getStateRewards());
+				}
+			}
 		}
 
 		switch (this->program->getModelType())
@@ -413,7 +416,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 
 		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(allStates.size()));
 		result->initialize(numberOfTransitions);
-		if (this->rewardModel->hasTransitionRewards()) {
+		if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
 			this->transitionRewards = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(allStates.size()));
 			this->transitionRewards->initialize(numberOfTransitions);
 		}
@@ -427,7 +430,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			for (auto choice : transitionMap[state]) {
 				for (auto elem : choice.second) {
 					map[elem.first] += elem.second;
-					if (this->rewardModel->hasTransitionRewards()) {
+					if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
 						for (auto reward : this->rewardModel->getTransitionRewards()) {
 							rewardMap[elem.first] += reward->getReward(choice.first, this->allStates[state]);
 						}
@@ -438,7 +441,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			double factor = 1.0 / transitionMap[state].size();
 			for (auto it : map) {
 				result->addNextValue(state, it.first, it.second * factor);
-				if (this->rewardModel->hasTransitionRewards()) {
+				if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
 					this->transitionRewards->addNextValue(state, it.first, rewardMap[it.first] * factor);
 				}
 			}
@@ -468,7 +471,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			for (auto choice : transitionMap[state]) {
 				for (auto it : choice.second) {
 					result->addNextValue(nextRow, it.first, it.second);
-					if (this->rewardModel->hasTransitionRewards()) {
+					if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
 						double rewardValue = 0;
 						for (auto reward : this->rewardModel->getTransitionRewards()) {
 							rewardValue = reward->getReward(choice.first, this->allStates[state]);
