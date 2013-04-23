@@ -26,7 +26,6 @@ public:
 			std::shared_ptr<BaseExpression> upperBound = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr))
 			: BaseExpression(type), index(index), variableName(variableName),
 			  lowerBound(lowerBound), upperBound(upperBound) {
-		std::cerr << "VariableExpression " << this->variableName << std::endl;
 	}
 
 	virtual ~VariableExpression() {
@@ -55,9 +54,7 @@ public:
 	}
 
 	virtual std::string toString() const {
-		std::stringstream result;
-		result << variableName << "(" << this->index << ")";
-		return result.str();
+		return this->variableName;
 	}
 	
 	virtual std::string dump(std::string prefix) const {

@@ -32,16 +32,11 @@ Module::Module(std::string moduleName,
 	: moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables),
 	  booleanVariablesToIndexMap(booleanVariableToIndexMap),
 	  integerVariablesToIndexMap(integerVariableToIndexMap), commands(commands), actions(), actionsToCommandIndexMap() {
-	std::cout << "Created module " << this << ":" << std::endl << this->toString() << std::endl;
 	this->collectActions();
 }
 
 Module::Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, std::shared_ptr<VariableAdder> adder)
 	: moduleName(moduleName) {
-	std::cout << "Renaming module " << module.moduleName << " to " << moduleName << " with " << renaming.size() << " renamings:" << std::endl;
-	for (auto it: renaming) {
-		std::cout << "\t" << it.first << " -> " << it.second << std::endl;
-	}
 	this->booleanVariables.reserve(module.booleanVariables.size());
 	for (BooleanVariable it: module.booleanVariables) {
 		if (renaming.count(it.getName()) > 0) {

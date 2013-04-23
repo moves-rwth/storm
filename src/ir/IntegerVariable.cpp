@@ -46,7 +46,7 @@ std::shared_ptr<storm::ir::expressions::BaseExpression> IntegerVariable::getUppe
 // Build a string representation of the variable.
 std::string IntegerVariable::toString() const {
 	std::stringstream result;
-	result << "int_" << this->getName() << ": [" << lowerBound->toString() << ".." << upperBound->toString() << "]";
+	result << this->getName() << ": [" << lowerBound->toString() << ".." << upperBound->toString() << "]";
 	if (this->getInitialValue() != nullptr) {
 		result << " init " + this->getInitialValue()->toString();
 	}

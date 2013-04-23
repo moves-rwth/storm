@@ -135,7 +135,6 @@ public:
 	}
 
 	void prepareForSecondRun() {
-		std::cerr << "starting second run" << std::endl;
 		integerConstants_.clear();
 		booleanConstants_.clear();
 		doubleConstants_.clear();
