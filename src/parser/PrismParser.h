@@ -84,9 +84,9 @@ public:
 	qi::rule<Iterator, qi::unused_type(std::vector<IntegerVariable>&, std::map<std::string, uint_fast64_t>&), qi::locals<uint_fast64_t, std::shared_ptr<BaseExpression>>, Skipper> integerVariableDefinition;
 
 	// Rules for command definitions.
-	qi::rule<Iterator, std::shared_ptr<Command>(), qi::locals<std::string>, Skipper> commandDefinition;
-	qi::rule<Iterator, std::vector<std::shared_ptr<Update>>(), Skipper> updateListDefinition;
-	qi::rule<Iterator, std::shared_ptr<Update>(), qi::locals<std::map<std::string, Assignment>, std::map<std::string, Assignment>>, Skipper> updateDefinition;
+	qi::rule<Iterator, Command(), qi::locals<std::string>, Skipper> commandDefinition;
+	qi::rule<Iterator, std::vector<Update>(), Skipper> updateListDefinition;
+	qi::rule<Iterator, Update(), qi::locals<std::map<std::string, Assignment>, std::map<std::string, Assignment>>, Skipper> updateDefinition;
 	qi::rule<Iterator, qi::unused_type(std::map<std::string, Assignment>&, std::map<std::string, Assignment>&), Skipper> assignmentDefinitionList;
 	qi::rule<Iterator, qi::unused_type(std::map<std::string, Assignment>&, std::map<std::string, Assignment>&), Skipper> assignmentDefinition;
 
@@ -129,7 +129,7 @@ public:
 	void addBoolAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping);
 	void addIntAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping);
 	std::shared_ptr<Module> renameModule(const std::string& name, const std::string& oldname, std::map<std::string, std::string>& mapping);
-	std::shared_ptr<Module> createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<std::shared_ptr<storm::ir::Command>> commands);
+	std::shared_ptr<Module> createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands);
 
 	};
 	

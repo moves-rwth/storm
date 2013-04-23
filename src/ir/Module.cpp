@@ -28,7 +28,7 @@ Module::Module(std::string moduleName,
 		std::vector<storm::ir::IntegerVariable> integerVariables,
 		std::map<std::string, uint_fast64_t> booleanVariableToIndexMap,
 		std::map<std::string, uint_fast64_t> integerVariableToIndexMap,
-		std::vector<std::shared_ptr<storm::ir::Command>> commands)
+		std::vector<storm::ir::Command> commands)
 	: moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables),
 	  booleanVariablesToIndexMap(booleanVariableToIndexMap),
 	  integerVariablesToIndexMap(integerVariableToIndexMap), commands(commands), actions(), actionsToCommandIndexMap() {
@@ -68,9 +68,8 @@ Module::Module(const Module& module, const std::string& moduleName, const std::m
 	}
 	
 	this->commands.reserve(module.commands.size());
-	for (std::shared_ptr<Command> cmd: module.commands) {
-		Command* c = new Command(*cmd, renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
-		this->commands.emplace_back(c);
+	for (Command cmd: module.commands) {
+		this->commands.emplace_back(cmd, renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
 	}
 	this->collectActions();
 }
@@ -121,7 +120,7 @@ uint_fast64_t Module::getIntegerVariableIndex(std::string variableName) const {
 }
 
 // Return the requested command.
-std::shared_ptr<storm::ir::Command> const Module::getCommand(uint_fast64_t index) const {
+storm::ir::Command const Module::getCommand(uint_fast64_t index) const {
 	return this->commands[index];
 }
 
@@ -136,7 +135,7 @@ std::string Module::toString() const {
 		result << "\t" << variable.toString() << std::endl;
 	}
 	for (auto command : commands) {
-		result << "\t" << command->toString() << std::endl;
+		result << "\t" << command.toString() << std::endl;
 	}
 	result << "endmodule" << std::endl;
 	return result.str();
@@ -159,7 +158,7 @@ std::shared_ptr<std::set<uint_fast64_t>> const Module::getCommandsByAction(std::
 
 void Module::collectActions() {
 	for (unsigned int id = 0; id < this->commands.size(); id++) {
-		std::string action = this->commands[id]->getActionName();
+		std::string action = this->commands[id].getActionName();
 		if (action != "") {
 			if (this->actionsToCommandIndexMap.count(action) == 0) {
 				this->actionsToCommandIndexMap[action] = std::shared_ptr<std::set<uint_fast64_t>>(new std::set<uint_fast64_t>());

@@ -69,7 +69,7 @@ namespace parser {
 		this->state->moduleMap_.add(name, res);
 		return res;
 	}
-	std::shared_ptr<Module> PrismParser::PrismGrammar::createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<std::shared_ptr<storm::ir::Command>> commands) {
+	std::shared_ptr<Module> PrismParser::PrismGrammar::createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands) {
 		this->state->moduleNames_.add(name, name);
 		std::shared_ptr<Module> res = std::shared_ptr<Module>(new Module(name, bools, ints, boolids, intids, commands));
 		this->state->moduleMap_.add(name, res);
@@ -85,11 +85,11 @@ namespace parser {
 	void createRewardModel(std::string name, std::vector<std::shared_ptr<StateReward>>& stateRewards, std::vector<std::shared_ptr<TransitionReward>>& transitionRewards, std::map<std::string, std::shared_ptr<RewardModel>>& mapping) {
 		mapping[name] = std::shared_ptr<RewardModel>(new RewardModel(name, stateRewards, transitionRewards));
 	}
-	std::shared_ptr<Update> createUpdate(std::shared_ptr<BaseExpression> likelihood, std::map<std::string, Assignment>& bools, std::map<std::string, Assignment> ints) {
-		return std::shared_ptr<Update>(new Update(likelihood, bools, ints));
+	Update createUpdate(std::shared_ptr<BaseExpression> likelihood, std::map<std::string, Assignment>& bools, std::map<std::string, Assignment> ints) {
+		return Update(likelihood, bools, ints);
 	}
-	std::shared_ptr<Command> createCommand(std::string& label, std::shared_ptr<BaseExpression> guard, std::vector<std::shared_ptr<Update>>& updates) {
-		return std::shared_ptr<Command>(new Command(label, guard, updates));
+	Command createCommand(std::string& label, std::shared_ptr<BaseExpression> guard, std::vector<Update>& updates) {
+		return Command(label, guard, updates);
 	}
 	std::shared_ptr<Program> createProgram(
 			Program::ModelType modelType,

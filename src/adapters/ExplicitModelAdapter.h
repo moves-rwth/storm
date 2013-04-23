@@ -83,7 +83,7 @@ private:
 	 * @params update Update to be applied.
 	 * @return Resulting state.
 	 */
-	StateType* applyUpdate(StateType const * const state, std::shared_ptr<storm::ir::Update> const update) const;
+	StateType* applyUpdate(StateType const * const state, storm::ir::Update const& update) const;
 
 	/*!
 	 * Reads and combines variables from all program modules and stores them.
@@ -107,7 +107,7 @@ private:
 	 * @param action Action label.
 	 * @return Active commands.
 	 */
-	std::unique_ptr<std::list<std::list<std::shared_ptr<storm::ir::Command>>>> getActiveCommandsByAction(StateType const * state, std::string& action);
+	std::unique_ptr<std::list<std::list<storm::ir::Command>>> getActiveCommandsByAction(StateType const * state, std::string& action);
 
 	/*!
 	 * Generates all initial states and adds them to allStates.

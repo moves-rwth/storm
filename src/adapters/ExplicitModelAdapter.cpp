@@ -160,20 +160,20 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 * @param action Action label.
 	 * @return Active commands.
 	 */
-	std::unique_ptr<std::list<std::list<std::shared_ptr<storm::ir::Command>>>> ExplicitModelAdapter::getActiveCommandsByAction(StateType const * state, std::string& action) {
-		std::unique_ptr<std::list<std::list<std::shared_ptr<storm::ir::Command>>>> res = std::unique_ptr<std::list<std::list<std::shared_ptr<storm::ir::Command>>>>(new std::list<std::list<std::shared_ptr<storm::ir::Command>>>());
+	std::unique_ptr<std::list<std::list<storm::ir::Command>>> ExplicitModelAdapter::getActiveCommandsByAction(StateType const * state, std::string& action) {
+		std::unique_ptr<std::list<std::list<storm::ir::Command>>> res = std::unique_ptr<std::list<std::list<storm::ir::Command>>>(new std::list<std::list<storm::ir::Command>>());
 		
 		// Iterate over all modules.
 		for (uint_fast64_t i = 0; i < this->program->getNumberOfModules(); ++i) {
 			std::shared_ptr<storm::ir::Module> const module = this->program->getModule(i);
 			
 			std::shared_ptr<std::set<uint_fast64_t>> ids = module->getCommandsByAction(action);
-			std::list<std::shared_ptr<storm::ir::Command>> commands;
+			std::list<storm::ir::Command> commands;
 			
 			// Look up commands by their id. Add, if guard holds.
 			for (uint_fast64_t id : *ids) {
-				std::shared_ptr<storm::ir::Command> cmd = module->getCommand(id);
-				if (cmd->getGuard()->getValueAsBool(state)) {
+				storm::ir::Command cmd = module->getCommand(id);
+				if (cmd.getGuard()->getValueAsBool(state)) {
 					commands.push_back(module->getCommand(id));
 				}
 			}
@@ -181,7 +181,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 		}
 		// Sort the result in the vague hope that having small lists at the beginning will speed up the expanding.
 		// This is how lambdas may look like in C++...
-		res->sort([](const std::list<std::shared_ptr<storm::ir::Command>>& a, const std::list<std::shared_ptr<storm::ir::Command>>& b){ return a.size() < b.size(); });
+		res->sort([](const std::list<storm::ir::Command>& a, const std::list<storm::ir::Command>& b){ return a.size() < b.size(); });
 		return res;
 	}
 	
@@ -191,12 +191,12 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 * @params update Update to be applied.
 	 * @return Resulting state.
 	 */
-	StateType* ExplicitModelAdapter::applyUpdate(StateType const * const state, std::shared_ptr<storm::ir::Update> const update) const {
+	StateType* ExplicitModelAdapter::applyUpdate(StateType const * const state, storm::ir::Update const& update) const {
 		StateType* newState = new StateType(*state);
-		for (auto assignedVariable : update->getBooleanAssignments()) {
+		for (auto assignedVariable : update.getBooleanAssignments()) {
 			setValue(newState, this->booleanVariableToIndexMap.at(assignedVariable.first), assignedVariable.second.getExpression()->getValueAsBool(state));
 		}
-		for (auto assignedVariable : update->getIntegerAssignments()) {
+		for (auto assignedVariable : update.getIntegerAssignments()) {
 			setValue(newState, this->integerVariableToIndexMap.at(assignedVariable.first), assignedVariable.second.getExpression()->getValueAsInt(state));
 		}
 		return newState;
@@ -297,29 +297,29 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			std::shared_ptr<storm::ir::Module> const module = program->getModule(i);
 			// Iterate over all commands.
 			for (uint_fast64_t j = 0; j < module->getNumberOfCommands(); ++j) {
-				std::shared_ptr<storm::ir::Command> const command = module->getCommand(j);
+				storm::ir::Command const& command = module->getCommand(j);
 				// Only consider unlabeled commands.
-				if (command->getActionName() != "") continue;
+				if (command.getActionName() != "") continue;
 				// Omit, if command is not active.
-				if (!command->getGuard()->getValueAsBool(state)) continue;
+				if (!command.getGuard()->getValueAsBool(state)) continue;
 
 				// Add a new map and get pointer.
 				res.emplace_back();
 				std::map<uint_fast64_t, double>* states = &res.back().second;
 
 				// Iterate over all updates.
-				for (uint_fast64_t k = 0; k < command->getNumberOfUpdates(); ++k) {
+				for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
 					// Obtain new state id.
-					std::shared_ptr<storm::ir::Update> const update = command->getUpdate(k);
+					storm::ir::Update const& update = command.getUpdate(k);
 					uint_fast64_t newStateId = this->getOrAddStateId(this->applyUpdate(state, update));
 
 					// Check, if we already know this state, add up probabilities for every state.
 					auto stateIt = states->find(newStateId);
 					if (stateIt == states->end()) {
-						(*states)[newStateId] = update->getLikelihoodExpression()->getValueAsDouble(state);
+						(*states)[newStateId] = update.getLikelihoodExpression()->getValueAsDouble(state);
 						this->numberOfTransitions++;
 					} else {
-						(*states)[newStateId] += update->getLikelihoodExpression()->getValueAsDouble(state);
+						(*states)[newStateId] += update.getLikelihoodExpression()->getValueAsDouble(state);
 					}	
 				}
 			}
@@ -336,21 +336,21 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 		// Create a copy of the current state, as we will free intermediate states...
 		for (std::string action : this->program->getActions()) {
 			StateType* state = new StateType(*this->allStates[stateID]);
-			std::unique_ptr<std::list<std::list<std::shared_ptr<storm::ir::Command>>>> cmds = this->getActiveCommandsByAction(state, action);
+			std::unique_ptr<std::list<std::list<storm::ir::Command>>> cmds = this->getActiveCommandsByAction(state, action);
 
 			// Start with current state
 			std::unordered_map<StateType*, double, StateHash, StateCompare> resultStates;
 			resultStates[state] = 1.0;
 			
-			for (std::list<std::shared_ptr<storm::ir::Command>> module : *cmds) {
+			for (std::list<storm::ir::Command> module : *cmds) {
 				if (resultStates.size() == 0) break;
 				std::unordered_map<StateType*, double, StateHash, StateCompare> newStates;
 
 				// Iterate over all commands within this module.
-				for (std::shared_ptr<storm::ir::Command> command : module) {
+				for (storm::ir::Command command : module) {
 					// Iterate over all updates of this command.
-					for (uint_fast64_t k = 0; k < command->getNumberOfUpdates(); ++k) {
-						std::shared_ptr<storm::ir::Update> const update = command->getUpdate(k);
+					for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
+						storm::ir::Update const update = command.getUpdate(k);
 
 						// Iterate over all resultStates.
 						for (auto it : resultStates) {
@@ -360,9 +360,9 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 							// Take care of calculation of likelihood, combine identical states.
 							auto s = newStates.find(newState);
 							if (s == newStates.end()) {
-								newStates[newState] = it.second * update->getLikelihoodExpression()->getValueAsDouble(it.first);
+								newStates[newState] = it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
 							} else {
-								newStates[newState] += it.second * update->getLikelihoodExpression()->getValueAsDouble(it.first);
+								newStates[newState] += it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
 							}
 						}
 					}
@@ -461,7 +461,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 		LOG4CPLUS_DEBUG(logger, "Building nondeterministic transition matrix with " << this->numberOfChoices << " choices and " << this->numberOfTransitions << " transitions now.");
 		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(allStates.size(), this->numberOfChoices));
 		result->initialize(this->numberOfTransitions);
-		if (this->rewardModel->hasTransitionRewards()) {
+		if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
 			this->transitionRewards = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(allStates.size(), this->numberOfChoices));
 			this->transitionRewards->initialize(this->numberOfTransitions);
 		}
