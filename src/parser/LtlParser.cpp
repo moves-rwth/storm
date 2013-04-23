@@ -47,27 +47,27 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, storm::formula::ltl::Abstra
 
 		//This block defines rules for parsing state formulas
 		ltlFormula %= orFormula;
-		ltlFormula.name("state formula");
+		ltlFormula.name("LTL formula");
 		orFormula = andFormula[qi::_val = qi::_1] > *(qi::lit("|") > andFormula)[qi::_val =
 				phoenix::new_<storm::formula::ltl::Or<double>>(qi::_val, qi::_1)];
-		orFormula.name("state formula");
+		orFormula.name("LTL formula");
 		andFormula = untilFormula[qi::_val = qi::_1] > *(qi::lit("&") > untilFormula)[qi::_val =
 				phoenix::new_<storm::formula::ltl::And<double>>(qi::_val, qi::_1)];
-		andFormula.name("state formula");
+		andFormula.name("LTL formula");
 		untilFormula = notFormula[qi::_val = qi::_1] >
 				*((qi::lit("U") >> qi::lit("<=") > qi::int_ > notFormula)[qi::_val = phoenix::new_<storm::formula::ltl::BoundedUntil<double>>(qi::_val, qi::_2, qi::_1)] |
 				  (qi::lit("U") > notFormula)[qi::_val = phoenix::new_<storm::formula::ltl::Until<double>>(qi::_val, qi::_1)]);
 		notFormula = atomicLtlFormula[qi::_val = qi::_1] | (qi::lit("!") > atomicLtlFormula)[qi::_val =
 				phoenix::new_<storm::formula::ltl::Not<double>>(qi::_1)];
-		notFormula.name("state formula");
+		notFormula.name("LTL formula");
 
 		//This block defines rules for "atomic" state formulas
 		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
 		atomicLtlFormula %= pathFormula | atomicProposition | qi::lit("(") >> ltlFormula >> qi::lit(")");
-		atomicLtlFormula.name("state formula");
+		atomicLtlFormula.name("LTL formula");
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				phoenix::new_<storm::formula::ltl::Ap<double>>(qi::_1)];
-		atomicProposition.name("state formula");
+		atomicProposition.name("LTL formula");
 		/*probabilisticBoundOperator = (
 				(qi::lit("P") >> qi::lit(">") >> qi::double_ > qi::lit("[") > LtlFormula > qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::formula::ltl::ProbabilisticBoundOperator<double> >(storm::formula::GREATER, qi::_1, qi::_2)] |
@@ -89,16 +89,16 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, storm::formula::ltl::Abstra
 
 		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (boundedEventually | eventually | globally);//(boundedEventually | eventually | globally | boundedUntil | until);
-		pathFormula.name("ltl formula");
+		pathFormula.name("LTL formula");
 		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > ltlFormula)[qi::_val =
 				phoenix::new_<storm::formula::ltl::BoundedEventually<double>>(qi::_2, qi::_1)];
-		boundedEventually.name("ltl formula");
-		eventually = (qi::lit("F") > ltlFormula)[qi::_val =
+		boundedEventually.name("LTL formula");
+		eventually = (qi::lit("F") >> ltlFormula)[qi::_val =
 				phoenix::new_<storm::formula::ltl::Eventually<double> >(qi::_1)];
-		eventually.name("ltl formula");
-		globally = (qi::lit("G") > ltlFormula)[qi::_val =
+		eventually.name("LTL formula");
+		globally = (qi::lit("G") >> ltlFormula)[qi::_val =
 				phoenix::new_<storm::formula::ltl::Globally<double> >(qi::_1)];
-		globally.name("ltl formula");
+		globally.name("LTL formula");
 
 		start = ltlFormula;
 		start.name("LTL formula");

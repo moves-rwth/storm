@@ -40,6 +40,44 @@ TEST(LtlParserTest, parsePropositionalFormulaTest) {
 	delete ltlParser;
 }
 
+/*!
+ * The following test checks whether in the formula "F & b", F is correctly interpreted as proposition instead of the
+ * "Eventually" operator.
+ */
+TEST(LtlParserTest, parseAmbiguousFormulaTest) {
+	storm::parser::LtlParser* ltlParser = nullptr;
+	ASSERT_NO_THROW(
+			ltlParser = new storm::parser::LtlParser("F & b")
+	);
+
+	ASSERT_NE(ltlParser->getFormula(), nullptr);
+
+
+	ASSERT_EQ(ltlParser->getFormula()->toString(), "(F & b)");
+
+	delete ltlParser->getFormula();
+	delete ltlParser;
+}
+
+/*!
+ * The following test checks whether in the formula "F F", F is interpreted as "eventually" operator or atomic proposition,
+ * depending where it occurs.
+ */
+TEST(LtlParserTest, parseAmbiguousFormulaTest2) {
+	storm::parser::LtlParser* ltlParser = nullptr;
+	ASSERT_NO_THROW(
+			ltlParser = new storm::parser::LtlParser("F F")
+	);
+
+	ASSERT_NE(ltlParser->getFormula(), nullptr);
+
+
+	ASSERT_EQ(ltlParser->getFormula()->toString(), "F F");
+
+	delete ltlParser->getFormula();
+	delete ltlParser;
+}
+
 TEST(LtlParserTest, parseBoundedEventuallyFormulaTest) {
 	storm::parser::LtlParser* ltlParser = nullptr;
 	ASSERT_NO_THROW(
@@ -102,6 +140,13 @@ TEST(LtlParserTest, parseComplexFormulaTest) {
 	ASSERT_EQ("(a U F (b | G (a & F<=3 (a U<=7 b))))", ltlParser->getFormula()->toString());
 	delete ltlParser->getFormula();
 	delete ltlParser;
-
 }
 
+TEST(LtlParserTest, wrongFormulaTest) {
+	storm::parser::LtlParser* ltlParser = nullptr;
+	ASSERT_THROW(
+			ltlParser = new storm::parser::LtlParser("(a | b) & +"),
+			storm::exceptions::WrongFormatException
+	);
+	delete ltlParser;
+}
