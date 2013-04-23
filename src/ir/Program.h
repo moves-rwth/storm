@@ -58,8 +58,8 @@ public:
 				std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions,
 				std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions,
 				std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions,
-				std::vector<std::shared_ptr<storm::ir::Module>> modules,
-				std::map<std::string, std::shared_ptr<storm::ir::RewardModel>> rewards,
+				std::vector<storm::ir::Module> modules,
+				std::map<std::string, storm::ir::RewardModel> rewards,
 				std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
 
 	/*!
@@ -72,7 +72,7 @@ public:
 	 * Retrieves a reference to the module with the given index.
 	 * @param index the index of the module to retrieve.
 	 */
-	std::shared_ptr<storm::ir::Module> const& getModule(uint_fast64_t index) const;
+	storm::ir::Module const& getModule(uint_fast64_t index) const;
 
 	/*!
 	 * Retrieves the model type of the model.
@@ -98,14 +98,14 @@ public:
 	 * @param action Name of the action.
 	 * @returns Indices of all matching modules.
 	 */
-	std::shared_ptr<std::set<uint_fast64_t>> const getModulesByAction(std::string const& action) const;
+	std::set<uint_fast64_t> const getModulesByAction(std::string const& action) const;
 
 	/*!
 	 * Retrieve reward model with given name.
 	 * @param name Name of the reward model.
 	 * @return Reward model with given name.
 	 */
-	std::shared_ptr<storm::ir::RewardModel> getRewardModel(std::string const & name) const;
+	storm::ir::RewardModel getRewardModel(std::string const & name) const;
 
 	/*!
 	 * Retrieves all labels.
@@ -127,10 +127,10 @@ private:
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions;
 
 	// The modules associated with the program.
-	std::vector<std::shared_ptr<storm::ir::Module>> modules;
+	std::vector<storm::ir::Module> modules;
 
 	// The reward models associated with the program.
-	std::map<std::string, std::shared_ptr<storm::ir::RewardModel>> rewards;
+	std::map<std::string, storm::ir::RewardModel> rewards;
 
 	// The labels that are defined for this model.
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels;
@@ -139,7 +139,7 @@ private:
 	std::set<std::string> actions;
 	
 	// A map of actions to the set of modules containing commands labelled with this action.
-	std::map<std::string, std::shared_ptr<std::set<uint_fast64_t>>> actionsToModuleIndexMap;
+	std::map<std::string, std::set<uint_fast64_t>> actionsToModuleIndexMap;
 };
 
 } // namespace ir

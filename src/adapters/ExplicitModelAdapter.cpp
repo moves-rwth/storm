@@ -24,7 +24,7 @@ namespace storm {
 
 namespace adapters {
 
-ExplicitModelAdapter::ExplicitModelAdapter(std::shared_ptr<storm::ir::Program> program) : program(program), 
+ExplicitModelAdapter::ExplicitModelAdapter(storm::ir::Program program) : program(program), 
 		booleanVariables(), integerVariables(), booleanVariableToIndexMap(), integerVariableToIndexMap(),
 		allStates(), stateToIndexMap(), numberOfTransitions(0), numberOfChoices(0), transitionRewards(nullptr), transitionMap() {
 	this->initializeVariables();
@@ -39,12 +39,12 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 
 		this->buildTransitionMap();
 
-		std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling = this->getStateLabeling(this->program->getLabels());
+		std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling = this->getStateLabeling(this->program.getLabels());
 		std::shared_ptr<std::vector<double>> stateRewards = nullptr;
 
 		this->rewardModel = nullptr;
 		if (rewardModelName != "") {
-			this->rewardModel = this->program->getRewardModel(rewardModelName);
+			this->rewardModel = std::unique_ptr<storm::ir::RewardModel>(new storm::ir::RewardModel(this->program.getRewardModel(rewardModelName)));;
 			if (this->rewardModel != nullptr) {
 				if (this->rewardModel->hasStateRewards()) {
 					stateRewards = this->getStateRewards(this->rewardModel->getStateRewards());
@@ -52,7 +52,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			}
 		}
 
-		switch (this->program->getModelType())
+		switch (this->program.getModelType())
 		{
 			case storm::ir::Program::DTMC:
 			{
@@ -93,11 +93,11 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 		std::get<1>(*state)[index] = value;
 	}
 
-	std::shared_ptr<std::vector<double>> ExplicitModelAdapter::getStateRewards(std::vector<std::shared_ptr<storm::ir::StateReward>> const & rewards) {
+	std::shared_ptr<std::vector<double>> ExplicitModelAdapter::getStateRewards(std::vector<storm::ir::StateReward> const & rewards) {
 		std::shared_ptr<std::vector<double>> results(new std::vector<double>(this->allStates.size()));
 		for (uint_fast64_t index = 0; index < this->allStates.size(); index++) {
 			for (auto reward: rewards) {
-				(*results)[index] = reward->getReward(this->allStates[index]);
+				(*results)[index] = reward.getReward(this->allStates[index]);
 			}
 		}
 		return results;
@@ -121,9 +121,9 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	void ExplicitModelAdapter::initializeVariables() {
 		uint_fast64_t numberOfIntegerVariables = 0;
 		uint_fast64_t numberOfBooleanVariables = 0;
-		for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
-			numberOfIntegerVariables += program->getModule(i)->getNumberOfIntegerVariables();
-			numberOfBooleanVariables += program->getModule(i)->getNumberOfBooleanVariables();
+		for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
+			numberOfIntegerVariables += program.getModule(i).getNumberOfIntegerVariables();
+			numberOfBooleanVariables += program.getModule(i).getNumberOfBooleanVariables();
 		}
 
 		this->booleanVariables.resize(numberOfBooleanVariables);
@@ -131,17 +131,17 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 
 		uint_fast64_t nextBooleanVariableIndex = 0;
 		uint_fast64_t nextIntegerVariableIndex = 0;
-		for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
-			std::shared_ptr<storm::ir::Module> const module = program->getModule(i);
+		for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
+			storm::ir::Module const& module = program.getModule(i);
 
-			for (uint_fast64_t j = 0; j < module->getNumberOfBooleanVariables(); ++j) {
-				this->booleanVariables[nextBooleanVariableIndex] = module->getBooleanVariable(j);
-				this->booleanVariableToIndexMap[module->getBooleanVariable(j).getName()] = nextBooleanVariableIndex;
+			for (uint_fast64_t j = 0; j < module.getNumberOfBooleanVariables(); ++j) {
+				this->booleanVariables[nextBooleanVariableIndex] = module.getBooleanVariable(j);
+				this->booleanVariableToIndexMap[module.getBooleanVariable(j).getName()] = nextBooleanVariableIndex;
 				++nextBooleanVariableIndex;
 			}
-			for (uint_fast64_t j = 0; j < module->getNumberOfIntegerVariables(); ++j) {
-				this->integerVariables[nextIntegerVariableIndex] = module->getIntegerVariable(j);
-				this->integerVariableToIndexMap[module->getIntegerVariable(j).getName()] = nextIntegerVariableIndex;
+			for (uint_fast64_t j = 0; j < module.getNumberOfIntegerVariables(); ++j) {
+				this->integerVariables[nextIntegerVariableIndex] = module.getIntegerVariable(j);
+				this->integerVariableToIndexMap[module.getIntegerVariable(j).getName()] = nextIntegerVariableIndex;
 				++nextIntegerVariableIndex;
 			}
 		}
@@ -164,17 +164,17 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 		std::unique_ptr<std::list<std::list<storm::ir::Command>>> res = std::unique_ptr<std::list<std::list<storm::ir::Command>>>(new std::list<std::list<storm::ir::Command>>());
 		
 		// Iterate over all modules.
-		for (uint_fast64_t i = 0; i < this->program->getNumberOfModules(); ++i) {
-			std::shared_ptr<storm::ir::Module> const module = this->program->getModule(i);
+		for (uint_fast64_t i = 0; i < this->program.getNumberOfModules(); ++i) {
+			storm::ir::Module const& module = this->program.getModule(i);
 			
-			std::shared_ptr<std::set<uint_fast64_t>> ids = module->getCommandsByAction(action);
+			std::shared_ptr<std::set<uint_fast64_t>> ids = module.getCommandsByAction(action);
 			std::list<storm::ir::Command> commands;
 			
 			// Look up commands by their id. Add, if guard holds.
 			for (uint_fast64_t id : *ids) {
-				storm::ir::Command cmd = module->getCommand(id);
+				storm::ir::Command cmd = module.getCommand(id);
 				if (cmd.getGuard()->getValueAsBool(state)) {
-					commands.push_back(module->getCommand(id));
+					commands.push_back(module.getCommand(id));
 				}
 			}
 			res->push_back(commands);
@@ -293,11 +293,11 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	void ExplicitModelAdapter::addUnlabeledTransitions(const uint_fast64_t stateID, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>& res) {
 		const StateType* state = this->allStates[stateID];
 		// Iterate over all modules.
-		for (uint_fast64_t i = 0; i < program->getNumberOfModules(); ++i) {
-			std::shared_ptr<storm::ir::Module> const module = program->getModule(i);
+		for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
+			storm::ir::Module const& module = program.getModule(i);
 			// Iterate over all commands.
-			for (uint_fast64_t j = 0; j < module->getNumberOfCommands(); ++j) {
-				storm::ir::Command const& command = module->getCommand(j);
+			for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
+				storm::ir::Command const& command = module.getCommand(j);
 				// Only consider unlabeled commands.
 				if (command.getActionName() != "") continue;
 				// Omit, if command is not active.
@@ -334,7 +334,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 */
 	void ExplicitModelAdapter::addLabeledTransitions(const uint_fast64_t stateID, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>& res) {
 		// Create a copy of the current state, as we will free intermediate states...
-		for (std::string action : this->program->getActions()) {
+		for (std::string action : this->program.getActions()) {
 			StateType* state = new StateType(*this->allStates[stateID]);
 			std::unique_ptr<std::list<std::list<storm::ir::Command>>> cmds = this->getActiveCommandsByAction(state, action);
 
@@ -432,7 +432,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 					map[elem.first] += elem.second;
 					if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
 						for (auto reward : this->rewardModel->getTransitionRewards()) {
-							rewardMap[elem.first] += reward->getReward(choice.first, this->allStates[state]);
+							rewardMap[elem.first] += reward.getReward(choice.first, this->allStates[state]);
 						}
 					}
 				}
@@ -474,7 +474,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 					if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
 						double rewardValue = 0;
 						for (auto reward : this->rewardModel->getTransitionRewards()) {
-							rewardValue = reward->getReward(choice.first, this->allStates[state]);
+							rewardValue = reward.getReward(choice.first, this->allStates[state]);
 						}
 						this->transitionRewards->addNextValue(nextRow, it.first, rewardValue);
 					}

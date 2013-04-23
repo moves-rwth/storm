@@ -58,32 +58,32 @@ namespace parser {
 		this->state->assignedLocalBooleanVariables_.add(variable, variable);
 		mapping[variable] = Assignment(variable, value);
 	}
-	std::shared_ptr<Module> PrismParser::PrismGrammar::renameModule(const std::string& name, const std::string& oldname, std::map<std::string, std::string>& mapping) {
+	Module PrismParser::PrismGrammar::renameModule(const std::string& name, const std::string& oldname, std::map<std::string, std::string>& mapping) {
 		this->state->moduleNames_.add(name, name);
-		std::shared_ptr<Module> old = this->state->moduleMap_.at(oldname);
+		Module* old = this->state->moduleMap_.find(oldname);
 		if (old == nullptr) {
 			std::cerr << "Renaming module failed: module " << oldname << " does not exist!" << std::endl;
-			return nullptr;
+			throw "Renaming module failed";
 		}
-		std::shared_ptr<Module> res = std::shared_ptr<Module>(new Module(*old, name, mapping, this->state));
+		Module res(*old, name, mapping, this->state);
 		this->state->moduleMap_.add(name, res);
 		return res;
 	}
-	std::shared_ptr<Module> PrismParser::PrismGrammar::createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands) {
+	Module PrismParser::PrismGrammar::createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands) {
 		this->state->moduleNames_.add(name, name);
-		std::shared_ptr<Module> res = std::shared_ptr<Module>(new Module(name, bools, ints, boolids, intids, commands));
+		Module res(name, bools, ints, boolids, intids, commands);
 		this->state->moduleMap_.add(name, res);
 		return res;
 	}
 
-	std::shared_ptr<StateReward> createStateReward(std::shared_ptr<BaseExpression> guard, std::shared_ptr<BaseExpression> reward) {
-		return std::shared_ptr<StateReward>(new StateReward(guard, reward));
+	StateReward createStateReward(std::shared_ptr<BaseExpression> guard, std::shared_ptr<BaseExpression> reward) {
+		return StateReward(guard, reward);
 	}
-	std::shared_ptr<TransitionReward> createTransitionReward(std::string label, std::shared_ptr<BaseExpression> guard, std::shared_ptr<BaseExpression> reward) {
-		return std::shared_ptr<TransitionReward>(new TransitionReward(label, guard, reward));
+	TransitionReward createTransitionReward(std::string label, std::shared_ptr<BaseExpression> guard, std::shared_ptr<BaseExpression> reward) {
+		return TransitionReward(label, guard, reward);
 	}
-	void createRewardModel(std::string name, std::vector<std::shared_ptr<StateReward>>& stateRewards, std::vector<std::shared_ptr<TransitionReward>>& transitionRewards, std::map<std::string, std::shared_ptr<RewardModel>>& mapping) {
-		mapping[name] = std::shared_ptr<RewardModel>(new RewardModel(name, stateRewards, transitionRewards));
+	void createRewardModel(std::string name, std::vector<StateReward>& stateRewards, std::vector<TransitionReward>& transitionRewards, std::map<std::string, RewardModel>& mapping) {
+		mapping[name] = RewardModel(name, stateRewards, transitionRewards);
 	}
 	Update createUpdate(std::shared_ptr<BaseExpression> likelihood, std::map<std::string, Assignment>& bools, std::map<std::string, Assignment> ints) {
 		return Update(likelihood, bools, ints);
@@ -91,15 +91,15 @@ namespace parser {
 	Command createCommand(std::string& label, std::shared_ptr<BaseExpression> guard, std::vector<Update>& updates) {
 		return Command(label, guard, updates);
 	}
-	std::shared_ptr<Program> createProgram(
+	Program createProgram(
 			Program::ModelType modelType,
 			std::map<std::string, std::shared_ptr<BooleanConstantExpression>> undefBoolConst,
 			std::map<std::string, std::shared_ptr<IntegerConstantExpression>> undefIntConst,
 			std::map<std::string, std::shared_ptr<DoubleConstantExpression>> undefDoubleConst,
-			std::vector<std::shared_ptr<Module>> modules,
-			std::map<std::string, std::shared_ptr<RewardModel>> rewards,
+			std::vector<Module> modules,
+			std::map<std::string, RewardModel> rewards,
 			std::map<std::string, std::shared_ptr<BaseExpression>> labels) {
-		return std::shared_ptr<Program>(new Program(modelType, undefBoolConst, undefIntConst, undefDoubleConst, modules, rewards, labels));
+		return Program(modelType, undefBoolConst, undefIntConst, undefDoubleConst, modules, rewards, labels);
 	}
 
 PrismParser::PrismGrammar::PrismGrammar() : PrismParser::PrismGrammar::base_type(start), state(new storm::parser::prism::VariableState()) {
@@ -230,14 +230,14 @@ PrismParser::PrismGrammar::PrismGrammar() : PrismParser::PrismGrammar::base_type
  * closes the file properly, even if an exception is thrown in the parser. In this case, the
  * exception is passed on to the caller.
  */
-std::shared_ptr<storm::ir::Program> PrismParser::parseFile(std::string const& filename) const {
+storm::ir::Program PrismParser::parseFile(std::string const& filename) const {
 	// Open file and initialize result.
 	std::ifstream inputFileStream(filename, std::ios::in);
-	std::shared_ptr<storm::ir::Program> result(nullptr);
+	storm::ir::Program result;
 
 	// Now try to parse the contents of the file.
 	try {
-		result = std::shared_ptr<storm::ir::Program>(parse(inputFileStream, filename));
+		result = parse(inputFileStream, filename);
 	} catch(std::exception& e) {
 		// In case of an exception properly close the file before passing exception.
 		inputFileStream.close();
@@ -254,7 +254,7 @@ std::shared_ptr<storm::ir::Program> PrismParser::parseFile(std::string const& fi
  * If the parser throws an expectation failure exception, i.e. expected input different than the one
  * provided, this is caught and displayed properly before the exception is passed on.
  */
-std::shared_ptr<storm::ir::Program> PrismParser::parse(std::istream& inputStream, std::string const& filename) const {
+storm::ir::Program PrismParser::parse(std::istream& inputStream, std::string const& filename) const {
 	// Prepare iterators to input.
 	// TODO: Right now, this parses the whole contents of the file into a string first.
 	// While this is usually not necessary, because there exist adapters that make an input stream
@@ -268,7 +268,7 @@ std::shared_ptr<storm::ir::Program> PrismParser::parse(std::istream& inputStream
 	PositionIteratorType positionIteratorEnd;
 
 	// Prepare resulting intermediate representation of input.
-	std::shared_ptr<storm::ir::Program> result(new storm::ir::Program());
+	storm::ir::Program result;
 
 	// In order to instantiate the grammar, we have to pass the type of the skipping parser.
 	// As this is more complex, we let Boost figure out the actual type for us.
@@ -278,11 +278,11 @@ std::shared_ptr<storm::ir::Program> PrismParser::parse(std::istream& inputStream
 		// First run.
 		qi::phrase_parse(positionIteratorBegin, positionIteratorEnd, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
 		grammar.prepareForSecondRun();
-		result = std::shared_ptr<storm::ir::Program>(new storm::ir::Program());
+		result = storm::ir::Program();
 		std::cout << "Now we start the second run..." << std::endl;
 		// Second run.
 		qi::phrase_parse(positionIteratorBegin2, positionIteratorEnd, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
-		std::cout << "Here is the parsed grammar: " << std::endl << result->toString() << std::endl;
+		std::cout << "Here is the parsed grammar: " << std::endl << result.toString() << std::endl;
 	} catch(const qi::expectation_failure<PositionIteratorType>& e) {
 		// If the parser expected content different than the one provided, display information
 		// about the location of the error.

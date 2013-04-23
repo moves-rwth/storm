@@ -53,7 +53,7 @@ public:
 
 class ExplicitModelAdapter {
 public:
-	ExplicitModelAdapter(std::shared_ptr<storm::ir::Program> program);
+	ExplicitModelAdapter(storm::ir::Program program);
 	~ExplicitModelAdapter();
 
 	std::shared_ptr<storm::models::AbstractModel> getModel(std::string const & rewardModelName = "");
@@ -91,7 +91,7 @@ private:
 	 */
 	void initializeVariables();
 
-	std::shared_ptr<std::vector<double>> getStateRewards(std::vector<std::shared_ptr<storm::ir::StateReward>> const & rewards);
+	std::shared_ptr<std::vector<double>> getStateRewards(std::vector<storm::ir::StateReward> const & rewards);
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
 
 	/*!
@@ -166,14 +166,14 @@ private:
 	void clearInternalState();
 
 	// Program that should be converted.
-	std::shared_ptr<storm::ir::Program> program;
+	storm::ir::Program program;
 	std::vector<storm::ir::BooleanVariable> booleanVariables;
 	std::vector<storm::ir::IntegerVariable> integerVariables;
 	std::map<std::string, uint_fast64_t> booleanVariableToIndexMap;
 	std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
 
 	// Members that are filled during the conversion.
-	std::shared_ptr<storm::ir::RewardModel> rewardModel;
+	std::unique_ptr<storm::ir::RewardModel> rewardModel;
 	std::vector<StateType*> allStates;
 	std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
 	uint_fast64_t numberOfTransitions;

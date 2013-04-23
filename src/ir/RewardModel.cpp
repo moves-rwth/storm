@@ -19,7 +19,7 @@ RewardModel::RewardModel() : rewardModelName(), stateRewards(), transitionReward
 }
 
 // Initializes all members according to the given values.
-RewardModel::RewardModel(std::string rewardModelName, std::vector<std::shared_ptr<storm::ir::StateReward>> stateRewards, std::vector<std::shared_ptr<storm::ir::TransitionReward>> transitionRewards) : rewardModelName(rewardModelName), stateRewards(stateRewards), transitionRewards(transitionRewards) {
+RewardModel::RewardModel(std::string rewardModelName, std::vector<storm::ir::StateReward> stateRewards, std::vector<storm::ir::TransitionReward> transitionRewards) : rewardModelName(rewardModelName), stateRewards(stateRewards), transitionRewards(transitionRewards) {
 	// Nothing to do here.
 }
 
@@ -28,10 +28,10 @@ std::string RewardModel::toString() const {
 	std::stringstream result;
 	result << "rewards \"" << rewardModelName << "\"" << std::endl;
 	for (auto reward : stateRewards) {
-		result << reward->toString() << std::endl;
+		result << reward.toString() << std::endl;
 	}
 	for (auto reward : transitionRewards) {
-		result << reward->toString() << std::endl;
+		result << reward.toString() << std::endl;
 	}
 	result << "endrewards" << std::endl;
 	return result.str();
@@ -41,7 +41,7 @@ bool RewardModel::hasStateRewards() const {
 	return this->stateRewards.size() > 0;
 }
 
-std::vector<std::shared_ptr<storm::ir::StateReward>> RewardModel::getStateRewards() const {
+std::vector<storm::ir::StateReward> RewardModel::getStateRewards() const {
 	return this->stateRewards;
 }
 
@@ -49,7 +49,7 @@ bool RewardModel::hasTransitionRewards() const {
 	return this->transitionRewards.size() > 0;
 }
 
-std::vector<std::shared_ptr<storm::ir::TransitionReward>> RewardModel::getTransitionRewards() const {
+std::vector<storm::ir::TransitionReward> RewardModel::getTransitionRewards() const {
 	return this->transitionRewards;
 }
 

@@ -1,5 +1,4 @@
-/*
- * PrismParser.h
+/* * PrismParser.h
  *
  *  Created on: Jan 3, 2013
  *      Author: Christian Dehnert
@@ -42,7 +41,7 @@ public:
 	 * @param filename the name of the file to parse.
 	 * @return a shared pointer to the intermediate representation of the PRISM file.
 	 */
-	std::shared_ptr<storm::ir::Program> parseFile(std::string const& filename) const;
+	storm::ir::Program parseFile(std::string const& filename) const;
 
 	/*!
 	 * The Boost spirit grammar for the PRISM language. Returns the intermediate representation of
@@ -50,11 +49,15 @@ public:
 	 */
 	class PrismGrammar : public qi::grammar<
 		Iterator,
-		std::shared_ptr<Program>(),
+		Program(),
 		qi::locals<
 			std::map<std::string, std::shared_ptr<BooleanConstantExpression>>,
 			std::map<std::string, std::shared_ptr<IntegerConstantExpression>>,
-			std::map<std::string, std::shared_ptr<DoubleConstantExpression>>, std::map<std::string, std::shared_ptr<RewardModel>>, std::map<std::string, std::shared_ptr<BaseExpression>>>, Skipper> {
+			std::map<std::string, std::shared_ptr<DoubleConstantExpression>>, 
+			std::map<std::string, RewardModel>,
+			std::map<std::string, std::shared_ptr<BaseExpression>>
+		>,
+		Skipper> {
 	public:
 		PrismGrammar();
 		void prepareForSecondRun();
@@ -66,16 +69,22 @@ public:
 	// The starting point of the grammar.
 	qi::rule<
 			Iterator,
-			std::shared_ptr<Program>(),
-			qi::locals<std::map<std::string, std::shared_ptr<BooleanConstantExpression>>, std::map<std::string, std::shared_ptr<IntegerConstantExpression>>, std::map<std::string, std::shared_ptr<DoubleConstantExpression>>, std::map<std::string, std::shared_ptr<RewardModel>>, std::map<std::string, std::shared_ptr<BaseExpression>>>,
+			Program(),
+			qi::locals<
+				std::map<std::string, std::shared_ptr<BooleanConstantExpression>>,
+				std::map<std::string, std::shared_ptr<IntegerConstantExpression>>,
+				std::map<std::string, std::shared_ptr<DoubleConstantExpression>>,
+				std::map<std::string, RewardModel>,
+				std::map<std::string, std::shared_ptr<BaseExpression>>
+			>,
 			Skipper> start;
 	qi::rule<Iterator, Program::ModelType(), Skipper> modelTypeDefinition;
 	qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BooleanConstantExpression>>&, std::map<std::string, std::shared_ptr<IntegerConstantExpression>>&, std::map<std::string, std::shared_ptr<DoubleConstantExpression>>&), Skipper> constantDefinitionList;
-	qi::rule<Iterator, std::vector<std::shared_ptr<Module>>(), Skipper> moduleDefinitionList;
+	qi::rule<Iterator, std::vector<Module>(), Skipper> moduleDefinitionList;
 
 	// Rules for module definition.
-	qi::rule<Iterator, std::shared_ptr<Module>(), qi::locals<std::vector<BooleanVariable>, std::vector<IntegerVariable>, std::map<std::string, uint_fast64_t>, std::map<std::string, uint_fast64_t>>, Skipper> moduleDefinition;
-	qi::rule<Iterator, std::shared_ptr<Module>(), qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
+	qi::rule<Iterator, Module(), qi::locals<std::vector<BooleanVariable>, std::vector<IntegerVariable>, std::map<std::string, uint_fast64_t>, std::map<std::string, uint_fast64_t>>, Skipper> moduleDefinition;
+	qi::rule<Iterator, Module(), qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
 
 	// Rules for variable definitions.
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerLiteralExpression;
@@ -96,10 +105,10 @@ public:
 	qi::rule<Iterator, std::string(), Skipper> unassignedLocalIntegerVariableName;
 
 	// Rules for reward definitions.
-	qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<RewardModel>>&), Skipper> rewardDefinitionList;
-	qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<RewardModel>>&), qi::locals<std::vector<std::shared_ptr<StateReward>>, std::vector<std::shared_ptr<TransitionReward>>>, Skipper> rewardDefinition;
-	qi::rule<Iterator, std::shared_ptr<StateReward>(), Skipper> stateRewardDefinition;
-	qi::rule<Iterator, std::shared_ptr<TransitionReward>(), qi::locals<std::string>, Skipper> transitionRewardDefinition;
+	qi::rule<Iterator, qi::unused_type(std::map<std::string, RewardModel>&), Skipper> rewardDefinitionList;
+	qi::rule<Iterator, qi::unused_type(std::map<std::string, RewardModel>&), qi::locals<std::vector<StateReward>, std::vector<TransitionReward>>, Skipper> rewardDefinition;
+	qi::rule<Iterator, StateReward(), Skipper> stateRewardDefinition;
+	qi::rule<Iterator, TransitionReward(), qi::locals<std::string>, Skipper> transitionRewardDefinition;
 
 	// Rules for label definitions.
 	qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BaseExpression>>&), Skipper> labelDefinitionList;
@@ -128,8 +137,8 @@ public:
 	void addLabel(const std::string& name, std::shared_ptr<BaseExpression> value, std::map<std::string, std::shared_ptr<BaseExpression>>& mapping);
 	void addBoolAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping);
 	void addIntAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping);
-	std::shared_ptr<Module> renameModule(const std::string& name, const std::string& oldname, std::map<std::string, std::string>& mapping);
-	std::shared_ptr<Module> createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands);
+	Module renameModule(const std::string& name, const std::string& oldname, std::map<std::string, std::string>& mapping);
+	Module createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands);
 
 	};
 	
@@ -141,7 +150,7 @@ private:
 	 * @param filename the name of the file the input stream belongs to. Used for diagnostics.
 	 * @return a shared pointer to the intermediate representation of the PRISM file.
 	 */
-	std::shared_ptr<storm::ir::Program> parse(std::istream& inputStream, std::string const& filename) const;
+	storm::ir::Program parse(std::istream& inputStream, std::string const& filename) const;
 };
 
 } // namespace parser

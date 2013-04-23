@@ -25,15 +25,15 @@ Program::Program() : modelType(UNDEFINED), booleanUndefinedConstantExpressions()
 }
 
 // Initializes all members according to the given values.
-Program::Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<std::shared_ptr<storm::ir::Module>> modules, std::map<std::string, std::shared_ptr<storm::ir::RewardModel>> rewards, std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels)
+Program::Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules, std::map<std::string, storm::ir::RewardModel> rewards, std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels)
 	: modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), modules(modules), rewards(rewards), labels(labels), actionsToModuleIndexMap() {
 	// Build actionsToModuleIndexMap
     for (unsigned int id = 0; id < this->modules.size(); id++) {
-		for (auto action : this->modules[id]->getActions()) {
+		for (auto action : this->modules[id].getActions()) {
 			if (this->actionsToModuleIndexMap.count(action) == 0) {
-				this->actionsToModuleIndexMap[action] = std::shared_ptr<std::set<uint_fast64_t>>(new std::set<uint_fast64_t>());
+				this->actionsToModuleIndexMap[action] = std::set<uint_fast64_t>();
 			}
-            this->actionsToModuleIndexMap[action]->insert(id);
+            this->actionsToModuleIndexMap[action].insert(id);
             this->actions.insert(action);
         }
     }
@@ -67,11 +67,11 @@ std::string Program::toString() const {
 	result << std::endl;
 
 	for (auto module : modules) {
-		result << module->toString() << std::endl;
+		result << module.toString() << std::endl;
 	}
 
 	for (auto rewardModel : rewards) {
-		result << rewardModel.first << ": " << rewardModel.second->toString() << std::endl;
+		result << rewardModel.first << ": " << rewardModel.second.toString() << std::endl;
 	}
 
 	for (auto label : labels) {
@@ -85,7 +85,7 @@ uint_fast64_t Program::getNumberOfModules() const {
 	return this->modules.size();
 }
 
-std::shared_ptr<storm::ir::Module> const& Program::getModule(uint_fast64_t index) const {
+storm::ir::Module const& Program::getModule(uint_fast64_t index) const {
 	return this->modules[index];
 }
 
@@ -95,20 +95,20 @@ std::set<std::string> const& Program::getActions() const {
 }
 
 // Return modules with given action.
-std::shared_ptr<std::set<uint_fast64_t>> const Program::getModulesByAction(std::string const& action) const {
+std::set<uint_fast64_t> const Program::getModulesByAction(std::string const& action) const {
 	auto res = this->actionsToModuleIndexMap.find(action);
 	if (res == this->actionsToModuleIndexMap.end()) {
-		return std::shared_ptr<std::set<uint_fast64_t>>(new std::set<uint_fast64_t>());
+		return std::set<uint_fast64_t>();
 	} else {
 		return res->second;
 	}
 }
 
-std::shared_ptr<storm::ir::RewardModel> Program::getRewardModel(std::string const & name) const {
+storm::ir::RewardModel Program::getRewardModel(std::string const & name) const {
 	auto it = this->rewards.find(name);
 	if (it == this->rewards.end()) {
 		LOG4CPLUS_ERROR(logger, "The given reward model \"" << name << "\" does not exist. We will proceed without rewards.");
-		return nullptr;
+		throw "Rewardmodel does not exist.";
 	} else {
 		return it->second;
 	}

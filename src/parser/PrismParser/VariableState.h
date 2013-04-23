@@ -38,7 +38,7 @@ public:
 	// the intermediate representation.
 	struct qi::symbols<char, std::shared_ptr<VariableExpression>> integerVariables_, booleanVariables_;
 	struct qi::symbols<char, std::shared_ptr<BaseExpression>> integerConstants_, booleanConstants_, doubleConstants_;
-	struct qi::symbols<char, std::shared_ptr<Module>> moduleMap_;
+	struct qi::symbols<char, Module> moduleMap_;
 
 	// A structure representing the identity function over identifier names.
 	struct variableNamesStruct : qi::symbols<char, std::string> { } integerVariableNames_, booleanVariableNames_, commandNames_, labelNames_, allConstantNames_, moduleNames_,
