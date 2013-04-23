@@ -458,11 +458,11 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 * @return result matrix.
 	 */
 	std::shared_ptr<storm::storage::SparseMatrix<double>> ExplicitModelAdapter::buildNondeterministicMatrix() {
-		LOG4CPLUS_DEBUG(logger, "Building nondeterministic transition matrix with " << this->numberOfChoices << " choices and " << this->numberOfTransitions << " transitions now.");
-		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(allStates.size(), this->numberOfChoices));
+		LOG4CPLUS_DEBUG(logger, "Building nondeterministic transition matrix: " << this->numberOfChoices << " x " << allStates.size() << " with " << this->numberOfTransitions << " transitions now.");
+		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(this->numberOfChoices, allStates.size()));
 		result->initialize(this->numberOfTransitions);
 		if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
-			this->transitionRewards = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(allStates.size(), this->numberOfChoices));
+			this->transitionRewards = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(this->numberOfChoices, allStates.size()));
 			this->transitionRewards->initialize(this->numberOfTransitions);
 		}
 		// Build matrix.
