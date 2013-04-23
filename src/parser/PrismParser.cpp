@@ -26,6 +26,11 @@
 #include <iomanip>
 #include <limits>
 
+
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
+
 // Some typedefs and namespace definitions to reduce code size.
 typedef std::string::const_iterator BaseIteratorType;
 typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
@@ -276,13 +281,14 @@ storm::ir::Program PrismParser::parse(std::istream& inputStream, std::string con
 	try {
 		// Now parse the content using phrase_parse in order to be able to supply a skipping parser.
 		// First run.
+		LOG4CPLUS_INFO(logger, "Start parsing...");
 		qi::phrase_parse(positionIteratorBegin, positionIteratorEnd, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
 		grammar.prepareForSecondRun();
 		result = storm::ir::Program();
-		std::cout << "Now we start the second run..." << std::endl;
+		LOG4CPLUS_INFO(logger, "Start second parsing run...");
 		// Second run.
 		qi::phrase_parse(positionIteratorBegin2, positionIteratorEnd, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
-		std::cout << "Here is the parsed grammar: " << std::endl << result.toString() << std::endl;
+		LOG4CPLUS_INFO(logger, "Finished parsing, here is the parsed program:" << std::endl << result.toString());
 	} catch(const qi::expectation_failure<PositionIteratorType>& e) {
 		// If the parser expected content different than the one provided, display information
 		// about the location of the error.
