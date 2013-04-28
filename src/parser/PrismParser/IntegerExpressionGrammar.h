@@ -22,6 +22,7 @@ namespace prism {
 class IntegerExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused>, public BaseGrammar<IntegerExpressionGrammar> {
 public:
 	IntegerExpressionGrammar(std::shared_ptr<VariableState>& state);
+	virtual void prepareSecondRun();
 
 private:
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused> integerExpression;

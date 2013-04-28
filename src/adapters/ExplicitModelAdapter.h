@@ -60,6 +60,8 @@ public:
 
 private:
 
+	double precision;
+
 	// First some generic routines to operate on states.
 
 	/*!

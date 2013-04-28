@@ -7,10 +7,10 @@ namespace storm {
 namespace parser {
 namespace prism {
 
-BooleanExpressionGrammar::BooleanExpressionGrammar(std::shared_ptr<VariableState>& state)
-			: BooleanExpressionGrammar::base_type(booleanExpression), BaseGrammar(state) {
+	BooleanExpressionGrammar::BooleanExpressionGrammar(std::shared_ptr<VariableState>& state)
+		: BooleanExpressionGrammar::base_type(booleanExpression), BaseGrammar(state) {
 
-	booleanExpression %= orExpression;
+		booleanExpression %= orExpression;
 		booleanExpression.name("boolean expression");
 
 		orExpression = andExpression[qi::_val = qi::_1] >> *(qi::lit("|") >> andExpression)[qi::_val = phoenix::bind(&BaseGrammar::createOr, this, qi::_val, qi::_1)];
@@ -29,6 +29,11 @@ BooleanExpressionGrammar::BooleanExpressionGrammar(std::shared_ptr<VariableState
 		relativeExpression.name("relative expression");
 		
 		booleanVariableExpression = IdentifierGrammar::instance(this->state)[qi::_val = phoenix::bind(&BaseGrammar::getBoolVariable, this, qi::_1)];
+		booleanVariableExpression.name("boolean variable");
+	}
+
+	void BooleanExpressionGrammar::prepareSecondRun() {
+		booleanVariableExpression = this->state->booleanVariables_;
 		booleanVariableExpression.name("boolean variable");
 	}
 

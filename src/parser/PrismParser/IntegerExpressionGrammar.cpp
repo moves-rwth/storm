@@ -26,6 +26,11 @@ namespace prism {
 		integerVariableExpression.name("integer variable");
 	}
 
+	void IntegerExpressionGrammar::prepareSecondRun() {
+		integerVariableExpression = this->state->integerVariables_;
+		integerVariableExpression.name("integer variable");
+	}
+
 }
 }
 }

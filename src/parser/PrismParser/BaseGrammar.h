@@ -24,8 +24,16 @@ namespace prism {
 		static T& instance(std::shared_ptr<VariableState>& state = nullptr) {
 			if (BaseGrammar::instanceObject == nullptr) {
 				BaseGrammar::instanceObject = std::shared_ptr<T>(new T(state));
+				if (!state->firstRun) BaseGrammar::instanceObject->secondRun();
 			}
 			return *BaseGrammar::instanceObject;
+		}
+
+		static void secondRun() {
+			if (BaseGrammar::instanceObject != nullptr) {
+				BaseGrammar::instanceObject->prepareSecondRun();
+			}
+
 		}
 
 		std::shared_ptr<BaseExpression> createBoolLiteral(const bool value) {
@@ -70,6 +78,7 @@ namespace prism {
 			return std::shared_ptr<UnaryBooleanFunctionExpression>(new UnaryBooleanFunctionExpression(child, UnaryBooleanFunctionExpression::NOT));
 		}
 		std::shared_ptr<BaseExpression> createAnd(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right) {
+			//std::cerr << "Creating " << left->toString() << " & " << right->toString() << std::endl;
 			return std::shared_ptr<BinaryBooleanFunctionExpression>(new BinaryBooleanFunctionExpression(left, right, BinaryBooleanFunctionExpression::AND));
 		}
 		std::shared_ptr<BaseExpression> createOr(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right) {
@@ -82,11 +91,13 @@ namespace prism {
 			return state->getIntegerVariable(name);
 		}
 
+		virtual void prepareSecondRun() {}
 	protected:
 		std::shared_ptr<VariableState> state;
 
 	private:
 		static std::shared_ptr<T> instanceObject;
+		static bool inSecondRun;
 	};
 
 	template <typename T>

@@ -28,6 +28,8 @@ ExplicitModelAdapter::ExplicitModelAdapter(storm::ir::Program program) : program
 		booleanVariables(), integerVariables(), booleanVariableToIndexMap(), integerVariableToIndexMap(),
 		allStates(), stateToIndexMap(), numberOfTransitions(0), numberOfChoices(0), transitionRewards(nullptr), transitionMap() {
 	this->initializeVariables();
+	storm::settings::Settings* s = storm::settings::instance();
+	this->precision = s->get<double>("precision");
 }
 
 ExplicitModelAdapter::~ExplicitModelAdapter() {
@@ -57,6 +59,11 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			case storm::ir::Program::DTMC:
 			{
 				std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->buildDeterministicMatrix();
+				std::cerr << "Row 2: ";
+				for (const double* val = matrix->beginConstIterator(2); val != matrix->endConstIterator(2); val++) {
+					std::cerr << *val << ", ";
+				}
+				std::cerr << std::endl;
 				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Dtmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
 				break;
 			}
@@ -306,6 +313,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 				// Add a new map and get pointer.
 				res.emplace_back();
 				std::map<uint_fast64_t, double>* states = &res.back().second;
+				double probSum = 0;
 
 				// Iterate over all updates.
 				for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
@@ -313,6 +321,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 					storm::ir::Update const& update = command.getUpdate(k);
 					uint_fast64_t newStateId = this->getOrAddStateId(this->applyUpdate(state, update));
 
+					probSum += update.getLikelihoodExpression()->getValueAsDouble(state);
 					// Check, if we already know this state, add up probabilities for every state.
 					auto stateIt = states->find(newStateId);
 					if (stateIt == states->end()) {
@@ -321,6 +330,10 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 					} else {
 						(*states)[newStateId] += update.getLikelihoodExpression()->getValueAsDouble(state);
 					}	
+				}
+				if (std::abs(1 - probSum) > this->precision) {
+					LOG4CPLUS_ERROR(logger, "Sum of update probabilities should be one for command:\n\t"  << command.toString());
+					throw storm::exceptions::WrongFileFormatException() << "Sum of update probabilities should be one for command:\n\t"  << command.toString();
 				}
 			}
 		}
@@ -349,6 +362,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 				// Iterate over all commands within this module.
 				for (storm::ir::Command command : module) {
 					// Iterate over all updates of this command.
+					double probSum = 0;
 					for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
 						storm::ir::Update const update = command.getUpdate(k);
 
@@ -356,6 +370,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 						for (auto it : resultStates) {
 							// Apply the new update and get resulting state.
 							StateType* newState = this->applyUpdate(it.first, update);
+							probSum += update.getLikelihoodExpression()->getValueAsDouble(it.first);
 							// Insert the new state into newStates array.
 							// Take care of calculation of likelihood, combine identical states.
 							auto s = newStates.find(newState);
@@ -365,6 +380,10 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 								newStates[newState] += it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
 							}
 						}
+					}
+					if (std::abs(1 - probSum) > this->precision) {
+						LOG4CPLUS_ERROR(logger, "Sum of update probabilities should be one for command:\n\t"  << command.toString());
+						throw storm::exceptions::WrongFileFormatException() << "Sum of update probabilities should be one for command:\n\t"  << command.toString();
 					}
 				}
 				for (auto it: resultStates) {
@@ -435,6 +454,12 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 							rewardMap[elem.first] += reward.getReward(choice.first, this->allStates[state]);
 						}
 					}
+				}
+			}
+			if (state < 5) {
+				std::cerr << "From " << state << std::endl;
+				for (auto it: map) {
+					std::cerr << "\t" << it.first << ": " << it.second << std::endl;
 				}
 			}
 			// Scale probabilities by number of choices.

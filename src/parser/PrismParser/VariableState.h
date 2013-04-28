@@ -45,13 +45,12 @@ public:
 			localBooleanVariables_, localIntegerVariables_, assignedLocalBooleanVariables_, assignedLocalIntegerVariables_;
 
 	uint_fast64_t addBooleanVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) {
-		//std::cerr << "adding boolean variable " << name << std::endl;
 		if (firstRun) {
 			std::shared_ptr<VariableExpression> varExpr = std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::bool_, this->nextBooleanVariableIndex, name));
 			this->booleanVariables_.add(name, varExpr);
 			this->booleanVariableNames_.add(name, name);
 			this->nextBooleanVariableIndex++;
-			return this->nextBooleanVariableIndex-1;
+			return varExpr->getVariableIndex();
 		} else {
 			std::shared_ptr<VariableExpression> res = this->booleanVariables_.at(name);
 			if (res != nullptr) {
@@ -70,7 +69,7 @@ public:
 			this->integerVariables_.add(name, varExpr);
 			this->integerVariableNames_.add(name, name);
 			this->nextIntegerVariableIndex++;
-			return this->nextIntegerVariableIndex-1;
+			return varExpr->getVariableIndex();
 		} else {
 			std::shared_ptr<VariableExpression> res = this->integerVariables_.at(name);
 			if (res != nullptr) {
@@ -83,7 +82,6 @@ public:
 	}
 
 	std::shared_ptr<VariableExpression> getBooleanVariable(const std::string& name) {
-		//std::cerr << "getting boolen variable " << name << std::endl;
 		std::shared_ptr<VariableExpression> res = this->booleanVariables_.at(name);
 		if (res != nullptr) {
 			return res;
@@ -91,7 +89,7 @@ public:
 			if (firstRun) {
 				return std::shared_ptr<VariableExpression>(new VariableExpression(BaseExpression::bool_, std::numeric_limits<uint_fast64_t>::max(), "bool", std::shared_ptr<BaseExpression>(nullptr), std::shared_ptr<BaseExpression>(nullptr)));
 			} else {
-				std::cerr << "Variable " << name << " was not created in first run" << std::endl;
+				std::cerr << "bool Variable " << name << " was not created in first run" << std::endl;
 				return std::shared_ptr<VariableExpression>(nullptr);
 			}
 		}
@@ -106,7 +104,7 @@ public:
 			if (firstRun) {
 				return std::shared_ptr<VariableExpression>(new VariableExpression(BaseExpression::int_, std::numeric_limits<uint_fast64_t>::max(), "int", std::shared_ptr<BaseExpression>(nullptr), std::shared_ptr<BaseExpression>(nullptr)));
 			} else {
-				std::cerr << "Variable " << name << " was not created in first run" << std::endl;
+				std::cerr << "int Variable " << name << " was not created in first run" << std::endl;
 				return std::shared_ptr<VariableExpression>(nullptr);
 			}
 		}

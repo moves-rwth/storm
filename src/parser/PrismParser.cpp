@@ -56,10 +56,12 @@ namespace parser {
 		mapping[name] = value;
 	}
 	void PrismParser::PrismGrammar::addIntAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping) {
+		//std::cout << "Adding int assignment for " << variable << std::endl;
 		this->state->assignedLocalIntegerVariables_.add(variable, variable);
 		mapping[variable] = Assignment(variable, value);
 	}
 	void PrismParser::PrismGrammar::addBoolAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping) {
+		//std::cout << "Adding bool assignment for " << variable << std::endl;
 		this->state->assignedLocalBooleanVariables_.add(variable, variable);
 		mapping[variable] = Assignment(variable, value);
 	}
@@ -79,6 +81,21 @@ namespace parser {
 		Module res(name, bools, ints, boolids, intids, commands);
 		this->state->moduleMap_.add(name, res);
 		return res;
+	}
+
+	void PrismParser::PrismGrammar::createIntegerVariable(const std::string name, std::shared_ptr<BaseExpression> lower, std::shared_ptr<BaseExpression> upper, std::shared_ptr<BaseExpression> init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
+		//std::cout << "Creating int " << name << " = " << init << std::endl;
+		uint_fast64_t id = this->state->addIntegerVariable(name, lower, upper, init);
+		vars.emplace_back(id, name, lower, upper, init);
+		varids[name] = id;
+		this->state->localIntegerVariables_.add(name, name);
+	}
+	void PrismParser::PrismGrammar::createBooleanVariable(const std::string name, std::shared_ptr<BaseExpression> init, std::vector<BooleanVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
+		//std::cout << "Creating bool " << name << std::endl;
+		uint_fast64_t id = this->state->addBooleanVariable(name, init);
+		vars.emplace_back(id, name, init);
+		varids[name] = id;
+		this->state->localBooleanVariables_.add(name, name);
 	}
 
 	StateReward createStateReward(std::shared_ptr<BaseExpression> guard, std::shared_ptr<BaseExpression> reward) {
@@ -140,7 +157,8 @@ PrismParser::PrismGrammar::PrismGrammar() : PrismParser::PrismGrammar::base_type
 		assignmentDefinition.name("assignment");
 		assignmentDefinitionList = assignmentDefinition(qi::_r1, qi::_r2) % "&";
 		assignmentDefinitionList.name("assignment list");
-		updateDefinition = (prism::ConstDoubleExpressionGrammar::instance(this->state) > qi::lit(":")[phoenix::clear(phoenix::ref(this->state->assignedLocalBooleanVariables_)), phoenix::clear(phoenix::ref(this->state->assignedLocalIntegerVariables_))] > assignmentDefinitionList(qi::_a, qi::_b))[qi::_val = phoenix::bind(&createUpdate, qi::_1, qi::_a, qi::_b)];
+		updateDefinition = (
+				prism::ConstDoubleExpressionGrammar::instance(this->state) > qi::lit(":")[phoenix::clear(phoenix::ref(this->state->assignedLocalBooleanVariables_)), phoenix::clear(phoenix::ref(this->state->assignedLocalIntegerVariables_))] > assignmentDefinitionList(qi::_a, qi::_b))[qi::_val = phoenix::bind(&createUpdate, qi::_1, qi::_a, qi::_b)];
 		updateDefinition.name("update");
 		updateListDefinition = +updateDefinition % "+";
 		updateListDefinition.name("update list");
@@ -154,22 +172,13 @@ PrismParser::PrismGrammar::PrismGrammar() : PrismParser::PrismGrammar::base_type
 		// This block defines all entities that are needed for parsing variable definitions.
 		booleanVariableDefinition = (prism::FreeIdentifierGrammar::instance(this->state) >> qi::lit(":") >> qi::lit("bool") > -(qi::lit("init") > prism::ConstBooleanExpressionGrammar::instance(this->state)[qi::_b = phoenix::construct<std::shared_ptr<BaseExpression>>(qi::_1)]) > qi::lit(";"))
 			[
-				//qi::_a = phoenix::bind(&VariableState<Iterator,Skipper>::addBooleanVariable, *this->state.get(), qi::_1),
-				qi::_a = phoenix::bind(&storm::parser::prism::VariableState::addBooleanVariable, *this->state, qi::_1, qi::_b),
-				phoenix::push_back(qi::_r1, phoenix::construct<BooleanVariable>(qi::_a, phoenix::val(qi::_1), qi::_b)),
-				phoenix::insert(qi::_r2, phoenix::construct<std::pair<std::string, uint_fast64_t>>(qi::_1, qi::_a)),
-				phoenix::bind(this->state->localBooleanVariables_.add, qi::_1, qi::_1)
+				phoenix::bind(&PrismParser::PrismGrammar::createBooleanVariable, this, qi::_1, qi::_b, qi::_r1, qi::_r2)
 			];
 		booleanVariableDefinition.name("boolean variable declaration");
 
-		integerLiteralExpression = qi::int_[qi::_val = phoenix::construct<std::shared_ptr<BaseExpression>>(phoenix::new_<IntegerLiteral>(qi::_1))];
-		integerLiteralExpression.name("integer literal");
-		integerVariableDefinition = (prism::FreeIdentifierGrammar::instance(this->state) >> qi::lit(":") >> qi::lit("[") > integerLiteralExpression > qi::lit("..") > integerLiteralExpression > qi::lit("]") > -(qi::lit("init") > prism::ConstIntegerExpressionGrammar::instance(this->state)[qi::_b = phoenix::construct<std::shared_ptr<BaseExpression>>(qi::_1)]) > qi::lit(";"))
+		integerVariableDefinition = (prism::FreeIdentifierGrammar::instance(this->state) >> qi::lit(":") >> qi::lit("[") > prism::ConstIntegerExpressionGrammar::instance(this->state) > qi::lit("..") > prism::ConstIntegerExpressionGrammar::instance(this->state) > qi::lit("]") > -(qi::lit("init") > prism::ConstIntegerExpressionGrammar::instance(this->state)[qi::_b = phoenix::construct<std::shared_ptr<BaseExpression>>(qi::_1)]) > qi::lit(";"))
 			[
-				qi::_a = phoenix::bind(&storm::parser::prism::VariableState::addIntegerVariable, *this->state, qi::_1, qi::_2, qi::_3, qi::_b),
-				phoenix::push_back(qi::_r1, phoenix::construct<IntegerVariable>(qi::_a, qi::_1, qi::_2, qi::_3, qi::_b)),
-				phoenix::insert(qi::_r2, phoenix::construct<std::pair<std::string, uint_fast64_t>>(qi::_1, qi::_a)),
-				phoenix::bind(this->state->localIntegerVariables_.add, qi::_1, qi::_1)
+				phoenix::bind(&PrismParser::PrismGrammar::createIntegerVariable, this, qi::_1, qi::_2, qi::_3, qi::_b, qi::_r1, qi::_r2)
 			];
 		integerVariableDefinition.name("integer variable declaration");
 		variableDefinition = (booleanVariableDefinition(qi::_r1, qi::_r3) | integerVariableDefinition(qi::_r2, qi::_r4));
@@ -228,6 +237,11 @@ PrismParser::PrismGrammar::PrismGrammar() : PrismParser::PrismGrammar::base_type
 	
 	void PrismParser::PrismGrammar::prepareForSecondRun() {
 		this->state->prepareForSecondRun();
+		prism::BooleanExpressionGrammar::secondRun();
+		prism::ConstBooleanExpressionGrammar::secondRun();
+		prism::ConstDoubleExpressionGrammar::secondRun();
+		prism::ConstIntegerExpressionGrammar::secondRun();
+		prism::IntegerExpressionGrammar::secondRun();
 	}
 
 /*!

@@ -22,7 +22,8 @@ namespace prism {
 class BooleanExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused>, public BaseGrammar<BooleanExpressionGrammar> {
 public:
 	BooleanExpressionGrammar(std::shared_ptr<VariableState>& state);
-
+	virtual void prepareSecondRun();
+	
 private:
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused> booleanExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> orExpression;
