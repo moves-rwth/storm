@@ -89,6 +89,14 @@ public:
 	uint_fast64_t getNumberOfStates() const {
 		return this->probabilityMatrix->getColumnCount();
 	}
+	
+	/*!
+	 * Returns the number of choices for all states of the MDP.
+	 * @return The number of choices for all states of the MDP.
+	 */
+	uint_fast64_t getNumberOfChoices() const {
+		return this->probabilityMatrix->getRowCount();
+	}
 
 	/*!
 	 * Returns the number of (non-zero) transitions of the MDP.

@@ -29,11 +29,14 @@ namespace prism {
 			return *BaseGrammar::instanceObject;
 		}
 
+		static void resetInstance() {
+			BaseGrammar::instanceObject = nullptr;
+		}
+
 		static void secondRun() {
 			if (BaseGrammar::instanceObject != nullptr) {
 				BaseGrammar::instanceObject->prepareSecondRun();
 			}
-
 		}
 
 		std::shared_ptr<BaseExpression> createBoolLiteral(const bool value) {
