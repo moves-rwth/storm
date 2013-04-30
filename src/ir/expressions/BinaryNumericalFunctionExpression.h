@@ -83,7 +83,6 @@ public:
 		case DIVIDE: result += " / "; break;
 		}
 		result += this->getRight()->toString();
-
 		return result;
 	}
 	

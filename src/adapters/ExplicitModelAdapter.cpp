@@ -59,11 +59,6 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			case storm::ir::Program::DTMC:
 			{
 				std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->buildDeterministicMatrix();
-				std::cerr << "Row 2: ";
-				for (const double* val = matrix->beginConstIterator(2); val != matrix->endConstIterator(2); val++) {
-					std::cerr << *val << ", ";
-				}
-				std::cerr << std::endl;
 				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Dtmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
 				break;
 			}
@@ -454,12 +449,6 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 							rewardMap[elem.first] += reward.getReward(choice.first, this->allStates[state]);
 						}
 					}
-				}
-			}
-			if (state < 5) {
-				std::cerr << "From " << state << std::endl;
-				for (auto it: map) {
-					std::cerr << "\t" << it.first << ": " << it.second << std::endl;
 				}
 			}
 			// Scale probabilities by number of choices.

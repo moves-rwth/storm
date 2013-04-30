@@ -30,11 +30,11 @@ ConstDoubleExpressionGrammar::ConstDoubleExpressionGrammar(std::shared_ptr<Varia
 	constantDoubleExpression.name("constant double expression");
 
 	constantDoublePlusExpression %= constantDoubleMultExpression[qi::_val = qi::_1] >> *((qi::lit("+")[qi::_a = true] | qi::lit("-")[qi::_a = false]) >> constantDoubleMultExpression)
-			[phoenix::bind(&ConstDoubleExpressionGrammar::createPlus, this, qi::_val, qi::_a, qi::_1)];
+			[qi::_val = phoenix::bind(&ConstDoubleExpressionGrammar::createPlus, this, qi::_val, qi::_a, qi::_1)];
 	constantDoublePlusExpression.name("constant double expression");
 
 	constantDoubleMultExpression %= constantAtomicDoubleExpression[qi::_val = qi::_1] >> *((qi::lit("*")[qi::_a = true] | qi::lit("/")[qi::_a = false]) >> constantAtomicDoubleExpression)
-			[phoenix::bind(&ConstDoubleExpressionGrammar::createMult, this, qi::_val, qi::_a, qi::_1)];
+			[qi::_val = phoenix::bind(&ConstDoubleExpressionGrammar::createMult, this, qi::_val, qi::_a, qi::_1)];
 	constantDoubleMultExpression.name("constant double expression");
 
 	constantAtomicDoubleExpression %= (qi::lit("(") >> constantDoubleExpression >> qi::lit(")") | doubleConstantExpression);
