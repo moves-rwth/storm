@@ -45,9 +45,9 @@ set(GMMXX_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-4.2/include)
 message(STATUS "GMMXX_INCLUDE_DIR is ${GMMXX_INCLUDE_DIR}")
 
 # Set all CUDD references to the version in the repository
-set(CUDD_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/include)
+set(CUDD_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/include ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/obj ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/cudd ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/mtr ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/epd)
 set(CUDD_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/cudd ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/mtr ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/util ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/st ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/epd ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/obj)
-message(STATUS "CUDD_INCLUDE_DIR is ${CUDD_INCLUDE_DIR}")
+message(STATUS "CUDD_INCLUDE_DIRS is ${CUDD_INCLUDE_DIRS}")
 message(STATUS "CUDD_LIBRARY_DIRS is ${CUDD_LIBRARY_DIRS}")
 
 # Now define all available custom options
@@ -165,9 +165,9 @@ if (ADDITIONAL_LINK_DIRS)
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
-if (CUDD_INCLUDE_DIR)
-    include_directories(${CUDD_INCLUDE_DIR})
-endif(CUDD_INCLUDE_DIR)
+if (CUDD_INCLUDE_DIRS)
+    include_directories(${CUDD_INCLUDE_DIRS})
+endif(CUDD_INCLUDE_DIRS)
 if (CUDD_LIBRARY_DIRS)
     link_directories(${CUDD_LIBRARY_DIRS})
 endif(CUDD_LIBRARY_DIRS)

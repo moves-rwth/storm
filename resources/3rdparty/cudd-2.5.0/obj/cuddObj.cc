@@ -2773,6 +2773,66 @@ Cudd::addResidue(
 
 } // Cudd::addResidue
 
+ADD
+ADD::Equals(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+
+} // ADD::Equals
+
+ADD
+ADD::NotEquals(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addNotEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+
+} // ADD::NotEquals
+
+ADD
+ADD::LessThan(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addLessThan, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+
+} // ADD::LessThan
+
+ADD
+ADD::LessThanOrEqual(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addLessThanEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+
+} // ADD::LessThanOrEqual
+
+ADD
+ADD::GreaterThan(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addGreaterThan, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+
+} // ADD::GreaterThan
+
+ADD
+ADD::GreaterThanOrEqual(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addGreaterThanEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+
+} // ADD::GreaterThanOrEqual
+
 
 BDD
 BDD::AndAbstract(

@@ -401,6 +401,12 @@ public:
     ADD Cmpl() const;
     ADD Negate() const;
     ADD RoundOff(int N) const;
+    ADD Equals(const ADD& g) const;
+    ADD NotEquals(const ADD& g) const;
+    ADD LessThan(const ADD& g) const;
+    ADD LessThanOrEqual(const ADD& g) const;
+    ADD GreaterThan(const ADD& g) const;
+    ADD GreaterThanOrEqual(const ADD& g) const;
     BDD BddThreshold(CUDD_VALUE_TYPE value) const;
     BDD BddStrictThreshold(CUDD_VALUE_TYPE value) const;
     BDD BddInterval(CUDD_VALUE_TYPE lower, CUDD_VALUE_TYPE upper) const;
