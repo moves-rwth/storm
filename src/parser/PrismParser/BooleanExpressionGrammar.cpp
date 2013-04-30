@@ -33,7 +33,7 @@ namespace prism {
 	}
 
 	void BooleanExpressionGrammar::prepareSecondRun() {
-		booleanVariableExpression = this->state->booleanVariables_;
+		booleanVariableExpression %= this->state->booleanVariables_;
 		booleanVariableExpression.name("boolean variable");
 	}
 

@@ -26,7 +26,6 @@
 #include <iomanip>
 #include <limits>
 
-
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -69,7 +68,7 @@ namespace parser {
 		this->state->moduleNames_.add(name, name);
 		Module* old = this->state->moduleMap_.find(oldname);
 		if (old == nullptr) {
-			std::cerr << "Renaming module failed: module " << oldname << " does not exist!" << std::endl;
+			LOG4CPLUS_ERROR(logger, "Renaming module failed: module " << oldname << " does not exist!");
 			throw "Renaming module failed";
 		}
 		Module res(*old, name, mapping, this->state);
@@ -236,7 +235,16 @@ PrismParser::PrismGrammar::PrismGrammar() : PrismParser::PrismGrammar::base_type
 	}
 	
 	void PrismParser::PrismGrammar::prepareForSecondRun() {
+		LOG4CPLUS_INFO(logger, "Preparing parser for second run.");
+		this->state->getIntegerVariable("d1");
+		this->state->getIntegerVariable("d2");
+		this->state->getIntegerVariable("s1");
+		this->state->getIntegerVariable("s2");
 		this->state->prepareForSecondRun();
+		this->state->getIntegerVariable("d1");
+		this->state->getIntegerVariable("d2");
+		this->state->getIntegerVariable("s1");
+		this->state->getIntegerVariable("s2");
 		prism::BooleanExpressionGrammar::secondRun();
 		prism::ConstBooleanExpressionGrammar::secondRun();
 		prism::ConstDoubleExpressionGrammar::secondRun();

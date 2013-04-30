@@ -12,6 +12,10 @@
 #include <sstream>
 #include <iostream>
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
+
 namespace storm {
 
 namespace ir {
@@ -37,29 +41,30 @@ Module::Module(std::string moduleName,
 
 Module::Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, std::shared_ptr<VariableAdder> adder)
 	: moduleName(moduleName) {
+	LOG4CPLUS_DEBUG(logger, "Start renaming " << module.moduleName << " to " << moduleName);
 	this->booleanVariables.reserve(module.booleanVariables.size());
 	for (BooleanVariable it: module.booleanVariables) {
 		if (renaming.count(it.getName()) > 0) {
 			this->booleanVariablesToIndexMap[renaming.at(it.getName())] = adder->addBooleanVariable(renaming.at(it.getName()), it.getInitialValue());
-		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
+		} else LOG4CPLUS_ERROR(logger, moduleName << "." << it.getName() << " was not renamed!");
 	}
 	this->integerVariables.reserve(module.integerVariables.size());
 	for (IntegerVariable it: module.integerVariables) {
 		if (renaming.count(it.getName()) > 0) {
 			this->integerVariablesToIndexMap[renaming.at(it.getName())] = adder->addIntegerVariable(renaming.at(it.getName()), it.getLowerBound(), it.getUpperBound(), it.getInitialValue());
-		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
+		} else LOG4CPLUS_ERROR(logger, moduleName << "." << it.getName() << " was not renamed!");
 	}
 	this->booleanVariables.reserve(module.booleanVariables.size());
 	for (BooleanVariable it: module.booleanVariables) {
 		if (renaming.count(it.getName()) > 0) {
 			this->booleanVariables.emplace_back(it, renaming.at(it.getName()), renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
-		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
+		} else LOG4CPLUS_ERROR(logger, moduleName << "." << it.getName() << " was not renamed!");
 	}
 	this->integerVariables.reserve(module.integerVariables.size());
 	for (IntegerVariable it: module.integerVariables) {
 		if (renaming.count(it.getName()) > 0) {
 			this->integerVariables.emplace_back(it, renaming.at(it.getName()), renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
-		} else std::cerr << "ERROR: " << moduleName << "." << it.getName() << " was not renamed!" << std::endl;
+		} else LOG4CPLUS_ERROR(logger, moduleName << "." << it.getName() << " was not renamed!");
 	}
 	
 	this->commands.reserve(module.commands.size());
@@ -67,6 +72,8 @@ Module::Module(const Module& module, const std::string& moduleName, const std::m
 		this->commands.emplace_back(cmd, renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
 	}
 	this->collectActions();
+
+	LOG4CPLUS_DEBUG(logger, "Finished renaming...");
 }
 
 // Return the number of boolean variables.

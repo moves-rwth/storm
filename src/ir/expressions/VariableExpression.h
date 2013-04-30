@@ -26,9 +26,11 @@ public:
 			std::shared_ptr<BaseExpression> upperBound = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr))
 			: BaseExpression(type), index(index), variableName(variableName),
 			  lowerBound(lowerBound), upperBound(upperBound) {
+		std::cerr << "Creating " << this << std::endl;
 	}
 
 	virtual ~VariableExpression() {
+		std::cerr << "Destroying " << this << std::endl;
 	}
 
 	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
