@@ -23,13 +23,18 @@ std::ostream& operator<<(std::ostream& out, qi::symbols<char, T>& symbols) {
 	symbols.for_each(dump);
 	return out;
 }
+std::ostream& operator<<(std::ostream& out, VariableState::variableNamesStruct& symbols) {
+	SymbolDump<std::string> dump(out);
+	symbols.for_each(dump);
+	return out;
+}
 
 
 VariableState::VariableState(bool firstRun)
 		: firstRun(firstRun), keywords(), nextBooleanVariableIndex(0), nextIntegerVariableIndex(0) {
 }
 
-uint_fast64_t VariableState::addBooleanVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) {
+uint_fast64_t VariableState::addBooleanVariable(const std::string& name) {
 	if (firstRun) {
 		std::shared_ptr<VariableExpression> varExpr = std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::bool_, this->nextBooleanVariableIndex, name));
 		LOG4CPLUS_DEBUG(logger, "Adding boolean variable " << name << " with new id " << this->nextBooleanVariableIndex);
@@ -48,7 +53,7 @@ uint_fast64_t VariableState::addBooleanVariable(const std::string& name, const s
 	}
 }
 
-uint_fast64_t VariableState::addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper, const std::shared_ptr<storm::ir::expressions::BaseExpression> init) {
+uint_fast64_t VariableState::addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper) {
 	if (firstRun) {
 		std::shared_ptr<VariableExpression> varExpr = std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::int_, this->nextIntegerVariableIndex, name, lower, upper));
 		LOG4CPLUS_DEBUG(logger, "Adding integer variable " << name << " with new id " << this->nextIntegerVariableIndex);
@@ -106,8 +111,30 @@ std::shared_ptr<VariableExpression> VariableState::getVariable(const std::string
 		if (res != nullptr) {
 			return *res;
 		} else {
-			LOG4CPLUS_ERROR(logger, "Getting variable " << name << ", but was not found. This variable does not exist.");
 			return std::shared_ptr<VariableExpression>(nullptr);
+		}
+	}
+}
+
+void VariableState::performRenaming(const std::map<std::string, std::string>& renaming) {
+	for (auto it: renaming) {
+		std::shared_ptr<VariableExpression>* original = this->integerVariables_.find(it.first);
+		if (original != nullptr) {
+			std::shared_ptr<VariableExpression>* next = this->integerVariables_.find(it.second);
+			if (next == nullptr) {
+				this->addIntegerVariable(it.second, (*original)->getLowerBound(), (*original)->getUpperBound());
+			}
+		}
+		original = this->booleanVariables_.find(it.first);
+		if (original != nullptr) {
+			if (this->booleanVariables_.find(it.second) == nullptr) {
+				this->addBooleanVariable(it.second);
+			}
+		}
+		std::string* oldCmdName = this->commandNames_.find(it.first);
+		if (oldCmdName != nullptr) {
+			LOG4CPLUS_DEBUG(logger, "Adding new command name " << it.second << " due to module renaming.");
+			this->commandNames_.at(it.second) = it.second;
 		}
 	}
 }

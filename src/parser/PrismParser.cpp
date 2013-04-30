@@ -42,7 +42,6 @@ storm::ir::Program PrismParser::parseFile(std::string const& filename) const {
 	try {
 		result = parse(inputFileStream, filename);
 	} catch(std::exception& e) {
-		std::cerr << "Exception: " << e.what() << std::endl;
 		// In case of an exception properly close the file before passing exception.
 		inputFileStream.close();
 		throw e;
@@ -91,9 +90,6 @@ storm::ir::Program PrismParser::parse(std::istream& inputStream, std::string con
 		// Reset grammars.
 		grammar.resetGrammars();
 	} catch(const qi::expectation_failure<PositionIteratorType>& e) {
-		// Reset grammars in any case.
-		grammar.resetGrammars();
-
 		// If the parser expected content different than the one provided, display information
 		// about the location of the error.
 		const boost::spirit::classic::file_position_base<std::string>& pos = e.first.get_position();
@@ -117,6 +113,9 @@ storm::ir::Program PrismParser::parse(std::istream& inputStream, std::string con
 		msg << std::endl;
 
 		std::cerr << msg.str();
+		
+		// Reset grammars in any case.
+		grammar.resetGrammars();
 
 		// Now propagate exception.
 		throw storm::exceptions::WrongFileFormatException() << msg.str();

@@ -84,14 +84,14 @@ Module PrismGrammar::createModule(const std::string name, std::vector<BooleanVar
 
 void PrismGrammar::createIntegerVariable(const std::string name, std::shared_ptr<BaseExpression> lower, std::shared_ptr<BaseExpression> upper, std::shared_ptr<BaseExpression> init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
 	//std::cout << "Creating int " << name << " = " << init << std::endl;
-	uint_fast64_t id = this->state->addIntegerVariable(name, lower, upper, init);
+	uint_fast64_t id = this->state->addIntegerVariable(name, lower, upper);
 	vars.emplace_back(id, name, lower, upper, init);
 	varids[name] = id;
 	this->state->localIntegerVariables_.add(name, name);
 }
 void PrismGrammar::createBooleanVariable(const std::string name, std::shared_ptr<BaseExpression> init, std::vector<BooleanVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
 	//std::cout << "Creating bool " << name << std::endl;
-	uint_fast64_t id = this->state->addBooleanVariable(name, init);
+	uint_fast64_t id = this->state->addBooleanVariable(name);
 	vars.emplace_back(id, name, init);
 	varids[name] = id;
 	this->state->localBooleanVariables_.add(name, name);

@@ -46,12 +46,14 @@ public:
 	struct variableNamesStruct : qi::symbols<char, std::string> { } integerVariableNames_, booleanVariableNames_, commandNames_, labelNames_, allConstantNames_, moduleNames_,
 			localBooleanVariables_, localIntegerVariables_, assignedLocalBooleanVariables_, assignedLocalIntegerVariables_;
 public:
-	uint_fast64_t addBooleanVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init);
-	uint_fast64_t addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper, const std::shared_ptr<storm::ir::expressions::BaseExpression> init);
+	uint_fast64_t addBooleanVariable(const std::string& name);
+	uint_fast64_t addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper);
 
 	std::shared_ptr<VariableExpression> getBooleanVariable(const std::string& name);
 	std::shared_ptr<VariableExpression> getIntegerVariable(const std::string& name);
 	std::shared_ptr<VariableExpression> getVariable(const std::string& name);
+
+	void performRenaming(const std::map<std::string, std::string>& renaming);
 
 	void startModule();
 

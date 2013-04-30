@@ -44,16 +44,7 @@ Module::Module(const Module& module, const std::string& moduleName, const std::m
 	LOG4CPLUS_DEBUG(logger, "Start renaming " << module.moduleName << " to " << moduleName);
 
 	// First step: Create new Variables via the adder.
-	for (BooleanVariable it: module.booleanVariables) {
-		if (renaming.count(it.getName()) > 0) {
-			adder->addBooleanVariable(renaming.at(it.getName()), it.getInitialValue());
-		} else LOG4CPLUS_ERROR(logger, moduleName << "." << it.getName() << " was not renamed!");
-	}
-	for (IntegerVariable it: module.integerVariables) {
-		if (renaming.count(it.getName()) > 0) {
-			adder->addIntegerVariable(renaming.at(it.getName()), it.getLowerBound(), it.getUpperBound(), it.getInitialValue());
-		} else LOG4CPLUS_ERROR(logger, moduleName << "." << it.getName() << " was not renamed!");
-	}
+	adder->performRenaming(renaming);
 
 	// Second step: Get all indices of variables that are produced by the renaming.
 	for (auto it: renaming) {
