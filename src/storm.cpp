@@ -254,7 +254,8 @@ int main(const int argc, const char* argv[]) {
 	// testChecking();
 	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::PrismParser parser;
-	std::shared_ptr<storm::ir::Program> program = parser.parseFile(s->getString("trafile"));
+	std::cout << "Building model for " << s->getString("trafile") << std::endl;
+	storm::ir::Program program = parser.parseFile(s->getString("trafile"));
 	storm::adapters::ExplicitModelAdapter explicitModelAdapter(program);
 	std::shared_ptr<storm::models::AbstractModel> model = explicitModelAdapter.getModel();
 	if (model->getType() == storm::models::DTMC) {
