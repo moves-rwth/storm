@@ -44,12 +44,14 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <iostream>
+#include <iomanip>
 
 void printUsage() {
 	struct rusage ru;
 	getrusage(RUSAGE_SELF, &ru);
 
 	std::cout << "Memory Usage: " << ru.ru_maxrss << "kB" << std::endl;
+	std::cout << "CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
 }
 
 

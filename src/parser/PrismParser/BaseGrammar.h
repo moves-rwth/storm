@@ -21,7 +21,7 @@ namespace prism {
 	public:
 		BaseGrammar(std::shared_ptr<VariableState>& state) : state(state) {}
 
-		static T& instance(std::shared_ptr<VariableState>& state = nullptr) {
+		static T& instance(std::shared_ptr<VariableState> state = nullptr) {
 			if (BaseGrammar::instanceObject == nullptr) {
 				BaseGrammar::instanceObject = std::shared_ptr<T>(new T(state));
 				if (!state->firstRun) BaseGrammar::instanceObject->secondRun();
