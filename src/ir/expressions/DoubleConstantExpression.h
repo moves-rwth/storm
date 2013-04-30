@@ -19,7 +19,10 @@ namespace expressions {
 class DoubleConstantExpression : public ConstantExpression {
 public:
 	DoubleConstantExpression(std::string constantName) : ConstantExpression(double_, constantName), defined(false), value(0) {
-
+	}
+	
+	DoubleConstantExpression(const DoubleConstantExpression& dce)
+		: ConstantExpression(dce), defined(dce.defined), value(dce.value) {
 	}
 
 	virtual ~DoubleConstantExpression() {
@@ -27,7 +30,7 @@ public:
 	}
 
 	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
-		return std::shared_ptr<BaseExpression>(this);
+		return std::shared_ptr<BaseExpression>(new DoubleConstantExpression(*this));
 	}
 
 	virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {

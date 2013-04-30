@@ -42,18 +42,32 @@ Module::Module(std::string moduleName,
 Module::Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, std::shared_ptr<VariableAdder> adder)
 	: moduleName(moduleName) {
 	LOG4CPLUS_DEBUG(logger, "Start renaming " << module.moduleName << " to " << moduleName);
-	this->booleanVariables.reserve(module.booleanVariables.size());
+
+	// First step: Create new Variables via the adder.
 	for (BooleanVariable it: module.booleanVariables) {
 		if (renaming.count(it.getName()) > 0) {
-			this->booleanVariablesToIndexMap[renaming.at(it.getName())] = adder->addBooleanVariable(renaming.at(it.getName()), it.getInitialValue());
+			adder->addBooleanVariable(renaming.at(it.getName()), it.getInitialValue());
 		} else LOG4CPLUS_ERROR(logger, moduleName << "." << it.getName() << " was not renamed!");
 	}
-	this->integerVariables.reserve(module.integerVariables.size());
 	for (IntegerVariable it: module.integerVariables) {
 		if (renaming.count(it.getName()) > 0) {
-			this->integerVariablesToIndexMap[renaming.at(it.getName())] = adder->addIntegerVariable(renaming.at(it.getName()), it.getLowerBound(), it.getUpperBound(), it.getInitialValue());
+			adder->addIntegerVariable(renaming.at(it.getName()), it.getLowerBound(), it.getUpperBound(), it.getInitialValue());
 		} else LOG4CPLUS_ERROR(logger, moduleName << "." << it.getName() << " was not renamed!");
 	}
+
+	// Second step: Get all indices of variables that are produced by the renaming.
+	for (auto it: renaming) {
+		std::shared_ptr<expressions::VariableExpression> var = adder->getVariable(it.second);
+		if (var != nullptr) {
+			if (var->getType() == expressions::BaseExpression::bool_) {
+				this->booleanVariablesToIndexMap[it.second] = var->getVariableIndex();
+			} else if (var->getType() == expressions::BaseExpression::int_) {
+				this->integerVariablesToIndexMap[it.second] = var->getVariableIndex();
+			}
+		}
+	}
+
+	// Third step: Create new Variable objects.
 	this->booleanVariables.reserve(module.booleanVariables.size());
 	for (BooleanVariable it: module.booleanVariables) {
 		if (renaming.count(it.getName()) > 0) {
@@ -66,7 +80,8 @@ Module::Module(const Module& module, const std::string& moduleName, const std::m
 			this->integerVariables.emplace_back(it, renaming.at(it.getName()), renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);
 		} else LOG4CPLUS_ERROR(logger, moduleName << "." << it.getName() << " was not renamed!");
 	}
-	
+
+	// Fourth step: Clone commands.
 	this->commands.reserve(module.commands.size());
 	for (Command cmd: module.commands) {
 		this->commands.emplace_back(cmd, renaming, this->booleanVariablesToIndexMap, this->integerVariablesToIndexMap);

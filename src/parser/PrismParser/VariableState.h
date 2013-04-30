@@ -47,12 +47,11 @@ public:
 			localBooleanVariables_, localIntegerVariables_, assignedLocalBooleanVariables_, assignedLocalIntegerVariables_;
 public:
 	uint_fast64_t addBooleanVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> init);
-
 	uint_fast64_t addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper, const std::shared_ptr<storm::ir::expressions::BaseExpression> init);
 
 	std::shared_ptr<VariableExpression> getBooleanVariable(const std::string& name);
-
 	std::shared_ptr<VariableExpression> getIntegerVariable(const std::string& name);
+	std::shared_ptr<VariableExpression> getVariable(const std::string& name);
 
 	void startModule();
 

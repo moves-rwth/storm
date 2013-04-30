@@ -97,6 +97,20 @@ std::shared_ptr<VariableExpression> VariableState::getIntegerVariable(const std:
 		}
 	}
 }
+std::shared_ptr<VariableExpression> VariableState::getVariable(const std::string& name) {
+	std::shared_ptr<VariableExpression>* res = this->integerVariables_.find(name);
+	if (res != nullptr) {
+		return *res;
+	} else {
+		res = this->booleanVariables_.find(name);
+		if (res != nullptr) {
+			return *res;
+		} else {
+			LOG4CPLUS_ERROR(logger, "Getting variable " << name << ", but was not found. This variable does not exist.");
+			return std::shared_ptr<VariableExpression>(nullptr);
+		}
+	}
+}
 
 void VariableState::startModule() {
 	this->localBooleanVariables_.clear();

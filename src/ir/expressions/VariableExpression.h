@@ -13,6 +13,10 @@
 #include <memory>
 #include <iostream>
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
+
 namespace storm {
 
 namespace ir {
@@ -26,26 +30,27 @@ public:
 			std::shared_ptr<BaseExpression> upperBound = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr))
 			: BaseExpression(type), index(index), variableName(variableName),
 			  lowerBound(lowerBound), upperBound(upperBound) {
-		std::cerr << "Creating " << this << std::endl;
 	}
 
 	virtual ~VariableExpression() {
-		std::cerr << "Destroying " << this << std::endl;
 	}
 
 	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
+		std::shared_ptr<BaseExpression> lower = this->lowerBound, upper = this->upperBound;
+		if (lower != nullptr) lower = lower->clone(renaming, bools, ints);
+		if (upper != nullptr) upper = upper->clone(renaming, bools, ints);
 		if (renaming.count(this->variableName) > 0) {
 			std::string newName = renaming.at(this->variableName);
 			if (this->getType() == bool_) {
-				return std::shared_ptr<BaseExpression>(new VariableExpression(bool_, bools.at(newName), newName, this->lowerBound, this->upperBound));
+				return std::shared_ptr<BaseExpression>(new VariableExpression(bool_, bools.at(newName), newName, lower, upper));
 			} else if (this->getType() == int_) {
-				return std::shared_ptr<BaseExpression>(new VariableExpression(int_, ints.at(newName), newName, this->lowerBound, this->upperBound));
+				return std::shared_ptr<BaseExpression>(new VariableExpression(int_, ints.at(newName), newName, lower, upper));
 			} else {
-				std::cerr << "ERROR: Renaming variable " << this->variableName << " that is neither bool nor int." << std::endl;
-				return std::shared_ptr<BaseExpression>(this);
+				LOG4CPLUS_ERROR(logger, "ERROR: Renaming variable " << this->variableName << " that is neither bool nor int.");
+				return std::shared_ptr<BaseExpression>(nullptr);
 			}
 		} else {
-			return std::shared_ptr<BaseExpression>(this);
+			return std::shared_ptr<BaseExpression>(new VariableExpression(this->getType(), this->index, this->variableName, lower, upper));
 		}
 	}
 

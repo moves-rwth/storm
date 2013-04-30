@@ -34,6 +34,9 @@ public:
 	BaseExpression(ReturnType type) : type(type) {
 
 	}
+	BaseExpression(const BaseExpression& be)
+		: type(be.type) {
+	}
 
 	virtual ~BaseExpression() {
 

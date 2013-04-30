@@ -21,6 +21,9 @@ public:
 	std::string constantName;
 
 	ConstantExpression(ReturnType type, std::string constantName) : BaseExpression(type), constantName(constantName) {
+	}
+	ConstantExpression(const ConstantExpression& ce)
+		: BaseExpression(ce), constantName(ce.constantName) {
 
 	}
 

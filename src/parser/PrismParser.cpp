@@ -72,13 +72,13 @@ namespace parser {
 			throw "Renaming module failed";
 		}
 		Module res(*old, name, mapping, this->state);
-		this->state->moduleMap_.add(name, res);
+		this->state->moduleMap_.at(name) = res;
 		return res;
 	}
 	Module PrismParser::PrismGrammar::createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands) {
 		this->state->moduleNames_.add(name, name);
 		Module res(name, bools, ints, boolids, intids, commands);
-		this->state->moduleMap_.add(name, res);
+		this->state->moduleMap_.at(name) = res;
 		return res;
 	}
 
