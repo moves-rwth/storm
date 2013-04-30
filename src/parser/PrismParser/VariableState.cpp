@@ -53,9 +53,6 @@ uint_fast64_t VariableState::addIntegerVariable(const std::string& name, const s
 		std::shared_ptr<VariableExpression> varExpr = std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::int_, this->nextIntegerVariableIndex, name, lower, upper));
 		LOG4CPLUS_DEBUG(logger, "Adding integer variable " << name << " with new id " << this->nextIntegerVariableIndex);
 		this->integerVariables_.add(name, varExpr);
-		LOG4CPLUS_DEBUG(logger, "Int variables: " << this->integerVariables_);
-		this->integerVariables_.at(name) = varExpr;
-		LOG4CPLUS_DEBUG(logger, "Int variables: " << this->integerVariables_);
 		this->integerVariableNames_.add(name, name);
 		this->nextIntegerVariableIndex++;
 		return varExpr->getVariableIndex();
@@ -72,10 +69,9 @@ uint_fast64_t VariableState::addIntegerVariable(const std::string& name, const s
 }
 
 std::shared_ptr<VariableExpression> VariableState::getBooleanVariable(const std::string& name) {
-	std::shared_ptr<VariableExpression> res = this->booleanVariables_.at(name);
+	std::shared_ptr<VariableExpression>* res = this->booleanVariables_.find(name);
 	if (res != nullptr) {
-		LOG4CPLUS_DEBUG(logger, "Getting boolean variable " << name << ", was found at " << res);
-		return res;
+		return *res;
 	} else {
 		if (firstRun) {
 			LOG4CPLUS_DEBUG(logger, "Getting boolean variable " << name << ", was not yet created.");
@@ -88,10 +84,9 @@ std::shared_ptr<VariableExpression> VariableState::getBooleanVariable(const std:
 }
 
 std::shared_ptr<VariableExpression> VariableState::getIntegerVariable(const std::string& name) {
-	std::shared_ptr<VariableExpression> res = this->integerVariables_.at(name);
+	std::shared_ptr<VariableExpression>* res = this->integerVariables_.find(name);
 	if (res != nullptr) {
-		LOG4CPLUS_DEBUG(logger, "Getting integer variable " << name << ", was found at " << res);
-		return res;
+		return *res;
 	} else {
 		if (firstRun) {
 			LOG4CPLUS_DEBUG(logger, "Getting integer variable " << name << ", was not yet created.");
