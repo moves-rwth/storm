@@ -40,7 +40,7 @@ ConstDoubleExpressionGrammar::ConstDoubleExpressionGrammar(std::shared_ptr<Varia
 	constantAtomicDoubleExpression %= (qi::lit("(") >> constantDoubleExpression >> qi::lit(")") | doubleConstantExpression);
 	constantAtomicDoubleExpression.name("constant double expression");
 
-	doubleConstantExpression %= (this->state->doubleConstants_ | doubleLiteralExpression);
+	doubleConstantExpression %= (this->state->doubleConstants_ | this->state->integerConstants_ | doubleLiteralExpression);
 	doubleConstantExpression.name("double constant or literal");
 
 	doubleLiteralExpression = qi::double_[qi::_val = phoenix::bind(&ConstDoubleExpressionGrammar::createLiteral, this, qi::_1)];
