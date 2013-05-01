@@ -54,6 +54,7 @@ namespace prism {
 		relationalOperatorStruct() {
 			add
 				("=", BinaryRelationExpression::EQUAL)
+				("!=", BinaryRelationExpression::NOT_EQUAL)
 				("<", BinaryRelationExpression::LESS)
 				("<=", BinaryRelationExpression::LESS_OR_EQUAL)
 				(">", BinaryRelationExpression::GREATER)
