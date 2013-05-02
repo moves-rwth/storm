@@ -168,6 +168,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			storm::ir::Module const& module = this->program.getModule(i);
 			
 			std::shared_ptr<std::set<uint_fast64_t>> ids = module.getCommandsByAction(action);
+			if (ids->size() == 0) continue;
 			std::list<storm::ir::Command> commands;
 			
 			// Look up commands by their id. Add, if guard holds.
