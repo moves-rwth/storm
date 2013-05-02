@@ -25,8 +25,8 @@ Variable::Variable(uint_fast64_t index, std::string variableName, std::shared_pt
 	// Nothing to do here.
 }
 
-Variable::Variable(const Variable& var, const std::string& newName, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints) {
-	this->index = var.index;
+Variable::Variable(const Variable& var, const std::string& newName, const uint_fast64_t newIndex, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints) {
+	this->index = newIndex;
 	this->variableName = newName;
 	if (var.initialValue != nullptr) {
 		this->initialValue = var.initialValue->clone(renaming, bools, ints);

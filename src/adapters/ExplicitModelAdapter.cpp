@@ -131,20 +131,18 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 		this->booleanVariables.resize(numberOfBooleanVariables);
 		this->integerVariables.resize(numberOfIntegerVariables);
 
-		uint_fast64_t nextBooleanVariableIndex = 0;
-		uint_fast64_t nextIntegerVariableIndex = 0;
 		for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
 			storm::ir::Module const& module = program.getModule(i);
 
 			for (uint_fast64_t j = 0; j < module.getNumberOfBooleanVariables(); ++j) {
-				this->booleanVariables[nextBooleanVariableIndex] = module.getBooleanVariable(j);
-				this->booleanVariableToIndexMap[module.getBooleanVariable(j).getName()] = nextBooleanVariableIndex;
-				++nextBooleanVariableIndex;
+				storm::ir::BooleanVariable var = module.getBooleanVariable(j);
+				this->booleanVariables[var.getIndex()] = var;
+				this->booleanVariableToIndexMap[var.getName()] = var.getIndex();
 			}
 			for (uint_fast64_t j = 0; j < module.getNumberOfIntegerVariables(); ++j) {
-				this->integerVariables[nextIntegerVariableIndex] = module.getIntegerVariable(j);
-				this->integerVariableToIndexMap[module.getIntegerVariable(j).getName()] = nextIntegerVariableIndex;
-				++nextIntegerVariableIndex;
+				storm::ir::IntegerVariable var = module.getIntegerVariable(j);
+				this->integerVariables[var.getIndex()] = var;
+				this->integerVariableToIndexMap[var.getName()] = var.getIndex();
 			}
 		}
 	}
