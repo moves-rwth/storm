@@ -33,7 +33,6 @@ namespace parser {
  * exception is passed on to the caller.
  */
 storm::ir::Program PrismParser::parseFile(std::string const& filename) const {
-	std::cerr << "parseFile( " << filename << " )" << std::endl;
 	// Open file and initialize result.
 	std::ifstream inputFileStream(filename, std::ios::in);
 	storm::ir::Program result;

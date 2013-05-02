@@ -54,7 +54,7 @@ public:
 		switch (functionType) {
 		case NOT: result += "!"; break;
 		}
-		result += this->getChild()->toString();
+		result += "(" + this->getChild()->toString() + ")";
 
 		return result;
 	}
