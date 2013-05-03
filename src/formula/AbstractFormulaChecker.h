@@ -1,6 +1,15 @@
 #ifndef STORM_FORMULA_ABSTRACTFORMULACHECKER_H_
 #define STORM_FORMULA_ABSTRACTFORMULACHECKER_H_
 
+namespace storm {
+namespace formula {
+
+template <class T> class AbstractFormulaChecker;
+
+} //namespace formula
+} //namespace storm
+
+
 #include "src/formula/abstract/AbstractFormula.h"
 
 namespace storm {

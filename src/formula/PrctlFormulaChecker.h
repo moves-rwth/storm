@@ -22,20 +22,20 @@ class PrctlFormulaChecker : public AbstractFormulaChecker<T> {
 		 *	Implementation of AbstractFormulaChecker::conforms() using code
 		 *	looking exactly like the sample code given there.
 		 */
-		virtual bool conforms(const AbstractFormula<T>* formula) const {
+		virtual bool conforms(const storm::formula::abstract::AbstractFormula<T>* formula) const {
 			// What to support: Principles of Model Checking Def. 10.76 + syntactic sugar
 			if (
-					dynamic_cast<const And<T>*>(formula) ||
-					dynamic_cast<const Ap<T>*>(formula) ||
-					dynamic_cast<const BoundedUntil<T>*>(formula) ||
-					dynamic_cast<const Eventually<T>*>(formula) ||
-					dynamic_cast<const Globally<T>*>(formula) ||
-					dynamic_cast<const Next<T>*>(formula) ||
-					dynamic_cast<const Not<T>*>(formula) ||
-					dynamic_cast<const Or<T>*>(formula) ||
-					dynamic_cast<const ProbabilisticNoBoundOperator<T>*>(formula) ||
-					dynamic_cast<const ProbabilisticBoundOperator<T>*>(formula) ||
-					dynamic_cast<const Until<T>*>(formula)
+					dynamic_cast<const storm::formula::prctl::And<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::Ap<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::BoundedUntil<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::Eventually<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::Globally<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::Next<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::Not<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::Or<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::ProbabilisticNoBoundOperator<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::ProbabilisticBoundOperator<T>*>(formula) ||
+					dynamic_cast<const storm::formula::prctl::Until<T>*>(formula)
 				) {
 				return formula->conforms(*this);
 			}
