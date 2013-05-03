@@ -57,7 +57,7 @@ public:
 	 * Empty constructor
 	 */
 	CumulativeReward() {
-		bound = 0;
+		// Intentionally left empty
 	}
 
 	/*!
@@ -65,8 +65,9 @@ public:
 	 *
 	 * @param bound The time bound of the reward formula
 	 */
-	CumulativeReward(T bound) {
-		this->bound = bound;
+	CumulativeReward(T bound) :
+		storm::property::abstract::CumulativeReward<T>(bound) {
+		// Intentionally left empty
 	}
 
 	/*!
@@ -77,22 +78,6 @@ public:
 	}
 
 	/*!
-	 * @returns the time instance for the instantaneous reward operator
-	 */
-	T getBound() const {
-		return bound;
-	}
-
-	/*!
-	 * Sets the the time instance for the instantaneous reward operator
-	 *
-	 * @param bound the new bound.
-	 */
-	void setBound(T bound) {
-		this->bound = bound;
-	}
-
-	/*!
 	 * Clones the called object.
 	 *
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
@@ -100,7 +85,7 @@ public:
 	 * @returns a new CumulativeReward-object that is identical the called object.
 	 */
 	virtual AbstractPathFormula<T>* clone() const {
-		return new CumulativeReward(bound);
+		return new CumulativeReward(this->getBound());
 	}
 
 
@@ -116,9 +101,6 @@ public:
 	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<ICumulativeRewardModelChecker>()->checkCumulativeReward(*this, qualitative);
 	}
-
-private:
-	T bound;
 };
 
 } //namespace prctl
