@@ -13,8 +13,8 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 
-	ASSERT_EQ(mdp->getNumberOfStates(), 169);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 436);
+	ASSERT_EQ(mdp->getNumberOfStates(), 169u);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 436u);
 
 	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
 
@@ -177,8 +177,8 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 
-	ASSERT_EQ(mdp->getNumberOfStates(), 3172);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144);
+	ASSERT_EQ(mdp->getNumberOfStates(), 3172u);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144u);
 
 	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
 

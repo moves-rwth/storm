@@ -14,8 +14,8 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 13);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 27);
+	ASSERT_EQ(dtmc->getNumberOfStates(), 13u);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 27u);
 
 	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
