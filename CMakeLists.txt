@@ -49,6 +49,7 @@ option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
 option(USE_INTELTBB "Sets whether the Intel TBB Extensions should be used." OFF)
+option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (DEBUG)
@@ -200,7 +201,6 @@ if (USE_INTELTBB)
 	target_link_libraries(storm-tests tbb tbbmalloc) 
 endif(USE_INTELTBB)
 
-set (STORM_USE_COTIRE ON)
 if (APPLE)
 	set(STORM_USE_COTIRE OFF)
 	
