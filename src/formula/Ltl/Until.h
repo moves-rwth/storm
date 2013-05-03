@@ -13,7 +13,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace ltl {
 
 template <class T> class Until;
@@ -52,7 +52,7 @@ class IUntilModelChecker {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Until : public storm::formula::abstract::Until<T, AbstractLtlFormula<T>>,
+class Until : public storm::property::abstract::Until<T, AbstractLtlFormula<T>>,
 				  public AbstractLtlFormula<T> {
 
 public:
@@ -70,7 +70,7 @@ public:
 	 * @param right The left formula subtree
 	 */
 	Until(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right)
-		: storm::formula::abstract::Until<T, AbstractLtlFormula<T>>(left, right) {
+		: storm::property::abstract::Until<T, AbstractLtlFormula<T>>(left, right) {
 		// Intentionally left empty
 	}
 
@@ -93,7 +93,7 @@ public:
 	 * @return A string representation of the formula.
 	 */
 	virtual std::string toString() const {
-		return "(" + storm::formula::abstract::Until<T, AbstractLtlFormula<T>>::toString() + ")";
+		return "(" + storm::property::abstract::Until<T, AbstractLtlFormula<T>>::toString() + ")";
 	}
 
 	/*!
@@ -129,7 +129,7 @@ public:
 };
 
 } //namespace ltl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_LTL_UNTIL_H_ */

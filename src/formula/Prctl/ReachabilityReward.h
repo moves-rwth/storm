@@ -14,7 +14,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class ReachabilityReward;
@@ -50,7 +50,7 @@ class IReachabilityRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class ReachabilityReward : public storm::formula::abstract::Eventually<T, AbstractStateFormula<T>>,
+class ReachabilityReward : public storm::property::abstract::Eventually<T, AbstractStateFormula<T>>,
 									public AbstractPathFormula<T> {
 
 public:
@@ -67,7 +67,7 @@ public:
 	 * @param child The child node
 	 */
 	ReachabilityReward(AbstractStateFormula<T>* child) :
-		storm::formula::abstract::Eventually<T, AbstractStateFormula<T>>(child){
+		storm::property::abstract::Eventually<T, AbstractStateFormula<T>>(child){
 		// Intentionally left empty
 	}
 
@@ -111,7 +111,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_REACHABILITYREWARD_H_ */

@@ -13,7 +13,7 @@
 
 namespace storm {
 
-namespace formula {
+namespace property {
 
 namespace abstract {
 
@@ -107,8 +107,8 @@ public:
      *  @param checker Formula checker object.
      *  @return true iff the subtree conforms to some logic.
      */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-        return checker.conforms(this->child);
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+        return checker.validate(this->child);
     }
 
 private:
@@ -117,7 +117,7 @@ private:
 
 } //namespace abstract
 
-} //namespace formula
+} //namespace property
 
 } //namespace storm
 

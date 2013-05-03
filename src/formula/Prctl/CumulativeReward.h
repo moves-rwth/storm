@@ -15,7 +15,7 @@
 #include <string>
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class CumulativeReward;
@@ -49,7 +49,7 @@ class ICumulativeRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class CumulativeReward : public storm::formula::abstract::CumulativeReward<T>,
+class CumulativeReward : public storm::property::abstract::CumulativeReward<T>,
 								 public AbstractPathFormula<T> {
 
 public:
@@ -93,15 +93,6 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
-	 */
-	virtual std::string toString() const {
-		std::string result = "C <= ";
-		result += std::to_string(bound);
-		return result;
-	}
-
-	/*!
 	 * Clones the called object.
 	 *
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
@@ -125,25 +116,13 @@ public:
 	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<ICumulativeRewardModelChecker>()->checkCumulativeReward(*this, qualitative);
 	}
-	
-	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *  
-     *  As CumulativeReward objects have no subformulas, we return true here.
-     * 
-     *  @param checker Formula checker object.
-     *  @return true
-     */	
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		return true;
-	}
 
 private:
 	T bound;
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_INSTANTANEOUSREWARD_H_ */

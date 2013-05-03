@@ -42,22 +42,22 @@ template<class Type>
 class AbstractModelChecker :
 	// A list of interfaces the model checker supports. Typically, for each of the interfaces, a check method needs to
 	// be implemented that performs the corresponding check.
-	public virtual storm::formula::prctl::IApModelChecker<Type>,
-	public virtual storm::formula::prctl::IAndModelChecker<Type>,
-	public virtual storm::formula::prctl::IOrModelChecker<Type>,
-	public virtual storm::formula::prctl::INotModelChecker<Type>,
-	public virtual storm::formula::prctl::IUntilModelChecker<Type>,
-	public virtual storm::formula::prctl::IEventuallyModelChecker<Type>,
-	public virtual storm::formula::prctl::IGloballyModelChecker<Type>,
-	public virtual storm::formula::prctl::INextModelChecker<Type>,
-	public virtual storm::formula::prctl::IBoundedUntilModelChecker<Type>,
-	public virtual storm::formula::prctl::IBoundedEventuallyModelChecker<Type>,
-	public virtual storm::formula::prctl::INoBoundOperatorModelChecker<Type>,
-	public virtual storm::formula::prctl::IProbabilisticBoundOperatorModelChecker<Type>,
-	public virtual storm::formula::prctl::IRewardBoundOperatorModelChecker<Type>,
-	public virtual storm::formula::prctl::IReachabilityRewardModelChecker<Type>,
-	public virtual storm::formula::prctl::ICumulativeRewardModelChecker<Type>,
-	public virtual storm::formula::prctl::IInstantaneousRewardModelChecker<Type> {
+	public virtual storm::property::prctl::IApModelChecker<Type>,
+	public virtual storm::property::prctl::IAndModelChecker<Type>,
+	public virtual storm::property::prctl::IOrModelChecker<Type>,
+	public virtual storm::property::prctl::INotModelChecker<Type>,
+	public virtual storm::property::prctl::IUntilModelChecker<Type>,
+	public virtual storm::property::prctl::IEventuallyModelChecker<Type>,
+	public virtual storm::property::prctl::IGloballyModelChecker<Type>,
+	public virtual storm::property::prctl::INextModelChecker<Type>,
+	public virtual storm::property::prctl::IBoundedUntilModelChecker<Type>,
+	public virtual storm::property::prctl::IBoundedEventuallyModelChecker<Type>,
+	public virtual storm::property::prctl::INoBoundOperatorModelChecker<Type>,
+	public virtual storm::property::prctl::IProbabilisticBoundOperatorModelChecker<Type>,
+	public virtual storm::property::prctl::IRewardBoundOperatorModelChecker<Type>,
+	public virtual storm::property::prctl::IReachabilityRewardModelChecker<Type>,
+	public virtual storm::property::prctl::ICumulativeRewardModelChecker<Type>,
+	public virtual storm::property::prctl::IInstantaneousRewardModelChecker<Type> {
 	
 public:
 	/*!
@@ -123,7 +123,7 @@ public:
 	 *
 	 * @param stateFormula The formula to be checked.
 	 */
-	void check(storm::formula::prctl::AbstractStateFormula<Type> const& stateFormula) const {
+	void check(storm::property::prctl::AbstractStateFormula<Type> const& stateFormula) const {
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << stateFormula.toString());
 		std::cout << "Model checking formula:\t" << stateFormula.toString() << std::endl;
@@ -154,7 +154,7 @@ public:
 	 *
 	 * @param noBoundFormula The formula to be checked.
 	 */
-	void check(storm::formula::prctl::AbstractNoBoundOperator<Type> const& noBoundFormula) const {
+	void check(storm::property::prctl::AbstractNoBoundOperator<Type> const& noBoundFormula) const {
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << noBoundFormula.toString());
 		std::cout << "Model checking formula:\t" << noBoundFormula.toString() << std::endl;
@@ -184,7 +184,7 @@ public:
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkAp(storm::formula::prctl::Ap<Type> const& formula) const {
+	storm::storage::BitVector* checkAp(storm::property::prctl::Ap<Type> const& formula) const {
 		if (formula.getAp() == "true") {
 			return new storm::storage::BitVector(model.getNumberOfStates(), true);
 		} else if (formula.getAp() == "false") {
@@ -205,7 +205,7 @@ public:
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkAnd(storm::formula::prctl::And<Type> const& formula) const {
+	storm::storage::BitVector* checkAnd(storm::property::prctl::And<Type> const& formula) const {
 		storm::storage::BitVector* result = formula.getLeft().check(*this);
 		storm::storage::BitVector* right = formula.getRight().check(*this);
 		(*result) &= (*right);
@@ -219,7 +219,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector* checkOr(storm::formula::prctl::Or<Type> const& formula) const {
+	virtual storm::storage::BitVector* checkOr(storm::property::prctl::Or<Type> const& formula) const {
 		storm::storage::BitVector* result = formula.getLeft().check(*this);
 		storm::storage::BitVector* right = formula.getRight().check(*this);
 		(*result) |= (*right);
@@ -233,7 +233,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkNot(const storm::formula::prctl::Not<Type>& formula) const {
+	storm::storage::BitVector* checkNot(const storm::property::prctl::Not<Type>& formula) const {
 		storm::storage::BitVector* result = formula.getChild().check(*this);
 		result->complement();
 		return result;
@@ -246,7 +246,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkProbabilisticBoundOperator(storm::formula::prctl::ProbabilisticBoundOperator<Type> const& formula) const {
+	storm::storage::BitVector* checkProbabilisticBoundOperator(storm::property::prctl::ProbabilisticBoundOperator<Type> const& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type>* quantitativeResult = formula.getPathFormula().check(*this, false);
 
@@ -272,7 +272,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkRewardBoundOperator(const storm::formula::prctl::RewardBoundOperator<Type>& formula) const {
+	storm::storage::BitVector* checkRewardBoundOperator(const storm::property::prctl::RewardBoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type>* quantitativeResult = formula.getPathFormula().check(*this, false);
 

@@ -20,7 +20,7 @@
 
 namespace storm {
 
-namespace formula {
+namespace property {
 
 namespace abstract {
 
@@ -56,7 +56,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	PathBoundOperator(storm::formula::ComparisonType comparisonOperator, T bound, FormulaType* pathFormula)
+	PathBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, FormulaType* pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
@@ -69,7 +69,7 @@ public:
 	 * @param pathFormula The child node
 	 * @param minimumOperator Indicator, if operator should be minimum or maximum operator.
 	 */
-	PathBoundOperator(storm::formula::ComparisonType comparisonOperator, T bound, FormulaType* pathFormula, bool minimumOperator)
+	PathBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, FormulaType* pathFormula, bool minimumOperator)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula), OptimizingOperator(minimumOperator) {
 		// Intentionally left empty
 	}
@@ -113,11 +113,11 @@ public:
 	/*!
 	 * @returns the comparison relation
 	 */
-	const storm::formula::ComparisonType getComparisonOperator() const {
+	const storm::property::ComparisonType getComparisonOperator() const {
 		return comparisonOperator;
 	}
 
-	void setComparisonOperator(storm::formula::ComparisonType comparisonOperator) {
+	void setComparisonOperator(storm::property::ComparisonType comparisonOperator) {
 		this->comparisonOperator = comparisonOperator;
 	}
 
@@ -172,19 +172,19 @@ public:
      *  @param checker Formula checker object.
      *  @return true iff the subtree conforms to some logic.
      */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-        return checker.conforms(this->pathFormula);
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+        return checker.validate(this->pathFormula);
     }
 
 private:
-	storm::formula::ComparisonType comparisonOperator;
+	storm::property::ComparisonType comparisonOperator;
 	T bound;
 	FormulaType* pathFormula;
 };
 
 } //namespace abstract
 
-} //namespace formula
+} //namespace property
 
 } //namespace storm
 

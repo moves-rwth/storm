@@ -13,7 +13,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace ltl {
 
 template <class T> class Eventually;
@@ -51,7 +51,7 @@ class IEventuallyModelChecker {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Eventually : public storm::formula::abstract::Eventually<T, AbstractLtlFormula<T>>,
+class Eventually : public storm::property::abstract::Eventually<T, AbstractLtlFormula<T>>,
 						 public AbstractLtlFormula<T> {
 
 public:
@@ -68,7 +68,7 @@ public:
 	 * @param child The child node
 	 */
 	Eventually(AbstractLtlFormula<T>* child)
-		: storm::formula::abstract::Eventually<T, AbstractLtlFormula<T>>(child) {
+		: storm::property::abstract::Eventually<T, AbstractLtlFormula<T>>(child) {
 
 	}
 
@@ -112,7 +112,7 @@ public:
 };
 
 } //namespace ltl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_LTL_EVENTUALLY_H_ */

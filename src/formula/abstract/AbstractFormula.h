@@ -11,30 +11,30 @@
 #include <string>
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 template <class T> class AbstractFormula;
 } //namespace abstract
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #include "src/modelchecker/ForwardDeclarations.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 
 //abstract
 /*!
  *	@brief Abstract base class for logic Abstract formulas in general.
  *
- * The namespace storm::formula::abstract contains versions of the formula classes which are logic abstract, and contain
+ * The namespace storm::property::abstract contains versions of the formula classes which are logic abstract, and contain
  * the implementation which is not directly dependent on the logics.
  * The classes for the subtrees are referenced by the template parameter FormulaType, which is typically instantiated in
  * the derived classes of concrete logics.
  *
- * The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions "toString" and "conforms"
+ * The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions "toString" and "validate"
  * of the subformulas are needed.
  *
  * @note
@@ -75,18 +75,18 @@ public:
 	 *
 	 *	This method is given a checker object that knows which formula
 	 *	classes are allowed within the logic the checker represents. Every
-	 *	subclass is supposed to call checker.conforms() for all child
+	 *	subclass is supposed to call checker.validate() for all child
 	 *	formulas and return true if and only if all those calls returned
 	 *	true.
 	 *
 	 *	@param checker Checker object.
 	 *	@return true iff all subtrees are valid.
 	 */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const = 0;
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const = 0;
 };
 
 } // namespace abstract
-} // namespace formula
+} // namespace property
 } // namespace storm
 
 #endif /* STORM_FORMULA_ABSTRACT_ABSTRACTFORMULA_H_ */

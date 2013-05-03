@@ -14,7 +14,7 @@
 
 namespace storm {
 
-namespace formula {
+namespace property {
 
 namespace csl {
 
@@ -54,14 +54,14 @@ class ISteadyStateBoundOperatorModelChecker {
  * @see AbstractCslFormula
  */
 template <class T>
-class SteadyStateBoundOperator : public storm::formula::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>,
+class SteadyStateBoundOperator : public storm::property::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>,
 											public AbstractStateFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	SteadyStateBoundOperator() : storm::formula::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>
+	SteadyStateBoundOperator() : storm::property::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>
 		(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
@@ -72,8 +72,8 @@ public:
 	 * @param stateFormula The child node
 	 */
 	SteadyStateBoundOperator(
-		storm::formula::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* stateFormula) :
-			storm::formula::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>(comparisonRelation, bound, stateFormula) {
+		storm::property::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* stateFormula) :
+			storm::property::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>(comparisonRelation, bound, stateFormula) {
 	}
 
 	/*!
@@ -112,7 +112,7 @@ public:
 };
 
 } //namespace csl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_CSL_STEADYSTATEOPERATOR_H_ */

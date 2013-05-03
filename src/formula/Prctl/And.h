@@ -15,7 +15,7 @@
 #include <string>
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class And;
@@ -54,7 +54,7 @@ class IAndModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class And : public storm::formula::abstract::And<T, AbstractStateFormula<T>>, public AbstractStateFormula<T> {
+class And : public storm::property::abstract::And<T, AbstractStateFormula<T>>, public AbstractStateFormula<T> {
 
 public:
 	/*!
@@ -73,7 +73,7 @@ public:
 	 * @param right The right sub formula
 	 */
 	And(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right)
-		: storm::formula::abstract::And<T, AbstractStateFormula<T>>(left, right) {
+		: storm::property::abstract::And<T, AbstractStateFormula<T>>(left, right) {
 		//intentionally left empty
 	}
 
@@ -122,7 +122,7 @@ public:
 
 } //namespace prctl
 
-} //namespace formula
+} //namespace property
 
 } //namespace storm
 

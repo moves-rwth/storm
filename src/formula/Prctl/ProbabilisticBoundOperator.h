@@ -14,7 +14,7 @@
 #include "utility/ConstTemplates.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class ProbabilisticBoundOperator;
@@ -53,7 +53,7 @@ class IProbabilisticBoundOperatorModelChecker {
  * @see AbstractPrctlFormula
  */
 template<class T>
-class ProbabilisticBoundOperator : public storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>,
+class ProbabilisticBoundOperator : public storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>,
 											  public AbstractStateFormula<T> {
 
 public:
@@ -73,10 +73,10 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			storm::formula::ComparisonType comparisonRelation,
+			storm::property::ComparisonType comparisonRelation,
 			T bound,
 			AbstractPathFormula<T>* pathFormula)
-			: storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
+			: storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -88,11 +88,11 @@ public:
 	 * @param minimumOperator
 	 */
 	ProbabilisticBoundOperator(
-			storm::formula::ComparisonType comparisonRelation,
+			storm::property::ComparisonType comparisonRelation,
 			T bound,
 			AbstractPathFormula<T>* pathFormula,
 			bool minimumOperator)
-			: storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator){
+			: storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator){
 		// Intentionally left empty
 	}
 
@@ -133,7 +133,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_PROBABILISTICBOUNDOPERATOR_H_ */

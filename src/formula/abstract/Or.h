@@ -12,7 +12,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 
 /*!
@@ -139,8 +139,8 @@ public:
      *  @param checker Formula checker object.
      *  @return true iff all subtrees conform to some logic.
      */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-        return checker.conforms(this->left) && checker.conforms(this->right);
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+        return checker.validate(this->left) && checker.validate(this->right);
     }
 
 private:
@@ -150,7 +150,7 @@ private:
 
 } //namespace abstract
 
-} //namespace formula
+} //namespace property
 
 } //namespace storm
 

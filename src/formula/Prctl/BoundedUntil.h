@@ -16,7 +16,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class BoundedUntil;
@@ -56,7 +56,7 @@ class IBoundedUntilModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class BoundedUntil : public storm::formula::abstract::BoundedUntil<T, AbstractStateFormula<T>>,
+class BoundedUntil : public storm::property::abstract::BoundedUntil<T, AbstractStateFormula<T>>,
 							public AbstractPathFormula<T> {
 
 public:
@@ -76,7 +76,7 @@ public:
 	 */
 	BoundedUntil(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right,
 					 uint_fast64_t bound) :
-					 storm::formula::abstract::BoundedUntil<T, AbstractStateFormula<T>>(left,right,bound) {
+					 storm::property::abstract::BoundedUntil<T, AbstractStateFormula<T>>(left,right,bound) {
 		//intentionally left empty
 	}
 
@@ -125,7 +125,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_BOUNDEDUNTIL_H_ */

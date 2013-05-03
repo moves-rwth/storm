@@ -13,7 +13,7 @@
 #include "src/formula/abstract/SteadyStateNoBoundOperator.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 template <class T> class SteadyStateNoBoundOperator;
@@ -37,13 +37,13 @@ class ISteadyStateNoBoundOperatorModelChecker {
 };
 
 template <class T>
-class SteadyStateNoBoundOperator: public storm::formula::abstract::SteadyStateNoBoundOperator<T, AbstractStateFormula<T>>,
+class SteadyStateNoBoundOperator: public storm::property::abstract::SteadyStateNoBoundOperator<T, AbstractStateFormula<T>>,
 											 public AbstractNoBoundOperator<T> {
 public:
 	/*!
 	 * Empty constructor
 	 */
-	SteadyStateNoBoundOperator() : storm::formula::abstract::SteadyStateNoBoundOperator<T, AbstractStateFormula<T>>() {
+	SteadyStateNoBoundOperator() : storm::property::abstract::SteadyStateNoBoundOperator<T, AbstractStateFormula<T>>() {
 		// Intentionally left empty
 
 	}
@@ -54,7 +54,7 @@ public:
 	 * @param stateFormula The state formula that forms the subtree
 	 */
 	SteadyStateNoBoundOperator(AbstractStateFormula<T>* stateFormula)
-		: storm::formula::abstract::SteadyStateNoBoundOperator<T, AbstractStateFormula<T>>(stateFormula) {
+		: storm::property::abstract::SteadyStateNoBoundOperator<T, AbstractStateFormula<T>>(stateFormula) {
 		// Intentionally left empty
 	}
 
@@ -94,7 +94,7 @@ public:
 };
 
 } /* namespace csl */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 
 #endif /* STORM_FORMULA_CSL_STEADYSTATENOBOUNDOPERATOR_H_ */

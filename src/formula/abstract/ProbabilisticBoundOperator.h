@@ -14,7 +14,7 @@
 #include "utility/ConstTemplates.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 
 /*!
@@ -62,7 +62,7 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			storm::formula::ComparisonType comparisonRelation,
+			storm::property::ComparisonType comparisonRelation,
 			T bound,
 			FormulaType* pathFormula)
 			: PathBoundOperator<T, FormulaType>(comparisonRelation, bound, pathFormula) {
@@ -78,7 +78,7 @@ public:
 	 * @param minimumOperator
 	 */
 	ProbabilisticBoundOperator(
-			storm::formula::ComparisonType comparisonRelation,
+			storm::property::ComparisonType comparisonRelation,
 			T bound,
 			FormulaType* pathFormula,
 			bool minimumOperator)
@@ -104,7 +104,7 @@ public:
 };
 
 } //namespace abstract
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_ABSTRACT_PROBABILISTICBOUNDOPERATOR_H_ */

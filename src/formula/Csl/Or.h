@@ -13,7 +13,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 template <class T> class Or;
@@ -52,7 +52,7 @@ class IOrModelChecker {
  * @see AbstractCslFormula
  */
 template <class T>
-class Or : public storm::formula::abstract::Or<T, AbstractStateFormula<T>>,
+class Or : public storm::property::abstract::Or<T, AbstractStateFormula<T>>,
 			  public AbstractStateFormula<T> {
 
 public:
@@ -72,7 +72,7 @@ public:
 	 * @param right The right sub formula
 	 */
 	Or(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) :
-		storm::formula::abstract::Or<T, AbstractStateFormula<T>>(left, right) {
+		storm::property::abstract::Or<T, AbstractStateFormula<T>>(left, right) {
 		//intentionally left empty
 	}
 
@@ -119,7 +119,7 @@ public:
 };
 
 } //namespace csl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_CSL_OR_H_ */

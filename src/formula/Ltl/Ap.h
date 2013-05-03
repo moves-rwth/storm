@@ -12,7 +12,7 @@
 #include "src/formula/abstract/Ap.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace ltl {
 
 template <class T> class Ap;
@@ -44,8 +44,8 @@ class IApModelChecker {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Ap: public storm::formula::abstract::Ap<T>,
-		    public storm::formula::ltl::AbstractLtlFormula<T> {
+class Ap: public storm::property::abstract::Ap<T>,
+		    public storm::property::ltl::AbstractLtlFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -62,7 +62,7 @@ public:
 	 * @param ap The string representing the atomic proposition
 	 */
 	Ap(std::string ap) :
-		storm::formula::abstract::Ap<T>(ap) {
+		storm::property::abstract::Ap<T>(ap) {
 		// Intentionally left empty
 	}
 
@@ -101,6 +101,6 @@ public:
 };
 
 } /* namespace ltl */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 #endif /* STORM_FORMULA_LTL_AP_H_ */

@@ -12,7 +12,7 @@
 #include "src/formula/abstract/IOptimizingOperator.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T>
@@ -43,7 +43,7 @@ public:
  */
 template <class T>
 class AbstractNoBoundOperator: public AbstractPrctlFormula<T>,
-										 public virtual storm::formula::abstract::IOptimizingOperator {
+										 public virtual storm::property::abstract::IOptimizingOperator {
 public:
 	AbstractNoBoundOperator() {
 		// Intentionally left empty.
@@ -78,6 +78,6 @@ public:
 };
 
 } /* namespace prctl */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 #endif /* STORM_FORMULA_PRCTL_ABSTRACTNOBOUNDOPERATOR_H_ */

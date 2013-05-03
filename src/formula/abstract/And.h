@@ -14,7 +14,7 @@
 #include <string>
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 
 /*!
@@ -33,7 +33,7 @@ namespace abstract {
  *
  * @tparam FormulaType The type of the subformula.
  * 		  The instantiation of FormulaType should be a subclass of AbstractFormula, as the functions
- * 		  "toString" and "conforms" of the subformulas are needed.
+ * 		  "toString" and "validate" of the subformulas are needed.
  */
 template <class T, class FormulaType>
 class And : public virtual AbstractFormula<T> {
@@ -141,8 +141,8 @@ public:
 	 *	@param checker Formula checker object.
 	 *	@return true iff all subtrees conform to some logic.
 	 */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-        return checker.conforms(this->left) && checker.conforms(this->right);
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+        return checker.validate(this->left) && checker.validate(this->right);
     }
 
 
@@ -153,7 +153,7 @@ private:
 
 } //namespace abstract
 
-} //namespace formula
+} //namespace property
 
 } //namespace storm
 

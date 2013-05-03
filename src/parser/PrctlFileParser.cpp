@@ -68,11 +68,11 @@ void PrctlFileParser::check(std::string filename, storm::modelchecker::AbstractM
 		//The while loop reads the input file line by line
 		while (std::getline(inputFileStream, line)) {
 			PrctlParser parser(line);
-			storm::formula::prctl::AbstractStateFormula<double>* stateFormula = dynamic_cast<storm::formula::prctl::AbstractStateFormula<double>*>(parser.getFormula());
+			storm::property::prctl::AbstractStateFormula<double>* stateFormula = dynamic_cast<storm::property::prctl::AbstractStateFormula<double>*>(parser.getFormula());
 			if (stateFormula != nullptr) {
 				modelChecker->check(*stateFormula);
 			}
-			storm::formula::prctl::AbstractNoBoundOperator<double>* noBoundFormula = dynamic_cast<storm::formula::prctl::AbstractNoBoundOperator<double>*>(parser.getFormula());
+			storm::property::prctl::AbstractNoBoundOperator<double>* noBoundFormula = dynamic_cast<storm::property::prctl::AbstractNoBoundOperator<double>*>(parser.getFormula());
 			if (noBoundFormula != nullptr) {
 				modelChecker->check(*noBoundFormula);
 			}

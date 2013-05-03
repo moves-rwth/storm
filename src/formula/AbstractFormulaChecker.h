@@ -2,18 +2,18 @@
 #define STORM_FORMULA_ABSTRACTFORMULACHECKER_H_
 
 namespace storm {
-namespace formula {
+namespace property {
 
 template <class T> class AbstractFormulaChecker;
 
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 
 #include "src/formula/abstract/AbstractFormula.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 
 /*!
  *	@brief	Base class for all formula checkers.
@@ -22,7 +22,7 @@ namespace formula {
  *	logic. Hence, this pure virtual base class should be subclassed for
  *	every logic we support.
  *
- *	Every subclass must implement conforms(). It gets a pointer to an
+ *	Every subclass must implement validate(). It gets a pointer to an
  *	AbstractFormula object and should return if the subtree represented by
  *	this formula is valid in the logic.
  *
@@ -33,12 +33,12 @@ namespace formula {
  *			dynamic_cast<const Not<T>*>(formula) ||
  *			dynamic_cast<const Or<T>*>(formula)
  *		) {
- *		return formula->conforms(*this);
+ *		return formula->validate(*this);
  *	} else	return false;
  *	@endcode
  *
- *	Every formula class implements a conforms() method itself which calls
- *	conforms() on the given checker for every child in the formula tree.
+ *	Every formula class implements a validate() method itself which calls
+ *	validate() on the given checker for every child in the formula tree.
  *
  *	If the formula structure is not an actual tree, but an directed acyclic
  *	graph, the shared subtrees will be checked twice. If we have directed
@@ -64,10 +64,10 @@ class AbstractFormulaChecker {
 		 *	@param formula A pointer to some formula object.
 		 *	@return true iff the formula is valid.
 		 */
-		virtual bool conforms(const storm::formula::abstract::AbstractFormula<T>* formula) const = 0;
+		virtual bool validate(const storm::property::abstract::AbstractFormula<T>* formula) const = 0;
 };
 
-} // namespace formula
+} // namespace property
 } // namespace storm
 
 #endif

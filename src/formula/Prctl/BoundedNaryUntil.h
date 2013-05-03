@@ -19,7 +19,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 
@@ -63,7 +63,7 @@ class IBoundedNaryUntilModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class BoundedNaryUntil : public storm::formula::abstract::BoundedNaryUntil<T, AbstractStateFormula<T>>,
+class BoundedNaryUntil : public storm::property::abstract::BoundedNaryUntil<T, AbstractStateFormula<T>>,
 								 public AbstractPathFormula<T> {
 
 public:
@@ -81,7 +81,7 @@ public:
 	 * @param right The left formula subtree
 	 */
 	BoundedNaryUntil(AbstractStateFormula<T>* left, std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right) :
-		storm::formula::abstract::BoundedNaryUntil<T, AbstractStateFormula<T>>(left, right){
+		storm::property::abstract::BoundedNaryUntil<T, AbstractStateFormula<T>>(left, right){
 
 	}
 
@@ -135,7 +135,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_BOUNDEDNARYUNTIL_H_ */

@@ -8,7 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_ABSTRACTSTATEFORMULA_H_
 #define STORM_FORMULA_PRCTL_ABSTRACTSTATEFORMULA_H_
 
-namespace storm { namespace formula { namespace prctl {
+namespace storm { namespace property { namespace prctl {
 template <class T> class AbstractStateFormula;
 }}}
 
@@ -17,7 +17,7 @@ template <class T> class AbstractStateFormula;
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 /*!
@@ -65,7 +65,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 

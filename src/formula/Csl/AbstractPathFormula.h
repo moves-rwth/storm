@@ -9,11 +9,11 @@
 #define STORM_FORMULA_CSL_ABSTRACTPATHFORMULA_H_
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 template<class T> class AbstractPathFormula;
 } //namespace csl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #include "src/formula/abstract/AbstractFormula.h"
@@ -24,7 +24,7 @@ template<class T> class AbstractPathFormula;
 #include <typeinfo>
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 /*!
@@ -40,7 +40,7 @@ namespace csl {
  * 		This class is intentionally not derived from AbstractCslFormula, as a path formula is not a complete CSL formula.
  */
 template <class T>
-class AbstractPathFormula : public virtual storm::formula::abstract::AbstractFormula<T> {
+class AbstractPathFormula : public virtual storm::property::abstract::AbstractFormula<T> {
 
 public:
 	/*!
@@ -75,7 +75,7 @@ public:
 };
 
 } //namespace csl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_CSL_ABSTRACTPATHFORMULA_H_ */

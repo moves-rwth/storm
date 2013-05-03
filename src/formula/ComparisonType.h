@@ -9,7 +9,7 @@
 #define STORM_FORMULA_COMPARISONTYPE_H_
 
 namespace storm {
-namespace formula {
+namespace property {
 
 enum ComparisonType { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
 

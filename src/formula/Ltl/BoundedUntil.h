@@ -15,7 +15,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace ltl {
 
 template <class T> class BoundedUntil;
@@ -54,7 +54,7 @@ class IBoundedUntilModelChecker {
  * @see AbstractLtlFormula
  */
 template <class T>
-class BoundedUntil : public storm::formula::abstract::BoundedUntil<T, AbstractLtlFormula<T>>,
+class BoundedUntil : public storm::property::abstract::BoundedUntil<T, AbstractLtlFormula<T>>,
 							public AbstractLtlFormula<T> {
 
 public:
@@ -74,7 +74,7 @@ public:
 	 */
 	BoundedUntil(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right,
 					 uint_fast64_t bound) :
-					 storm::formula::abstract::BoundedUntil<T, AbstractLtlFormula<T>>(left,right,bound) {
+					 storm::property::abstract::BoundedUntil<T, AbstractLtlFormula<T>>(left,right,bound) {
 		//intentionally left empty
 	}
 
@@ -97,7 +97,7 @@ public:
 	 * @return A string representation of the formula.
 	 */
 	virtual std::string toString() const {
-		return "(" + storm::formula::abstract::BoundedUntil<T, AbstractLtlFormula<T>>::toString() + ")";
+		return "(" + storm::property::abstract::BoundedUntil<T, AbstractLtlFormula<T>>::toString() + ")";
 	}
 
 	/*!
@@ -135,7 +135,7 @@ public:
 };
 
 } //namespace ltl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_LTL_BOUNDEDUNTIL_H_ */

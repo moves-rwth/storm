@@ -14,7 +14,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 template <class T> class Until;
@@ -54,7 +54,7 @@ class IUntilModelChecker {
  * @see AbstractCslFormula
  */
 template <class T>
-class Until : public storm::formula::abstract::Until<T, AbstractStateFormula<T>>,
+class Until : public storm::property::abstract::Until<T, AbstractStateFormula<T>>,
 				  public AbstractPathFormula<T> {
 
 public:
@@ -72,7 +72,7 @@ public:
 	 * @param right The left formula subtree
 	 */
 	Until(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right)
-		: storm::formula::abstract::Until<T, AbstractStateFormula<T>>(left, right) {
+		: storm::property::abstract::Until<T, AbstractStateFormula<T>>(left, right) {
 		// Intentionally left empty
 	}
 
@@ -119,7 +119,7 @@ public:
 };
 
 } //namespace csl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_CSL_UNTIL_H_ */

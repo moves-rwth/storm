@@ -16,7 +16,7 @@
 #include <string>
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class InstantaneousReward;
@@ -50,7 +50,7 @@ class IInstantaneousRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class InstantaneousReward : public storm::formula::abstract::InstantaneousReward<T>,
+class InstantaneousReward : public storm::property::abstract::InstantaneousReward<T>,
 									 public AbstractPathFormula<T> {
 
 public:
@@ -67,7 +67,7 @@ public:
 	 * @param bound The time instance of the reward formula
 	 */
 	InstantaneousReward(uint_fast64_t bound) :
-		storm::formula::abstract::InstantaneousReward<T>(bound) {
+		storm::property::abstract::InstantaneousReward<T>(bound) {
 		//intentionally left empty
 	}
 
@@ -105,7 +105,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_INSTANTANEOUSREWARD_H_ */

@@ -19,7 +19,7 @@ public:
 public:
 	/*!
 	 * Reads a LTL formula from its string representation and parses it into a formula tree, consisting of
-	 * classes in the namespace storm::formula.
+	 * classes in the namespace storm::property.
 	 *
 	 * If the string could not be parsed successfully, it will throw a wrongFormatException.
 	 *
@@ -31,7 +31,7 @@ public:
 	/*!
 	 *	@return a pointer to the parsed formula object
 	 */
-	storm::formula::ltl::AbstractLtlFormula<double>* getFormula() {
+	storm::property::ltl::AbstractLtlFormula<double>* getFormula() {
 		return this->formula;
 	}
 
@@ -46,7 +46,7 @@ public:
 	}
 
 private:
-	storm::formula::ltl::AbstractLtlFormula<double>* formula;
+	storm::property::ltl::AbstractLtlFormula<double>* formula;
 
 	/*!
 	 * Struct for the Ltl grammar, that Boost::Spirit uses to parse the formulas.

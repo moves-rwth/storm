@@ -12,7 +12,7 @@
 #include "src/formula/abstract/Or.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace ltl {
 
 template <class T> class Or;
@@ -50,8 +50,8 @@ class IOrModelChecker {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Or: public storm::formula::abstract::Or<T, AbstractLtlFormula<T>>,
-			 public storm::formula::ltl::AbstractLtlFormula<T> {
+class Or: public storm::property::abstract::Or<T, AbstractLtlFormula<T>>,
+			 public storm::property::ltl::AbstractLtlFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -69,7 +69,7 @@ public:
 	 * @param right The right subformula
 	 */
 	Or(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right)
-		: storm::formula::abstract::Or<T,AbstractLtlFormula<T>>(left, right) {
+		: storm::property::abstract::Or<T,AbstractLtlFormula<T>>(left, right) {
 		// Intentionally left empty
 	}
 
@@ -114,6 +114,6 @@ public:
 };
 
 } /* namespace ltl */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 #endif /* OR_H_ */

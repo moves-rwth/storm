@@ -17,7 +17,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 
 /*!
@@ -151,10 +151,10 @@ public:
      *  @param checker Formula checker object.
      *  @return true iff all subtrees conform to some logic.
      */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-		bool res = checker.conforms(this->left);
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+		bool res = checker.validate(this->left);
 		for (auto it = this->right->begin(); it != this->right->end(); ++it) {
-			res &= checker.conforms(std::get<0>(*it));
+			res &= checker.validate(std::get<0>(*it));
 		}
 		return res;
 	}
@@ -166,7 +166,7 @@ private:
 };
 
 } //namespace abstract
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_ABSTRACT_BOUNDEDNARYUNTIL_H_ */

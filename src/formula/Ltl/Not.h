@@ -13,7 +13,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace ltl {
 
 template <class T> class Not;
@@ -48,7 +48,7 @@ class INotModelChecker {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Not : public storm::formula::abstract::Not<T, AbstractLtlFormula<T>>,
+class Not : public storm::property::abstract::Not<T, AbstractLtlFormula<T>>,
 			   public AbstractLtlFormula<T> {
 
 public:
@@ -64,7 +64,7 @@ public:
 	 * @param child The child node
 	 */
 	Not(AbstractLtlFormula<T>* child) :
-		storm::formula::abstract::Not<T, AbstractLtlFormula<T>>(child){
+		storm::property::abstract::Not<T, AbstractLtlFormula<T>>(child){
 		//intentionally left empty
 	}
 
@@ -108,7 +108,7 @@ public:
 };
 
 } //namespace ltl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_LTL_NOT_H_ */

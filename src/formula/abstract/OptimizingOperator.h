@@ -5,7 +5,7 @@
 
 namespace storm {
 
-namespace formula {
+namespace property {
 
 namespace abstract {
 
@@ -65,7 +65,7 @@ private:
 
 } //namespace abstract
 
-} //namespace formula
+} //namespace property
 
 } //namespace storm
 

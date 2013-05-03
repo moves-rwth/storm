@@ -13,7 +13,7 @@
 #include "src/formula/abstract/RewardNoBoundOperator.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 /*!
@@ -47,8 +47,8 @@ namespace prctl {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class RewardNoBoundOperator: public storm::formula::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>>,
-									  public storm::formula::prctl::AbstractNoBoundOperator<T> {
+class RewardNoBoundOperator: public storm::property::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>>,
+									  public storm::property::prctl::AbstractNoBoundOperator<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -63,7 +63,7 @@ public:
 	 * @param pathFormula The child node.
 	 */
 	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula)
-		: storm::formula::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula) {
+		: storm::property::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -73,7 +73,7 @@ public:
 	 * @param pathFormula The child node.
 	 */
 	RewardNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator)
-		: storm::formula::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula, minimumOperator) {
+		: storm::property::abstract::RewardNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -102,7 +102,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_REWARDNOBOUNDOPERATOR_H_ */

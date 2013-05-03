@@ -14,7 +14,7 @@
 #include "utility/ConstTemplates.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 template <class T> class ProbabilisticBoundOperator;
@@ -53,14 +53,14 @@ class IProbabilisticBoundOperatorModelChecker {
  * @see AbstractCslFormula
  */
 template<class T>
-class ProbabilisticBoundOperator : public storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>,
+class ProbabilisticBoundOperator : public storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>,
 											  public AbstractStateFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticBoundOperator() : storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>
+	ProbabilisticBoundOperator() : storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>
 		(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
@@ -74,14 +74,14 @@ public:
 	 * @param pathFormula The child node
 	 */
 	ProbabilisticBoundOperator(
-			storm::formula::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula)
-			: storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
+			storm::property::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula)
+			: storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
 	ProbabilisticBoundOperator(
-			storm::formula::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
-			: storm::formula::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator){
+			storm::property::ComparisonType comparisonRelation, T bound, AbstractPathFormula<T>* pathFormula, bool minimumOperator)
+			: storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator){
 		// Intentionally left empty
 	}
 
@@ -115,7 +115,7 @@ public:
 };
 
 } //namespace csl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_CSL_PROBABILISTICBOUNDOPERATOR_H_ */

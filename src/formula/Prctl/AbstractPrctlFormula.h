@@ -11,14 +11,14 @@
 #include "src/formula/abstract/AbstractFormula.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 /*!
  * Interface class for all PRCTL root formulas.
  */
 template<class T>
-class AbstractPrctlFormula : public virtual storm::formula::abstract::AbstractFormula<T> {
+class AbstractPrctlFormula : public virtual storm::property::abstract::AbstractFormula<T> {
 public:
 	virtual ~AbstractPrctlFormula() {
 		// Intentionally left empty
@@ -26,6 +26,6 @@ public:
 };
 
 } /* namespace prctl */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 #endif /* ABSTRACTPRCTLFORMULA_H_ */

@@ -17,7 +17,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl{
 
 template <class T> class BoundedEventually;
@@ -56,7 +56,7 @@ class IBoundedEventuallyModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class BoundedEventually : public storm::formula::abstract::BoundedEventually<T, AbstractStateFormula<T>>,
+class BoundedEventually : public storm::property::abstract::BoundedEventually<T, AbstractStateFormula<T>>,
 								  public AbstractPathFormula<T> {
 
 public:
@@ -74,7 +74,7 @@ public:
 	 * @param bound The maximal number of steps
 	 */
 	BoundedEventually(AbstractStateFormula<T>* child, uint_fast64_t bound) :
-		storm::formula::abstract::BoundedEventually<T, AbstractStateFormula<T>>(child, bound){
+		storm::property::abstract::BoundedEventually<T, AbstractStateFormula<T>>(child, bound){
 		//intentionally left empty
 	}
 
@@ -120,7 +120,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_BOUNDEDUNTIL_H_ */

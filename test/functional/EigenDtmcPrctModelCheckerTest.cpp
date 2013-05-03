@@ -20,9 +20,9 @@ TEST(EigenDtmcPrctModelCheckerTest, Die) {
 
 	storm::modelChecker::EigenDtmcPrctlModelChecker<double> mc(*dtmc);
 
-	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("one");
-	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	storm::property::Ap<double>* apFormula = new storm::property::Ap<double>("one");
+	storm::property::Eventually<double>* eventuallyFormula = new storm::property::Eventually<double>(apFormula);
+	storm::property::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	std::vector<double>* result = probFormula->check(mc);
 
@@ -31,9 +31,9 @@ TEST(EigenDtmcPrctModelCheckerTest, Die) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("two");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::Ap<double>("two");
+	eventuallyFormula = new storm::property::Eventually<double>(apFormula);
+	probFormula = new storm::property::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
@@ -42,9 +42,9 @@ TEST(EigenDtmcPrctModelCheckerTest, Die) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("three");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::Ap<double>("three");
+	eventuallyFormula = new storm::property::Eventually<double>(apFormula);
+	probFormula = new storm::property::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
@@ -53,9 +53,9 @@ TEST(EigenDtmcPrctModelCheckerTest, Die) {
 	delete probFormula;
 	delete result;
 
-	storm::formula::Ap<double>* done = new storm::formula::Ap<double>("done");
-	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(done);
-	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula);
+	storm::property::Ap<double>* done = new storm::property::Ap<double>("done");
+	storm::property::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::ReachabilityReward<double>(done);
+	storm::property::RewardNoBoundOperator<double>* rewardFormula = new storm::property::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
 	result = rewardFormula->check(mc);
 
@@ -80,9 +80,9 @@ TEST(EigenDtmcPrctModelCheckerTest, Crowds) {
 
 	storm::modelChecker::EigenDtmcPrctlModelChecker<double> mc(*dtmc);
 
-	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("observe0Greater1");
-	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	storm::property::Ap<double>* apFormula = new storm::property::Ap<double>("observe0Greater1");
+	storm::property::Eventually<double>* eventuallyFormula = new storm::property::Eventually<double>(apFormula);
+	storm::property::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	std::vector<double>* result = probFormula->check(mc);
 
@@ -91,9 +91,9 @@ TEST(EigenDtmcPrctModelCheckerTest, Crowds) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("observeIGreater1");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::Ap<double>("observeIGreater1");
+	eventuallyFormula = new storm::property::Eventually<double>(apFormula);
+	probFormula = new storm::property::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
@@ -102,9 +102,9 @@ TEST(EigenDtmcPrctModelCheckerTest, Crowds) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("observeOnlyTrueSender");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::Ap<double>("observeOnlyTrueSender");
+	eventuallyFormula = new storm::property::Eventually<double>(apFormula);
+	probFormula = new storm::property::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
@@ -128,9 +128,9 @@ TEST(EigenDtmcPrctModelCheckerTest, SynchronousLeader) {
 
 	storm::modelChecker::EigenDtmcPrctlModelChecker<double> mc(*dtmc);
 
-	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	storm::property::Ap<double>* apFormula = new storm::property::Ap<double>("elected");
+	storm::property::Eventually<double>* eventuallyFormula = new storm::property::Eventually<double>(apFormula);
+	storm::property::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	std::vector<double>* result = probFormula->check(mc);
 
@@ -139,9 +139,9 @@ TEST(EigenDtmcPrctModelCheckerTest, SynchronousLeader) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::BoundedUntil<double>* boundedUntilFormula = new storm::formula::BoundedUntil<double>(new storm::formula::Ap<double>("true"), apFormula, 20);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
+	apFormula = new storm::property::Ap<double>("elected");
+	storm::property::BoundedUntil<double>* boundedUntilFormula = new storm::property::BoundedUntil<double>(new storm::property::Ap<double>("true"), apFormula, 20);
+	probFormula = new storm::property::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
 
 	result = probFormula->check(mc);
 
@@ -150,9 +150,9 @@ TEST(EigenDtmcPrctModelCheckerTest, SynchronousLeader) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula);
+	apFormula = new storm::property::Ap<double>("elected");
+	storm::property::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::ReachabilityReward<double>(apFormula);
+	storm::property::RewardNoBoundOperator<double>* rewardFormula = new storm::property::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
 	result = rewardFormula->check(mc);
 

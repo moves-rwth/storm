@@ -22,7 +22,7 @@ class PrctlParser : Parser {
 	public:
 		/*!
 		 * Reads a PRCTL formula from its string representation and parses it into a formula tree, consisting of
-		 * classes in the namespace storm::formula.
+		 * classes in the namespace storm::property.
 		 *
 		 * If the string could not be parsed successfully, it will throw a wrongFormatException.
 		 *
@@ -34,12 +34,12 @@ class PrctlParser : Parser {
 		/*!
 		 *	@return a pointer to the parsed formula object
 		 */
-		storm::formula::prctl::AbstractPrctlFormula<double>* getFormula() {
+		storm::property::prctl::AbstractPrctlFormula<double>* getFormula() {
 			return this->formula;
 		}
 
 	private:
-		storm::formula::prctl::AbstractPrctlFormula<double>* formula;
+		storm::property::prctl::AbstractPrctlFormula<double>* formula;
 
 		/*!
 		 * Struct for the Prctl grammar, that Boost::Spirit uses to parse the formulas.

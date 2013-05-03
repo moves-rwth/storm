@@ -13,14 +13,14 @@
 #include "src/formula/abstract/AbstractFormula.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace ltl {
 
 /*!
  * Interface class for all LTL root formulas.
  */
 template <class T>
-class AbstractLtlFormula : public virtual storm::formula::abstract::AbstractFormula<T> {
+class AbstractLtlFormula : public virtual storm::property::abstract::AbstractFormula<T> {
 public:
 	/**
 	 * Empty destructor
@@ -53,6 +53,6 @@ public:
 };
 
 } /* namespace ltl */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 #endif /* STORM_LTL_ABSTRACTLTLFORMULA_H_ */

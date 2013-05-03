@@ -13,7 +13,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace ltl {
 
 template <class T> class Next;
@@ -51,7 +51,7 @@ class INextModelChecker {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Next : public storm::formula::abstract::Next<T, AbstractLtlFormula<T>>,
+class Next : public storm::property::abstract::Next<T, AbstractLtlFormula<T>>,
 				 public AbstractLtlFormula<T> {
 
 public:
@@ -68,7 +68,7 @@ public:
 	 * @param child The child node
 	 */
 	Next(AbstractLtlFormula<T>* child)
-		: storm::formula::abstract::Next<T, AbstractLtlFormula<T>>(child) {
+		: storm::property::abstract::Next<T, AbstractLtlFormula<T>>(child) {
 		//intentionally left empty
 	}
 
@@ -112,7 +112,7 @@ public:
 };
 
 } //namespace ltl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_LTL_NEXT_H_ */

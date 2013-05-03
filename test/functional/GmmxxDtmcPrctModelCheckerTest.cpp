@@ -19,9 +19,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 
 	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
-	storm::formula::prctl::Ap<double>* apFormula = new storm::formula::prctl::Ap<double>("one");
-	storm::formula::prctl::Eventually<double>* eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
-	storm::formula::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("one");
+	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	std::vector<double>* result = probFormula->check(mc);
 
@@ -32,9 +32,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::prctl::Ap<double>("two");
-	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
-	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::prctl::Ap<double>("two");
+	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
@@ -45,9 +45,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::prctl::Ap<double>("three");
-	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
-	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::prctl::Ap<double>("three");
+	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
@@ -58,9 +58,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 	delete probFormula;
 	delete result;
 
-	storm::formula::prctl::Ap<double>* done = new storm::formula::prctl::Ap<double>("done");
-	storm::formula::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(done);
-	storm::formula::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula);
+	storm::property::prctl::Ap<double>* done = new storm::property::prctl::Ap<double>("done");
+	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(done);
+	storm::property::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
 	result = rewardFormula->check(mc);
 
@@ -86,9 +86,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 
 	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
-	storm::formula::prctl::Ap<double>* apFormula = new storm::formula::prctl::Ap<double>("observe0Greater1");
-	storm::formula::prctl::Eventually<double>* eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
-	storm::formula::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("observe0Greater1");
+	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	std::vector<double>* result = probFormula->check(mc);
 
@@ -99,9 +99,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::prctl::Ap<double>("observeIGreater1");
-	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
-	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::prctl::Ap<double>("observeIGreater1");
+	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
@@ -112,9 +112,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::prctl::Ap<double>("observeOnlyTrueSender");
-	eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
-	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::prctl::Ap<double>("observeOnlyTrueSender");
+	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
@@ -140,9 +140,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 
 	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
-	storm::formula::prctl::Ap<double>* apFormula = new storm::formula::prctl::Ap<double>("elected");
-	storm::formula::prctl::Eventually<double>* eventuallyFormula = new storm::formula::prctl::Eventually<double>(apFormula);
-	storm::formula::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
+	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	std::vector<double>* result = probFormula->check(mc);
 
@@ -153,9 +153,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::prctl::Ap<double>("elected");
-	storm::formula::prctl::BoundedUntil<double>* boundedUntilFormula = new storm::formula::prctl::BoundedUntil<double>(new storm::formula::prctl::Ap<double>("true"), apFormula, 20);
-	probFormula = new storm::formula::prctl::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
+	apFormula = new storm::property::prctl::Ap<double>("elected");
+	storm::property::prctl::BoundedUntil<double>* boundedUntilFormula = new storm::property::prctl::BoundedUntil<double>(new storm::property::prctl::Ap<double>("true"), apFormula, 20);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
 
 	result = probFormula->check(mc);
 
@@ -166,9 +166,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::prctl::Ap<double>("elected");
-	storm::formula::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::prctl::ReachabilityReward<double>(apFormula);
-	storm::formula::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula);
+	apFormula = new storm::property::prctl::Ap<double>("elected");
+	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
+	storm::property::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
 	result = rewardFormula->check(mc);
 

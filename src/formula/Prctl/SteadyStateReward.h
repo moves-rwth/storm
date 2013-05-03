@@ -15,7 +15,7 @@
 #include <string>
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class SteadyStateReward;
@@ -46,7 +46,7 @@ class ISteadyStateRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class SteadyStateReward: public storm::formula::abstract::SteadyStateReward<T>,
+class SteadyStateReward: public storm::property::abstract::SteadyStateReward<T>,
 								 public AbstractPathFormula<T> {
 public:
 	/*!
@@ -86,6 +86,6 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 #endif /* STORM_FORMULA_PRCTL_STEADYSTATEREWARD_H_ */

@@ -14,7 +14,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 template <class T> class Not;
@@ -50,7 +50,7 @@ class INotModelChecker {
  * @see AbstractCslFormula
  */
 template <class T>
-class Not : public storm::formula::abstract::Not<T, AbstractStateFormula<T>>,
+class Not : public storm::property::abstract::Not<T, AbstractStateFormula<T>>,
 			   public AbstractStateFormula<T> {
 
 public:
@@ -66,7 +66,7 @@ public:
 	 * @param child The child node
 	 */
 	Not(AbstractStateFormula<T>* child) :
-		storm::formula::abstract::Not<T, AbstractStateFormula<T>>(child){
+		storm::property::abstract::Not<T, AbstractStateFormula<T>>(child){
 		//intentionally left empty
 	}
 
@@ -110,7 +110,7 @@ public:
 };
 
 } //namespace csl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_CSL_NOT_H_ */

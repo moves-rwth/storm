@@ -15,7 +15,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 template <class T> class Globally;
@@ -54,7 +54,7 @@ class IGloballyModelChecker {
  * @see AbstractCslFormula
  */
 template <class T>
-class Globally : public storm::formula::abstract::Globally<T, AbstractStateFormula<T>>,
+class Globally : public storm::property::abstract::Globally<T, AbstractStateFormula<T>>,
 					  public AbstractPathFormula<T> {
 
 public:
@@ -71,7 +71,7 @@ public:
 	 * @param child The child node
 	 */
 	Globally(AbstractStateFormula<T>* child)
-		: storm::formula::abstract::Globally<T, AbstractStateFormula<T>>(child) {
+		: storm::property::abstract::Globally<T, AbstractStateFormula<T>>(child) {
 		//intentionally left empty
 	}
 
@@ -116,7 +116,7 @@ public:
 };
 
 } //namespace csl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_CSL_GLOBALLY_H_ */

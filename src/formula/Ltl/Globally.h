@@ -14,7 +14,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace ltl {
 
 template <class T> class Globally;
@@ -52,7 +52,7 @@ class IGloballyModelChecker {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Globally : public storm::formula::abstract::Globally<T, AbstractLtlFormula<T>>,
+class Globally : public storm::property::abstract::Globally<T, AbstractLtlFormula<T>>,
 					  public AbstractLtlFormula<T> {
 
 public:
@@ -69,7 +69,7 @@ public:
 	 * @param child The child node
 	 */
 	Globally(AbstractLtlFormula<T>* child)
-		: storm::formula::abstract::Globally<T, AbstractLtlFormula<T>>(child) {
+		: storm::property::abstract::Globally<T, AbstractLtlFormula<T>>(child) {
 		//intentionally left empty
 	}
 
@@ -114,7 +114,7 @@ public:
 };
 
 } //namespace ltl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_LTL_GLOBALLY_H_ */

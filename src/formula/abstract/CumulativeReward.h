@@ -13,7 +13,7 @@
 #include <string>
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 
 /*!
@@ -86,7 +86,7 @@ public:
      *  @param checker Formula checker object.
      *  @return true
      */	
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
 		return true;
 	}
 
@@ -95,7 +95,7 @@ private:
 };
 
 } //namespace abstract
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_ABSTRACT_INSTANTANEOUSREWARD_H_ */

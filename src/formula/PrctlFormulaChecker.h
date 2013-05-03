@@ -7,7 +7,7 @@
 #include <iostream>
 
 namespace storm {
-namespace formula {
+namespace property {
 
 /*!
  *	@brief Checks formulas if they are within PRCTL.
@@ -19,31 +19,31 @@ template <class T>
 class PrctlFormulaChecker : public AbstractFormulaChecker<T> {
 	public:
 		/*!
-		 *	Implementation of AbstractFormulaChecker::conforms() using code
+		 *	Implementation of AbstractFormulaChecker::validate() using code
 		 *	looking exactly like the sample code given there.
 		 */
-		virtual bool conforms(const storm::formula::abstract::AbstractFormula<T>* formula) const {
+		virtual bool validate(const storm::property::abstract::AbstractFormula<T>* formula) const {
 			// What to support: Principles of Model Checking Def. 10.76 + syntactic sugar
 			if (
-					dynamic_cast<const storm::formula::prctl::And<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::Ap<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::BoundedUntil<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::Eventually<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::Globally<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::Next<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::Not<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::Or<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::ProbabilisticNoBoundOperator<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::ProbabilisticBoundOperator<T>*>(formula) ||
-					dynamic_cast<const storm::formula::prctl::Until<T>*>(formula)
+					dynamic_cast<const storm::property::prctl::And<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::Ap<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::BoundedUntil<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::Eventually<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::Globally<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::Next<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::Not<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::Or<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::ProbabilisticNoBoundOperator<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::ProbabilisticBoundOperator<T>*>(formula) ||
+					dynamic_cast<const storm::property::prctl::Until<T>*>(formula)
 				) {
-				return formula->conforms(*this);
+				return formula->validate(*this);
 			}
 			return false;
 		}
 };
 
-} // namespace formula
+} // namespace property
 } // namespace storm
 
 #endif

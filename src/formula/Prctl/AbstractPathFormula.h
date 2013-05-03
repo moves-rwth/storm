@@ -8,7 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_
 #define STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_
 
-namespace storm { namespace formula { namespace prctl {
+namespace storm { namespace property { namespace prctl {
 template <class T> class AbstractPathFormula;
 }}}
 
@@ -20,7 +20,7 @@ template <class T> class AbstractPathFormula;
 #include <typeinfo>
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 /*!
@@ -35,7 +35,7 @@ namespace prctl {
  * @note This class is intentionally not derived from AbstractPrctlFormula, as path formulas are not complete PRCTL formulas.
  */
 template <class T>
-class AbstractPathFormula : public virtual storm::formula::abstract::AbstractFormula<T> {
+class AbstractPathFormula : public virtual storm::property::abstract::AbstractFormula<T> {
 
 public:
 	/*!
@@ -70,7 +70,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_ */

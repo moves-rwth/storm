@@ -14,7 +14,7 @@
 #include "utility/ConstTemplates.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class RewardBoundOperator;
@@ -52,7 +52,7 @@ class IRewardBoundOperatorModelChecker {
  * @see AbstractPrctlFormula
  */
 template<class T>
-class RewardBoundOperator : public storm::formula::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>,
+class RewardBoundOperator : public storm::property::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>,
 									 public AbstractStateFormula<T> {
 
 public:
@@ -71,10 +71,10 @@ public:
 	 * @param pathFormula The child node
 	 */
 	RewardBoundOperator(
-			storm::formula::ComparisonType comparisonRelation,
+			storm::property::ComparisonType comparisonRelation,
 			T bound,
 			AbstractPathFormula<T>* pathFormula) :
-				storm::formula::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
+				storm::property::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -88,11 +88,11 @@ public:
 	 * @param minimumOperator
 	 */
 	RewardBoundOperator(
-			storm::formula::ComparisonType comparisonRelation,
+			storm::property::ComparisonType comparisonRelation,
 			T bound,
 			AbstractPathFormula<T>* pathFormula,
 			bool minimumOperator)
-			: storm::formula::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator) {
+			: storm::property::abstract::RewardBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -126,7 +126,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_REWARDBOUNDOPERATOR_H_ */

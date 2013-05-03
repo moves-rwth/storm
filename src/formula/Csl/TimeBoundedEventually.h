@@ -13,7 +13,7 @@
 #include "AbstractStateFormula.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 template<class T> class TimeBoundedEventually;
@@ -38,7 +38,7 @@ class ITimeBoundedEventuallyModelChecker {
 
 
 template<class T>
-class TimeBoundedEventually: public storm::formula::abstract::TimeBoundedEventually<T, AbstractStateFormula<T>>,
+class TimeBoundedEventually: public storm::property::abstract::TimeBoundedEventually<T, AbstractStateFormula<T>>,
 									  public AbstractPathFormula<T> {
 public:
 	/**
@@ -48,12 +48,12 @@ public:
 	 * @param upperBound
 	 */
 	TimeBoundedEventually(T lowerBound, T upperBound)
-		: storm::formula::abstract::TimeBoundedEventually<T, AbstractStateFormula<T>>(lowerBound, upperBound) {
+		: storm::property::abstract::TimeBoundedEventually<T, AbstractStateFormula<T>>(lowerBound, upperBound) {
 		// Intentionally left empty
 	}
 
 	TimeBoundedEventually(T lowerBound, T upperBound, AbstractStateFormula<T>* child)
-		: storm::formula::abstract::TimeBoundedEventually<T, AbstractStateFormula<T>>(lowerBound, upperBound, child) {
+		: storm::property::abstract::TimeBoundedEventually<T, AbstractStateFormula<T>>(lowerBound, upperBound, child) {
 		// Intentionally left empty
 	}
 
@@ -91,7 +91,7 @@ public:
 };
 
 } /* namespace csl */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 
 #endif /* STORM_FORMULA_CSL_TIMEBOUNDEDEVENTUALLY_H_ */

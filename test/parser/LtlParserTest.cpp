@@ -86,7 +86,7 @@ TEST(LtlParserTest, parseBoundedEventuallyFormulaTest) {
 
 	ASSERT_NE(ltlParser->getFormula(), nullptr);
 
-	storm::formula::ltl::BoundedEventually<double>* op = static_cast<storm::formula::ltl::BoundedEventually<double>*>(ltlParser->getFormula());
+	storm::property::ltl::BoundedEventually<double>* op = static_cast<storm::property::ltl::BoundedEventually<double>*>(ltlParser->getFormula());
 
 	ASSERT_EQ(static_cast<uint_fast64_t>(5), op->getBound());
 
@@ -104,7 +104,7 @@ TEST(LtlParserTest, parseBoundedUntilFormulaTest) {
 
 	ASSERT_NE(ltlParser->getFormula(), nullptr);
 
-	storm::formula::ltl::BoundedUntil<double>* op = static_cast<storm::formula::ltl::BoundedUntil<double>*>(ltlParser->getFormula());
+	storm::property::ltl::BoundedUntil<double>* op = static_cast<storm::property::ltl::BoundedUntil<double>*>(ltlParser->getFormula());
 
 	ASSERT_EQ(static_cast<uint_fast64_t>(3), op->getBound());
 

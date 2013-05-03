@@ -14,7 +14,7 @@
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class Ap;
@@ -47,7 +47,7 @@ class IApModelChecker {
  * @see AbstractStateFormula
  */
 template <class T>
-class Ap : public storm::formula::abstract::Ap<T>,
+class Ap : public storm::property::abstract::Ap<T>,
 			  public AbstractStateFormula<T> {
 
 public:
@@ -59,7 +59,7 @@ public:
 	 * @param ap The string representing the atomic proposition
 	 */
 	Ap(std::string ap)
-		: storm::formula::abstract::Ap<T>(ap) {
+		: storm::property::abstract::Ap<T>(ap) {
 		// Intentionally left empty
 	}
 
@@ -99,7 +99,7 @@ public:
 
 } //namespace abstract
 
-} //namespace formula
+} //namespace property
 
 } //namespace storm
 

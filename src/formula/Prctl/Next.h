@@ -14,7 +14,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 template <class T> class Next;
@@ -53,7 +53,7 @@ class INextModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class Next : public storm::formula::abstract::Next<T, AbstractStateFormula<T>>,
+class Next : public storm::property::abstract::Next<T, AbstractStateFormula<T>>,
 				 public AbstractPathFormula<T> {
 
 public:
@@ -70,7 +70,7 @@ public:
 	 * @param child The child node
 	 */
 	Next(AbstractStateFormula<T>* child)
-		: storm::formula::abstract::Next<T, AbstractStateFormula<T>>(child) {
+		: storm::property::abstract::Next<T, AbstractStateFormula<T>>(child) {
 		//intentionally left empty
 	}
 
@@ -114,7 +114,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_NEXT_H_ */

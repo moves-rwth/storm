@@ -13,7 +13,7 @@
 #include "src/formula/abstract/ProbabilisticNoBoundOperator.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace prctl {
 
 /*!
@@ -47,7 +47,7 @@ namespace prctl {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class ProbabilisticNoBoundOperator: public storm::formula::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>,
+class ProbabilisticNoBoundOperator: public storm::property::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>,
 												public AbstractNoBoundOperator<T> {
 public:
 	/*!
@@ -63,7 +63,7 @@ public:
 	 * @param pathFormula The child node.
 	 */
 	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula)
-		: storm::formula::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula) {
+		: storm::property::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula) {
 		// Intentionally left empty
 	}
 
@@ -73,7 +73,7 @@ public:
 	 * @param pathFormula The child node.
 	 */
 	ProbabilisticNoBoundOperator(AbstractPathFormula<T>* pathFormula, bool minimumOperator)
-		: storm::formula::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula, minimumOperator) {
+		: storm::property::abstract::ProbabilisticNoBoundOperator<T, AbstractPathFormula<T>>(pathFormula, minimumOperator) {
 		// Intentionally left empty
 	}
 
@@ -109,7 +109,7 @@ public:
 };
 
 } //namespace prctl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_PRCTL_PROBABILISTICNOBOUNDOPERATOR_H_ */

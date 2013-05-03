@@ -16,7 +16,7 @@
 #include "src/utility/ConstTemplates.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 
 /*!
@@ -52,7 +52,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param stateFormula The child node
 	 */
-	StateBoundOperator(storm::formula::ComparisonType comparisonOperator, T bound, FormulaType* stateFormula)
+	StateBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, FormulaType* stateFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), stateFormula(stateFormula) {
 		// Intentionally left empty
 	}
@@ -154,8 +154,8 @@ public:
      *  @param checker Formula checker object.
      *  @return true iff the subtree conforms to some logic.
      */
-	virtual bool conforms(const AbstractFormulaChecker<T>& checker) const {
-        return checker.conforms(this->stateFormula);
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+        return checker.validate(this->stateFormula);
     }
 
 private:
@@ -165,7 +165,7 @@ private:
 };
 
 } //namespace abstract
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_ABSTRACT_STATEBOUNDOPERATOR_H_ */

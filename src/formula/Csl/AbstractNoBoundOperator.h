@@ -12,7 +12,7 @@
 #include "src/formula/abstract/IOptimizingOperator.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 template <class T>
@@ -43,7 +43,7 @@ public:
  */
 template <class T>
 class AbstractNoBoundOperator: public AbstractCslFormula<T>/*,
-										 public virtual storm::formula::abstract::IOptimizingOperator*/ {
+										 public virtual storm::property::abstract::IOptimizingOperator*/ {
 public:
 	AbstractNoBoundOperator() {
 		// Intentionally left empty
@@ -78,6 +78,6 @@ public:
 };
 
 } /* namespace csl */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 #endif /* STORM_FORMULA_CSL_ABSTRACTNOBOUNDOPERATOR_H_ */

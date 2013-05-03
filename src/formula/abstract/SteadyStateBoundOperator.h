@@ -12,7 +12,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 
 /*!
@@ -47,7 +47,7 @@ public:
 	 * @param stateFormula The child node
 	 */
 	SteadyStateBoundOperator(
-		storm::formula::ComparisonType comparisonRelation, T bound, FormulaType* stateFormula) :
+		storm::property::ComparisonType comparisonRelation, T bound, FormulaType* stateFormula) :
 			StateBoundOperator<T, FormulaType>(comparisonRelation, bound, stateFormula) {
 	}
 
@@ -67,7 +67,7 @@ public:
 };
 
 } //namespace abstract
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 #endif /* STORM_FORMULA_ABSTRACT_STEADYSTATEOPERATOR_H_ */

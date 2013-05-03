@@ -11,7 +11,7 @@
 #include "StateNoBoundOperator.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace abstract {
 
 /*!
@@ -65,7 +65,7 @@ public:
 };
 
 } /* namespace abstract */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 
 #endif /* STORM_FORMULA_ABSTRACT_STEADYSTATENOBOUNDOPERATOR_H_ */

@@ -9,7 +9,7 @@
 #define STORM_FORMULA_CSL_ABSTRACTSTATEFORMULA_H_
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 template<class T> class AbstractStateFormula;
 }
@@ -21,7 +21,7 @@ template<class T> class AbstractStateFormula;
 #include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 /*!
@@ -69,7 +69,7 @@ public:
 };
 
 } //namespace csl
-} //namespace formula
+} //namespace property
 } //namespace storm
 
 

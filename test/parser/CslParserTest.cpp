@@ -50,9 +50,9 @@ TEST(CslParserTest, parseProbabilisticFormulaTest) {
 
 	ASSERT_NE(cslParser->getFormula(), nullptr);
 
-	storm::formula::csl::ProbabilisticBoundOperator<double>* op = static_cast<storm::formula::csl::ProbabilisticBoundOperator<double>*>(cslParser->getFormula());
+	storm::property::csl::ProbabilisticBoundOperator<double>* op = static_cast<storm::property::csl::ProbabilisticBoundOperator<double>*>(cslParser->getFormula());
 
-	ASSERT_EQ(storm::formula::GREATER, op->getComparisonOperator());
+	ASSERT_EQ(storm::property::GREATER, op->getComparisonOperator());
 	ASSERT_EQ(0.5, op->getBound());
 
 	ASSERT_EQ(cslParser->getFormula()->toString(), "P > 0.500000 [F a]");
@@ -70,9 +70,9 @@ TEST(CslParserTest, parseSteadyStateBoundFormulaTest) {
 
 	ASSERT_NE(cslParser->getFormula(), nullptr);
 
-	storm::formula::csl::SteadyStateBoundOperator<double>* op = static_cast<storm::formula::csl::SteadyStateBoundOperator<double>*>(cslParser->getFormula());
+	storm::property::csl::SteadyStateBoundOperator<double>* op = static_cast<storm::property::csl::SteadyStateBoundOperator<double>*>(cslParser->getFormula());
 
-	ASSERT_EQ(storm::formula::GREATER_EQUAL, op->getComparisonOperator());
+	ASSERT_EQ(storm::property::GREATER_EQUAL, op->getComparisonOperator());
 	ASSERT_EQ(15.0, op->getBound());
 
 	ASSERT_EQ("S >= 15.000000 [P < 0.200000 [a U[0.000000,3.000000] b]]", cslParser->getFormula()->toString());

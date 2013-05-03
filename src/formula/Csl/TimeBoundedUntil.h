@@ -13,7 +13,7 @@
 #include "src/formula/abstract/TimeBoundedUntil.h"
 
 namespace storm {
-namespace formula {
+namespace property {
 namespace csl {
 
 template <class T> class TimeBoundedUntil;
@@ -37,7 +37,7 @@ class ITimeBoundedUntilModelChecker {
 };
 
 template <class T>
-class TimeBoundedUntil: public storm::formula::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>,
+class TimeBoundedUntil: public storm::property::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>,
 								public AbstractPathFormula<T> {
 public:
 	/**
@@ -48,7 +48,7 @@ public:
 	 * @param upperBound
 	 */
 	TimeBoundedUntil(T lowerBound, T upperBound) :
-		storm::formula::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>(lowerBound, upperBound) {
+		storm::property::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>(lowerBound, upperBound) {
 		// Intentionally left empty
 	}
 
@@ -60,7 +60,7 @@ public:
 	 * @param right
 	 */
 	TimeBoundedUntil(T lowerBound, T upperBound, AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) :
-		storm::formula::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>(lowerBound, upperBound, left, right) {
+		storm::property::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>(lowerBound, upperBound, left, right) {
 
 	}
 
@@ -105,7 +105,7 @@ public:
 };
 
 } /* namespace csl */
-} /* namespace formula */
+} /* namespace property */
 } /* namespace storm */
 
 #endif /* STORM_FORMULA_CSL_TIMEBOUNDEDUNTIL_H_ */
