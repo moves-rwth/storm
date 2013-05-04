@@ -8,39 +8,42 @@
 #ifndef STORM_MODELCHECKER_TOPOLOGICALVALUEITERATIONSMDPPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_TOPOLOGICALVALUEITERATIONSMDPPRCTLMODELCHECKER_H_
 
+#include "src/modelchecker/SparseMdpPrctlModelChecker.h"
+#include "src/exceptions/InvalidPropertyException.h"
 #include <cmath>
 
-#include "src/models/Mdp.h"
-#include "src/modelchecker/MdpPrctlModelChecker.h"
-#include "src/utility/GraphAnalyzer.h"
-#include "src/utility/Vector.h"
-#include "src/utility/ConstTemplates.h"
-#include "src/utility/Settings.h"
-#include "src/adapters/GmmxxAdapter.h"
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/storage/JacobiDecomposition.h"
-
-#include "gmm/gmm_matrix.h"
-#include "gmm/gmm_iter_solvers.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
-
 namespace storm {
-
-namespace modelChecker {
+namespace modelchecker {
 
 /*
- * A model checking engine that makes use of the gmm++ backend.
+ * An implementation of the SparseMdpPrctlModelChecker interface that uses topoligical value iteration for solving
+ * equation systems.
  */
 template <class Type>
-class TopologicalValueIterationMdpPrctlModelChecker : public MdpPrctlModelChecker<Type> {
+class TopologicalValueIterationMdpPrctlModelChecker : public SparseMdpPrctlModelChecker<Type> {
 
 public:
-	explicit TopologicalValueIterationMdpPrctlModelChecker(storm::models::Mdp<Type>& mdp) : MdpPrctlModelChecker<Type>(mdp) { }
+	/*!
+	 * Constructs a SparseMdpPrctlModelChecker with the given model.
+	 *
+	 * @param model The MDP to be checked.
+	 */
+	explicit TopologicalValueIterationMdpPrctlModelChecker(storm::models::Mdp<Type> const& model) : SparseMdpPrctlModelChecker<Type>(model) {
+		// Intentionally left empty.
+	}
 
+	/*!
+	 * Copy constructs a SparseMdpPrctlModelChecker from the given model checker. In particular, this means that the newly
+	 * constructed model checker will have the model of the given model checker as its associated model.
+	 */
+	explicit TopologicalValueIterationMdpPrctlModelChecker(storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<Type> const& modelchecker)
+		: SparseMdpPrctlModelChecker<Type>(modelchecker),  minimumOperatorStack() {
+		// Intentionally left empty.
+	}
+
+	/*!
+	 * Virtual destructor. Needs to be virtual, because this class has virtual methods.
+	 */
 	virtual ~TopologicalValueIterationMdpPrctlModelChecker() { }
 
 private:
@@ -63,10 +66,10 @@ private:
 		unsigned maxIterations = s->get<unsigned>("maxiter");
 		bool relative = s->get<bool>("relative");
 
+		// Now, we need to determine the SCCs of the MDP and a topological sort.
 		std::vector<std::vector<uint_fast64_t>> stronglyConnectedComponents;
 		storm::models::GraphTransitions<Type> stronglyConnectedComponentsDependencyGraph;
 		storm::utility::GraphAnalyzer::performSccDecomposition(matrix, nondeterministicChoiceIndices, stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
-
 		std::vector<uint_fast64_t> topologicalSort;
 		storm::utility::GraphAnalyzer::getTopologicalSort(stronglyConnectedComponentsDependencyGraph, topologicalSort);
 
@@ -80,9 +83,12 @@ private:
 		uint_fast64_t globalIterations = 0;
 		bool converged = true;
 
+		// Iterate over all SCCs of the MDP as specified by the topological sort. This guarantees that an SCC is only
+		// solved after all SCCs it depends on have been solved.
 		for (auto sccIndexIt = topologicalSort.begin(); sccIndexIt != topologicalSort.end() && converged; ++sccIndexIt) {
 			std::vector<uint_fast64_t> const& scc = stronglyConnectedComponents[*sccIndexIt];
 
+			// For the current SCC, we need to perform value iteration until convergence.
 			localIterations = 0;
 			converged = false;
 			while (!converged && localIterations < maxIterations) {
@@ -98,6 +104,8 @@ private:
 				}
 
 				// Determine whether the method converged.
+				// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
+				// running time. In fact, it is faster. This has to be investigated.
 				// converged = storm::utility::equalModuloPrecision(*currentX, *newX, scc, precision, relative);
 				converged = storm::utility::equalModuloPrecision(*currentX, *newX, precision, relative);
 
@@ -109,13 +117,16 @@ private:
 				++globalIterations;
 			}
 
-			std::cout << "converged locally for scc of size " << scc.size() << std::endl;
-
+			// As the "number of iterations" of the full method is the maximum of the local iterations, we need to keep
+			// track of the maximum.
 			if (localIterations > currentMaxLocalIterations) {
 				currentMaxLocalIterations = localIterations;
 			}
 		}
 
+		// If we performed an odd number of global iterations, we need to swap the x and currentX, because the newest
+		// result is currently stored in currentX, but x is the output vector.
+		// TODO: Check whether this is correct or should be put into the for-loop over SCCs.
 		if (globalIterations % 2 == 1) {
 			std::swap(x, *currentX);
 			delete currentX;
@@ -132,8 +143,7 @@ private:
 	}
 };
 
-} //namespace modelChecker
-
-} //namespace storm
+} // namespace modelchecker
+} // namespace storm
 
 #endif /* STORM_MODELCHECKER_TOPOLOGICALVALUEITERATIONSMDPPRCTLMODELCHECKER_H_ */

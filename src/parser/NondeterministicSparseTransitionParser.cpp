@@ -23,7 +23,7 @@
 
 #include "src/utility/Settings.h"
 #include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "boost/integer/integer_mask.hpp"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -204,7 +204,7 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	 */
 	if (nonzero == 0) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
-		throw storm::exceptions::WrongFileFormatException();
+		throw storm::exceptions::WrongFormatException();
 	}
 
 	/*
@@ -223,10 +223,10 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	if (isRewardFile) {
 		if (choices > rewardMatrixInformation->rowCount || (uint_fast64_t)(maxnode + 1) > rewardMatrixInformation->columnCount) {
 			LOG4CPLUS_ERROR(logger, "Reward matrix size exceeds transition matrix size.");
-			throw storm::exceptions::WrongFileFormatException() << "Reward matrix size exceeds transition matrix size.";
+			throw storm::exceptions::WrongFormatException() << "Reward matrix size exceeds transition matrix size.";
 		} else if (choices != rewardMatrixInformation->rowCount) {
 			LOG4CPLUS_ERROR(logger, "Reward matrix row count does not match transition matrix row count.");
-			throw storm::exceptions::WrongFileFormatException() << "Reward matrix row count does not match transition matrix row count.";
+			throw storm::exceptions::WrongFormatException() << "Reward matrix row count does not match transition matrix row count.";
 		} else {
 			maxnode = rewardMatrixInformation->columnCount - 1;
 		}
@@ -341,7 +341,7 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 		this->rowMapping->at(node) = curRow + 1;
 	}
 
-	if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+	if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 
 	/*
 	 * Finalize matrix.

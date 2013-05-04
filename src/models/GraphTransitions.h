@@ -66,29 +66,6 @@ public:
 		// Intentionally left empty.
 	}
 
-	GraphTransitions(GraphTransitions<T>&& other) {
-		this->numberOfStates = other.numberOfStates;
-		this->numberOfTransitions = other.numberOfTransitions;
-		std::swap(successorList, other.successorList);
-		std::swap(stateIndications, other.stateIndications);
-	}
-
-	GraphTransitions<T>& operator=(GraphTransitions<T>&& other) {
-		this->numberOfStates = other.numberOfStates;
-		this->numberOfTransitions = other.numberOfTransitions;
-		std::swap(successorList, other.successorList);
-		std::swap(stateIndications, other.stateIndications);
-		return *this;
-	}
-
-	//! Destructor
-	/*!
-	 * Destructor. Frees the internal storage.
-	 */
-	~GraphTransitions() {
-		// Intentionally left empty.
-	}
-
 	/*!
 	 * Retrieves the size of the internal representation of the graph transitions in memory.
 	 * @return the size of the internal representation of the graph transitions in memory
@@ -181,19 +158,24 @@ private:
 	void initializeForward(storm::storage::SparseMatrix<T> const& transitionMatrix) {
 		// First, we copy the index list from the sparse matrix as this will
 		// stay the same.
-		std::copy(transitionMatrix.getRowIndications().begin(), transitionMatrix.getRowIndications().end(), this->stateIndications.begin());
+		std::copy(transitionMatrix.constColumnIteratorBegin(), transitionMatrix.constColumnIteratorEnd(), this->stateIndications.begin());
 
 		// Now we can iterate over all rows of the transition matrix and record the target state.
 		for (uint_fast64_t i = 0, currentNonZeroElement = 0; i < numberOfStates; i++) {
-			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix.constColumnIteratorBegin(i); rowIt != transitionMatrix.constColumnIteratorEnd(i); ++rowIt) {
 				this->successorList[currentNonZeroElement++] = *rowIt;
 			}
 		}
 	}
 
 	void initializeForward(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
+		// We can directly copy the starting indices from the transition matrix as we do not
+		// eliminate duplicate transitions and therefore will have as many non-zero entries as this
+		// matrix.
+		typename storm::storage::SparseMatrix<T>::ConstRowsIterator rowsIt(transitionMatrix);
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-			this->stateIndications[i] = transitionMatrix.getRowIndications().at(nondeterministicChoiceIndices[i]);
+			rowsIt.moveToRow(nondeterministicChoiceIndices[i]);
+			this->stateIndications[i] = rowsIt.index();
 		}
 		this->stateIndications[numberOfStates] = numberOfTransitions;
 
@@ -201,7 +183,7 @@ private:
 		// the target state.
 		for (uint_fast64_t i = 0, currentNonZeroElement = 0; i < numberOfStates; i++) {
 			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
-				for (auto rowIt = transitionMatrix.beginConstColumnIterator(j); rowIt != transitionMatrix.endConstColumnIterator(j); ++rowIt) {
+				for (auto rowIt = transitionMatrix.constColumnIteratorBegin(j); rowIt != transitionMatrix.constColumnIteratorEnd(j); ++rowIt) {
 					this->successorList[currentNonZeroElement++] = *rowIt;
 				}
 			}
@@ -216,7 +198,7 @@ private:
 	void initializeBackward(storm::storage::SparseMatrix<T> const& transitionMatrix) {
 		// First, we need to count how many backward transitions each state has.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix.constColumnIteratorBegin(i); rowIt != transitionMatrix.constColumnIteratorEnd(i); ++rowIt) {
 				this->stateIndications[*rowIt + 1]++;
 			}
 		}
@@ -238,7 +220,7 @@ private:
 		// Now we are ready to actually fill in the list of predecessors for
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-			for (auto rowIt = transitionMatrix.beginConstColumnIterator(i); rowIt != transitionMatrix.endConstColumnIterator(i); ++rowIt) {
+			for (auto rowIt = transitionMatrix.constColumnIteratorBegin(i); rowIt != transitionMatrix.constColumnIteratorEnd(i); ++rowIt) {
 				this->successorList[nextIndices[*rowIt]++] = i;
 			}
 		}
@@ -248,7 +230,7 @@ private:
 		// First, we need to count how many backward transitions each state has.
 		for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
 			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
-				for (auto rowIt = transitionMatrix.beginConstColumnIterator(j); rowIt != transitionMatrix.endConstColumnIterator(j); ++rowIt) {
+				for (auto rowIt = transitionMatrix.constColumnIteratorBegin(j); rowIt != transitionMatrix.constColumnIteratorEnd(j); ++rowIt) {
 					this->stateIndications[*rowIt + 1]++;
 				}
 			}
@@ -272,7 +254,7 @@ private:
 		// every state. Again, we start by considering all but the last row.
 		for (uint_fast64_t i = 0; i < numberOfStates; i++) {
 			for (uint_fast64_t j = nondeterministicChoiceIndices[i]; j < nondeterministicChoiceIndices[i + 1]; ++j) {
-				for (auto rowIt = transitionMatrix.beginConstColumnIterator(j); rowIt != transitionMatrix.endConstColumnIterator(j); ++rowIt) {
+				for (auto rowIt = transitionMatrix.constColumnIteratorBegin(j); rowIt != transitionMatrix.constColumnIteratorEnd(j); ++rowIt) {
 					this->successorList[nextIndices[*rowIt]++] = i;
 				}
 			}

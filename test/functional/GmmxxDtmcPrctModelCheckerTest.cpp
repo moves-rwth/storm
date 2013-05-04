@@ -14,50 +14,57 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 13);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 27);
+	ASSERT_EQ(dtmc->getNumberOfStates(), 13u);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 27u);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
-	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("one");
-	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("one");
+	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	std::vector<double>* result = probFormula->check(mc);
 
+	ASSERT_NE(nullptr, result);
+
 	ASSERT_LT(std::abs((*result)[0] - ((double)1/6)), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("two");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::prctl::Ap<double>("two");
+	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
+	ASSERT_NE(nullptr, result);
+
 	ASSERT_LT(std::abs((*result)[0] - ((double)1/6)), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("three");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::prctl::Ap<double>("three");
+	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
 
+	ASSERT_NE(nullptr, result);
+
 	ASSERT_LT(std::abs((*result)[0] - ((double)1/6)), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	storm::formula::Ap<double>* done = new storm::formula::Ap<double>("done");
-	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(done);
-	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula);
+	storm::property::prctl::Ap<double>* done = new storm::property::prctl::Ap<double>("done");
+	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(done);
+	storm::property::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
 	result = rewardFormula->check(mc);
 
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - ((double)11/3)), s->get<double>("precision"));
 
@@ -77,35 +84,41 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 8607);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 22460);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
-	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("observe0Greater1");
-	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("observe0Greater1");
+	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	std::vector<double>* result = probFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 0.3328800375801578281), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("observeIGreater1");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::prctl::Ap<double>("observeIGreater1");
+	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 0.1522173670950556501), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("observeOnlyTrueSender");
-	eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = new storm::property::prctl::Ap<double>("observeOnlyTrueSender");
+	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	result = probFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 0.32153724292835045), s->get<double>("precision"));
 
@@ -125,35 +138,41 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 12400);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 28894);
 
-	storm::modelChecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
-	storm::formula::Ap<double>* apFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::Eventually<double>* eventuallyFormula = new storm::formula::Eventually<double>(apFormula);
-	storm::formula::ProbabilisticNoBoundOperator<double>* probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
+	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
 	std::vector<double>* result = probFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::BoundedUntil<double>* boundedUntilFormula = new storm::formula::BoundedUntil<double>(new storm::formula::Ap<double>("true"), apFormula, 20);
-	probFormula = new storm::formula::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
+	apFormula = new storm::property::prctl::Ap<double>("elected");
+	storm::property::prctl::BoundedUntil<double>* boundedUntilFormula = new storm::property::prctl::BoundedUntil<double>(new storm::property::prctl::Ap<double>("true"), apFormula, 20);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
 
 	result = probFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 0.9999965911265462636), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 
-	apFormula = new storm::formula::Ap<double>("elected");
-	storm::formula::ReachabilityReward<double>* reachabilityRewardFormula = new storm::formula::ReachabilityReward<double>(apFormula);
-	storm::formula::RewardNoBoundOperator<double>* rewardFormula = new storm::formula::RewardNoBoundOperator<double>(reachabilityRewardFormula);
+	apFormula = new storm::property::prctl::Ap<double>("elected");
+	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
+	storm::property::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
 	result = rewardFormula->check(mc);
+
+	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 1.0448979591835938496), s->get<double>("precision"));
 

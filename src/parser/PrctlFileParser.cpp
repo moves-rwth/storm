@@ -5,27 +5,80 @@
  *      Author: Thomas Heinemann
  */
 
+#include <sstream>
+
 #include "PrctlFileParser.h"
+#include "PrctlParser.h"
+#include "modelchecker/EigenDtmcPrctlModelChecker.h"
+#include "modelchecker/GmmxxDtmcPrctlModelChecker.h"
+#include "modelchecker/GmmxxMdpPrctlModelChecker.h"
 
 namespace storm {
 namespace parser {
 
-PrctlFileParser::PrctlFileParser(std::string filename) {
-	// Open file and initialize result.
-	std::ifstream inputFileStream(filename, std::ios::in);
+PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Dtmc<double>& dtmc, enum libraries library) {
+	//Here ,the model checker which uses the correct library is created and a reference stored in the pointer modelChecker:
+	storm::modelchecker::SparseDtmcPrctlModelChecker<double>* modelChecker = nullptr;
+	switch(library) {
+	//case EIGEN:
+		//Eigen Model Checker is not completely implemented at the moment, thus using Eigen is not possible...
+		//Current behaviour: Fall back to GMMXX...
+		//modelChecker = new storm::modelchecker::EigenDtmcPrctlModelChecker<double>(dtmc);
+	//	break;
+	case GMMXX:
+	default:					//Note: GMMXX is default, hence default branches here, too.
+		modelChecker = new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+		break;
+	}
 
-	// Prepare iterators to input.
-	// TODO: Right now, this parses the whole contents of the file into a string first.
-	// While this is usually not necessary, because there exist adapters that make an input stream
-	// iterable in both directions without storing it into a string, using the corresponding
-	// Boost classes gives an awful output under valgrind and is thus disabled for the time being.
-	std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
-	parse(fileContent);
+	//Now, the check function (which works on abstract model checkers) can parse the formulas and invoke the model checker:
+	check(filename, modelChecker);
+	delete modelChecker;
+}
+
+PrctlFileParser::PrctlFileParser(std::string filename, storm::models::Mdp<double>& mdp, enum libraries library) {
+	//Here ,the model checker which uses the correct library is created and a reference stored in the pointer modelChecker:
+	storm::modelchecker::SparseMdpPrctlModelChecker<double>* modelChecker = nullptr;
+	switch(library) {
+	//case EIGEN:
+		//Eigen MDP Model Checker is not implemented yet
+		//Current behaviour: Fall back to GMMXX...
+	//	break;
+	case GMMXX:
+	default:					//Note: GMMXX is default, hence default branches here, too.
+		modelChecker = new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+		break;
+	}
+
+	//Now, the check function (which works on abstract model checkers) can parse the formulas and invoke the model checker:
+	check(filename, modelChecker);
+	delete modelChecker;
 }
 
 PrctlFileParser::~PrctlFileParser() {
 	//intentionally left empty
-	//formulas are not deleted with the parser!
+}
+
+void PrctlFileParser::check(std::string filename, storm::modelchecker::AbstractModelChecker<double>* modelChecker) {
+	// Open file
+	std::ifstream inputFileStream(filename, std::ios::in);
+
+	while(!inputFileStream.eof()) {
+		std::string line;
+		//The while loop reads the input file line by line
+		while (std::getline(inputFileStream, line)) {
+			PrctlParser parser(line);
+			storm::property::prctl::AbstractStateFormula<double>* stateFormula = dynamic_cast<storm::property::prctl::AbstractStateFormula<double>*>(parser.getFormula());
+			if (stateFormula != nullptr) {
+				modelChecker->check(*stateFormula);
+			}
+			storm::property::prctl::AbstractNoBoundOperator<double>* noBoundFormula = dynamic_cast<storm::property::prctl::AbstractNoBoundOperator<double>*>(parser.getFormula());
+			if (noBoundFormula != nullptr) {
+				modelChecker->check(*noBoundFormula);
+			}
+			delete parser.getFormula();
+		}
+	}
 }
 
 } /* namespace parser */

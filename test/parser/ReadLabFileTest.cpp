@@ -10,7 +10,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/parser/AtomicPropositionLabelingParser.h"
 #include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 #include <memory>
 
@@ -38,39 +38,42 @@ TEST(ReadLabFileTest, ParseTest) {
 		ASSERT_TRUE(labeling->containsAtomicProposition(smth));
 
 		//Testing whether all and only the correct nodes are labeled with "phi"
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,0));
 		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,1));
 		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,2));
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,3));
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,5));
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,7));
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,9));
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,10));
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(phi,11));
 
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,3));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,4));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,5));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,6));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,7));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,8));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,9));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,10));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(phi,11));
 
 		//Testing whether all and only the correct nodes are labeled with "psi"
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(psi,6));
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(psi,7));
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(psi,8));
-
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,0));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,1));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,2));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,3));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,4));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,5));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,6));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,7));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,8));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,9));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,10));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(psi,11));
 
 		//Testing whether all and only the correct nodes are labeled with "smth"
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(smth,4));
-		ASSERT_TRUE(labeling->stateHasAtomicProposition(smth,5));
+		ASSERT_TRUE(labeling->stateHasAtomicProposition(smth,2));
 
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,0));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,1));
-		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,2));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,3));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,4));
+		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,5));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,6));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,7));
 		ASSERT_FALSE(labeling->stateHasAtomicProposition(smth,8));
@@ -86,14 +89,14 @@ TEST(ReadLabFileTest, ParseTest) {
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest1) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), storm::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest2) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), storm::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadLabFileTest, WrongPropositionTest) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), storm::exceptions::WrongFileFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), storm::exceptions::WrongFormatException);
 }
 

@@ -1,0 +1,1020 @@
+/* ================================================= */
+/* ====== Windows CSS Styles ======================= */
+/* ====== styles_w.css ============================= */
+
+/* ------------------------------------------------- */
+/* Default body style */
+body {
+	color:#333333;
+	background-color:#ffffff;
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 10pt;
+	margin-left: 30px;
+}
+
+/* ------------------------------------------------- */
+/* Help 3 body style overriding default MSHV behavior */
+
+body.OH_VSIP_body {
+	
+	margin-left: 30px;
+	
+	}
+	
+DIV.OH_outerContent
+{  
+  border:0px none #FFFFFF; 
+}
+
+
+/* ------------------------------------------------- */
+/* Title headings styles */
+h1 {
+	color: #0860a8;
+	font-size: 15pt;
+	font-weight: normal;
+	padding-bottom: 1px;	
+	margin-left: 0pt;
+	margin-bottom: 0px;
+	border-bottom: 1px solid #0860A8; 
+}
+
+h1.firsttitle { 
+    font-weight:normal; 
+    border-bottom:0 none; 
+    margin-left:0; 
+}
+h2 {
+	color: #0860a8;
+	font-weight: lighter;
+	margin-top: 5pt;
+	margin-bottom: 0;
+	font-size: 13pt;
+}
+/*h2 { 
+	color: #0860a8;
+	font-weight: lighter;
+	padding-left:30px; 
+	margin-top:5pt; 
+	margin-bottom:0; 
+	font-size:13pt;
+}*/
+h3 {
+	color: #333333;
+	font-weight: bold;
+	margin-top: 5pt;
+	margin-bottom: 0;
+	font-size: 10.5pt;
+}
+/*h3 { 
+	color: #333333;
+	font-weight:bold; 
+	padding-left:30px; 
+	margin-top:5pt; 
+	margin-bottom:0; 
+	font-size:10.5pt;
+}*/
+
+h4 { 
+	color: #333333;
+	color: #0860a8;
+	margin-bottom:0.75em; 
+	padding-left:0px;
+	/*padding-left:15px;*/
+	font-size: 10.0pt;
+ }
+.relinfo { 
+	padding-left:30px; 
+/*	color: #333333;*/
+}
+caption { 
+    font-size:10pt; 
+    font-weight: bold; 
+}
+.figcap { 
+    margin-left:24px;
+    font-size:10pt; 
+    font-weight: bold; 
+    text-align:center;
+}
+.sectiontitle { 
+	padding-left:0px;
+	/*padding-left:30px;*/ 
+}
+.linklist { 
+	padding-left:0px;
+	/*padding-left:30px;*/ 
+}
+/* ------------------------------------------------- */
+/* Link styles */
+a:link { 
+	color: #0860a8;
+	text-decoration: none;
+/*	color:#0033ff;*/
+}
+a:active { 
+	color: #0860a8;
+	text-decoration: underline;
+/*	color:#000000;	*/
+}
+a:visited { 
+	color:#0860a8;
+	text-decoration: none;
+/*	color:#9900cc;*/
+}
+a:hover { 
+	color:#000000; 
+	background-color:#ffffcc;
+}
+.familylinks { 
+     margin-top:1em; 
+ }
+a.start { 
+	font-size: 18pt;
+	text-decoration: underline;
+}
+a:active.start { 
+	color: #0860a8;
+	text-decoration: underline;
+}
+a:visited.start { 
+	color:#0860a8;
+	text-decoration: underline;
+}
+a.underlined { 
+	text-decoration: underline;
+}
+a:active.underlined { 
+	color: #0860a8;
+	text-decoration: underline;
+}
+a:visited.underlined { 
+	color:#0860a8;
+	text-decoration: underline;
+}
+/* ------------------------------------------------- */
+/* Paragraph styles */
+.shortdesc {
+	font-size: inherit;
+	/*font-size: 12pt;*/
+   /*font-style: italic;*/
+	padding-left: inherit;
+	line-height : 16pt;	
+	margin-top: 0px;	
+	margin-bottom: 0.5em;	
+}
+p { 
+	font-size: inherit;
+	margin-left:0px;  
+	/*margin-left:30px; */
+	/*line-height:120%;*/
+	line-height:150%;
+	margin-top:0; 
+	/*margin-bottom:5pt;*/
+	margin-bottom:10px;
+}
+.p { 
+	font-size:inherit; 
+	margin-left:0px; 
+	/*margin-left:30px; */
+/*	line-height:130%; */
+	line-height:170%; 
+	margin-top:0; 
+	margin-bottom:5pt;
+	padding-left:0pt; 
+}
+
+/* ------------------------------------------------- */
+/* Table styles */
+table { 
+	margin-bottom:5pt; 
+	border-collapse:collapse; 
+	margin-left:0px; 
+	/*margin-left:30px;*/  
+	margin-top:0.3em; 
+	font-size:10pt;
+}
+tr { 
+	vertical-align:top;
+}	
+th, th h3{ 
+	padding:4px; 
+	text-align:left; 
+	background-color: #555555; 
+	font-weight:bold; 
+	margin-top:0; 
+	margin-bottom:0; 
+	color: #FFFFFF; 
+	font-size:11pt;	
+}
+th { 
+	border:1px #bababa solid;
+	/*padding:0;*/
+	padding-top: 0px; 
+	padding-bottom: 0px; 
+	padding-right: 3px; 
+	padding-left: 3px; 
+}
+
+td { 
+	border: 1px #bababa solid; 
+/*	border:1px #ff9900 solid; */
+	vertical-align:top; 
+	font-size:inherit;
+	margin-bottom:0;
+}
+td, td p{ 
+	margin-top:0; 
+	margin-left:0;
+	/*padding: 5px; */
+	text-align:left; 
+	font-size:inherit; 
+	line-height: 120%;
+/*	line-height:130%;*/
+}
+td p {
+	margin-bottom:0;
+	padding-top: 5px; 
+	padding-bottom: 5px; 
+	padding-right: 5px; 
+	padding-left: 1px; 
+}
+.noborder { 
+	border:0px none;
+}
+.noborder1stcol { 
+	border:0px none;
+	padding-left: 0pt;
+}
+td ol { 
+	font-size:inherit;
+	margin-left:28px; 
+}
+td ul { 
+	font-size:inherit;
+	margin-left:24px; 
+}
+.DefListTbl {
+   width: 90%;
+	margin-left: -3pt;
+}
+.syntaxdiagramtbl {
+	 margin-left: -3pt;
+}
+.sdtbl {  
+}
+.sdrow {  
+}
+.sdtblp {  
+	border:0px none;
+	font-size:inherit;
+	line-height: 120%;
+	margin-bottom:0;
+	padding-bottom: 0px; 
+	padding-top: 5px; 
+	padding-left: 0px; 
+	padding-right: 5px; 
+	vertical-align:top; 
+}
+
+.idepara {  
+	border:0px none;
+	font-size:inherit;
+	line-height: 120%;
+	margin-bottom:0;
+	padding-bottom: 0px; 
+	padding-top: 5px; 
+	padding-left: 0px; 
+	padding-right: 5px; 
+	vertical-align:top; 
+}
+.ide_para {  
+	border:0px none;
+	font-size:inherit;
+	line-height: 120%;
+	margin-bottom:0;
+	padding-bottom: 0px; 
+	padding-top: 5px; 
+	padding-left: 0px; 
+	padding-right: 5px; 
+	vertical-align:top; 
+}
+/* ------------------------------------------------- */
+/* Note styles */
+div.Note{
+	margin-top:0px;
+	margin-left:15px;
+	margin-bottom:10px;
+	padding-left:10px;
+	padding-right:5px;
+	padding-bottom:5px;
+	
+	background-color: #E2E7EB;
+	max-width:600px;
+	box-shadow:2px 3px 3px 1px #CCCCCC;
+}
+dd div.Note {
+	margin-top:10px;
+}
+
+h3.NoteTipHead {
+	color: #0860a8;
+	padding-top: 5px;
+	text-transform: uppercase;
+}
+h3.NoteTipHead img {
+	vertical-align: middle;
+}
+P.Note { 
+	/*margin-top:0;
+	margin-left:25px;
+	margin-bottom:0pt;*/
+	margin-top:0;
+	margin-left:15px;
+	padding-left:10px;
+	padding-right:5px;
+	padding-bottom:5px;
+	margin-bottom:0pt;
+	background-color: #E2E7EB;
+	max-width:600px;	
+
+}
+
+/* ------------------------------------------------- */
+blockquote { 
+	margin-top:0; 
+	margin-bottom:0;
+}
+HR { 
+	/*color:#ff9900; */
+	color: #0860A8;
+	border:0; 
+	background:#ff9900;
+	height:1px; 
+	margin-left:0;
+}
+/* ------------------------------------------------- */
+/* List styles */
+.simple    {
+	list-style: none;
+}
+ul { 
+	/*margin-left: 24px; */
+	margin-bottom: 1em; 
+	/*padding-left:24px; */
+	font-size: inherit; 
+	line-height: 100%; 
+	/*line-height:130%;*/ 
+	list-style-image:url();
+	margin-top: 0px; 
+
+}
+ol { 
+	font-size:inherit;
+	line-height: 100%; 
+	/*line-height:130%; */
+	list-style-type:decimal;
+	/*margin-left:24px; */
+	margin-bottom:1em; 
+	margin-top:0px; 
+	/*padding-left:30px; */
+}
+ol.num { 
+	font-size:inherit; 
+	line-height: 100%; 
+	/*line-height:130%; */
+	list-style-type: decimal;
+	/*margin-left:24px; */
+	margin-bottom:1em; 
+	margin-top:0px; 
+	/*padding-left:30px; */
+}
+ol.abc { 
+	font-size:inherit; 
+	line-height: 100%; 
+	/*line-height:130%; */
+	list-style-type: lower-alpha;
+/*	list-style-type: upper-alpha;*/
+	/*margin-left:24px; */
+	margin-bottom:1em; 
+	margin-top:0px; 
+	/*padding-left:30px; */
+}
+ol.ABC { 
+	font-size:inherit; 
+	line-height: 100%; 
+	/*line-height:130%; */
+	list-style-type: upper-alpha;
+	/*margin-left:24px; */
+	margin-bottom:1em; 
+	margin-top:0px; 
+	/*padding-left:30px; */
+}
+ol.roman { 
+	font-size:inherit; 
+	line-height: 100%; 
+	/*line-height:130%; */
+	list-style-type: lower-roman;
+	/*margin-left:24px; */
+	margin-bottom:1em; 
+	margin-top:0px; 
+	/*padding-left:30px; */
+}
+ol.Roman { 
+	font-size:inherit; 
+	line-height: 100%; 
+	/*line-height:130%; */
+	list-style-type: upper-roman;
+	/*margin-left:24px; */
+	margin-bottom:1em; 
+	margin-top:0px; 
+	/*padding-left:30px; */
+}
+ol ol { 
+	/*margin-left:0px; */
+	margin-left:24px; 
+	list-style:lower-alpha; 
+	margin-bottom:0em; 
+	font-size:inherit;
+}
+ul ol { 
+	/*margin-left:0px; */
+	margin-left:24px; 
+	list-style-image:url();
+	list-style-type:decimal; 
+	margin-bottom:0em; 
+	font-size:inherit;
+}
+ul ul { 
+	font-size:inherit;
+	margin-bottom:0px; 
+	/*margin-left:0px; */
+	margin-left:18px; 
+	/*list-style-image:url(); 
+	list-style:circle;*/
+}
+/*ul li p, ol ul li p, ol ul li {
+}*/
+ul ul li p {
+	list-style: url();
+}
+
+ol ul { 
+	font-size:inherit;
+	margin-bottom:0px; 
+	margin-left:18px; 
+	/*list-style:circle; */
+}
+.dash {
+	list-style: url("../Resources/ndash.gif");
+}
+.dashpara { 
+	margin-left:10pt; 
+}
+dd ul, dd p ul { 
+	list-style: url();
+	/*margin-left: 12pt;*/
+}
+dd ul { 
+	margin-left:16px; 
+	font-size:inherit;
+}
+dd ol { 
+	margin-left:24px; 
+	font-size:inherit;
+}
+/*ul li ul li, ul li p ul li {
+	list-style-image:url("Resources/ndash.gif"); */
+	/*list-style: url();*/
+/*}*/
+/*ul li ul li p, ul li p ul li p {
+	list-style-image:url("Resources/ndash.gif"); */
+	/*list-style: url();*/
+/*}*/
+li { 
+	font-size:inherit;
+	line-height:130%; 
+	margin-top:0px; 
+}
+li p, ol p, ul p { 
+	margin-bottom:0.2em; 
+	margin-top:0.2em; 
+	margin-left:0; 
+	padding-left:0; 
+	font-size:inherit;
+}
+li table, td table, dd table { 
+	margin-left:0;
+}
+indent li p { 
+	margin-bottom:0.2em; 
+	margin-top:0.2em; 
+	margin-left:-2em;
+}
+P.Preformatted, pre {
+ 	background-color:#eeeeee;
+	font-size:inherit; 
+	font-family:"Courier New", Courier, monospace; 
+	line-height: 110%;
+	margin-bottom:0; 
+	margin-left:0px; 
+	/*margin-left:30px;*/  
+	margin-top:0; 		
+	x-text-tab-stops:repeat 1in; 
+}
+
+td P.Preformatted, pre { 
+	background-color:#eeeeee;
+	font-size:10pt; 
+	/*font-size:inherit; */
+	font-family:"Courier New", Courier, monospace; 
+	/*line-height:90%;*/ // reduced line height by 50%.
+	margin-bottom:0; 
+	margin-left:0px; // reduced the left margin for the this new pseudo-class.
+	margin-top:0; 
+	x-text-tab-stops:repeat 1in; 
+}
+
+div.nobullet { 
+	margin-left:10pt; 
+ }
+/*p.nobullet { 
+	margin-bottom:0.2em; 
+	margin-top:0.2em; 
+	padding-left:0; 
+	font-size:inherit;
+	background-color: red;
+}*/
+
+ul.ullinks { 
+	margin-left: 0px;
+	margin-bottom: 1em; 
+	/*padding-left:24px; */
+	font-size: inherit; 
+	line-height: 100%; 
+	/*line-height:130%;*/ 
+	/*list-style-image:url(); */
+	margin-top: 0px; 
+	margin-left: 16px;
+}
+/*.ulchildlink {
+	list-style: url();
+}*/
+
+*/
+/* ------------------------------------------------- */
+/* Definition list */
+dl { 
+	font-size:inherit; 
+	margin-bottom:0px; 
+	margin-left:0px;
+	margin-top:0px; 
+}	
+dt { 
+/*	font-weight:bold; */
+	margin-left:0em; 
+	margin-top:0em;
+   margin-bottom:0em; 
+   width:100px;
+}
+.dlterm { 
+	/*font-weight:bold; */
+	margin-left:0em; 
+	margin-top:0em;
+   margin-bottom:0em; 
+   width:100px; 
+}
+dd {
+	font-size:inherit; 
+	margin-left:0px; 
+   position:relative; 
+  	top:-13pt;
+   left:110px;  
+   width:70%; 
+   line-height:14pt;
+   margin-top:0em;
+   margin-bottom:-10pt;
+}
+/*.biblio {
+	color: blue;
+}*/
+dd.biblio {
+	/*color: blue;*/
+	font-size:inherit; 
+	margin-left:0px; 
+   position:relative; 
+    top:-14pt; 
+    left:140px; 
+    width:60%; 
+    line-height:14pt;
+    margin-top:0em;
+    margin-bottom:0em; 
+}
+.DefListTbl {
+   width: 90%;
+}
+table.argTbl {
+   width: 75%;
+/*	padding-left:30px; 
+	margin-left:24px; */
+}
+.dlsyntax { 
+	/*margin-left:24px;*/
+	margin-left:0px; 
+/*	margin-bottom:1em; */
+	/*padding-left:5px;*/
+	padding-left:0px;  
+/*	padding-left:30px; */
+	font-size:inherit; 
+	margin-top:-1px; 
+	line-height:150%; 
+}	
+.dtsyntax  { 
+   margin-bottom:-1.125em; 
+	margin-left:0em; 
+	margin-top:0em;
+   width:100px; }
+.ddsyntax  { 
+	 font-size:inherit; 
+ 	 margin-left:0px; 
+    position:relative; 
+    top:-4pt; 
+    left:110px; 
+    width:70%; 
+    line-height:14pt;
+    margin-bottom:-1em; 
+}
+.dlsyntaxpara {
+/*	margin-left:24px; */
+	margin-left:0px;
+	margin-bottom:1em; 
+	/*padding-left:30px; */
+	font-size:inherit; 
+	/*margin-top:-1px; */
+	/*margin-top:1em; */
+	line-height:150%; 
+}
+.syntaxnote { 
+	margin-left:0px; 
+	/*margin-left:30px;*/  
+	/*margin-bottom:1em; */
+	padding-left:0px; 
+	font-size:inherit; 
+	margin-top:-5px; 
+	line-height:150%; 
+ }
+.syntaxnote-orig { 
+	margin-left:135px; 
+	margin-bottom:1em; 
+	padding-left:30px; 
+	font-size:inherit; 
+	margin-top:-1px; 
+	line-height:150%; 
+ }
+/* "dl" style for ""ReturnValues" */
+.dlretval { 
+	margin-left:24px; 
+	margin-bottom:2em; 
+	padding-left:30px; 
+	font-size:inherit;
+	margin-top:-1px; 
+	line-height:150%; 
+   width: 90%;
+}	
+/* "dt" style for ""ReturnValues" */
+.dtretval  { 
+    margin-left:0em; 
+    margin-top:0em;
+    margin-bottom:-1.25em; 
+    width:400px; 
+}
+/* "dd" style for ""ReturnValues" */
+.ddretval  { 
+    /*color: blue;*/
+	 font-size:inherit; 
+ 	 margin-left:0px; 
+    position:relative; 
+    top:-4pt; 
+    left:300px; 
+/*    width:60%;*/ 
+/*    line-height:14pt;*/
+    margin-bottom:0;
+/*    margin-bottom:-1em;*/
+}
+dd p {
+	margin-bottom:0em; 
+	margin-top:0em; 
+	margin-left:0; 
+	padding-left:0; 
+	font-size:inherit;
+}
+dd dl { 
+	margin-left:0px;
+}
+/* ------------------------------------------------- */
+/* Inline Styles */
+SPAN.Big { 
+	font-weight:bold; 
+	font-size:105%;
+}
+SPAN.Code, .Code { 
+    font-family:"Courier New", Courier, monospace;
+}
+.code { 
+        background-color: #F5F5F5; 
+        font-family: "Courier New" , Courier, monospace;
+        font-size: 10pt; 
+        line-height: 118%; 
+        margin-top:0.0em; 
+        margin-bottom:0.0em;
+        /*padding-left:30px; */
+        padding-left:0px; 
+        white-space: pre;
+}
+code { 
+       background-color: #F5F5F5; 
+       font-family:"Courier New" , Courier, monospace;
+       font-size: 10pt; 
+       line-height: 118%; 
+       margin-top:0.0em; 
+       margin-bottom:0.0em;
+       /*padding-left:30px; */
+       padding-left:0px; 
+       white-space: pre;
+}
+strong { 
+    font-size: inherit; 
+ }
+sup, sub { vertical-align: 0;
+           position: relative; }
+
+sub{
+  top: 0.8ex;
+}
+sup{
+    bottom: 1ex;
+}
+/*sub {
+    font-family:Arial, Symbol, monospace;
+	 font-size: 80%;
+    vertical-align: bottom;
+ }
+sup {
+    font-family:Arial, Symbol, monospace;
+	 font-size: 80%;
+    vertical-align: top;
+ }*/
+tt { 
+    font-family: "Courier New" , Courier, monospace;  
+}
+.b {
+    font-weight: bold; 
+}
+.boldspan {
+    font-weight: bold; 
+}
+.bgcolorgray { 
+    background-color:#999999;
+ }
+.bi {
+    font-style: italic;
+    font-weight: bold; 
+}
+.bt {
+    font-family:times;  
+    font-weight: bold; 
+}
+.codeph { 
+    font-family:"Courier New" , Courier, monospace;  
+}
+.delim { 
+    font-family:"Courier New" , Courier, monospace;  
+}
+.eq { 
+    margin-bottom:1em; 
+	/*margin-left:30px; */
+ }
+.eqsymbol { 
+    /*font-family:"Courier New" , Courier, monospace;  */
+    /*font-family:Tahoma, sans-serif;*/
+    font-family:'Times New Roman', sans-serif;
+    font-size: 12pt;
+}
+
+ }
+.imagecenter {
+    text-align: center; 
+}
+.tfootnote {
+    font-size:8pt; 
+}
+.italic {
+    font-style: italic;
+}
+.keyword { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: normal; 
+}
+.keywordb { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: bold; 
+}
+.keywordtt { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: normal; 
+}
+.keywordbt { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: bold; 
+}
+.keywordit { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-style: italic;
+    font-weight: inherit; 
+}
+.keywordbi { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: bold; 
+    font-style: italic;
+}
+.keywordn { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-style: normal;
+    font-weight: normal; 
+}
+h1 .keyword, h2 .keyword, h3 .keyword { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: bold; 
+}
+.kwd { 
+    font-family:"Courier New" , Courier, monospace;  
+}
+.option { 
+    font-family:"Courier New" , Courier, monospace;  
+}
+.optionb { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: bold; 
+}
+.optiontt { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: normal; 
+}
+.optionbt { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: bold; 
+}
+.optionit { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-style: italic;
+    font-weight: inherit; 
+}
+.optionbi { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-weight: bold; 
+    font-style: italic;
+}
+.optionn { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-style: normal;
+    font-weight: normal; 
+}
+.oper { 
+    font-family:"Courier New" , Courier, monospace;  
+}
+.parmname {
+    font-style: italic;
+    font-family:"Courier New" , Courier, monospace;  
+	font-weight: normal;
+}
+.parmnameb { 
+    font-family:"Courier New" , Courier, monospace;  
+	font-style: italic;
+    font-weight: bold; 
+}
+.parmnamett { 
+    font-family:"Courier New" , Courier, monospace;  
+	font-style: normal;
+    font-weight: normal; 
+}
+.parmnamebt { 
+    font-family:"Courier New" , Courier, monospace;  
+	font-style: normal;
+    font-weight: bold; 
+}
+.parmnamen { 
+    font-family:"Courier New" , Courier, monospace;  
+    font-style: normal;
+    font-weight: normal; 
+}
+.sep { 
+    font-family:"Courier New" , Courier, monospace;  
+}
+.tenpt { 
+    font-size:8pt; 
+ }
+.tt { 
+    font-family:"Courier New" , Courier, monospace;  
+}
+.var {
+    font-style: italic;
+    font-family:"Courier New" , Courier, monospace;  
+}
+.equation { 
+    font-style: italic;
+    font-family:"Times New Roman" , monospace;  
+}
+.varname {
+    font-style: italic;
+    font-family:"Courier New" , monospace;  
+}
+.varnameb { 
+    font-family:"Courier New" , monospace;  
+    font-style: italic;
+    font-weight: bold; 
+}
+.varnamebo { 
+    font-family:"Courier New" , monospace;  
+    font-style: italic;
+    font-weight: bold; 
+	text-decoration: overline
+}
+.varnamebt { 
+    font-family:"Courier New" , monospace;  
+    font-style: normal;
+    font-weight: bold; 
+}
+.varnamebu { 
+    font-family:"Courier New" , monospace;  
+    font-style: italic;
+    font-weight: bold; 
+	text-decoration: underline
+}
+.varnamett { 
+    font-family:"Courier New" , monospace;  
+    font-style: normal;
+    font-weight: normal; 
+}
+
+.varnamen { 
+    font-family:"Courier New" , monospace;  
+    font-style: normal;
+    font-weight: normal; 
+}
+.overline { 
+	text-decoration: overline
+}
+.underline { 
+	text-decoration: underline
+}
+.filepath {
+    font-style: normal; /* MKL */
+    /* font-style: italic;*/ /* Compiler */
+    font-family:"Courier New" , Courier, monospace;  
+}
+
+/*.uicontrol {
+    font-style: italic;
+    font-family:"Courier New" , Courier, monospace;  
+}*/
+/*.Fortran95 {*/
+.NonStdFortran {
+   /*color: teal;*/
+   /*color: #007783;*/
+   color: green;
+}
+
+.h3titleblue {
+	color: #0860a8;
+   font-weight: lighter;
+	margin-top: 5pt;
+	margin-bottom: 0;
+   font-size: 13pt;
+}
+
+.Context_StepsIntro {
+   font-weight: bold;
+}
+
+.docfeedback {
+	margin-top: 15px;
+	margin-left: 0pt;
+	margin-bottom: 0px;
+	border-top: 1px solid #cccccc;
+	font-weight: bold;
+}
+
+.noBgrnd {
+	background-image: none;
+}
+.dropPara {
+	float: left;
+}
+
+
+.RevUpdate {
+   /*color: red; */
+   background-color: #FFFF99;
+   font-weight: normal;
+   line-height:120%;
+}

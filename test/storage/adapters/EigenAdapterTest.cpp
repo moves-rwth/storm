@@ -45,6 +45,8 @@ TEST(EigenAdapterTest, SimpleDenseSquareCopy) {
 			col = 0;
 		}
 	}
+
+	delete esm;
 }
 
 TEST(EigenAdapterTest, SimpleSparseSquareCopy) {
@@ -93,4 +95,6 @@ TEST(EigenAdapterTest, SimpleSparseSquareCopy) {
 			col = 0;
 		}
 	}
+
+	delete esm;
 }

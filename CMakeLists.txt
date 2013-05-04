@@ -48,6 +48,8 @@ message(STATUS "GMMXX_INCLUDE_DIR is ${GMMXX_INCLUDE_DIR}")
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
+option(USE_INTELTBB "Sets whether the Intel TBB Extensions should be used." OFF)
+option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (DEBUG)
@@ -101,24 +103,50 @@ message(STATUS "STORM_CPP_TESTS_BASE_PATH is ${STORM_CPP_TESTS_BASE_PATH}")
 
 # Main Sources
 file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
-file(GLOB_RECURSE STORM_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
+file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
+set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE}")
+file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
+file(GLOB_RECURSE STORM_EXCEPTIONS_FILES ${PROJECT_SOURCE_DIR}/src/exceptions/*.h ${PROJECT_SOURCE_DIR}/src/exceptions/*.cpp)
+file(GLOB_RECURSE STORM_FORMULA_FILES ${PROJECT_SOURCE_DIR}/src/formula/*.h ${PROJECT_SOURCE_DIR}/src/formula/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/*.cpp)
+file(GLOB_RECURSE STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJECT_SOURCE_DIR}/src/models/*.cpp)
+file(GLOB_RECURSE STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
+file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
 
 # Test Sources
 # Note that the tests also need the source files, except for the main file
-file(GLOB_RECURSE STORM_TEST_HEADERS ${PROJECT_SOURCE_DIR}/test/*.h)
-file(GLOB_RECURSE STORM_TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/*.cpp ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
+file(GLOB_RECURSE STORM_TEST_FILES ${PROJECT_SOURCE_DIR}/test/*.h ${PROJECT_SOURCE_DIR}/test/*.cpp)
 
-# Main Grouping
-source_group(Headers FILES ${STORM_HEADERS})
-source_group(Sources FILES ${STORM_SOURCES})
-
-# Test Grouping
-source_group(Headers FILES ${STORM_TEST_HEADERS})
-source_group(Sources FILES ${STORM_TEST_SOURCES})
+# Group the headers and sources
+source_group(main FILES ${STORM_MAIN_FILE})
+source_group(adapters FILES ${STORM_ADAPTERS_FILES})
+source_group(exceptions FILES ${STORM_EXCEPTIONS_FILES})
+source_group(formula FILES ${STORM_FORMULA_FILES})
+source_group(modelchecker FILES ${STORM_MODELCHECKER_FILES})
+source_group(models FILES ${STORM_MODELS_FILES})
+source_group(parser FILES ${STORM_PARSER_FILES})
+source_group(storage FILES ${STORM_STORAGE_FILES})
+source_group(utility FILES ${STORM_UTILITY_FILES})
+source_group(test FILES ${STORM_TEST_FILES})
 
 # Add base folder for better inclusion paths
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src")
+
+# Preset pathes for Intel TBB to internal copy in /resources/3rdParty/tbb41_20130314_mergedWindowsLinuxMacOSX
+set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb41_20130314_merged-win-lin-mac/")
+if(MSVC)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/vc11")
+elseif(CMAKE_COMPILER_IS_GNUCC)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/gcc4.4")
+else(CLANG)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/clang3.2")
+endif()
+
+# Add the resources/cmake folder to Module Search Path for FindTBB.cmake
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
 
 # Set required external packages
 find_package(Threads REQUIRED)
@@ -127,6 +155,7 @@ set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(TBB)
 
 if(Boost_FOUND)
     if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
@@ -140,6 +169,18 @@ if(Boost_FOUND)
 	link_directories(${Boost_LIBRARY_DIRS})
 endif(Boost_FOUND)
 
+# Intels Thread Building Blocks
+if (TBB_FOUND)
+	message(STATUS "Found TBB with Interface Version ${TBB_INTERFACE_VERSION}")
+	
+	if(USE_INTELTBB)
+		add_definitions(-DGMM_USE_TBB)
+	endif()
+	
+	include_directories(${TBB_INCLUDE_DIRS})
+	link_directories(${TBB_LIBRARY_DIRS})
+endif(TBB_FOUND)
+
 # Add Eigen to the included directories
 include_directories(${EIGEN3_INCLUDE_DIR})
 
@@ -149,15 +190,23 @@ include_directories(${GMMXX_INCLUDE_DIR})
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
 add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
-add_executable(storm-tests ${STORM_TEST_SOURCES} ${STORM_TEST_HEADERS})
+add_executable(storm-tests ${STORM_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
 
 # Add target link deps for Boost program options
 target_link_libraries(storm ${Boost_LIBRARIES})   
 target_link_libraries(storm-tests ${Boost_LIBRARIES})
 
-set (STORM_USE_COTIRE ON)
+if (USE_INTELTBB)
+	target_link_libraries(storm tbb tbbmalloc)
+	target_link_libraries(storm-tests tbb tbbmalloc) 
+endif(USE_INTELTBB)
+
 if (APPLE)
 	set(STORM_USE_COTIRE OFF)
+	
+    # Set up some Xcode specific settings
+	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
+	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 endif(APPLE)
 
 # Print Cotire Usage Status

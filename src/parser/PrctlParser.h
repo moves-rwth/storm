@@ -3,39 +3,47 @@
 
 #include "src/parser/Parser.h"
 
-#include "src/formula/Formulas.h"
-#include <memory>
+#include "src/formula/Prctl.h"
+//#include <memory>
 
 namespace storm {
 namespace parser {
 
 /*!
- *	@brief Load PRCTL file
+ * Reads a PRCTL formula from a string and return the formula tree.
+ *
+ * If you want to read the formula from a file, use the PrctlFileParser class instead.
+ *
+ * @note
+ * This class creates a PctlFormula object which can be accessed through the getFormula() method (of base
+ * class PrctlParser). However, it will not delete this object.
  */
-class PrctlParser : Parser
-{
+class PrctlParser : Parser {
 	public:
-		PrctlParser() { }
+		/*!
+		 * Reads a PRCTL formula from its string representation and parses it into a formula tree, consisting of
+		 * classes in the namespace storm::property.
+		 *
+		 * If the string could not be parsed successfully, it will throw a wrongFormatException.
+		 *
+		 * @param formulaString The string representation of the formula
+		 * @throw wrongFormatException If the input could not be parsed successfully
+		 */
 		PrctlParser(std::string formulaString);
 		 
 		/*!
-		 *	@brief return formula object parsed from file.
+		 *	@return a pointer to the parsed formula object
 		 */
-	storm::formula::AbstractFormula<double>* getFormula()
-		{
+		storm::property::prctl::AbstractPrctlFormula<double>* getFormula() {
 			return this->formula;
 		}
-	
-	protected:
-		/*!
-		 * Parses a formula and stores the result in the field "formula"
-		 * @param formula The string representation of the formula to parse
-		 */
-		void parse(std::string formula);
 
 	private:
-		storm::formula::AbstractFormula<double>* formula;
+		storm::property::prctl::AbstractPrctlFormula<double>* formula;
 
+		/*!
+		 * Struct for the Prctl grammar, that Boost::Spirit uses to parse the formulas.
+		 */
 		template<typename Iterator, typename Skipper>
 		struct PrctlGrammar;
 

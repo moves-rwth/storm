@@ -21,7 +21,7 @@
 #include <string>
 
 #include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "boost/integer/integer_mask.hpp"
 #include "src/utility/Settings.h"
 
@@ -157,7 +157,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	 */
 	if (nonZeroEntryCount == 0) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
-		throw storm::exceptions::WrongFileFormatException();
+		throw storm::exceptions::WrongFormatException();
 	}
 
 	/*
@@ -178,7 +178,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 	if (isRewardMatrix) {
 		if (maxStateId + 1 > rewardMatrixInformation->rowCount || maxStateId + 1 > rewardMatrixInformation->columnCount) {
 			LOG4CPLUS_ERROR(logger, "Reward matrix has more rows or columns than transition matrix.");
-			throw storm::exceptions::WrongFileFormatException() << "Reward matrix has more rows or columns than transition matrix.";
+			throw storm::exceptions::WrongFormatException() << "Reward matrix has more rows or columns than transition matrix.";
 		} else {
 			maxStateId = rewardMatrixInformation->rowCount - 1;
 		}
@@ -266,7 +266,7 @@ DeterministicSparseTransitionParser::DeterministicSparseTransitionParser(std::st
 		}
 	}
 
-	if (!fixDeadlocks && hadDeadlocks && !isRewardMatrix) throw storm::exceptions::WrongFileFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
 
 	/*
 	 *	Finalize Matrix.
