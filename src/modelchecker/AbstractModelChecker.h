@@ -131,7 +131,7 @@ public:
 			result = stateFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : *model.getLabeledStates("init")) {
+			for (auto initialState : model.getLabeledStates("init")) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
 				std::cout << "\t" << initialState << ": " << result->get(initialState) << std::endl;
 			}
@@ -162,7 +162,7 @@ public:
 			result = this->checkNoBoundOperator(noBoundFormula);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : *model.getLabeledStates("init")) {
+			for (auto initialState : model.getLabeledStates("init")) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
 				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
 			}
@@ -195,7 +195,7 @@ public:
 			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
 		}
 
-		return new storm::storage::BitVector(*model.getLabeledStates(formula.getAp()));
+		return new storm::storage::BitVector(model.getLabeledStates(formula.getAp()));
 	}
 
 	/*!
