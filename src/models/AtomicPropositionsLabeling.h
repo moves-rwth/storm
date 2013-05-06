@@ -94,8 +94,8 @@ public:
      *
 	 * @return True if the proposition is registered within the labeling, false otherwise.
 	 */
-	bool containsAtomicProposition(std::string const& proposition) {
-		return (nameToLabelingMap.count(proposition) != 0);
+	bool containsAtomicProposition(std::string const& ap) const {
+		return (nameToLabelingMap.count(ap) != 0);
 	}
 
 	/*!
@@ -105,7 +105,7 @@ public:
 	 * @param state The index of the state to label.
 	 */
 	void addAtomicPropositionToState(std::string const& ap, uint_fast64_t const state) {
-		if (nameToLabelingMap.count(ap) == 0) {
+		if (!this->containsAtomicProposition(ap)) {
 			LOG4CPLUS_ERROR(logger, "Atomic Proposition '" << ap << "' unknown.");
 			throw storm::exceptions::OutOfRangeException() << "Atomic Proposition '" << ap << "' unknown.";
 		}
@@ -117,10 +117,10 @@ public:
 	}
 
 	/*!
-	 * Returns a list of atomic propositions of a given state.
+	 * Returns a set of atomic propositions of a given state.
      *
 	 * @param state The index of a state.
-	 * @returns The list of propositions for the given state.
+	 * @returns The set of atomic propositions for the given state.
 	 */
 	std::set<std::string> getPropositionsForState(uint_fast64_t state) {
 		if (state >= stateCount) {
@@ -143,8 +143,13 @@ public:
 	 * @param state The index of the state to check.
 	 * @return True if the node is labeled with the atomic proposition, false otherwise.
 	 */
-	bool getStateHasAtomicProposition(std::string const& ap, const uint_fast64_t state) {
-		return this->singleLabelings[nameToLabelingMap[ap]].get(state);
+	bool getStateHasAtomicProposition(std::string const& ap, const uint_fast64_t state) const {
+		if (!this->containsAtomicProposition(ap)) {
+			LOG4CPLUS_ERROR(logger, "The atomic proposition " << ap << " is invalid for the labeling of the model.");
+			throw storm::exceptions::InvalidArgumentException() << "The atomic proposition " << ap << " is invalid for the labeling of the model.";
+		}
+        auto apIndexPair = nameToLabelingMap.find(ap);
+		return this->singleLabelings[apIndexPair->second].get(state);
 	}
 
 	/*!
@@ -152,7 +157,7 @@ public:
      *
 	 * @return The number of atomic propositions.
 	 */
-	uint_fast64_t getNumberOfAtomicPropositions() {
+	uint_fast64_t getNumberOfAtomicPropositions() const {
 		return apCountMax;
 	}
 
@@ -162,13 +167,13 @@ public:
 	 * @param ap The name of the atomic proposition.
 	 * @return A bit vector that represents the labeling of the states with the given atomic proposition.
 	 */
-	storm::storage::BitVector const& getAtomicProposition(std::string const& ap) {
+	storm::storage::BitVector const& getLabeledStates(std::string const& ap) const {
 		if (!this->containsAtomicProposition(ap)) {
 			LOG4CPLUS_ERROR(logger, "The atomic proposition " << ap << " is invalid for the labeling of the model.");
-			throw storm::exceptions::InvalidArgumentException() << "The atomic proposition " << ap
-					<< " is invalid for the labeling of the model.";
+			throw storm::exceptions::InvalidArgumentException() << "The atomic proposition " << ap << " is invalid for the labeling of the model.";
 		}
-		return (this->singleLabelings[nameToLabelingMap[ap]]);
+        auto apIndexPair = nameToLabelingMap.find(ap);
+		return this->singleLabelings[apIndexPair->second];
 	}
 
    /*!
@@ -176,7 +181,7 @@ public:
     *
     * @return The size of the labeling in memory measured in bytes.
     */
-	uint_fast64_t getSizeInMemory() {
+	uint_fast64_t getSizeInMemory() const {
         // Add size of this very object to the sizes of the single labelings.
 		return sizeof(*this) + apCountMax * sizeof(storm::storage::BitVector);
 	}
@@ -186,7 +191,7 @@ public:
      *
 	 * @param out The stream the information is to be printed to.
 	 */
-	void printAtomicPropositionsInformationToStream(std::ostream& out) {
+	void printAtomicPropositionsInformationToStream(std::ostream& out) const {
 		out << "Atomic Propositions: \t" << this->getNumberOfAtomicPropositions()
 			<< std::endl;
 		for (auto apIndexPair : this->nameToLabelingMap) {

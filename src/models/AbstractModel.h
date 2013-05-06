@@ -109,7 +109,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * correspond to a state labeled with the given atomic proposition.
 		 */
 		storm::storage::BitVector const& getLabeledStates(std::string const& ap) const {
-			return stateLabeling->getAtomicProposition(ap);
+			return stateLabeling->getLabeledStates(ap);
 		}
 
 		/*!
