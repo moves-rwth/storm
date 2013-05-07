@@ -110,10 +110,6 @@ bool parseOptions(const int argc, const char* argv[]) {
 		std::cout << storm::settings::help;
 		return false;
 	}
-	if (s->isSet("test-prctl")) {
-		storm::parser::PrctlParser parser(s->getString("test-prctl").c_str());
-		return false;
-	}
 	
 	if (s->isSet("verbose")) {
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
@@ -210,7 +206,7 @@ void checkMdp(std::shared_ptr<storm::models::Mdp<double>> mdp) {
 	}
 
 	if(s->isSet("csl")) {
-		LOG4CPLUS_ERROR(logger, "CSL properties cannot be checked on DTMCs.");
+		LOG4CPLUS_ERROR(logger, "CSL properties cannot be checked on MDPs.");
 	}
 }
 
@@ -239,37 +235,6 @@ void checkDtmc(std::shared_ptr<storm::models::Dtmc<double>> dtmc) {
 }
 
 /*!
- * Simple testing procedure.
- */
-void check_main() {
-	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::AutoParser<double> parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
-
-	LOG4CPLUS_DEBUG(logger, s->getString("matrixlib"));
-
-
-	switch (parser.getType()) {
-	case storm::models::DTMC:
-		LOG4CPLUS_INFO(logger, "Model was detected as DTMC");
-		checkDtmc(parser.getModel<storm::models::Dtmc<double>>());
-		break;
-	case storm::models::MDP:
-		LOG4CPLUS_INFO(logger, "Model was detected as MDP");
-		checkMdp(parser.getModel<storm::models::Mdp<double>>());
-		break;
-	case storm::models::CTMC:
-	case storm::models::CTMDP:
-		// Continuous time model checking is not implemented yet
-		LOG4CPLUS_ERROR(logger, "The model type you selected is not supported in this version of storm.");
-		break;
-	case storm::models::Unknown:
-	default:
-		LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
-		break;
-	}
-}
-
-/*!
  * Main entry point.
  */
 int main(const int argc, const char* argv[]) {
@@ -279,15 +244,46 @@ int main(const int argc, const char* argv[]) {
 	printHeader(argc, argv);
 
 	initializeLogger();
-	if (!parseOptions(argc, argv)) {
-		return 0;
-	}
+
 	setUp();
 
 	try {
 		LOG4CPLUS_INFO(logger, "StoRM was invoked.");
 
-		check_main();
+		// Parse options
+		if (!parseOptions(argc, argv)) {
+			// If false is returned, the program execution is stopped here
+			// E.g. if the user asked to see the help text
+			return 0;
+		}
+
+		// Now, the settings are receivd and the model is parsed.
+		storm::settings::Settings* s = storm::settings::instance();
+		storm::parser::AutoParser<double> parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
+
+		LOG4CPLUS_DEBUG(logger, s->getString("matrixlib"));
+
+
+		// Depending on the model type, the respective model checking procedure is chosen.
+		switch (parser.getType()) {
+		case storm::models::DTMC:
+			LOG4CPLUS_INFO(logger, "Model was detected as DTMC");
+			checkDtmc(parser.getModel<storm::models::Dtmc<double>>());
+			break;
+		case storm::models::MDP:
+			LOG4CPLUS_INFO(logger, "Model was detected as MDP");
+			checkMdp(parser.getModel<storm::models::Mdp<double>>());
+			break;
+		case storm::models::CTMC:
+		case storm::models::CTMDP:
+			// Continuous time model checking is not implemented yet
+			LOG4CPLUS_ERROR(logger, "The model type you selected is not supported in this version of storm.");
+			break;
+		case storm::models::Unknown:
+		default:
+			LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
+			break;
+		}
 
 
 		cleanUp();

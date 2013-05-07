@@ -134,7 +134,6 @@ void Settings::initDescriptions() {
 		("debug", "be very verbose, intended for debugging")
 		("logfile,l", bpo::value<std::string>(), "name of the log file")
 		("configfile,c", bpo::value<std::string>(), "name of config file")
-		("test-prctl", bpo::value<std::string>(), "name of prctl file")
 		("trafile", bpo::value<std::string>()->required(), "name of the .tra file")
 		("labfile", bpo::value<std::string>()->required(), "name of the .lab file")
 		("prctl", bpo::value<std::string>(), "text file containing prctl formulas")
