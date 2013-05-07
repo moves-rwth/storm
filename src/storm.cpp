@@ -31,6 +31,8 @@
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
 
+#include "src/parser/PrctlFileParser.h"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 #include "log4cplus/consoleappender.h"
@@ -433,28 +435,44 @@ void testCheckingConsensus(storm::models::Mdp<double>& mdp) {
 }
 
 /*!
+ * Check method for DTMCs
+ * @param dtmc Reference to the DTMC to check
+ */
+void checkDtmc(std::shared_ptr<storm::models::Dtmc<double>> dtmc) {
+	dtmc->printModelInformationToStream(std::cout);
+}
+
+void checkMdp(std::shared_ptr<storm::models::Mdp<double>> mdp) {
+	mdp->printModelInformationToStream(std::cout);
+}
+
+/*!
  * Simple testing procedure.
  */
 void testChecking() {
 	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::AutoParser<double> parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
 
-	if (parser.getType() == storm::models::DTMC) {
-		std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
-		dtmc->printModelInformationToStream(std::cout);
+	if (s->isSet("prctl")) {
+		LOG4CPLUS_INFO(logger, "Parsing prctl file"+ s->getString("prctl"));
+		storm::parser::PrctlFileParser fileParser;
+		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("prctl"));
 
-		// testCheckingDie(*dtmc);
-		// testCheckingCrowds(*dtmc);
-		// testCheckingSynchronousLeader(*dtmc, 6);
-	} else if (parser.getType() == storm::models::MDP) {
-		std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
-		mdp->printModelInformationToStream(std::cout);
+	}
 
-        // testCheckingDice(*mdp);
-		// testCheckingAsynchLeader(*mdp);
-		// testCheckingConsensus(*mdp);
-	} else {
-		std::cout << "Input is neither a DTMC nor an MDP." << std::endl;
+
+	switch (parser.getType()) {
+	case storm::models::DTMC:
+		LOG4CPLUS_INFO(logger, "Model was detected as DTMC");
+		checkDtmc(parser.getModel<storm::models::Dtmc<double>>());
+		break;
+	case storm::models::MDP:
+		LOG4CPLUS_INFO(logger, "Model was detected as MDP");
+		checkMdp(parser.getModel<storm::models::Mdp<double>>());
+		break;
+	default:
+		LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
+		break;
 	}
 }
 
