@@ -27,6 +27,12 @@ PrctlFileParser::~PrctlFileParser() {
 std::list<storm::property::prctl::AbstractPrctlFormula<double>*> PrctlFileParser::parseFormulas(std::string filename) {
 	// Open file
 	std::ifstream inputFileStream(filename, std::ios::in);
+
+	if (!inputFileStream.is_open()) {
+		std::string message = "Error while opening file ";
+		throw storm::exceptions::FileIoException() << message << filename;
+	}
+
 	std::list<storm::property::prctl::AbstractPrctlFormula<double>*> result;
 
 	while(!inputFileStream.eof()) {
