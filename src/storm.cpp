@@ -142,6 +142,26 @@ void cleanUp() {
 }
 
 /*!
+ * Factory style creation of new MDP model checker
+ * @param mdp The Dtmc that the model checker will check
+ * @return
+ */
+storm::modelchecker::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
+	//TODO: Add support for different libraries (read from settings)
+	return new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+}
+
+/*!
+ * Factory style creation of new DTMC model checker
+ * @param dtmc The Dtmc that the model checker will check
+ * @return
+ */
+storm::modelchecker::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double>& dtmc) {
+	//TODO: Add support for different libraries (read from settings)
+	return new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+}
+
+/*!
  * Calls the check method of a model checker for all PRCTL formulas in a given list.
  *
  * @param formulaList The list of PRCTL formulas
@@ -170,10 +190,11 @@ void checkMdp(std::shared_ptr<storm::models::Mdp<double>> mdp) {
 		storm::parser::PrctlFileParser fileParser;
 		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("prctl"));
 
-		//TODO: Add support for different model checkers (selected by settings)
-		storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
+		storm::modelchecker::AbstractModelChecker<double>* mc = createPrctlModelChecker(*mdp);
 
-		checkPrctlFormulasAgainstModel(formulaList, mc);
+		checkPrctlFormulasAgainstModel(formulaList, *mc);
+
+		delete mc;
 	}
 
 	if(s->isSet("csl")) {
@@ -188,16 +209,16 @@ void checkMdp(std::shared_ptr<storm::models::Mdp<double>> mdp) {
 void checkDtmc(std::shared_ptr<storm::models::Dtmc<double>> dtmc) {
 	dtmc->printModelInformationToStream(std::cout);
 	storm::settings::Settings* s = storm::settings::instance();
-	LOG4CPLUS_INFO(logger, "lalala");
 	if (s->isSet("prctl")) {
 		LOG4CPLUS_INFO(logger, "Parsing prctl file"+ s->getString("prctl"));
 		storm::parser::PrctlFileParser fileParser;
 		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("prctl"));
 
-		//TODO: Add support for different model checkers (selected by settings)
-		storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+		storm::modelchecker::AbstractModelChecker<double>* mc = createPrctlModelChecker(*dtmc);
 
-		checkPrctlFormulasAgainstModel(formulaList, mc);
+		checkPrctlFormulasAgainstModel(formulaList, *mc);
+
+		delete mc;
 	}
 
 	if(s->isSet("csl")) {
