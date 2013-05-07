@@ -142,23 +142,35 @@ void cleanUp() {
 }
 
 /*!
- * Factory style creation of new MDP model checker
- * @param mdp The Dtmc that the model checker will check
- * @return
- */
-storm::modelchecker::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
-	//TODO: Add support for different libraries (read from settings)
-	return new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
-}
-
-/*!
  * Factory style creation of new DTMC model checker
  * @param dtmc The Dtmc that the model checker will check
  * @return
  */
 storm::modelchecker::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double>& dtmc) {
-	//TODO: Add support for different libraries (read from settings)
-	return new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+	storm::settings::Settings* s = storm::settings::instance();
+	if (s->getString("matrixlib") == "gmm++") {
+		return new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+	}
+	// The control flow should never reach this point, as there is a default setting for matrixlib (gmm++)
+	std::string message = "No matrix library suitable for DTMC model checking has been set";
+	throw storm::exceptions::InvalidSettingsException() << message;
+	return nullptr;
+}
+
+/*!
+ * Factory style creation of new MDP model checker
+ * @param mdp The Dtmc that the model checker will check
+ * @return
+ */
+storm::modelchecker::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
+	storm::settings::Settings* s = storm::settings::instance();
+	if (s->getString("matrixlib") == "gmm++") {
+		return new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+	}
+	// The control flow should never reach this point, as there is a default setting for matrixlib (gmm++)
+	std::string message = "No matrix library suitable for MDP model checking has been set";
+	throw storm::exceptions::InvalidSettingsException() << message;
+	return nullptr;
 }
 
 /*!
@@ -233,6 +245,9 @@ void check_main() {
 	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::AutoParser<double> parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
 
+	LOG4CPLUS_DEBUG(logger, s->getString("matrixlib"));
+
+
 	switch (parser.getType()) {
 	case storm::models::DTMC:
 		LOG4CPLUS_INFO(logger, "Model was detected as DTMC");
@@ -268,7 +283,6 @@ int main(const int argc, const char* argv[]) {
 		return 0;
 	}
 	setUp();
-
 
 	try {
 		LOG4CPLUS_INFO(logger, "StoRM was invoked.");
