@@ -81,8 +81,8 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 8607);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 22460);
+	ASSERT_EQ(dtmc->getNumberOfStates(), 8607u);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 22460u);
 
 	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
@@ -135,8 +135,8 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 12400);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 28894);
+	ASSERT_EQ(dtmc->getNumberOfStates(), 12400u);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 28894u);
 
 	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 

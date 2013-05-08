@@ -117,6 +117,20 @@ public:
 	}
 
 	/*!
+	 * Checks the given abstract prctl formula on the model and prints the result (depending on the actual type of the formula)
+	 * for all initial states, i.e. states that carry the atomic proposition "init".
+	 *
+	 * @param formula The formula to be checked.
+	 */
+	void check(storm::property::prctl::AbstractPrctlFormula<Type> const& formula) const {
+		if (dynamic_cast<storm::property::prctl::AbstractStateFormula<Type> const*>(&formula) != nullptr) {
+			this->check(static_cast<storm::property::prctl::AbstractStateFormula<Type> const&>(formula));
+		} else if (dynamic_cast<storm::property::prctl::AbstractNoBoundOperator<Type> const*>(&formula) != nullptr) {
+			this->check(static_cast<storm::property::prctl::AbstractNoBoundOperator<Type> const&>(formula));
+		}
+	}
+
+	/*!
 	 * Checks the given state formula on the model and prints the result (true/false) for all initial states, i.e.
 	 * states that carry the atomic proposition "init".
 	 *
