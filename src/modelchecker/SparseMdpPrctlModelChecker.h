@@ -216,9 +216,9 @@ public:
 		storm::storage::BitVector statesWithProbability0(this->getModel().getNumberOfStates());
 		storm::storage::BitVector statesWithProbability1(this->getModel().getNumberOfStates());
 		if (this->minimumOperatorStack.top()) {
-			storm::utility::GraphAnalyzer::performProb01Min(this->getModel(), *leftStates, *rightStates, &statesWithProbability0, &statesWithProbability1);
+			storm::utility::GraphAnalyzer::performProb01Min(this->getModel(), *leftStates, *rightStates, statesWithProbability0, statesWithProbability1);
 		} else {
-			storm::utility::GraphAnalyzer::performProb01Max(this->getModel(), *leftStates, *rightStates, &statesWithProbability0, &statesWithProbability1);
+			storm::utility::GraphAnalyzer::performProb01Max(this->getModel(), *leftStates, *rightStates, statesWithProbability0, statesWithProbability1);
 		}
 
 		// Delete sub-results that are obsolete now.
@@ -359,9 +359,9 @@ public:
 		storm::storage::BitVector infinityStates(this->getModel().getNumberOfStates());
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
 		if (this->minimumOperatorStack.top()) {
-			storm::utility::GraphAnalyzer::performProb1A(this->getModel(), trueStates, *targetStates, &infinityStates);
+			storm::utility::GraphAnalyzer::performProb1A(this->getModel(), trueStates, *targetStates, infinityStates);
 		} else {
-			storm::utility::GraphAnalyzer::performProb1E(this->getModel(), trueStates, *targetStates, &infinityStates);
+			storm::utility::GraphAnalyzer::performProb1E(this->getModel(), trueStates, *targetStates, infinityStates);
 		}
 		infinityStates.complement();
 

@@ -13,7 +13,7 @@ namespace storm  {
 namespace utility {
 
 /*!
- * Prints a separation line on the command line.
+ * Prints a separating line to the standard output.
  */
 void printSeparationLine(std::ostream& out);
 
