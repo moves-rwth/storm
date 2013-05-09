@@ -213,13 +213,14 @@ public:
 
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-		storm::storage::BitVector statesWithProbability0(this->getModel().getNumberOfStates());
-		storm::storage::BitVector statesWithProbability1(this->getModel().getNumberOfStates());
+        std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
 		if (this->minimumOperatorStack.top()) {
-			storm::utility::GraphAnalyzer::performProb01Min(this->getModel(), *leftStates, *rightStates, statesWithProbability0, statesWithProbability1);
+			statesWithProbability01 = storm::utility::GraphAnalyzer::performProb01Min(this->getModel(), *leftStates, *rightStates);
 		} else {
-			storm::utility::GraphAnalyzer::performProb01Max(this->getModel(), *leftStates, *rightStates, statesWithProbability0, statesWithProbability1);
+			statesWithProbability01 = storm::utility::GraphAnalyzer::performProb01Max(this->getModel(), *leftStates, *rightStates);
 		}
+		storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
+		storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
 
 		// Delete sub-results that are obsolete now.
 		delete leftStates;
@@ -356,12 +357,12 @@ public:
 		storm::storage::BitVector* targetStates = formula.getChild().check(*this);
 
 		// Determine which states have a reward of infinity by definition.
-		storm::storage::BitVector infinityStates(this->getModel().getNumberOfStates());
+		storm::storage::BitVector infinityStates;
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
 		if (this->minimumOperatorStack.top()) {
-			storm::utility::GraphAnalyzer::performProb1A(this->getModel(), trueStates, *targetStates, infinityStates);
+			infinityStates = storm::utility::GraphAnalyzer::performProb1A(this->getModel(), trueStates, *targetStates);
 		} else {
-			storm::utility::GraphAnalyzer::performProb1E(this->getModel(), trueStates, *targetStates, infinityStates);
+			infinityStates = storm::utility::GraphAnalyzer::performProb1E(this->getModel(), trueStates, *targetStates);
 		}
 		infinityStates.complement();
 

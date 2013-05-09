@@ -191,6 +191,7 @@ public:
 	 * given bit vector by means of a deep copy.
 	 */
 	BitVector& operator=(BitVector const& bv) {
+        LOG4CPLUS_DEBUG(logger, "Performing copy assignment.");
         // Check if we need to dispose of our current storage.
 		if (this->bucketArray != nullptr) {
 			delete[] this->bucketArray;
@@ -204,7 +205,15 @@ public:
 		return *this;
 	}
     
+    /*!
+     * Move assigns the given bit vector to the current bit vector.
+     *
+     * @param bv The bit vector whose content is moved to the current bit vector.
+     * @return A reference to this bit vector after the contents of the given bit vector
+     * have been moved into it.
+     */
     BitVector& operator=(BitVector&& bv) {
+        LOG4CPLUS_DEBUG(logger, "Performing move assignment.");
         // Only perform the assignment if the source and target are not identical.
         if (this != &bv) {
             // Check if we need to dispose of our current storage.

@@ -120,10 +120,8 @@ public:
 	 */
 	template <typename T>
 	static storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
-		storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
-        storm::storage::BitVector statesWithProbability1(model.getNumberOfStates());
-        GraphAnalyzer::performProbGreater0(model, phiStates, psiStates, statesWithProbabilityGreater0);
-		GraphAnalyzer::performProbGreater0(model, ~psiStates, ~(statesWithProbabilityGreater0), statesWithProbability1);
+        storm::storage::BitVector statesWithProbabilityGreater0 = GraphAnalyzer::performProbGreater0(model, phiStates, psiStates);
+		storm::storage::BitVector statesWithProbability1 = GraphAnalyzer::performProbGreater0(model, ~psiStates, ~(statesWithProbabilityGreater0));
 		statesWithProbability1.complement();
         return statesWithProbability1;
 	}
@@ -136,15 +134,14 @@ public:
 	 * @param model The model whose graph structure to search.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
-	 * @param statesWithProbability0 A pointer to a bit vector that is initially empty and will
-     * contain all states with probability 0 after the invocation of the function.
-	 * @param statesWithProbability1 A pointer to a bit vector that is initially empty and will
-     * contain all states with probability 1 after the invocation of the function.
+	 * @return A pair of bit vectors that represent all states with probability 0 and 1, respectively.
 	 */
 	template <typename T>
-	static void performProb01Max(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector& statesWithProbability0, storm::storage::BitVector& statesWithProbability1) {
-		GraphAnalyzer::performProb0A(model, phiStates, psiStates, statesWithProbability0);
-		GraphAnalyzer::performProb1E(model, phiStates, psiStates, statesWithProbability1);
+	static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+		std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
+        result.first = GraphAnalyzer::performProb0A(model, phiStates, psiStates);
+		result.second = GraphAnalyzer::performProb1E(model, phiStates, psiStates);
+        return result;
 	}
 
     /*!
@@ -156,11 +153,13 @@ public:
 	 * @param model The model whose graph structure to search.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
-	 * @param statesWithProbability0 A pointer to a bit vector that is initially empty and will
-     * contain all states with probability 0 after the invocation of the function.
+	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
-	static void performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector& statesWithProbability0) {
+	static storm::storage::BitVector performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+        // Prepare the resulting bit vector.
+        storm::storage::BitVector statesWithProbability0(model.getNumberOfStates());
+        
 		// Get the backwards transition relation from the model to ease the search.
 		storm::models::GraphTransitions<T> backwardTransitions(*model.getTransitionMatrix(), *model.getNondeterministicChoiceIndices(), false);
 
@@ -185,8 +184,9 @@ public:
 			}
 		}
 
-        // Finally, invert the computed set of states.
+        // Finally, invert the computed set of states and return result.
 		statesWithProbability0.complement();
+        return statesWithProbability0;
 	}
 
     /*!
@@ -198,19 +198,18 @@ public:
 	 * @param model The model whose graph structure to search.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
-	 * @param statesWithProbability1 A pointer to a bit vector that is initially empty and will
-     * contain all states with probability 1 after the invocation of the function.
+	 * @return A bit vector that represents all states with probability 1.
 	 */
 	template <typename T>
-	static void performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector& statesWithProbability1) {
-		// Get some temporaries for convenience.
+	static storm::storage::BitVector performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+        // Get some temporaries for convenience.
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
 
 		// Get the backwards transition relation from the model to ease the search.
 		storm::models::GraphTransitions<T> backwardTransitions(*model.getTransitionMatrix(), *model.getNondeterministicChoiceIndices(), false);
 
-		storm::storage::BitVector* currentStates = new storm::storage::BitVector(model.getNumberOfStates(), true);
+		storm::storage::BitVector currentStates(model.getNumberOfStates(), true);
 
 		std::vector<uint_fast64_t> stack;
 		stack.reserve(model.getNumberOfStates());
@@ -219,7 +218,7 @@ public:
 		bool done = false;
 		while (!done) {
 			stack.clear();
-			storm::storage::BitVector* nextStates = new storm::storage::BitVector(psiStates);
+			storm::storage::BitVector nextStates(psiStates);
 			psiStates.addSetIndicesToVector(stack);
 
 			while (!stack.empty()) {
@@ -227,13 +226,13 @@ public:
 				stack.pop_back();
 
 				for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
-					if (phiStates.get(*it) && !nextStates->get(*it)) {
+					if (phiStates.get(*it) && !nextStates.get(*it)) {
 						// Check whether the predecessor has only successors in the current state set for one of the
 						// nondeterminstic choices.
 						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
 							bool allSuccessorsInCurrentStates = true;
 							for (auto colIt = transitionMatrix->constColumnIteratorBegin(row); colIt != transitionMatrix->constColumnIteratorEnd(row); ++colIt) {
-								if (!currentStates->get(*colIt)) {
+								if (!currentStates.get(*colIt)) {
 									allSuccessorsInCurrentStates = false;
 									break;
 								}
@@ -243,7 +242,7 @@ public:
 							// add it to the set of states for the next iteration and perform a backward search from
 							// that state.
 							if (allSuccessorsInCurrentStates) {
-								nextStates->set(*it, true);
+								nextStates.set(*it, true);
 								stack.push_back(*it);
 								break;
 							}
@@ -253,16 +252,14 @@ public:
 			}
 
 			// Check whether we need to perform an additional iteration.
-			if (*currentStates == *nextStates) {
+			if (currentStates == nextStates) {
 				done = true;
 			} else {
-				*currentStates = *nextStates;
+				currentStates = std::move(nextStates);
 			}
-			delete nextStates;
 		}
 
-		statesWithProbability1 = *currentStates;
-		delete currentStates;
+        return currentStates;
 	}
 	/*!
 	 * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi
@@ -272,15 +269,14 @@ public:
 	 * @param model The model whose graph structure to search.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
-	 * @param statesWithProbability0 A pointer to a bit vector that is initially empty and will
-     * contain all states with probability 0 after the invocation of the function.
-	 * @param statesWithProbability1 A pointer to a bit vector that is initially empty and will
-     * contain all states with probability 1 after the invocation of the function.
+	 * @return A pair of bit vectors that represent all states with probability 0 and 1, respectively.
 	 */
     template <typename T>
-	static void performProb01Min(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector& statesWithProbability0, storm::storage::BitVector& statesWithProbability1) {
-		GraphAnalyzer::performProb0E(model, phiStates, psiStates, statesWithProbability0);
-		GraphAnalyzer::performProb1A(model, phiStates, psiStates, statesWithProbability1);
+	static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+		std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
+        result.first = GraphAnalyzer::performProb0E(model, phiStates, psiStates);
+		result.second = GraphAnalyzer::performProb1A(model, phiStates, psiStates);
+        return result;
 	}
 
     /*!
@@ -292,11 +288,13 @@ public:
 	 * @param model The model whose graph structure to search.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
-	 * @param statesWithProbability0 A pointer to a bit vector that is initially empty and will
-     * contain all states with probability 0 after the invocation of the function.
+	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
-	static void performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector& statesWithProbability0) {
+	static storm::storage::BitVector performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+        // Prepare resulting bit vector.
+        storm::storage::BitVector statesWithProbability0(model.getNumberOfStates());
+        
 		// Get some temporaries for convenience.
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
@@ -347,6 +345,7 @@ public:
 		}
 
 		statesWithProbability0.complement();
+        return statesWithProbability0;
 	}
 
     /*!
@@ -358,11 +357,10 @@ public:
 	 * @param model The model whose graph structure to search.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
-	 * @param statesWithProbability1 A pointer to a bit vector that is initially empty and will
-     * contain all states with probability 1 after the invocation of the function.
+	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
-	static void performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector& statesWithProbability1) {
+	static storm::storage::BitVector performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
 		// Get some temporaries for convenience.
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
@@ -370,7 +368,7 @@ public:
 		// Get the backwards transition relation from the model to ease the search.
 		storm::models::GraphTransitions<T> backwardTransitions(*model.getTransitionMatrix(), *model.getNondeterministicChoiceIndices(), false);
 
-		storm::storage::BitVector* currentStates = new storm::storage::BitVector(model.getNumberOfStates(), true);
+		storm::storage::BitVector currentStates(model.getNumberOfStates(), true);
 
 		std::vector<uint_fast64_t> stack;
 		stack.reserve(model.getNumberOfStates());
@@ -379,7 +377,7 @@ public:
 		bool done = false;
 		while (!done) {
 			stack.clear();
-			storm::storage::BitVector* nextStates = new storm::storage::BitVector(psiStates);
+			storm::storage::BitVector nextStates(psiStates);
 			psiStates.addSetIndicesToVector(stack);
 
 			while (!stack.empty()) {
@@ -387,13 +385,13 @@ public:
 				stack.pop_back();
 
 				for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
-					if (phiStates.get(*it) && !nextStates->get(*it)) {
+					if (phiStates.get(*it) && !nextStates.get(*it)) {
 						// Check whether the predecessor has only successors in the current state set for all of the
 						// nondeterminstic choices.
 						bool allSuccessorsInCurrentStatesForAllChoices = true;
 						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
 							for (auto colIt = transitionMatrix->constColumnIteratorBegin(row); colIt != transitionMatrix->constColumnIteratorEnd(row); ++colIt) {
-								if (!currentStates->get(*colIt)) {
+								if (!currentStates.get(*colIt)) {
 									allSuccessorsInCurrentStatesForAllChoices = false;
 									goto afterCheckLoop;
 								}
@@ -405,7 +403,7 @@ public:
 						// add it to the set of states for the next iteration and perform a backward search from
 						// that state.
 						if (allSuccessorsInCurrentStatesForAllChoices) {
-							nextStates->set(*it, true);
+							nextStates.set(*it, true);
 							stack.push_back(*it);
 						}
 					}
@@ -413,39 +411,46 @@ public:
 			}
 
 			// Check whether we need to perform an additional iteration.
-			if (*currentStates == *nextStates) {
+			if (currentStates == nextStates) {
 				done = true;
 			} else {
-				*currentStates = *nextStates;
+				currentStates = std::move(nextStates);
 			}
-			delete nextStates;
 		}
-
-		statesWithProbability1 = *currentStates;
-		delete currentStates;
+        return currentStates;
 	}
 
-    /*
-     * Performs a decomposition of the given matrix and vector indicating the nondeterministic
-     * choices into SCCs.
+    /*!
+     * Performs a decomposition of the given matrix belonging to a nondeterministic model and vector indicating the
+     * nondeterministic choices into SCCs.
      *
-     * @param 
+     * @param matrix The matrix of the nondeterminstic model to decompose.
+     * @param nondeterministicChoiceIndices A vector indicating the non-deterministic choices of each state in the matrix.
+     * @return A pair whose first component represents the SCCs and whose second component represents the dependency
+     * transitions of the SCCs.
      */
 	template <typename T>
-	static void performSccDecomposition(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents, storm::models::GraphTransitions<T>& stronglyConnectedComponentsDependencyGraph) {
+	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
 		LOG4CPLUS_INFO(logger, "Computing SCC decomposition.");
-
 		// Get the forward transition relation from the model to ease the search.
 		storm::models::GraphTransitions<T> forwardTransitions(matrix, nondeterministicChoiceIndices, true);
 
 		// Perform the actual SCC decomposition based on the graph-transitions of the system.
-		performSccDecomposition(nondeterministicChoiceIndices.size() - 1, forwardTransitions, stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
-
+		std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> result = performSccDecomposition(nondeterministicChoiceIndices.size() - 1, forwardTransitions);
 		LOG4CPLUS_INFO(logger, "Done computing SCC decomposition.");
+        
+        return result;
 	}
 
+    /*!
+     * Performs a topological sort of the states of the system according to the given transitions.
+     *
+     * @param transitions The transitions of the graph structure.
+     * @return A vector of indices that is a topological sort of the states.
+     */
 	template <typename T>
-	static void getTopologicalSort(storm::models::GraphTransitions<T> const& transitions, std::vector<uint_fast64_t>& topologicalSort) {
+	static std::vector<uint_fast64_t> getTopologicalSort(storm::models::GraphTransitions<T> const& transitions) {
+        std::vector<uint_fast64_t> topologicalSort;
 		topologicalSort.reserve(transitions.getNumberOfStates());
 
 		std::vector<uint_fast64_t> recursionStack;
@@ -503,6 +508,8 @@ public:
 				}
 			}
 		}
+        
+        return topologicalSort;
 	}
 
 private:

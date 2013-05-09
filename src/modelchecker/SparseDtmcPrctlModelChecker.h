@@ -212,12 +212,9 @@ public:
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
         std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::GraphAnalyzer::performProb01(this->getModel(), *leftStates, *rightStates);
-		storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
-		storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
+		storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
+		storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
         
-        std::cout << statesWithProbability0.toString() << std::endl;
-        std::cout << statesWithProbability1.toString() << std::endl;
-
 		// Delete intermediate results that are obsolete now.
 		delete leftStates;
 		delete rightStates;
@@ -361,9 +358,8 @@ public:
 		storm::storage::BitVector* targetStates = formula.getChild().check(*this);
 
 		// Determine which states have a reward of infinity by definition.
-		storm::storage::BitVector infinityStates(this->getModel().getNumberOfStates());
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		storm::utility::GraphAnalyzer::performProb1(this->getModel(), trueStates, *targetStates, infinityStates);
+		storm::storage::BitVector infinityStates = storm::utility::GraphAnalyzer::performProb1(this->getModel(), trueStates, *targetStates);
 		infinityStates.complement();
 
 		// Create resulting vector.
