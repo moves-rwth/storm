@@ -430,10 +430,12 @@ public:
      * transitions of the SCCs.
      */
 	template <typename T>
-	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
+	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(storm::models::AbstractNondeterministicModel<T> const& model) {
 		LOG4CPLUS_INFO(logger, "Computing SCC decomposition.");
-		// Get the forward transition relation from the model to ease the search.
-		storm::models::GraphTransitions<T> forwardTransitions(matrix, nondeterministicChoiceIndices, true);
+
+        // Get the forward transition relation from the model to ease the search.
+        std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+		storm::models::GraphTransitions<T> forwardTransitions(model.getTransitionMatrix(), nondeterministicChoiceIndices, true);
 
 		// Perform the actual SCC decomposition based on the graph-transitions of the system.
 		std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> result = performSccDecomposition(nondeterministicChoiceIndices.size() - 1, forwardTransitions);
@@ -514,7 +516,9 @@ public:
 
 private:
 	template <typename T>
-	static void performSccDecomposition(uint_fast64_t numberOfStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents, storm::models::GraphTransitions<T>& stronglyConnectedComponentsDependencyGraph) {
+	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(uint_fast64_t numberOfStates, storm::models::GraphTransitions<T> const& forwardTransitions) {
+        std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> sccDecomposition;
+
 		std::vector<uint_fast64_t> tarjanStack;
 		tarjanStack.reserve(numberOfStates);
 		storm::storage::BitVector tarjanStackStates(numberOfStates);
@@ -528,11 +532,12 @@ private:
 		uint_fast64_t currentIndex = 0;
 		for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
 			if (!visitedStates.get(state)) {
-				performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, forwardTransitions, stronglyConnectedComponents, stateToSccMap);
+				performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, forwardTransitions, sccDecomposition.first, stateToSccMap);
 			}
 		}
 
-		stronglyConnectedComponentsDependencyGraph = storm::models::GraphTransitions<T>(forwardTransitions, stronglyConnectedComponents, stateToSccMap);
+		sccDecomposition.second = storm::models::GraphTransitions<T>(forwardTransitions, sccDecomposition.first, stateToSccMap);
+        return sccDecomposition;
 	}
 
 	template <typename T>
