@@ -421,13 +421,11 @@ public:
 	}
 
     /*!
-     * Performs a decomposition of the given matrix belonging to a nondeterministic model and vector indicating the
-     * nondeterministic choices into SCCs.
+     * Performs a decomposition of the given nondetermistic model into its SCCs.
      *
-     * @param matrix The matrix of the nondeterminstic model to decompose.
-     * @param nondeterministicChoiceIndices A vector indicating the non-deterministic choices of each state in the matrix.
+     * @param model The nondeterminstic model to decompose.
      * @return A pair whose first component represents the SCCs and whose second component represents the dependency
-     * transitions of the SCCs.
+     * graph of the SCCs.
      */
 	template <typename T>
 	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(storm::models::AbstractNondeterministicModel<T> const& model) {
@@ -455,12 +453,13 @@ public:
         std::vector<uint_fast64_t> topologicalSort;
 		topologicalSort.reserve(transitions.getNumberOfStates());
 
+        // Prepare the stacks needed for recursion.
 		std::vector<uint_fast64_t> recursionStack;
 		recursionStack.reserve(transitions.getNumberOfStates());
-
 		std::vector<typename storm::models::GraphTransitions<T>::stateSuccessorIterator> iteratorRecursionStack;
 		iteratorRecursionStack.reserve(transitions.getNumberOfStates());
 
+        // Perform a depth-first search over the given transitions and record states in the reverse order they were visited.
 		storm::storage::BitVector visitedStates(transitions.getNumberOfStates());
 		for (uint_fast64_t state = 0; state < transitions.getNumberOfStates(); ++state) {
 			if (!visitedStates.get(state)) {
@@ -515,20 +514,28 @@ public:
 	}
 
 private:
+    /*!
+     * Performs an SCC decomposition of the system given by its forward transitions.
+     *
+     * @param forwardTransitions The (forward) transition relation of the model to decompose.
+     * @return A pair whose first component represents the SCCs and whose second component represents the dependency
+     * graph of the SCCs.
+     */
 	template <typename T>
-	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(uint_fast64_t numberOfStates, storm::models::GraphTransitions<T> const& forwardTransitions) {
+	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(storm::models::GraphTransitions<T> const& forwardTransitions) {
         std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> sccDecomposition;
-
+        uint_fast64_t numberOfStates = forwardTransitions.getNumberOfStates();
+        
+        // Set up the environment of Tarjan's algorithm.
 		std::vector<uint_fast64_t> tarjanStack;
 		tarjanStack.reserve(numberOfStates);
 		storm::storage::BitVector tarjanStackStates(numberOfStates);
-
 		std::vector<uint_fast64_t> stateIndices(numberOfStates);
 		std::vector<uint_fast64_t> lowlinks(numberOfStates);
 		storm::storage::BitVector visitedStates(numberOfStates);
-
 		std::map<uint_fast64_t, uint_fast64_t> stateToSccMap;
 
+        // Start the search for SCCs from every vertex in the graph structure, because there is.
 		uint_fast64_t currentIndex = 0;
 		for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
 			if (!visitedStates.get(state)) {
@@ -536,10 +543,26 @@ private:
 			}
 		}
 
+        // Finally, determine the dependency graph over the SCCs and return result.
 		sccDecomposition.second = storm::models::GraphTransitions<T>(forwardTransitions, sccDecomposition.first, stateToSccMap);
         return sccDecomposition;
 	}
 
+    /*!
+     * Performs an SCC decomposition using Tarjan's algorithm.
+     *
+     * @param startState The state at which the search is started.
+     * @param currentIndex The index that is to be used as the next free index.
+     * @param stateIndices The vector that stores the index for each state.
+     * @param lowlinks A vector that stores the lowlink of each state, i.e. the lowest index of a state reachable from
+     * a particular state.
+     * @param tarjanStack A stack used for Tarjan's algorithm.
+     * @param tarjanStackStates A bit vector that represents all states that are currently contained in tarjanStack.
+     * @param visitedStates A bit vector that stores all states that have already been visited.
+     * @param forwardTransitions The (forward) transition relation of the graph structure.
+     * @param stronglyConnectedComponents A vector of strongly connected components to which newly found SCCs are added.
+     * @param stateToSccMap A mapping from state indices to SCC indices that maps each state to its SCC.
+     */
 	template <typename T>
 	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t>& stateToSccMap) {
 		// Create the stacks needed for turning the recursive formulation of Tarjan's algorithm
