@@ -520,6 +520,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 				// This is a deadlock state.
 				if (storm::settings::instance()->isSet("fix-deadlocks")) {
 					this->numberOfTransitions++;
+					this->numberOfChoices++;
 					this->transitionMap[curIndex].emplace_back();
 					this->transitionMap[curIndex].back().second[curIndex] = 1;
 				} else {
