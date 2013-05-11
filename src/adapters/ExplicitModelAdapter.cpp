@@ -259,6 +259,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 				}
 			}
 		}
+		stateToIndexMap[this->allStates[0]] = 0;
 		LOG4CPLUS_DEBUG(logger, "Generated " << this->allStates.size() << " initial states.");
 	}
 
