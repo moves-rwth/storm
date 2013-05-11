@@ -1,9 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/PrismParser.h"
-#include "src/utility/IoUtility.h"
+//#include "src/utility/IoUtility.h"
 #include "src/ir/Program.h"
 #include "src/adapters/ExplicitModelAdapter.h"
+#include "src/models/Dtmc.h"
 #include "src/models/Mdp.h"
 
 TEST(ParsePrismTest, parseCrowds5_5) {

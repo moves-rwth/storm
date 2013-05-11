@@ -51,6 +51,15 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			// Intentionally left empty.
 		}
 
+
+		/*!
+		 * Returns the number of choices for all states of the MDP.
+		 * @return The number of choices for all states of the MDP.
+		 */
+		uint_fast64_t getNumberOfChoices() const {
+			return this->getTransitionMatrix()->getRowCount();
+		}
+
 		/*!
 		 * Retrieves the size of the internal representation of the model in memory.
 		 * @return the size of the internal representation of the model in memory
