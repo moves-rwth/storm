@@ -2,7 +2,7 @@
 
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/Settings.h"
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 #include "src/ir/Program.h"
 #include "src/ir/RewardModel.h"
@@ -82,7 +82,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 				break;
 			default:
 				LOG4CPLUS_ERROR(logger, "Error while creating model from probabilistic program: We can't handle this model type.");
-				throw storm::exceptions::WrongFileFormatException() << "Error while creating model from probabilistic program: We can't handle this model type.";
+				throw storm::exceptions::WrongFormatException() << "Error while creating model from probabilistic program: We can't handle this model type.";
 				break;
 		}
 
@@ -341,7 +341,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 				}
 				if (std::abs(1 - probSum) > this->precision) {
 					LOG4CPLUS_ERROR(logger, "Sum of update probabilities should be one for command:\n\t"  << command.toString());
-					throw storm::exceptions::WrongFileFormatException() << "Sum of update probabilities should be one for command:\n\t"  << command.toString();
+					throw storm::exceptions::WrongFormatException() << "Sum of update probabilities should be one for command:\n\t"  << command.toString();
 				}
 			}
 		}
@@ -391,7 +391,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 					}
 					if (std::abs(1 - probSum) > this->precision) {
 						LOG4CPLUS_ERROR(logger, "Sum of update probabilities should be one for command:\n\t"  << command.toString());
-						throw storm::exceptions::WrongFileFormatException() << "Sum of update probabilities should be one for command:\n\t"  << command.toString();
+						throw storm::exceptions::WrongFormatException() << "Sum of update probabilities should be one for command:\n\t"  << command.toString();
 					}
 				}
 				for (auto it: resultStates) {
@@ -539,7 +539,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 					this->transitionMap[curIndex].back().second[curIndex] = 1;
 				} else {
 					LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state.");
-					throw storm::exceptions::WrongFileFormatException() << "Error while creating sparse matrix from probabilistic program: found deadlock state.";
+					throw storm::exceptions::WrongFormatException() << "Error while creating sparse matrix from probabilistic program: found deadlock state.";
 				}
 			}
 		}
