@@ -3,6 +3,7 @@ resources/3rdparty/log4cplus-1.1.0/
 resources/3rdparty/gtest-1.6.0/
 resources/3rdparty/eigen/
 resources/3rdparty/gmm-4.2/
+resources/3rdparty/cudd-2.5.0/
 #Visual Studio files
 *.[Oo]bj
 *.user

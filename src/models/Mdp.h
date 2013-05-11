@@ -70,6 +70,14 @@ public:
 	~Mdp() {
 		// Intentionally left empty.
 	}
+	
+	/*!
+	 * Returns the number of choices for all states of the MDP.
+	 * @return The number of choices for all states of the MDP.
+	 */
+	uint_fast64_t getNumberOfChoices() const {
+		return this->probabilityMatrix->getRowCount();
+	}
 
 	storm::models::ModelType getType() const {
 		return MDP;

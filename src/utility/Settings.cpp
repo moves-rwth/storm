@@ -132,6 +132,7 @@ void Settings::initDescriptions() {
 		("help,h", "produce help message")
 		("verbose,v", "be verbose")
 		("debug", "be very verbose, intended for debugging")
+		("trace", "be extremely verbose, expect lots of output")
 		("logfile,l", bpo::value<std::string>(), "name of the log file")
 		("configfile,c", bpo::value<std::string>(), "name of config file")
 		("trafile", bpo::value<std::string>()->required(), "name of the .tra file")

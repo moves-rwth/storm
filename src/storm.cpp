@@ -27,6 +27,7 @@
 #include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
+#include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
@@ -38,7 +39,25 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
+#include "src/parser/PrismParser.h"
+#include "src/adapters/ExplicitModelAdapter.h"
+#include "src/adapters/SymbolicModelAdapter.h"
+
 #include "src/exceptions/InvalidSettingsException.h"
+
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <iostream>
+#include <iomanip>
+
+void printUsage() {
+	struct rusage ru;
+	getrusage(RUSAGE_SELF, &ru);
+
+	std::cout << "Memory Usage: " << ru.ru_maxrss << "kB" << std::endl;
+	std::cout << "CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
+}
+
 
 log4cplus::Logger logger;
 
@@ -118,7 +137,12 @@ bool parseOptions(const int argc, const char* argv[]) {
 	if (s->isSet("debug")) {
 		logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL);
-		LOG4CPLUS_DEBUG(logger, "Enable very verbose mode, log output gets printed to console.");
+		LOG4CPLUS_INFO(logger, "Enable very verbose mode, log output gets printed to console.");
+	}
+	if (s->isSet("trace")) {
+		logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL);
+		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::TRACE_LOG_LEVEL);
+		LOG4CPLUS_INFO(logger, "Enable trace mode, log output gets printed to console.");
 	}
 	if (s->isSet("logfile")) {
 		setUpFileLogging();
@@ -134,7 +158,7 @@ void setUp() {
  * Function to perform some cleanup.
  */
 void cleanUp() {
-	// nothing here
+	delete storm::utility::cuddUtilityInstance();
 }
 
 /*!

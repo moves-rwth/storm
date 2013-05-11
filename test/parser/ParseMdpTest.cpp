@@ -21,7 +21,7 @@ TEST(ParseMdpTest, parseAndOutput) {
 
 	ASSERT_EQ(mdp->getNumberOfStates(), (uint_fast64_t)3);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), (uint_fast64_t)11);
-	ASSERT_EQ(matrix->getRowCount(), (uint_fast64_t)2 * 3);
+	ASSERT_EQ(matrix->getRowCount(), (uint_fast64_t)(2 * 3));
 	ASSERT_EQ(matrix->getColumnCount(), (uint_fast64_t)3);
 	
 
