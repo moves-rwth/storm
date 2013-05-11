@@ -78,6 +78,7 @@ private:
 	 * @param value New value.
 	 */
 	static void setValue(StateType* const state, uint_fast64_t const index, int_fast64_t const value);
+	static std::string toString(StateType const * const state);
 	/*!
 	 * Apply an update to the given state and return the resulting new state object.
 	 * This methods creates a copy of the given state.
@@ -86,6 +87,15 @@ private:
 	 * @return Resulting state.
 	 */
 	StateType* applyUpdate(StateType const * const state, storm::ir::Update const& update) const;
+	/*!
+	 * Apply an update to a given state and return the resulting new state object.
+	 * Updates are done using the variable values from a given baseState.
+	 * @params state State to be updated.
+	 * @params baseState State used for update variables.
+	 * @params update Update to be applied.
+	 * @return Resulting state.
+	 */
+	StateType* applyUpdate(StateType const * const state, StateType const * const baseState, storm::ir::Update const& update) const;
 
 	/*!
 	 * Reads and combines variables from all program modules and stores them.

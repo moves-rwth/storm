@@ -16,6 +16,8 @@
 
 typedef std::pair<std::vector<bool>, std::vector<int_fast64_t>> StateType;
 
+#include <sstream>
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -93,6 +95,13 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 
 	void ExplicitModelAdapter::setValue(StateType* const state, uint_fast64_t const index, int_fast64_t const value) {
 		std::get<1>(*state)[index] = value;
+	}
+
+	std::string ExplicitModelAdapter::toString(StateType const * const state) {
+		std::stringstream ss;
+		for (unsigned int i = 0; i < state->first.size(); i++) ss << state->first[i] << "\t";
+		for (unsigned int i = 0; i < state->second.size(); i++) ss << state->second[i] << "\t";
+		return ss.str();
 	}
 
 	std::shared_ptr<std::vector<double>> ExplicitModelAdapter::getStateRewards(std::vector<storm::ir::StateReward> const & rewards) {
@@ -193,12 +202,16 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 * @return Resulting state.
 	 */
 	StateType* ExplicitModelAdapter::applyUpdate(StateType const * const state, storm::ir::Update const& update) const {
+		return this->applyUpdate(state, state, update);
+	}
+
+	StateType* ExplicitModelAdapter::applyUpdate(StateType const * const state, StateType const * const baseState, storm::ir::Update const& update) const {
 		StateType* newState = new StateType(*state);
 		for (auto assignedVariable : update.getBooleanAssignments()) {
-			setValue(newState, this->booleanVariableToIndexMap.at(assignedVariable.first), assignedVariable.second.getExpression()->getValueAsBool(state));
+			setValue(newState, this->booleanVariableToIndexMap.at(assignedVariable.first), assignedVariable.second.getExpression()->getValueAsBool(baseState));
 		}
 		for (auto assignedVariable : update.getIntegerAssignments()) {
-			setValue(newState, this->integerVariableToIndexMap.at(assignedVariable.first), assignedVariable.second.getExpression()->getValueAsInt(state));
+			setValue(newState, this->integerVariableToIndexMap.at(assignedVariable.first), assignedVariable.second.getExpression()->getValueAsInt(baseState));
 		}
 		return newState;
 	}
@@ -364,7 +377,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 						// Iterate over all resultStates.
 						for (auto it : resultStates) {
 							// Apply the new update and get resulting state.
-							StateType* newState = this->applyUpdate(it.first, update);
+							StateType* newState = this->applyUpdate(it.first, this->allStates[stateID], update);
 							probSum += update.getLikelihoodExpression()->getValueAsDouble(it.first);
 							// Insert the new state into newStates array.
 							// Take care of calculation of likelihood, combine identical states.
@@ -425,7 +438,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			}
 			numberOfTransitions += set.size();
 		}
-		LOG4CPLUS_DEBUG(logger, "Building deterministic transition matrix with " << numberOfTransitions << " transitions now.");
+		LOG4CPLUS_INFO(logger, "Building deterministic transition matrix: " << allStates.size() << " x " << allStates.size() << " with " << numberOfTransitions << " transitions.");
 		// Now build matrix.
 
 		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(allStates.size()));
@@ -472,7 +485,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	 * @return result matrix.
 	 */
 	std::shared_ptr<storm::storage::SparseMatrix<double>> ExplicitModelAdapter::buildNondeterministicMatrix() {
-		LOG4CPLUS_DEBUG(logger, "Building nondeterministic transition matrix: " << this->numberOfChoices << " x " << allStates.size() << " with " << this->numberOfTransitions << " transitions now.");
+		LOG4CPLUS_INFO(logger, "Building nondeterministic transition matrix: " << this->numberOfChoices << " x " << allStates.size() << " with " << this->numberOfTransitions << " transitions.");
 		std::shared_ptr<storm::storage::SparseMatrix<double>> result(new storm::storage::SparseMatrix<double>(this->numberOfChoices, allStates.size()));
 		result->initialize(this->numberOfTransitions);
 		if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {

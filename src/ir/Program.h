@@ -113,6 +113,8 @@ public:
 	 */
 	std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> getLabels() const;
 
+	std::string getVariableString() const;
+
 private:
 	// The type of the model.
 	ModelType modelType;

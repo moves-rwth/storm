@@ -151,7 +151,7 @@ private:
 	// A map of boolean variable names to their index.
 	std::map<std::string, uint_fast64_t> booleanVariablesToIndexMap;
 
-	// A map of integer variable names to their details.
+	// A map of integer variable names to their index.
 	std::map<std::string, uint_fast64_t> integerVariablesToIndexMap;
 
 	// The commands associated with the module.

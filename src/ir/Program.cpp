@@ -118,6 +118,28 @@ std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> P
 	return this->labels;
 }
 
+std::string Program::getVariableString() const {
+	std::map<unsigned int, std::string> bools;
+	std::map<unsigned int, std::string> ints;
+	unsigned maxInt = 0, maxBool = 0;
+	for (Module module: this->modules) {
+		for (unsigned int i = 0; i < module.getNumberOfBooleanVariables(); i++) {
+			storm::ir::BooleanVariable var = module.getBooleanVariable(i);
+			bools[var.getIndex()] = var.getName();
+			if (var.getIndex() >= maxBool) maxBool = var.getIndex()+1;
+		}
+		for (unsigned int i = 0; i < module.getNumberOfIntegerVariables(); i++) {
+			storm::ir::IntegerVariable var = module.getIntegerVariable(i);
+			ints[var.getIndex()] = var.getName();
+			if (var.getIndex() >= maxInt) maxInt = var.getIndex()+1;
+		}
+	}
+	std::stringstream ss;
+	for (unsigned int i = 0; i < maxBool; i++) ss << bools[i] << "\t";
+	for (unsigned int i = 0; i < maxInt; i++) ss << ints[i] << "\t";
+	return ss.str();
+}
+
 } // namespace ir
 
 } // namepsace storm

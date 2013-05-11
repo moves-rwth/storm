@@ -41,7 +41,7 @@ Module::Module(std::string moduleName,
 
 Module::Module(const Module& module, const std::string& moduleName, const std::map<std::string, std::string>& renaming, std::shared_ptr<VariableAdder> adder)
 	: moduleName(moduleName) {
-	LOG4CPLUS_DEBUG(logger, "Start renaming " << module.moduleName << " to " << moduleName);
+	LOG4CPLUS_TRACE(logger, "Start renaming " << module.moduleName << " to " << moduleName);
 
 	// First step: Create new Variables via the adder.
 	adder->performRenaming(renaming);
@@ -79,7 +79,7 @@ Module::Module(const Module& module, const std::string& moduleName, const std::m
 	}
 	this->collectActions();
 
-	LOG4CPLUS_DEBUG(logger, "Finished renaming...");
+	LOG4CPLUS_TRACE(logger, "Finished renaming...");
 }
 
 // Return the number of boolean variables.

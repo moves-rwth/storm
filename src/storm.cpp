@@ -137,6 +137,10 @@ bool parseOptions(const int argc, const char* argv[]) {
 		logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
 		LOG4CPLUS_INFO(logger, "Enable very verbose mode, log output gets printed to console.");
 	}
+	if (s->isSet("trace")) {
+		logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL);
+		LOG4CPLUS_INFO(logger, "Enable trace mode, log output gets printed to console.");
+	}
 	if (s->isSet("logfile")) {
 		setUpFileLogging();
 	}
