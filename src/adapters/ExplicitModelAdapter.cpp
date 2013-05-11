@@ -38,7 +38,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	this->clearInternalState();
 }
 
-	std::shared_ptr<storm::models::AbstractModel> ExplicitModelAdapter::getModel(std::string const & rewardModelName) {
+	std::shared_ptr<storm::models::AbstractModel<double>> ExplicitModelAdapter::getModel(std::string const & rewardModelName) {
 
 
 		this->buildTransitionMap();
@@ -61,24 +61,25 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			case storm::ir::Program::DTMC:
 			{
 				std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->buildDeterministicMatrix();
-				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Dtmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
+				return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Dtmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
 				break;
 			}
 			case storm::ir::Program::CTMC:
 			{
 				std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->buildDeterministicMatrix();
-				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Ctmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
+				return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
 				break;
 			}
 			case storm::ir::Program::MDP:
 			{
 				std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->buildNondeterministicMatrix();
-				return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Mdp<double>(matrix, stateLabeling, stateRewards, this->transitionRewards));
+				std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices;
+				return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Mdp<double>(matrix, stateLabeling, choiceIndices, stateRewards, this->transitionRewards));
 				break;
 			}
 			case storm::ir::Program::CTMDP:
 				// Todo
-				//return std::shared_ptr<storm::models::AbstractModel>(new storm::models::Ctmdp<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
+				//return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmdp<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
 				break;
 			default:
 				LOG4CPLUS_ERROR(logger, "Error while creating model from probabilistic program: We can't handle this model type.");
@@ -86,7 +87,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 				break;
 		}
 
-		return std::shared_ptr<storm::models::AbstractModel>(nullptr);
+		return std::shared_ptr<storm::models::AbstractModel<double>>(nullptr);
 	}
 
 	void ExplicitModelAdapter::setValue(StateType* const state, uint_fast64_t const  index, bool const value) {

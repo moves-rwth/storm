@@ -8,7 +8,7 @@
 #ifndef STORM_ADAPTERS_SYMBOLICMODELADAPTER_H_
 #define STORM_ADAPTERS_SYMBOLICMODELADAPTER_H_
 
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 #include "src/utility/CuddUtility.h"
 #include "SymbolicExpressionAdapter.h"
@@ -255,7 +255,7 @@ private:
 				storm::ir::IntegerVariable const& integerVariable = module.getIntegerVariable(j);
 				uint_fast64_t integerRange = integerVariable.getUpperBound()->getValueAsInt(nullptr) - integerVariable.getLowerBound()->getValueAsInt(nullptr);
 				if (integerRange <= 0) {
-					throw storm::exceptions::WrongFileFormatException() << "Range of variable "
+					throw storm::exceptions::WrongFormatException() << "Range of variable "
 							<< integerVariable.getName() << " is empty or negativ.";
 				}
 				uint_fast64_t numberOfDecisionDiagramVariables = static_cast<uint_fast64_t>(std::ceil(std::log2(integerRange)));

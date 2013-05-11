@@ -18,9 +18,6 @@
 #include "src/parser/PrismParser/IdentifierGrammars.h"
 #include "src/parser/PrismParser/VariableState.h"
 
-// If the parser fails due to ill-formed data, this exception is thrown.
-#include "src/exceptions/WrongFileFormatException.h"
-
 // Needed for file IO.
 #include <fstream>
 #include <iomanip>

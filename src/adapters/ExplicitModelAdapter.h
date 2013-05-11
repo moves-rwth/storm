@@ -56,7 +56,7 @@ public:
 	ExplicitModelAdapter(storm::ir::Program program);
 	~ExplicitModelAdapter();
 
-	std::shared_ptr<storm::models::AbstractModel> getModel(std::string const & rewardModelName = "");
+	std::shared_ptr<storm::models::AbstractModel<double>> getModel(std::string const & rewardModelName = "");
 
 private:
 

@@ -12,7 +12,7 @@
 #include "src/parser/PrismParser/PrismGrammar.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
-#include "src/exceptions/WrongFileFormatException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 // Needed for file IO.
 #include <fstream>
@@ -117,7 +117,7 @@ storm::ir::Program PrismParser::parse(std::istream& inputStream, std::string con
 		grammar.resetGrammars();
 
 		// Now propagate exception.
-		throw storm::exceptions::WrongFileFormatException() << msg.str();
+		throw storm::exceptions::WrongFormatException() << msg.str();
 	}
 
 	return result;

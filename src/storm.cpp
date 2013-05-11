@@ -27,7 +27,7 @@
 #include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
-#include "src/solver/GraphAnalyzer.h"
+//#include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
