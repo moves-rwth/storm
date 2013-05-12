@@ -119,38 +119,6 @@ public:
 	}
 
 private:
-	void initializeFromSccDecomposition(GraphTransitions<T> const& transitions, std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap) {
-		for (uint_fast64_t currentSccIndex = 0; currentSccIndex < stronglyConnectedComponents.size(); ++currentSccIndex) {
-			// Mark beginning of current SCC.
-			stateIndications[currentSccIndex] = successorList.size();
-
-			// Get the actual SCC.
-			std::vector<uint_fast64_t> const& scc = stronglyConnectedComponents[currentSccIndex];
-
-			// Now, we determine the SCCs which are reachable (in one step) from the current SCC.
-			std::set<uint_fast64_t> allTargetSccs;
-			for (auto state : scc) {
-				for (stateSuccessorIterator succIt = transitions.beginStateSuccessorsIterator(state), succIte = transitions.endStateSuccessorsIterator(state); succIt != succIte; ++succIt) {
-					uint_fast64_t targetScc = stateToSccMap.find(*succIt)->second;
-
-					// We only need to consider transitions that are actually leaving the SCC.
-					if (targetScc != currentSccIndex) {
-						allTargetSccs.insert(targetScc);
-					}
-				}
-			}
-
-			// Now we can just enumerate all the target SCCs and insert the corresponding transitions.
-			for (auto targetScc : allTargetSccs) {
-				successorList.push_back(targetScc);
-			}
-		}
-
-		// Put the sentinel element at the end and initialize the number of transitions.
-		stateIndications[numberOfStates] = successorList.size();
-		numberOfTransitions = successorList.size();
-	}
-
 	/*!
 	 * Initializes this graph transitions object using the forward transition
 	 * relation given by means of a sparse matrix.

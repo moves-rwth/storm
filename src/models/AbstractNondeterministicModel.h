@@ -51,7 +51,6 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			// Intentionally left empty.
 		}
 
-
 		/*!
 		 * Returns the number of choices for all states of the MDP.
 		 * @return The number of choices for all states of the MDP.
@@ -60,6 +59,49 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			return this->getTransitionMatrix()->getRowCount();
 		}
 
+        /*!
+         * Extracts the SCC dependency graph from the model according to the given SCC decomposition.
+         *
+         * @param stronglyConnectedComponents A vector containing the SCCs of the system.
+         * @param stateToSccMap A mapping from state indices to
+         */
+        virtual storm::storage::SparseMatrix<bool> extractSccDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap) {
+            // The resulting sparse matrix will have as many rows/columns as there are SCCs.
+            uint_fast64_t numberOfStates = stronglyConnectedComponents.size();
+            storm::storage::SparseMatrix<bool> sccDependencyGraph(numberOfStates);
+            sccDependencyGraph.initialize();
+            
+            for (uint_fast64_t currentSccIndex = 0; currentSccIndex < stronglyConnectedComponents.size(); ++currentSccIndex) {
+                // Get the actual SCC.
+                std::vector<uint_fast64_t> const& scc = stronglyConnectedComponents[currentSccIndex];
+                
+                // Now, we determine the SCCs which are reachable (in one step) from the current SCC.
+                std::set<uint_fast64_t> allTargetSccs;
+                for (auto state : scc) {
+                    for (uint_fast64_t rowIndex = (*nondeterministicChoiceIndices)[state]; rowIndex < (*nondeterministicChoiceIndices)[state + 1]; ++rowIndex) {
+                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator succIt = this->getTransitionMatrix()->constColumnIteratorBegin(rowIndex), succIte = this->getTransitionMatrix()->constColumnIteratorEnd(rowIndex); succIt != succIte; ++succIt) {
+                            uint_fast64_t targetScc = stateToSccMap.find(*succIt)->second;
+                            
+                            // We only need to consider transitions that are actually leaving the SCC.
+                            if (targetScc != currentSccIndex) {
+                                allTargetSccs.insert(targetScc);
+                            }
+                        }
+                    }
+                }
+                
+                // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
+                for (auto targetScc : allTargetSccs) {
+                    sccDependencyGraph.insertNextValue(currentSccIndex, targetScc, true);
+                }
+            }
+            
+            // Finalize the matrix.
+            sccDependencyGraph.finalize(true);
+            
+            return sccDependencyGraph;
+        }
+    
 		/*!
 		 * Retrieves the size of the internal representation of the model in memory.
 		 * @return the size of the internal representation of the model in memory

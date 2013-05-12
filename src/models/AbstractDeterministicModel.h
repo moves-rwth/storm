@@ -45,6 +45,47 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		AbstractDeterministicModel(AbstractDeterministicModel const& other) : AbstractModel<T>(other) {
 			// Intentionally left empty.
 		}
+    
+        /*!
+         * Extracts the SCC dependency graph from the model according to the given SCC decomposition.
+         *
+         * @param stronglyConnectedComponents A vector containing the SCCs of the system.
+         * @param stateToSccMap A mapping from state indices to
+         */
+        virtual storm::storage::SparseMatrix<bool> extractSccDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap) {
+            // The resulting sparse matrix will have as many rows/columns as there are SCCs.
+            uint_fast64_t numberOfStates = stronglyConnectedComponents.size();
+            storm::storage::SparseMatrix<bool> sccDependencyGraph(numberOfStates);
+            sccDependencyGraph.initialize();
+            
+            for (uint_fast64_t currentSccIndex = 0; currentSccIndex < stronglyConnectedComponents.size(); ++currentSccIndex) {
+                // Get the actual SCC.
+                std::vector<uint_fast64_t> const& scc = stronglyConnectedComponents[currentSccIndex];
+                
+                // Now, we determine the SCCs which are reachable (in one step) from the current SCC.
+                std::set<uint_fast64_t> allTargetSccs;
+                for (auto state : scc) {
+                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator succIt = this->getTransitionMatrix()->constColumnIteratorBegin(state), succIte = this->getTransitionMatrix()->constColumnIteratorEnd(state); succIt != succIte; ++succIt) {
+                        uint_fast64_t targetScc = stateToSccMap.find(*succIt)->second;
+                            
+                        // We only need to consider transitions that are actually leaving the SCC.
+                        if (targetScc != currentSccIndex) {
+                            allTargetSccs.insert(targetScc);
+                        }
+                    }
+                }
+                
+                // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
+                for (auto targetScc : allTargetSccs) {
+                    sccDependencyGraph.insertNextValue(currentSccIndex, targetScc, true);
+                }
+            }
+            
+            // Finalize the matrix.
+            sccDependencyGraph.finalize(true);
+            
+            return sccDependencyGraph;
+        }
 };
 
 } // namespace models

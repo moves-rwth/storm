@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iterator>
+#include <set>
 #include "boost/integer/integer_mask.hpp"
 
 #include "src/exceptions/InvalidStateException.h"
@@ -55,8 +56,8 @@ public:
 	 * If we only want to iterate over the columns or values of the non-zero entries of
 	 * a row, we can simply iterate over the array (part) itself.
 	 */
-	typedef const uint_fast64_t* const ConstIndexIterator;
-	typedef const T* const ConstValueIterator;
+	typedef uint_fast64_t const* ConstIndexIterator;
+	typedef T const* ConstValueIterator;
 
 	/*!
 	 * Iterator class that is able to iterate over the non-zero elements of a matrix and return the position
@@ -232,7 +233,7 @@ public:
 	 *
 	 * @param nonZeroEntries The number of non-zero entries this matrix is going to hold.
 	 */
-	void initialize(uint_fast64_t nonZeroEntries) {
+	void initialize(uint_fast64_t nonZeroEntries = 0) {
 		// Check whether initializing the matrix is safe.
 		if (internalStatus != MatrixStatus::UnInitialized) {
 			triggerErrorState();
@@ -260,11 +261,15 @@ public:
 			}
 		}
 	}
-
+    
 	/*!
-	 * Sets the matrix element at the given row and column to the given value.
+	 * Sets the matrix element at the given row and column to the given value. After all elements have been added,
+     * a call to finalize() is mandatory.
 	 * NOTE: This is a linear setter. It must be called consecutively for each element,
 	 * row by row *and* column by column.
+     * NOTE: This method is different from insertNextValue(...) in that the number of nonzero elements must be known
+     * in advance (and passed to initialize()), because adding elements will not automatically increase the size of the
+     * underlying storage.
 	 *
 	 * @param row The row in which the matrix element is to be set.
 	 * @param col The column in which the matrix element is to be set.
@@ -276,7 +281,7 @@ public:
 		if ((row > rowCount) || (col > colCount)) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to add a value at illegal position (" << row << ", " << col << ") in matrix of size (" << rowCount << ", " << colCount << ").");
-			throw storm::exceptions::OutOfRangeException("Trying to add a value at illegal position.");
+			throw storm::exceptions::OutOfRangeException() << "Trying to add a value at illegal position (" << row << ", " << col << ") in matrix of size (" << rowCount << ", " << colCount << ").";
 		}
 
 		// If we switched to another row, we have to adjust the missing
@@ -294,14 +299,53 @@ public:
 
 		++currentSize;
 	}
+    
+    /*!
+     * Inserts a value at the given row and column with the given value. After all elements have been added,
+     * a call to finalize() is mandatory.
+     * NOTE: This is a linear inserter. It must be called consecutively for each element, row by row *and* column by
+     * column.
+     * NOTE: This method is different from addNextValue(...) in that the number of nonzero elements need not be known
+     * in advance, because inserting elements will automatically increase the size of the underlying storage.
+	 *
+	 * @param row The row in which the matrix element is to be set.
+	 * @param col The column in which the matrix element is to be set.
+	 * @param value The value that is to be set.
+     */
+    void insertNextValue(const uint_fast64_t row, const uint_fast64_t col,	T const& value) {
+		// Check whether the given row and column positions are valid and throw
+		// error otherwise.
+		if ((row > rowCount) || (col > colCount)) {
+			triggerErrorState();
+			LOG4CPLUS_ERROR(logger, "Trying to insert a value at illegal position (" << row << ", " << col << ") in matrix of size (" << rowCount << ", " << colCount << ").");
+			throw storm::exceptions::OutOfRangeException() << "Trying to insert a value at illegal position (" << row << ", " << col << ") in matrix of size (" << rowCount << ", " << colCount << ").";
+		}
+        
+		// If we switched to another row, we have to adjust the missing entries in the rowIndications array.
+		if (row != lastRow) {
+			for (uint_fast64_t i = lastRow + 1; i <= row; ++i) {
+				rowIndications[i] = currentSize;
+			}
+			lastRow = row;
+		}
+        
+		// Finally, set the element and increase the current size.
+		valueStorage.push_back(value);
+		columnIndications.push_back(col);
+        ++nonZeroEntryCount;
+		++currentSize;
+	}
+
 
 	/*
-	 * Finalizes the sparse matrix to indicate that initialization has been
-	 * completed and the matrix may now be used.
+	 * Finalizes the sparse matrix to indicate that initialization has been completed and the matrix may now be used.
+     *
+     * @param pushSentinelElement A boolean flag that indicates whether the sentinel element is to be pushed or inserted
+     * at a fixed location. If the elements have been added to the matrix via insertNextElement, this needs to be true
+     * and false otherwise.
 	 */
-	void finalize() {
-		// Check whether it's safe to finalize the matrix and throw error
-		// otherwise.
+	void finalize(bool pushSentinelElement = false) {
+		// Check whether it's safe to finalize the matrix and throw error otherwise.
 		if (!isInitialized()) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to finalize an uninitialized matrix.");
@@ -319,11 +363,14 @@ public:
 				}
 			}
 
-			// Set a sentinel element at the last position of the row_indications
-			// array. This eases iteration work, as now the indices of row i
-			// are always between row_indications[i] and row_indications[i + 1],
-			// also for the first and last row.
-			rowIndications[rowCount] = nonZeroEntryCount;
+			// Set a sentinel element at the last position of the row_indications array. This eases iteration work, as
+            // now the indices of row i are always between rowIndications[i] and rowIndications[i + 1], also for the
+            // first and last row.
+            if (pushSentinelElement) {
+                rowIndications.push_back(nonZeroEntryCount);
+            } else {
+                rowIndications[rowCount] = nonZeroEntryCount;
+            }
 
 			setState(MatrixStatus::ReadReady);
 		}

@@ -85,6 +85,14 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 */
 		virtual ModelType getType() const = 0;
 
+        /*!
+         * Extracts the SCC dependency graph from the model according to the given SCC decomposition.
+         *
+         * @param stronglyConnectedComponents A vector containing the SCCs of the system.
+         * @param stateToSccMap A mapping from state indices to
+         */
+        virtual storm::storage::SparseMatrix<bool> extractSccDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap) = 0;
+    
 		/*!
 		 * Returns the state space size of the model.
 		 * @return The size of the state space of the model.
@@ -151,7 +159,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * Returns the set of states with which the given state is labeled.
 		 * @return The set of states with which the given state is labeled.
 		 */
-		std::set<std::string> const getPropositionsForState(uint_fast64_t const &state) const {
+		std::set<std::string> const getPropositionsForState(uint_fast64_t const& state) const {
 			return stateLabeling->getPropositionsForState(state);
 		}
 

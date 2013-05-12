@@ -421,7 +421,7 @@ public:
 	}
 
     /*!
-     * Performs a decomposition of the given nondetermistic model into its SCCs.
+     * Performs a decomposition of the given nondeterministic model into its SCCs.
      *
      * @param model The nondeterminstic model to decompose.
      * @return A pair whose first component represents the SCCs and whose second component represents the dependency
@@ -430,51 +430,75 @@ public:
 	template <typename T>
 	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(storm::models::AbstractNondeterministicModel<T> const& model) {
 		LOG4CPLUS_INFO(logger, "Computing SCC decomposition.");
-
-        // Get the forward transition relation from the model to ease the search.
-        std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
-		storm::models::GraphTransitions<T> forwardTransitions(model.getTransitionMatrix(), nondeterministicChoiceIndices, true);
-
-		// Perform the actual SCC decomposition based on the graph-transitions of the system.
-		std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> result = performSccDecomposition(nondeterministicChoiceIndices.size() - 1, forwardTransitions);
-		LOG4CPLUS_INFO(logger, "Done computing SCC decomposition.");
         
-        return result;
+        std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> sccDecomposition;
+        uint_fast64_t numberOfStates = model.getNumberOfStates();
+            
+        // Set up the environment of Tarjan's algorithm.
+        std::vector<uint_fast64_t> tarjanStack;
+        tarjanStack.reserve(numberOfStates);
+        storm::storage::BitVector tarjanStackStates(numberOfStates);
+        std::vector<uint_fast64_t> stateIndices(numberOfStates);
+        std::vector<uint_fast64_t> lowlinks(numberOfStates);
+        storm::storage::BitVector visitedStates(numberOfStates);
+        std::map<uint_fast64_t, uint_fast64_t> stateToSccMap;
+            
+        // Start the search for SCCs from every vertex in the graph structure, because there is.
+        uint_fast64_t currentIndex = 0;
+        for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+            if (!visitedStates.get(state)) {
+                performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, model.getTransitionMatrix(), sccDecomposition.first, stateToSccMap);
+            }
+        }
+            
+        // Finally, determine the dependency graph over the SCCs and return result.
+        sccDecomposition.second = model.extractSccDependencyGraph(sccDecomposition.first, stateToSccMap);
+
+		LOG4CPLUS_INFO(logger, "Done computing SCC decomposition.");
+        return sccDecomposition;
 	}
 
     /*!
      * Performs a topological sort of the states of the system according to the given transitions.
      *
-     * @param transitions The transitions of the graph structure.
+     * @param matrix A square matrix representing the transition relation of the system.
      * @return A vector of indices that is a topological sort of the states.
      */
 	template <typename T>
-	static std::vector<uint_fast64_t> getTopologicalSort(storm::models::GraphTransitions<T> const& transitions) {
+	static std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) {
+        if (matrix.getRowCount() != matrix.getColumnCount()) {
+            LOG4CPLUS_ERROR(logger, "Provided matrix is required to be square.");
+            throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
+        }
+        
+        uint_fast64_t numberOfStates = matrix.getRowCount();
+        
+        // Prepare the result. This relies on the matrix being square.
         std::vector<uint_fast64_t> topologicalSort;
-		topologicalSort.reserve(transitions.getNumberOfStates());
+		topologicalSort.reserve(numberOfStates);
 
         // Prepare the stacks needed for recursion.
 		std::vector<uint_fast64_t> recursionStack;
-		recursionStack.reserve(transitions.getNumberOfStates());
-		std::vector<typename storm::models::GraphTransitions<T>::stateSuccessorIterator> iteratorRecursionStack;
-		iteratorRecursionStack.reserve(transitions.getNumberOfStates());
+		recursionStack.reserve(matrix.getRowCount());
+		std::vector<typename storm::storage::SparseMatrix<T>::ConstIndexIterator> iteratorRecursionStack;
+		iteratorRecursionStack.reserve(numberOfStates);
 
         // Perform a depth-first search over the given transitions and record states in the reverse order they were visited.
-		storm::storage::BitVector visitedStates(transitions.getNumberOfStates());
-		for (uint_fast64_t state = 0; state < transitions.getNumberOfStates(); ++state) {
+		storm::storage::BitVector visitedStates(numberOfStates);
+		for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
 			if (!visitedStates.get(state)) {
 				recursionStack.push_back(state);
-				iteratorRecursionStack.push_back(transitions.beginStateSuccessorsIterator(state));
+				iteratorRecursionStack.push_back(matrix.constColumnIteratorBegin(state));
 
 				recursionStepForward:
 				while (!recursionStack.empty()) {
 					uint_fast64_t currentState = recursionStack.back();
-					typename storm::models::GraphTransitions<T>::stateSuccessorIterator currentIt = iteratorRecursionStack.back();
+					typename storm::storage::SparseMatrix<T>::ConstIndexIterator currentIt = iteratorRecursionStack.back();
 
 					visitedStates.set(currentState, true);
 
 					recursionStepBackward:
-					for (; currentIt != transitions.endStateSuccessorsIterator(currentState); ++currentIt) {
+					for (; currentIt != matrix.constColumnIteratorEnd(currentState); ++currentIt) {
 						if (!visitedStates.get(*currentIt)) {
 							// Put unvisited successor on top of our recursion stack and remember that.
 							recursionStack.push_back(*currentIt);
@@ -484,7 +508,7 @@ public:
 							iteratorRecursionStack.push_back(currentIt + 1);
 
 							// Also, put initial value for iterator on corresponding recursion stack.
-							iteratorRecursionStack.push_back(transitions.beginStateSuccessorsIterator(*currentIt));
+							iteratorRecursionStack.push_back(matrix.constColumnIteratorBegin(*currentIt));
 
 							goto recursionStepForward;
 						}
@@ -515,40 +539,6 @@ public:
 
 private:
     /*!
-     * Performs an SCC decomposition of the system given by its forward transitions.
-     *
-     * @param forwardTransitions The (forward) transition relation of the model to decompose.
-     * @return A pair whose first component represents the SCCs and whose second component represents the dependency
-     * graph of the SCCs.
-     */
-	template <typename T>
-	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(storm::models::GraphTransitions<T> const& forwardTransitions) {
-        std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> sccDecomposition;
-        uint_fast64_t numberOfStates = forwardTransitions.getNumberOfStates();
-        
-        // Set up the environment of Tarjan's algorithm.
-		std::vector<uint_fast64_t> tarjanStack;
-		tarjanStack.reserve(numberOfStates);
-		storm::storage::BitVector tarjanStackStates(numberOfStates);
-		std::vector<uint_fast64_t> stateIndices(numberOfStates);
-		std::vector<uint_fast64_t> lowlinks(numberOfStates);
-		storm::storage::BitVector visitedStates(numberOfStates);
-		std::map<uint_fast64_t, uint_fast64_t> stateToSccMap;
-
-        // Start the search for SCCs from every vertex in the graph structure, because there is.
-		uint_fast64_t currentIndex = 0;
-		for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-			if (!visitedStates.get(state)) {
-				performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, forwardTransitions, sccDecomposition.first, stateToSccMap);
-			}
-		}
-
-        // Finally, determine the dependency graph over the SCCs and return result.
-		sccDecomposition.second = storm::models::GraphTransitions<T>(forwardTransitions, sccDecomposition.first, stateToSccMap);
-        return sccDecomposition;
-	}
-
-    /*!
      * Performs an SCC decomposition using Tarjan's algorithm.
      *
      * @param startState The state at which the search is started.
@@ -559,30 +549,30 @@ private:
      * @param tarjanStack A stack used for Tarjan's algorithm.
      * @param tarjanStackStates A bit vector that represents all states that are currently contained in tarjanStack.
      * @param visitedStates A bit vector that stores all states that have already been visited.
-     * @param forwardTransitions The (forward) transition relation of the graph structure.
+     * @param matrix The transition matrix representing the graph structure.
      * @param stronglyConnectedComponents A vector of strongly connected components to which newly found SCCs are added.
      * @param stateToSccMap A mapping from state indices to SCC indices that maps each state to its SCC.
      */
 	template <typename T>
-	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::models::GraphTransitions<T> const& forwardTransitions, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t>& stateToSccMap) {
+	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::storage::SparseMatrix<T> const& matrix, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t>& stateToSccMap) {
 		// Create the stacks needed for turning the recursive formulation of Tarjan's algorithm
 		// into an iterative version. In particular, we keep one stack for states and one stack
 		// for the iterators. The last one is not strictly needed, but reduces iteration work when
 		// all successors of a particular state are considered.
 		std::vector<uint_fast64_t> recursionStateStack;
 		recursionStateStack.reserve(lowlinks.size());
-		std::vector<typename storm::models::GraphTransitions<T>::stateSuccessorIterator> recursionIteratorStack;
+		std::vector<typename storm::storage::SparseMatrix<T>::ConstIndexIterator> recursionIteratorStack;
 		recursionIteratorStack.reserve(lowlinks.size());
 		std::vector<bool> statesInStack(lowlinks.size());
 
 		// Initialize the recursion stacks with the given initial state (and its successor iterator).
 		recursionStateStack.push_back(startState);
-		recursionIteratorStack.push_back(forwardTransitions.beginStateSuccessorsIterator(startState));
+		recursionIteratorStack.push_back(matrix.constColumnIteratorBegin(startState));
 
 		recursionStepForward:
 		while (!recursionStateStack.empty()) {
 			uint_fast64_t currentState = recursionStateStack.back();
-			typename storm::models::GraphTransitions<T>::stateSuccessorIterator currentIt = recursionIteratorStack.back();
+			typename storm::storage::SparseMatrix<T>::ConstIndexIterator currentIt = recursionIteratorStack.back();
 
 			// Perform the treatment of newly discovered state as defined by Tarjan's algorithm
 			visitedStates.set(currentState, true);
@@ -593,7 +583,7 @@ private:
 			tarjanStackStates.set(currentState, true);
 
 			// Now, traverse all successors of the current state.
-			for(; currentIt != forwardTransitions.endStateSuccessorsIterator(currentState); ++currentIt) {
+			for(; currentIt != matrix.constColumnIteratorEnd(currentState); ++currentIt) {
 				// If we have not visited the successor already, we need to perform the procedure
 				// recursively on the newly found state.
 				if (!visitedStates.get(*currentIt)) {
@@ -606,7 +596,7 @@ private:
 					statesInStack[*currentIt] = true;
 
 					// Also, put initial value for iterator on corresponding recursion stack.
-					recursionIteratorStack.push_back(forwardTransitions.beginStateSuccessorsIterator(*currentIt));
+					recursionIteratorStack.push_back(matrix.constColumnIteratorBegin(*currentIt));
 
 					// Perform the actual recursion step in an iterative way.
 					goto recursionStepForward;
