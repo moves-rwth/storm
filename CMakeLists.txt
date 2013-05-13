@@ -20,7 +20,7 @@ else()
 	set (STORM_LIB_SUFFIX a)
 	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.${STORM_LIB_SUFFIX})
 	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.${STORM_LIB_SUFFIX})
-	set (GTEST_LIBRARIES ${GTEST_LIBRARY}) # as we dont use FindGTest anymore
+	set (GTEST_LIBRARIES ${GTEST_LIBRARY} ${GTEST_MAIN_LIBRARY}) # as we dont use FindGTest anymore
 endif()
 message(STATUS "GTEST_INCLUDE_DIR is ${GTEST_INCLUDE_DIR}")
 message(STATUS "GTEST_LIBRARY is ${GTEST_LIBRARY}")
@@ -126,6 +126,7 @@ file(GLOB_RECURSE STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJ
 file(GLOB_RECURSE STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
+file(GLOB_RECURSE STORM_IR_FILES ${PROJECT_SOURCE_DIR}/src/ir/*.h ${PROJECT_SOURCE_DIR}/src/ir/*.cpp)
 
 # Test Sources
 # Note that the tests also need the source files, except for the main file
@@ -141,6 +142,7 @@ source_group(models FILES ${STORM_MODELS_FILES})
 source_group(parser FILES ${STORM_PARSER_FILES})
 source_group(storage FILES ${STORM_STORAGE_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
+source_group(ir FILES ${STORM_IR_FILES})
 source_group(test FILES ${STORM_TEST_FILES})
 
 # Add base folder for better inclusion paths
