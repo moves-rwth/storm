@@ -130,7 +130,7 @@ file(GLOB_RECURSE STORM_IR_FILES ${PROJECT_SOURCE_DIR}/src/ir/*.h ${PROJECT_SOUR
 
 # Test Sources
 # Note that the tests also need the source files, except for the main file
-file(GLOB_RECURSE STORM_TEST_FILES ${PROJECT_SOURCE_DIR}/test/*.h ${PROJECT_SOURCE_DIR}/test/*.cpp)
+file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${PROJECT_SOURCE_DIR}/test/functional/*.h ${PROJECT_SOURCE_DIR}/test/functional/*.cpp)
 
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
@@ -226,7 +226,8 @@ endif(CUDD_LIBRARY_DIRS)
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
 add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
-add_executable(storm-tests ${STORM_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
+add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
+add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
 
 # Add target link deps for Boost program options
 target_link_libraries(storm ${Boost_LIBRARIES})   

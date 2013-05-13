@@ -7,7 +7,7 @@
 
 TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/two_dice/two_dice.tra", STORM_CPP_TESTS_BASE_PATH "/functional/two_dice/two_dice.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/two_dice/two_dice.flip.trans.rew");
+	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "functional/modelchecker/two_dice/two_dice.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.flip.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::MDP);
 
@@ -171,7 +171,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/asynchronous_leader/leader4.tra", STORM_CPP_TESTS_BASE_PATH "/functional/asynchronous_leader/leader4.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/asynchronous_leader/leader4.trans.rew");
+	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/asynchronous_leader/leader4.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/asynchronous_leader/leader4.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/asynchronous_leader/leader4.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::MDP);
 
