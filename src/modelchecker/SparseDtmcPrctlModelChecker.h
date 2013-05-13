@@ -94,10 +94,6 @@ public:
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
 		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
 
-		// Delete obsolete intermediates.
-		delete leftStates;
-		delete rightStates;
-
 		// Create the vector with which to multiply.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 		storm::utility::setVectorValues(result, *rightStates, storm::utility::constGetOne<Type>());
@@ -105,7 +101,9 @@ public:
 		// Perform the matrix vector multiplication as often as required by the formula bound.
 		this->performMatrixVectorMultiplication(tmpMatrix, *result, nullptr, formula.getBound());
 
-		// Return result.
+		// Delete obsolete intermediates and return result.
+		delete leftStates;
+		delete rightStates;
 		return result;
 	}
 

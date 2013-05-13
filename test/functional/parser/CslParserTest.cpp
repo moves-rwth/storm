@@ -127,14 +127,9 @@ TEST(CslParserTest, parseComplexFormulaTest) {
 
 }
 
-
-
 TEST(CslParserTest, wrongProbabilisticFormulaTest) {
 	storm::parser::CslParser* cslParser = nullptr;
-	ASSERT_THROW(
-			cslParser = new storm::parser::CslParser("P > 0.5 [ a ]"),
-			storm::exceptions::WrongFormatException
-	);
+	ASSERT_THROW(cslParser = new storm::parser::CslParser("P > 0.5 [ a ]"),	storm::exceptions::WrongFormatException);
 
 	delete cslParser;
 }

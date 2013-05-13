@@ -25,7 +25,7 @@ TEST(ReadLabFileTest, ParseTest) {
 	
 	storm::parser::AtomicPropositionLabelingParser* parser = nullptr;
 	//Parsing the file
-	ASSERT_NO_THROW(parser = new storm::parser::AtomicPropositionLabelingParser(12, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/pctl_general_input_01.lab"));
+	ASSERT_NO_THROW(parser = new storm::parser::AtomicPropositionLabelingParser(12, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general_input_01.lab"));
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> labeling(parser->getLabeling());
 
 	//Checking whether all propositions are in the labelling
@@ -89,14 +89,14 @@ TEST(ReadLabFileTest, ParseTest) {
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest1) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header1.lab"), storm::exceptions::WrongFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/wrong_format_header1.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest2) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_header2.lab"), storm::exceptions::WrongFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/wrong_format_header2.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadLabFileTest, WrongPropositionTest) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/wrong_format_proposition.lab"), storm::exceptions::WrongFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/wrong_format_proposition.lab"), storm::exceptions::WrongFormatException);
 }
 
