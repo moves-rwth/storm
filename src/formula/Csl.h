@@ -5,8 +5,10 @@
  *      Author: thomas
  */
 
-#ifndef CSL_H_
-#define CSL_H_
+#ifndef STORM_FORMULA_CSL_H_
+#define STORM_FORMULA_CSL_H_
+
+#include "src/modelchecker/csl/ForwardDeclarations.h"
 
 #include "Csl/And.h"
 #include "Csl/Ap.h"
@@ -24,5 +26,7 @@
 #include "Csl/TimeBoundedEventually.h"
 #include "Csl/TimeBoundedUntil.h"
 
+#include "modelchecker/csl/AbstractModelChecker.h"
 
-#endif /* CSL_H_ */
+
+#endif /* STORM_FORMULA_CSL_H_ */

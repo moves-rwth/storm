@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #include "src/utility/Settings.h"
-#include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
+#include "src/modelchecker/prctl/GmmxxMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
 TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
@@ -16,7 +16,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 169u);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 436u);
 
-	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::prctl::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("two");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -114,7 +114,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	std::shared_ptr<storm::models::Mdp<double>> stateRewardMdp = stateRewardParser.getModel<storm::models::Mdp<double>>();
 
-	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
+	storm::modelchecker::prctl::GmmxxMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
 
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
@@ -144,7 +144,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 	std::shared_ptr<storm::models::Mdp<double>> stateAndTransitionRewardMdp = stateAndTransitionRewardParser.getModel<storm::models::Mdp<double>>();
 
-	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
+	storm::modelchecker::prctl::GmmxxMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
 
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
@@ -180,7 +180,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 3172u);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144u);
 
-	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::prctl::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);

@@ -14,7 +14,6 @@
 #include <vector>
 #include <tuple>
 #include <sstream>
-#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace property {

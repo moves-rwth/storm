@@ -5,10 +5,10 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_MODELCHECKER_GMMXXMDPPRCTLMODELCHECKER_H_
-#define STORM_MODELCHECKER_GMMXXMDPPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_PRCTL_GMMXXMDPPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_PRCTL_GMMXXMDPPRCTLMODELCHECKER_H_
 
-#include "src/modelchecker/SparseMdpPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/adapters/GmmxxAdapter.h"
 
 #include "gmm/gmm_matrix.h"
@@ -18,6 +18,7 @@
 
 namespace storm {
 namespace modelchecker {
+namespace prctl {
 
 /*
  * An implementation of the SparseMdpPrctlModelChecker interface that uses gmm++ as the solving backend.
@@ -39,7 +40,7 @@ public:
 	 * Copy constructs a GmmxxDtmcPrctlModelChecker from the given model checker. In particular, this means that the newly
 	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	explicit GmmxxMdpPrctlModelChecker(storm::modelchecker::GmmxxMdpPrctlModelChecker<Type> const& modelchecker) : SparseMdpPrctlModelChecker<Type>(modelchecker) {
+	explicit GmmxxMdpPrctlModelChecker(storm::modelchecker::prctl::GmmxxMdpPrctlModelChecker<Type> const& modelchecker) : SparseMdpPrctlModelChecker<Type>(modelchecker) {
 		// Intentionally left empty.
 	}
 
@@ -156,7 +157,8 @@ private:
 	}
 };
 
+} //namespace prctl
 } //namespace modelchecker
 } //namespace storm
 
-#endif /* STORM_MODELCHECKER_GMMXXMDPPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_PRCTL_GMMXXMDPPRCTLMODELCHECKER_H_ */

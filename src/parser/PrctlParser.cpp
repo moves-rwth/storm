@@ -35,7 +35,7 @@ namespace parser {
 template<typename Iterator, typename Skipper>
 struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl::AbstractPrctlFormula<double>*(), Skipper > {
 	PrctlGrammar() : PrctlGrammar::base_type(start) {
-		freeIdentifierName = qi::lexeme[+(qi::alpha | qi::char_('_'))];
+		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
 
 		//This block defines rules for parsing state formulas
 		stateFormula %= orFormula;

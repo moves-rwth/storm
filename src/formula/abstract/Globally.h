@@ -10,7 +10,6 @@
 
 #include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 

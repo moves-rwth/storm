@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #include "src/utility/Settings.h"
-#include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/GmmxxDtmcPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
 TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
@@ -17,7 +17,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 13u);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 27u);
 
-	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("one");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -84,7 +84,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 8607u);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 22460u);
 
-	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("observe0Greater1");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -138,7 +138,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 12400u);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 28894u);
 
-	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
+	storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);

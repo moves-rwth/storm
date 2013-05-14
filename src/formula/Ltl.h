@@ -8,7 +8,7 @@
 #ifndef STORM_FORMULA_LTL_H_
 #define STORM_FORMULA_LTL_H_
 
-#include "src/modelchecker/ForwardDeclarations.h"
+#include "src/modelchecker/ltl/ForwardDeclarations.h"
 
 #include "Ltl/And.h"
 #include "Ltl/Ap.h"
@@ -21,6 +21,6 @@
 #include "Ltl/Or.h"
 #include "Ltl/Until.h"
 
-#include "modelchecker/AbstractModelChecker.h"
+#include "modelchecker/ltl/AbstractModelChecker.h"
 
 #endif /* STORM_FORMULA_LTL_H_ */

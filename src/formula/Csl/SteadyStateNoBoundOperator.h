@@ -87,7 +87,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>*  check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const {
+	virtual std::vector<T>*  check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const {
 		return modelChecker.template as<ISteadyStateNoBoundOperatorModelChecker>()->checkSteadyStateNoBoundOperator(*this);
 	}
 

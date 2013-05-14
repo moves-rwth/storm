@@ -11,7 +11,7 @@
 #include "AbstractStateFormula.h"
 #include "src/formula/abstract/Not.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/modelchecker/ForwardDeclarations.h"
+#include "src/modelchecker/csl/ForwardDeclarations.h"
 
 namespace storm {
 namespace property {
@@ -104,7 +104,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector *check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);  
 	}
 };

@@ -14,7 +14,7 @@
 #include "src/formula/AbstractFormulaChecker.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
-#include "src/modelchecker/ForwardDeclarations.h"
+#include "src/modelchecker/prctl/ForwardDeclarations.h"
 
 namespace storm {
 namespace property {
@@ -114,7 +114,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
+	virtual std::vector<T>* check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<IBoundedEventuallyModelChecker>()->checkBoundedEventually(*this, qualitative);
 	}
 };

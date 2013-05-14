@@ -11,7 +11,6 @@
 #include "AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
-#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace property {

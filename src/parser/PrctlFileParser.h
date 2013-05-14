@@ -34,7 +34,7 @@ public:
 	 * At this time, empty
 	 *
 	 */
-	virtual ~PrctlFileParser();
+	~PrctlFileParser();
 
 	/*!
 	 * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.

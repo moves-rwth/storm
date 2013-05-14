@@ -5,10 +5,10 @@
  *      Author: chris
  */
 
-#ifndef STORM_FORMULA_FORMULAS_H_
-#define STORM_FORMULA_FORMULAS_H_
+#ifndef STORM_FORMULA_PRCTL_H_
+#define STORM_FORMULA_PRCTL_H_
 
-#include "modelchecker/ForwardDeclarations.h"
+#include "modelchecker/prctl/ForwardDeclarations.h"
 
 #include "Prctl/And.h"
 #include "Prctl/Ap.h"
@@ -32,18 +32,11 @@
 #include "Prctl/RewardNoBoundOperator.h"
 #include "Prctl/SteadyStateReward.h"
 
-/*
-#include "SteadyStateNoBoundOperator.h"
-#include "SteadyStateBoundOperator.h"
-
-#include "TimeBoundedUntil.h"
-#include "TimeBoundedEventually.h"
-*/
 #include "Prctl/AbstractPrctlFormula.h"
 #include "Prctl/AbstractStateFormula.h"
 #include "Prctl/AbstractNoBoundOperator.h"
 #include "Prctl/AbstractPathFormula.h"
 
-#include "modelchecker/AbstractModelChecker.h"
+#include "modelchecker/prctl/AbstractModelChecker.h"
 
-#endif /* STORM_FORMULA_FORMULAS_H_ */
+#endif /* STORM_FORMULA_PRCTL_H_ */

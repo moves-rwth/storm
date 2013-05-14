@@ -9,9 +9,6 @@
 
 #include "PrctlFileParser.h"
 #include "PrctlParser.h"
-#include "modelchecker/EigenDtmcPrctlModelChecker.h"
-#include "modelchecker/GmmxxDtmcPrctlModelChecker.h"
-#include "modelchecker/GmmxxMdpPrctlModelChecker.h"
 
 namespace storm {
 namespace parser {

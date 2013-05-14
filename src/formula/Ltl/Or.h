@@ -107,7 +107,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
 

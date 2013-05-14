@@ -7,7 +7,7 @@
 #include "log4cplus/fileappender.h"
 
 #include "src/utility/Settings.h"
-#include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/GmmxxDtmcPrctlModelChecker.h"
 
 log4cplus::Logger logger;
 
@@ -37,7 +37,7 @@ void setUpLogging() {
 bool parseOptions(int const argc, char const * const argv[]) {
     storm::settings::Settings* s = nullptr;
     try {
-        storm::settings::Settings::registerModule<storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>>();
+        storm::settings::Settings::registerModule<storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<double>>();
         s = storm::settings::newInstance(argc, argv, nullptr, true);
     } catch (storm::exceptions::InvalidSettingsException& e) {
         std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;

@@ -34,7 +34,7 @@ namespace csl {
  * 	This class does not contain a check() method like the other formula classes.
  * 	The check method should only be called by the model checker to infer the correct check function for sub
  * 	formulas. As this operator can only appear at the root, the method is not useful here.
- * 	Use the checkProbabilisticNoBoundOperator method from the DtmcPrctlModelChecker class instead.
+ * 	Use the checkProbabilisticNoBoundOperator method from the DtmccslModelChecker class instead.
  *
  * The subtree is seen as part of the object and deleted with it
  * (this behavior can be prevented by setting them to NULL before deletion)
@@ -103,7 +103,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const {
+	virtual std::vector<T>* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const {
 		return this->getPathFormula().check(modelChecker, qualitative);
 	}
 };

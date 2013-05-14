@@ -12,10 +12,12 @@
 // the callback methods (i.e., the check methods).
 namespace storm {
 namespace modelchecker {
+namespace csl {
 
 template <class Type>
 class AbstractModelChecker;
 
+} //namespace csl
 } //namespace modelchecker
 } //namespace storm
 

@@ -5,15 +5,16 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_MODELCHECKER_TOPOLOGICALVALUEITERATIONSMDPPRCTLMODELCHECKER_H_
-#define STORM_MODELCHECKER_TOPOLOGICALVALUEITERATIONSMDPPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_PRCTL_TOPOLOGICALVALUEITERATIONSMDPPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_PRCTL_TOPOLOGICALVALUEITERATIONSMDPPRCTLMODELCHECKER_H_
 
-#include "src/modelchecker/SparseMdpPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include <cmath>
 
 namespace storm {
 namespace modelchecker {
+namespace prctl {
 
 /*
  * An implementation of the SparseMdpPrctlModelChecker interface that uses topoligical value iteration for solving
@@ -143,7 +144,8 @@ private:
 	}
 };
 
+} // namespace prctl
 } // namespace modelchecker
 } // namespace storm
 
-#endif /* STORM_MODELCHECKER_TOPOLOGICALVALUEITERATIONSMDPPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_PRCTL_TOPOLOGICALVALUEITERATIONSMDPPRCTLMODELCHECKER_H_ */

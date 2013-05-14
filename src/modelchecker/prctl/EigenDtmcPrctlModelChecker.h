@@ -5,13 +5,13 @@
  *      Author: 
  */
 
-#ifndef STORM_MODELCHECKER_EIGENDTMCPRCTLMODELCHECKER_H_
-#define STORM_MODELCHECKER_EIGENDTMCPRCTLMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_PRCTL_EIGENDTMCPRCTLMODELCHECKER_H_
+#define STORM_MODELCHECKER_PRCTL_EIGENDTMCPRCTLMODELCHECKER_H_
 
 #include "src/utility/Vector.h"
 
 #include "src/models/Dtmc.h"
-#include "src/modelchecker/SparseDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/utility/GraphAnalyzer.h"
 #include "src/utility/ConstTemplates.h"
 #include "src/exceptions/NoConvergenceException.h"
@@ -30,6 +30,7 @@ extern log4cplus::Logger logger;
 
 namespace storm {
 namespace modelchecker {
+namespace prctl {
 
 /*
  * A model checking engine that makes use of the eigen backend.
@@ -135,7 +136,8 @@ private:
 	}
 };
 
+} //namespace prctl
 } //namespace modelchecker
 } //namespace storm
 
-#endif /* STORM_MODELCHECKER_EIGENDTMCPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_PRCTL_EIGENDTMCPRCTLMODELCHECKER_H_ */

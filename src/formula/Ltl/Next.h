@@ -106,7 +106,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T> *check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<INextModelChecker>()->checkNext(*this);
 	}
 };

@@ -18,7 +18,7 @@ template <class T> class AbstractFormula;
 } //namespace property
 } //namespace storm
 
-#include "src/modelchecker/ForwardDeclarations.h"
+
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {

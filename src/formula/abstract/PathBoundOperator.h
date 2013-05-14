@@ -15,7 +15,6 @@
 
 #include "src/formula/abstract/OptimizingOperator.h"
 
-#include "src/modelchecker/ForwardDeclarations.h"
 #include "src/utility/ConstTemplates.h"
 
 namespace storm {

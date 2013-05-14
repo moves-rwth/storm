@@ -22,9 +22,9 @@
 #include "src/models/Dtmc.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
-#include "src/modelchecker/EigenDtmcPrctlModelChecker.h"
-#include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
-#include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
+#include "src/modelchecker/prctl/EigenDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/GmmxxDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/GmmxxMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/utility/Settings.h"
@@ -32,6 +32,7 @@
 #include "src/formula/Prctl.h"
 
 #include "src/parser/PrctlFileParser.h"
+#include "src/parser/LtlFileParser.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -98,7 +99,7 @@ void printFooter() {
 bool parseOptions(const int argc, const char* argv[]) {
 	storm::settings::Settings* s = nullptr;
 	try {
-		storm::settings::Settings::registerModule<storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>>();
+		storm::settings::Settings::registerModule<storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<double>>();
 		s = storm::settings::newInstance(argc, argv, nullptr);
 	} catch (storm::exceptions::InvalidSettingsException& e) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
@@ -142,10 +143,10 @@ void cleanUp() {
  * @param dtmc The Dtmc that the model checker will check
  * @return
  */
-storm::modelchecker::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double>& dtmc) {
+storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double>& dtmc) {
 	storm::settings::Settings* s = storm::settings::instance();
 	if (s->getString("matrixlib") == "gmm++") {
-		return new storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>(dtmc);
+		return new storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 	}
 	// The control flow should never reach this point, as there is a default setting for matrixlib (gmm++)
 	std::string message = "No matrix library suitable for DTMC model checking has been set";
@@ -158,10 +159,10 @@ storm::modelchecker::AbstractModelChecker<double>* createPrctlModelChecker(storm
  * @param mdp The Dtmc that the model checker will check
  * @return
  */
-storm::modelchecker::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
+storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
 	storm::settings::Settings* s = storm::settings::instance();
 	if (s->getString("matrixlib") == "gmm++") {
-		return new storm::modelchecker::GmmxxMdpPrctlModelChecker<double>(mdp);
+		return new storm::modelchecker::prctl::GmmxxMdpPrctlModelChecker<double>(mdp);
 	}
 	// The control flow should never reach this point, as there is a default setting for matrixlib (gmm++)
 	std::string message = "No matrix library suitable for MDP model checking has been set";
@@ -176,7 +177,7 @@ storm::modelchecker::AbstractModelChecker<double>* createPrctlModelChecker(storm
  * @param mc the model checker
  */
 void checkPrctlFormulasAgainstModel(std::list<storm::property::prctl::AbstractPrctlFormula<double>*>& formulaList,
-									storm::modelchecker::AbstractModelChecker<double> const& mc) {
+									storm::modelchecker::prctl::AbstractModelChecker<double> const& mc) {
 	for ( auto formula : formulaList ) {
 		mc.check(*formula);
 
@@ -198,7 +199,7 @@ void checkMdp(std::shared_ptr<storm::models::Mdp<double>> mdp) {
 		storm::parser::PrctlFileParser fileParser;
 		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("prctl"));
 
-		storm::modelchecker::AbstractModelChecker<double>* mc = createPrctlModelChecker(*mdp);
+		storm::modelchecker::prctl::AbstractModelChecker<double>* mc = createPrctlModelChecker(*mdp);
 
 		checkPrctlFormulasAgainstModel(formulaList, *mc);
 
@@ -222,11 +223,26 @@ void checkDtmc(std::shared_ptr<storm::models::Dtmc<double>> dtmc) {
 		storm::parser::PrctlFileParser fileParser;
 		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("prctl"));
 
-		storm::modelchecker::AbstractModelChecker<double>* mc = createPrctlModelChecker(*dtmc);
+		storm::modelchecker::prctl::AbstractModelChecker<double>* mc = createPrctlModelChecker(*dtmc);
 
 		checkPrctlFormulasAgainstModel(formulaList, *mc);
 
 		delete mc;
+	}
+
+	if (s->isSet("ltl")) {
+		LOG4CPLUS_INFO(logger, "Parsing ltl file"+ s->getString("ltl"));
+		storm::parser::LtlFileParser fileParser;
+		std::list<storm::property::ltl::AbstractLtlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("ltl"));
+
+		LOG4CPLUS_ERROR(logger, "LTL model checking is not implemented yet.");
+
+		//Debug output while LTL formulas cannot be checked
+		for (auto formula : formulaList) {
+			LOG4CPLUS_DEBUG(logger, formula->toString());
+		}
+
+
 	}
 
 	if(s->isSet("csl")) {

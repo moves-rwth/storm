@@ -11,7 +11,6 @@
 #include "src/formula/abstract/AbstractFormula.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
-#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 namespace property {

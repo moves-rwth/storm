@@ -11,7 +11,7 @@
 #include "src/formula/abstract/Eventually.h"
 #include "src/formula/Csl/AbstractPathFormula.h"
 #include "src/formula/Csl/AbstractStateFormula.h"
-#include "src/modelchecker/ForwardDeclarations.h"
+#include "src/modelchecker/csl/ForwardDeclarations.h"
 
 namespace storm {
 namespace property {
@@ -108,7 +108,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
+	virtual std::vector<T> *check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
 		return modelChecker.template as<IEventuallyModelChecker>()->checkEventually(*this, qualitative);
 	}
 };

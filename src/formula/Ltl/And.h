@@ -11,7 +11,7 @@
 #include "AbstractLtlFormula.h"
 #include "src/formula/abstract/And.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "src/modelchecker/ForwardDeclarations.h"
+#include "src/modelchecker/ltl/ForwardDeclarations.h"
 #include <string>
 
 namespace storm {
@@ -113,7 +113,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
 	}
 

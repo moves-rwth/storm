@@ -109,7 +109,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IProbabilisticBoundOperatorModelChecker>()->checkProbabilisticBoundOperator(*this);
 	}
 };

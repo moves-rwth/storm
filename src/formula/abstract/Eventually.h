@@ -9,7 +9,6 @@
 #define STORM_FORMULA_ABSTRACT_EVENTUALLY_H_
 
 #include "src/formula/abstract/AbstractFormula.h"
-#include "src/modelchecker/ForwardDeclarations.h"
 
 namespace storm {
 

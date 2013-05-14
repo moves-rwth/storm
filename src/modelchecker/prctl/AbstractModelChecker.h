@@ -5,15 +5,8 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
-#define STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
-
-// Forward declaration of abstract model checker class needed by the formula classes.
-namespace storm {
-namespace modelchecker {
-	template <class Type> class AbstractModelChecker;
-}
-}
+#ifndef STORM_MODELCHECKER_PRCTL_ABSTRACTMODELCHECKER_H_
+#define STORM_MODELCHECKER_PRCTL_ABSTRACTMODELCHECKER_H_
 
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/formula/Prctl.h"
@@ -29,6 +22,7 @@ extern log4cplus::Logger logger;
 
 namespace storm {
 namespace modelchecker {
+namespace prctl {
 
 /*!
  * @brief
@@ -316,7 +310,8 @@ private:
 	storm::models::AbstractModel<Type> const& model;
 };
 
+} // namespace prctl
 } // namespace modelchecker
 } // namespace storm
 
-#endif /* STORM_MODELCHECKER_DTMCPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_PRCTL_DTMCPRCTLMODELCHECKER_H_ */

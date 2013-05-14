@@ -12,7 +12,7 @@
 #include "AbstractLtlFormula.h"
 #include "boost/integer/integer_mask.hpp"
 #include <string>
-#include "src/modelchecker/ForwardDeclarations.h"
+#include "src/modelchecker/ltl/ForwardDeclarations.h"
 
 namespace storm {
 namespace property {
@@ -129,7 +129,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelchecker::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T> *check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IBoundedUntilModelChecker>()->checkBoundedUntil(*this);
 	}
 };
