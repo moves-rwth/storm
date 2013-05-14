@@ -99,7 +99,7 @@ public:
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
 		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates, *this->getModel().getNondeterministicChoiceIndices());
-
+        
 		// Create the vector with which to multiply.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 		storm::utility::setVectorValues(result, *rightStates, storm::utility::constGetOne<Type>());

@@ -130,8 +130,8 @@ file(GLOB_RECURSE STORM_IR_FILES ${PROJECT_SOURCE_DIR}/src/ir/*.h ${PROJECT_SOUR
 
 # Test Sources
 # Note that the tests also need the source files, except for the main file
-file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${PROJECT_SOURCE_DIR}/test/functional/*.h ${PROJECT_SOURCE_DIR}/test/functional/*.cpp)
-file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${PROJECT_SOURCE_DIR}/test/performance/*.h ${PROJECT_SOURCE_DIR}/test/performance/*.cpp)
+file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/functional/*.h ${STORM_CPP_TESTS_BASE_PATH}/functional/*.cpp)
+file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/performance/*.h ${STORM_CPP_TESTS_BASE_PATH}/performance/*.cpp)
 
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})

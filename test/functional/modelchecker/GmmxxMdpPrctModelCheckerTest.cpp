@@ -7,7 +7,7 @@
 
 TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.flip.trans.rew");
+	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
     
 	ASSERT_EQ(parser.getType(), storm::models::MDP);
     
@@ -108,7 +108,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete rewardFormula;
 	delete result;
     
-	storm::parser::AutoParser<double> stateRewardParser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.lab", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.flip.state.rew", "");
+	storm::parser::AutoParser<double> stateRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "");
     
 	ASSERT_EQ(stateRewardParser.getType(), storm::models::MDP);
     
@@ -138,7 +138,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete rewardFormula;
 	delete result;
     
-	storm::parser::AutoParser<double> stateAndTransitionRewardParser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.lab", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.flip.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/two_dice/two_dice.flip.trans.rew");
+	storm::parser::AutoParser<double> stateAndTransitionRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
     
 	ASSERT_EQ(stateAndTransitionRewardParser.getType(), storm::models::MDP);
     
@@ -171,7 +171,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 
 TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/asynchronous_leader/leader4.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/asynchronous_leader/leader4.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/asynchronous_leader/leader4.trans.rew");
+	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::MDP);
 
