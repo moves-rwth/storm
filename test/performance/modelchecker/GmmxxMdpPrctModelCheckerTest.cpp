@@ -13,8 +13,8 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 
-	ASSERT_EQ(mdp->getNumberOfStates(), 3172u);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144u);
+	ASSERT_EQ(mdp->getNumberOfStates(), 2095783u);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 7714385u);
 
 	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
 
@@ -52,7 +52,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -65,7 +65,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -76,7 +76,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.checkNoBoundOperator(*rewardFormula);
 
-	ASSERT_LT(std::abs((*result)[0] - 4.28568908480604982), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 6.172433512), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -89,7 +89,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 4.2856904354441400784), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 6.1724344), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
@@ -97,11 +97,14 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 
 TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
 	storm::settings::Settings* s = storm::settings::instance();
-	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin6_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin6_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin6_6.steps.state.rew", "");
+	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "");
     
 	ASSERT_EQ(parser.getType(), storm::models::MDP);
     
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
+    
+	ASSERT_EQ(mdp->getNumberOfStates(), 63616u);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 213472u);
     
     storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
     
@@ -128,7 +131,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.4370098592), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -137,13 +140,13 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     apFormula2 = new storm::property::prctl::Ap<double>("all_coins_equal_1");
     andFormula = new storm::property::prctl::And<double>(apFormula, apFormula2);
     eventuallyFormula = new storm::property::prctl::Eventually<double>(andFormula);
-	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
     
 	result = mc.checkNoBoundOperator(*probFormula);
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.4370098592), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -159,7 +162,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.1034345104), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -172,7 +175,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -185,7 +188,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -196,7 +199,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 4.28568908480604982), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1725.593313), s->get<double>("precision"));
     
 	delete rewardFormula;
 	delete result;
@@ -209,7 +212,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 4.2856904354441400784), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 2179.014847), s->get<double>("precision"));
     
 	delete rewardFormula;
 	delete result;

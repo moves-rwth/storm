@@ -14,8 +14,8 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 8607u);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 22460u);
+	ASSERT_EQ(dtmc->getNumberOfStates(), 2036647u);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 8973900u);
 
 	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
@@ -27,7 +27,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.3328800375801578281), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.2296803699), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -40,7 +40,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.1522173670950556501), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.05072232915), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -53,13 +53,13 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.32153724292835045), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.2274230551), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
 }
 
-/*
+
 TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
@@ -69,8 +69,8 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 12400u);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 28894u);
+	ASSERT_EQ(dtmc->getNumberOfStates(), 1312334u);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 2886810u);
 
 	storm::modelchecker::GmmxxDtmcPrctlModelChecker<double> mc(*dtmc);
 
@@ -95,7 +95,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.9999965911265462636), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.9999996339), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -108,9 +108,8 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1.0448979591835938496), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1.025217446), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
 }
-*/
