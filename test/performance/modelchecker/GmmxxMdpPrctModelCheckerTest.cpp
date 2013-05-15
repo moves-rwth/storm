@@ -116,7 +116,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 1), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -131,7 +131,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.4370098592), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0.4370098591707694546393), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -146,7 +146,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.4370098592), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0.5282872761373342829216), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -156,13 +156,13 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     storm::property::prctl::Not<double>* notFormula = new storm::property::prctl::Not<double>(apFormula2);
     andFormula = new storm::property::prctl::And<double>(apFormula, notFormula);
     eventuallyFormula = new storm::property::prctl::Eventually<double>(andFormula);
-	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
     
 	result = mc.checkNoBoundOperator(*probFormula);
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.1034345104), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0.10343451035775527713), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -175,7 +175,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 0), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -188,7 +188,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 0), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -199,7 +199,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 1725.593313), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 1725.5933133943854045), s->get<double>("precision"));
     
 	delete rewardFormula;
 	delete result;
@@ -212,7 +212,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[0] - 2179.014847), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 2179.014847073392047605011), s->get<double>("precision"));
     
 	delete rewardFormula;
 	delete result;

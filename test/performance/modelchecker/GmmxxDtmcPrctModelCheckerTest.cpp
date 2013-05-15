@@ -95,7 +95,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.9999996339), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.999394979327824395376467), s->get<double>("precision"));
 
 	delete probFormula;
 	delete result;
@@ -108,7 +108,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1.025217446), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1.02521744572240791626427), s->get<double>("precision"));
 
 	delete rewardFormula;
 	delete result;
