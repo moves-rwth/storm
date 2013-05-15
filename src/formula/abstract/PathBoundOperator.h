@@ -70,7 +70,7 @@ public:
 	 * @param minimumOperator Indicator, if operator should be minimum or maximum operator.
 	 */
 	PathBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, FormulaType* pathFormula, bool minimumOperator)
-		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula), OptimizingOperator(minimumOperator) {
+		: OptimizingOperator(minimumOperator), comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
 

@@ -13,6 +13,8 @@
 #include "modelchecker/GmmxxDtmcPrctlModelChecker.h"
 #include "modelchecker/GmmxxMdpPrctlModelChecker.h"
 
+#include <boost/algorithm/string.hpp>
+
 namespace storm {
 namespace parser {
 
@@ -39,6 +41,11 @@ std::list<storm::property::prctl::AbstractPrctlFormula<double>*> PrctlFileParser
 		std::string line;
 		//The while loop reads the input file line by line
 		while (std::getline(inputFileStream, line)) {
+			boost::algorithm::trim(line);
+			if ((line.length() == 0) || ((line[0] == '/') && (line[1] == '/'))) {
+				// ignore empty lines and lines starting with //
+				continue;
+			}
 			PrctlParser parser(line);
 			result.push_back(parser.getFormula());
 		}
