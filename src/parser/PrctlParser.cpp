@@ -37,13 +37,13 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 	PrctlGrammar() : PrctlGrammar::base_type(start) {
 
 		//This block contains helper rules that may be used several times
-		freeIdentifierName = qi::lexeme[+(qi::alpha | qi::char_('_'))];
+		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
 		comparisonType = (
 				(qi::lit(">="))[qi::_val = storm::property::GREATER_EQUAL] |
 				(qi::lit(">"))[qi::_val = storm::property::GREATER] |
 				(qi::lit("<="))[qi::_val = storm::property::LESS_EQUAL] |
 				(qi::lit("<"))[qi::_val = storm::property::LESS]);
-		comment = qi::lit("//")
+		comment = (qi::lit("//") >> *(qi::char_))[qi::_val = nullptr];
 
 		//This block defines rules for parsing state formulas
 		stateFormula %= orFormula;
@@ -142,7 +142,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 		instantaneousReward.name("path formula (for reward operator)");
 		steadyStateReward = (qi::lit("S"))[qi::_val = phoenix::new_<storm::property::prctl::SteadyStateReward<double>>()];
 
-		start = (comment | noBoundOperator | stateFormula | qi::eps[qi::error()]);
+		start = (comment | noBoundOperator | stateFormula) >> qi::eoi;
 		start.name("PRCTL formula");
 	}
 
@@ -231,7 +231,7 @@ storm::parser::PrctlParser::PrctlParser(std::string formulaString) {
 	// The syntax can be so wrong that no rule can be matched at all
 	// In that case, no expectation failure is thrown, but the parser just returns nullptr
 	// Then, of course the result is not usable, hence we throw a WrongFormatException, too.
-	if (positionIteratorBegin != formulaString.end()) {
+	if (positionIteratorBegin != positionIteratorEnd) {
 		throw storm::exceptions::WrongFormatException() << "Syntax error in formula";
 	}
 
