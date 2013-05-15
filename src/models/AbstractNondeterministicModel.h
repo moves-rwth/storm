@@ -84,7 +84,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
          * @param state The state for which to return the iterator.
          * @return An iterator to the successors of the given state.
          */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) {
+        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const {
             return this->getTransitionMatrix()->constColumnIteratorBegin((*nondeterministicChoiceIndices)[state]);
         }
     
@@ -94,7 +94,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
          * @param state The state for which to return the iterator.
          * @return An iterator pointing to the element past the successors of the given state.
          */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) {
+        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
             return this->getTransitionMatrix()->constColumnIteratorEnd((*nondeterministicChoiceIndices)[state + 1] - 1);
         }
 

@@ -91,7 +91,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param stronglyConnectedComponents A vector containing the SCCs of the system.
          * @param stateToSccMap A mapping from state indices to
          */
-        virtual storm::storage::SparseMatrix<bool> extractSccDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap) {
+        storm::storage::SparseMatrix<bool> extractSccDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap) const {
             // The resulting sparse matrix will have as many rows/columns as there are SCCs.
             uint_fast64_t numberOfStates = stronglyConnectedComponents.size();
             storm::storage::SparseMatrix<bool> sccDependencyGraph(numberOfStates);
@@ -132,7 +132,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param state The state for which to return the iterator.
          * @return An iterator to the successors of the given state.
          */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) = 0;
+        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const = 0;
     
         /*!
          * Returns an iterator pointing to the element past the successors of the given state.
@@ -140,7 +140,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param state The state for which to return the iterator.
          * @return An iterator pointing to the element past the successors of the given state.
          */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) = 0;
+        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const = 0;
     
 		/*!
 		 * Returns the state space size of the model.

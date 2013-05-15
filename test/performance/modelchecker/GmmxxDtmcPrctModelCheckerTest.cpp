@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-
 #include "src/utility/Settings.h"
 #include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
