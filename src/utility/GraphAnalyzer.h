@@ -58,7 +58,7 @@ public:
         storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
         
 		// Get the backwards transition relation from the model to ease the search.
-		storm::models::GraphTransitions<T> backwardTransitions(*model.getTransitionMatrix(), false);
+        storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
         
 		// Add all psi states as the already satisfy the condition.
 		statesWithProbabilityGreater0 |= psiStates;
@@ -73,7 +73,7 @@ public:
 			uint_fast64_t currentState = stack.back();
 			stack.pop_back();
 
-			for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+			for(auto it = backwardTransitions.constColumnIteratorBegin(currentState); it != backwardTransitions.constColumnIteratorEnd(currentState); ++it) {
 				if (phiStates.get(*it) && !statesWithProbabilityGreater0.get(*it)) {
 					statesWithProbabilityGreater0.set(*it, true);
 					stack.push_back(*it);
@@ -161,7 +161,7 @@ public:
         storm::storage::BitVector statesWithProbability0(model.getNumberOfStates());
         
 		// Get the backwards transition relation from the model to ease the search.
-		storm::models::GraphTransitions<T> backwardTransitions(*model.getTransitionMatrix(), *model.getNondeterministicChoiceIndices(), false);
+		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
 
 		// Add all psi states as the already satisfy the condition.
 		statesWithProbability0 |= psiStates;
@@ -176,7 +176,7 @@ public:
 			uint_fast64_t currentState = stack.back();
 			stack.pop_back();
 
-			for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+			for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
 				if (phiStates.get(*it) && !statesWithProbability0.get(*it)) {
 					statesWithProbability0.set(*it, true);
 					stack.push_back(*it);
@@ -207,7 +207,7 @@ public:
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
 
 		// Get the backwards transition relation from the model to ease the search.
-		storm::models::GraphTransitions<T> backwardTransitions(*model.getTransitionMatrix(), *model.getNondeterministicChoiceIndices(), false);
+		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
 
 		storm::storage::BitVector currentStates(model.getNumberOfStates(), true);
 
@@ -225,7 +225,7 @@ public:
 				uint_fast64_t currentState = stack.back();
 				stack.pop_back();
 
-				for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+				for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
 					if (phiStates.get(*it) && !nextStates.get(*it)) {
 						// Check whether the predecessor has only successors in the current state set for one of the
 						// nondeterminstic choices.
@@ -300,7 +300,7 @@ public:
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
 
 		// Get the backwards transition relation from the model to ease the search.
-		storm::models::GraphTransitions<T> backwardTransitions(*transitionMatrix, *nondeterministicChoiceIndices, false);
+		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
 
 		// Add all psi states as the already satisfy the condition.
 		statesWithProbability0 |= psiStates;
@@ -315,7 +315,7 @@ public:
 			uint_fast64_t currentState = stack.back();
 			stack.pop_back();
 
-			for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+			for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
 				if (phiStates.get(*it) && !statesWithProbability0.get(*it)) {
 					// Check whether the predecessor has at least one successor in the current state
 					// set for every nondeterministic choice.
@@ -366,7 +366,7 @@ public:
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
 
 		// Get the backwards transition relation from the model to ease the search.
-		storm::models::GraphTransitions<T> backwardTransitions(*model.getTransitionMatrix(), *model.getNondeterministicChoiceIndices(), false);
+		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
 
 		storm::storage::BitVector currentStates(model.getNumberOfStates(), true);
 
@@ -384,7 +384,7 @@ public:
 				uint_fast64_t currentState = stack.back();
 				stack.pop_back();
 
-				for(auto it = backwardTransitions.beginStateSuccessorsIterator(currentState); it != backwardTransitions.endStateSuccessorsIterator(currentState); ++it) {
+				for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
 					if (phiStates.get(*it) && !nextStates.get(*it)) {
 						// Check whether the predecessor has only successors in the current state set for all of the
 						// nondeterminstic choices.
@@ -421,17 +421,16 @@ public:
 	}
 
     /*!
-     * Performs a decomposition of the given nondeterministic model into its SCCs.
+     * Performs a decomposition of the given model into its SCCs.
      *
      * @param model The nondeterminstic model to decompose.
-     * @return A pair whose first component represents the SCCs and whose second component represents the dependency
-     * graph of the SCCs.
+     * @return A vector of SCCs of the model.
      */
 	template <typename T>
-	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::storage::SparseMatrix<bool>> performSccDecomposition(storm::models::AbstractModel<T> const& model) {
+	static std::vector<std::vector<uint_fast64_t>> performSccDecomposition(storm::models::AbstractModel<T> const& model) {
 		LOG4CPLUS_INFO(logger, "Computing SCC decomposition.");
         
-        std::pair<std::vector<std::vector<uint_fast64_t>>, storm::storage::SparseMatrix<bool>> sccDecomposition;
+        std::vector<std::vector<uint_fast64_t>> scc;
         uint_fast64_t numberOfStates = model.getNumberOfStates();
             
         // Set up the environment of Tarjan's algorithm.
@@ -441,21 +440,17 @@ public:
         std::vector<uint_fast64_t> stateIndices(numberOfStates);
         std::vector<uint_fast64_t> lowlinks(numberOfStates);
         storm::storage::BitVector visitedStates(numberOfStates);
-        std::map<uint_fast64_t, uint_fast64_t> stateToSccMap;
             
         // Start the search for SCCs from every vertex in the graph structure, because there is.
         uint_fast64_t currentIndex = 0;
         for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
             if (!visitedStates.get(state)) {
-                performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, *model.getTransitionMatrix(), sccDecomposition.first, stateToSccMap);
+                performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, *model.getTransitionMatrix(), scc);
             }
         }
-            
-        // Finally, determine the dependency graph over the SCCs and return result.
-        sccDecomposition.second = model.extractSccDependencyGraph(sccDecomposition.first, stateToSccMap);
 
 		LOG4CPLUS_INFO(logger, "Done computing SCC decomposition.");
-        return sccDecomposition;
+        return scc;
 	}
 
     /*!
@@ -551,10 +546,9 @@ private:
      * @param visitedStates A bit vector that stores all states that have already been visited.
      * @param matrix The transition matrix representing the graph structure.
      * @param stronglyConnectedComponents A vector of strongly connected components to which newly found SCCs are added.
-     * @param stateToSccMap A mapping from state indices to SCC indices that maps each state to its SCC.
      */
 	template <typename T>
-	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::storage::SparseMatrix<T> const& matrix, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t>& stateToSccMap) {
+	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::storage::SparseMatrix<T> const& matrix, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents) {
 		// Create the stacks needed for turning the recursive formulation of Tarjan's algorithm
 		// into an iterative version. In particular, we keep one stack for states and one stack
 		// for the iterators. The last one is not strictly needed, but reduces iteration work when
@@ -623,7 +617,6 @@ private:
 
 					// Add the state to the current SCC.
 					stronglyConnectedComponents.back().push_back(lastState);
-					stateToSccMap[lastState] = stronglyConnectedComponents.size() - 1;
 				} while (lastState != currentState);
 			}
 

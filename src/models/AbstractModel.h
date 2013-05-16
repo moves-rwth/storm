@@ -91,9 +91,20 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param stronglyConnectedComponents A vector containing the SCCs of the system.
          * @param stateToSccMap A mapping from state indices to
          */
-        storm::storage::SparseMatrix<bool> extractSccDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap) const {
-            // The resulting sparse matrix will have as many rows/columns as there are SCCs.
+        storm::storage::SparseMatrix<bool> extractSccDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents) const {
             uint_fast64_t numberOfStates = stronglyConnectedComponents.size();
+            
+            // First, we need to create a mapping of states to their SCC index, to ease the computation
+            // of dependency transitions later.
+            std::vector<uint_fast64_t> stateToSccMap(this->getNumberOfStates());
+            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+                for (uint_fast64_t j = 0; j < stronglyConnectedComponents[i].size(); ++j) {
+                    stateToSccMap[stronglyConnectedComponents[i][j]] = i;
+                }
+            }
+            
+            // The resulting sparse matrix will have as many rows/columns as there are SCCs.
+
             storm::storage::SparseMatrix<bool> sccDependencyGraph(numberOfStates);
             sccDependencyGraph.initialize();
             
@@ -105,7 +116,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 std::set<uint_fast64_t> allTargetSccs;
                 for (auto state : scc) {
                     for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator succIt = this->constStateSuccessorIteratorBegin(state), succIte = this->constStateSuccessorIteratorEnd(state); succIt != succIte; ++succIt) {
-                        uint_fast64_t targetScc = stateToSccMap.find(*succIt)->second;
+                        uint_fast64_t targetScc = stateToSccMap[*succIt];
                         
                         // We only need to consider transitions that are actually leaving the SCC.
                         if (targetScc != currentSccIndex) {
@@ -124,6 +135,59 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             sccDependencyGraph.finalize(true);
             
             return sccDependencyGraph;
+        }
+    
+        /*!
+         * Retrieves the backward transition relation of the model, i.e. a set of transitions
+         * between states that correspond to the reversed transition relation of this model.
+         *
+         * @return A sparse matrix that represents the backward transitions of this model.
+         */
+        virtual storm::storage::SparseMatrix<bool> getBackwardTransitions() const {
+            uint_fast64_t numberOfStates = this->getNumberOfStates();
+            uint_fast64_t numberOfTransitions = this->getNumberOfTransitions();
+            
+            std::vector<uint_fast64_t> rowIndications(numberOfStates + 1);
+            std::vector<uint_fast64_t> columnIndications(numberOfTransitions);
+            std::vector<bool> values(numberOfTransitions, true);
+            
+            // First, we need to count how many backward transitions each state has.
+            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+                for (auto rowIt = this->constStateSuccessorIteratorBegin(i), rowIte = this->constStateSuccessorIteratorEnd(i); rowIt != rowIte; ++rowIt) {
+                    rowIndications[*rowIt + 1]++;
+                }
+            }
+            
+            // Now compute the accumulated offsets.
+            for (uint_fast64_t i = 1; i < numberOfStates; ++i) {
+                rowIndications[i] = rowIndications[i - 1] + rowIndications[i];
+            }
+            
+            // Put a sentinel element at the end of the indices list. This way,
+            // for each state i the range of indices can be read off between
+            // state_indices_list[i] and state_indices_list[i + 1].
+            // FIXME: This should not be necessary and already be implied by the first steps.
+            rowIndications[numberOfStates] = numberOfTransitions;
+            
+            // Create an array that stores the next index for each state. Initially
+            // this corresponds to the previously computed accumulated offsets.
+            std::vector<uint_fast64_t> nextIndices = rowIndications;
+            
+            // Now we are ready to actually fill in the list of predecessors for
+            // every state. Again, we start by considering all but the last row.
+            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+                for (auto rowIt = this->constStateSuccessorIteratorBegin(i), rowIte = this->constStateSuccessorIteratorEnd(i); rowIt != rowIte; ++rowIt) {
+                    columnIndications[nextIndices[*rowIt]++] = i;
+                }
+            }
+            
+            storm::storage::SparseMatrix<bool> backwardTransitionMatrix(numberOfStates, numberOfStates,
+                                                                        numberOfTransitions,
+                                                                        std::move(rowIndications),
+                                                                        std::move(columnIndications),
+                                                                        std::move(values));
+            
+            return backwardTransitionMatrix;
         }
 
         /*!
@@ -269,10 +333,11 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 				<< std::endl;
 		}
 
-	private:
+	protected:
 		/*! A matrix representing the likelihoods of moving between states. */
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix;
 
+private:
 		/*! The labeling of the states of the model. */
 		std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling;
 

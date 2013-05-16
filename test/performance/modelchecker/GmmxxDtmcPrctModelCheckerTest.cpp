@@ -22,7 +22,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
 	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
+    LOG4CPLUS_WARN(logger, "Model Checking P=? [F observe0Greater1] on crowds/crowds20_5...");
 	std::vector<double>* result = probFormula->check(mc);
+    LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_NE(nullptr, result);
 
@@ -35,8 +37,10 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
 	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
+    LOG4CPLUS_WARN(logger, "Model Checking P=? [F observeIGreater1] on crowds/crowds20_5...");
 	result = probFormula->check(mc);
-
+    LOG4CPLUS_WARN(logger, "Done.");
+    
 	ASSERT_NE(nullptr, result);
 
 	ASSERT_LT(std::abs((*result)[0] - 0.05072232915), s->get<double>("precision"));
@@ -48,7 +52,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
 	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
+    LOG4CPLUS_WARN(logger, "Model Checking P=? [F observeOnlyTrueSender] on crowds/crowds20_5...");
 	result = probFormula->check(mc);
+    LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_NE(nullptr, result);
 
@@ -77,7 +83,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
 	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
+    LOG4CPLUS_WARN(logger, "Model Checking P=? [F elected] on synchronous_leader/leader6_8...");
 	std::vector<double>* result = probFormula->check(mc);
+    LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_NE(nullptr, result);
 
@@ -90,7 +98,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	storm::property::prctl::BoundedUntil<double>* boundedUntilFormula = new storm::property::prctl::BoundedUntil<double>(new storm::property::prctl::Ap<double>("true"), apFormula, 20);
 	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
 
+    LOG4CPLUS_WARN(logger, "Model Checking P=? [F<=20 elected] on synchronous_leader/leader6_8...");
 	result = probFormula->check(mc);
+    LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_NE(nullptr, result);
 
@@ -103,7 +113,9 @@ TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
 	storm::property::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula);
 
+    LOG4CPLUS_WARN(logger, "Model Checking R=? [F elected] on synchronous_leader/leader6_8...");
 	result = rewardFormula->check(mc);
+    LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_NE(nullptr, result);
 

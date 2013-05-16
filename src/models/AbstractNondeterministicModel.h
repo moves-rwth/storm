@@ -2,7 +2,6 @@
 #define STORM_MODELS_ABSTRACTNONDETERMINISTICMODEL_H_
 
 #include "AbstractModel.h"
-#include "GraphTransitions.h"
 
 #include <memory>
 
@@ -56,7 +55,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		 * @return The number of choices for all states of the MDP.
 		 */
 		uint_fast64_t getNumberOfChoices() const {
-			return this->getTransitionMatrix()->getRowCount();
+			return this->transitionMatrix->getRowCount();
 		}
     
 		/*!
@@ -85,7 +84,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
          * @return An iterator to the successors of the given state.
          */
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const {
-            return this->getTransitionMatrix()->constColumnIteratorBegin((*nondeterministicChoiceIndices)[state]);
+            return this->transitionMatrix->constColumnIteratorBegin((*nondeterministicChoiceIndices)[state]);
         }
     
         /*!
@@ -95,7 +94,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
          * @return An iterator pointing to the element past the successors of the given state.
          */
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
-            return this->getTransitionMatrix()->constColumnIteratorEnd((*nondeterministicChoiceIndices)[state + 1] - 1);
+            return this->transitionMatrix->constColumnIteratorEnd((*nondeterministicChoiceIndices)[state + 1] - 1);
         }
 
 	private:

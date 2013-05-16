@@ -151,7 +151,7 @@ private:
 		if (converged) {
 			LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
 		} else {
-			LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+			LOG4CPLUS_WARN(logger, "Iterative solver did not converge after " << iterations << " iterations.");
 		}
 	}
 };

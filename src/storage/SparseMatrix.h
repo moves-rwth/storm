@@ -211,7 +211,7 @@ public:
 	 */
 	SparseMatrix(uint_fast64_t rows, uint_fast64_t cols) : rowCount(rows), colCount(cols),
 		nonZeroEntryCount(0), internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) {
-    
+        // Intentionally left empty.
     }
 
 	/*!
@@ -222,8 +222,28 @@ public:
 	SparseMatrix(uint_fast64_t size = 0)
 			: rowCount(size), colCount(size), nonZeroEntryCount(0),
 			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) {
-			  
+        // Intentionally left empty.
 	}
+    
+    /*!
+     * Constructs a sparse matrix object with the given (moved) contents.
+     *
+     * @param rowCount The number of rows.
+     * @param colCount The number of columns.
+     * @param nonZeroEntryCount The number of non-zero entries.
+     * @param rowIndications The vector indicating where the rows start.
+     * @param columnIndications The vector indicating the column for each non-zero element.
+     * @param values The vector containing the non-zero values.
+     */
+    SparseMatrix(uint_fast64_t rowCount, uint_fast64_t colCount, uint_fast64_t nonZeroEntryCount,
+                 std::vector<uint_fast64_t>&& rowIndications,
+                 std::vector<uint_fast64_t>&& columnIndications, std::vector<T>&& values)
+                    : rowCount(rowCount), colCount(colCount), nonZeroEntryCount(nonZeroEntryCount),
+                    valueStorage(values), columnIndications(columnIndications),
+                    rowIndications(rowIndications), internalStatus(MatrixStatus::Initialized),
+                    currentSize(0), lastRow(0) {
+        // Intentionally left empty.
+    }
 
 	/*!
 	 * Initializes the sparse matrix with the given number of non-zero entries

@@ -16,7 +16,7 @@ log4cplus::Logger logger;
  */
 void setUpLogging() {
 	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
-	logger.setLogLevel(log4cplus::INFO_LOG_LEVEL);
+	logger.setLogLevel(log4cplus::WARN_LOG_LEVEL);
 	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender("storm-performance-tests.log"));
 	fileLogAppender->setName("mainFileAppender");
 	fileLogAppender->setThreshold(log4cplus::WARN_LOG_LEVEL);
@@ -42,9 +42,8 @@ bool parseOptions(int const argc, char const * const argv[]) {
         storm::settings::Settings::registerModule<storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>>();
         s = storm::settings::newInstance(argc, argv, nullptr, true);
     } catch (storm::exceptions::InvalidSettingsException& e) {
-        std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
-        std::cout << std::endl << storm::settings::help;
-        return false;
+        // Ignore this case.
+        return true;
     }
     
     if (s->isSet("help")) {
@@ -64,5 +63,8 @@ int main(int argc, char* argv[]) {
 	
 	testing::InitGoogleTest(&argc, argv);
 
-    return RUN_ALL_TESTS();
+    int result = RUN_ALL_TESTS();
+    
+    logger.closeNestedAppenders();
+    return result;
 }

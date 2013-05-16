@@ -2,7 +2,6 @@
 #define STORM_MODELS_ABSTRACTDETERMINISTICMODEL_H_
 
 #include "AbstractModel.h"
-#include "GraphTransitions.h"
 
 #include <memory>
 
@@ -53,7 +52,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
          * @return An iterator to the successors of the given state.
          */
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const {
-            return this->getTransitionMatrix()->constColumnIteratorBegin(state);
+            return this->transitionMatrix->constColumnIteratorBegin(state);
         }
     
         /*!
@@ -63,7 +62,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
          * @return An iterator pointing to the element past the successors of the given state.
          */
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
-            return this->getTransitionMatrix()->constColumnIteratorEnd(state);
+            return this->transitionMatrix->constColumnIteratorEnd(state);
         }
 };
 
