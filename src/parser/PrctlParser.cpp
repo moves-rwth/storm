@@ -43,6 +43,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 				(qi::lit(">"))[qi::_val = storm::property::GREATER] |
 				(qi::lit("<="))[qi::_val = storm::property::LESS_EQUAL] |
 				(qi::lit("<"))[qi::_val = storm::property::LESS]);
+		//Comment: Empty line or line starting with "//"
 		comment = (qi::lit("//") >> *(qi::char_))[qi::_val = nullptr];
 
 		//This block defines rules for parsing state formulas
@@ -70,7 +71,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 						phoenix::new_<storm::property::prctl::ProbabilisticBoundOperator<double> >(qi::_1, qi::_2, qi::_3, true)] |
 				(qi::lit("P") >> qi::lit("max") > comparisonType > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::property::prctl::ProbabilisticBoundOperator<double> >(qi::_1, qi::_2, qi::_3, false)] |
-				(qi::lit("P") > comparisonType > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
+				(qi::lit("P") >> comparisonType > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
 						phoenix::new_<storm::property::prctl::ProbabilisticBoundOperator<double> >(qi::_1, qi::_2, qi::_3)]
 				);
 
@@ -142,11 +143,17 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 		instantaneousReward.name("path formula (for reward operator)");
 		steadyStateReward = (qi::lit("S"))[qi::_val = phoenix::new_<storm::property::prctl::SteadyStateReward<double>>()];
 
-		start = (comment | noBoundOperator | stateFormula) >> qi::eoi;
+		formula = (noBoundOperator | stateFormula);
+		formula.name("PRCTL formula");
+
+		start = (((formula) > (comment | qi::eps))[qi::_val = qi::_1] |
+				 comment
+				 ) > qi::eoi;
 		start.name("PRCTL formula");
 	}
 
 	qi::rule<Iterator, storm::property::prctl::AbstractPrctlFormula<double>*(), Skipper> start;
+	qi::rule<Iterator, storm::property::prctl::AbstractPrctlFormula<double>*(), Skipper> formula;
 	qi::rule<Iterator, storm::property::prctl::AbstractPrctlFormula<double>*(), Skipper> comment;
 
 	qi::rule<Iterator, storm::property::prctl::AbstractStateFormula<double>*(), Skipper> stateFormula;
@@ -226,13 +233,6 @@ storm::parser::PrctlParser::PrctlParser(std::string formulaString) {
 
 		// Now propagate exception.
 		throw storm::exceptions::WrongFormatException() << msg.str();
-	}
-
-	// The syntax can be so wrong that no rule can be matched at all
-	// In that case, no expectation failure is thrown, but the parser just returns nullptr
-	// Then, of course the result is not usable, hence we throw a WrongFormatException, too.
-	if (positionIteratorBegin != positionIteratorEnd) {
-		throw storm::exceptions::WrongFormatException() << "Syntax error in formula";
 	}
 
 	formula = result_pointer;
