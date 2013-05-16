@@ -35,7 +35,6 @@ namespace parser {
 template<typename Iterator, typename Skipper>
 struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl::AbstractPrctlFormula<double>*(), Skipper > {
 	PrctlGrammar() : PrctlGrammar::base_type(start) {
-
 		//This block contains helper rules that may be used several times
 		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
 		comparisonType = (

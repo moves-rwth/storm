@@ -116,7 +116,7 @@ TEST(CslParserTest, parseProbabilisticNoBoundFormulaTest) {
 TEST(CslParserTest, parseComplexFormulaTest) {
 	storm::parser::CslParser* cslParser = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("S<=0.5 [ P <= 0.5 [ a U c ] ] & (P > 0.5 [ G b] | !P < 0.4 [ G P>0.9 [F >=7 a & b] ])")
+			cslParser = new storm::parser::CslParser("S<=0.5 [ P <= 0.5 [ a U c ] ] & (P > 0.5 [ G b] | !P < 0.4 [ G P>0.9 [F >=7 a & b] ])  //and a comment")
 	);
 
 	ASSERT_NE(cslParser->getFormula(), nullptr);

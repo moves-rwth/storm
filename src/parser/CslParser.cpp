@@ -40,7 +40,15 @@ namespace parser {
 template<typename Iterator, typename Skipper>
 struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper > {
 	CslGrammar() : CslGrammar::base_type(start) {
-		freeIdentifierName = qi::lexeme[+(qi::alpha | qi::char_('_'))];
+		//This block contains helper rules that may be used several times
+		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
+		comparisonType = (
+				(qi::lit(">="))[qi::_val = storm::property::GREATER_EQUAL] |
+				(qi::lit(">"))[qi::_val = storm::property::GREATER] |
+				(qi::lit("<="))[qi::_val = storm::property::LESS_EQUAL] |
+				(qi::lit("<"))[qi::_val = storm::property::LESS]);
+		//Comment: Empty line or line starting with "//"
+		comment = (qi::lit("//") >> *(qi::char_))[qi::_val = nullptr];
 
 		//This block defines rules for parsing state formulas
 		stateFormula %= orFormula;
@@ -63,25 +71,13 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::Abstr
 				phoenix::new_<storm::property::csl::Ap<double>>(qi::_1)];
 		atomicProposition.name("state formula");
 		probabilisticBoundOperator = (
-				(qi::lit("P") >> qi::lit(">") >> qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::property::csl::ProbabilisticBoundOperator<double> >(storm::property::GREATER, qi::_1, qi::_2)] |
-				(qi::lit("P") >> qi::lit(">=") > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::property::csl::ProbabilisticBoundOperator<double> >(storm::property::GREATER_EQUAL, qi::_1, qi::_2)] |
-				(qi::lit("P") >> qi::lit("<") >> qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
-								phoenix::new_<storm::property::csl::ProbabilisticBoundOperator<double> >(storm::property::LESS, qi::_1, qi::_2)] |
-				(qi::lit("P") > qi::lit("<=") > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::property::csl::ProbabilisticBoundOperator<double> >(storm::property::LESS_EQUAL, qi::_1, qi::_2)]
+				(qi::lit("P") >> comparisonType > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
+						phoenix::new_<storm::property::csl::ProbabilisticBoundOperator<double> >(qi::_1, qi::_2, qi::_3)]
 				);
 		probabilisticBoundOperator.name("state formula");
 		steadyStateBoundOperator = (
-				(qi::lit("S") >> qi::lit(">") >> qi::double_ > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::property::csl::SteadyStateBoundOperator<double> >(storm::property::GREATER, qi::_1, qi::_2)] |
-				(qi::lit("S") >> qi::lit(">=") >> qi::double_ > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::property::csl::SteadyStateBoundOperator<double> >(storm::property::GREATER_EQUAL, qi::_1, qi::_2)] |
-				(qi::lit("S") >> qi::lit("<") >> qi::double_ > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::property::csl::SteadyStateBoundOperator<double> >(storm::property::LESS, qi::_1, qi::_2)] |
-				(qi::lit("S") > qi::lit("<=") >> qi::double_ > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val =
-										phoenix::new_<storm::property::csl::SteadyStateBoundOperator<double> >(storm::property::LESS_EQUAL, qi::_1, qi::_2)]
+				(qi::lit("S") >> comparisonType > qi::double_ > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val =
+										phoenix::new_<storm::property::csl::SteadyStateBoundOperator<double> >(qi::_1, qi::_2, qi::_3)]
 				);
 		steadyStateBoundOperator.name("state formula");
 
@@ -126,11 +122,18 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::Abstr
 				phoenix::new_<storm::property::csl::Until<double>>(phoenix::bind(&storm::property::csl::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::property::csl::AbstractStateFormula<double>>::get, qi::_a)), qi::_2)];
 		until.name("path formula (for probabilistic operator)");
 
-		start = (noBoundOperator | stateFormula);
+		formula = (noBoundOperator | stateFormula);
+		formula.name("CSL formula");
+
+		start = (((formula) > (comment | qi::eps))[qi::_val = qi::_1] |
+				 comment
+				 ) > qi::eoi;
 		start.name("CSL formula");
 	}
 
 	qi::rule<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper> start;
+	qi::rule<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper> formula;
+	qi::rule<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper> comment;
 
 	qi::rule<Iterator, storm::property::csl::AbstractStateFormula<double>*(), Skipper> stateFormula;
 	qi::rule<Iterator, storm::property::csl::AbstractStateFormula<double>*(), Skipper> atomicStateFormula;
@@ -155,6 +158,7 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::Abstr
 
 
 	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
+	qi::rule<Iterator, storm::property::ComparisonType(), Skipper> comparisonType;
 
 };
 
