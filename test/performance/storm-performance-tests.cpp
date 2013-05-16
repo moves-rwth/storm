@@ -15,10 +15,12 @@ log4cplus::Logger logger;
  * Initializes the logging framework.
  */
 void setUpLogging() {
-	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender("storm-functional-tests.log"));
+	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
+	logger.setLogLevel(log4cplus::INFO_LOG_LEVEL);
+	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender("storm-performance-tests.log"));
 	fileLogAppender->setName("mainFileAppender");
+	fileLogAppender->setThreshold(log4cplus::WARN_LOG_LEVEL);
 	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M} (%r ms) - %F:%L : %m%n")));
-	logger = log4cplus::Logger::getInstance("mainLogger");
 	logger.addAppender(fileLogAppender);
 
 	// Uncomment these lines to enable console logging output

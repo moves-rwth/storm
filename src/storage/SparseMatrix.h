@@ -219,7 +219,7 @@ public:
 	 *
 	 * @param size The number of rows and columns of the matrix.
 	 */
-	SparseMatrix(uint_fast64_t size)
+	SparseMatrix(uint_fast64_t size = 0)
 			: rowCount(size), colCount(size), nonZeroEntryCount(0),
 			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) {
 			  

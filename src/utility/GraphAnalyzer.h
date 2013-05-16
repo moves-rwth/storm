@@ -428,10 +428,10 @@ public:
      * graph of the SCCs.
      */
 	template <typename T>
-	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> performSccDecomposition(storm::models::AbstractNondeterministicModel<T> const& model) {
+	static std::pair<std::vector<std::vector<uint_fast64_t>>, storm::storage::SparseMatrix<bool>> performSccDecomposition(storm::models::AbstractModel<T> const& model) {
 		LOG4CPLUS_INFO(logger, "Computing SCC decomposition.");
         
-        std::pair<std::vector<std::vector<uint_fast64_t>>, storm::models::GraphTransitions<T>> sccDecomposition;
+        std::pair<std::vector<std::vector<uint_fast64_t>>, storm::storage::SparseMatrix<bool>> sccDecomposition;
         uint_fast64_t numberOfStates = model.getNumberOfStates();
             
         // Set up the environment of Tarjan's algorithm.
@@ -447,7 +447,7 @@ public:
         uint_fast64_t currentIndex = 0;
         for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
             if (!visitedStates.get(state)) {
-                performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, model.getTransitionMatrix(), sccDecomposition.first, stateToSccMap);
+                performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, *model.getTransitionMatrix(), sccDecomposition.first, stateToSccMap);
             }
         }
             
