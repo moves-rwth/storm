@@ -139,8 +139,12 @@ public:
 	template <typename T>
 	static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
 		std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
-        result.first = GraphAnalyzer::performProb0A(model, phiStates, psiStates);
-		result.second = GraphAnalyzer::performProb1E(model, phiStates, psiStates);
+        
+        // Get the backwards transition relation from the model to ease the search.
+		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
+        
+        result.first = GraphAnalyzer::performProb0A(model, backwardTransitions, phiStates, psiStates);
+		result.second = GraphAnalyzer::performProb1E(model, backwardTransitions, phiStates, psiStates);
         return result;
 	}
 
@@ -151,17 +155,15 @@ public:
      * scheduler tries to maximize this probability.
      *
 	 * @param model The model whose graph structure to search.
+     * @param backwardTransitions The reversed transition relation of the model.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
 	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	static storm::storage::BitVector performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
         // Prepare the resulting bit vector.
         storm::storage::BitVector statesWithProbability0(model.getNumberOfStates());
-        
-		// Get the backwards transition relation from the model to ease the search.
-		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
 
 		// Add all psi states as the already satisfy the condition.
 		statesWithProbability0 |= psiStates;
@@ -196,18 +198,16 @@ public:
      * scheduler tries to maximize this probability.
      *
 	 * @param model The model whose graph structure to search.
+     * @param backwardTransitions The reversed transition relation of the model.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
 	 * @return A bit vector that represents all states with probability 1.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	static storm::storage::BitVector performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
         // Get some temporaries for convenience.
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
-
-		// Get the backwards transition relation from the model to ease the search.
-		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
 
 		storm::storage::BitVector currentStates(model.getNumberOfStates(), true);
 
@@ -274,8 +274,12 @@ public:
     template <typename T>
 	static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
 		std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
-        result.first = GraphAnalyzer::performProb0E(model, phiStates, psiStates);
-		result.second = GraphAnalyzer::performProb1A(model, phiStates, psiStates);
+        
+        // Get the backwards transition relation from the model to ease the search.
+		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
+        
+        result.first = GraphAnalyzer::performProb0E(model, backwardTransitions, phiStates, psiStates);
+		result.second = GraphAnalyzer::performProb1A(model, backwardTransitions, phiStates, psiStates);
         return result;
 	}
 
@@ -286,21 +290,19 @@ public:
      * scheduler tries to minimize this probability.
      *
 	 * @param model The model whose graph structure to search.
+     * @param backwardTransitions The reversed transition relation of the model.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
 	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	static storm::storage::BitVector performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
         // Prepare resulting bit vector.
         storm::storage::BitVector statesWithProbability0(model.getNumberOfStates());
         
 		// Get some temporaries for convenience.
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
-
-		// Get the backwards transition relation from the model to ease the search.
-		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
 
 		// Add all psi states as the already satisfy the condition.
 		statesWithProbability0 |= psiStates;
@@ -355,18 +357,16 @@ public:
      * scheduler tries to minimize this probability.
      *
 	 * @param model The model whose graph structure to search.
+     * @param backwardTransitions The reversed transition relation of the model.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
 	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	static storm::storage::BitVector performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
 		// Get some temporaries for convenience.
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
-
-		// Get the backwards transition relation from the model to ease the search.
-		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
 
 		storm::storage::BitVector currentStates(model.getNumberOfStates(), true);
 

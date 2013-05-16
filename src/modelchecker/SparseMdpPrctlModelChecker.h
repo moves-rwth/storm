@@ -360,9 +360,9 @@ public:
 		storm::storage::BitVector infinityStates;
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
 		if (this->minimumOperatorStack.top()) {
-			infinityStates = storm::utility::GraphAnalyzer::performProb1A(this->getModel(), trueStates, *targetStates);
+			infinityStates = storm::utility::GraphAnalyzer::performProb1A(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates);
 		} else {
-			infinityStates = storm::utility::GraphAnalyzer::performProb1E(this->getModel(), trueStates, *targetStates);
+			infinityStates = storm::utility::GraphAnalyzer::performProb1E(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates);
 		}
 		infinityStates.complement();
 
