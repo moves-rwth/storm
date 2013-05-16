@@ -5,8 +5,8 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_UTILITY_GRAPHANALYZER_H_
-#define STORM_UTILITY_GRAPHANALYZER_H_
+#ifndef STORM_UTILITY_GRAPH_H_
+#define STORM_UTILITY_GRAPH_H_
 
 #include "src/models/AbstractDeterministicModel.h"
 #include "src/models/AbstractNondeterministicModel.h"
@@ -20,27 +20,8 @@ extern log4cplus::Logger logger;
 namespace storm {
 
 namespace utility {
-
-class GraphAnalyzer {
-public:
-	/*!
-	 * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi until psi in a
-	 * deterministic model.
-     *
-	 * @param model The model whose graph structure to search.
-	 * @param phiStates The set of all states satisfying phi.
-	 * @param psiStates The set of all states satisfying psi.
-	 * @return A pair of bit vectors such that the first bit vector stores the indices of all states
-     * with probability 0 and the second stores all indices of states with probability 1.
-	 */
-	template <typename T>
-	static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
-        std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
-		result.first = GraphAnalyzer::performProbGreater0(model, phiStates, psiStates);
-		result.second = GraphAnalyzer::performProb1(model, phiStates, psiStates, result.first);
-		result.first.complement();
-        return result;
-	}
+    
+namespace graph {
 
 	/*!
 	 * Performs a backwards breadt-first search trough the underlying graph structure
@@ -53,7 +34,7 @@ public:
 	 * @return A bit vector with all indices of states that have a probability greater than 0.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProbGreater0(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	storm::storage::BitVector performProbGreater0(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
         // Prepare the resulting bit vector.
         storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
         
@@ -100,8 +81,8 @@ public:
 	 * @return A bit vector with all indices of states that have a probability greater than 1.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0) {
-        storm::storage::BitVector statesWithProbability1 = GraphAnalyzer::performProbGreater0(model, ~psiStates, ~statesWithProbabilityGreater0);
+	storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0) {
+        storm::storage::BitVector statesWithProbability1 = performProbGreater0(model, ~psiStates, ~statesWithProbabilityGreater0);
 		statesWithProbability1.complement();
         return statesWithProbability1;
 	}
@@ -119,32 +100,29 @@ public:
 	 * @return A bit vector with all indices of states that have a probability greater than 1.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
-        storm::storage::BitVector statesWithProbabilityGreater0 = GraphAnalyzer::performProbGreater0(model, phiStates, psiStates);
-		storm::storage::BitVector statesWithProbability1 = GraphAnalyzer::performProbGreater0(model, ~psiStates, ~(statesWithProbabilityGreater0));
+	storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+        storm::storage::BitVector statesWithProbabilityGreater0 = performProbGreater0(model, phiStates, psiStates);
+		storm::storage::BitVector statesWithProbability1 = performProbGreater0(model, ~psiStates, ~(statesWithProbabilityGreater0));
 		statesWithProbability1.complement();
         return statesWithProbability1;
 	}
 
-	/*!
-	 * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi
-     * until psi in a non-deterministic model in which all non-deterministic choices are resolved
-     * such that the probability is maximized.
+    /*!
+	 * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi until psi in a
+	 * deterministic model.
      *
 	 * @param model The model whose graph structure to search.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
-	 * @return A pair of bit vectors that represent all states with probability 0 and 1, respectively.
+	 * @return A pair of bit vectors such that the first bit vector stores the indices of all states
+     * with probability 0 and the second stores all indices of states with probability 1.
 	 */
 	template <typename T>
-	static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
-		std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
-        
-        // Get the backwards transition relation from the model to ease the search.
-		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
-        
-        result.first = GraphAnalyzer::performProb0A(model, backwardTransitions, phiStates, psiStates);
-		result.second = GraphAnalyzer::performProb1E(model, backwardTransitions, phiStates, psiStates);
+	static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+        std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
+		result.first = performProbGreater0(model, phiStates, psiStates);
+		result.second = performProb1(model, phiStates, psiStates, result.first);
+		result.first.complement();
         return result;
 	}
 
@@ -161,7 +139,7 @@ public:
 	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	storm::storage::BitVector performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
         // Prepare the resulting bit vector.
         storm::storage::BitVector statesWithProbability0(model.getNumberOfStates());
 
@@ -204,7 +182,7 @@ public:
 	 * @return A bit vector that represents all states with probability 1.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	storm::storage::BitVector performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
         // Get some temporaries for convenience.
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
@@ -261,25 +239,26 @@ public:
 
         return currentStates;
 	}
-	/*!
+    
+    /*!
 	 * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi
      * until psi in a non-deterministic model in which all non-deterministic choices are resolved
-     * such that the probability is minimized.
+     * such that the probability is maximized.
      *
 	 * @param model The model whose graph structure to search.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
 	 * @return A pair of bit vectors that represent all states with probability 0 and 1, respectively.
 	 */
-    template <typename T>
-	static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	template <typename T>
+	std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
 		std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
         
         // Get the backwards transition relation from the model to ease the search.
 		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
         
-        result.first = GraphAnalyzer::performProb0E(model, backwardTransitions, phiStates, psiStates);
-		result.second = GraphAnalyzer::performProb1A(model, backwardTransitions, phiStates, psiStates);
+        result.first = performProb0A(model, backwardTransitions, phiStates, psiStates);
+		result.second = performProb1E(model, backwardTransitions, phiStates, psiStates);
         return result;
 	}
 
@@ -296,7 +275,7 @@ public:
 	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	storm::storage::BitVector performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
         // Prepare resulting bit vector.
         storm::storage::BitVector statesWithProbability0(model.getNumberOfStates());
         
@@ -363,7 +342,7 @@ public:
 	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
-	static storm::storage::BitVector performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	storm::storage::BitVector performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
 		// Get some temporaries for convenience.
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
@@ -421,13 +400,139 @@ public:
 	}
 
     /*!
+	 * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi
+     * until psi in a non-deterministic model in which all non-deterministic choices are resolved
+     * such that the probability is minimized.
+     *
+	 * @param model The model whose graph structure to search.
+	 * @param phiStates The set of all states satisfying phi.
+	 * @param psiStates The set of all states satisfying psi.
+	 * @return A pair of bit vectors that represent all states with probability 0 and 1, respectively.
+	 */
+    template <typename T>
+	std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+		std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
+        
+        // Get the backwards transition relation from the model to ease the search.
+		storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
+        
+        result.first = performProb0E(model, backwardTransitions, phiStates, psiStates);
+		result.second = performProb1A(model, backwardTransitions, phiStates, psiStates);
+        return result;
+	}
+    
+    /*!
+     * Performs an SCC decomposition using Tarjan's algorithm.
+     *
+     * @param startState The state at which the search is started.
+     * @param currentIndex The index that is to be used as the next free index.
+     * @param stateIndices The vector that stores the index for each state.
+     * @param lowlinks A vector that stores the lowlink of each state, i.e. the lowest index of a state reachable from
+     * a particular state.
+     * @param tarjanStack A stack used for Tarjan's algorithm.
+     * @param tarjanStackStates A bit vector that represents all states that are currently contained in tarjanStack.
+     * @param visitedStates A bit vector that stores all states that have already been visited.
+     * @param matrix The transition matrix representing the graph structure.
+     * @param stronglyConnectedComponents A vector of strongly connected components to which newly found SCCs are added.
+     */
+	template <typename T>
+	void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::storage::SparseMatrix<T> const& matrix, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents) {
+		// Create the stacks needed for turning the recursive formulation of Tarjan's algorithm
+		// into an iterative version. In particular, we keep one stack for states and one stack
+		// for the iterators. The last one is not strictly needed, but reduces iteration work when
+		// all successors of a particular state are considered.
+		std::vector<uint_fast64_t> recursionStateStack;
+		recursionStateStack.reserve(lowlinks.size());
+		std::vector<typename storm::storage::SparseMatrix<T>::ConstIndexIterator> recursionIteratorStack;
+		recursionIteratorStack.reserve(lowlinks.size());
+		std::vector<bool> statesInStack(lowlinks.size());
+        
+		// Initialize the recursion stacks with the given initial state (and its successor iterator).
+		recursionStateStack.push_back(startState);
+		recursionIteratorStack.push_back(matrix.constColumnIteratorBegin(startState));
+        
+    recursionStepForward:
+		while (!recursionStateStack.empty()) {
+			uint_fast64_t currentState = recursionStateStack.back();
+			typename storm::storage::SparseMatrix<T>::ConstIndexIterator currentIt = recursionIteratorStack.back();
+            
+			// Perform the treatment of newly discovered state as defined by Tarjan's algorithm
+			visitedStates.set(currentState, true);
+			stateIndices[currentState] = currentIndex;
+			lowlinks[currentState] = currentIndex;
+			++currentIndex;
+			tarjanStack.push_back(currentState);
+			tarjanStackStates.set(currentState, true);
+            
+			// Now, traverse all successors of the current state.
+			for(; currentIt != matrix.constColumnIteratorEnd(currentState); ++currentIt) {
+				// If we have not visited the successor already, we need to perform the procedure
+				// recursively on the newly found state.
+				if (!visitedStates.get(*currentIt)) {
+					// Save current iterator position so we can continue where we left off later.
+					recursionIteratorStack.pop_back();
+					recursionIteratorStack.push_back(currentIt);
+                    
+					// Put unvisited successor on top of our recursion stack and remember that.
+					recursionStateStack.push_back(*currentIt);
+					statesInStack[*currentIt] = true;
+                    
+					// Also, put initial value for iterator on corresponding recursion stack.
+					recursionIteratorStack.push_back(matrix.constColumnIteratorBegin(*currentIt));
+                    
+					// Perform the actual recursion step in an iterative way.
+					goto recursionStepForward;
+                    
+                recursionStepBackward:
+					lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[*currentIt]);
+				} else if (tarjanStackStates.get(*currentIt)) {
+					// Update the lowlink of the current state.
+					lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[*currentIt]);
+				}
+			}
+            
+			// If the current state is the root of a SCC, we need to pop all states of the SCC from
+			// the algorithm's stack.
+			if (lowlinks[currentState] == stateIndices[currentState]) {
+				stronglyConnectedComponents.push_back(std::vector<uint_fast64_t>());
+                
+				uint_fast64_t lastState = 0;
+				do {
+					// Pop topmost state from the algorithm's stack.
+					lastState = tarjanStack.back();
+					tarjanStack.pop_back();
+					tarjanStackStates.set(lastState, false);
+                    
+					// Add the state to the current SCC.
+					stronglyConnectedComponents.back().push_back(lastState);
+				} while (lastState != currentState);
+			}
+            
+			// If we reach this point, we have completed the recursive descent for the current state.
+			// That is, we need to pop it from the recursion stacks.
+			recursionStateStack.pop_back();
+			recursionIteratorStack.pop_back();
+            
+			// If there is at least one state under the current one in our recursion stack, we need
+			// to restore the topmost state as the current state and jump to the part after the
+			// original recursive call.
+			if (recursionStateStack.size() > 0) {
+				currentState = recursionStateStack.back();
+				currentIt = recursionIteratorStack.back();
+                
+				goto recursionStepBackward;
+			}
+		}
+	}
+    
+    /*!
      * Performs a decomposition of the given model into its SCCs.
      *
      * @param model The nondeterminstic model to decompose.
      * @return A vector of SCCs of the model.
      */
 	template <typename T>
-	static std::vector<std::vector<uint_fast64_t>> performSccDecomposition(storm::models::AbstractModel<T> const& model) {
+	std::vector<std::vector<uint_fast64_t>> performSccDecomposition(storm::models::AbstractModel<T> const& model) {
 		LOG4CPLUS_INFO(logger, "Computing SCC decomposition.");
         
         std::vector<std::vector<uint_fast64_t>> scc;
@@ -460,7 +565,7 @@ public:
      * @return A vector of indices that is a topological sort of the states.
      */
 	template <typename T>
-	static std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) {
+	std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) {
         if (matrix.getRowCount() != matrix.getColumnCount()) {
             LOG4CPLUS_ERROR(logger, "Provided matrix is required to be square.");
             throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
@@ -531,115 +636,11 @@ public:
         
         return topologicalSort;
 	}
-
-private:
-    /*!
-     * Performs an SCC decomposition using Tarjan's algorithm.
-     *
-     * @param startState The state at which the search is started.
-     * @param currentIndex The index that is to be used as the next free index.
-     * @param stateIndices The vector that stores the index for each state.
-     * @param lowlinks A vector that stores the lowlink of each state, i.e. the lowest index of a state reachable from
-     * a particular state.
-     * @param tarjanStack A stack used for Tarjan's algorithm.
-     * @param tarjanStackStates A bit vector that represents all states that are currently contained in tarjanStack.
-     * @param visitedStates A bit vector that stores all states that have already been visited.
-     * @param matrix The transition matrix representing the graph structure.
-     * @param stronglyConnectedComponents A vector of strongly connected components to which newly found SCCs are added.
-     */
-	template <typename T>
-	static void performSccDecompositionHelper(uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, storm::storage::SparseMatrix<T> const& matrix, std::vector<std::vector<uint_fast64_t>>& stronglyConnectedComponents) {
-		// Create the stacks needed for turning the recursive formulation of Tarjan's algorithm
-		// into an iterative version. In particular, we keep one stack for states and one stack
-		// for the iterators. The last one is not strictly needed, but reduces iteration work when
-		// all successors of a particular state are considered.
-		std::vector<uint_fast64_t> recursionStateStack;
-		recursionStateStack.reserve(lowlinks.size());
-		std::vector<typename storm::storage::SparseMatrix<T>::ConstIndexIterator> recursionIteratorStack;
-		recursionIteratorStack.reserve(lowlinks.size());
-		std::vector<bool> statesInStack(lowlinks.size());
-
-		// Initialize the recursion stacks with the given initial state (and its successor iterator).
-		recursionStateStack.push_back(startState);
-		recursionIteratorStack.push_back(matrix.constColumnIteratorBegin(startState));
-
-		recursionStepForward:
-		while (!recursionStateStack.empty()) {
-			uint_fast64_t currentState = recursionStateStack.back();
-			typename storm::storage::SparseMatrix<T>::ConstIndexIterator currentIt = recursionIteratorStack.back();
-
-			// Perform the treatment of newly discovered state as defined by Tarjan's algorithm
-			visitedStates.set(currentState, true);
-			stateIndices[currentState] = currentIndex;
-			lowlinks[currentState] = currentIndex;
-			++currentIndex;
-			tarjanStack.push_back(currentState);
-			tarjanStackStates.set(currentState, true);
-
-			// Now, traverse all successors of the current state.
-			for(; currentIt != matrix.constColumnIteratorEnd(currentState); ++currentIt) {
-				// If we have not visited the successor already, we need to perform the procedure
-				// recursively on the newly found state.
-				if (!visitedStates.get(*currentIt)) {
-					// Save current iterator position so we can continue where we left off later.
-					recursionIteratorStack.pop_back();
-					recursionIteratorStack.push_back(currentIt);
-
-					// Put unvisited successor on top of our recursion stack and remember that.
-					recursionStateStack.push_back(*currentIt);
-					statesInStack[*currentIt] = true;
-
-					// Also, put initial value for iterator on corresponding recursion stack.
-					recursionIteratorStack.push_back(matrix.constColumnIteratorBegin(*currentIt));
-
-					// Perform the actual recursion step in an iterative way.
-					goto recursionStepForward;
-
-					recursionStepBackward:
-					lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[*currentIt]);
-				} else if (tarjanStackStates.get(*currentIt)) {
-					// Update the lowlink of the current state.
-					lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[*currentIt]);
-				}
-			}
-
-			// If the current state is the root of a SCC, we need to pop all states of the SCC from
-			// the algorithm's stack.
-			if (lowlinks[currentState] == stateIndices[currentState]) {
-				stronglyConnectedComponents.push_back(std::vector<uint_fast64_t>());
-
-				uint_fast64_t lastState = 0;
-				do {
-					// Pop topmost state from the algorithm's stack.
-					lastState = tarjanStack.back();
-					tarjanStack.pop_back();
-					tarjanStackStates.set(lastState, false);
-
-					// Add the state to the current SCC.
-					stronglyConnectedComponents.back().push_back(lastState);
-				} while (lastState != currentState);
-			}
-
-			// If we reach this point, we have completed the recursive descent for the current state.
-			// That is, we need to pop it from the recursion stacks.
-			recursionStateStack.pop_back();
-			recursionIteratorStack.pop_back();
-
-			// If there is at least one state under the current one in our recursion stack, we need
-			// to restore the topmost state as the current state and jump to the part after the
-			// original recursive call.
-			if (recursionStateStack.size() > 0) {
-				currentState = recursionStateStack.back();
-				currentIt = recursionIteratorStack.back();
-
-				goto recursionStepBackward;
-			}
-		}
-	}
-};
+    
+} // namespace graph
 
 } // namespace utility
 
 } // namespace storm
 
-#endif /* STORM_UTILITY_GRAPHANALYZER_H_ */
+#endif /* STORM_UTILITY_GRAPH_H_ */

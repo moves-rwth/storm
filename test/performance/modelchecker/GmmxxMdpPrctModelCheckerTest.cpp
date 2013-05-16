@@ -110,7 +110,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
 	storm::settings::Settings* s = storm::settings::instance();
     s->set<unsigned>("maxiter", 20000);
-    std::cout << s->get<unsigned>("maxiter") << std::endl;
+    
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "");
     
 	ASSERT_EQ(parser.getType(), storm::models::MDP);
@@ -149,7 +149,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[31168] - 0.4370098591707694546393), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0.43742828319177884388579), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
