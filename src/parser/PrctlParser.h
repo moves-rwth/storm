@@ -38,6 +38,16 @@ class PrctlParser : Parser {
 			return this->formula;
 		}
 
+		/*!
+		 * Checks whether the line which was parsed was a comment line; also returns true if the line was empty (as the semantics are
+		 * the same)
+		 *
+		 * @return True if the parsed line consisted completely of a (valid) comment, false otherwise.
+		 */
+		bool parsedComment() {
+			return (formula == nullptr);
+		}
+
 	private:
 		storm::property::prctl::AbstractPrctlFormula<double>* formula;
 

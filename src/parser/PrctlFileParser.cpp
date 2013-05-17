@@ -40,7 +40,11 @@ std::list<storm::property::prctl::AbstractPrctlFormula<double>*> PrctlFileParser
 		//The while loop reads the input file line by line
 		while (std::getline(inputFileStream, line)) {
 			PrctlParser parser(line);
-			result.push_back(parser.getFormula());
+			if (!parser.parsedComment()) {
+				//lines containing comments will be skipped.
+				LOG4CPLUS_INFO(logger, "Parsed formula \"" + line + "\" into \"" + parser.getFormula()->toString() + "\"");
+				result.push_back(parser.getFormula());
+			}
 		}
 	}
 

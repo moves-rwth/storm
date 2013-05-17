@@ -8,7 +8,7 @@
 TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/die/die.tra", STORM_CPP_TESTS_BASE_PATH "/functional/die/die.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/die/die.coin_flips.trans.rew");
+	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
 
@@ -75,7 +75,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Die) {
 TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/crowds/crowds5_5.tra", STORM_CPP_TESTS_BASE_PATH "/functional/crowds/crowds5_5.lab", "", "");
+	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
 
@@ -129,7 +129,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/synchronous_leader/leader4_8.tra", STORM_CPP_TESTS_BASE_PATH "/functional/synchronous_leader/leader4_8.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/synchronous_leader/leader4_8.pick.trans.rew");
+	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
 

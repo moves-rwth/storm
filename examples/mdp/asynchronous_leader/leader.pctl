@@ -1,8 +1,8 @@
 Pmin=? [ F elected ]
 
-const int K = 25;
-Pmin=? [ F<=K elected ]
-Pmax=? [ F<=K elected ]
+// const int K = 25;
+Pmin=? [ F<=25 elected ]
+Pmax=? [ F<=25 elected ]
 
 Rmin=? [ F elected ]
 Rmax=? [ F elected ]

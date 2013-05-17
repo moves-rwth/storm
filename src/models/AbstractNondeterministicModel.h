@@ -2,7 +2,6 @@
 #define STORM_MODELS_ABSTRACTNONDETERMINISTICMODEL_H_
 
 #include "AbstractModel.h"
-#include "GraphTransitions.h"
 
 #include <memory>
 
@@ -56,51 +55,8 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		 * @return The number of choices for all states of the MDP.
 		 */
 		uint_fast64_t getNumberOfChoices() const {
-			return this->getTransitionMatrix()->getRowCount();
+			return this->transitionMatrix->getRowCount();
 		}
-
-        /*!
-         * Extracts the SCC dependency graph from the model according to the given SCC decomposition.
-         *
-         * @param stronglyConnectedComponents A vector containing the SCCs of the system.
-         * @param stateToSccMap A mapping from state indices to
-         */
-        virtual storm::storage::SparseMatrix<bool> extractSccDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents, std::map<uint_fast64_t, uint_fast64_t> const& stateToSccMap) {
-            // The resulting sparse matrix will have as many rows/columns as there are SCCs.
-            uint_fast64_t numberOfStates = stronglyConnectedComponents.size();
-            storm::storage::SparseMatrix<bool> sccDependencyGraph(numberOfStates);
-            sccDependencyGraph.initialize();
-            
-            for (uint_fast64_t currentSccIndex = 0; currentSccIndex < stronglyConnectedComponents.size(); ++currentSccIndex) {
-                // Get the actual SCC.
-                std::vector<uint_fast64_t> const& scc = stronglyConnectedComponents[currentSccIndex];
-                
-                // Now, we determine the SCCs which are reachable (in one step) from the current SCC.
-                std::set<uint_fast64_t> allTargetSccs;
-                for (auto state : scc) {
-                    for (uint_fast64_t rowIndex = (*nondeterministicChoiceIndices)[state]; rowIndex < (*nondeterministicChoiceIndices)[state + 1]; ++rowIndex) {
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator succIt = this->getTransitionMatrix()->constColumnIteratorBegin(rowIndex), succIte = this->getTransitionMatrix()->constColumnIteratorEnd(rowIndex); succIt != succIte; ++succIt) {
-                            uint_fast64_t targetScc = stateToSccMap.find(*succIt)->second;
-                            
-                            // We only need to consider transitions that are actually leaving the SCC.
-                            if (targetScc != currentSccIndex) {
-                                allTargetSccs.insert(targetScc);
-                            }
-                        }
-                    }
-                }
-                
-                // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
-                for (auto targetScc : allTargetSccs) {
-                    sccDependencyGraph.insertNextValue(currentSccIndex, targetScc, true);
-                }
-            }
-            
-            // Finalize the matrix.
-            sccDependencyGraph.finalize(true);
-            
-            return sccDependencyGraph;
-        }
     
 		/*!
 		 * Retrieves the size of the internal representation of the model in memory.
@@ -120,6 +76,26 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		std::shared_ptr<std::vector<uint_fast64_t>> getNondeterministicChoiceIndices() const {
 			return nondeterministicChoiceIndices;
 		}
+    
+        /*!
+         * Returns an iterator to the successors of the given state.
+         *
+         * @param state The state for which to return the iterator.
+         * @return An iterator to the successors of the given state.
+         */
+        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const {
+            return this->transitionMatrix->constColumnIteratorBegin((*nondeterministicChoiceIndices)[state]);
+        }
+    
+        /*!
+         * Returns an iterator pointing to the element past the successors of the given state.
+         *
+         * @param state The state for which to return the iterator.
+         * @return An iterator pointing to the element past the successors of the given state.
+         */
+        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
+            return this->transitionMatrix->constColumnIteratorEnd((*nondeterministicChoiceIndices)[state + 1] - 1);
+        }
 
 	private:
 		/*! A vector of indices mapping states to the choices (rows) in the transition matrix. */

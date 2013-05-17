@@ -11,7 +11,7 @@
 #include "src/modelchecker/AbstractModelChecker.h"
 #include "src/models/Dtmc.h"
 #include "src/utility/Vector.h"
-#include "src/utility/GraphAnalyzer.h"
+#include "src/utility/graph.h"
 
 #include <vector>
 
@@ -94,10 +94,6 @@ public:
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
 		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
 
-		// Delete obsolete intermediates.
-		delete leftStates;
-		delete rightStates;
-
 		// Create the vector with which to multiply.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 		storm::utility::setVectorValues(result, *rightStates, storm::utility::constGetOne<Type>());
@@ -105,7 +101,9 @@ public:
 		// Perform the matrix vector multiplication as often as required by the formula bound.
 		this->performMatrixVectorMultiplication(tmpMatrix, *result, nullptr, formula.getBound());
 
-		// Return result.
+		// Delete obsolete intermediates and return result.
+		delete leftStates;
+		delete rightStates;
 		return result;
 	}
 
@@ -211,7 +209,7 @@ public:
 
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-        std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::GraphAnalyzer::performProb01(this->getModel(), *leftStates, *rightStates);
+        std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), *leftStates, *rightStates);
 		storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
 		storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
         
@@ -359,7 +357,7 @@ public:
 
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		storm::storage::BitVector infinityStates = storm::utility::GraphAnalyzer::performProb1(this->getModel(), trueStates, *targetStates);
+		storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel(), trueStates, *targetStates);
 		infinityStates.complement();
 
 		// Create resulting vector.

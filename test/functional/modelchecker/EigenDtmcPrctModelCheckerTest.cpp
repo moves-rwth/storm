@@ -9,7 +9,7 @@
 TEST(EigenDtmcPrctModelCheckerTest, Die) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/die/die.tra", STORM_CPP_TESTS_BASE_PATH "/functional/die/die.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/die/die.coin_flips.trans.rew");
+	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/die/die.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/die/die.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/die/die.coin_flips.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
 
@@ -69,7 +69,7 @@ TEST(EigenDtmcPrctModelCheckerTest, Die) {
 TEST(EigenDtmcPrctModelCheckerTest, Crowds) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/crowds/crowds5_5.tra", STORM_CPP_TESTS_BASE_PATH "/functional/crowds/crowds5_5.lab", "", "");
+	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/crowds/crowds5_5.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/crowds/crowds5_5.lab", "", "");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
 
@@ -117,7 +117,7 @@ TEST(EigenDtmcPrctModelCheckerTest, Crowds) {
 TEST(EigenDtmcPrctModelCheckerTest, SynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
-	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/synchronous_leader/leader4_8.tra", STORM_CPP_TESTS_BASE_PATH "/functional/synchronous_leader/leader4_8.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/synchronous_leader/leader4_8.pick.trans.rew");
+	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/synchronous_leader/leader4_8.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/synchronous_leader/leader4_8.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/synchronous_leader/leader4_8.pick.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
 

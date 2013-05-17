@@ -52,7 +52,7 @@ namespace settings {
 			 *	@brief	Get value of a generic option.
 			 */
 			template <typename T>
-			inline const T& get( std::string const & name) const {
+			const T& get(std::string const& name) const {
 				if (this->vm.count(name) == 0) throw storm::exceptions::InvalidSettingsException() << "Could not read option " << name << ".";
 				return this->vm[name].as<T>();
 			}
@@ -60,32 +60,33 @@ namespace settings {
 			/*!
 			 *	@brief	Get value of string option.
 			 */
-			inline const std::string& getString(std::string const & name) const {
+			const std::string& getString(std::string const& name) const {
 				return this->get<std::string>(name);
 			}
 		
 			/*!
 			 *	@brief	Check if an option is set.
 			 */
-			inline const bool isSet(std::string const & name) const {
+			const bool isSet(std::string const& name) const {
 				return this->vm.count(name) > 0;
 			}
 			
 			/*!
 			 *	@brief	Set an option.
 			 */
-			inline void set(std::string const & name) {
+			void set(std::string const& name) {
 				bpo::variable_value val;
-				this->vm.insert( std::make_pair(name, val) );
+				this->vm.insert(std::make_pair(name, val));
 			}
 			
 			/*!
 			 *	@brief Set value for an option.
 			 */
 			template <typename T>
-			inline void set(std::string const & name, T const & value) {
+			void set(std::string const& name, T const& value) {
 				bpo::variable_value val(value, false);
-				this->vm.insert( std::make_pair(name, val) );
+                this->vm.erase(name);
+				this->vm.insert(std::make_pair(name, val));
 			}
 
 			/*!

@@ -20,7 +20,7 @@ else()
 	set (STORM_LIB_SUFFIX a)
 	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.${STORM_LIB_SUFFIX})
 	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.${STORM_LIB_SUFFIX})
-	set (GTEST_LIBRARIES ${GTEST_LIBRARY}) # as we dont use FindGTest anymore
+	set (GTEST_LIBRARIES ${GTEST_LIBRARY} ${GTEST_MAIN_LIBRARY}) # as we dont use FindGTest anymore
 endif()
 message(STATUS "GTEST_INCLUDE_DIR is ${GTEST_INCLUDE_DIR}")
 message(STATUS "GTEST_LIBRARY is ${GTEST_LIBRARY}")
@@ -95,7 +95,7 @@ else(CLANG)
 	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
 	set (CLANG ON)
     # Set standard flags for clang
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O4")
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O3")
     set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE")
     
     set (CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -126,10 +126,12 @@ file(GLOB_RECURSE STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJ
 file(GLOB_RECURSE STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
+file(GLOB_RECURSE STORM_IR_FILES ${PROJECT_SOURCE_DIR}/src/ir/*.h ${PROJECT_SOURCE_DIR}/src/ir/*.cpp)
 
 # Test Sources
 # Note that the tests also need the source files, except for the main file
-file(GLOB_RECURSE STORM_TEST_FILES ${PROJECT_SOURCE_DIR}/test/*.h ${PROJECT_SOURCE_DIR}/test/*.cpp)
+file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/functional/*.h ${STORM_CPP_TESTS_BASE_PATH}/functional/*.cpp)
+file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/performance/*.h ${STORM_CPP_TESTS_BASE_PATH}/performance/*.cpp)
 
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
@@ -141,7 +143,9 @@ source_group(models FILES ${STORM_MODELS_FILES})
 source_group(parser FILES ${STORM_PARSER_FILES})
 source_group(storage FILES ${STORM_STORAGE_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
-source_group(test FILES ${STORM_TEST_FILES})
+source_group(ir FILES ${STORM_IR_FILES})
+source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
+source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES})
 
 # Add base folder for better inclusion paths
 include_directories("${PROJECT_SOURCE_DIR}")
@@ -224,15 +228,18 @@ endif(CUDD_LIBRARY_DIRS)
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
 add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
-add_executable(storm-tests ${STORM_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
+add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
+add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
 
 # Add target link deps for Boost program options
 target_link_libraries(storm ${Boost_LIBRARIES})   
-target_link_libraries(storm-tests ${Boost_LIBRARIES})
+target_link_libraries(storm-functional-tests ${Boost_LIBRARIES})
+target_link_libraries(storm-performance-tests ${Boost_LIBRARIES})
 
 if (USE_INTELTBB)
 	target_link_libraries(storm tbb tbbmalloc)
-	target_link_libraries(storm-tests tbb tbbmalloc) 
+	target_link_libraries(storm-functional-tests tbb tbbmalloc)
+	target_link_libraries(storm-performance-tests tbb tbbmalloc)
 endif(USE_INTELTBB)
 
 if (APPLE)
@@ -253,14 +260,16 @@ if (STORM_USE_COTIRE)
 
 	cotire(storm)
 	target_link_libraries(storm_unity ${Boost_LIBRARIES})
-	#cotire(storm-tests)
+	#cotire(storm-functional-tests)
+	#cotire(storm-performance-tests)
 endif()
 	
 # Link against libc++abi if requested. May be needed to build on Linux systems using clang.
 if (LINK_LIBCXXABI)
 	message (STATUS "Linking against libc++abi.")
 	target_link_libraries(storm "c++abi")
-	target_link_libraries(storm-tests "c++abi")
+	target_link_libraries(storm-functional-tests "c++abi")
+	target_link_libraries(storm-performance-tests "c++abi")
 endif(LINK_LIBCXXABI)
 
 # Add a target to generate API documentation with Doxygen
@@ -279,9 +288,11 @@ if (GTEST_INCLUDE_DIR)
 	enable_testing()
 
 	include_directories(${GTEST_INCLUDE_DIR})
-	target_link_libraries(storm-tests ${GTEST_LIBRARIES})
+	target_link_libraries(storm-functional-tests ${GTEST_LIBRARIES})
+	target_link_libraries(storm-performance-tests ${GTEST_LIBRARIES})
 
-	add_test(NAME storm-tests COMMAND storm-tests)
+	add_test(NAME storm-functional-tests COMMAND storm-functional-tests)
+	add_test(NAME storm-performance-tests COMMAND storm-performance-tests)
 	if(MSVC) # VS2012 doesn't support correctly the tuples yet
 		add_definitions( /D _VARIADIC_MAX=10 )
 	endif()
@@ -293,20 +304,23 @@ if (LOG4CPLUS_INCLUDE_DIR)
 	if (STORM_USE_COTIRE)
 		target_link_libraries(storm_unity ${LOG4CPLUS_LIBRARIES})
 	endif(STORM_USE_COTIRE)
-    target_link_libraries(storm-tests ${LOG4CPLUS_LIBRARIES})
+    target_link_libraries(storm-functional-tests ${LOG4CPLUS_LIBRARIES})
+    target_link_libraries(storm-performance-tests ${LOG4CPLUS_LIBRARIES})
     # On Linux, we have to link against librt
     if (UNIX AND NOT APPLE)
 		target_link_libraries(storm rt)
 		if (STORM_USE_COTIRE)
 			target_link_libraries(storm_unity rt)
 		endif(STORM_USE_COTIRE)
-		target_link_libraries(storm-tests rt)
+		target_link_libraries(storm-functional-tests rt)
+		target_link_libraries(storm-performance-tests rt)
     endif(UNIX AND NOT APPLE)
 endif(LOG4CPLUS_INCLUDE_DIR)
 
 if (CUDD_LIBRARY_DIRS)
     target_link_libraries(storm "-lobj -lcudd -lmtr -lst -lutil -lepd")
-    target_link_libraries(storm-tests "-lobj -lcudd -lmtr -lst -lutil -lepd")
+    target_link_libraries(storm-functional-tests "-lobj -lcudd -lmtr -lst -lutil -lepd")
+    target_link_libraries(storm-performance-tests "-lobj -lcudd -lmtr -lst -lutil -lepd")
 endif(CUDD_LIBRARY_DIRS)
 
 if (THREADS_FOUND)
@@ -315,7 +329,8 @@ if (THREADS_FOUND)
 	if (STORM_USE_COTIRE)
 		target_link_libraries(storm_unity ${CMAKE_THREAD_LIBS_INIT})
 	endif(STORM_USE_COTIRE)
-	target_link_libraries(storm-tests ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries(storm-functional-tests ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries(storm-performance-tests ${CMAKE_THREAD_LIBS_INIT})
 endif(THREADS_FOUND)
 
 # Configure a header file to pass some of the CMake settings to the source code
@@ -324,10 +339,9 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/storm-config.h"
 )
 
-add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm -v --fix-deadlocks ${PROJECT_SOURCE_DIR}/examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab
-						DEPENDS storm)
-add_custom_target(memcheck-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-tests -v --fix-deadlocks 
-						DEPENDS storm-tests)
-						
+add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm -v --fix-deadlocks ${PROJECT_SOURCE_DIR}/examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab DEPENDS storm)
+add_custom_target(memcheck-functional-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-functional-tests -v --fix-deadlocks	DEPENDS storm-functional-tests)
+add_custom_target(memcheck-performance-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-performance-tests -v --fix-deadlocks DEPENDS storm-performance-tests)
+
 set (CPPLINT_ARGS --filter=-whitespace/tab,-whitespace/line_length,-legal/copyright,-readability/streams)
 add_custom_target(style python cpplint.py ${CPPLINT_ARGS} `find ./src/ -iname "*.h" -or -iname "*.cpp"`)

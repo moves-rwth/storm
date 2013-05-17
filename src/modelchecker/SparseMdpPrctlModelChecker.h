@@ -11,7 +11,7 @@
 #include "src/modelchecker/AbstractModelChecker.h"
 #include "src/models/Mdp.h"
 #include "src/utility/Vector.h"
-#include "src/utility/GraphAnalyzer.h"
+#include "src/utility/graph.h"
 
 #include <vector>
 #include <stack>
@@ -99,7 +99,7 @@ public:
 
 		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
 		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates, *this->getModel().getNondeterministicChoiceIndices());
-
+        
 		// Create the vector with which to multiply.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 		storm::utility::setVectorValues(result, *rightStates, storm::utility::constGetOne<Type>());
@@ -215,9 +215,9 @@ public:
 		// all states that have probability 0 and 1 of satisfying the until-formula.
         std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
 		if (this->minimumOperatorStack.top()) {
-			statesWithProbability01 = storm::utility::GraphAnalyzer::performProb01Min(this->getModel(), *leftStates, *rightStates);
+			statesWithProbability01 = storm::utility::graph::performProb01Min(this->getModel(), *leftStates, *rightStates);
 		} else {
-			statesWithProbability01 = storm::utility::GraphAnalyzer::performProb01Max(this->getModel(), *leftStates, *rightStates);
+			statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel(), *leftStates, *rightStates);
 		}
 		storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
 		storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
@@ -360,9 +360,9 @@ public:
 		storm::storage::BitVector infinityStates;
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
 		if (this->minimumOperatorStack.top()) {
-			infinityStates = storm::utility::GraphAnalyzer::performProb1A(this->getModel(), trueStates, *targetStates);
+			infinityStates = storm::utility::graph::performProb1A(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates);
 		} else {
-			infinityStates = storm::utility::GraphAnalyzer::performProb1E(this->getModel(), trueStates, *targetStates);
+			infinityStates = storm::utility::graph::performProb1E(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates);
 		}
 		infinityStates.complement();
 

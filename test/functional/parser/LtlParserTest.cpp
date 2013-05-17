@@ -132,7 +132,7 @@ TEST(LtlParserTest, parseComplexUntilTest) {
 TEST(LtlParserTest, parseComplexFormulaTest) {
 	storm::parser::LtlParser* ltlParser = nullptr;
 	ASSERT_NO_THROW(
-			ltlParser = new storm::parser::LtlParser("a U F b | G a & F<=3 a U<=7 b")
+			ltlParser = new storm::parser::LtlParser("a U F b | G a & F<=3 a U<=7 b //and a comment :P")
 	);
 
 	ASSERT_NE(ltlParser->getFormula(), nullptr);
@@ -145,7 +145,7 @@ TEST(LtlParserTest, parseComplexFormulaTest) {
 TEST(LtlParserTest, wrongFormulaTest) {
 	storm::parser::LtlParser* ltlParser = nullptr;
 	ASSERT_THROW(
-			ltlParser = new storm::parser::LtlParser("(a | b) & +"),
+			ltlParser = new storm::parser::LtlParser("(a | c) & +"),
 			storm::exceptions::WrongFormatException
 	);
 	delete ltlParser;
