@@ -99,21 +99,21 @@ storm::parser::MappedFile::MappedFile(const char* filename) {
 	 *	_stat64(), CreateFile(), CreateFileMapping(), MapViewOfFile()
 	 */
 	if (_stat64(filename, &(this->st)) != 0) {
-		LOG4CPLUS_ERROR(logger, "Error in _stat(" << filename << ").");
-		throw exceptions::FileIoException("storm::parser::MappedFile Error in stat()");
+		LOG4CPLUS_ERROR(logger, "Error in _stat(" << filename << "): Probably, this file does not exist.");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in stat(): Probably, this file does not exist.");
 	}
 
 	this->file = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (this->file == INVALID_HANDLE_VALUE) {
-		LOG4CPLUS_ERROR(logger, "Error in CreateFileA(" << filename << ").");
-		throw exceptions::FileIoException("storm::parser::MappedFile Error in CreateFileA()");
+		LOG4CPLUS_ERROR(logger, "Error in CreateFileA(" << filename << "): Probably, we may not read this file.");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in CreateFileA(): Probably, we may not read this file.");
 	}
 
 	this->mapping = CreateFileMappingA(this->file, NULL, PAGE_READONLY, (DWORD)(st.st_size >> 32), (DWORD)st.st_size, NULL);
 	if (this->mapping == NULL) {
 		CloseHandle(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in CreateFileMappingA(" << filename << ").");
-		throw exceptions::FileIoException("storm::parser::MappedFile Error in CreateFileMappingA()");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in CreateFileMappingA().");
 	}
 
 	this->data = static_cast<char*>(MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, this->st.st_size));
@@ -121,7 +121,7 @@ storm::parser::MappedFile::MappedFile(const char* filename) {
 		CloseHandle(this->mapping);
 		CloseHandle(this->file);
 		LOG4CPLUS_ERROR(logger, "Error in MapViewOfFile(" << filename << ").");
-		throw exceptions::FileIoException("storm::parser::MappedFile Error in MapViewOfFile()");
+		throw exceptions::FileIoException("storm::parser::MappedFile Error in MapViewOfFile().");
 	}
 	this->dataend = this->data + this->st.st_size;
 #endif
