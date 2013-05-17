@@ -76,14 +76,14 @@ storm::parser::MappedFile::MappedFile(const char* filename) {
 #else
 	if (stat64(filename, &(this->st)) != 0) {
 #endif
-		LOG4CPLUS_ERROR(logger, "Error in stat(" << filename << "): " << std::strerror(errno));
-		throw exceptions::FileIoException() << "storm::parser::MappedFile Error in stat(): " << std::strerror(errno);
+		LOG4CPLUS_ERROR(logger, "Error in stat(" << filename << "): Probably, this file does not exist.");
+		throw exceptions::FileIoException() << "storm::parser::MappedFile Error in stat(): Probably, this file does not exist.";
 	}
 	this->file = open(filename, O_RDONLY);
 
 	if (this->file < 0) {
-		LOG4CPLUS_ERROR(logger, "Error in open(" << filename << "): " << std::strerror(errno));
-		throw exceptions::FileIoException() << "storm::parser::MappedFile Error in open(): " << std::strerror(errno);
+		LOG4CPLUS_ERROR(logger, "Error in open(" << filename << "): Probably, we may not read this file.");
+		throw exceptions::FileIoException() << "storm::parser::MappedFile Error in open(): Probably, we may not read this file.";
 	}
 
 	this->data = reinterpret_cast<char*>(mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0));
