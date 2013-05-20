@@ -10,6 +10,8 @@
 
 #include "cuddObj.hh"
 
+#include "boost/integer/integer_mask.hpp"
+
 namespace storm {
 
 namespace utility {

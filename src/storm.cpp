@@ -45,17 +45,47 @@
 
 #include "src/exceptions/InvalidSettingsException.h"
 
-#include <sys/time.h>
-#include <sys/resource.h>
 #include <iostream>
 #include <iomanip>
 
 void printUsage() {
+#ifndef WINDOWS	
 	struct rusage ru;
 	getrusage(RUSAGE_SELF, &ru);
 
 	std::cout << "Memory Usage: " << ru.ru_maxrss << "kB" << std::endl;
-	std::cout << "CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
+	std::cout << "CPU Time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
+#else
+	HANDLE hProcess = GetCurrentProcess ();
+    FILETIME ftCreation, ftExit, ftUser, ftKernel;
+	PROCESS_MEMORY_COUNTERS pmc;
+	if (GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc))) {
+        std::cout << "Memory Usage: " << std::endl;
+		std::cout << "\tPageFaultCount: " << pmc.PageFaultCount << std::endl;
+        std::cout << "\tPeakWorkingSetSize: " << pmc.PeakWorkingSetSize << std::endl;
+        std::cout << "\tWorkingSetSize: " << pmc.WorkingSetSize << std::endl;
+        std::cout << "\tQuotaPeakPagedPoolUsage: " << pmc.QuotaPeakPagedPoolUsage << std::endl;
+        std::cout << "\tQuotaPagedPoolUsage: " << pmc.QuotaPagedPoolUsage << std::endl;
+        std::cout << "\tQuotaPeakNonPagedPoolUsage: " << pmc.QuotaPeakNonPagedPoolUsage << std::endl;
+        std::cout << "\tQuotaNonPagedPoolUsage: " << pmc.QuotaNonPagedPoolUsage << std::endl;
+        std::cout << "\tPagefileUsage:" << pmc.PagefileUsage << std::endl; 
+        std::cout << "\tPeakPagefileUsage: " << pmc.PeakPagefileUsage << std::endl;
+    }
+
+	GetProcessTimes (hProcess, &ftCreation, &ftExit, &ftKernel, &ftUser);
+
+	ULARGE_INTEGER uLargeInteger;
+	uLargeInteger.LowPart = ftKernel.dwLowDateTime;
+	uLargeInteger.HighPart = ftKernel.dwHighDateTime;
+	double kernelTime = uLargeInteger.QuadPart / 10000.0; // 100 ns Resolution to milliseconds
+	uLargeInteger.LowPart = ftUser.dwLowDateTime;
+	uLargeInteger.HighPart = ftUser.dwHighDateTime;
+	double userTime = uLargeInteger.QuadPart / 10000.0;
+
+	std::cout << "CPU Time: " << std::endl;
+	std::cout << "\tKernel Time: " << std::setprecision(3) << kernelTime << std::endl;
+	std::cout << "\tUser Time: " << std::setprecision(3) << userTime << std::endl;
+#endif
 }
 
 

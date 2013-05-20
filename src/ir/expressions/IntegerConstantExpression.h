@@ -62,7 +62,7 @@ public:
 		return defined;
 	}
 
-	int getValue() {
+	int_fast64_t getValue() {
 		return value;
 	}
 
