@@ -71,7 +71,7 @@ public:
 		 *
 		 * @param matrix The matrix on which this iterator operates.
 		 */
-		ConstRowsIterator(SparseMatrix<T> const& matrix, uint_fast64_t rowIndex = 0) : matrix(matrix), posIndex(0), rowIndex(0) {
+		ConstRowsIterator(SparseMatrix<T> const& matrix, uint_fast64_t row = 0) : matrix(matrix), posIndex(matrix.rowIndications[row]), rowIndex(row) {
 			// Intentionally left empty.
 		}
 
