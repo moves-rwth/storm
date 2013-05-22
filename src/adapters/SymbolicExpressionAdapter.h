@@ -158,12 +158,12 @@ public:
 		}
 
 		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
-		stack.push(new ADD(*cuddUtility->getConstant(expression->getValue())));
+		stack.push(new ADD(*cuddUtility->getConstant(static_cast<double>(expression->getValue()))));
 	}
 
 	virtual void visit(storm::ir::expressions::IntegerLiteral* expression) {
 		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
-		stack.push(new ADD(*cuddUtility->getConstant(expression->getValueAsInt(nullptr))));
+		stack.push(new ADD(*cuddUtility->getConstant(static_cast<double>(expression->getValueAsInt(nullptr)))));
 	}
 
 	virtual void visit(storm::ir::expressions::UnaryBooleanFunctionExpression* expression) {
@@ -211,8 +211,8 @@ public:
 			int64_t low = expression->getLowerBound()->getValueAsInt(nullptr);
 			int64_t high = expression->getUpperBound()->getValueAsInt(nullptr);
 
-			for (uint_fast64_t i = low; i <= high; ++i) {
-				cuddUtility->setValueAtIndex(result, i - low, variables, i);
+			for (int_fast64_t i = low; i <= high; ++i) {
+				cuddUtility->setValueAtIndex(result, i - low, variables, static_cast<double>(i));
 			}
 		}
 

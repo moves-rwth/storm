@@ -81,8 +81,8 @@ public:
 							int_fast64_t low = integerVariable.getLowerBound()->getValueAsInt(nullptr);
 							int_fast64_t high = integerVariable.getUpperBound()->getValueAsInt(nullptr);
 
-							for (uint_fast64_t i = low; i <= high; ++i) {
-								cuddUtility->setValueAtIndex(temporary, i - low, variableToColumnDecisionDiagramVariableMap[assignmentPair.first], i);
+							for (int_fast64_t i = low; i <= high; ++i) {
+								cuddUtility->setValueAtIndex(temporary, i - low, variableToColumnDecisionDiagramVariableMap[assignmentPair.first], static_cast<double>(i));
 							}
 
 							ADD* result = new ADD(*updateExpr * *guard);
@@ -194,7 +194,7 @@ private:
 
 			cuddUtility->dumpDotToFile(newReachableStates, "reach1.add");
 
-			newReachableStates = cuddUtility->permuteVariables(newReachableStates, allColumnDecisionDiagramVariables, allRowDecisionDiagramVariables, allDecisionDiagramVariables.size());
+			newReachableStates = cuddUtility->permuteVariables(newReachableStates, allColumnDecisionDiagramVariables, allRowDecisionDiagramVariables, static_cast<int>(allDecisionDiagramVariables.size()));
 
 			*newReachableStates += *reachableStates;
 			newReachableStates = new ADD(newReachableStates->GreaterThan(*cuddUtility->getZero()));
@@ -232,7 +232,7 @@ private:
 				int_fast64_t low = integerVariable.getLowerBound()->getValueAsInt(nullptr);
 				int_fast64_t high = integerVariable.getUpperBound()->getValueAsInt(nullptr);
 
-				for (uint_fast64_t i = low; i <= high; ++i) {
+				for (int_fast64_t i = low; i <= high; ++i) {
 					cuddUtility->setValueAtIndices(identity, i - low, i - low,
 							variableToRowDecisionDiagramVariableMap[integerVariable.getName()],
 							variableToColumnDecisionDiagramVariableMap[integerVariable.getName()], 1);
