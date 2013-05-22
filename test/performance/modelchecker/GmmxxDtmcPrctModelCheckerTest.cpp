@@ -4,7 +4,7 @@
 #include "src/modelchecker/GmmxxDtmcPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
-TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
+TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
@@ -65,7 +65,7 @@ TEST(GmmxxDtmcPrctModelCheckerTest, Crowds) {
 }
 
 
-TEST(GmmxxDtmcPrctModelCheckerTest, SynchronousLeader) {
+TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.pick.trans.rew");

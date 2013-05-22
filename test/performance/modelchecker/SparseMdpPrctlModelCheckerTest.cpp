@@ -2,10 +2,10 @@
 #include "storm-config.h"
 
 #include "src/utility/Settings.h"
-#include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
+#include "src/modelchecker/SparseMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
-TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
+TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew");
 
@@ -16,7 +16,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 2095783u);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7714385u);
 
-	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp);
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -27,7 +27,6 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
     LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_NE(nullptr, result);
-
 	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
 
 	delete probFormula;
@@ -72,7 +71,6 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
     LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_NE(nullptr, result);
-
 	ASSERT_LT(std::abs((*result)[0] - 0), s->get<double>("precision"));
 
 	delete probFormula;
@@ -107,8 +105,9 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	delete result;
 }
 
-TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
+TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
 	storm::settings::Settings* s = storm::settings::instance();
+    // Increase the maximal number of iterations, because the solver does not converge otherwise.
     s->set<unsigned>("maxiter", 20000);
     
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "");
@@ -120,7 +119,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 63616u);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 213472u);
     
-    storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
+    storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp);
     
     storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("finished");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -148,7 +147,6 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);
-    
 	ASSERT_LT(std::abs((*result)[31168] - 0.43742828319177884388579), s->get<double>("precision"));
     
     delete probFormula;
