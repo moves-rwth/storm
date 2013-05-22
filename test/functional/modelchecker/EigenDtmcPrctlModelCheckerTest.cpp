@@ -6,7 +6,7 @@
 #include "src/modelchecker/EigenDtmcPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
-TEST(EigenDtmcPrctModelCheckerTest, Die) {
+TEST(EigenDtmcPrctlModelCheckerTest, Die) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/die/die.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/die/die.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/die/die.coin_flips.trans.rew");
@@ -66,7 +66,7 @@ TEST(EigenDtmcPrctModelCheckerTest, Die) {
 	delete result;
 }
 
-TEST(EigenDtmcPrctModelCheckerTest, Crowds) {
+TEST(EigenDtmcPrctlModelCheckerTest, Crowds) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/crowds/crowds5_5.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/crowds/crowds5_5.lab", "", "");
@@ -114,7 +114,7 @@ TEST(EigenDtmcPrctModelCheckerTest, Crowds) {
 	delete result;
 }
 
-TEST(EigenDtmcPrctModelCheckerTest, SynchronousLeader) {
+TEST(EigenDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	s->set("fix-deadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/synchronous_leader/leader4_8.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/synchronous_leader/leader4_8.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/synchronous_leader/leader4_8.pick.trans.rew");

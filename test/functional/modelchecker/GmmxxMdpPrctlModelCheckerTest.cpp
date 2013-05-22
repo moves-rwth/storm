@@ -5,7 +5,7 @@
 #include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
-TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
+TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
 	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
     
@@ -169,7 +169,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete result;
 }
 
-TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
+TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew");
 
