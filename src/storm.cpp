@@ -343,7 +343,10 @@ int main(const int argc, const char* argv[]) {
 		}
 		if (s->isSet("symbolic")) {
 			std::string arg = s->getString("symbolic");
-			Pr
+			storm::parser::PrismParser parser;
+			storm::adapters::ExplicitModelAdapter adapter(parser.parseFile(arg));
+			std::shared_ptr<storm::models::AbstractModel<double>> model = adapter.getModel();
+			model->printModelInformationToStream(std::cout);
 		}
 
 		cleanUp();

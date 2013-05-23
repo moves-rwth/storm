@@ -9,14 +9,14 @@
 
 #include "src/utility/OsDetection.h"
 
-#include "src/parser/PrismParser/Includes.h"
-#include "src/parser/PrismParser/BooleanExpressionGrammar.h"
-#include "src/parser/PrismParser/ConstBooleanExpressionGrammar.h"
-#include "src/parser/PrismParser/ConstDoubleExpressionGrammar.h"
-#include "src/parser/PrismParser/ConstIntegerExpressionGrammar.h"
-#include "src/parser/PrismParser/IntegerExpressionGrammar.h"
-#include "src/parser/PrismParser/IdentifierGrammars.h"
-#include "src/parser/PrismParser/VariableState.h"
+#include "src/parser/prismparser/Includes.h"
+#include "src/parser/prismparser/BooleanExpressionGrammar.h"
+#include "src/parser/prismparser/ConstBooleanExpressionGrammar.h"
+#include "src/parser/prismparser/ConstDoubleExpressionGrammar.h"
+#include "src/parser/prismparser/ConstIntegerExpressionGrammar.h"
+#include "src/parser/prismparser/IntegerExpressionGrammar.h"
+#include "src/parser/prismparser/IdentifierGrammars.h"
+#include "src/parser/prismparser/VariableState.h"
 
 // Needed for file IO.
 #include <fstream>

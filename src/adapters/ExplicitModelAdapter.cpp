@@ -73,8 +73,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			case storm::ir::Program::MDP:
 			{
 				std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = this->buildNondeterministicMatrix();
-				std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices;
-				return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Mdp<double>(matrix, stateLabeling, choiceIndices, stateRewards, this->transitionRewards));
+				return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Mdp<double>(matrix, stateLabeling, this->choiceIndices, stateRewards, this->transitionRewards));
 				break;
 			}
 			case storm::ir::Program::CTMDP:
@@ -493,9 +492,12 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 			this->transitionRewards = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(this->numberOfChoices, allStates.size()));
 			this->transitionRewards->initialize(this->numberOfTransitions);
 		}
+		this->choiceIndices = std::shared_ptr<std::vector<uint_fast64_t>>(new std::vector<uint_fast64_t>());
+		this->choiceIndices->reserve(allStates.size());
 		// Build matrix.
 		uint_fast64_t nextRow = 0;
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
+			this->choiceIndices->push_back(transitionMap[state].size());
 			for (auto choice : transitionMap[state]) {
 				for (auto it : choice.second) {
 					result->addNextValue(nextRow, it.first, it.second);

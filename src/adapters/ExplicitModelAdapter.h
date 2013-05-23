@@ -190,6 +190,7 @@ private:
 	std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
 	uint_fast64_t numberOfTransitions;
 	uint_fast64_t numberOfChoices;
+        std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices;
 	std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewards;
 
 	/*!

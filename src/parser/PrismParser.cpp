@@ -9,7 +9,7 @@
 
 #include "src/utility/OsDetection.h"
 
-#include "src/parser/PrismParser/PrismGrammar.h"
+#include "src/parser/prismparser/PrismGrammar.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
