@@ -5,7 +5,7 @@
 #include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
-TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
+TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew");
 
@@ -107,7 +107,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 	delete result;
 }
 
-TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
+TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
 	storm::settings::Settings* s = storm::settings::instance();
     s->set<unsigned>("maxiter", 20000);
     
@@ -164,8 +164,8 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
 	result = mc.checkNoBoundOperator(*probFormula);
     LOG4CPLUS_WARN(logger, "Done.");
     
-	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 0.5282872761373342829216), s->get<double>("precision"));
+	ASSERT_NE(nullptr, result);    
+	ASSERT_LT(std::abs((*result)[31168] - 0.52932863686144482340267813924583606421947479248047), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -182,7 +182,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 0.10343451035775527713), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0.1041409700076474653673841), s->get<double>("precision"));
     
     delete probFormula;
     delete result;
@@ -238,7 +238,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 2179.014847073392047605011), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 2183.1424220082612919213715), s->get<double>("precision"));
     
 	delete rewardFormula;
 	delete result;

@@ -8,9 +8,9 @@
 #ifndef ERRORHANDLING_H
 #define	ERRORHANDLING_H
 
+#include "src/utility/OsDetection.h"
 #include <signal.h>
-#include <execinfo.h>
-#include <cxxabi.h>
+
 
 /*
  * Demangles the given string. This is needed for the correct display of backtraces.
@@ -22,16 +22,42 @@ std::string demangle(char const* symbol) {
     
 	// Attention: sscanf format strings rely on the size being 128.
 	char temp[128];
-	char* demangled;
     
-	// Check for C++ symbol.
+	// Check for C++ symbol, on Non-MSVC Only
 	if (sscanf(symbol, "%*[^(]%*[^_]%127[^)+]", temp) == 1) {
+#ifndef WINDOWS
+		char* demangled;
 		if (NULL != (demangled = abi::__cxa_demangle(temp, NULL, NULL, &status))) {
 			std::string result(demangled);
 			free(demangled);
 			return result;
 		}
+#else
+	DWORD  error;
+	HANDLE hProcess;
+
+	SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+
+	hProcess = GetCurrentProcess();
+
+	if (!SymInitialize(hProcess, NULL, TRUE)) {
+		// SymInitialize failed
+		error = GetLastError();
+		LOG4CPLUS_ERROR(logger, "SymInitialize returned error : " << error);
+		return FALSE;
+	} else {
+		char demangled[1024];
+		if (UnDecorateSymbolName(temp, demangled, sizeof(demangled), UNDNAME_COMPLETE)) {
+			return std::string(demangled);
+		} else {
+			// UnDecorateSymbolName failed
+			DWORD error = GetLastError();
+			LOG4CPLUS_ERROR(logger, "UnDecorateSymbolName returned error: " << error);
+		}
 	}
+#endif
+	}
+
 	// Check for C symbol.
 	if (sscanf(symbol, "%127s", temp) == 1) {
 		return temp;
@@ -50,6 +76,7 @@ void signalHandler(int sig) {
 #define SIZE 128
 	LOG4CPLUS_FATAL(logger, "The program received signal " << sig << ". The following backtrace shows the status upon reception of the signal.");
 
+#ifndef WINDOWS
 	void *buffer[SIZE];
  	char **strings;
 	int nptrs;
@@ -68,6 +95,9 @@ void signalHandler(int sig) {
 		LOG4CPLUS_FATAL(logger, nptrs-j << ": " << demangle(strings[j]));
 	}
 	free(strings);
+#else
+	LOG4CPLUS_WARN(logger, "No Backtrace Support available on Platform Windows!");
+#endif
 	LOG4CPLUS_FATAL(logger, "Exiting.");
 	exit(2);
 }

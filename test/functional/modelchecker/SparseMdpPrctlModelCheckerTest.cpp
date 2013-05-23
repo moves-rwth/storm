@@ -2,10 +2,10 @@
 #include "storm-config.h"
 
 #include "src/utility/Settings.h"
-#include "src/modelchecker/GmmxxMdpPrctlModelChecker.h"
+#include "src/modelchecker/SparseMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
-TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
+TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
     
@@ -16,7 +16,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 169u);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 436u);
     
-	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp);
     
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("two");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -25,7 +25,6 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	std::vector<double>* result = mc.checkNoBoundOperator(*probFormula);
     
 	ASSERT_NE(nullptr, result);
-    
 	ASSERT_LT(std::abs((*result)[0] - 0.0277777612209320068), s->get<double>("precision"));
     
 	delete probFormula;
@@ -114,7 +113,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
     
 	std::shared_ptr<storm::models::Mdp<double>> stateRewardMdp = stateRewardParser.getModel<storm::models::Mdp<double>>();
     
-	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
@@ -144,7 +143,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
     
 	std::shared_ptr<storm::models::Mdp<double>> stateAndTransitionRewardMdp = stateAndTransitionRewardParser.getModel<storm::models::Mdp<double>>();
     
-	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
@@ -169,7 +168,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, Dice) {
 	delete result;
 }
 
-TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
+TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::instance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew");
 
@@ -180,7 +179,7 @@ TEST(GmmxxMdpPrctModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 3172u);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144u);
 
-	storm::modelchecker::GmmxxMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp);
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);

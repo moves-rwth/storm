@@ -31,34 +31,17 @@ void setUpLogging() {
 }
 
 /*!
- * Function that parses the command line options.
- * @param argc The argc argument of main().
- * @param argv The argv argument of main().
- * @return True iff the program should continue to run after parsing the options.
+ * Creates an empty settings object as the standard instance of the Settings class.
  */
-bool parseOptions(int const argc, char const * const argv[]) {
-    storm::settings::Settings* s = nullptr;
-    try {
-        storm::settings::Settings::registerModule<storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>>();
-        s = storm::settings::newInstance(argc, argv, nullptr, true);
-    } catch (storm::exceptions::InvalidSettingsException& e) {
-        // Ignore this case.
-        return true;
-    }
-    
-    if (s->isSet("help")) {
-        std::cout << storm::settings::help;
-        return false;
-    }
-    
-    return true; 
+void createEmptyOptions() {
+    storm::settings::Settings::registerModule<storm::modelchecker::GmmxxDtmcPrctlModelChecker<double>>();
+    const char* newArgv[] = {"storm-performance-tests"};
+    storm::settings::Settings* s = storm::settings::newInstance(1, newArgv, nullptr, true);
 }
 
 int main(int argc, char* argv[]) {
 	setUpLogging();
-	if (!parseOptions(argc, argv)) {
-		return 0;
-	}
+	createEmptyOptions();
 	std::cout << "StoRM (Performance) Testing Suite" << std::endl;
 	
 	testing::InitGoogleTest(&argc, argv);

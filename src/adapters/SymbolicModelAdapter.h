@@ -16,6 +16,7 @@
 #include "cuddObj.hh"
 #include <iostream>
 #include <unordered_map>
+#include <cmath>
 
 namespace storm {
 
@@ -80,8 +81,8 @@ public:
 							int_fast64_t low = integerVariable.getLowerBound()->getValueAsInt(nullptr);
 							int_fast64_t high = integerVariable.getUpperBound()->getValueAsInt(nullptr);
 
-							for (uint_fast64_t i = low; i <= high; ++i) {
-								cuddUtility->setValueAtIndex(temporary, i - low, variableToColumnDecisionDiagramVariableMap[assignmentPair.first], i);
+							for (int_fast64_t i = low; i <= high; ++i) {
+								cuddUtility->setValueAtIndex(temporary, i - low, variableToColumnDecisionDiagramVariableMap[assignmentPair.first], static_cast<double>(i));
 							}
 
 							ADD* result = new ADD(*updateExpr * *guard);
@@ -138,6 +139,16 @@ private:
 	SymbolicExpressionAdapter rowExpressionAdapter;
 	SymbolicExpressionAdapter columnExpressionAdapter;
 
+	// As log2 is not part of C90, only of C99 which no Compiler fully supports, this feature is unavailable on MSVC
+	inline double log2(uint_fast64_t number) {
+#		include "src/utility/OsDetection.h"
+#		ifndef WINDOWS
+			return std::log2(number);
+#		else
+			return std::log(number) / std::log(2);
+#		endif
+	}
+
 	ADD* getInitialStateDecisionDiagram(storm::ir::Program const& program) {
 		ADD* initialStates = cuddUtility->getOne();
 		for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
@@ -183,7 +194,7 @@ private:
 
 			cuddUtility->dumpDotToFile(newReachableStates, "reach1.add");
 
-			newReachableStates = cuddUtility->permuteVariables(newReachableStates, allColumnDecisionDiagramVariables, allRowDecisionDiagramVariables, allDecisionDiagramVariables.size());
+			newReachableStates = cuddUtility->permuteVariables(newReachableStates, allColumnDecisionDiagramVariables, allRowDecisionDiagramVariables, static_cast<int>(allDecisionDiagramVariables.size()));
 
 			*newReachableStates += *reachableStates;
 			newReachableStates = new ADD(newReachableStates->GreaterThan(*cuddUtility->getZero()));
@@ -221,7 +232,7 @@ private:
 				int_fast64_t low = integerVariable.getLowerBound()->getValueAsInt(nullptr);
 				int_fast64_t high = integerVariable.getUpperBound()->getValueAsInt(nullptr);
 
-				for (uint_fast64_t i = low; i <= high; ++i) {
+				for (int_fast64_t i = low; i <= high; ++i) {
 					cuddUtility->setValueAtIndices(identity, i - low, i - low,
 							variableToRowDecisionDiagramVariableMap[integerVariable.getName()],
 							variableToColumnDecisionDiagramVariableMap[integerVariable.getName()], 1);
@@ -258,7 +269,7 @@ private:
 					throw storm::exceptions::WrongFormatException() << "Range of variable "
 							<< integerVariable.getName() << " is empty or negativ.";
 				}
-				uint_fast64_t numberOfDecisionDiagramVariables = static_cast<uint_fast64_t>(std::ceil(std::log2(integerRange)));
+				uint_fast64_t numberOfDecisionDiagramVariables = static_cast<uint_fast64_t>(std::ceil(log2(integerRange)));
 
 				std::vector<ADD*> allRowDecisionDiagramVariablesForVariable;
 				std::vector<ADD*> allColumnDecisionDiagramVariablesForVariable;

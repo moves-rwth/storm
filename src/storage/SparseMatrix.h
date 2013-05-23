@@ -71,7 +71,7 @@ public:
 		 *
 		 * @param matrix The matrix on which this iterator operates.
 		 */
-		ConstRowsIterator(SparseMatrix<T> const& matrix, uint_fast64_t rowIndex = 0) : matrix(matrix), posIndex(0), rowIndex(0) {
+		ConstRowsIterator(SparseMatrix<T> const& matrix, uint_fast64_t row = 0) : matrix(matrix), posIndex(matrix.rowIndications[row]), rowIndex(row) {
 			// Intentionally left empty.
 		}
 
@@ -961,12 +961,12 @@ public:
 		// product of the corresponding row with the input vector.
 		// Note that only the end iterator has to be moved by one row, because the other iterator
 		// is automatically moved forward one row by the inner loop.
-		for (uint_fast64_t i = 0; i < result.size(); ++i, elementIte.moveToNextRow()) {
-			result[i] = storm::utility::constGetZero<T>();
+		for (auto it = result.begin(), ite = result.end(); it != ite; ++it, elementIte.moveToNextRow()) {
+			*it = storm::utility::constGetZero<T>();
 			
 			// Perform the scalar product.
 			for (; elementIt != elementIte; ++elementIt) {
-				result[i] += elementIt.value() * vector[elementIt.column()];
+				*it += elementIt.value() * vector[elementIt.column()];
 			}
 		}
 	}
