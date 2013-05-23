@@ -54,10 +54,6 @@ Settings::Settings(int const argc, char const * const argv[], char const * const
 		// Initially fill description objects.
 		this->initDescriptions();
 
-		// Take care of positional arguments.
-		Settings::positional.add("trafile", 1);
-		Settings::positional.add("labfile", 1);
-
 		// Check module triggers, add corresponding options.
 		std::map< std::string, std::list< std::string > > options;
 
@@ -122,6 +118,12 @@ Settings::Settings(int const argc, char const * const argv[], char const * const
 	}
 }
 
+void checkExplicit(const std::vector<std::string>& filenames) {
+	if (filenames.size() != 2) {
+		throw storm::exceptions::InvalidSettingsException() << "--explicit must be given exactly two filenames";
+	}
+}
+
 /*!
  *	Initially fill options_description objects.
  */
@@ -135,8 +137,8 @@ void Settings::initDescriptions() {
 		("trace", "be extremely verbose, expect lots of output")
 		("logfile,l", bpo::value<std::string>(), "name of the log file")
 		("configfile,c", bpo::value<std::string>(), "name of config file")
-		("trafile", bpo::value<std::string>()->required(), "name of the .tra file")
-		("labfile", bpo::value<std::string>()->required(), "name of the .lab file")
+		("explicit", bpo::value<std::vector<std::string>>()->notifier(&checkExplicit), "name of transition and labeling file")
+		("symbolic", bpo::value<std::string>(), "name of prism file")
 		("prctl", bpo::value<std::string>(), "text file containing prctl formulas")
 		("csl", bpo::value<std::string>(), "text file containing csl formulas")
 		("ltl", bpo::value<std::string>(), "text file containing ltl formulas")

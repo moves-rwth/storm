@@ -283,32 +283,38 @@ int main(const int argc, const char* argv[]) {
 
 		// Now, the settings are receivd and the model is parsed.
 		storm::settings::Settings* s = storm::settings::instance();
-		storm::parser::AutoParser<double> parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
+		if (s->isSet("explicit")) {
+			std::vector<std::string> args = s->get<std::vector<std::string>>("explicit");
+			storm::parser::AutoParser<double> parser(args[0], args[1], s->getString("staterew"), s->getString("transrew"));
 
-		LOG4CPLUS_DEBUG(logger, s->getString("matrixlib"));
+			LOG4CPLUS_DEBUG(logger, s->getString("matrixlib"));
 
 
-		// Depending on the model type, the respective model checking procedure is chosen.
-		switch (parser.getType()) {
-		case storm::models::DTMC:
-			LOG4CPLUS_INFO(logger, "Model was detected as DTMC");
-			checkDtmc(parser.getModel<storm::models::Dtmc<double>>());
-			break;
-		case storm::models::MDP:
-			LOG4CPLUS_INFO(logger, "Model was detected as MDP");
-			checkMdp(parser.getModel<storm::models::Mdp<double>>());
-			break;
-		case storm::models::CTMC:
-		case storm::models::CTMDP:
-			// Continuous time model checking is not implemented yet
-			LOG4CPLUS_ERROR(logger, "The model type you selected is not supported in this version of storm.");
-			break;
-		case storm::models::Unknown:
-		default:
-			LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
-			break;
+			// Depending on the model type, the respective model checking procedure is chosen.
+			switch (parser.getType()) {
+			case storm::models::DTMC:
+				LOG4CPLUS_INFO(logger, "Model was detected as DTMC");
+				checkDtmc(parser.getModel<storm::models::Dtmc<double>>());
+				break;
+			case storm::models::MDP:
+				LOG4CPLUS_INFO(logger, "Model was detected as MDP");
+				checkMdp(parser.getModel<storm::models::Mdp<double>>());
+				break;
+			case storm::models::CTMC:
+			case storm::models::CTMDP:
+				// Continuous time model checking is not implemented yet
+				LOG4CPLUS_ERROR(logger, "The model type you selected is not supported in this version of storm.");
+				break;
+			case storm::models::Unknown:
+			default:
+				LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
+				break;
+			}
 		}
-
+		if (s->isSet("symbolic")) {
+			std::string arg = s->getString("symbolic");
+			Pr
+		}
 
 		cleanUp();
 
