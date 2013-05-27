@@ -63,19 +63,19 @@ void PrismGrammar::addBoolAssignment(const std::string& variable, std::shared_pt
 }
 Module PrismGrammar::renameModule(const std::string& name, const std::string& oldname, std::map<std::string, std::string>& mapping) {
 	this->state->moduleNames_.add(name, name);
-	Module* old = this->state->moduleMap_.find(oldname);
+	Module* old = this->moduleMap_.find(oldname);
 	if (old == nullptr) {
 		LOG4CPLUS_ERROR(logger, "Renaming module failed: module " << oldname << " does not exist!");
 		throw "Renaming module failed";
 	}
 	Module res(*old, name, mapping, this->state);
-	this->state->moduleMap_.at(name) = res;
+	this->moduleMap_.at(name) = res;
 	return res;
 }
 Module PrismGrammar::createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands) {
 	this->state->moduleNames_.add(name, name);
 	Module res(name, bools, ints, boolids, intids, commands);
-	this->state->moduleMap_.at(name) = res;
+	this->moduleMap_.at(name) = res;
 	return res;
 }
 

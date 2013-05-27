@@ -53,16 +53,24 @@ public:
 
 class ExplicitModelAdapter {
 public:
+	/*!
+	 * Initialize adapter with given program.
+	 */
 	ExplicitModelAdapter(storm::ir::Program program);
 	~ExplicitModelAdapter();
 
+	/*!
+	 * Convert program to an AbstractModel.
+	 * The model will be of the type specified in the program.
+	 * The model will contain rewards that are specified by the given reward model.
+	 * @param rewardModelName Name of reward model to be added to the model.
+	 * @return Model resulting from the program.
+	 */
 	std::shared_ptr<storm::models::AbstractModel<double>> getModel(std::string const & rewardModelName = "");
 
 private:
 
 	double precision;
-
-	// First some generic routines to operate on states.
 
 	/*!
 	 * Set some boolean variable in the given state object.
@@ -78,6 +86,11 @@ private:
 	 * @param value New value.
 	 */
 	static void setValue(StateType* const state, uint_fast64_t const index, int_fast64_t const value);
+	/*!
+	 * Transforms a state into a somewhat readable string.
+	 * @param state State.
+	 * @return String representation of the state.
+	 */
 	static std::string toString(StateType const * const state);
 	/*!
 	 * Apply an update to the given state and return the resulting new state object.
@@ -103,7 +116,18 @@ private:
 	 */
 	void initializeVariables();
 
+	/*!
+	 * Calculate state reward for every reachable state based on given reward models.
+	 * @param rewards List of state reward models.
+	 * @return Reward for every state.
+	 */
 	std::shared_ptr<std::vector<double>> getStateRewards(std::vector<storm::ir::StateReward> const & rewards);
+	
+	/*!
+	 * Determines the labels for every reachable state, based on a list of available labels.
+	 * @param labels Mapping from label names to boolean expressions.
+	 * @returns The resulting labeling.
+	 */
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
 
 	/*!
@@ -168,29 +192,41 @@ private:
 	std::shared_ptr<storm::storage::SparseMatrix<double>> buildNondeterministicMatrix();
 
 	/*!
-	 * Build matrix from model. Starts with all initial states and explores the reachable state space.
-	 * While exploring, the transitions are stored in a temporary map.
-	 * Afterwards, we transform this map into the actual matrix.
-	 * @return result matrix.
+	 * Generate internal transition map from given model.
+	 * Starts with all initial states and explores the reachable state space.
 	 */
 	void buildTransitionMap();
 	
+	/*!
+	 * Clear all members that are initialized during the computation.
+	 */
 	void clearInternalState();
 
 	// Program that should be converted.
 	storm::ir::Program program;
+	// List of all boolean variables.
 	std::vector<storm::ir::BooleanVariable> booleanVariables;
+	// List of all integer variables.
 	std::vector<storm::ir::IntegerVariable> integerVariables;
+	// Maps boolean variable names to their index.
 	std::map<std::string, uint_fast64_t> booleanVariableToIndexMap;
+	// Maps integer variable names to their index.
 	std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
 
-	// Members that are filled during the conversion.
+	//// Members that are filled during the conversion.
+	// Selected reward model.
 	std::unique_ptr<storm::ir::RewardModel> rewardModel;
+	// List of all reachable states.
 	std::vector<StateType*> allStates;
+	// Maps states to their index (within allStates).
 	std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
+	// Number of transitions.
 	uint_fast64_t numberOfTransitions;
+	// Number of choices. (Is number of rows in matrix of nondeterministic model.)
 	uint_fast64_t numberOfChoices;
-        std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices;
+	// Number of choices for each state.
+	std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices;
+	// Rewards for transitions.
 	std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewards;
 
 	/*!

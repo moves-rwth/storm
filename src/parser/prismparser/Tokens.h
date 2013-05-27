@@ -12,9 +12,10 @@ namespace storm {
 namespace parser {
 namespace prism {
 
-
-	// A structure mapping the textual representation of a model type to the model type
-	// representation of the intermediate representation.
+	/*!
+	 * A structure mapping the textual representation of a model type to the model type
+	 * representation of the intermediate representation.
+	 */
 	struct modelTypeStruct : qi::symbols<char, Program::ModelType> {
 		modelTypeStruct() {
 			add
@@ -27,7 +28,9 @@ namespace prism {
 	};
 
 
-	// A structure defining the keywords that are not allowed to be chosen as identifiers.
+	/*!
+	 * A structure defining the keywords that are not allowed to be chosen as identifiers.
+	 */
 	struct keywordsStruct : qi::symbols<char, unsigned> {
 		keywordsStruct() {
 			add
@@ -48,8 +51,10 @@ namespace prism {
 		}
 	};
 	
-	// A structure mapping the textual representation of a binary relation to the representation
-	// of the intermediate representation.
+	/*!
+	 * A structure mapping the textual representation of a binary relation to the representation
+	 * of the intermediate representation.
+	 */
 	struct relationalOperatorStruct : qi::symbols<char, BinaryRelationExpression::RelationType> {
 		relationalOperatorStruct() {
 			add

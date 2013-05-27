@@ -17,6 +17,9 @@ namespace storm {
 namespace parser {
 namespace prism {
 
+/*!
+ * This grammar parses constant boolean expression as used in prism models.
+ */
 class ConstBooleanExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused>, public BaseGrammar<ConstBooleanExpressionGrammar> {
 public:
 	ConstBooleanExpressionGrammar(std::shared_ptr<VariableState>& state);
@@ -33,12 +36,6 @@ private:
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> booleanLiteralExpression;
 
 	storm::parser::prism::relationalOperatorStruct relations_;
-
-	std::shared_ptr<BaseExpression> createRelation(std::shared_ptr<BaseExpression> left, BinaryRelationExpression::RelationType relationType, std::shared_ptr<BaseExpression> right);
-	std::shared_ptr<BaseExpression> createNot(std::shared_ptr<BaseExpression> child);
-	std::shared_ptr<BaseExpression> createAnd(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right);
-	std::shared_ptr<BaseExpression> createOr(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right);
-	std::shared_ptr<BaseExpression> createLiteral(const bool value);
 };
 
 

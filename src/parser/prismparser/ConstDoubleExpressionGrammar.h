@@ -16,10 +16,12 @@ namespace storm {
 namespace parser {
 namespace prism {
 
+/*!
+ * This grammar parses constant double expressions as used in prism models.
+ */
 class ConstDoubleExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused>, public BaseGrammar<ConstDoubleExpressionGrammar> {
 public:
 	ConstDoubleExpressionGrammar(std::shared_ptr<VariableState>& state);
-
 
 private:
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused> constantDoubleExpression;
@@ -28,10 +30,6 @@ private:
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> constantAtomicDoubleExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> doubleConstantExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> doubleLiteralExpression;
-
-	std::shared_ptr<BaseExpression> createLiteral(double value);
-	std::shared_ptr<BaseExpression> createPlus(const std::shared_ptr<BaseExpression> left, bool addition, const std::shared_ptr<BaseExpression> right);
-	std::shared_ptr<BaseExpression> createMult(const std::shared_ptr<BaseExpression> left, bool multiplication, const std::shared_ptr<BaseExpression> right);
 };
 
 

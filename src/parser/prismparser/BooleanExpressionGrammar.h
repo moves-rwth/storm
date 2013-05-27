@@ -19,9 +19,16 @@ namespace storm {
 namespace parser {
 namespace prism {
 
+/*!
+ * This grammar parses (non constant) boolean expressions as used in prism models.
+ */
 class BooleanExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused>, public BaseGrammar<BooleanExpressionGrammar> {
 public:
 	BooleanExpressionGrammar(std::shared_ptr<VariableState>& state);
+	/*!
+	 * Switch to second run.
+	 * Variable names may be any valid identifier in the first run, but only defined variables in the second run.
+	 */
 	virtual void prepareSecondRun();
 	
 private:
@@ -33,6 +40,9 @@ private:
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> relativeExpression;
 	qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> booleanVariableExpression;
 
+	/*!
+	 * Parser relation operators.
+	 */
 	storm::parser::prism::relationalOperatorStruct relations_;
 };
 

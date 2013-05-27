@@ -54,6 +54,7 @@ public:
 private:
 
 	std::shared_ptr<storm::parser::prism::VariableState> state;
+	struct qi::symbols<char, Module> moduleMap_;
 
 	// The starting point of the grammar.
 	qi::rule<

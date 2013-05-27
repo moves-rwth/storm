@@ -26,36 +26,39 @@ namespace storm {
 
 namespace adapters {
 
-ExplicitModelAdapter::ExplicitModelAdapter(storm::ir::Program program) : program(program), 
-		booleanVariables(), integerVariables(), booleanVariableToIndexMap(), integerVariableToIndexMap(),
-		allStates(), stateToIndexMap(), numberOfTransitions(0), numberOfChoices(0), transitionRewards(nullptr), transitionMap() {
-	this->initializeVariables();
-	storm::settings::Settings* s = storm::settings::instance();
-	this->precision = s->get<double>("precision");
-}
+	ExplicitModelAdapter::ExplicitModelAdapter(storm::ir::Program program) : program(program), 
+			booleanVariables(), integerVariables(), booleanVariableToIndexMap(), integerVariableToIndexMap(),
+			allStates(), stateToIndexMap(), numberOfTransitions(0), numberOfChoices(0), transitionRewards(nullptr), transitionMap() {
+		// Get variables from program.
+		this->initializeVariables();
+		storm::settings::Settings* s = storm::settings::instance();
+		this->precision = s->get<double>("precision");
+	}
 
-ExplicitModelAdapter::~ExplicitModelAdapter() {
-	this->clearInternalState();
-}
+	ExplicitModelAdapter::~ExplicitModelAdapter() {
+		this->clearInternalState();
+	}
 
 	std::shared_ptr<storm::models::AbstractModel<double>> ExplicitModelAdapter::getModel(std::string const & rewardModelName) {
-
-
-		this->buildTransitionMap();
-
-		std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling = this->getStateLabeling(this->program.getLabels());
-		std::shared_ptr<std::vector<double>> stateRewards = nullptr;
-
+		// Initialize rewardModel.
 		this->rewardModel = nullptr;
 		if (rewardModelName != "") {
-			this->rewardModel = std::unique_ptr<storm::ir::RewardModel>(new storm::ir::RewardModel(this->program.getRewardModel(rewardModelName)));;
-			if (this->rewardModel != nullptr) {
-				if (this->rewardModel->hasStateRewards()) {
-					stateRewards = this->getStateRewards(this->rewardModel->getStateRewards());
-				}
-			}
+			this->rewardModel = std::unique_ptr<storm::ir::RewardModel>(new storm::ir::RewardModel(this->program.getRewardModel(rewardModelName)));
+		}
+		
+		// State expansion, build temporary map, compute transition rewards.
+		this->buildTransitionMap();
+		
+		// Compute labeling.
+		std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling = this->getStateLabeling(this->program.getLabels());
+		
+		// Compute state rewards.
+		std::shared_ptr<std::vector<double>> stateRewards = nullptr;
+		if ((this->rewardModel != nullptr) && this->rewardModel->hasStateRewards()) {
+			stateRewards = this->getStateRewards(this->rewardModel->getStateRewards());
 		}
 
+		// Build and return actual model.
 		switch (this->program.getModelType())
 		{
 			case storm::ir::Program::DTMC:
@@ -107,8 +110,10 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	std::shared_ptr<std::vector<double>> ExplicitModelAdapter::getStateRewards(std::vector<storm::ir::StateReward> const & rewards) {
 		std::shared_ptr<std::vector<double>> results(new std::vector<double>(this->allStates.size()));
 		for (uint_fast64_t index = 0; index < this->allStates.size(); index++) {
+			(*results)[index] = 0;
 			for (auto reward: rewards) {
-				(*results)[index] = reward.getReward(this->allStates[index]);
+				// Add this reward to the state.
+				(*results)[index] += reward.getReward(this->allStates[index]);
 			}
 		}
 		return results;
@@ -116,11 +121,13 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 
 	std::shared_ptr<storm::models::AtomicPropositionsLabeling> ExplicitModelAdapter::getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels) {
 		std::shared_ptr<storm::models::AtomicPropositionsLabeling> results(new storm::models::AtomicPropositionsLabeling(this->allStates.size(), labels.size()));
+		// Initialize labeling.
 		for (auto it: labels) {
 			results->addAtomicProposition(it.first);
 		}
 		for (uint_fast64_t index = 0; index < this->allStates.size(); index++) {
 			for (auto label: labels) {
+				// Add label to state, if guard is true.
 				if (label.second->getValueAsBool(this->allStates[index])) {
 					results->addAtomicPropositionToState(label.first, index);
 				}
@@ -132,6 +139,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 	void ExplicitModelAdapter::initializeVariables() {
 		uint_fast64_t numberOfIntegerVariables = 0;
 		uint_fast64_t numberOfBooleanVariables = 0;
+		// Count number of variables.
 		for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
 			numberOfIntegerVariables += program.getModule(i).getNumberOfIntegerVariables();
 			numberOfBooleanVariables += program.getModule(i).getNumberOfBooleanVariables();
@@ -140,6 +148,7 @@ ExplicitModelAdapter::~ExplicitModelAdapter() {
 		this->booleanVariables.resize(numberOfBooleanVariables);
 		this->integerVariables.resize(numberOfIntegerVariables);
 
+		// Create variables.
 		for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
 			storm::ir::Module const& module = program.getModule(i);
 

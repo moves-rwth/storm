@@ -16,6 +16,9 @@ namespace storm {
 namespace parser {
 namespace prism {
 
+/*!
+ * This grammar parses constant integer expressions as used in prism models.
+ */
 class ConstIntegerExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused>, public BaseGrammar<ConstIntegerExpressionGrammar> {
 public:
 	ConstIntegerExpressionGrammar(std::shared_ptr<VariableState>& state);
