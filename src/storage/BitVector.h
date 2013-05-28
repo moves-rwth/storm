@@ -95,7 +95,13 @@ public:
 		uint_fast64_t endIndex;
 	};
 
-	//! Constructor
+    /*
+     * Standard constructor. Constructs an empty bit vector of length 0.
+     */
+    BitVector() : bucketCount(0), bitCount(0), bucketArray(nullptr), endIterator(*this, 0, 0, false), truncateMask(0) {
+        // Intentionally left empty.
+    }
+    
 	/*!
 	 * Constructs a bit vector which can hold the given number of bits and
 	 * initializes all bits to the provided truth value.
@@ -131,7 +137,6 @@ public:
 		}
 	}
 
-	//! Copy Constructor
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given bit vector.
 	 * @param bv A reference to the bit vector to be copied.
@@ -141,8 +146,17 @@ public:
 		bucketArray = new uint64_t[bucketCount];
 		std::copy(bv.bucketArray, bv.bucketArray + this->bucketCount, this->bucketArray);
 	}
+    
+    /*!
+     * Move constructor. Move constructs the bit vector from the given bit vector.
+     *
+     */
+    BitVector(BitVector&& bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
+        LOG4CPLUS_DEBUG(logger, "Invoking move constructor.");
+        this->bucketArray = bv.bucketArray;
+        bv.bucketArray = nullptr;
+    }
 
-	//! Destructor
 	/*!
 	 * Destructor. Frees the underlying bucket array.
 	 */
@@ -152,7 +166,6 @@ public:
 		}
 	}
 
-	// Equality Operator
 	/*!
 	 * Compares the given bit vector with the current one.
 	 */
@@ -171,7 +184,6 @@ public:
 		return true;
 	}
 
-	//! Assignment Operator
 	/*!
 	 * Assigns the given bit vector to the current bit vector by a deep copy.
 	 * @param bv The bit vector to assign to the current bit vector.
@@ -179,9 +191,12 @@ public:
 	 * given bit vector by means of a deep copy.
 	 */
 	BitVector& operator=(BitVector const& bv) {
+        LOG4CPLUS_DEBUG(logger, "Performing copy assignment.");
+        // Check if we need to dispose of our current storage.
 		if (this->bucketArray != nullptr) {
 			delete[] this->bucketArray;
 		}
+        // Copy the values from the other bit vector.
 		bucketCount = bv.bucketCount;
 		bitCount = bv.bitCount;
 		bucketArray = new uint64_t[bucketCount];
@@ -189,6 +204,35 @@ public:
 		updateSizeChange();
 		return *this;
 	}
+    
+    /*!
+     * Move assigns the given bit vector to the current bit vector.
+     *
+     * @param bv The bit vector whose content is moved to the current bit vector.
+     * @return A reference to this bit vector after the contents of the given bit vector
+     * have been moved into it.
+     */
+    BitVector& operator=(BitVector&& bv) {
+        LOG4CPLUS_DEBUG(logger, "Performing move assignment.");
+        // Only perform the assignment if the source and target are not identical.
+        if (this != &bv) {
+            // Check if we need to dispose of our current storage.
+            if (this->bucketArray != nullptr) {
+                delete[] this->bucketArray;
+            }
+        
+            // Copy the values from the other bit vector, but directly steal its storage.
+            bucketCount = bv.bucketCount;
+            bitCount = bv.bitCount;
+            bucketArray = bv.bucketArray;
+            updateSizeChange();
+        
+            // Now alter the other bit vector such that it does not dispose of our stolen storage.
+            bv.bucketArray = nullptr;
+        }
+        
+        return *this;
+    }
 
 	/*!
 	 * Resizes the bit vector to hold the given new number of bits.
@@ -430,9 +474,9 @@ public:
 	 * Adds all indices of bits set to one to the provided list.
 	 * @param list The list to which to append the indices.
 	 */
-	void addSetIndicesToList(std::vector<uint_fast64_t>& list) const {
+	void addSetIndicesToVector(std::vector<uint_fast64_t>& vector) const {
 		for (auto index : *this) {
-			list.push_back(index);
+			vector.push_back(index);
 		}
 	}
 

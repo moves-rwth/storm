@@ -12,7 +12,6 @@
 
 #include "src/models/Dtmc.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "src/utility/GraphAnalyzer.h"
 #include "src/utility/ConstTemplates.h"
 #include "src/exceptions/NoConvergenceException.h"
 

@@ -2,7 +2,6 @@
 #define STORM_MODELS_ABSTRACTNONDETERMINISTICMODEL_H_
 
 #include "AbstractModel.h"
-#include "GraphTransitions.h"
 
 #include <memory>
 
@@ -52,6 +51,14 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		}
 
 		/*!
+		 * Returns the number of choices for all states of the MDP.
+		 * @return The number of choices for all states of the MDP.
+		 */
+		uint_fast64_t getNumberOfChoices() const {
+			return this->transitionMatrix->getRowCount();
+		}
+    
+		/*!
 		 * Retrieves the size of the internal representation of the model in memory.
 		 * @return the size of the internal representation of the model in memory
 		 * measured in bytes.
@@ -69,6 +76,26 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		std::shared_ptr<std::vector<uint_fast64_t>> getNondeterministicChoiceIndices() const {
 			return nondeterministicChoiceIndices;
 		}
+    
+        /*!
+         * Returns an iterator to the successors of the given state.
+         *
+         * @param state The state for which to return the iterator.
+         * @return An iterator to the successors of the given state.
+         */
+        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const {
+            return this->transitionMatrix->constColumnIteratorBegin((*nondeterministicChoiceIndices)[state]);
+        }
+    
+        /*!
+         * Returns an iterator pointing to the element past the successors of the given state.
+         *
+         * @param state The state for which to return the iterator.
+         * @return An iterator pointing to the element past the successors of the given state.
+         */
+        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
+            return this->transitionMatrix->constColumnIteratorEnd((*nondeterministicChoiceIndices)[state + 1] - 1);
+        }
 
 	private:
 		/*! A vector of indices mapping states to the choices (rows) in the transition matrix. */

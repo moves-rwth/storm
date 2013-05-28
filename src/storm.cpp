@@ -27,6 +27,7 @@
 #include "src/modelchecker/prctl/GmmxxMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
+//#include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
@@ -39,7 +40,55 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
+#include "src/parser/PrismParser.h"
+#include "src/adapters/ExplicitModelAdapter.h"
+#include "src/adapters/SymbolicModelAdapter.h"
+
 #include "src/exceptions/InvalidSettingsException.h"
+
+#include <iostream>
+#include <iomanip>
+
+void printUsage() {
+#ifndef WINDOWS	
+	struct rusage ru;
+	getrusage(RUSAGE_SELF, &ru);
+
+	std::cout << "Memory Usage: " << ru.ru_maxrss << "kB" << std::endl;
+	std::cout << "CPU Time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
+#else
+	HANDLE hProcess = GetCurrentProcess ();
+    FILETIME ftCreation, ftExit, ftUser, ftKernel;
+	PROCESS_MEMORY_COUNTERS pmc;
+	if (GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc))) {
+        std::cout << "Memory Usage: " << std::endl;
+		std::cout << "\tPageFaultCount: " << pmc.PageFaultCount << std::endl;
+        std::cout << "\tPeakWorkingSetSize: " << pmc.PeakWorkingSetSize << std::endl;
+        std::cout << "\tWorkingSetSize: " << pmc.WorkingSetSize << std::endl;
+        std::cout << "\tQuotaPeakPagedPoolUsage: " << pmc.QuotaPeakPagedPoolUsage << std::endl;
+        std::cout << "\tQuotaPagedPoolUsage: " << pmc.QuotaPagedPoolUsage << std::endl;
+        std::cout << "\tQuotaPeakNonPagedPoolUsage: " << pmc.QuotaPeakNonPagedPoolUsage << std::endl;
+        std::cout << "\tQuotaNonPagedPoolUsage: " << pmc.QuotaNonPagedPoolUsage << std::endl;
+        std::cout << "\tPagefileUsage:" << pmc.PagefileUsage << std::endl; 
+        std::cout << "\tPeakPagefileUsage: " << pmc.PeakPagefileUsage << std::endl;
+    }
+
+	GetProcessTimes (hProcess, &ftCreation, &ftExit, &ftKernel, &ftUser);
+
+	ULARGE_INTEGER uLargeInteger;
+	uLargeInteger.LowPart = ftKernel.dwLowDateTime;
+	uLargeInteger.HighPart = ftKernel.dwHighDateTime;
+	double kernelTime = uLargeInteger.QuadPart / 10000.0; // 100 ns Resolution to milliseconds
+	uLargeInteger.LowPart = ftUser.dwLowDateTime;
+	uLargeInteger.HighPart = ftUser.dwHighDateTime;
+	double userTime = uLargeInteger.QuadPart / 10000.0;
+
+	std::cout << "CPU Time: " << std::endl;
+	std::cout << "\tKernel Time: " << std::setprecision(3) << kernelTime << std::endl;
+	std::cout << "\tUser Time: " << std::setprecision(3) << userTime << std::endl;
+#endif
+}
+
 
 log4cplus::Logger logger;
 
@@ -119,7 +168,12 @@ bool parseOptions(const int argc, const char* argv[]) {
 	if (s->isSet("debug")) {
 		logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL);
-		LOG4CPLUS_DEBUG(logger, "Enable very verbose mode, log output gets printed to console.");
+		LOG4CPLUS_INFO(logger, "Enable very verbose mode, log output gets printed to console.");
+	}
+	if (s->isSet("trace")) {
+		logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL);
+		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::TRACE_LOG_LEVEL);
+		LOG4CPLUS_INFO(logger, "Enable trace mode, log output gets printed to console.");
 	}
 	if (s->isSet("logfile")) {
 		setUpFileLogging();
@@ -135,7 +189,7 @@ void setUp() {
  * Function to perform some cleanup.
  */
 void cleanUp() {
-	// nothing here
+	delete storm::utility::cuddUtilityInstance();
 }
 
 /*!
@@ -275,32 +329,41 @@ int main(const int argc, const char* argv[]) {
 
 		// Now, the settings are receivd and the model is parsed.
 		storm::settings::Settings* s = storm::settings::instance();
-		storm::parser::AutoParser<double> parser(s->getString("trafile"), s->getString("labfile"), s->getString("staterew"), s->getString("transrew"));
+		if (s->isSet("explicit")) {
+			std::vector<std::string> args = s->get<std::vector<std::string>>("explicit");
+			storm::parser::AutoParser<double> parser(args[0], args[1], s->getString("staterew"), s->getString("transrew"));
 
-		LOG4CPLUS_DEBUG(logger, s->getString("matrixlib"));
+			LOG4CPLUS_DEBUG(logger, s->getString("matrixlib"));
 
 
-		// Depending on the model type, the respective model checking procedure is chosen.
-		switch (parser.getType()) {
-		case storm::models::DTMC:
-			LOG4CPLUS_INFO(logger, "Model was detected as DTMC");
-			checkDtmc(parser.getModel<storm::models::Dtmc<double>>());
-			break;
-		case storm::models::MDP:
-			LOG4CPLUS_INFO(logger, "Model was detected as MDP");
-			checkMdp(parser.getModel<storm::models::Mdp<double>>());
-			break;
-		case storm::models::CTMC:
-		case storm::models::CTMDP:
-			// Continuous time model checking is not implemented yet
-			LOG4CPLUS_ERROR(logger, "The model type you selected is not supported in this version of storm.");
-			break;
-		case storm::models::Unknown:
-		default:
-			LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
-			break;
+			// Depending on the model type, the respective model checking procedure is chosen.
+			switch (parser.getType()) {
+			case storm::models::DTMC:
+				LOG4CPLUS_INFO(logger, "Model was detected as DTMC");
+				checkDtmc(parser.getModel<storm::models::Dtmc<double>>());
+				break;
+			case storm::models::MDP:
+				LOG4CPLUS_INFO(logger, "Model was detected as MDP");
+				checkMdp(parser.getModel<storm::models::Mdp<double>>());
+				break;
+			case storm::models::CTMC:
+			case storm::models::CTMDP:
+				// Continuous time model checking is not implemented yet
+				LOG4CPLUS_ERROR(logger, "The model type you selected is not supported in this version of storm.");
+				break;
+			case storm::models::Unknown:
+			default:
+				LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
+				break;
+			}
 		}
-
+		if (s->isSet("symbolic")) {
+			std::string arg = s->getString("symbolic");
+			storm::parser::PrismParser parser;
+			storm::adapters::ExplicitModelAdapter adapter(parser.parseFile(arg));
+			std::shared_ptr<storm::models::AbstractModel<double>> model = adapter.getModel();
+			model->printModelInformationToStream(std::cout);
+		}
 
 		cleanUp();
 

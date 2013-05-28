@@ -68,11 +68,9 @@ private:
 		bool relative = s->get<bool>("relative");
 
 		// Now, we need to determine the SCCs of the MDP and a topological sort.
-		std::vector<std::vector<uint_fast64_t>> stronglyConnectedComponents;
-		storm::models::GraphTransitions<Type> stronglyConnectedComponentsDependencyGraph;
-		storm::utility::GraphAnalyzer::performSccDecomposition(matrix, nondeterministicChoiceIndices, stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
-		std::vector<uint_fast64_t> topologicalSort;
-		storm::utility::GraphAnalyzer::getTopologicalSort(stronglyConnectedComponentsDependencyGraph, topologicalSort);
+        std::vector<std::vector<uint_fast64_t>> stronglyConnectedComponents = storm::utility::GraphAnalyzer::performSccDecomposition(this->getModel(), stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
+        storm::storage::SparseMatrix<bool> stronglyConnectedComponentsDependencyGraph = this->getModel().extractSccDependencyGraph(stronglyConnectedComponents);
+		std::vector<uint_fast64_t> topologicalSort = storm::utility::GraphAnalyzer::getTopologicalSort(stronglyConnectedComponentsDependencyGraph);
 
 		// Set up the environment for the power method.
 		std::vector<Type> multiplyResult(matrix.getRowCount());

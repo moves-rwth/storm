@@ -47,6 +47,10 @@ namespace abstract {
 template<class T, class FormulaType>
 class PathBoundOperator : public virtual AbstractFormula<T>, public OptimizingOperator {
 
+	// Throw a compiler error if FormulaType is not a subclass of AbstractFormula.
+	static_assert(std::is_base_of<AbstractFormula<T>, FormulaType>::value,
+				  "Instantiaton of FormulaType for storm::property::abstract::PathBoundOperator<T,FormulaType> has to be a subtype of storm::property::abstract::AbstractFormula<T>");
+
 public:
 	/*!
 	 * Constructor for non-optimizing operator.
@@ -69,7 +73,7 @@ public:
 	 * @param minimumOperator Indicator, if operator should be minimum or maximum operator.
 	 */
 	PathBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, FormulaType* pathFormula, bool minimumOperator)
-		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula), OptimizingOperator(minimumOperator) {
+		: OptimizingOperator(minimumOperator), comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
 

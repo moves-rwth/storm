@@ -49,6 +49,11 @@ namespace abstract {
  */
 template <class T, class FormulaType>
 class ProbabilisticNoBoundOperator: public PathNoBoundOperator<T, FormulaType> {
+
+	// Throw a compiler error if FormulaType is not a subclass of AbstractFormula.
+	static_assert(std::is_base_of<AbstractFormula<T>, FormulaType>::value,
+				  "Instantiaton of FormulaType for storm::property::abstract::ProbabilisticNoBoundOperator<T,FormulaType> has to be a subtype of storm::property::abstract::AbstractFormula<T>");
+
 public:
 	/*!
 	 * Empty constructor

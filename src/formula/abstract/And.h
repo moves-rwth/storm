@@ -11,6 +11,7 @@
 #include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <string>
+#include <type_traits>
 
 namespace storm {
 namespace property {
@@ -36,6 +37,10 @@ namespace abstract {
  */
 template <class T, class FormulaType>
 class And : public virtual AbstractFormula<T> {
+
+	// Throw a compiler error when FormulaType is not a subclass of AbstractFormula.
+	static_assert(std::is_base_of<AbstractFormula<T>, FormulaType>::value,
+				  "Instantiaton of FormulaType for storm::property::abstract::And<T,FormulaType> has to be a subtype of storm::property::abstract::AbstractFormula<T>");
 
 public:
 	/*!

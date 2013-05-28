@@ -69,9 +69,11 @@ private:
 		// Now perform matrix-vector multiplication as long as we meet the bound of the formula.
 		for (uint_fast64_t i = 0; i < n; ++i) {
 			gmm::mult(*gmmxxMatrix, x, multiplyResult);
+            
 			if (b != nullptr) {
 				gmm::add(*b, multiplyResult);
 			}
+            
 			if (this->minimumOperatorStack.top()) {
 				storm::utility::reduceVectorMin(multiplyResult, &x, nondeterministicChoiceIndices);
 			} else {
@@ -120,7 +122,7 @@ private:
 			// Compute x' = A*x + b.
 			gmm::mult(*gmmxxMatrix, *currentX, multiplyResult);
 			gmm::add(b, multiplyResult);
-
+            
 			// Reduce the vector x' by applying min/max for all non-deterministic choices.
 			if (this->minimumOperatorStack.top()) {
 				storm::utility::reduceVectorMin(multiplyResult, newX, nondeterministicChoiceIndices);

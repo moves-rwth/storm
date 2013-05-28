@@ -4,8 +4,8 @@
 dtmc
 
 // CONSTANTS
-const N = 3; // number of processes
-const K = 5; // range of probabilistic choice
+const int N = 3; // number of processes
+const int K = 5; // range of probabilistic choice
 
 // counter module used to count the number of processes that have been read
 // and to know when a process has decided
@@ -15,15 +15,15 @@ module counter
 	c : [1..N-1];
 	
 	// reading
-	[read] c<N-1 -> (c'=c+1);
+	[read] c<N-1 -> 1:(c'=c+1);
 	// finished reading
-	[read] c=N-1 -> (c'=c);
+	[read] c=N-1 -> 1:(c'=c);
 	//decide
-	[done] u1|u2|u3 -> (c'=c);
+	[done] u1|u2|u3 -> 1:(c'=c);
 	// pick again reset counter 
-	[retry] !(u1|u2|u3) -> (c'=1);
+	[retry] !(u1|u2|u3) -> 1:(c'=1);
 	// loop (when finished to avoid deadlocks)
-	[loop] s1=3 -> (c'=c);
+	[loop] s1=3 -> 1:(c'=c);
 	
 endmodule
 
@@ -56,18 +56,18 @@ module process1
 	             + 1/K : (s1'=1) & (p1'=3) & (v1'=3) & (u1'=true)
 	             + 1/K : (s1'=1) & (p1'=4) & (v1'=4) & (u1'=true);
 	// read
-	[read] s1=1 &  u1 & c<N-1 -> (u1'=(p1!=v2)) & (v1'=v2);
-	[read] s1=1 & !u1 & c<N-1 -> (u1'=false) & (v1'=v2) & (p1'=0);
+	[read] s1=1 &  u1 & c<N-1 -> 1:(u1'=(p1!=v2)) & (v1'=v2);
+	[read] s1=1 & !u1 & c<N-1 -> 1:(u1'=false) & (v1'=v2) & (p1'=0);
 	// read and move to decide
-	[read] s1=1 &  u1 & c=N-1 -> (s1'=2) & (u1'=(p1!=v2)) & (v1'=0) & (p1'=0);
-	[read] s1=1 & !u1 & c=N-1 -> (s1'=2) & (u1'=false) & (v1'=0);
+	[read] s1=1 &  u1 & c=N-1 -> 1:(s1'=2) & (u1'=(p1!=v2)) & (v1'=0) & (p1'=0);
+	[read] s1=1 & !u1 & c=N-1 -> 1:(s1'=2) & (u1'=false) & (v1'=0);
 	// deciding
 	// done
-	[done] s1=2 -> (s1'=3) & (u1'=false) & (v1'=0) & (p1'=0);
+	[done] s1=2 -> 1:(s1'=3) & (u1'=false) & (v1'=0) & (p1'=0);
 	//retry
-	[retry] s1=2 -> (s1'=0) & (u1'=false) & (v1'=0) & (p1'=0);
+	[retry] s1=2 -> 1:(s1'=0) & (u1'=false) & (v1'=0) & (p1'=0);
 	// loop (when finished to avoid deadlocks)
-	[loop] s1=3 -> (s1'=3);
+	[loop] s1=3 -> 1:(s1'=3);
 	
 endmodule
 

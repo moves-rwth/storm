@@ -59,7 +59,7 @@ uint_fast64_t DeterministicSparseTransitionParser::firstPass(char* buf, uint_fas
 	 * Check all transitions for non-zero diagonal entries and deadlock states.
 	 */
 	int_fast64_t lastRow = -1;
-	int_fast64_t row, col;
+	uint_fast64_t row, col;
 	uint_fast64_t readTransitionCount = 0;
 	bool rowHadDiagonalEntry = false;
 	double val;
