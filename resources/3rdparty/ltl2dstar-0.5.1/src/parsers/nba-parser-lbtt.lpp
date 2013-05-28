@@ -1,0 +1,98 @@
+/*
+ * This file is part of the program ltl2dstar (http://www.ltl2dstar.de/).
+ * Copyright (C) 2005-2007 Joachim Klein <j.klein@ltl2dstar.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as 
+ *  published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/* This is an input file for the lexer generator flex. 
+   The parser can parse NBAs in LBTT format. */
+
+%{
+#include <cstring>
+#include <string>
+#include "nba-parser-lbtt.tab.hpp"
+
+#include <boost/lexical_cast.hpp>
+#include "common/Exceptions.hpp"
+
+namespace nba_parser_lbtt {
+extern int line_number;
+};
+
+using namespace nba_parser_lbtt;
+
+#if (__WIN32__ || _WIN32)
+ 	// define YY_NO_UNISTD so that flex doesn't attempt
+	// to include <unistd.h>, which doesn't exists on Windows.
+	#define YY_NO_UNISTD_H 1
+#endif
+%}
+
+%option never-interactive
+%option noyywrap
+%option nounput
+%option prefix="lbtt_"
+
+%%
+
+[ \t]                      { /* skip whitespace */ }
+
+\n|"\x0d\x0a"|"\x0a"|"\x0d" {
+			     /* skip newline */
+			     line_number++;
+                           }
+
+"-1"			   {
+				return LBTT_STOP;
+			   }
+
+[0-9]+			   {
+				lbtt_lval.i=boost::lexical_cast<unsigned int>(yytext);				
+				return LBTT_INT;
+			   }
+
+
+"p"[0-9]+                  {
+                             lbtt_lval.str = new std::string(yytext);
+                             return LBTT_AP;
+                           }
+
+t                          {
+                             return LBTT_TRUE;
+			   }
+
+f                          {
+                             return LBTT_FALSE;
+                           }
+
+"|"                       {
+                             return LBTT_OR;
+                           }
+
+"&"                       {
+                             return LBTT_AND;
+                           }
+
+"!"                        {
+                             return LBTT_NOT;
+                           }
+
+<*>.|\n                    { // Default rule
+                            THROW_EXCEPTION(Exception,
+                                            "Lexer error: Unknown character '"+
+                                            std::string(yytext)+
+                                            "'");
+                           }
+%%

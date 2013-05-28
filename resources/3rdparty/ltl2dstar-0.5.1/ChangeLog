@@ -1,0 +1,27 @@
+2007-05-28  Joachim Klein  <joachim@ltl2dstar.de>
+	Version 0.5.1
+	Added Plugin infrastructure (src/plugins)
+	Fix bug in operator< in SafraTree.hpp
+
+2007-04-25  Joachim Klein  <joachim@ltl2dstar.de>
+	Version 0.5.0
+	Add stuttering, changes in the automata infrastructure, 
+	many other changes and bugfixes.
+
+2005-05-19  Joachim Klein  <joachim@ltl2dstar.de>
+
+	* DRA2NBA.hpp, SafrasAlgorithm.cpp: rename variables _I, _J, _N
+	because they may clash with C macro definitions (_N on Solaris)
+
+	* common/RunProgram.posix.cpp: rename stdin, stdout, stderr to
+	std_in, std_out, std_out to avoid confusion with predefined std*
+	with some compilers/system header files.
+
+	* ltl2dstar_main.cpp: fix argc handling of command line options
+
+	
+2005-05-03  Joachim Klein <j.klein@ltl2dstar.de>
+
+	* DRAOptimizations.hpp: Track the current Coloring using 
+	dynamic memory instead of local variables (crash)
+

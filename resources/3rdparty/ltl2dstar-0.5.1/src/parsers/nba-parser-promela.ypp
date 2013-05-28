@@ -1,0 +1,174 @@
+/*
+ * This file is part of the program ltl2dstar (http://www.ltl2dstar.de/).
+ * Copyright (C) 2005-2007 Joachim Klein <j.klein@ltl2dstar.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as 
+ *  published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/* This is an input file for the parser generator bison. 
+   The parser can parse NBAs in LBTT format. */
+%{
+
+#include <cstdio>
+#include <string>
+#include <iostream>
+#include <memory>
+
+#define YYSTYPE std::string
+
+
+#include "NBABuilder.hpp"
+
+  namespace nba_parser_promela {
+    int line_number;
+
+    std::auto_ptr<NBABuilder<std::string> > builder;
+	
+    unsigned int current_state;
+    bool current_state_valid=false;
+  };           
+ 
+extern int yylex(); // provided by lexer
+
+using namespace nba_parser_promela;
+
+void yyerror(const char *s) {
+  std::cerr << "Parse error for NBA automaton (PROMELA format) at line "<< line_number << "\n";
+  if (s!=0) {
+     std::cerr << s << std::endl;
+  }
+}
+
+
+
+%}
+
+
+%name-prefix="promela_"
+
+
+%token PROMELA_AP
+%right PROMELA_OR
+%right PROMELA_AND
+%nonassoc PROMELA_NOT PROMELA_TRUE PROMELA_FALSE
+ 
+%token PROMELA_NEVER PROMELA_IF PROMELA_FI PROMELA_GOTO PROMELA_SKIP
+%token PROMELA_LABEL
+%token PROMELA_COLON PROMELA_SEMICOLON PROMELA_DOUBLE_COLON 
+%token PROMELA_LBRACE PROMELA_RBRACE PROMELA_LPAREN
+%token PROMELA_RPAREN PROMELA_RIGHT_ARROW
+
+%%
+
+promela_nba:	PROMELA_NEVER PROMELA_LBRACE states opt_semicolon PROMELA_RBRACE
+		;
+
+opt_semicolon:	PROMELA_SEMICOLON 
+		| /* empty */
+		;
+
+
+states:		state
+		| states PROMELA_SEMICOLON state
+		;
+
+state:		{
+		  current_state_valid=false;
+		}
+		state_labels state_body
+		;
+
+state_labels:	label state_labels
+		| label
+		;
+
+label:		PROMELA_LABEL PROMELA_COLON 
+		{
+		   if (current_state_valid) {
+		   	builder->addAdditionalNameToState($1, current_state);			
+		   } else {
+		   	current_state=builder->findOrAddState($1);
+			std::string& label=$1;
+			if (label.find("accept") != std::string::npos) {
+				builder->setFinal(current_state);
+			}
+			if (label.find("accept_all") != std::string::npos) {
+				// dirty hack: accept_all + skip -> trueloop
+				builder->setFinal(current_state);
+		                builder->addEdge(current_state, current_state, std::string("t"));
+                        }
+			if (label.find("init") != std::string::npos) {
+				builder->setStartState(current_state);
+			}
+			current_state_valid=true;
+		   }
+
+		}
+		;
+
+state_body:	PROMELA_IF transitions PROMELA_FI
+		| PROMELA_SKIP
+		| PROMELA_FALSE
+		{builder->setFinal(current_state, false);}
+		| PROMELA_IF PROMELA_DOUBLE_COLON PROMELA_FALSE PROMELA_FI
+		{builder->setFinal(current_state, false);}
+		;
+
+
+transitions:	transitions transition
+		| transition
+		;
+
+transition:	PROMELA_DOUBLE_COLON guard PROMELA_RIGHT_ARROW PROMELA_GOTO PROMELA_LABEL
+		{
+		   builder->addEdge(current_state, builder->findOrAddState($5), $2);
+		}
+		;
+
+guard:		 PROMELA_AP
+	           { $$ = $1;}
+		|PROMELA_TRUE
+                   { $$ = "t";}
+		|PROMELA_FALSE
+                   { $$ = "f";}
+		|PROMELA_NOT guard
+	           { $$ = std::string("! " + $2);
+                   }
+		|guard PROMELA_AND guard
+                   { $$ = std::string("& " + $1 + " " + $3);
+                   }		
+		|guard PROMELA_OR guard
+                   { $$ = std::string("| " + $1 + " " + $3);
+		   }
+		|PROMELA_LPAREN guard PROMELA_RPAREN
+		 { $$ = $2; }
+
+%%
+
+/** declaration for 'yyrestart' from flex */
+void promela_restart (FILE *input_file);
+extern int promela_debug;
+
+namespace nba_parser_promela {
+
+int parse(FILE *file, NBA_I *nba, bool debug=false) {
+    builder.reset(new NBABuilder<std::string>(nba));
+
+    promela_restart(file);
+    promela_debug= (debug ? 1 : 0);
+
+    return promela_parse();	
+}
+
+};

@@ -50,6 +50,12 @@ set(CUDD_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/cudd $
 message(STATUS "CUDD_INCLUDE_DIRS is ${CUDD_INCLUDE_DIRS}")
 message(STATUS "CUDD_LIBRARY_DIRS is ${CUDD_LIBRARY_DIRS}")
 
+#Set all ltl2dstar references to the verion in the repository
+set(LTL2DSTAR_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
+set(LTL2DSTAR_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
+message(STATUS "LTL2DSTAR_INCLUDE_DIRS is ${LTL2DSTAR_INCLUDE_DIRS}")
+message(STATUS "LTL2DSTAR_LIBRARY_DIRS is ${LTL2DSTAR_LIBRARY_DIRS}")
+
 # Now define all available custom options
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
@@ -239,6 +245,13 @@ if (CUDD_LIBRARY_DIRS)
     link_directories(${CUDD_LIBRARY_DIRS})
 endif(CUDD_LIBRARY_DIRS)
 
+if (LTL2DSTAR_INCLUDE_DIRS)
+    include_directories(${LTL2DSTAR_INCLUDE_DIRS})
+endif(LTL2DSTAR_INCLUDE_DIRS)
+if (LTL2DSTAR_LIBRARY_DIRS)
+    link_directories(${LTL2DSTAR_LIBRARY_DIRS})
+endif(LTL2DSTAR_LIBRARY_DIRS)
+
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
 add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
@@ -351,6 +364,16 @@ if (CUDD_LIBRARY_DIRS)
 		target_link_libraries(storm-performance-tests "-lobj -lcudd -lmtr -lst -lutil -lepd")
 	endif ()
 endif(CUDD_LIBRARY_DIRS)
+
+if (LTL2DSTAR_LIBRARY_DIRS)
+  if (MSVC)
+      #TODO
+  else ()
+      target_link_libraries(storm "-lltl2dstar")
+      target_link_libraries(storm-functional-tests "-lltl2dstar")
+      target_link_libraries(storm-performance-tests "-lltl2dstar")
+  endif ()
+endif (LTL2DSTAR_LIBRARY_DIRS)
 
 if (THREADS_FOUND)
 	include_directories(${THREADS_INCLUDE_DIRS})

@@ -1,0 +1,161 @@
+/*
+ * This file is part of the program ltl2dstar (http://www.ltl2dstar.de/).
+ * Copyright (C) 2005-2007 Joachim Klein <j.klein@ltl2dstar.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as 
+ *  published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/* This is an input file for the lexer generator flex. 
+   The parser can parse NBAs in PROMELA (SPIN) format. */
+
+%{
+#include <cstring>
+#include <string>
+
+#define YYSTYPE std::string
+#include "nba-parser-promela.tab.hpp"
+
+#include <boost/lexical_cast.hpp>
+#include "common/Exceptions.hpp"
+
+namespace nba_parser_promela {
+extern int line_number;
+};
+
+using namespace nba_parser_promela;
+
+#if (__WIN32__ || _WIN32)
+ 	// define YY_NO_UNISTD so that flex doesn't attempt
+	// to include <unistd.h>, which doesn't exists on Windows.
+	#define YY_NO_UNISTD_H 1
+#endif
+%}
+
+%option never-interactive
+%option noyywrap
+%option nounput
+%option prefix="promela_"
+%%
+
+[ \t]                       { /* skip whitespace */ }
+
+\n|"\x0d\x0a"|"\x0a"|"\x0d" {
+			     line_number++;
+                             /* skip newline */
+                            }
+
+"/*"([^\*]*(\*[^/])?)*"*/" { 
+			     char *s=yytext;
+
+			     do {
+				if (*s=='\n') {
+			           line_number++;
+                                }
+                             } while (*++s != 0);
+                           }
+
+
+"p"[0-9]+                  {
+//                             promela_lval.str = new std::string(yytext);
+			     promela_lval=yytext;
+                             return PROMELA_AP;
+                           }
+
+"1"|"true"                 {
+                             return PROMELA_TRUE;
+			   }
+
+"never"			  {
+		             return PROMELA_NEVER;
+			  }
+
+"if"			  {
+		             return PROMELA_IF;
+			  }
+
+"fi"			  {
+		             return PROMELA_FI;
+			  }
+
+"goto"			  {
+		             return PROMELA_GOTO;
+			  }
+
+"skip"			  {
+		             return PROMELA_SKIP;
+			  }
+
+"::"			  {
+		             return PROMELA_DOUBLE_COLON;
+			  }
+
+":"			  {
+		             return PROMELA_COLON;
+			  }
+
+";"			  {
+		             return PROMELA_SEMICOLON;
+			  }
+
+"("			  {
+		             return PROMELA_LPAREN;
+			  }
+
+")"			  {
+		             return PROMELA_RPAREN;
+			  }
+
+"{"			  {
+		             return PROMELA_LBRACE;
+			  }
+
+"}"			  {
+		             return PROMELA_RBRACE;
+			  }
+
+"->"			  {
+		             return PROMELA_RIGHT_ARROW;
+			  }
+
+
+
+"0"|"false"                {
+                             return PROMELA_FALSE;
+                           }
+
+"||"                      {
+                             return PROMELA_OR;
+                           }
+
+"&&"                      {
+                             return PROMELA_AND;
+                           }
+
+"!"                        {
+                             return PROMELA_NOT;
+                           }
+
+[A-Za-z_][A-Za-z0-9_]*     {
+			     promela_lval=yytext;
+//                             promela_lval.str = new std::string(yytext);
+                             return PROMELA_LABEL;
+                           }
+
+<*>.|\n                    { // Default rule
+                            THROW_EXCEPTION(Exception,
+                                            "Lexer error: Unknown character '"+
+                                            std::string(yytext)+
+                                            "'");
+                           }
+%%

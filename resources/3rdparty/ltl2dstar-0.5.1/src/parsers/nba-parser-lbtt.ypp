@@ -1,0 +1,228 @@
+/*
+ * This file is part of the program ltl2dstar (http://www.ltl2dstar.de/).
+ * Copyright (C) 2005-2007 Joachim Klein <j.klein@ltl2dstar.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as 
+ *  published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/* This is an input file for the parser generator bison. 
+   The parser can parse NBAs in LBTT format. */
+
+%{
+
+#include <cstdio>
+#include <string>
+#include <iostream>
+#include <memory>
+
+#include <boost/lexical_cast.hpp>
+
+#include "NBABuilder.hpp"
+#include "LTLFormula.hpp"
+
+  namespace nba_parser_lbtt {
+    int line_number;
+
+    std::auto_ptr<NBABuilder<unsigned int> > builder;
+
+    /* The current state in the NBA */	
+    unsigned int current_state;
+
+    /* The overall number of states */
+    unsigned int number_of_states;
+
+    /* The ID of the acceptance condition in the LBTT
+       automaton */
+    int acceptance_id=-1;
+  };           
+
+  using namespace nba_parser_lbtt;
+ 
+extern int yylex(); // provided by lexer
+
+void yyerror(const char *s) {
+  std::cerr << "Parse error for NBA automaton (LBTT format) at line "<< line_number << "\n";
+  if (s!=0) {
+     std::cerr << s << std::endl;
+  }
+}
+
+%}
+
+
+%name-prefix="lbtt_"
+
+
+%union {
+  std::string* str;
+  std::string* guard;
+  int i;
+}
+
+%token <i> LBTT_INT 
+
+%token LBTT_STOP  // -1
+
+%token LBTT_TRUE LBTT_FALSE
+%token <str> LBTT_AP 
+%right LBTT_OR
+%right LBTT_AND
+%nonassoc LBTT_NOT
+ 
+%type <guard> guard_formula
+
+%type <i> num_states num_acc state_id initial to_state_id
+
+
+%%
+
+lbtt_nba:	num_states num_acc state_list 
+		;
+
+num_states:	LBTT_INT {number_of_states=$1;}
+		;
+
+num_acc:	LBTT_INT
+                {
+		   if ($1!=1) {
+		      std::string error("Unsupported number of acceptance conditions.\nOnly one acceptance condition is supported, but the automaton has ");
+		      error+=boost::lexical_cast<std::string>($1);				
+		      error+=" acceptance conditions.";
+		      lbtt_error(error.c_str());
+		      YYABORT;
+		   }
+                }
+		;
+
+state_list:	state_list state
+		|  /* empty */
+		;
+
+state:		state_id 
+                  {
+		   current_state=builder->findOrAddState($1);
+                  } 
+                 initial 
+                  {
+                   if ($3 == 1) {
+                     builder->setStartState(current_state);
+                   }
+                  }
+                 cond_list 
+                 transition_list 
+		;
+
+state_id:	LBTT_INT
+		;
+
+initial:	LBTT_INT
+		{
+		  if ($1!=0 && $1!=1) {
+                     std::string error="Value for 'initial' can only be '0' or '1', not '"+boost::lexical_cast<std::string>($1)+"'";
+			lbtt_error(error.c_str());
+			YYABORT;
+		  }
+		  $$=$1;
+		}	
+		;
+
+cond_list:	LBTT_INT LBTT_STOP
+		  {
+		   /* Sanity check to see if the ID of 
+		    * the single acceptance condition is
+		    * used consitently */
+		    if (acceptance_id==-1) {
+			// first occurence
+			acceptance_id=$1;
+                    } else if (acceptance_id != $1) {
+			std::string error;
+			error="Multiple acceptance IDs in automaton with only one acceptance condition. Should be: "+boost::lexical_cast<std::string>(acceptance_id)+", was: "+boost::lexical_cast<std::string>($1);
+			lbtt_error(error.c_str());
+			YYABORT;
+		    }
+
+		   builder->setFinal(current_state);
+                  }
+		| LBTT_INT LBTT_INT
+		  { 
+                   lbtt_error("Multiple acceptance IDs in automaton with only one acceptance condition!");
+		   YYABORT;
+                  }	
+		| LBTT_STOP
+		;
+
+transition_list:  transition transition_list
+		| LBTT_STOP
+
+transition:	to_state_id guard_formula
+                {
+                  builder->addEdge(current_state, builder->findOrAddState($1), *$2);
+                  delete $2; // delete guard_string
+		}
+		;
+
+to_state_id:	LBTT_INT
+		;
+
+guard_formula:    LBTT_TRUE 
+                   { $$ = new std::string("t");}
+		| LBTT_FALSE 
+                   { $$ = new std::string("f");}
+		| LBTT_AP 
+	           { 
+		      $$ = $1; 
+		      if (!builder->isAP(*$$)) {
+			std::string error;
+			error="Illegal atomic proposition: "+*$$;
+			lbtt_error(error.c_str());
+			YYABORT;
+		      }
+		   }
+		| LBTT_NOT guard_formula
+	           { $$ = new std::string("! " + *$2);
+		     delete $2;
+                   }
+		| LBTT_AND guard_formula guard_formula
+                   { $$ = new std::string("& " + *$2 + " " + *$3);
+		     delete $2;
+		     delete $3;
+                   }
+			
+		| LBTT_OR  guard_formula guard_formula
+                   { $$ = new std::string("| " + *$2 + " " + *$3);
+		     delete $2;
+		     delete $3;
+                   }
+
+%%
+
+
+/** declaration for 'yyrestart' from flex */
+void lbtt_restart (FILE *input_file);
+extern int lbtt_debug;
+
+namespace nba_parser_lbtt {
+
+int parse(FILE *file, NBA_I *nba, bool debug=false) {
+    builder.reset(new NBABuilder<unsigned int>(nba));
+    line_number=0;
+
+    lbtt_restart(file);
+  
+    lbtt_debug= (debug ? 1 : 0);
+  
+    return lbtt_parse();	
+}
+
+};

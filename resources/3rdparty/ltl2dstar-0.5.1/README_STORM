@@ -1,0 +1,7 @@
+Readme for distribution of ltl2dstar with storm:
+
+Differences to the common version:
+- A small fix in in DRA.h, which allows the compilation with new compilers
+- Changed makefile: Storm directly uses the code of ltl2dstar (i.e. without calling the binary), so the makefile was changed in the following way:
+  - The target "lib" creates a static library (libltl2dstar.a) which does not contain the source code of the main source file (ltl2dstar_main.cpp).
+  - The target "all" creates this static library and an executable file (ltl2dstar), using the main source file.
