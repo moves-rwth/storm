@@ -25,6 +25,11 @@ namespace abstract {
  */
 template <class T, class FormulaType>
 class TimeBoundedUntil: public TimeBoundedOperator<T> {
+
+	// Throw a compiler error if FormulaType is not a subclass of AbstractFormula.
+	static_assert(std::is_base_of<AbstractFormula<T>, FormulaType>::value,
+				  "Instantiaton of FormulaType for storm::property::abstract::TimeBoundedUntil<T,FormulaType> has to be a subtype of storm::property::abstract::AbstractFormula<T>");
+
 public:
 	/**
 	 * Constructor providing bounds only;
