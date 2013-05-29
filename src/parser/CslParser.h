@@ -11,23 +11,31 @@
 #include "Parser.h"
 
 #include "src/formula/Csl.h"
-//#include <memory>
+#include <functional>
 
 namespace storm {
 namespace parser {
 
+/*!
+ * Reads a CSL formula from its string representation and parses it into a formula tree, consisting of
+ * classes in the namespace storm::property.
+ *
+ * If the string could not be parsed successfully, it will throw a wrongFormatException.
+ *
+ * @param formulaString The string representation of the formula
+ * @throw wrongFormatException If the input could not be parsed successfully
+ */
+storm::property::csl::AbstractCslFormularRef_t<double> CslParser(std::string formulaString);
+
+/*!
+ * Struct for the CSL grammar, that Boost::Spirit uses to parse the formulas.
+ */
+template<typename Iterator, typename Skipper>
+struct CslGrammar;
+
 class CslParser: public storm::parser::Parser {
 public:
-	/*!
-	 * Reads a CSL formula from its string representation and parses it into a formula tree, consisting of
-	 * classes in the namespace storm::property.
-	 *
-	 * If the string could not be parsed successfully, it will throw a wrongFormatException.
-	 *
-	 * @param formulaString The string representation of the formula
-	 * @throw wrongFormatException If the input could not be parsed successfully
-	 */
-	CslParser(std::string formulaString);
+	
 	virtual ~CslParser();
 
 	/*!
@@ -41,11 +49,7 @@ private:
 private:
 	storm::property::csl::AbstractCslFormula<double>* formula;
 
-	/*!
-	 * Struct for the CSL grammar, that Boost::Spirit uses to parse the formulas.
-	 */
-	template<typename Iterator, typename Skipper>
-	struct CslGrammar;
+	
 };
 
 } /* namespace parser */

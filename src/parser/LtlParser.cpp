@@ -41,7 +41,7 @@ namespace storm {
 namespace parser {
 
 template<typename Iterator, typename Skipper>
-struct LtlParser::LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper > {
+struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper > {
 	LtlGrammar() : LtlGrammar::base_type(start) {
 		//This block contains helper rules that may be used several times
 		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
@@ -128,7 +128,7 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, storm::property::ltl::Abstr
 } //namespace parser
 
 
-storm::parser::LtlParser::LtlParser(std::string formulaString) {
+storm::property::ltl::AbstractLtlFormularSharedPtr_t<double> storm::parser::LtlParser(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -178,6 +178,6 @@ storm::parser::LtlParser::LtlParser(std::string formulaString) {
 		throw storm::exceptions::WrongFormatException() << "Syntax error in formula";
 	}
 
-	formula = result_pointer;
+	return storm::property::ltl::AbstractLtlFormularSharedPtr_t<double>(result_pointer);
 }
 

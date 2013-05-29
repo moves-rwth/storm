@@ -20,7 +20,7 @@ extern log4cplus::Logger logger;
  *	@param end New pointer will be written there
  *	@return Result of strtol()
  */
-uint_fast64_t storm::parser::Parser::checked_strtol(const char* str, char** end) {
+uint_fast64_t storm::parser::checked_strtol(const char* str, char** end) {
 	uint_fast64_t res = strtol(str, end, 10);
 	if (str == *end) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing integer. Next input token is not a number.");
@@ -38,7 +38,7 @@ uint_fast64_t storm::parser::Parser::checked_strtol(const char* str, char** end)
  *	@param end New pointer will be written there
  *	@return Result of strtod()
  */
-double storm::parser::Parser::checked_strtod(const char* str, char** end) {
+double storm::parser::checked_strtod(const char* str, char** end) {
 	double res = strtod(str, end);
 	if (str == *end) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing floating point. Next input token is not a number.");
@@ -54,7 +54,7 @@ double storm::parser::Parser::checked_strtod(const char* str, char** end) {
  *	@param buf String buffer
  *	@return	pointer to first non-whitespace character
  */
-char* storm::parser::Parser::trimWhitespaces(char* buf) {
+char* storm::parser::trimWhitespaces(char* buf) {
 	while ((*buf == ' ') || (*buf == '\t') || (*buf == '\n') || (*buf == '\r')) buf++;
 	return buf;
 }

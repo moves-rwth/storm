@@ -38,7 +38,7 @@ namespace storm {
 namespace parser {
 
 template<typename Iterator, typename Skipper>
-struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper > {
+struct CslGrammar : qi::grammar<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper > {
 	CslGrammar() : CslGrammar::base_type(start) {
 		//This block contains helper rules that may be used several times
 		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
@@ -166,7 +166,7 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::Abstr
 
 };
 
-CslParser::CslParser(std::string formulaString) {
+storm::property::csl::AbstractCslFormularRef_t<double> CslParser(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();

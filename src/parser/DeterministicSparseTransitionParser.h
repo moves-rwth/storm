@@ -15,20 +15,7 @@ namespace parser {
  *	@brief	Load a deterministic transition system from file and create a
  *	sparse adjacency matrix whose entries represent the weights of the edges
  */
-class DeterministicSparseTransitionParser : public Parser {
-	public:
-		DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing = true, RewardMatrixInformationStruct* rewardMatrixInformation = nullptr);
-
-		std::shared_ptr<storm::storage::SparseMatrix<double>> getMatrix() {
-			return this->matrix;
-		}
-
-	private:
-		std::shared_ptr<storm::storage::SparseMatrix<double>> matrix;
-
-		uint_fast64_t firstPass(char* buf, uint_fast64_t &maxnode, RewardMatrixInformationStruct* rewardMatrixInformation);
-
-};
+storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing = true, RewardMatrixInformationStruct* rewardMatrixInformation = nullptr);
 
 } // namespace parser
 } // namespace storm

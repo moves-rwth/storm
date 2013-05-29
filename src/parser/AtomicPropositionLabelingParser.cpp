@@ -40,12 +40,15 @@ namespace parser {
  *	@param filename   input .lab file's name.
  *	@return The pointer to the created labeling object.
  */
-AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t node_count,
-		std::string const & filename)
-	: labeling(nullptr) {
+storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser(uint_fast64_t node_count, std::string const & filename) {
 	/*
 	 *	Open file.
 	 */
+	if (!fileExistsAndIsReadable(filename.c_str())) {
+		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
+		throw storm::exceptions::WrongFormatException();
+	}
+
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
 
@@ -96,7 +99,7 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 	/*
 	 *	create labeling object with given node and proposition count
 	 */
-	this->labeling = std::shared_ptr<storm::models::AtomicPropositionsLabeling>(new storm::models::AtomicPropositionsLabeling(node_count, proposition_count));
+	storm::models::AtomicPropositionsLabeling labeling(node_count, proposition_count);
 
 	/*
 	 *	second run: add propositions and node labels to labeling
@@ -130,7 +133,7 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 				if (strncmp(buf, "#END", cnt) == 0) break;
 				strncpy(proposition, buf, cnt);
 				proposition[cnt] = '\0';
-				this->labeling->addAtomicProposition(proposition);
+				labeling.addAtomicProposition(proposition);
 			} else {
 				cnt = 1;  // next char is separator, one step forward
 			}
@@ -173,13 +176,14 @@ AtomicPropositionLabelingParser::AtomicPropositionLabelingParser(uint_fast64_t n
 					 */
 					strncpy(proposition, buf, cnt);
 					proposition[cnt] = '\0';
-					this->labeling->addAtomicPropositionToState(proposition, node);
+					labeling.addAtomicPropositionToState(proposition, node);
 					buf += cnt;
 				}
 			}
 			buf = trimWhitespaces(buf);
 		}
 	}
+	return labeling;
 }
 
 }  // namespace parser

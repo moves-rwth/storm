@@ -36,16 +36,20 @@ namespace parser {
  *
  *	@param stateCount The number of states.
  *	@param filename The filename of the state reward file.
- *	@return A pointer to the created state reward vector.
+ *	@return The created state reward vector.
  */
-SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::string const & filename)
-	: stateRewards(nullptr) {
+std::vector<double> SparseStateRewardParser(uint_fast64_t stateCount, std::string const & filename) {
 	// Open file.
+	if (!fileExistsAndIsReadable(filename.c_str())) {
+		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
+		throw storm::exceptions::WrongFormatException();
+	}
+
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
 
 	// Create state reward vector with given state count.
-	this->stateRewards = std::shared_ptr<std::vector<double>>(new std::vector<double>(stateCount));
+	std::vector<double> stateRewards(stateCount);
 
 	{
 		// Now parse state reward assignments.
@@ -62,7 +66,7 @@ SparseStateRewardParser::SparseStateRewardParser(uint_fast64_t stateCount, std::
 				throw storm::exceptions::WrongFormatException() << "State reward file specifies illegal reward value.";
 			}
 
-			(*this->stateRewards)[state] = reward;
+			stateRewards[state] = reward;
 
 			buf = trimWhitespaces(buf);
 		}

@@ -49,7 +49,7 @@ namespace parser {
  *	@param maxnode Is set to highest id of all nodes.
  *	@return The number of non-zero elements.
  */
-uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
+uint_fast64_t firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
 	bool isRewardFile = rewardMatrixInformation != nullptr;
 
 	/*
@@ -177,12 +177,16 @@ uint_fast64_t NondeterministicSparseTransitionParser::firstPass(char* buf, uint_
  *	@return a pointer to the created sparse matrix.
  */
 
-NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(std::string const &filename, RewardMatrixInformationStruct* rewardMatrixInformation)
-	: matrix(nullptr) {
+NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionParser(std::string const &filename, RewardMatrixInformationStruct* rewardMatrixInformation) {
 	/*
 	 *	Enforce locale where decimal point is '.'.
 	 */
 	setlocale(LC_NUMERIC, "C");
+
+	if (!fileExistsAndIsReadable(filename.c_str())) {
+		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
+		throw storm::exceptions::WrongFormatException();
+	}
 
 	bool isRewardFile = rewardMatrixInformation != nullptr;
 
@@ -197,7 +201,7 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	 */
 	int_fast64_t maxnode;
 	uint_fast64_t choices;
-	uint_fast64_t nonzero = this->firstPass(file.data, choices, maxnode, rewardMatrixInformation);
+	uint_fast64_t nonzero = firstPass(file.data, choices, maxnode, rewardMatrixInformation);
 
 	/*
 	 *	If first pass returned zero, the file format was wrong.
@@ -238,17 +242,18 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	 *	Those two values, as well as the number of nonzero elements, was been calculated in the first run.
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << choices << " x " << (maxnode+1) << " with " << nonzero << " entries.");
-	this->matrix = std::shared_ptr<storm::storage::SparseMatrix<double>>(new storm::storage::SparseMatrix<double>(choices, maxnode + 1));
-	if (this->matrix == nullptr) {
+	storm::storage::SparseMatrix<double> matrix(choices, maxnode + 1);
+	matrix.initialize(nonzero);
+	if (!matrix.isInitialized()) {
 		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << choices << " x " << (maxnode+1) << ".");
 		throw std::bad_alloc();
 	}
-	this->matrix->initialize(nonzero);
+	
 
 	/*
 	 *	Create row mapping.
 	 */
-	this->rowMapping = std::shared_ptr<std::vector<uint_fast64_t>>(new std::vector<uint_fast64_t>(maxnode+2,0));
+	std::vector<uint_fast64_t> rowMapping(maxnode + 2, 0);
 
 	/*
 	 *	Parse file content.
@@ -303,8 +308,8 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 			for (int_fast64_t node = lastsource + 1; node < source; node++) {
 				hadDeadlocks = true;
 				if (fixDeadlocks) {
-					this->rowMapping->at(node) = curRow;
-					this->matrix->addNextValue(curRow, node, 1);
+					rowMapping.at(node) = curRow;
+					matrix.addNextValue(curRow, node, 1);
 					++curRow;
 					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
 				} else {
@@ -315,14 +320,14 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 				/*
 				 *	Add this source to rowMapping, if this is the first choice we encounter for this state.
 				 */
-				this->rowMapping->at(source) = curRow;
+				rowMapping.at(source) = curRow;
 			}
 		}
 
 		// Read target and value and write it to the matrix.
 		target = checked_strtol(buf, &buf);
 		val = checked_strtod(buf, &buf);
-		this->matrix->addNextValue(curRow, target, val);
+		matrix.addNextValue(curRow, target, val);
 
 		lastsource = source;
 		lastchoice = choice;
@@ -338,7 +343,7 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	}
 
 	for (int_fast64_t node = lastsource + 1; node <= maxnode + 1; node++) {
-		this->rowMapping->at(node) = curRow + 1;
+		rowMapping.at(node) = curRow + 1;
 	}
 
 	if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
@@ -346,7 +351,9 @@ NondeterministicSparseTransitionParser::NondeterministicSparseTransitionParser(s
 	/*
 	 * Finalize matrix.
 	 */	
-	this->matrix->finalize();
+	matrix.finalize();
+
+	return std::make_pair(matrix, rowMapping);
 }
 
 }  // namespace parser

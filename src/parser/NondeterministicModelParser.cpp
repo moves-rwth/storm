@@ -29,23 +29,21 @@ namespace parser {
  */
 NondeterministicModelParser::NondeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	storm::parser::NondeterministicSparseTransitionParser tp(transitionSystemFile);
-	uint_fast64_t stateCount = tp.getMatrix()->getColumnCount();
+	NondeterministicSparseTransitionParserResult_t nondeterministicSparseTransitionParserResult = storm::parser::NondeterministicSparseTransitionParser(transitionSystemFile);
+	uint_fast64_t stateCount = nondeterministicSparseTransitionParserResult.first.getColumnCount();
 
-	storm::parser::AtomicPropositionLabelingParser lp(stateCount, labelingFile);
 	if (stateRewardFile != "") {
-		storm::parser::SparseStateRewardParser srp(stateCount, stateRewardFile);
-		this->stateRewards = srp.getStateRewards();
+		std::vector<double> stateRewards = storm::parser::SparseStateRewardParser(stateCount, stateRewardFile);
 	}
 	if (transitionRewardFile != "") {
-		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(tp.getMatrix()->getRowCount(), tp.getMatrix()->getColumnCount(), tp.getRowMapping());
+		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(nondeterministicSparseTransitionParserResult.first.getRowCount(), nondeterministicSparseTransitionParserResult.first.getColumnCount(), nondeterministicSparseTransitionParserResult.second);
 		storm::parser::NondeterministicSparseTransitionParser trp(transitionRewardFile, rewardMatrixInfo);
 		delete rewardMatrixInfo;
 		this->transitionRewardMatrix = trp.getMatrix();
 	}
 
 	this->probabilityMatrix = tp.getMatrix();
-	this->stateLabeling = lp.getLabeling();
+	this->stateLabeling = std::shared_ptr<storm::models::AtomicPropositionsLabeling>(storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile));
 	this->rowMapping = tp.getRowMapping();
 
 	this->mdp = nullptr;

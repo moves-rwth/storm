@@ -13,29 +13,16 @@
 namespace storm {
 namespace parser {
 	
+/*! 
+ * @brief Contains the Result of a call to the NondeterministicSparseTransitionParser function. The first part is the resulting matrix. The second part is the row mapping.
+ */
+typedef std::pair<storm::storage::SparseMatrix<double>, std::vector<uint_fast64_t>> NondeterministicSparseTransitionParserResult_t;
+
 /*!
  *	@brief	Load a nondeterministic transition system from file and create a
  *	sparse adjacency matrix whose entries represent the weights of the edges
  */
-class NondeterministicSparseTransitionParser : public Parser {
-	public:
-		NondeterministicSparseTransitionParser(std::string const &filename, RewardMatrixInformationStruct* rewardMatrixInformation = nullptr);
-
-		inline std::shared_ptr<storm::storage::SparseMatrix<double>> getMatrix() const {
-			return this->matrix;
-		}
-
-		inline std::shared_ptr<std::vector<uint_fast64_t>> getRowMapping() const {
-			return this->rowMapping;
-		}
-
-	private:
-		std::shared_ptr<storm::storage::SparseMatrix<double>> matrix;
-		std::shared_ptr<std::vector<uint_fast64_t>> rowMapping;
-
-		uint_fast64_t firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation);
-
-};
+NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionParser(std::string const &filename, RewardMatrixInformationStruct* rewardMatrixInformation = nullptr);
 
 } // namespace parser
 } // namespace storm

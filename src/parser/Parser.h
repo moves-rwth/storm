@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <iostream>
+#include <fstream>
 #include <memory>
 #include <vector>
 
@@ -46,6 +47,15 @@ namespace parser {
 		uint_fast64_t columnCount;
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices;
 	};
+
+	/*!
+	 *  @brief Tests whether the given file exists and is readable.
+	 */
+	bool fileExistsAndIsReadable(const char* fileName) {
+		std::ifstream fin(fileName);
+		bool returnValue = !fin.fail();
+		return returnValue;
+	}
 
 	/*!
 	 *	@brief Opens a file and maps it to memory providing a char*
@@ -114,22 +124,24 @@ namespace parser {
 	};
 
 	class Parser {
-		protected:
-			/*!
-			 *	@brief Parses integer and checks, if something has been parsed.
-			 */
-			uint_fast64_t checked_strtol(const char* str, char** end);
-
-			/*!
-			 *	@brief Parses floating point and checks, if something has been parsed.
-			 */
-			double checked_strtod(const char* str, char** end);
-	
-			/*!
-			 *	@brief Skips common whitespaces in a string.
-			 */
-			char* trimWhitespaces(char* buf);
+		//protected:
+			
 	};
+
+	/*!
+		*	@brief Parses integer and checks, if something has been parsed.
+		*/
+	uint_fast64_t checked_strtol(const char* str, char** end);
+
+	/*!
+		*	@brief Parses floating point and checks, if something has been parsed.
+		*/
+	double checked_strtod(const char* str, char** end);
+	
+	/*!
+		*	@brief Skips common whitespaces in a string.
+		*/
+	char* trimWhitespaces(char* buf);
 
 } // namespace parser
 } // namespace storm

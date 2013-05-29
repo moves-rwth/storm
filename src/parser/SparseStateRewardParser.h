@@ -13,17 +13,7 @@ namespace parser {
 /*!
  *	@brief Load state reward file and return vector of state rewards.
  */
-class SparseStateRewardParser : Parser {
-	public:
-		SparseStateRewardParser(uint_fast64_t stateCount, std::string const &filename);
-
-		std::shared_ptr<std::vector<double>> getStateRewards() {
-			return this->stateRewards;
-		}
-
-	private:
-		std::shared_ptr<std::vector<double>> stateRewards;
-};
+std::vector<double> SparseStateRewardParser(uint_fast64_t stateCount, std::string const &filename);
 
 } // namespace parser
 
