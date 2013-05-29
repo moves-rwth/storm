@@ -54,7 +54,7 @@ class IBoundedEventuallyVisitor {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual void visitBoundedEventually(const BoundedEventually<T>& obj) const = 0;
+		virtual void visitBoundedEventually(const BoundedEventually<T>& obj) = 0;
 };
 
 /*!
@@ -134,7 +134,7 @@ public:
 		return modelChecker.template as<IBoundedEventuallyModelChecker>()->checkBoundedEventually(*this);
 	}
 
-	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
 		visitor.template as<IBoundedEventuallyVisitor>()->visitBoundedEventually(*this);
 	}
 };

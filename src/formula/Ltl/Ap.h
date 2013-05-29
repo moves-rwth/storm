@@ -51,7 +51,7 @@ class IApVisitor {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual void visitAp(const Ap<T>& obj) const = 0;
+		virtual void visitAp(const Ap<T>& obj) = 0;
 };
 
 /*!
@@ -118,7 +118,7 @@ public:
 		return new Ap(this->getAp());
 	}
 
-	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
 		visitor.template as<IApVisitor>()->visitAp(*this);
 	}
 };

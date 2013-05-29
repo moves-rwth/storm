@@ -79,7 +79,7 @@ public:
 	 *	@param visitor The visitor object.
 	 *	@return true iff all subtrees are valid.
 	 */
-	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const = 0;
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const = 0;
 };
 
 } /* namespace ltl */

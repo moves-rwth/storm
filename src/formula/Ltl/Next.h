@@ -51,7 +51,7 @@ class INextVisitor {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual void visitNext(const Next<T>& obj) const = 0;
+		virtual void visitNext(const Next<T>& obj) = 0;
 };
 
 /*!
@@ -128,7 +128,7 @@ public:
 		return modelChecker.template as<INextModelChecker>()->checkNext(*this);
 	}
 
-	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
 		visitor.template as<INextVisitor>()->visitNext(*this);
 	}
 };

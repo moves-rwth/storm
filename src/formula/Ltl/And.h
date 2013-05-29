@@ -53,7 +53,7 @@ class IAndVisitor {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual void visitAnd(const And<T>& obj) const = 0;
+		virtual void visitAnd(const And<T>& obj) = 0;
 };
 
 /*!
@@ -135,7 +135,7 @@ public:
 		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
 	}
 
-	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
 		visitor.template as<IAndVisitor>()->visitAnd(*this);
 	}
 

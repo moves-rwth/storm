@@ -51,7 +51,7 @@ class IUntilVisitor {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual void visitUntil(const Until<T>& obj) const = 0;
+		virtual void visitUntil(const Until<T>& obj) = 0;
 };
 
 /*!
@@ -145,7 +145,7 @@ public:
 		return modelChecker.template as<IUntilModelChecker>()->checkUntil(*this);
 	}
 
-	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
 		visitor.template as<IUntilVisitor>()->visitUntil(*this);
 	}
 };

@@ -51,7 +51,7 @@ class INotVisitor {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual void visitNot(const Not<T>& obj) const = 0;
+		virtual void visitNot(const Not<T>& obj) = 0;
 };
 
 /*!
@@ -124,7 +124,7 @@ public:
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);
 	}
 
-	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
 		visitor.template as<INotVisitor>()->visitNot(*this);
 	}
 };

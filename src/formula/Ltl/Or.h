@@ -50,7 +50,7 @@ class IOrVisitor {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual void visitOr(const Or<T>& obj) const = 0;
+		virtual void visitOr(const Or<T>& obj) = 0;
 };
 
 /*!
@@ -129,7 +129,7 @@ public:
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
 
-	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
 		visitor.template as<IOrVisitor>()->visitOr(*this);
 	}
 

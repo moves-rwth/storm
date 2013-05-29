@@ -49,9 +49,9 @@ public:
 	 * If the model checker is not of the requested type, type casting will fail and result in an exception.
 	 */
 	template <template <class Type> class Target>
-	const Target<T>* as() const {
+	Target<T>* as() {
 		try {
-			const Target<T>* target = dynamic_cast<const Target<T>*>(this);
+			Target<T>* target = dynamic_cast<Target<T>*>(this);
 			return target;
 		} catch (std::bad_cast& bc) {
 			LOG4CPLUS_ERROR(logger, "Bad cast: tried to cast " << typeid(*this).name() << " to " << typeid(Target<T>).name() << ".");
