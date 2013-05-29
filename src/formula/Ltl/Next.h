@@ -37,6 +37,24 @@ class INextModelChecker {
 };
 
 /*!
+ *	@brief Interface class for visitors that support Next.
+ *
+ *	All visitors that support the formula class Next must inherit
+ *	this pure virtual class.
+ */
+template <class T>
+class INextVisitor {
+	public:
+		/*!
+		 *	@brief Visits Next formula.
+		 *
+		 *	@param obj Formula object with subformulas.
+		 *	@return Result of the formula for every node.
+		 */
+		virtual void visitNext(const Next<T>& obj) const = 0;
+};
+
+/*!
  * @brief
  * Class for an abstract (path) formula tree with a Next node as root.
  *
@@ -108,6 +126,10 @@ public:
 	 */
 	virtual std::vector<T> *check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<INextModelChecker>()->checkNext(*this);
+	}
+
+	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+		visitor.template as<INextVisitor>()->visitNext(*this);
 	}
 };
 

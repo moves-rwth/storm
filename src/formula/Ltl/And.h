@@ -39,6 +39,24 @@ class IAndModelChecker {
 };
 
 /*!
+ *	@brief Interface class for visitors that support And.
+ *
+ *	All visitors that support the formula class And must inherit
+ *	this pure virtual class.
+ */
+template <class T>
+class IAndVisitor {
+	public:
+		/*!
+		 *	@brief Evaluates And formula within a model checker.
+		 *
+		 *	@param obj Formula object with subformulas.
+		 *	@return Result of the formula for every node.
+		 */
+		virtual void visitAnd(const And<T>& obj) const = 0;
+};
+
+/*!
  * @brief
  * Class for an abstract formula tree with AND node as root.
  *
@@ -115,6 +133,10 @@ public:
 	 */
 	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
+	}
+
+	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+		visitor.template as<IAndVisitor>()->visitAnd(*this);
 	}
 
 };

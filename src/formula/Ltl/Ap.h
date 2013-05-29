@@ -35,6 +35,25 @@ class IApModelChecker {
 		virtual std::vector<T>* checkAp(const Ap<T>& obj) const = 0;
 };
 
+
+/*!
+ *	@brief Interface class for visitors that support Ap.
+ *
+ *	All visitors that support the formula class Ap must inherit
+ *	this pure virtual class.
+ */
+template <class T>
+class IApVisitor {
+	public:
+		/*!
+		 *	@brief Evaluates And formula within a model checker.
+		 *
+		 *	@param obj Formula object with subformulas.
+		 *	@return Result of the formula for every node.
+		 */
+		virtual void visitAp(const Ap<T>& obj) const = 0;
+};
+
 /*!
  * @brief
  * Class for an abstract formula tree with atomic proposition as root.
@@ -97,6 +116,10 @@ public:
 	 */
 	virtual AbstractLtlFormula<T>* clone() const {
 		return new Ap(this->getAp());
+	}
+
+	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+		visitor.template as<IApVisitor>()->visitAp(*this);
 	}
 };
 

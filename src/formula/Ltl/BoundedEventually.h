@@ -40,6 +40,24 @@ class IBoundedEventuallyModelChecker {
 };
 
 /*!
+ *	@brief Interface class for visitors that support BoundedEventually.
+ *
+ *	All visitors that support the formula class BoundedEventually must inherit
+ *	this pure virtual class.
+ */
+template <class T>
+class IBoundedEventuallyVisitor {
+	public:
+		/*!
+		 *	@brief Evaluates BoundedEventually formula within a model checker.
+		 *
+		 *	@param obj Formula object with subformulas.
+		 *	@return Result of the formula for every node.
+		 */
+		virtual void visitBoundedEventually(const BoundedEventually<T>& obj) const = 0;
+};
+
+/*!
  * @brief
  * Class for an abstract (path) formula tree with a BoundedEventually node as root.
  *
@@ -114,6 +132,10 @@ public:
 	 */
 	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IBoundedEventuallyModelChecker>()->checkBoundedEventually(*this);
+	}
+
+	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+		visitor.template as<IBoundedEventuallyVisitor>()->visitBoundedEventually(*this);
 	}
 };
 

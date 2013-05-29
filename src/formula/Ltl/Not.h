@@ -37,6 +37,24 @@ class INotModelChecker {
 };
 
 /*!
+ *	@brief Interface class for visitors that support Not.
+ *
+ *	All visitors that support the formula class Not must inherit
+ *	this pure virtual class.
+ */
+template <class T>
+class INotVisitor {
+	public:
+		/*!
+		 *	@brief Visits Not formula.
+		 *
+		 *	@param obj Formula object with subformulas.
+		 *	@return Result of the formula for every node.
+		 */
+		virtual void visitNot(const Not<T>& obj) const = 0;
+};
+
+/*!
  * @brief
  * Class for an abstract formula tree with NOT node as root.
  *
@@ -104,6 +122,10 @@ public:
 	 */
 	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);
+	}
+
+	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+		visitor.template as<INotVisitor>()->visitNot(*this);
 	}
 };
 

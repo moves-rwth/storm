@@ -36,6 +36,24 @@ class IOrModelChecker {
 };
 
 /*!
+ *	@brief Interface class for visitors that support Or.
+ *
+ *	All visitors that support the formula class Or must inherit
+ *	this pure virtual class.
+ */
+template <class T>
+class IOrVisitor {
+	public:
+		/*!
+		 *	@brief Visits Or formula.
+		 *
+		 *	@param obj Formula object with subformulas.
+		 *	@return Result of the formula for every node.
+		 */
+		virtual void visitOr(const Or<T>& obj) const = 0;
+};
+
+/*!
  * @brief
  * Class for an abstract formula tree with OR node as root.
  *
@@ -109,6 +127,10 @@ public:
 	 */
 	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
+	}
+
+	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+		visitor.template as<IOrVisitor>()->visitOr(*this);
 	}
 
 };

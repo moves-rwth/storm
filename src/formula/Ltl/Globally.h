@@ -38,6 +38,24 @@ class IGloballyModelChecker {
 };
 
 /*!
+ *	@brief Interface class for visitors that support Globally.
+ *
+ *	All visitors that support the formula class Globally must inherit
+ *	this pure virtual class.
+ */
+template <class T>
+class IGloballyVisitor {
+	public:
+		/*!
+		 *	@brief Visits Globally formula.
+		 *
+		 *	@param obj Formula object with subformulas.
+		 *	@return Result of the formula for every node.
+		 */
+		virtual void visitGlobally(const Globally<T>& obj) const = 0;
+};
+
+/*!
  * @brief
  * Class for an abstract (path) formula tree with a Globally node as root.
  *
@@ -110,6 +128,10 @@ public:
 	 */
 	virtual std::vector<T> *check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IGloballyModelChecker>()->checkGlobally(*this);
+	}
+
+	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+		visitor.template as<IGloballyVisitor>()->visitGlobally(*this);
 	}
 };
 

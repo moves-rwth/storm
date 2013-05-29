@@ -12,6 +12,21 @@
 #include "src/modelchecker/ltl/ForwardDeclarations.h"
 #include "src/formula/abstract/AbstractFormula.h"
 
+// Forward declaration for formula visitor
+namespace storm {
+namespace property {
+namespace ltl {
+
+template <class T>
+class AbstractLtlFormula;
+
+}
+}
+}
+
+#include "visitor/AbstractLtlFormulaVisitor.h"
+
+
 namespace storm {
 namespace property {
 namespace ltl {
@@ -50,6 +65,21 @@ public:
 	 * @returns a new AND-object that is identical the called object.
 	 */
 	virtual AbstractLtlFormula<T>* clone() const = 0;
+
+	/*!
+	 *	@brief Visits all nodes of a formula tree.
+	 *
+	 *	@note Every subclass must implement this method.
+	 *
+	 *	This method is given a visitor that visits each node to perform some
+	 *	task on it (e.g. Validity checks, conversion, ...). The subclasses are to
+	 *
+	 *
+	 *
+	 *	@param visitor The visitor object.
+	 *	@return true iff all subtrees are valid.
+	 */
+	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const = 0;
 };
 
 } /* namespace ltl */

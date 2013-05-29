@@ -37,6 +37,24 @@ class IEventuallyModelChecker {
 };
 
 /*!
+ *	@brief Interface class for visitors that support Eventually.
+ *
+ *	All visitors that support the formula class Eventually must inherit
+ *	this pure virtual class.
+ */
+template <class T>
+class IEventuallyVisitor {
+	public:
+		/*!
+		 *	@brief Visits Eventually formula.
+		 *
+		 *	@param obj Formula object with subformulas.
+		 *	@return Result of the formula for every node.
+		 */
+		virtual void visitEventually(const Eventually<T>& obj) const = 0;
+};
+
+/*!
  * @brief
  * Class for an abstract (path) formula tree with an Eventually node as root.
  *
@@ -108,6 +126,10 @@ public:
 	 */
 	virtual std::vector<T> *check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IEventuallyModelChecker>()->checkEventually(*this);
+	}
+
+	virtual void visit(const visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+		visitor.template as<IEventuallyVisitor>()->visitEventually(*this);
 	}
 };
 
