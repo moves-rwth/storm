@@ -88,19 +88,28 @@ public:
 		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
 		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
 
-		// Copy the matrix before we make any changes.
-		storm::storage::SparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionMatrix());
-
-		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
-		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates);
+        // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the
+        // further analysis.
+        storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(this->getModel(), *leftStates, *rightStates);
+        
+        // Now we can eliminate the rows and columns from the original transition probability matrix that have probability 0.
+        storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
+        
+		// Make all rows absorbing that satisfy the second sub-formula.
+		submatrix.makeRowsAbsorbing(maybeStates % *rightStates);
 
 		// Create the vector with which to multiply.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-		storm::utility::vector::setVectorValues(*result, *rightStates, storm::utility::constGetOne<Type>());
+        std::vector<Type> subresult(maybeStates.getNumberOfSetBits());
+		storm::utility::vector::setVectorValues(subresult, *rightStates, storm::utility::constGetOne<Type>());
 
 		// Perform the matrix vector multiplication as often as required by the formula bound.
-		this->performMatrixVectorMultiplication(tmpMatrix, *result, nullptr, formula.getBound());
+		this->performMatrixVectorMultiplication(submatrix, subresult, nullptr, formula.getBound());
 
+        // Create result vector and set its values accordingly.
+		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+        storm::utility::vector::setVectorValues(*result, maybeStates, subresult);
+        storm::utility::vector::setVectorValues<Type>(*result, ~maybeStates, storm::utility::constGetZero<Type>());
+        
 		// Delete obsolete intermediates and return result.
 		delete leftStates;
 		delete rightStates;

@@ -85,55 +85,53 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		virtual ModelType getType() const = 0;
 
         /*!
-         * Extracts the SCC dependency graph from the model according to the given SCC decomposition.
+         * Extracts the dependency graph from the model according to the given partition.
          *
-         * @param stronglyConnectedComponents A vector containing the SCCs of the system.
-         * @param stateToSccMap A mapping from state indices to
+         * @param partition A vector containing the blocks of the partition of the system.
+         * @return A sparse matrix with bool entries that represents the dependency graph of the blocks of the partition.
          */
-        storm::storage::SparseMatrix<bool> extractSccDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& stronglyConnectedComponents) const {
-            uint_fast64_t numberOfStates = stronglyConnectedComponents.size();
+        storm::storage::SparseMatrix<bool> extractPartitionDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& partition) const {
+            uint_fast64_t numberOfStates = partition.size();
             
             // First, we need to create a mapping of states to their SCC index, to ease the computation
             // of dependency transitions later.
-            std::vector<uint_fast64_t> stateToSccMap(this->getNumberOfStates());
+            std::vector<uint_fast64_t> stateToBlockMap(this->getNumberOfStates());
             for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                for (uint_fast64_t j = 0; j < stronglyConnectedComponents[i].size(); ++j) {
-                    stateToSccMap[stronglyConnectedComponents[i][j]] = i;
+                for (uint_fast64_t j = 0; j < partition[i].size(); ++j) {
+                    stateToBlockMap[partition[i][j]] = i;
                 }
             }
             
-            // The resulting sparse matrix will have as many rows/columns as there are SCCs.
-
-            storm::storage::SparseMatrix<bool> sccDependencyGraph(numberOfStates);
-            sccDependencyGraph.initialize();
+            // The resulting sparse matrix will have as many rows/columns as there are blocks in the partition.
+            storm::storage::SparseMatrix<bool> dependencyGraph(numberOfStates);
+            dependencyGraph.initialize();
             
-            for (uint_fast64_t currentSccIndex = 0; currentSccIndex < stronglyConnectedComponents.size(); ++currentSccIndex) {
-                // Get the actual SCC.
-                std::vector<uint_fast64_t> const& scc = stronglyConnectedComponents[currentSccIndex];
+            for (uint_fast64_t currentBlockIndex = 0; currentBlockIndex < partition.size(); ++currentBlockIndex) {
+                // Get the next block.
+                std::vector<uint_fast64_t> const& block = partition[currentBlockIndex];
                 
-                // Now, we determine the SCCs which are reachable (in one step) from the current SCC.
-                std::set<uint_fast64_t> allTargetSccs;
-                for (auto state : scc) {
+                // Now, we determine the blocks which are reachable (in one step) from the current block.
+                std::set<uint_fast64_t> allTargetBlocks;
+                for (auto state : block) {
                     for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator succIt = this->constStateSuccessorIteratorBegin(state), succIte = this->constStateSuccessorIteratorEnd(state); succIt != succIte; ++succIt) {
-                        uint_fast64_t targetScc = stateToSccMap[*succIt];
+                        uint_fast64_t targetBlock = stateToBlockMap[*succIt];
                         
                         // We only need to consider transitions that are actually leaving the SCC.
-                        if (targetScc != currentSccIndex) {
-                            allTargetSccs.insert(targetScc);
+                        if (targetBlock != currentBlockIndex) {
+                            allTargetBlocks.insert(targetBlock);
                         }
                     }
                 }
                 
                 // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
-                for (auto targetScc : allTargetSccs) {
-                    sccDependencyGraph.insertNextValue(currentSccIndex, targetScc, true);
+                for (auto targetBlock : allTargetBlocks) {
+                    dependencyGraph.insertNextValue(currentBlockIndex, targetBlock, true);
                 }
             }
             
-            // Finalize the matrix.
-            sccDependencyGraph.finalize(true);
-            
-            return sccDependencyGraph;
+            // Finalize the matrix and return result.
+            dependencyGraph.finalize(true);
+            return dependencyGraph;
         }
     
         /*!
@@ -332,7 +330,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 				<< std::endl;
 		}
 
-	protected:
+protected:
 		/*! A matrix representing the likelihoods of moving between states. */
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix;
 

@@ -469,6 +469,41 @@ public:
 		}
 		return true;
 	}
+    
+    /*!
+	 * Computes a bit vector such that bit i is set iff the i-th set bit of the current bit vector is also contained
+     * in the given bit vector.
+     *
+	 * @param bv A reference the bit vector to be used.
+	 * @return A bit vector whose i-th bit is set iff the i-th set bit of the current bit vector is also contained
+     * in the given bit vector.
+	 */
+	BitVector operator%(BitVector const& bv) const {
+		// Create resulting bit vector.
+		BitVector result(this->getNumberOfSetBits());
+        
+        // If the current bit vector has not too many elements compared to the given bit vector we prefer iterating
+        // over its elements.
+        if (this->getNumberOfSetBits() / 10 < bv.getNumberOfSetBits()) {
+            uint_fast64_t position = 0;
+            for (auto bit : *this) {
+                if (bv.get(bit)) {
+                    result.set(position, true);
+                }
+                ++position;
+            }
+        } else {
+            // If the given bit vector had much less elements, we iterate over its elements and accept calling the more
+            // costly operation getNumberOfSetBitsBeforeIndex on the current bit vector.
+            for (auto bit : bv) {
+                if (this->get(bit)) {
+                    result.set(this->getNumberOfSetBitsBeforeIndex(bit), true);
+                }
+            }
+        }
+        
+		return result;
+	}
 
 	/*!
 	 * Adds all indices of bits set to one to the provided list.

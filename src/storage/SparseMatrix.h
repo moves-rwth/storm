@@ -592,7 +592,7 @@ public:
 		// Check whether the accessed state exists.
 		if (row > rowCount) {
 			LOG4CPLUS_ERROR(logger, "Trying to make an illegal row " << row << " absorbing.");
-			throw storm::exceptions::OutOfRangeException("Trying to make an illegal row absorbing.");
+			throw storm::exceptions::OutOfRangeException() << "Trying to make an illegal row " << row << " absorbing.";
 			return false;
 		}
 
