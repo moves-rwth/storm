@@ -157,8 +157,7 @@ public:
 				delete result;
 			}
 		}
-		std::cout << std::endl;
-		storm::utility::printSeparationLine(std::cout);
+		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
 	/*!
@@ -187,8 +186,7 @@ public:
 				delete result;
 			}
 		}
-		std::cout << std::endl;
-		storm::utility::printSeparationLine(std::cout);
+		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
 	/*!

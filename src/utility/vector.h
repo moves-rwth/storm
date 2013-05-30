@@ -185,7 +185,7 @@ void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vec
  */
 template<class T>
 void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping) {
-	reduceVector<T>(source, target, rowGrouping, [] (T const& val1, T const& val2) -> bool { return val1 < val2; });
+	reduceVector<T>(source, target, rowGrouping, std::less<T>());
 }
 
 /*!
@@ -197,7 +197,7 @@ void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::
  */
 template<class T>
 void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping) {
-    reduceVector<T>(source, target, rowGrouping, [] (T const& val1, T const& val2) -> bool { return val1 > val2; });
+    reduceVector<T>(source, target, rowGrouping, std::greater<T>());
 }
 
 /*!

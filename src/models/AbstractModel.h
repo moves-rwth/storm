@@ -4,7 +4,6 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/utility/CommandLine.h"
 
 #include <memory>
 #include <vector>
