@@ -34,7 +34,7 @@ public:
 	 *
 	 * @param model The DTMC to be checked.
 	 */
-	explicit GmmxxDtmcPrctlModelChecker(storm::models::Dtmc<Type>& dtmc) : SparseDtmcPrctlModelChecker<Type>(dtmc) {
+	explicit GmmxxDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& dtmc) : SparseDtmcPrctlModelChecker<Type>(dtmc) {
 		// Intentionally left empty.
 	}
 
@@ -277,7 +277,7 @@ private:
 			xCurrent = swap;
 
 			// Now check if the process already converged within our precision.
-			converged = storm::utility::equalModuloPrecision(*xCurrent, *xNext, precision, relative);
+			converged = storm::utility::vector::equalModuloPrecision(*xCurrent, *xNext, precision, relative);
 
 			// Increase iteration count so we can abort if convergence is too slow.
 			++iterationCount;

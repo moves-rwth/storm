@@ -1,5 +1,5 @@
 /*
- * GraphAnalyzer.h
+ * graph.h
  *
  *  Created on: 28.11.2012
  *      Author: Christian Dehnert
