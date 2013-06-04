@@ -162,6 +162,20 @@ public:
 	}
 
 	/*!
+	 * Returns the number of atomic propositions managed by this object (set in the initialization).
+     *
+	 * @return The number of atomic propositions.
+	 */
+	uint_fast64_t getIndexOfProposition(std::string const& ap) const {
+		if (!this->containsAtomicProposition(ap)) {
+			LOG4CPLUS_ERROR(logger, "The atomic proposition " << ap << " is invalid for the labeling of the model.");
+			throw storm::exceptions::InvalidArgumentException() << "The atomic proposition " << ap << " is invalid for the labeling of the model.";
+		}
+		auto apIndexPair = nameToLabelingMap.find(ap);
+		return apIndexPair->second;
+	}
+
+	/*!
 	 * Returns the labeling of states associated with the given atomic proposition.
      *
 	 * @param ap The name of the atomic proposition.
@@ -199,6 +213,11 @@ public:
 				<< this->singleLabelings[apIndexPair.second].getNumberOfSetBits();
 			out << " state(s)" << std::endl;
 		}
+	}
+
+	std::unordered_map<std::string, uint_fast64_t> const& getNameToLabelingMap() const
+			{
+		return this->nameToLabelingMap;
 	}
 
 private:

@@ -75,7 +75,7 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, storm::property::ltl::Abstr
 		atomicProposition.name("LTL formula");
 
 		//This block defines rules for parsing probabilistic path formulas
-		pathFormula = (boundedEventually | eventually | globally);
+		pathFormula = (boundedEventually | eventually | globally | next);
 		pathFormula.name("LTL formula");
 		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > ltlFormula)[qi::_val =
 				phoenix::new_<storm::property::ltl::BoundedEventually<double>>(qi::_2, qi::_1)];
@@ -86,6 +86,9 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, storm::property::ltl::Abstr
 		globally = (qi::lit("G") >> ltlFormula)[qi::_val =
 				phoenix::new_<storm::property::ltl::Globally<double> >(qi::_1)];
 		globally.name("LTL formula");
+		next = (qi::lit("X") >> ltlFormula)[qi::_val =
+				phoenix::new_<storm::property::ltl::Next<double> >(qi::_1)];
+		next.name("LTL formula");
 
 		start = (((ltlFormula) > (comment | qi::eps))[qi::_val = qi::_1] |
 				 comment
@@ -113,6 +116,7 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, storm::property::ltl::Abstr
 	qi::rule<Iterator, storm::property::ltl::BoundedEventually<double>*(), Skipper> boundedEventually;
 	qi::rule<Iterator, storm::property::ltl::Eventually<double>*(), Skipper> eventually;
 	qi::rule<Iterator, storm::property::ltl::Globally<double>*(), Skipper> globally;
+	qi::rule<Iterator, storm::property::ltl::Next<double>*(), Skipper> next;
 	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), qi::locals< std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>>, Skipper> boundedUntil;
 	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), qi::locals< std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>>, Skipper> until;
 

@@ -92,7 +92,7 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::Abstr
 		steadyStateNoBoundOperator.name("no bound operator");
 
 		//This block defines rules for parsing probabilistic path formulas
-		pathFormula = (timeBoundedEventually | eventually | globally | timeBoundedUntil | until);
+		pathFormula = (timeBoundedEventually | eventually | globally | next | timeBoundedUntil | until);
 		pathFormula.name("path formula");
 		timeBoundedEventually = (
 				(qi::lit("F") >> qi::lit("[") > qi::double_ > qi::lit(",") > qi::double_ > qi::lit("]") > stateFormula)[qi::_val =
@@ -106,6 +106,9 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::Abstr
 		eventually = (qi::lit("F") > stateFormula)[qi::_val =
 				phoenix::new_<storm::property::csl::Eventually<double> >(qi::_1)];
 		eventually.name("path formula (for probabilistic operator)");
+		next = (qi::lit("X") > stateFormula)[qi::_val =
+				phoenix::new_<storm::property::csl::Next<double> >(qi::_1)];
+		next.name("path formula (for probabilistic operator)");
 		globally = (qi::lit("G") > stateFormula)[qi::_val =
 				phoenix::new_<storm::property::csl::Globally<double> >(qi::_1)];
 		globally.name("path formula (for probabilistic operator)");
@@ -152,6 +155,7 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::Abstr
 	qi::rule<Iterator, storm::property::csl::AbstractPathFormula<double>*(), Skipper> pathFormula;
 	qi::rule<Iterator, storm::property::csl::TimeBoundedEventually<double>*(), Skipper> timeBoundedEventually;
 	qi::rule<Iterator, storm::property::csl::Eventually<double>*(), Skipper> eventually;
+	qi::rule<Iterator, storm::property::csl::Next<double>*(), Skipper> next;
 	qi::rule<Iterator, storm::property::csl::Globally<double>*(), Skipper> globally;
 	qi::rule<Iterator, storm::property::csl::TimeBoundedUntil<double>*(), qi::locals< std::shared_ptr<storm::property::csl::AbstractStateFormula<double>>>, Skipper> timeBoundedUntil;
 	qi::rule<Iterator, storm::property::csl::Until<double>*(), qi::locals< std::shared_ptr<storm::property::csl::AbstractStateFormula<double>>>, Skipper> until;

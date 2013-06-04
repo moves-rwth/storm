@@ -110,7 +110,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 		rewardNoBoundOperator.name("no bound operator");
 
 		//This block defines rules for parsing probabilistic path formulas
-		pathFormula = (boundedEventually | eventually | globally | boundedUntil | until);
+		pathFormula = (boundedEventually | eventually | next | globally | boundedUntil | until);
 		pathFormula.name("path formula");
 		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > stateFormula)[qi::_val =
 				phoenix::new_<storm::property::prctl::BoundedEventually<double>>(qi::_2, qi::_1)];
@@ -118,6 +118,9 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 		eventually = (qi::lit("F") > stateFormula)[qi::_val =
 				phoenix::new_<storm::property::prctl::Eventually<double> >(qi::_1)];
 		eventually.name("path formula (for probabilistic operator)");
+		next = (qi::lit("X") > stateFormula)[qi::_val =
+				phoenix::new_<storm::property::prctl::Next<double> >(qi::_1)];
+		next.name("path formula (for probabilistic operator)");
 		globally = (qi::lit("G") > stateFormula)[qi::_val =
 				phoenix::new_<storm::property::prctl::Globally<double> >(qi::_1)];
 		globally.name("path formula (for probabilistic operator)");
@@ -172,6 +175,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 	qi::rule<Iterator, storm::property::prctl::AbstractPathFormula<double>*(), Skipper> pathFormula;
 	qi::rule<Iterator, storm::property::prctl::BoundedEventually<double>*(), Skipper> boundedEventually;
 	qi::rule<Iterator, storm::property::prctl::Eventually<double>*(), Skipper> eventually;
+	qi::rule<Iterator, storm::property::prctl::Next<double>*(), Skipper> next;
 	qi::rule<Iterator, storm::property::prctl::Globally<double>*(), Skipper> globally;
 	qi::rule<Iterator, storm::property::prctl::BoundedUntil<double>*(), qi::locals< std::shared_ptr<storm::property::prctl::AbstractStateFormula<double>>>, Skipper> boundedUntil;
 	qi::rule<Iterator, storm::property::prctl::Until<double>*(), qi::locals< std::shared_ptr<storm::property::prctl::AbstractStateFormula<double>>>, Skipper> until;
