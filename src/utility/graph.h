@@ -31,10 +31,12 @@ namespace graph {
      * @param model The model whose graph structure to search.
 	 * @param phiStates A bit vector of all states satisfying phi.
 	 * @param psiStates A bit vector of all states satisfying psi.
+     * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
+     * @param maximalSteps The maximal number of steps to reach the psi states. 
 	 * @return A bit vector with all indices of states that have a probability greater than 0.
 	 */
 	template <typename T>
-	storm::storage::BitVector performProbGreater0(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+	storm::storage::BitVector performProbGreater0(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
         // Prepare the resulting bit vector.
         storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
         
@@ -48,16 +50,43 @@ namespace graph {
 		std::vector<uint_fast64_t> stack;
 		stack.reserve(model.getNumberOfStates());
 		psiStates.addSetIndicesToVector(stack);
+        
+        // Initialize the stack for the step bound, if the number of steps is bounded.
+        std::vector<uint_fast64_t> stepStack;
+        std::vector<uint_fast64_t> remainingSteps;
+        if (useStepBound) {
+            stepStack.reserve(model.getNumberOfStates());
+            stepStack.insert(stepStack.begin(), psiStates.getNumberOfSetBits(), maximalSteps);
+            remainingSteps.resize(model.getNumberOfStates());
+            for (auto state : psiStates) {
+                remainingSteps[state] = maximalSteps;
+            }
+        }
 
 		// Perform the actual BFS.
-		while(!stack.empty()) {
-			uint_fast64_t currentState = stack.back();
+        uint_fast64_t currentState, currentStepBound;
+		while (!stack.empty()) {
+            currentState = stack.back();
 			stack.pop_back();
+            
+            if (useStepBound) {
+                currentStepBound = stepStack.back();
+                stepStack.pop_back();
+            }
 
-			for(auto it = backwardTransitions.constColumnIteratorBegin(currentState); it != backwardTransitions.constColumnIteratorEnd(currentState); ++it) {
-				if (phiStates.get(*it) && !statesWithProbabilityGreater0.get(*it)) {
-					statesWithProbabilityGreater0.set(*it, true);
-					stack.push_back(*it);
+			for (auto it = backwardTransitions.constColumnIteratorBegin(currentState); it != backwardTransitions.constColumnIteratorEnd(currentState); ++it) {
+				if (phiStates.get(*it) && (!statesWithProbabilityGreater0.get(*it) || (useStepBound && remainingSteps[*it] < currentStepBound - 1))) {
+                    // If we don't have a number of maximal steps to take, just add the state to the stack.
+                    if (!useStepBound) {
+                        statesWithProbabilityGreater0.set(*it, true);
+                        stack.push_back(*it);
+                    } else if (currentStepBound > 0) {
+                        // If there is at least one more step to go, we need to push the state and the new number of steps.
+                        remainingSteps[*it] = currentStepBound - 1;
+                        statesWithProbabilityGreater0.set(*it, true);
+                        stack.push_back(*it);
+                        stepStack.push_back(currentStepBound - 1);
+                    }
 				}
 			}
 		}
@@ -127,6 +156,80 @@ namespace graph {
 	}
 
     /*!
+	 * Computes the sets of states that have probability greater 0 of satisfying phi until psi under at least
+     * one possible resolution of non-determinism in a non-deterministic model. Stated differently,
+     * this means that these states have a probability greater 0 of satisfying phi until psi if the
+     * scheduler tries to minimize this probability.
+     *
+	 * @param model The model whose graph structure to search.
+     * @param backwardTransitions The reversed transition relation of the model.
+	 * @param phiStates The set of all states satisfying phi.
+	 * @param psiStates The set of all states satisfying psi.
+     * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
+     * @param maximalSteps The maximal number of steps to reach the psi states.
+	 * @return A bit vector that represents all states with probability 0.
+	 */
+	template <typename T>
+	storm::storage::BitVector performProbGreater0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
+        // Prepare resulting bit vector.
+        storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
+        
+		// Get some temporaries for convenience.
+		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+        
+		// Add all psi states as the already satisfy the condition.
+		statesWithProbabilityGreater0 |= psiStates;
+        
+		// Initialize the stack used for the BFS with the states
+		std::vector<uint_fast64_t> stack;
+		stack.reserve(model.getNumberOfStates());
+		psiStates.addSetIndicesToVector(stack);
+        
+        // Initialize the stack for the step bound, if the number of steps is bounded.
+        std::vector<uint_fast64_t> stepStack;
+        std::vector<uint_fast64_t> remainingSteps;
+        if (useStepBound) {
+            stepStack.reserve(model.getNumberOfStates());
+            stepStack.insert(stepStack.begin(), psiStates.getNumberOfSetBits(), maximalSteps);
+            remainingSteps.resize(model.getNumberOfStates());
+            for (auto state : psiStates) {
+                remainingSteps[state] = maximalSteps;
+            }
+        }
+        
+		// Perform the actual BFS.
+        uint_fast64_t currentState, currentStepBound;
+		while (!stack.empty()) {
+			currentState = stack.back();
+			stack.pop_back();
+            
+            if (useStepBound) {
+                currentStepBound = stepStack.back();
+                stepStack.pop_back();
+            }
+            
+			for (auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
+                if (phiStates.get(*it) && (!statesWithProbabilityGreater0.get(*it) || (useStepBound && remainingSteps[*it] < currentStepBound - 1))) {
+                    // If we don't have a bound on the number of steps to take, just add the state to the stack.
+                    if (!useStepBound) {
+                        statesWithProbabilityGreater0.set(*it, true);
+                        stack.push_back(*it);
+                    } else if (currentStepBound > 0) {
+                        // If there is at least one more step to go, we need to push the state and the new number of steps.
+                        remainingSteps[*it] = currentStepBound - 1;
+                        statesWithProbabilityGreater0.set(*it, true);
+                        stack.push_back(*it);
+                        stepStack.push_back(currentStepBound - 1);
+                    }
+                }
+			}
+		}
+        
+        return statesWithProbabilityGreater0;
+	}
+    
+    /*!
 	 * Computes the sets of states that have probability 0 of satisfying phi until psi under all
      * possible resolutions of non-determinism in a non-deterministic model. Stated differently,
      * this means that these states have probability 0 of satisfying phi until psi even if the
@@ -136,36 +239,14 @@ namespace graph {
      * @param backwardTransitions The reversed transition relation of the model.
 	 * @param phiStates The set of all states satisfying phi.
 	 * @param psiStates The set of all states satisfying psi.
+     * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
+     * @param maximalSteps The maximal number of steps to reach the psi states. 
 	 * @return A bit vector that represents all states with probability 0.
 	 */
 	template <typename T>
 	storm::storage::BitVector performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
-        // Prepare the resulting bit vector.
-        storm::storage::BitVector statesWithProbability0(model.getNumberOfStates());
-
-		// Add all psi states as the already satisfy the condition.
-		statesWithProbability0 |= psiStates;
-
-		// Initialize the stack used for the BFS with the states
-		std::vector<uint_fast64_t> stack;
-		stack.reserve(model.getNumberOfStates());
-		psiStates.addSetIndicesToVector(stack);
-
-		// Perform the actual BFS.
-		while(!stack.empty()) {
-			uint_fast64_t currentState = stack.back();
-			stack.pop_back();
-
-			for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
-				if (phiStates.get(*it) && !statesWithProbability0.get(*it)) {
-					statesWithProbability0.set(*it, true);
-					stack.push_back(*it);
-				}
-			}
-		}
-
-        // Finally, invert the computed set of states and return result.
-		statesWithProbability0.complement();
+        storm::storage::BitVector statesWithProbability0 = performProbGreater0E(model, backwardTransitions, phiStates, psiStates);
+        statesWithProbability0.complement();
         return statesWithProbability0;
 	}
 
@@ -194,13 +275,14 @@ namespace graph {
 
         // Perform the loop as long as the set of states gets larger.
 		bool done = false;
+        uint_fast64_t currentState;
 		while (!done) {
 			stack.clear();
 			storm::storage::BitVector nextStates(psiStates);
 			psiStates.addSetIndicesToVector(stack);
 
 			while (!stack.empty()) {
-				uint_fast64_t currentState = stack.back();
+				currentState = stack.back();
 				stack.pop_back();
 
 				for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
@@ -263,6 +345,101 @@ namespace graph {
 	}
 
     /*!
+	 * Computes the sets of states that have probability greater 0 of satisfying phi until psi under any
+     * possible resolution of non-determinism in a non-deterministic model. Stated differently,
+     * this means that these states have a probability greater 0 of satisfying phi until psi if the
+     * scheduler tries to maximize this probability.
+     *
+	 * @param model The model whose graph structure to search.
+     * @param backwardTransitions The reversed transition relation of the model.
+	 * @param phiStates The set of all states satisfying phi.
+	 * @param psiStates The set of all states satisfying psi.
+     * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
+     * @param maximalSteps The maximal number of steps to reach the psi states.
+	 * @return A bit vector that represents all states with probability 0.
+	 */
+	template <typename T>
+	storm::storage::BitVector performProbGreater0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
+        // Prepare resulting bit vector.
+        storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
+        
+		// Get some temporaries for convenience.
+		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
+		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+        
+		// Add all psi states as the already satisfy the condition.
+		statesWithProbabilityGreater0 |= psiStates;
+        
+		// Initialize the stack used for the BFS with the states
+		std::vector<uint_fast64_t> stack;
+		stack.reserve(model.getNumberOfStates());
+		psiStates.addSetIndicesToVector(stack);
+        
+        // Initialize the stack for the step bound, if the number of steps is bounded.
+        std::vector<uint_fast64_t> stepStack;
+        std::vector<uint_fast64_t> remainingSteps;
+        if (useStepBound) {
+            stepStack.reserve(model.getNumberOfStates());
+            stepStack.insert(stepStack.begin(), psiStates.getNumberOfSetBits(), maximalSteps);
+            remainingSteps.resize(model.getNumberOfStates());
+            for (auto state : psiStates) {
+                remainingSteps[state] = maximalSteps;
+            }
+        }
+        
+		// Perform the actual BFS.
+        uint_fast64_t currentState, currentStepBound;
+		while(!stack.empty()) {
+			currentState = stack.back();
+			stack.pop_back();
+            
+            if (useStepBound) {
+                currentStepBound = stepStack.back();
+                stepStack.pop_back();
+            }
+            
+			for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
+                if (phiStates.get(*it) && (!statesWithProbabilityGreater0.get(*it) || (useStepBound && remainingSteps[*it] < currentStepBound - 1))) {
+                    // Check whether the predecessor has at least one successor in the current state set for every
+                    // nondeterministic choice.
+                    bool addToStatesWithProbabilityGreater0 = true;
+                    for (auto rowIt = nondeterministicChoiceIndices->begin() + *it; rowIt != nondeterministicChoiceIndices->begin() + *it + 1; ++rowIt) {
+                        bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
+                        for (auto colIt = transitionMatrix->constColumnIteratorBegin(*rowIt); colIt != transitionMatrix->constColumnIteratorEnd(*rowIt); ++colIt) {
+                            if (statesWithProbabilityGreater0.get(*colIt)) {
+                                hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasAtLeastOneSuccessorWithProbabilityGreater0) {
+                            addToStatesWithProbabilityGreater0 = false;
+                            break;
+                        }
+                    }
+                    
+                    // If we need to add the state, then actually add it and perform further search from the state.
+                    if (addToStatesWithProbabilityGreater0) {
+                        // If we don't have a bound on the number of steps to take, just add the state to the stack.
+                        if (!useStepBound) {
+                            statesWithProbabilityGreater0.set(*it, true);
+                            stack.push_back(*it);
+                        } else if (currentStepBound > 0) {
+                            // If there is at least one more step to go, we need to push the state and the new number of steps.
+                            remainingSteps[*it] = currentStepBound - 1;
+                            statesWithProbabilityGreater0.set(*it, true);
+                            stack.push_back(*it);
+                            stepStack.push_back(currentStepBound - 1);
+                        }
+                    }
+                }
+			}
+		}
+        
+        return statesWithProbabilityGreater0;
+	}
+    
+    /*!
 	 * Computes the sets of states that have probability 0 of satisfying phi until psi under at least
      * one possible resolution of non-determinism in a non-deterministic model. Stated differently,
      * this means that these states have probability 0 of satisfying phi until psi if the
@@ -276,56 +453,8 @@ namespace graph {
 	 */
 	template <typename T>
 	storm::storage::BitVector performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
-        // Prepare resulting bit vector.
-        storm::storage::BitVector statesWithProbability0(model.getNumberOfStates());
-        
-		// Get some temporaries for convenience.
-		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
-
-		// Add all psi states as the already satisfy the condition.
-		statesWithProbability0 |= psiStates;
-
-		// Initialize the stack used for the DFS with the states
-		std::vector<uint_fast64_t> stack;
-		stack.reserve(model.getNumberOfStates());
-		psiStates.addSetIndicesToVector(stack);
-
-		// Perform the actual DFS.
-		while(!stack.empty()) {
-			uint_fast64_t currentState = stack.back();
-			stack.pop_back();
-
-			for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
-				if (phiStates.get(*it) && !statesWithProbability0.get(*it)) {
-					// Check whether the predecessor has at least one successor in the current state
-					// set for every nondeterministic choice.
-					bool addToStatesWithProbability0 = true;
-					for (auto rowIt = nondeterministicChoiceIndices->begin() + *it; rowIt != nondeterministicChoiceIndices->begin() + *it + 1; ++rowIt) {
-						bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
-						for (auto colIt = transitionMatrix->constColumnIteratorBegin(*rowIt); colIt != transitionMatrix->constColumnIteratorEnd(*rowIt); ++colIt) {
-							if (statesWithProbability0.get(*colIt)) {
-								hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
-								break;
-							}
-						}
-						if (!hasAtLeastOneSuccessorWithProbabilityGreater0) {
-							addToStatesWithProbability0 = false;
-							break;
-						}
-					}
-
-					// If we need to add the state, then actually add it and perform further search
-					// from the state.
-					if (addToStatesWithProbability0) {
-						statesWithProbability0.set(*it, true);
-						stack.push_back(*it);
-					}
-				}
-			}
-		}
-
-		statesWithProbability0.complement();
+        storm::storage::BitVector statesWithProbability0 = performProbGreater0A(model, backwardTransitions, phiStates, psiStates);
+        statesWithProbability0.complement();
         return statesWithProbability0;
 	}
 
@@ -347,20 +476,21 @@ namespace graph {
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
 
+        // Initialize the environment for the iterative algorithm.
 		storm::storage::BitVector currentStates(model.getNumberOfStates(), true);
-
 		std::vector<uint_fast64_t> stack;
 		stack.reserve(model.getNumberOfStates());
 
         // Perform the loop as long as the set of states gets smaller.
 		bool done = false;
+        uint_fast64_t currentState;
 		while (!done) {
 			stack.clear();
 			storm::storage::BitVector nextStates(psiStates);
 			psiStates.addSetIndicesToVector(stack);
 
 			while (!stack.empty()) {
-				uint_fast64_t currentState = stack.back();
+				currentState = stack.back();
 				stack.pop_back();
 
 				for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {

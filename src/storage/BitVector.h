@@ -111,8 +111,8 @@ public:
 	BitVector(uint_fast64_t length, bool initTrue = false) : bitCount(length), endIterator(*this, length, length, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
 		// Check whether the given length is valid.
 		if (length == 0) {
-			LOG4CPLUS_ERROR(logger, "Trying to create bit vector of size 0.");
-			throw storm::exceptions::InvalidArgumentException("Trying to create a bit vector of size 0.");
+			LOG4CPLUS_ERROR(logger, "Cannot create bit vector of size 0.");
+			throw storm::exceptions::InvalidArgumentException() << "Cannot create bit vector of size 0.";
 		}
 
 		// Compute the correct number of buckets needed to store the given number of bits
@@ -272,7 +272,7 @@ public:
 	 */
 	void set(const uint_fast64_t index, const bool value) {
 		uint_fast64_t bucket = index >> 6;
-		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException();
+		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException() << "Written index " << index << " out of bounds.";
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		if (value) {
 			this->bucketArray[bucket] |= mask;
@@ -290,7 +290,7 @@ public:
 	 */
 	bool get(const uint_fast64_t index) const {
 		uint_fast64_t bucket = index >> 6;
-		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException();
+		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException() << "Read index " << index << " out of bounds.";
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		return ((this->bucketArray[bucket] & mask) == mask);
 	}
@@ -600,7 +600,7 @@ public:
 	 */
 	std::string toString() const {
 		std::stringstream result;
-		result << "bit vector(" << this->getNumberOfSetBits() << ") [";
+		result << "bit vector(" << this->getNumberOfSetBits() << "/" << bitCount << ") [";
 		for (auto index : *this) {
 			result << index << " ";
 		}

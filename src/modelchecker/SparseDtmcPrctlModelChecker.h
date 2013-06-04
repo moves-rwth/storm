@@ -90,17 +90,20 @@ public:
 
         // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the
         // further analysis.
-        storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(this->getModel(), *leftStates, *rightStates);
+        storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(this->getModel(), *leftStates, *rightStates, true, formula.getBound());
         
         // Now we can eliminate the rows and columns from the original transition probability matrix that have probability 0.
         storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
         
+        // Compute the new set of target states in the reduced system.
+        storm::storage::BitVector rightStatesInReducedSystem = maybeStates % *rightStates;
+        
 		// Make all rows absorbing that satisfy the second sub-formula.
-		submatrix.makeRowsAbsorbing(maybeStates % *rightStates);
+		submatrix.makeRowsAbsorbing(rightStatesInReducedSystem);
 
 		// Create the vector with which to multiply.
         std::vector<Type> subresult(maybeStates.getNumberOfSetBits());
-		storm::utility::vector::setVectorValues(subresult, *rightStates, storm::utility::constGetOne<Type>());
+		storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
 
 		// Perform the matrix vector multiplication as often as required by the formula bound.
 		this->performMatrixVectorMultiplication(submatrix, subresult, nullptr, formula.getBound());
