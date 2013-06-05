@@ -8,7 +8,7 @@ namespace storm {
 namespace exceptions {
 
 /*! 
- * @brief This exception is thrown when a memory request can't be
+ * @brief This exception is thrown when a memory request can not be
  * fulfilled.
  */
 STORM_EXCEPTION_DEFINE_NEW(InvalidStateException)

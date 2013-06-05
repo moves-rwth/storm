@@ -128,7 +128,7 @@ struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormu
 } //namespace parser
 
 
-storm::property::ltl::AbstractLtlFormularSharedPtr_t<double> storm::parser::LtlParser(std::string formulaString) {
+storm::property::ltl::AbstractLtlFormula<double>* storm::parser::LtlParser(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -178,6 +178,6 @@ storm::property::ltl::AbstractLtlFormularSharedPtr_t<double> storm::parser::LtlP
 		throw storm::exceptions::WrongFormatException() << "Syntax error in formula";
 	}
 
-	return storm::property::ltl::AbstractLtlFormularSharedPtr_t<double>(result_pointer);
+	return result_pointer;
 }
 

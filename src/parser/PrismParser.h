@@ -21,28 +21,33 @@ namespace parser {
 using namespace storm::ir;
 using namespace storm::ir::expressions;
 
-/*!
- * This class parses the format of the PRISM model checker into an intermediate representation.
+/*
+ * This functions parse the format of the PRISM model checker into an intermediate representation.
  */
+
+/*!
+ * Parses the given file into the intermediate representation assuming it complies with the
+ * PRISM syntax.
+ * @param filename the name of the file to parse.
+ * @return a shared pointer to the intermediate representation of the PRISM file.
+ */
+storm::ir::Program parseFile(std::string const& filename);
+
+/*!
+ * Parses the given input stream into the intermediate representation assuming it complies with
+ * the PRISM syntax.
+ * @param inputStream the input stream to parse.
+ * @param filename the name of the file the input stream belongs to. Used for diagnostics.
+ * @return a shared pointer to the intermediate representation of the PRISM file.
+ */
+storm::ir::Program parse(std::istream& inputStream, std::string const& filename);
+
 class PrismParser {
 public:
-	/*!
-	 * Parses the given file into the intermediate representation assuming it complies with the
-	 * PRISM syntax.
-	 * @param filename the name of the file to parse.
-	 * @return a shared pointer to the intermediate representation of the PRISM file.
-	 */
-	storm::ir::Program parseFile(std::string const& filename) const;
+	
 	
 private:
-	/*!
-	 * Parses the given input stream into the intermediate representation assuming it complies with
-	 * the PRISM syntax.
-	 * @param inputStream the input stream to parse.
-	 * @param filename the name of the file the input stream belongs to. Used for diagnostics.
-	 * @return a shared pointer to the intermediate representation of the PRISM file.
-	 */
-	storm::ir::Program parse(std::istream& inputStream, std::string const& filename) const;
+	
 };
 
 } // namespace parser

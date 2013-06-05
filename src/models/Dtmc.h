@@ -57,6 +57,31 @@ public:
 		}
 	}
 
+	/*!
+	 * Constructs a DTMC object from the given transition probability matrix and
+	 * the given labeling of the states.
+	 * All values are copied.
+	 * @param probabilityMatrix The matrix representing the transitions in the model.
+	 * @param stateLabeling The labeling that assigns a set of atomic
+	 * propositions to each state.
+	 * @param stateRewardVector The reward values associated with the states.
+	 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+	 */
+	Dtmc(storm::storage::SparseMatrix<T> const& probabilityMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
+				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
+			: AbstractDeterministicModel<T>(probabilityMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+		if (!this->checkValidityOfProbabilityMatrix()) {
+			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
+			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
+		}
+		if (this->getTransitionRewardMatrix() != nullptr) {
+			if (!this->getTransitionRewardMatrix()->containsAllPositionsOf(*this->getTransitionMatrix())) {
+				LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+				throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
+			}
+		}
+	}
+
 	//! Copy Constructor
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given DTMC.

@@ -43,6 +43,19 @@ public:
 			: AbstractDeterministicModel<T>(rateMatrix, stateLabeling, stateRewardVector, transitionRewardMatrix) {
 	}
 
+	/*!
+	 * Constructs a CTMC object from the given transition rate matrix and
+	 * the given labeling of the states.
+	 * @param rateMatrix The transition rate function of the
+	 * CTMC given by a matrix.
+	 * @param stateLabeling The labeling that assigns a set of atomic
+	 * propositions to each state.
+	 */
+	Ctmc(storm::storage::SparseMatrix<T> const& rateMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
+				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
+			: AbstractDeterministicModel<T>(rateMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+	}
+
 	//! Copy Constructor
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given CTMC.

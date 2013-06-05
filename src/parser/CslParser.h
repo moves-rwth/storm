@@ -25,32 +25,13 @@ namespace parser {
  * @param formulaString The string representation of the formula
  * @throw wrongFormatException If the input could not be parsed successfully
  */
-storm::property::csl::AbstractCslFormularRef_t<double> CslParser(std::string formulaString);
+storm::property::csl::AbstractCslFormula<double>* CslParser(std::string formulaString);
 
 /*!
  * Struct for the CSL grammar, that Boost::Spirit uses to parse the formulas.
  */
 template<typename Iterator, typename Skipper>
 struct CslGrammar;
-
-class CslParser: public storm::parser::Parser {
-public:
-	
-	virtual ~CslParser();
-
-	/*!
-	 *	@return a pointer to the parsed formula object
-	 */
-	storm::property::csl::AbstractCslFormula<double>* getFormula() {
-		return this->formula;
-	}
-
-private:
-private:
-	storm::property::csl::AbstractCslFormula<double>* formula;
-
-	
-};
 
 } /* namespace parser */
 } /* namespace storm */

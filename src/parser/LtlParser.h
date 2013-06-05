@@ -23,7 +23,7 @@ namespace parser {
 	* @param formulaString The string representation of the formula
 	* @throw wrongFormatException If the input could not be parsed successfully
 	*/
-storm::property::ltl::AbstractLtlFormularSharedPtr_t<double> LtlParser(std::string formulaString);
+storm::property::ltl::AbstractLtlFormula<double>* LtlParser(std::string formulaString);
 
 /*!
  * Struct for the Ltl grammar, that Boost::Spirit uses to parse the formulas.

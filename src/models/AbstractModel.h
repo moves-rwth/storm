@@ -8,6 +8,8 @@
 #include <memory>
 #include <vector>
 
+#include <boost/optional.hpp>
+
 namespace storm {
 namespace models {
 
@@ -46,6 +48,31 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 				std::shared_ptr<std::vector<T>> stateRewardVector, std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix)
 				: transitionMatrix(transitionMatrix), stateLabeling(stateLabeling), stateRewardVector(stateRewardVector), transitionRewardMatrix(transitionRewardMatrix) {
 			// Intentionally left empty.
+		}
+
+		/*! Constructs an abstract model from the given transition matrix and
+		 * the given labeling of the states. Creates copies of all given references.
+		 * @param transitionMatrix The matrix representing the transitions in the model.
+		 * @param stateLabeling The labeling that assigns a set of atomic
+		 * propositions to each state.
+		 * @param stateRewardVector The reward values associated with the states.
+		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+		 */
+		AbstractModel(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
+				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix) {
+			this->transitionMatrix.reset(new storm::storage::SparseMatrix<T>(transitionMatrix));
+			this->stateLabeling.reset(new storm::models::AtomicPropositionsLabeling(stateLabeling));
+					
+			this->stateRewardVector = nullptr;
+			this->transitionRewardMatrix = nullptr;
+
+			if (optionalStateRewardVector) { // Boost::Optional
+				this->stateRewardVector.reset(new std::vector<T>(optionalStateRewardVector.get()));
+			}
+
+			if (optionalTransitionRewardMatrix) { // Boost::Optional
+				this->stateRewardVector.reset(new storm::storage::SparseMatrix<T>(optionalTransitionRewardMatrix.get()));
+			}
 		}
 
 		/*!

@@ -12,50 +12,43 @@
 #include "src/models/Dtmc.h"
 #include "src/models/Ctmc.h"
 
+#include <boost/optional.hpp>
+
 namespace storm {
 namespace parser {
 
 /*!
- *	@brief Load label and transition file and return initialized dtmc or ctmc object.
+ *	@brief Load label and transition file and returns an initialized dtmc or ctmc object.
  *
- *	@note This class creates a new Dtmc or Ctmc object that can
- *	be accessed via getDtmc() or getCtmc(). However, it will not delete this object!
+ *	@note This class creates a new Dtmc or Ctmc object
  *
  *	@note The labeling representation in the file may use at most as much nodes as are specified in the transition system.
  */
-class DeterministicModelParser: public storm::parser::Parser {
-	public:
-		DeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
+
+
+storm::models::Dtmc<double> DeterministicModelParserAsDtmc(std::string const & transitionSystemFile, std::string const & labelingFile,
+				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
+storm::models::Ctmc<double> DeterministicModelParserAsCtmc(std::string const & transitionSystemFile, std::string const & labelingFile,
 				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
 
-		/*!
-		 *	@brief	Get the parsed dtmc model.
-		 */
-		std::shared_ptr<storm::models::Dtmc<double>> getDtmc() {
-			if (this->dtmc == nullptr) {
-				this->dtmc = std::shared_ptr<storm::models::Dtmc<double>>(new storm::models::Dtmc<double>(this->transitionSystem, this->labeling, this->stateRewards, this->transitionRewards));
-			}
-			return this->dtmc;
-		}
-		/*!
-		 *	@brief	Get the parsed ctmc model.
-		 */
-		std::shared_ptr<storm::models::Ctmc<double>> getCtmc() {
-			if (this->ctmc == nullptr) {
-				this->ctmc = std::shared_ptr<storm::models::Ctmc<double>>(new storm::models::Ctmc<double>(this->transitionSystem, this->labeling, this->stateRewards, this->transitionRewards));
-			}
-			return this->ctmc;
-		}
-
-	private:
-		std::shared_ptr<storm::storage::SparseMatrix<double>> transitionSystem;
-		std::shared_ptr<storm::models::AtomicPropositionsLabeling> labeling;
-		std::shared_ptr<std::vector<double>> stateRewards;
-		std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewards;
-
-		std::shared_ptr<storm::models::Dtmc<double>> dtmc;
-		std::shared_ptr<storm::models::Ctmc<double>> ctmc;
+/*!
+ * @brief This Class acts as a container much like std::pair for the four return values of the DeterministicModelParser
+ */
+template <class T>
+class DeterministicModelParserResultContainer {
+public:
+	storm::storage::SparseMatrix<T> transitionSystem;
+	storm::models::AtomicPropositionsLabeling labeling;
+	boost::optional<std::vector<T>> stateRewards;
+	boost::optional<storm::storage::SparseMatrix<T>> transitionRewards;
+	DeterministicModelParserResultContainer(storm::storage::SparseMatrix<T>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) { }
+private:
+	DeterministicModelParserResultContainer() {}
 };
+
+
+DeterministicModelParserResultContainer<double> parseDeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
+				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
 
 } /* namespace parser */
 } /* namespace storm */

@@ -32,7 +32,7 @@ namespace parser {
  * closes the file properly, even if an exception is thrown in the parser. In this case, the
  * exception is passed on to the caller.
  */
-storm::ir::Program PrismParser::parseFile(std::string const& filename) const {
+storm::ir::Program parseFile(std::string const& filename) {
 	// Open file and initialize result.
 	std::ifstream inputFileStream(filename, std::ios::in);
 	storm::ir::Program result;
@@ -56,7 +56,7 @@ storm::ir::Program PrismParser::parseFile(std::string const& filename) const {
  * If the parser throws an expectation failure exception, i.e. expected input different than the one
  * provided, this is caught and displayed properly before the exception is passed on.
  */
-storm::ir::Program PrismParser::parse(std::istream& inputStream, std::string const& filename) const {
+storm::ir::Program parse(std::istream& inputStream, std::string const& filename) {
 	// Prepare iterators to input.
 	// TODO: Right now, this parses the whole contents of the file into a string first.
 	// While this is usually not necessary, because there exist adapters that make an input stream

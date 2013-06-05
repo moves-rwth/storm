@@ -166,7 +166,7 @@ struct CslGrammar : qi::grammar<Iterator, storm::property::csl::AbstractCslFormu
 
 };
 
-storm::property::csl::AbstractCslFormularRef_t<double> CslParser(std::string formulaString) {
+storm::property::csl::AbstractCslFormula<double>* CslParser(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -216,12 +216,7 @@ storm::property::csl::AbstractCslFormularRef_t<double> CslParser(std::string for
 		throw storm::exceptions::WrongFormatException() << "Syntax error in formula";
 	}
 
-	formula = result_pointer;
-}
-
-CslParser::~CslParser() {
-	// Intentionally left empty
-	// Parsed formula is not deleted with the parser!
+	return result_pointer;
 }
 
 } /* namespace parser */
