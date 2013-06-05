@@ -129,7 +129,7 @@ public:
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IOrVisitor>()->visitOr(*this);
 	}
 

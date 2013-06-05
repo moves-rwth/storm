@@ -118,7 +118,7 @@ public:
 		return new Ap(this->getAp());
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IApVisitor>()->visitAp(*this);
 	}
 };

@@ -130,7 +130,7 @@ public:
 		return modelChecker.template as<IGloballyModelChecker>()->checkGlobally(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IGloballyVisitor>()->visitGlobally(*this);
 	}
 };

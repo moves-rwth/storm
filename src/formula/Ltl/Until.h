@@ -145,7 +145,7 @@ public:
 		return modelChecker.template as<IUntilModelChecker>()->checkUntil(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IUntilVisitor>()->visitUntil(*this);
 	}
 };

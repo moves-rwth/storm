@@ -134,7 +134,7 @@ public:
 		return modelChecker.template as<IBoundedEventuallyModelChecker>()->checkBoundedEventually(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IBoundedEventuallyVisitor>()->visitBoundedEventually(*this);
 	}
 };

@@ -124,7 +124,7 @@ public:
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<INotVisitor>()->visitNot(*this);
 	}
 };

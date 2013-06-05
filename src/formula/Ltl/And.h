@@ -135,7 +135,7 @@ public:
 		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IAndVisitor>()->visitAnd(*this);
 	}
 

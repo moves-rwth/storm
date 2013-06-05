@@ -128,7 +128,7 @@ public:
 		return modelChecker.template as<IEventuallyModelChecker>()->checkEventually(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IEventuallyVisitor>()->visitEventually(*this);
 	}
 };

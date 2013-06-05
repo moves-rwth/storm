@@ -128,7 +128,7 @@ public:
 		return modelChecker.template as<INextModelChecker>()->checkNext(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const {
+	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<INextVisitor>()->visitNext(*this);
 	}
 };
