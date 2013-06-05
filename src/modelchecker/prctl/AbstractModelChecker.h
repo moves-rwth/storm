@@ -86,7 +86,8 @@ public:
 
 	/*!
 	 * Returns a pointer to the model checker object that is of the requested type as given by the template parameters.
-	 * @returns A pointer to the model checker object that is of the requested type as given by the template parameters.
+     *
+	 * @return A pointer to the model checker object that is of the requested type as given by the template parameters.
 	 * If the model checker is not of the requested type, type casting will fail and result in an exception.
 	 */
 	template <template <class T> class Target>
@@ -105,7 +106,7 @@ public:
 	 * Retrieves the model associated with this model checker as a constant reference to an object of the type given
 	 * by the template parameter.
 	 *
-	 * @returns A constant reference of the specified type to the model associated with this model checker. If the model
+	 * @return A constant reference of the specified type to the model associated with this model checker. If the model
 	 * is not of the requested type, type casting will fail and result in an exception.
 	 */
 	template <class Model>
@@ -118,6 +119,15 @@ public:
 			throw bc;
 		}
 	}
+        
+    /*!
+     * Retrieves the initial states of the model.
+     *
+     * @return A bit vector that represents the initial states of the model.
+     */
+    storm::storage::BitVector const& getInitialStates() const {
+        return model.getLabeledStates("init");
+    }
 
 	/*!
 	 * Checks the given abstract prctl formula on the model and prints the result (depending on the actual type of the formula)
@@ -148,7 +158,7 @@ public:
 			result = stateFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getLabeledStates("init")) {
+			for (auto initialState : this->getInitialStates()) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
 				std::cout << "\t" << initialState << ": " << result->get(initialState) << std::endl;
 			}
@@ -178,7 +188,7 @@ public:
 			result = this->checkNoBoundOperator(noBoundFormula);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getLabeledStates("init")) {
+			for (auto initialState : this->getInitialStates()) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
 				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
 			}
@@ -196,7 +206,7 @@ public:
 	 * Checks the given formula consisting of a single atomic proposition.
 	 *
 	 * @param formula The formula to be checked.
-	 * @returns The set of states satisfying the formula represented by a bit vector.
+	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
 	storm::storage::BitVector* checkAp(storm::property::prctl::Ap<Type> const& formula) const {
 		if (formula.getAp() == "true") {
@@ -217,7 +227,7 @@ public:
 	 * Checks the given formula that is a logical "and" of two formulae.
 	 *
 	 * @param formula The formula to be checked.
-	 * @returns The set of states satisfying the formula represented by a bit vector.
+	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
 	storm::storage::BitVector* checkAnd(storm::property::prctl::And<Type> const& formula) const {
 		storm::storage::BitVector* result = formula.getLeft().check(*this);
@@ -231,7 +241,7 @@ public:
 	 * Checks the given formula that is a logical "or" of two formulae.
 	 *
 	 * @param formula The formula to check.
-	 * @returns The set of states satisfying the formula represented by a bit vector.
+	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
 	virtual storm::storage::BitVector* checkOr(storm::property::prctl::Or<Type> const& formula) const {
 		storm::storage::BitVector* result = formula.getLeft().check(*this);
@@ -245,7 +255,7 @@ public:
 	 * Checks the given formula that is a logical "not" of a sub-formula.
 	 *
 	 * @param formula The formula to check.
-	 * @returns The set of states satisfying the formula represented by a bit vector.
+	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
 	storm::storage::BitVector* checkNot(const storm::property::prctl::Not<Type>& formula) const {
 		storm::storage::BitVector* result = formula.getChild().check(*this);
@@ -258,7 +268,7 @@ public:
 	 * Checks the given formula that is a P operator over a path formula featuring a value bound.
 	 *
 	 * @param formula The formula to check.
-	 * @returns The set of states satisfying the formula represented by a bit vector.
+	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
 	storm::storage::BitVector* checkProbabilisticBoundOperator(storm::property::prctl::ProbabilisticBoundOperator<Type> const& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
@@ -284,7 +294,7 @@ public:
 	 * Checks the given formula that is an R operator over a reward formula featuring a value bound.
 	 *
 	 * @param formula The formula to check.
-	 * @returns The set of states satisfying the formula represented by a bit vector.
+	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
 	storm::storage::BitVector* checkRewardBoundOperator(const storm::property::prctl::RewardBoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.

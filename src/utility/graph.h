@@ -46,10 +46,8 @@ namespace graph {
 		// Add all psi states as the already satisfy the condition.
 		statesWithProbabilityGreater0 |= psiStates;
 
-		// Initialize the stack used for the BFS with the states.
-		std::vector<uint_fast64_t> stack;
-		stack.reserve(model.getNumberOfStates());
-		psiStates.addSetIndicesToVector(stack);
+		// Initialize the stack used for the DFS with the states.
+		std::vector<uint_fast64_t> stack = psiStates.getSetIndicesList();
         
         // Initialize the stack for the step bound, if the number of steps is bounded.
         std::vector<uint_fast64_t> stepStack;
@@ -63,7 +61,7 @@ namespace graph {
             }
         }
 
-		// Perform the actual BFS.
+		// Perform the actual DFS.
         uint_fast64_t currentState, currentStepBound;
 		while (!stack.empty()) {
             currentState = stack.back();
@@ -74,17 +72,17 @@ namespace graph {
                 stepStack.pop_back();
             }
 
-			for (auto it = backwardTransitions.constColumnIteratorBegin(currentState); it != backwardTransitions.constColumnIteratorEnd(currentState); ++it) {
-				if (phiStates.get(*it) && (!statesWithProbabilityGreater0.get(*it) || (useStepBound && remainingSteps[*it] < currentStepBound - 1))) {
-                    // If we don't have a number of maximal steps to take, just add the state to the stack.
+			for (auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
+				if (phiStates.get(*predecessorIt) && (!statesWithProbabilityGreater0.get(*predecessorIt) || (useStepBound && remainingSteps[*predecessorIt] < currentStepBound - 1))) {
+                    // If we don't have a bound on the number of steps to take, just add the state to the stack.
                     if (!useStepBound) {
-                        statesWithProbabilityGreater0.set(*it, true);
-                        stack.push_back(*it);
+                        statesWithProbabilityGreater0.set(*predecessorIt, true);
+                        stack.push_back(*predecessorIt);
                     } else if (currentStepBound > 0) {
                         // If there is at least one more step to go, we need to push the state and the new number of steps.
-                        remainingSteps[*it] = currentStepBound - 1;
-                        statesWithProbabilityGreater0.set(*it, true);
-                        stack.push_back(*it);
+                        remainingSteps[*predecessorIt] = currentStepBound - 1;
+                        statesWithProbabilityGreater0.set(*predecessorIt, true);
+                        stack.push_back(*predecessorIt);
                         stepStack.push_back(currentStepBound - 1);
                     }
 				}
@@ -174,17 +172,11 @@ namespace graph {
         // Prepare resulting bit vector.
         storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
         
-		// Get some temporaries for convenience.
-		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
-        
 		// Add all psi states as the already satisfy the condition.
 		statesWithProbabilityGreater0 |= psiStates;
         
-		// Initialize the stack used for the BFS with the states
-		std::vector<uint_fast64_t> stack;
-		stack.reserve(model.getNumberOfStates());
-		psiStates.addSetIndicesToVector(stack);
+		// Initialize the stack used for the DFS with the states
+		std::vector<uint_fast64_t> stack = psiStates.getSetIndicesList();
         
         // Initialize the stack for the step bound, if the number of steps is bounded.
         std::vector<uint_fast64_t> stepStack;
@@ -198,7 +190,7 @@ namespace graph {
             }
         }
         
-		// Perform the actual BFS.
+		// Perform the actual DFS.
         uint_fast64_t currentState, currentStepBound;
 		while (!stack.empty()) {
 			currentState = stack.back();
@@ -209,17 +201,17 @@ namespace graph {
                 stepStack.pop_back();
             }
             
-			for (auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
-                if (phiStates.get(*it) && (!statesWithProbabilityGreater0.get(*it) || (useStepBound && remainingSteps[*it] < currentStepBound - 1))) {
+			for (auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
+                if (phiStates.get(*predecessorIt) && (!statesWithProbabilityGreater0.get(*predecessorIt) || (useStepBound && remainingSteps[*predecessorIt] < currentStepBound - 1))) {
                     // If we don't have a bound on the number of steps to take, just add the state to the stack.
                     if (!useStepBound) {
-                        statesWithProbabilityGreater0.set(*it, true);
-                        stack.push_back(*it);
+                        statesWithProbabilityGreater0.set(*predecessorIt, true);
+                        stack.push_back(*predecessorIt);
                     } else if (currentStepBound > 0) {
                         // If there is at least one more step to go, we need to push the state and the new number of steps.
-                        remainingSteps[*it] = currentStepBound - 1;
-                        statesWithProbabilityGreater0.set(*it, true);
-                        stack.push_back(*it);
+                        remainingSteps[*predecessorIt] = currentStepBound - 1;
+                        statesWithProbabilityGreater0.set(*predecessorIt, true);
+                        stack.push_back(*predecessorIt);
                         stepStack.push_back(currentStepBound - 1);
                     }
                 }
@@ -265,11 +257,11 @@ namespace graph {
 	template <typename T>
 	storm::storage::BitVector performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
         // Get some temporaries for convenience.
-		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+        storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
+		std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
 
+        // Initialize the environment for the iterative algorithm.
 		storm::storage::BitVector currentStates(model.getNumberOfStates(), true);
-
 		std::vector<uint_fast64_t> stack;
 		stack.reserve(model.getNumberOfStates());
 
@@ -285,14 +277,14 @@ namespace graph {
 				currentState = stack.back();
 				stack.pop_back();
 
-				for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
-					if (phiStates.get(*it) && !nextStates.get(*it)) {
+				for(auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
+					if (phiStates.get(*predecessorIt) && !nextStates.get(*predecessorIt)) {
 						// Check whether the predecessor has only successors in the current state set for one of the
 						// nondeterminstic choices.
-						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
+						for (auto row = nondeterministicChoiceIndices[*predecessorIt]; row < nondeterministicChoiceIndices[*predecessorIt + 1]; ++row) {
 							bool allSuccessorsInCurrentStates = true;
-							for (auto colIt = transitionMatrix->constColumnIteratorBegin(row); colIt != transitionMatrix->constColumnIteratorEnd(row); ++colIt) {
-								if (!currentStates.get(*colIt)) {
+							for (auto targetIt = transitionMatrix.constColumnIteratorBegin(row), targetIte = transitionMatrix.constColumnIteratorEnd(row); targetIt != targetIte; ++targetIt) {
+								if (!currentStates.get(*targetIt)) {
 									allSuccessorsInCurrentStates = false;
 									break;
 								}
@@ -302,8 +294,8 @@ namespace graph {
 							// add it to the set of states for the next iteration and perform a backward search from
 							// that state.
 							if (allSuccessorsInCurrentStates) {
-								nextStates.set(*it, true);
-								stack.push_back(*it);
+								nextStates.set(*predecessorIt, true);
+								stack.push_back(*predecessorIt);
 								break;
 							}
 						}
@@ -364,16 +356,14 @@ namespace graph {
         storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
         
 		// Get some temporaries for convenience.
-		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+        storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
+		std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
         
 		// Add all psi states as the already satisfy the condition.
 		statesWithProbabilityGreater0 |= psiStates;
         
-		// Initialize the stack used for the BFS with the states
-		std::vector<uint_fast64_t> stack;
-		stack.reserve(model.getNumberOfStates());
-		psiStates.addSetIndicesToVector(stack);
+		// Initialize the stack used for the DFS with the states
+		std::vector<uint_fast64_t> stack = psiStates.getSetIndicesList();
         
         // Initialize the stack for the step bound, if the number of steps is bounded.
         std::vector<uint_fast64_t> stepStack;
@@ -387,7 +377,7 @@ namespace graph {
             }
         }
         
-		// Perform the actual BFS.
+		// Perform the actual DFS.
         uint_fast64_t currentState, currentStepBound;
 		while(!stack.empty()) {
 			currentState = stack.back();
@@ -398,15 +388,15 @@ namespace graph {
                 stepStack.pop_back();
             }
             
-			for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
-                if (phiStates.get(*it) && (!statesWithProbabilityGreater0.get(*it) || (useStepBound && remainingSteps[*it] < currentStepBound - 1))) {
+			for(auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
+                if (phiStates.get(*predecessorIt) && (!statesWithProbabilityGreater0.get(*predecessorIt) || (useStepBound && remainingSteps[*predecessorIt] < currentStepBound - 1))) {
                     // Check whether the predecessor has at least one successor in the current state set for every
                     // nondeterministic choice.
                     bool addToStatesWithProbabilityGreater0 = true;
-                    for (auto rowIt = nondeterministicChoiceIndices->begin() + *it; rowIt != nondeterministicChoiceIndices->begin() + *it + 1; ++rowIt) {
+                    for (auto row = nondeterministicChoiceIndices[*predecessorIt]; row < nondeterministicChoiceIndices[*predecessorIt + 1]; ++row) {
                         bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
-                        for (auto colIt = transitionMatrix->constColumnIteratorBegin(*rowIt); colIt != transitionMatrix->constColumnIteratorEnd(*rowIt); ++colIt) {
-                            if (statesWithProbabilityGreater0.get(*colIt)) {
+                        for (auto successorIt = transitionMatrix.constColumnIteratorBegin(row), successorIte = transitionMatrix.constColumnIteratorEnd(row); successorIt != successorIte; ++successorIt) {
+                            if (statesWithProbabilityGreater0.get(*successorIt)) {
                                 hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
                                 break;
                             }
@@ -422,13 +412,13 @@ namespace graph {
                     if (addToStatesWithProbabilityGreater0) {
                         // If we don't have a bound on the number of steps to take, just add the state to the stack.
                         if (!useStepBound) {
-                            statesWithProbabilityGreater0.set(*it, true);
-                            stack.push_back(*it);
+                            statesWithProbabilityGreater0.set(*predecessorIt, true);
+                            stack.push_back(*predecessorIt);
                         } else if (currentStepBound > 0) {
                             // If there is at least one more step to go, we need to push the state and the new number of steps.
-                            remainingSteps[*it] = currentStepBound - 1;
-                            statesWithProbabilityGreater0.set(*it, true);
-                            stack.push_back(*it);
+                            remainingSteps[*predecessorIt] = currentStepBound - 1;
+                            statesWithProbabilityGreater0.set(*predecessorIt, true);
+                            stack.push_back(*predecessorIt);
                             stepStack.push_back(currentStepBound - 1);
                         }
                     }
@@ -473,8 +463,8 @@ namespace graph {
 	template <typename T>
 	storm::storage::BitVector performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
 		// Get some temporaries for convenience.
-		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix = model.getTransitionMatrix();
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+        storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
+		std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
 
         // Initialize the environment for the iterative algorithm.
 		storm::storage::BitVector currentStates(model.getNumberOfStates(), true);
@@ -493,14 +483,14 @@ namespace graph {
 				currentState = stack.back();
 				stack.pop_back();
 
-				for(auto it = backwardTransitions.constColumnIteratorBegin(currentState), ite = backwardTransitions.constColumnIteratorEnd(currentState); it != ite; ++it) {
-					if (phiStates.get(*it) && !nextStates.get(*it)) {
+				for(auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
+					if (phiStates.get(*predecessorIt) && !nextStates.get(*predecessorIt)) {
 						// Check whether the predecessor has only successors in the current state set for all of the
 						// nondeterminstic choices.
 						bool allSuccessorsInCurrentStatesForAllChoices = true;
-						for (uint_fast64_t row = (*nondeterministicChoiceIndices)[*it]; row < (*nondeterministicChoiceIndices)[*it + 1]; ++row) {
-							for (auto colIt = transitionMatrix->constColumnIteratorBegin(row); colIt != transitionMatrix->constColumnIteratorEnd(row); ++colIt) {
-								if (!currentStates.get(*colIt)) {
+						for (auto row = nondeterministicChoiceIndices[*predecessorIt]; row < nondeterministicChoiceIndices[*predecessorIt + 1]; ++row) {
+							for (auto successorIt = transitionMatrix.constColumnIteratorBegin(row), successorIte = transitionMatrix.constColumnIteratorEnd(row); successorIt != successorIte; ++successorIt) {
+								if (!currentStates.get(*successorIt)) {
 									allSuccessorsInCurrentStatesForAllChoices = false;
 									goto afterCheckLoop;
 								}
@@ -512,8 +502,8 @@ namespace graph {
 						// add it to the set of states for the next iteration and perform a backward search from
 						// that state.
 						if (allSuccessorsInCurrentStatesForAllChoices) {
-							nextStates.set(*it, true);
-							stack.push_back(*it);
+							nextStates.set(*predecessorIt, true);
+							stack.push_back(*predecessorIt);
 						}
 					}
 				}
@@ -584,7 +574,7 @@ namespace graph {
     recursionStepForward:
 		while (!recursionStateStack.empty()) {
 			uint_fast64_t currentState = recursionStateStack.back();
-			typename storm::storage::SparseMatrix<T>::ConstIndexIterator currentIt = recursionIteratorStack.back();
+			typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = recursionIteratorStack.back();
             
 			// Perform the treatment of newly discovered state as defined by Tarjan's algorithm
 			visitedStates.set(currentState, true);
@@ -595,29 +585,29 @@ namespace graph {
 			tarjanStackStates.set(currentState, true);
             
 			// Now, traverse all successors of the current state.
-			for(; currentIt != matrix.constColumnIteratorEnd(currentState); ++currentIt) {
+			for(; successorIt != matrix.constColumnIteratorEnd(currentState); ++successorIt) {
 				// If we have not visited the successor already, we need to perform the procedure
 				// recursively on the newly found state.
-				if (!visitedStates.get(*currentIt)) {
+				if (!visitedStates.get(*successorIt)) {
 					// Save current iterator position so we can continue where we left off later.
 					recursionIteratorStack.pop_back();
-					recursionIteratorStack.push_back(currentIt);
+					recursionIteratorStack.push_back(successorIt);
                     
 					// Put unvisited successor on top of our recursion stack and remember that.
-					recursionStateStack.push_back(*currentIt);
-					statesInStack[*currentIt] = true;
+					recursionStateStack.push_back(*successorIt);
+					statesInStack[*successorIt] = true;
                     
 					// Also, put initial value for iterator on corresponding recursion stack.
-					recursionIteratorStack.push_back(matrix.constColumnIteratorBegin(*currentIt));
+					recursionIteratorStack.push_back(matrix.constColumnIteratorBegin(*successorIt));
                     
 					// Perform the actual recursion step in an iterative way.
 					goto recursionStepForward;
                     
                 recursionStepBackward:
-					lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[*currentIt]);
-				} else if (tarjanStackStates.get(*currentIt)) {
+					lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[*successorIt]);
+				} else if (tarjanStackStates.get(*successorIt)) {
 					// Update the lowlink of the current state.
-					lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[*currentIt]);
+					lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[*successorIt]);
 				}
 			}
             
@@ -648,7 +638,7 @@ namespace graph {
 			// original recursive call.
 			if (recursionStateStack.size() > 0) {
 				currentState = recursionStateStack.back();
-				currentIt = recursionIteratorStack.back();
+				successorIt = recursionIteratorStack.back();
                 
 				goto recursionStepBackward;
 			}
@@ -680,7 +670,7 @@ namespace graph {
         uint_fast64_t currentIndex = 0;
         for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
             if (!visitedStates.get(state)) {
-                performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, *model.getTransitionMatrix(), scc);
+                performSccDecompositionHelper(state, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, model.getTransitionMatrix(), scc);
             }
         }
 
@@ -723,22 +713,22 @@ namespace graph {
 				recursionStepForward:
 				while (!recursionStack.empty()) {
 					uint_fast64_t currentState = recursionStack.back();
-					typename storm::storage::SparseMatrix<T>::ConstIndexIterator currentIt = iteratorRecursionStack.back();
+					typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = iteratorRecursionStack.back();
 
 					visitedStates.set(currentState, true);
 
 					recursionStepBackward:
-					for (; currentIt != matrix.constColumnIteratorEnd(currentState); ++currentIt) {
-						if (!visitedStates.get(*currentIt)) {
+					for (; successorIt != matrix.constColumnIteratorEnd(currentState); ++successorIt) {
+						if (!visitedStates.get(*successorIt)) {
 							// Put unvisited successor on top of our recursion stack and remember that.
-							recursionStack.push_back(*currentIt);
+							recursionStack.push_back(*successorIt);
 
 							// Save current iterator position so we can continue where we left off later.
 							iteratorRecursionStack.pop_back();
-							iteratorRecursionStack.push_back(currentIt + 1);
+							iteratorRecursionStack.push_back(successorIt + 1);
 
 							// Also, put initial value for iterator on corresponding recursion stack.
-							iteratorRecursionStack.push_back(matrix.constColumnIteratorBegin(*currentIt));
+							iteratorRecursionStack.push_back(matrix.constColumnIteratorBegin(*successorIt));
 
 							goto recursionStepForward;
 						}
@@ -756,7 +746,7 @@ namespace graph {
 					// original recursive call.
 					if (recursionStack.size() > 0) {
 						currentState = recursionStack.back();
-						currentIt = iteratorRecursionStack.back();
+						successorIt = iteratorRecursionStack.back();
 
 						goto recursionStepBackward;
 					}

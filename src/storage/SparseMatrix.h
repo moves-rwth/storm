@@ -920,7 +920,7 @@ public:
 	 * @returns A vector containing the sum of the elements in each row of the matrix resulting from
 	 * pointwise multiplication of the current matrix with the given matrix.
 	 */
-	std::vector<T> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) {
+	std::vector<T> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) const {
 		// Prepare result.
 		std::vector<T> result(rowCount, storm::utility::constGetZero<T>());
 

@@ -86,8 +86,8 @@ private:
 		// Get the settings object to customize linear solving.
 		storm::settings::Settings* s = storm::settings::instance();
 		double precision = s->get<double>("precision");
-		for (uint_fast64_t row = 0; row < this->getTransitionMatrix()->getRowCount(); row++) {
-			T sum = this->getTransitionMatrix()->getRowSum(row);
+		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); row++) {
+			T sum = this->getTransitionMatrix().getRowSum(row);
 			if (sum == 0) continue;
 			if (std::abs(sum - 1) > precision)  {
 				return false;

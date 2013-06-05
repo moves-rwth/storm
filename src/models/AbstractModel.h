@@ -208,7 +208,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return The size of the state space of the model.
 		 */
 		virtual uint_fast64_t getNumberOfStates() const {
-			return this->getTransitionMatrix()->getColumnCount();
+			return this->getTransitionMatrix().getColumnCount();
 		}
 
 		/*!
@@ -216,7 +216,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return The number of (non-zero) transitions of the model.
 		 */
 		virtual uint_fast64_t getNumberOfTransitions() const {
-			return this->getTransitionMatrix()->getNonZeroEntryCount();
+			return this->getTransitionMatrix().getNonZeroEntryCount();
 		}
 
 		/*!
@@ -245,24 +245,24 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return A pointer to the matrix representing the transition probability
 		 * function.
 		 */
-		std::shared_ptr<storm::storage::SparseMatrix<T>> getTransitionMatrix() const {
-			return transitionMatrix;
+		storm::storage::SparseMatrix<T> const& getTransitionMatrix() const {
+			return *transitionMatrix;
 		}
 
 		/*!
 		 * Returns a pointer to the matrix representing the transition rewards.
 		 * @return A pointer to the matrix representing the transition rewards.
 		 */
-		std::shared_ptr<storm::storage::SparseMatrix<T>> getTransitionRewardMatrix() const {
-			return transitionRewardMatrix;
+		storm::storage::SparseMatrix<T> const& getTransitionRewardMatrix() const {
+			return *transitionRewardMatrix;
 		}
 
 		/*!
 		 * Returns a pointer to the vector representing the state rewards.
 		 * @return A pointer to the vector representing the state rewards.
 		 */
-		std::shared_ptr<std::vector<T>> getStateRewardVector() const {
-			return stateRewardVector;
+		std::vector<T> const& getStateRewardVector() const {
+			return *stateRewardVector;
 		}
 
 		/*!
@@ -277,8 +277,8 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * Returns the state labeling associated with this model.
 		 * @return The state labeling associated with this model.
 		 */
-		std::shared_ptr<storm::models::AtomicPropositionsLabeling> getStateLabeling() const {
-			return stateLabeling;
+		storm::models::AtomicPropositionsLabeling const& getStateLabeling() const {
+			return *stateLabeling;
 		}
 
 		/*!
@@ -323,7 +323,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 			out << "Model type: \t\t" << this->getType() << std::endl;
 			out << "States: \t\t" << this->getNumberOfStates() << std::endl;
 			out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
-			this->getStateLabeling()->printAtomicPropositionsInformationToStream(out);
+			this->getStateLabeling().printAtomicPropositionsInformationToStream(out);
 			out << "Size in memory: \t"
 				<< (this->getSizeInMemory())/1024 << " kbytes" << std::endl;
 			out << "-------------------------------------------------------------- "

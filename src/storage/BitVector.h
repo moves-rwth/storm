@@ -420,6 +420,7 @@ public:
 	 * Performs a logical "implies" with the given bit vector. In case the sizes of the bit vectors
 	 * do not match, only the matching portion is considered and the overlapping bits
 	 * are set to 0.
+     *
 	 * @param bv A reference to the bit vector to use for the operation.
 	 * @return A bit vector corresponding to the logical "implies" of the two bit vectors.
 	 */
@@ -439,14 +440,15 @@ public:
 	/*!
 	 * Checks whether all bits that are set in the current bit vector are also set in the given bit
 	 * vector.
+     *
 	 * @param bv A reference to the bit vector whose bits are (possibly) a superset of the bits of
 	 * the current bit vector.
-	 * @returns True iff all bits that are set in the current bit vector are also set in the given bit
+	 * @return True iff all bits that are set in the current bit vector are also set in the given bit
 	 * vector.
 	 */
-	bool isContainedIn(BitVector const& bv) const {
+	bool isSubsetOf(BitVector const& bv) const {
 		for (uint_fast64_t i = 0; i < this->bucketCount; ++i) {
-			if ((this->bucketArray[i] & bv.bucketArray[i]) != bv.bucketArray[i]) {
+			if ((this->bucketArray[i] & bv.bucketArray[i]) != this->bucketArray[i]) {
 				return false;
 			}
 		}
@@ -456,6 +458,7 @@ public:
 	/*!
 	 * Checks whether none of the bits that are set in the current bit vector are also set in the
 	 * given bit vector.
+     *
 	 * @param bv A reference to the bit vector whose bits are (possibly) disjoint from the bits in
 	 * the current bit vector.
 	 * @returns True iff none of the bits that are set in the current bit vector are also set in the
@@ -504,9 +507,25 @@ public:
         
 		return result;
 	}
+    
+    /*!
+     * Returns a list containing all indices such that the bits at these indices are set to true
+     * in the bit vector.
+     *
+     * @return A vector of indices of set bits in the bit vector.
+     */
+    std::vector<uint_fast64_t> getSetIndicesList() const {
+        std::vector<uint_fast64_t> result;
+        result.reserve(this->getNumberOfSetBits());
+        for (auto index : *this) {
+			result.push_back(index);
+		}
+        return result;
+    }
 
 	/*!
-	 * Adds all indices of bits set to one to the provided list.
+	 * Adds all indices of bits set to one to the given list.
+     *
 	 * @param list The list to which to append the indices.
 	 */
 	void addSetIndicesToVector(std::vector<uint_fast64_t>& vector) const {

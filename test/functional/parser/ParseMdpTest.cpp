@@ -17,12 +17,12 @@ TEST(ParseMdpTest, parseAndOutput) {
 			STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general_input_01.lab"));
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = mdpParser->getMdp();
-	std::shared_ptr<storm::storage::SparseMatrix<double>> matrix = mdp->getTransitionMatrix();
+	storm::storage::SparseMatrix<double> const& matrix = mdp->getTransitionMatrix();
 
 	ASSERT_EQ(mdp->getNumberOfStates(), (uint_fast64_t)3);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), (uint_fast64_t)11);
-	ASSERT_EQ(matrix->getRowCount(), (uint_fast64_t)(2 * 3));
-	ASSERT_EQ(matrix->getColumnCount(), (uint_fast64_t)3);
+	ASSERT_EQ(matrix.getRowCount(), (uint_fast64_t)(2 * 3));
+	ASSERT_EQ(matrix.getColumnCount(), (uint_fast64_t)3);
 	
 
 	delete mdpParser;

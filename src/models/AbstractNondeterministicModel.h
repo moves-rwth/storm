@@ -73,8 +73,8 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		 * @param the vector indicating which matrix rows represent non-deterministic choices
 		 * of a certain state.
 		 */
-		std::shared_ptr<std::vector<uint_fast64_t>> getNondeterministicChoiceIndices() const {
-			return nondeterministicChoiceIndices;
+		std::vector<uint_fast64_t> const& getNondeterministicChoiceIndices() const {
+			return *nondeterministicChoiceIndices;
 		}
     
         /*!

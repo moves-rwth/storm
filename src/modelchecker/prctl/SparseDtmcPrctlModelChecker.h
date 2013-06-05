@@ -88,31 +88,40 @@ public:
 		// First, we need to compute the states that satisfy the sub-formulas of the bounded until-formula.
 		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
 		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
-
+        std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+        
         // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the
         // further analysis.
-        storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(this->getModel(), *leftStates, *rightStates, true, formula.getBound());
+        storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel(), *leftStates, *rightStates, true, formula.getBound());
+        LOG4CPLUS_INFO(logger, "Found " << statesWithProbabilityGreater0.getNumberOfSetBits() << " 'maybe' states.");
         
-        // Now we can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-        storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
-        
-        // Compute the new set of target states in the reduced system.
-        storm::storage::BitVector rightStatesInReducedSystem = maybeStates % *rightStates;
-        
-		// Make all rows absorbing that satisfy the second sub-formula.
-		submatrix.makeRowsAbsorbing(rightStatesInReducedSystem);
+        // Check if we already know the result (i.e. probability 0) for all initial states and
+        // don't compute anything in this case.
+        if (this->getInitialStates().isSubsetOf(~statesWithProbabilityGreater0)) {
+            LOG4CPLUS_INFO(logger, "The probabilities for the initial states were determined in a preprocessing step."
+                           << " No exact probabilities were computed.");
+        } else { // Otherwise, we have have to compute the probabilities.
+            // Now we can eliminate the rows and columns from the original transition probability matrix that have probability 0.
+            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0);
+            
+            // Compute the new set of target states in the reduced system.
+            storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % *rightStates;
+            
+            // Make all rows absorbing that satisfy the second sub-formula.
+            submatrix.makeRowsAbsorbing(rightStatesInReducedSystem);
+            
+            // Create the vector with which to multiply.
+            std::vector<Type> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
+            storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
+            
+            // Perform the matrix vector multiplication as often as required by the formula bound.
+            this->performMatrixVectorMultiplication(submatrix, subresult, nullptr, formula.getBound());
+            
+            // Create result vector and set its values accordingly.
 
-		// Create the vector with which to multiply.
-        std::vector<Type> subresult(maybeStates.getNumberOfSetBits());
-		storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
-
-		// Perform the matrix vector multiplication as often as required by the formula bound.
-		this->performMatrixVectorMultiplication(submatrix, subresult, nullptr, formula.getBound());
-
-        // Create result vector and set its values accordingly.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-        storm::utility::vector::setVectorValues(*result, maybeStates, subresult);
-        storm::utility::vector::setVectorValues<Type>(*result, ~maybeStates, storm::utility::constGetZero<Type>());
+            storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, subresult);
+            storm::utility::vector::setVectorValues<Type>(*result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
+        }
         
 		// Delete obsolete intermediates and return result.
 		delete leftStates;
@@ -143,7 +152,7 @@ public:
 		delete nextStates;
 
 		// Perform one single matrix-vector multiplication.
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result);
+		this->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result);
 
 		// Return result.
 		return result;
@@ -231,42 +240,49 @@ public:
 		delete rightStates;
 
 		// Perform some logging.
+        storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
 		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
 		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
-		storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
-		// Only try to solve system if there are states for which the probability is unknown.
-		uint_fast64_t maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
-		if (maybeStatesSetBitCount > 0 && !qualitative) {
-			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
-			// Converting the matrix from the fixpoint notation to the form needed for the equation
-			// system. That is, we go from x = A*x + b to (I-A)x = b.
-			submatrix.convertToEquationSystem();
-
-			// Initialize the x vector with 0.5 for each element. This is the initial guess for
-			// the iterative solvers. It should be safe as for all 'maybe' states we know that the
-			// probability is strictly larger than 0.
-			std::vector<Type> x(maybeStatesSetBitCount, Type(0.5));
-
-			// Prepare the right-hand side of the equation system. For entry i this corresponds to
-			// the accumulated probability of going from state i to some 'yes' state.
-			std::vector<Type> b = this->getModel().getTransitionMatrix()->getConstrainedRowSumVector(maybeStates, statesWithProbability1);
-
-			// Now solve the created system of linear equations.
-			this->solveEquationSystem(submatrix, x, b);
-
-			// Set values of resulting vector according to result.
-			storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
-		} else if (qualitative) {
-			// If we only need a qualitative result, we can safely assume that the results will only be compared to
-			// bounds which are either 0 or 1. Setting the value to 0.5 is thus safe.
-			storm::utility::vector::setVectorValues<Type>(*result, maybeStates, Type(0.5));
-		}
+        // Check whether we need to compute exact probabilities for some states.
+        if (this->getInitialStates().isDisjointFrom(maybeStates) || qualitative) {
+            if (qualitative) {
+                LOG4CPLUS_INFO(logger, "The formula was checked qualitatively. No exact probabilities were computed.");
+            } else {
+                LOG4CPLUS_INFO(logger, "The probabilities for the initial states were determined in a preprocessing step."
+                               << " No exact probabilities were computed.");
+            }
+            // Set the values for all maybe-states to 0.5 to indicate that their probability values
+            // are neither 0 nor 1.
+            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, Type(0.5));
+        } else {
+            // Otherwise, we have have to compute the probabilities.
+            
+            // First, we can eliminate the rows and columns from the original transition probability matrix.
+            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates);
+            // Converting the matrix from the fixpoint notation to the form needed for the equation
+            // system. That is, we go from x = A*x + b to (I-A)x = b.
+            submatrix.convertToEquationSystem();
+            
+            // Initialize the x vector with 0.5 for each element. This is the initial guess for
+            // the iterative solvers. It should be safe as for all 'maybe' states we know that the
+            // probability is strictly larger than 0.
+            std::vector<Type> x(maybeStates.getNumberOfSetBits(), Type(0.5));
+            
+            // Prepare the right-hand side of the equation system. For entry i this corresponds to
+            // the accumulated probability of going from state i to some 'yes' state.
+            std::vector<Type> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
+            
+            // Now solve the created system of linear equations.
+            this->solveEquationSystem(submatrix, x, b);
+            
+            // Set values of resulting vector according to result.
+            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
+        }
 
 		// Set values of resulting vector that are known exactly.
 		storm::utility::vector::setVectorValues<Type>(*result, statesWithProbability0, storm::utility::constGetZero<Type>());
@@ -294,10 +310,10 @@ public:
 		}
 
 		// Initialize result to state rewards of the model.
-		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
+		std::vector<Type>* result = new std::vector<Type>(this->getModel().getStateRewardVector());
 
 		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, nullptr, formula.getBound());
+		this->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result, nullptr, formula.getBound());
 
 		// Return result.
 		return result;
@@ -324,24 +340,24 @@ public:
 		// Compute the reward vector to add in each step based on the available reward models.
 		std::vector<Type> totalRewardVector;
 		if (this->getModel().hasTransitionRewards()) {
-			totalRewardVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
+			totalRewardVector = this->getModel().getTransitionMatrix().getPointwiseProductRowSumVector(this->getModel().getTransitionRewardMatrix());
 			if (this->getModel().hasStateRewards()) {
-				gmm::add(*this->getModel().getStateRewardVector(), totalRewardVector);
+                storm::utility::vector::addVectorsInPlace(totalRewardVector, this->getModel().getStateRewardVector());
 			}
 		} else {
-			totalRewardVector = std::vector<Type>(*this->getModel().getStateRewardVector());
+			totalRewardVector = std::vector<Type>(this->getModel().getStateRewardVector());
 		}
 
 		// Initialize result to either the state rewards of the model or the null vector.
 		std::vector<Type>* result = nullptr;
 		if (this->getModel().hasStateRewards()) {
-			result = new std::vector<Type>(*this->getModel().getStateRewardVector());
+			result = new std::vector<Type>(this->getModel().getStateRewardVector());
 		} else {
 			result = new std::vector<Type>(this->getModel().getNumberOfStates());
 		}
 
 		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, &totalRewardVector, formula.getBound());
+		this->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result, &totalRewardVector, formula.getBound());
 
 		// Return result.
 		return result;
@@ -372,56 +388,67 @@ public:
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
 		storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel(), trueStates, *targetStates);
 		infinityStates.complement();
+        LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
 
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
 		// Check whether there are states for which we have to compute the result.
 		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
-		const int maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
-		if (maybeStatesSetBitCount > 0) {
-			// Now we can eliminate the rows and columns from the original transition probability matrix.
-			storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates);
-			// Converting the matrix from the fixpoint notation to the form needed for the equation
-			// system. That is, we go from x = A*x + b to (I-A)x = b.
-			submatrix.convertToEquationSystem();
+        
+        // Check whether we need to compute exact rewards for some states.
+        if (this->getInitialStates().isDisjointFrom(maybeStates)) {
+            LOG4CPLUS_INFO(logger, "The rewards for the initial states were determined in a preprocessing step."
+                            << " No exact rewards were computed.");
+            // Set the values for all maybe-states to 1 to indicate that their reward values
+            // are neither 0 nor infinity.
+            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, storm::utility::constGetOne<Type>());
+        } else {
+            // In this case we have to compute the reward values for the remaining states.
+            const int maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
 
-			// Initialize the x vector with 1 for each element. This is the initial guess for
-			// the iterative solvers.
-			std::vector<Type> x(maybeStatesSetBitCount, storm::utility::constGetOne<Type>());
-
-			// Prepare the right-hand side of the equation system.
-			std::vector<Type> b(maybeStatesSetBitCount);
-			if (this->getModel().hasTransitionRewards()) {
-				// If a transition-based reward model is available, we initialize the right-hand
-				// side to the vector resulting from summing the rows of the pointwise product
-				// of the transition probability matrix and the transition reward matrix.
-				std::vector<Type> pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
-				storm::utility::vector::selectVectorValues(b, maybeStates, pointwiseProductRowSumVector);
-
-				if (this->getModel().hasStateRewards()) {
-					// If a state-based reward model is also available, we need to add this vector
-					// as well. As the state reward vector contains entries not just for the states
-					// that we still consider (i.e. maybeStates), we need to extract these values
-					// first.
-					std::vector<Type> subStateRewards(maybeStatesSetBitCount);
-					storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, *this->getModel().getStateRewardVector());
-					gmm::add(subStateRewards, b);
-				}
-			} else {
-				// If only a state-based reward model is  available, we take this vector as the
-				// right-hand side. As the state reward vector contains entries not just for the
-				// states that we still consider (i.e. maybeStates), we need to extract these values
-				// first.
-				storm::utility::vector::selectVectorValues(b, maybeStates, *this->getModel().getStateRewardVector());
-			}
-
-			// Now solve the resulting equation system.
-			this->solveEquationSystem(submatrix, x, b);
-
-			// Set values of resulting vector according to result.
-			storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
-		}
+            // Now we can eliminate the rows and columns from the original transition probability matrix.
+            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates);
+            // Converting the matrix from the fixpoint notation to the form needed for the equation
+            // system. That is, we go from x = A*x + b to (I-A)x = b.
+            submatrix.convertToEquationSystem();
+            
+            // Initialize the x vector with 1 for each element. This is the initial guess for
+            // the iterative solvers.
+            std::vector<Type> x(maybeStatesSetBitCount, storm::utility::constGetOne<Type>());
+            
+            // Prepare the right-hand side of the equation system.
+            std::vector<Type> b(maybeStatesSetBitCount);
+            if (this->getModel().hasTransitionRewards()) {
+                // If a transition-based reward model is available, we initialize the right-hand
+                // side to the vector resulting from summing the rows of the pointwise product
+                // of the transition probability matrix and the transition reward matrix.
+                std::vector<Type> pointwiseProductRowSumVector = this->getModel().getTransitionMatrix().getPointwiseProductRowSumVector(this->getModel().getTransitionRewardMatrix());
+                storm::utility::vector::selectVectorValues(b, maybeStates, pointwiseProductRowSumVector);
+                
+                if (this->getModel().hasStateRewards()) {
+                    // If a state-based reward model is also available, we need to add this vector
+                    // as well. As the state reward vector contains entries not just for the states
+                    // that we still consider (i.e. maybeStates), we need to extract these values
+                    // first.
+                    std::vector<Type> subStateRewards(maybeStatesSetBitCount);
+                    storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, this->getModel().getStateRewardVector());
+                    storm::utility::vector::addVectorsInPlace(b, subStateRewards);
+                }
+            } else {
+                // If only a state-based reward model is  available, we take this vector as the
+                // right-hand side. As the state reward vector contains entries not just for the
+                // states that we still consider (i.e. maybeStates), we need to extract these values
+                // first.
+                storm::utility::vector::selectVectorValues(b, maybeStates, this->getModel().getStateRewardVector());
+            }
+            
+            // Now solve the resulting equation system.
+            this->solveEquationSystem(submatrix, x, b);
+            
+            // Set values of resulting vector according to result.
+            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
+        }
 
 		// Set values of resulting vector that are known exactly.
 		storm::utility::vector::setVectorValues(*result, *targetStates, storm::utility::constGetZero<Type>());
