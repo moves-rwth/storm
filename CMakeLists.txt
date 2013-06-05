@@ -51,10 +51,10 @@ message(STATUS "CUDD_INCLUDE_DIRS is ${CUDD_INCLUDE_DIRS}")
 message(STATUS "CUDD_LIBRARY_DIRS is ${CUDD_LIBRARY_DIRS}")
 
 #Set all ltl2dstar references to the verion in the repository
-set(LTL2DSTAR_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
-set(LTL2DSTAR_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
-message(STATUS "LTL2DSTAR_INCLUDE_DIRS is ${LTL2DSTAR_INCLUDE_DIRS}")
-message(STATUS "LTL2DSTAR_LIBRARY_DIRS is ${LTL2DSTAR_LIBRARY_DIRS}")
+#set(LTL2DSTAR_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
+#set(LTL2DSTAR_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
+#message(STATUS "LTL2DSTAR_INCLUDE_DIRS is ${LTL2DSTAR_INCLUDE_DIRS}")
+#message(STATUS "LTL2DSTAR_LIBRARY_DIRS is ${LTL2DSTAR_LIBRARY_DIRS}")
 
 # Now define all available custom options
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
