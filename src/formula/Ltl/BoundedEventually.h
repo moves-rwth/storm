@@ -111,7 +111,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const {
+	virtual AbstractLtlFormula<T>* clone() const override {
 		BoundedEventually<T>* result = new BoundedEventually<T>();
 		result->setBound(this->getBound());
 		if (this->childIsSet()) {
@@ -130,7 +130,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IBoundedEventuallyModelChecker>()->checkBoundedEventually(*this);
 	}
 

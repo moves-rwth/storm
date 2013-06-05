@@ -90,7 +90,7 @@ public:
 	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() const {
+	virtual std::string toString() const override {
 		std::string result = "P";
 		result += PathNoBoundOperator<T, FormulaType>::toString();
 		return result;

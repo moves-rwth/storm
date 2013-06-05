@@ -90,7 +90,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const override {
 		SteadyStateBoundOperator<T>* result = new SteadyStateBoundOperator<T>();
 		result->setStateFormula(this->getStateFormula().clone());
 		return result;
@@ -105,7 +105,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<ISteadyStateBoundOperatorModelChecker>()->checkSteadyStateBoundOperator(*this);
 	}
 	

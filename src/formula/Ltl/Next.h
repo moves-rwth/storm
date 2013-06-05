@@ -107,7 +107,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const {
+	virtual AbstractLtlFormula<T>* clone() const override {
 		Next<T>* result = new Next<T>();
 		if (this->childIsSet()) {
 			result->setChild(this->getChild().clone());

@@ -105,7 +105,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const {
+	virtual AbstractLtlFormula<T>* clone() const override {
 		Or<T>* result = new Or();
 		if (this->leftIsSet()) {
 		  result->setLeft(this->getLeft().clone());
@@ -125,7 +125,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
 

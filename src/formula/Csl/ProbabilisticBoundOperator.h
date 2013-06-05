@@ -92,7 +92,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const override {
 		ProbabilisticBoundOperator<T>* result = new ProbabilisticBoundOperator<T>();
 		result->setComparisonOperator(this->getComparisonOperator());
 		result->setBound(this->getBound());
@@ -109,7 +109,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IProbabilisticBoundOperatorModelChecker>()->checkProbabilisticBoundOperator(*this);
 	}
 };

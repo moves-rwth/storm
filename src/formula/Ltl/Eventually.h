@@ -107,7 +107,7 @@ public:
 	 *
 	 * @returns a new Eventually-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const {
+	virtual AbstractLtlFormula<T>* clone() const override {
 		Eventually<T>* result = new Eventually<T>();
 		if (this->childIsSet()) {
 			result->setChild(this->getChild().clone());

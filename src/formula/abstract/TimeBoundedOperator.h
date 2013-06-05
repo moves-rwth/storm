@@ -87,7 +87,7 @@ public:
 	 * @returns a string representation of the Interval of the formula
 	 * 			May be used in subclasses to simplify string output.
 	 */
-	virtual std::string toString() const {
+	virtual std::string toString() const override {
 		std::string result = "";
 		if (upperBound == std::numeric_limits<double>::infinity()) {
 			result = ">=" + std::to_string(lowerBound);

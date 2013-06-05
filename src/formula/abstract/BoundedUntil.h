@@ -148,7 +148,7 @@ public:
 	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() const {
+	virtual std::string toString() const override {
 		std::string result = left->toString();
 		result += " U<=";
 		result += std::to_string(bound);
@@ -163,7 +163,7 @@ public:
      *  @param checker Formula checker object.
      *  @return true iff all subtrees conform to some logic.
      */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
 		return checker.validate(this->left) && checker.validate(this->right);
 	}
 

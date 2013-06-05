@@ -2,7 +2,7 @@
  * ComparisonType.h
  *
  *  Created on: 17.04.2013
- *      Author: thomas
+ *      Author: Thomas Heinemann
  */
 
 #ifndef STORM_FORMULA_COMPARISONTYPE_H_

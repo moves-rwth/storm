@@ -78,7 +78,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const override {
 		return new Ap(this->getAp());
 	}
 
@@ -91,7 +91,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector *check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IApModelChecker>()->checkAp(*this);
 	}
 

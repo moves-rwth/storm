@@ -109,7 +109,7 @@ public:
 	 *
 	 * @returns a new Globally-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const {
+	virtual AbstractLtlFormula<T>* clone() const override {
 		Globally<T>* result = new Globally<T>();
 		if (this->childIsSet()) {
 			result->setChild(this->getChild().clone());

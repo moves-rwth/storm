@@ -77,7 +77,7 @@ public:
 		// Intentionally left empty
 	}
 
-	virtual AbstractNoBoundOperator<T>* clone() const {
+	virtual AbstractNoBoundOperator<T>* clone() const override {
 		RewardNoBoundOperator<T>* result = new RewardNoBoundOperator<T>();
 		if (this->pathFormulaIsSet()) {
 			result->setPathFormula(this->getPathFormula().clone());
@@ -96,7 +96,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const {
+	virtual std::vector<T>* check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const override {
 		return this->getPathFormula().check(modelChecker, qualitative);
 	}
 };

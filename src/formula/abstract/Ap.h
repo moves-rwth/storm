@@ -55,7 +55,7 @@ public:
 	 * @returns a string representation of the leaf.
 	 *
 	 */
-	virtual std::string toString() const {
+	virtual std::string toString() const override {
 		return getAp();
 	}
 	
@@ -67,7 +67,7 @@ public:
      *  @param checker Formula checker object.
      *  @return true
      */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
 		return true;
 	}
 

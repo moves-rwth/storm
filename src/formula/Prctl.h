@@ -2,7 +2,7 @@
  * Prctl.h
  *
  *  Created on: 06.12.2012
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
 #ifndef STORM_FORMULA_PRCTL_H_

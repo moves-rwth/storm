@@ -68,7 +68,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const {
+	virtual AbstractPathFormula<T>* clone() const override {
 		TimeBoundedEventually<T>* result = new TimeBoundedEventually<T>(this->getLowerBound(), this->getUpperBound());
 		if (this->childIsSet()) {
 			result->setChild(this->getChild().clone());
@@ -85,7 +85,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
+	virtual std::vector<T>* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<ITimeBoundedEventuallyModelChecker>()->checkTimeBoundedEventually(*this, qualitative);
 	}
 };

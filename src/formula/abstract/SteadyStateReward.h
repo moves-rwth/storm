@@ -39,7 +39,7 @@ public:
 	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() const {
+	virtual std::string toString() const override {
 		return "S";
 	}
 
@@ -51,7 +51,7 @@ public:
      *  @param checker Formula checker object.
      *  @return true
      */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
 		return true;
 	}
 };

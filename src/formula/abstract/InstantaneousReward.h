@@ -72,7 +72,7 @@ public:
 	/*!
 	 * @returns a string representation of the formula
 	 */
-	virtual std::string toString() const {
+	virtual std::string toString() const override {
 		std::string result = "I=";
 		result += std::to_string(bound);
 		return result;
@@ -86,7 +86,7 @@ public:
      *  @param checker Formula checker object.
      *  @return true
      */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const {
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
 		return true;
 	}
 

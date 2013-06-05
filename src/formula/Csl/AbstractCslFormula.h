@@ -25,13 +25,6 @@ public:
 	}
 };
 
-/*!
- * @brief An encapsulation type for the Return Type of the CslParser. As a pure virtual Class can not be an r-value return type, it has to be encapsulated.
- * @see CslParser
- */
-template <typename T>
-using AbstractCslFormularRef_t = std::reference_wrapper<storm::property::csl::AbstractCslFormula<T>>;
-
 } /* namespace csl */
 } /* namespace property */
 } /* namespace storm */

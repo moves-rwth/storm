@@ -84,7 +84,7 @@ public:
 	 *
 	 * @returns a new CumulativeReward-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const {
+	virtual AbstractPathFormula<T>* clone() const override {
 		return new CumulativeReward(this->getBound());
 	}
 
@@ -98,7 +98,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> *check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const {
+	virtual std::vector<T> *check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<ICumulativeRewardModelChecker>()->checkCumulativeReward(*this, qualitative);
 	}
 };

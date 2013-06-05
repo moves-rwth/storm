@@ -82,9 +82,6 @@ public:
 	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const = 0;
 };
 
-template <typename T>
-using AbstractLtlFormularSharedPtr_t = std::shared_ptr<T>;
-
 } /* namespace ltl */
 } /* namespace property */
 } /* namespace storm */

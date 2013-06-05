@@ -2,7 +2,7 @@
  * Ltl.h
  *
  *  Created on: 22.04.2013
- *      Author: thomas
+ *      Author: Thomas Heinemann
  */
 
 #ifndef STORM_FORMULA_LTL_H_

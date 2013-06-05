@@ -2,7 +2,7 @@
  * Csl.h
  *
  *  Created on: 19.04.2013
- *      Author: thomas
+ *      Author: Thomas Heinemann
  */
 
 #ifndef STORM_FORMULA_CSL_H_
@@ -27,6 +27,5 @@
 #include "Csl/TimeBoundedUntil.h"
 
 #include "modelchecker/csl/AbstractModelChecker.h"
-
 
 #endif /* STORM_FORMULA_CSL_H_ */

@@ -87,7 +87,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const override {
 		Not<T>* result = new Not<T>();
 		if (this->childIsSet()) {
 			result->setChild(this->getChild().clone());
@@ -104,7 +104,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector *check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector *check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);  
 	}
 };

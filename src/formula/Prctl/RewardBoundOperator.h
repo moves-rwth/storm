@@ -103,7 +103,7 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const {
+	virtual AbstractStateFormula<T>* clone() const override {
 		RewardBoundOperator<T>* result = new RewardBoundOperator<T>();
 		result->setComparisonOperator(this->getComparisonOperator());
 		result->setBound(this->getBound());
@@ -120,7 +120,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const {
+	virtual storm::storage::BitVector* check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IRewardBoundOperatorModelChecker>()->checkRewardBoundOperator(*this);
 	}
 };

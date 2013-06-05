@@ -72,7 +72,7 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractNoBoundOperator <T>* clone() const {
+	virtual AbstractNoBoundOperator <T>* clone() const override {
 		SteadyStateNoBoundOperator<T>* result = new SteadyStateNoBoundOperator<T>();
 		result->setStateFormula(this->getStateFormula().clone());
 		return result;
@@ -87,7 +87,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>*  check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const {
+	virtual std::vector<T>*  check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative=false) const override {
 		return modelChecker.template as<ISteadyStateNoBoundOperatorModelChecker>()->checkSteadyStateNoBoundOperator(*this);
 	}
 
