@@ -10,7 +10,7 @@
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
 #include "src/models/Mdp.h"
-#include "src/utility/Vector.h"
+#include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
 #include <vector>
@@ -94,18 +94,37 @@ public:
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
 		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
 		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
-
-		// Copy the matrix before we make any changes.
-		storm::storage::SparseMatrix<Type> tmpMatrix(*this->getModel().getTransitionMatrix());
-
-		// Make all rows absorbing that violate both sub-formulas or satisfy the second sub-formula.
-		tmpMatrix.makeRowsAbsorbing(~(*leftStates | *rightStates) | *rightStates, *this->getModel().getNondeterministicChoiceIndices());
         
-		// Create the vector with which to multiply.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-		storm::utility::setVectorValues(result, *rightStates, storm::utility::constGetOne<Type>());
+        // Determine the states that have 0 probability of reaching the target states.
+        storm::storage::BitVector maybeStates;
+        if (this->minimumOperatorStack.top()) {
+			maybeStates = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), *leftStates, *rightStates, true, formula.getBound());
+		} else {
+			maybeStates = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), *leftStates, *rightStates, true, formula.getBound());
+		}
+        
+        // Now we can eliminate the rows and columns from the original transition probability matrix that have probability 0.
+        storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix()->getSubmatrix(maybeStates, *this->getModel().getNondeterministicChoiceIndices());
 
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, nullptr, formula.getBound());
+        // Get the "new" nondeterministic choice indices for the submatrix.
+        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
+
+        // Compute the new set of target states in the reduced system.
+        storm::storage::BitVector rightStatesInReducedSystem = maybeStates % *rightStates;
+
+		// Make all rows absorbing that satisfy the second sub-formula.
+		submatrix.makeRowsAbsorbing(rightStatesInReducedSystem, subNondeterministicChoiceIndices);
+
+        // Create the vector with which to multiply.
+        std::vector<Type> subresult(maybeStates.getNumberOfSetBits());
+		storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
+
+		this->performMatrixVectorMultiplication(submatrix, subresult, subNondeterministicChoiceIndices, nullptr, formula.getBound());
+
+		// Create the resulting vector.
+		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+        storm::utility::vector::setVectorValues(*result, maybeStates, subresult);
+		storm::utility::vector::setVectorValues(*result, ~maybeStates, storm::utility::constGetZero<Type>());
 
 		// Delete intermediate results and return result.
 		delete leftStates;
@@ -130,12 +149,12 @@ public:
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-		storm::utility::setVectorValues(result, *nextStates, storm::utility::constGetOne<Type>());
+		storm::utility::vector::setVectorValues(*result, *nextStates, storm::utility::constGetOne<Type>());
 
 		// Delete obsolete sub-result.
 		delete nextStates;
 
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result);
+		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, *this->getModel().getNondeterministicChoiceIndices());
 
 		// Return result.
 		return result;
@@ -155,7 +174,7 @@ public:
 	virtual std::vector<Type>* checkBoundedEventually(const storm::property::prctl::BoundedEventually<Type>& formula, bool qualitative) const {
 		// Create equivalent temporary bounded until formula and check it.
 		storm::property::prctl::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
-		return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
+        return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
 	}
 
 	/*!
@@ -192,7 +211,7 @@ public:
 		std::vector<Type>* result = this->checkEventually(temporaryEventuallyFormula, qualitative);
 
 		// Now subtract the resulting vector from the constant one vector to obtain final result.
-		storm::utility::subtractFromConstantOneVector(result);
+		storm::utility::vector::subtractFromConstantOneVector(*result);
 		return result;
 	}
 
@@ -256,12 +275,12 @@ public:
 			this->solveEquationSystem(submatrix, x, b, subNondeterministicChoiceIndices);
 
 			// Set values of resulting vector according to result.
-			storm::utility::setVectorValues<Type>(result, maybeStates, x);
+			storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
 		}
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
-		storm::utility::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
+		storm::utility::vector::setVectorValues<Type>(*result, statesWithProbability0, storm::utility::constGetZero<Type>());
+		storm::utility::vector::setVectorValues<Type>(*result, statesWithProbability1, storm::utility::constGetOne<Type>());
 
 		return result;
 	}
@@ -287,7 +306,7 @@ public:
 		// Initialize result to state rewards of the model.
 		std::vector<Type>* result = new std::vector<Type>(*this->getModel().getStateRewardVector());
 
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, nullptr, formula.getBound());
+		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, *this->getModel().getNondeterministicChoiceIndices(), nullptr, formula.getBound());
 
 		// Return result.
 		return result;
@@ -330,7 +349,7 @@ public:
 			result = new std::vector<Type>(this->getModel().getNumberOfStates());
 		}
 
-		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, &totalRewardVector, formula.getBound());
+		this->performMatrixVectorMultiplication(*this->getModel().getTransitionMatrix(), *result, *this->getModel().getNondeterministicChoiceIndices(), &totalRewardVector, formula.getBound());
 
 		// Delete temporary variables and return result.
 		return result;
@@ -397,36 +416,35 @@ public:
 				// side to the vector resulting from summing the rows of the pointwise product
 				// of the transition probability matrix and the transition reward matrix.
 				std::vector<Type> pointwiseProductRowSumVector = this->getModel().getTransitionMatrix()->getPointwiseProductRowSumVector(*this->getModel().getTransitionRewardMatrix());
-				storm::utility::selectVectorValues(&b, maybeStates, *this->getModel().getNondeterministicChoiceIndices(), pointwiseProductRowSumVector);
+				storm::utility::vector::selectVectorValues(b, maybeStates, *this->getModel().getNondeterministicChoiceIndices(), pointwiseProductRowSumVector);
 
 				if (this->getModel().hasStateRewards()) {
 					// If a state-based reward model is also available, we need to add this vector
 					// as well. As the state reward vector contains entries not just for the states
 					// that we still consider (i.e. maybeStates), we need to extract these values
 					// first.
-					std::vector<Type>* subStateRewards = new std::vector<Type>(b.size());
-					storm::utility::selectVectorValuesRepeatedly(subStateRewards, maybeStates, *this->getModel().getNondeterministicChoiceIndices(), *this->getModel().getStateRewardVector());
-					gmm::add(*subStateRewards, b);
-					delete subStateRewards;
+					std::vector<Type> subStateRewards(b.size());
+					storm::utility::vector::selectVectorValuesRepeatedly(subStateRewards, maybeStates, *this->getModel().getNondeterministicChoiceIndices(), *this->getModel().getStateRewardVector());
+					gmm::add(subStateRewards, b);
 				}
 			} else {
 				// If only a state-based reward model is  available, we take this vector as the
 				// right-hand side. As the state reward vector contains entries not just for the
 				// states that we still consider (i.e. maybeStates), we need to extract these values
 				// first.
-				storm::utility::selectVectorValuesRepeatedly(&b, maybeStates, *this->getModel().getNondeterministicChoiceIndices(), *this->getModel().getStateRewardVector());
+				storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, *this->getModel().getNondeterministicChoiceIndices(), *this->getModel().getStateRewardVector());
 			}
 
 			// Solve the corresponding system of equations.
 			this->solveEquationSystem(submatrix, x, b, subNondeterministicChoiceIndices);
 
 			// Set values of resulting vector according to result.
-			storm::utility::setVectorValues<Type>(result, maybeStates, x);
+			storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
 		}
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::setVectorValues(result, *targetStates, storm::utility::constGetZero<Type>());
-		storm::utility::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<Type>());
+		storm::utility::vector::setVectorValues(*result, *targetStates, storm::utility::constGetZero<Type>());
+		storm::utility::vector::setVectorValues(*result, infinityStates, storm::utility::constGetInfinity<Type>());
 
 		// Delete temporary storages and return result.
 		delete targetStates;
@@ -448,15 +466,12 @@ private:
 	 * @param A The matrix that is to be multiplied against the vector.
 	 * @param x The initial vector that is to be multiplied against the matrix. This is also the output parameter,
 	 * i.e. after the method returns, this vector will contain the computed values.
+     * @param nondeterministicChoiceIndices The assignment of states to their rows in the matrix.
 	 * @param b If not null, this vector is being added to the result after each matrix-vector multiplication.
 	 * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
 	 * @returns The result of the repeated matrix-vector multiplication as the content of the parameter vector.
 	 */
-	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const {
-		// Get the starting row indices for the non-deterministic choices to reduce the resulting
-		// vector properly.
-		std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = *this->getModel().getNondeterministicChoiceIndices();
-
+	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const {
 		// Create vector for result of multiplication, which is reduced to the result vector after
 		// each multiplication.
 		std::vector<Type> multiplyResult(A.getRowCount());
@@ -467,15 +482,15 @@ private:
 
 			// Add b if it is non-null.
 			if (b != nullptr) {
-				storm::utility::addVectors(multiplyResult, *b);
+				storm::utility::vector::addVectorsInPlace(multiplyResult, *b);
 			}
 
 			// Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
 			// element of the min/max operator stack.
 			if (this->minimumOperatorStack.top()) {
-				storm::utility::reduceVectorMin(multiplyResult, &x, nondeterministicChoiceIndices);
+				storm::utility::vector::reduceVectorMin(multiplyResult, x, nondeterministicChoiceIndices);
 			} else {
-				storm::utility::reduceVectorMax(multiplyResult, &x, nondeterministicChoiceIndices);
+				storm::utility::vector::reduceVectorMax(multiplyResult, x, nondeterministicChoiceIndices);
 			}
 		}
 	}
@@ -487,6 +502,7 @@ private:
 	 * @param x The solution vector x. The initial values of x represent a guess of the real values to the solver, but
 	 * may be ignored.
 	 * @param b The right-hand side of the equation system.
+     * @param nondeterministicChoiceIndices The assignment of states to their rows in the matrix.
 	 * @returns The solution vector x of the system of linear equations as the content of the parameter x.
 	 */
 	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
@@ -511,18 +527,18 @@ private:
 		while (!converged && iterations < maxIterations) {
 			// Compute x' = A*x + b.
 			A.multiplyWithVector(*currentX, multiplyResult);
-			storm::utility::addVectors(multiplyResult, b);
+			storm::utility::vector::addVectorsInPlace(multiplyResult, b);
 
 			// Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
 			// element of the min/max operator stack.
 			if (this->minimumOperatorStack.top()) {
-				storm::utility::reduceVectorMin(multiplyResult, newX, nondeterministicChoiceIndices);
+				storm::utility::vector::reduceVectorMin(multiplyResult, *newX, nondeterministicChoiceIndices);
 			} else {
-				storm::utility::reduceVectorMax(multiplyResult, newX, nondeterministicChoiceIndices);
+				storm::utility::vector::reduceVectorMax(multiplyResult, *newX, nondeterministicChoiceIndices);
 			}
 
 			// Determine whether the method converged.
-			converged = storm::utility::equalModuloPrecision(*currentX, *newX, precision, relative);
+			converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, precision, relative);
 
 			// Update environment variables.
 			swap = currentX;

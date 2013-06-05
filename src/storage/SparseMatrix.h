@@ -592,7 +592,7 @@ public:
 		// Check whether the accessed state exists.
 		if (row > rowCount) {
 			LOG4CPLUS_ERROR(logger, "Trying to make an illegal row " << row << " absorbing.");
-			throw storm::exceptions::OutOfRangeException("Trying to make an illegal row absorbing.");
+			throw storm::exceptions::OutOfRangeException() << "Trying to make an illegal row " << row << " absorbing.";
 			return false;
 		}
 
@@ -713,14 +713,18 @@ public:
 		SparseMatrix result(constraint.getNumberOfSetBits());
 		result.initialize(subNonZeroEntries);
 
-		// Create a temporary array that stores for each index whose bit is set
-		// to true the number of bits that were set before that particular index.
-		uint_fast64_t* bitsSetBeforeIndex = new uint_fast64_t[colCount];
+		// Create a temporary vecotr that stores for each index whose bit is set
+        // to true the number of bits that were set before that particular index.
+        std::vector<uint_fast64_t> bitsSetBeforeIndex;
+        bitsSetBeforeIndex.reserve(colCount);
+        
+        // Compute the information to fill this vector.
 		uint_fast64_t lastIndex = 0;
 		uint_fast64_t currentNumberOfSetBits = 0;
 		for (auto index : constraint) {
 			while (lastIndex <= index) {
-				bitsSetBeforeIndex[lastIndex++] = currentNumberOfSetBits;
+				bitsSetBeforeIndex.push_back(currentNumberOfSetBits);
+                ++lastIndex;
 			}
 			++currentNumberOfSetBits;
 		}
@@ -736,9 +740,6 @@ public:
 
 			++rowCount;
 		}
-
-		// Dispose of the temporary array.
-		delete[] bitsSetBeforeIndex;
 
 		// Finalize sub-matrix and return result.
 		result.finalize();
@@ -758,8 +759,7 @@ public:
 	SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices) const {
 		LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix (of unknown size).");
 
-		// First, we need to determine the number of non-zero entries and the number of rows of the
-		// sub-matrix.
+		// First, we need to determine the number of non-zero entries and the number of rows of the sub-matrix.
 		uint_fast64_t subNonZeroEntries = 0;
 		uint_fast64_t subRowCount = 0;
 		for (auto index : rowGroupConstraint) {
@@ -779,14 +779,18 @@ public:
 		SparseMatrix result(subRowCount, rowGroupConstraint.getNumberOfSetBits());
 		result.initialize(subNonZeroEntries);
 
-		// Create a temporary array that stores for each index whose bit is set
+		// Create a temporary vector that stores for each index whose bit is set
 		// to true the number of bits that were set before that particular index.
-		uint_fast64_t* bitsSetBeforeIndex = new uint_fast64_t[colCount];
+        std::vector<uint_fast64_t> bitsSetBeforeIndex;
+        bitsSetBeforeIndex.reserve(colCount);
+        
+        // Compute the information to fill this vector.
 		uint_fast64_t lastIndex = 0;
 		uint_fast64_t currentNumberOfSetBits = 0;
 		for (auto index : rowGroupConstraint) {
 			while (lastIndex <= index) {
-				bitsSetBeforeIndex[lastIndex++] = currentNumberOfSetBits;
+				bitsSetBeforeIndex.push_back(currentNumberOfSetBits);
+                ++lastIndex;
 			}
 			++currentNumberOfSetBits;
 		}
@@ -803,9 +807,6 @@ public:
 				++rowCount;
 			}
 		}
-
-		// Dispose of the temporary array.
-		delete[] bitsSetBeforeIndex;
 
 		// Finalize sub-matrix and return result.
 		result.finalize();

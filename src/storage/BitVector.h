@@ -111,8 +111,8 @@ public:
 	BitVector(uint_fast64_t length, bool initTrue = false) : bitCount(length), endIterator(*this, length, length, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
 		// Check whether the given length is valid.
 		if (length == 0) {
-			LOG4CPLUS_ERROR(logger, "Trying to create bit vector of size 0.");
-			throw storm::exceptions::InvalidArgumentException("Trying to create a bit vector of size 0.");
+			LOG4CPLUS_ERROR(logger, "Cannot create bit vector of size 0.");
+			throw storm::exceptions::InvalidArgumentException() << "Cannot create bit vector of size 0.";
 		}
 
 		// Compute the correct number of buckets needed to store the given number of bits
@@ -272,7 +272,7 @@ public:
 	 */
 	void set(const uint_fast64_t index, const bool value) {
 		uint_fast64_t bucket = index >> 6;
-		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException();
+		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException() << "Written index " << index << " out of bounds.";
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		if (value) {
 			this->bucketArray[bucket] |= mask;
@@ -290,7 +290,7 @@ public:
 	 */
 	bool get(const uint_fast64_t index) const {
 		uint_fast64_t bucket = index >> 6;
-		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException();
+		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException() << "Read index " << index << " out of bounds.";
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
 		return ((this->bucketArray[bucket] & mask) == mask);
 	}
@@ -469,6 +469,41 @@ public:
 		}
 		return true;
 	}
+    
+    /*!
+	 * Computes a bit vector such that bit i is set iff the i-th set bit of the current bit vector is also contained
+     * in the given bit vector.
+     *
+	 * @param bv A reference the bit vector to be used.
+	 * @return A bit vector whose i-th bit is set iff the i-th set bit of the current bit vector is also contained
+     * in the given bit vector.
+	 */
+	BitVector operator%(BitVector const& bv) const {
+		// Create resulting bit vector.
+		BitVector result(this->getNumberOfSetBits());
+        
+        // If the current bit vector has not too many elements compared to the given bit vector we prefer iterating
+        // over its elements.
+        if (this->getNumberOfSetBits() / 10 < bv.getNumberOfSetBits()) {
+            uint_fast64_t position = 0;
+            for (auto bit : *this) {
+                if (bv.get(bit)) {
+                    result.set(position, true);
+                }
+                ++position;
+            }
+        } else {
+            // If the given bit vector had much less elements, we iterate over its elements and accept calling the more
+            // costly operation getNumberOfSetBitsBeforeIndex on the current bit vector.
+            for (auto bit : bv) {
+                if (this->get(bit)) {
+                    result.set(this->getNumberOfSetBitsBeforeIndex(bit), true);
+                }
+            }
+        }
+        
+		return result;
+	}
 
 	/*!
 	 * Adds all indices of bits set to one to the provided list.
@@ -565,7 +600,7 @@ public:
 	 */
 	std::string toString() const {
 		std::stringstream result;
-		result << "bit vector(" << this->getNumberOfSetBits() << ") [";
+		result << "bit vector(" << this->getNumberOfSetBits() << "/" << bitCount << ") [";
 		for (auto index : *this) {
 			result << index << " ";
 		}

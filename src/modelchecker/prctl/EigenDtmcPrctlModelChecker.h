@@ -8,7 +8,7 @@
 #ifndef STORM_MODELCHECKER_PRCTL_EIGENDTMCPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_PRCTL_EIGENDTMCPRCTLMODELCHECKER_H_
 
-#include "src/utility/Vector.h"
+#include "src/utility/vector.h"
 
 #include "src/models/Dtmc.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"

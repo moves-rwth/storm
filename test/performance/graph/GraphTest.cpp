@@ -93,7 +93,7 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     ASSERT_EQ(sccDecomposition.size(), 1290297u);
     
     LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of crowds/crowds20_5...");
-    storm::storage::SparseMatrix<bool> sccDependencyGraph = dtmc->extractSccDependencyGraph(sccDecomposition);
+    storm::storage::SparseMatrix<bool> sccDependencyGraph = dtmc->extractPartitionDependencyGraph(sccDecomposition);
     LOG4CPLUS_WARN(logger, "Done.");
     
     ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1371253u);
@@ -110,7 +110,7 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     ASSERT_EQ(sccDecomposition.size(), 1279673u);
     
     LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of synchronous_leader/leader6_8...");
-    sccDependencyGraph = dtmc2->extractSccDependencyGraph(sccDecomposition);
+    sccDependencyGraph = dtmc2->extractPartitionDependencyGraph(sccDecomposition);
     LOG4CPLUS_WARN(logger, "Done.");
     
     ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1535367u);
@@ -127,7 +127,7 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     ASSERT_EQ(sccDecomposition.size(), 214675);
     
     LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of asynchronous_leader/leader6...");
-    sccDependencyGraph = mdp->extractSccDependencyGraph(sccDecomposition);
+    sccDependencyGraph = mdp->extractPartitionDependencyGraph(sccDecomposition);
     LOG4CPLUS_WARN(logger, "Done.");
     
     ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 684093u);
@@ -144,7 +144,7 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     ASSERT_EQ(sccDecomposition.size(), 63611u);
     
     LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of consensus/coin4_6...");
-    sccDependencyGraph = mdp2->extractSccDependencyGraph(sccDecomposition);
+    sccDependencyGraph = mdp2->extractPartitionDependencyGraph(sccDecomposition);
     LOG4CPLUS_WARN(logger, "Done.");
     
     ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 213400u);

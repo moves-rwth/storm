@@ -124,6 +124,7 @@ void printHeader(const int argc, const char* argv[]) {
 	std::cout << "-----" << std::endl << std::endl;
 
 	std::cout << "Version: 1.0 Alpha" << std::endl;
+    
 	// "Compute" the command line argument string with which STORM was invoked.
 	std::stringstream commandStream;
 	for (int i = 0; i < argc; ++i) {
@@ -133,14 +134,8 @@ void printHeader(const int argc, const char* argv[]) {
 }
 
 /*!
- * Prints the footer.
- */
-void printFooter() {
-	std::cout << "Nothing more to do, exiting." << std::endl;
-}
-
-/*!
- * Function that parses the command line options.
+ * Parses the given command line arguments.
+ *
  * @param argc The argc argument of main().
  * @param argv The argv argument of main().
  * @return True iff the program should continue to run after parsing the options.
@@ -181,126 +176,77 @@ bool parseOptions(const int argc, const char* argv[]) {
 	return true;
 }
 
+/*!
+ * Performs some necessary initializations.
+ */
 void setUp() {
+    // Increase the precision of output.
 	std::cout.precision(10);
 }
 
 /*!
- * Function to perform some cleanup.
+ * Performs some necessary clean-up.
  */
 void cleanUp() {
 	delete storm::utility::cuddUtilityInstance();
 }
 
 /*!
- * Factory style creation of new DTMC model checker
- * @param dtmc The Dtmc that the model checker will check
- * @return
+ * Creates a model checker for the given DTMC that complies with the given options.
+ *
+ * @param dtmc A reference to the DTMC for which the model checker is to be created.
+ * @return A pointer to the resulting model checker.
  */
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double>& dtmc) {
+    // Create the appropriate model checker.
 	storm::settings::Settings* s = storm::settings::instance();
 	if (s->getString("matrixlib") == "gmm++") {
 		return new storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<double>(dtmc);
 	}
-	// The control flow should never reach this point, as there is a default setting for matrixlib (gmm++)
-	std::string message = "No matrix library suitable for DTMC model checking has been set";
+    
+	// The control flow should never reach this point, as there is a default setting for matrixlib.
+	std::string message = "No matrix library suitable for DTMC model checking has been set.";
 	throw storm::exceptions::InvalidSettingsException() << message;
 	return nullptr;
 }
 
 /*!
- * Factory style creation of new MDP model checker
+ * Creates a model checker for the given MDP that complies with the given options.
+ *
  * @param mdp The Dtmc that the model checker will check
  * @return
  */
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
+    // Create the appropriate model checker.
 	storm::settings::Settings* s = storm::settings::instance();
 	if (s->getString("matrixlib") == "gmm++") {
 		return new storm::modelchecker::prctl::GmmxxMdpPrctlModelChecker<double>(mdp);
-	}
-	// The control flow should never reach this point, as there is a default setting for matrixlib (gmm++)
-	std::string message = "No matrix library suitable for MDP model checking has been set";
+	} else if (s->getString("matrixlib") == "native") {
+        return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp);
+    }
+    
+	// The control flow should never reach this point, as there is a default setting for matrixlib.
+	std::string message = "No matrix library suitable for MDP model checking has been set.";
 	throw storm::exceptions::InvalidSettingsException() << message;
 	return nullptr;
 }
 
 /*!
- * Calls the check method of a model checker for all PRCTL formulas in a given list.
+ * Checks the PRCTL formulae provided on the command line on the given model checker.
  *
- * @param formulaList The list of PRCTL formulas
- * @param mc the model checker
+ * @param modelchecker The model checker that is to be invoked on all given formulae.
  */
-void checkPrctlFormulasAgainstModel(std::list<storm::property::prctl::AbstractPrctlFormula<double>*>& formulaList,
-									storm::modelchecker::prctl::AbstractModelChecker<double> const& mc) {
-	for ( auto formula : formulaList ) {
-		mc.check(*formula);
-
-		//TODO: Should that be done here or in a second iteration through the list?
-		delete formula;
-	}
-	formulaList.clear();
-}
-
-/*!
- * Check method for DTMCs
- * @param dtmc Reference to the DTMC to check
- */
-void checkMdp(std::shared_ptr<storm::models::Mdp<double>> mdp) {
-	mdp->printModelInformationToStream(std::cout);
+void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double> const& modelchecker) {
 	storm::settings::Settings* s = storm::settings::instance();
 	if (s->isSet("prctl")) {
-		LOG4CPLUS_INFO(logger, "Parsing prctl file"+ s->getString("prctl"));
+		LOG4CPLUS_INFO(logger, "Parsing prctl file: " << s->getString("prctl") << ".");
 		storm::parser::PrctlFileParser fileParser;
 		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("prctl"));
-
-		storm::modelchecker::prctl::AbstractModelChecker<double>* mc = createPrctlModelChecker(*mdp);
-
-		checkPrctlFormulasAgainstModel(formulaList, *mc);
-
-		delete mc;
-	}
-
-	if(s->isSet("csl")) {
-		LOG4CPLUS_ERROR(logger, "CSL properties cannot be checked on MDPs.");
-	}
-}
-
-/*!
- * Check method for DTMCs
- * @param dtmc Reference to the DTMC to check
- */
-void checkDtmc(std::shared_ptr<storm::models::Dtmc<double>> dtmc) {
-	dtmc->printModelInformationToStream(std::cout);
-	storm::settings::Settings* s = storm::settings::instance();
-	if (s->isSet("prctl")) {
-		LOG4CPLUS_INFO(logger, "Parsing prctl file"+ s->getString("prctl"));
-		storm::parser::PrctlFileParser fileParser;
-		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("prctl"));
-
-		storm::modelchecker::prctl::AbstractModelChecker<double>* mc = createPrctlModelChecker(*dtmc);
-
-		checkPrctlFormulasAgainstModel(formulaList, *mc);
-
-		delete mc;
-	}
-
-	if (s->isSet("ltl")) {
-		LOG4CPLUS_INFO(logger, "Parsing ltl file"+ s->getString("ltl"));
-		storm::parser::LtlFileParser fileParser;
-		std::list<storm::property::ltl::AbstractLtlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("ltl"));
-
-		LOG4CPLUS_ERROR(logger, "LTL model checking is not implemented yet.");
-
-		//Debug output while LTL formulas cannot be checked
-		for (auto formula : formulaList) {
-			LOG4CPLUS_DEBUG(logger, formula->toString());
-		}
-
-
-	}
-
-	if(s->isSet("csl")) {
-		LOG4CPLUS_ERROR(logger, "CSL properties cannot be checked on DTMCs.");
+        
+        for (auto formula : formulaList) {
+            modelchecker.check(*formula);
+            delete formula;
+        }
 	}
 }
 
@@ -308,56 +254,66 @@ void checkDtmc(std::shared_ptr<storm::models::Dtmc<double>> dtmc) {
  * Main entry point.
  */
 int main(const int argc, const char* argv[]) {
-	// Catch segfaults and display a backtrace.
+	// Register a signal handler to catch segfaults and display a backtrace.
 	installSignalHandler();
 
+    // Print an information header.
 	printHeader(argc, argv);
 
+    // Initialize the logging engine and perform other initalizations.
 	initializeLogger();
-
 	setUp();
 
 	try {
 		LOG4CPLUS_INFO(logger, "StoRM was invoked.");
 
-		// Parse options
+		// Parse options.
 		if (!parseOptions(argc, argv)) {
-			// If false is returned, the program execution is stopped here
-			// E.g. if the user asked to see the help text
+			// If parsing failed or the option to see the usage was set, program execution stops here.
 			return 0;
 		}
 
-		// Now, the settings are receivd and the model is parsed.
+		// Now, the settings are received and the specified model is parsed. The actual actions taken depend on whether
+        // the model was provided in explicit or symbolic format.
 		storm::settings::Settings* s = storm::settings::instance();
 		if (s->isSet("explicit")) {
 			std::vector<std::string> args = s->get<std::vector<std::string>>("explicit");
 			storm::parser::AutoParser<double> parser(args[0], args[1], s->getString("staterew"), s->getString("transrew"));
 
+            // Determine which engine is to be used to choose the right model checker.
 			LOG4CPLUS_DEBUG(logger, s->getString("matrixlib"));
 
-
-			// Depending on the model type, the respective model checking procedure is chosen.
+			// Depending on the model type, the appropriate model checking procedure is chosen.
+            storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
 			switch (parser.getType()) {
 			case storm::models::DTMC:
-				LOG4CPLUS_INFO(logger, "Model was detected as DTMC");
-				checkDtmc(parser.getModel<storm::models::Dtmc<double>>());
+				LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+                modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Dtmc<double>>());
+				checkPrctlFormulae(*modelchecker);
 				break;
 			case storm::models::MDP:
-				LOG4CPLUS_INFO(logger, "Model was detected as MDP");
-				checkMdp(parser.getModel<storm::models::Mdp<double>>());
+				LOG4CPLUS_INFO(logger, "Model is an MDP.");
+                modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Mdp<double>>());
+				checkPrctlFormulae(*modelchecker);
 				break;
 			case storm::models::CTMC:
+                LOG4CPLUS_INFO(logger, "Model is a CTMC.");
+                LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+                break;
 			case storm::models::CTMDP:
-				// Continuous time model checking is not implemented yet
-				LOG4CPLUS_ERROR(logger, "The model type you selected is not supported in this version of storm.");
+                LOG4CPLUS_INFO(logger, "Model is a CTMC.");
+                LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
 				break;
 			case storm::models::Unknown:
 			default:
 				LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
 				break;
 			}
-		}
-		if (s->isSet("symbolic")) {
+            
+            if (modelchecker != nullptr) {
+                delete modelchecker;
+            }
+		} else if (s->isSet("symbolic")) {
 			std::string arg = s->getString("symbolic");
 			storm::parser::PrismParser parser;
 			storm::adapters::ExplicitModelAdapter adapter(parser.parseFile(arg));
@@ -365,13 +321,12 @@ int main(const int argc, const char* argv[]) {
 			model->printModelInformationToStream(std::cout);
 		}
 
+        // Perform clean-up and terminate.
 		cleanUp();
-
-		LOG4CPLUS_INFO(logger, "StoRM quit.");
-
+		LOG4CPLUS_INFO(logger, "StoRM terminating.");
 		return 0;
 	} catch (std::exception& e) {
-		LOG4CPLUS_FATAL(logger, "An exception was thrown but not catched. All we can do now is show it to you and die in peace...");
+		LOG4CPLUS_FATAL(logger, "An exception was thrown. Terminating.");
 		LOG4CPLUS_FATAL(logger, "\t" << e.what());
 	}
 	return 1;

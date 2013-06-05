@@ -53,12 +53,19 @@ public:
 
 private:
 
-	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const {
-		// Get the starting row indices for the non-deterministic choices to reduce the resulting
-		// vector properly.
-		std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = *this->getModel().getNondeterministicChoiceIndices();
-
-
+    /*!
+	 * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes x[i+1] = A*x[i] + b
+	 * until x[n], where x[0] = x.
+	 *
+	 * @param A The matrix that is to be multiplied against the vector.
+	 * @param x The initial vector that is to be multiplied against the matrix. This is also the output parameter,
+	 * i.e. after the method returns, this vector will contain the computed values.
+     * @param nondeterministicChoiceIndices The assignment of states to their rows in the matrix.
+	 * @param b If not null, this vector is being added to the result after each matrix-vector multiplication.
+	 * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
+	 * @returns The result of the repeated matrix-vector multiplication as the content of the parameter vector.
+	 */
+	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const {
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
 		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
 
@@ -75,9 +82,9 @@ private:
 			}
             
 			if (this->minimumOperatorStack.top()) {
-				storm::utility::reduceVectorMin(multiplyResult, &x, nondeterministicChoiceIndices);
+				storm::utility::vector::reduceVectorMin(multiplyResult, x, nondeterministicChoiceIndices);
 			} else {
-				storm::utility::reduceVectorMax(multiplyResult, &x, nondeterministicChoiceIndices);
+				storm::utility::vector::reduceVectorMax(multiplyResult, x, nondeterministicChoiceIndices);
 			}
 		}
 
@@ -125,13 +132,13 @@ private:
             
 			// Reduce the vector x' by applying min/max for all non-deterministic choices.
 			if (this->minimumOperatorStack.top()) {
-				storm::utility::reduceVectorMin(multiplyResult, newX, nondeterministicChoiceIndices);
+				storm::utility::vector::reduceVectorMin(multiplyResult, *newX, nondeterministicChoiceIndices);
 			} else {
-				storm::utility::reduceVectorMax(multiplyResult, newX, nondeterministicChoiceIndices);
+				storm::utility::vector::reduceVectorMax(multiplyResult, *newX, nondeterministicChoiceIndices);
 			}
 
 			// Determine whether the method converged.
-			converged = storm::utility::equalModuloPrecision(*currentX, *newX, precision, relative);
+			converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, precision, relative);
 
 			// Update environment variables.
 			swap = currentX;

@@ -209,7 +209,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::BoundedEventually<double>* boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 25);
-	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
 
 	result = mc.checkNoBoundOperator(*probFormula);
 
@@ -218,11 +218,11 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
 
 	delete probFormula;
-	delete result;
+	delete result; 
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
 	boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 25);
-	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
+	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
 
 	result = mc.checkNoBoundOperator(*probFormula);
 

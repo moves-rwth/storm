@@ -5,8 +5,17 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_MODELCHECKER_PRCTL_ABSTRACTMODELCHECKER_H_
-#define STORM_MODELCHECKER_PRCTL_ABSTRACTMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
+#define STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
+
+// Forward declaration of abstract model checker class needed by the formula classes.
+namespace storm {
+namespace modelchecker {
+namespace prctl {
+	template <class Type> class AbstractModelChecker;
+}
+}
+}
 
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/formula/Prctl.h"
@@ -151,8 +160,7 @@ public:
 				delete result;
 			}
 		}
-		std::cout << std::endl;
-		storm::utility::printSeparationLine(std::cout);
+		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
 	/*!
@@ -181,8 +189,7 @@ public:
 				delete result;
 			}
 		}
-		std::cout << std::endl;
-		storm::utility::printSeparationLine(std::cout);
+		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
 	/*!
