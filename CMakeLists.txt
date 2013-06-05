@@ -245,7 +245,6 @@ if (CUDD_LIBRARY_DIRS)
     link_directories(${CUDD_LIBRARY_DIRS})
 endif(CUDD_LIBRARY_DIRS)
 
-<<<<<<< HEAD
 if (LTL2DSTAR_INCLUDE_DIRS)
     include_directories(${LTL2DSTAR_INCLUDE_DIRS})
 endif(LTL2DSTAR_INCLUDE_DIRS)
@@ -253,8 +252,6 @@ if (LTL2DSTAR_LIBRARY_DIRS)
     link_directories(${LTL2DSTAR_LIBRARY_DIRS})
 endif(LTL2DSTAR_LIBRARY_DIRS)
 
-=======
->>>>>>> refs/heads/master
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
 add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
@@ -367,7 +364,6 @@ if (CUDD_LIBRARY_DIRS)
 		target_link_libraries(storm-performance-tests "-lobj -lcudd -lmtr -lst -lutil -lepd")
 	endif ()
 endif(CUDD_LIBRARY_DIRS)
-<<<<<<< HEAD
 
 if (LTL2DSTAR_LIBRARY_DIRS)
   if (MSVC)
@@ -378,8 +374,6 @@ if (LTL2DSTAR_LIBRARY_DIRS)
       target_link_libraries(storm-performance-tests "-lltl2dstar")
   endif ()
 endif (LTL2DSTAR_LIBRARY_DIRS)
-=======
->>>>>>> refs/heads/master
 
 if (THREADS_FOUND)
 	include_directories(${THREADS_INCLUDE_DIRS})
