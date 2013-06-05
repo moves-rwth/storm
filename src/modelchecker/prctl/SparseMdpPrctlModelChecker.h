@@ -94,37 +94,49 @@ public:
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
 		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
 		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
+		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
         
         // Determine the states that have 0 probability of reaching the target states.
-        storm::storage::BitVector maybeStates;
+        storm::storage::BitVector statesWithProbabilityGreater0;
         if (this->minimumOperatorStack.top()) {
-			maybeStates = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), *leftStates, *rightStates, true, formula.getBound());
+			statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), *leftStates, *rightStates, true, formula.getBound());
 		} else {
-			maybeStates = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), *leftStates, *rightStates, true, formula.getBound());
+			statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), *leftStates, *rightStates, true, formula.getBound());
 		}
         
-        // Now we can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-        storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
-
-        // Get the "new" nondeterministic choice indices for the submatrix.
-        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
-
-        // Compute the new set of target states in the reduced system.
-        storm::storage::BitVector rightStatesInReducedSystem = maybeStates % *rightStates;
-
-		// Make all rows absorbing that satisfy the second sub-formula.
-		submatrix.makeRowsAbsorbing(rightStatesInReducedSystem, subNondeterministicChoiceIndices);
-
-        // Create the vector with which to multiply.
-        std::vector<Type> subresult(maybeStates.getNumberOfSetBits());
-		storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
-
-		this->performMatrixVectorMultiplication(submatrix, subresult, subNondeterministicChoiceIndices, nullptr, formula.getBound());
-
-		// Create the resulting vector.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-        storm::utility::vector::setVectorValues(*result, maybeStates, subresult);
-		storm::utility::vector::setVectorValues(*result, ~maybeStates, storm::utility::constGetZero<Type>());
+        // Check if we already know the result (i.e. probability 0) for all initial states and
+        // don't compute anything in this case.
+        if (this->getInitialStates().isDisjointFrom(statesWithProbabilityGreater0)) {
+            LOG4CPLUS_INFO(logger, "The probabilities for the initial states were determined in a preprocessing step."
+                           << " No exact probabilities were computed.");
+            // Set the values for all maybe-states to 0.5 to indicate that their probability values are not 0 (and
+            // not necessarily 1).
+            storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, Type(0.5));
+        } else {
+            // In this case we have have to compute the probabilities.
+            
+            // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
+            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0, this->getModel().getNondeterministicChoiceIndices());
+            
+            // Get the "new" nondeterministic choice indices for the submatrix.
+            std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(statesWithProbabilityGreater0);
+            
+            // Compute the new set of target states in the reduced system.
+            storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % *rightStates;
+            
+            // Make all rows absorbing that satisfy the second sub-formula.
+            submatrix.makeRowsAbsorbing(rightStatesInReducedSystem, subNondeterministicChoiceIndices);
+            
+            // Create the vector with which to multiply.
+            std::vector<Type> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
+            storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
+            
+            this->performMatrixVectorMultiplication(submatrix, subresult, subNondeterministicChoiceIndices, nullptr, formula.getBound());
+            
+            // Set the values of the resulting vector accordingly.
+            storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, subresult);
+            storm::utility::vector::setVectorValues(*result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
+        }
 
 		// Delete intermediate results and return result.
 		delete leftStates;
@@ -246,17 +258,28 @@ public:
 		delete leftStates;
 		delete rightStates;
 
+		storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
 		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
 		LOG4CPLUS_INFO(logger, "Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
-		storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
-		// Only try to solve system if there are states for which the probability is unknown.
-		uint_fast64_t maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
-		if (maybeStatesSetBitCount > 0) {
+        // Check whether we need to compute exact probabilities for some states.
+        if (this->getInitialStates().isDisjointFrom(maybeStates) || qualitative) {
+            if (qualitative) {
+                LOG4CPLUS_INFO(logger, "The formula was checked qualitatively. No exact probabilities were computed.");
+            } else {
+                LOG4CPLUS_INFO(logger, "The probabilities for the initial states were determined in a preprocessing step."
+                               << " No exact probabilities were computed.");
+            }
+            // Set the values for all maybe-states to 0.5 to indicate that their probability values
+            // are neither 0 nor 1.
+            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, Type(0.5));
+        } else {
+            // In this case we have have to compute the probabilities.
+            
 			// First, we can eliminate the rows and columns from the original transition probability matrix for states
 			// whose probabilities are already known.
 			storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
@@ -265,7 +288,7 @@ public:
 			std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
 
 			// Create vector for results for maybe states.
-			std::vector<Type> x(maybeStatesSetBitCount);
+			std::vector<Type> x(maybeStates.getNumberOfSetBits());
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
@@ -385,27 +408,33 @@ public:
 			infinityStates = storm::utility::graph::performProb1E(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates);
 		}
 		infinityStates.complement();
-
+		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
 		LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
 		LOG4CPLUS_INFO(logger, "Found " << targetStates->getNumberOfSetBits() << " 'target' states.");
-		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
-		// Check whether there are states for which we have to compute the result.
-		const int maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
-		if (maybeStatesSetBitCount > 0) {
-			// First, we can eliminate the rows and columns from the original transition probability matrix for states
-			// whose probabilities are already known.
+        // Check whether we need to compute exact rewards for some states.
+        if (this->getInitialStates().isDisjointFrom(maybeStates)) {
+            LOG4CPLUS_INFO(logger, "The rewards for the initial states were determined in a preprocessing step."
+                           << " No exact rewards were computed.");
+            // Set the values for all maybe-states to 1 to indicate that their reward values
+            // are neither 0 nor infinity.
+            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, storm::utility::constGetOne<Type>());
+        } else {
+            // In this case we have to compute the reward values for the remaining states.
+
+			// We can eliminate the rows and columns from the original transition probability matrix for states
+			// whose reward values are already known.
 			storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
 
 			// Get the "new" nondeterministic choice indices for the submatrix.
 			std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
 
 			// Create vector for results for maybe states.
-			std::vector<Type> x(maybeStatesSetBitCount);
+			std::vector<Type> x(submatrix.getRowCount());
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.

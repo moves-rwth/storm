@@ -97,11 +97,16 @@ public:
         
         // Check if we already know the result (i.e. probability 0) for all initial states and
         // don't compute anything in this case.
-        if (this->getInitialStates().isSubsetOf(~statesWithProbabilityGreater0)) {
+        if (this->getInitialStates().isDisjointFrom(statesWithProbabilityGreater0)) {
             LOG4CPLUS_INFO(logger, "The probabilities for the initial states were determined in a preprocessing step."
                            << " No exact probabilities were computed.");
-        } else { // Otherwise, we have have to compute the probabilities.
-            // Now we can eliminate the rows and columns from the original transition probability matrix that have probability 0.
+            // Set the values for all maybe-states to 0.5 to indicate that their probability values are not 0 (and
+            // not necessarily 1).
+            storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, Type(0.5));
+        } else {
+            // In this case we have have to compute the probabilities.
+            
+            // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
             storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0);
             
             // Compute the new set of target states in the reduced system.
@@ -117,8 +122,7 @@ public:
             // Perform the matrix vector multiplication as often as required by the formula bound.
             this->performMatrixVectorMultiplication(submatrix, subresult, nullptr, formula.getBound());
             
-            // Create result vector and set its values accordingly.
-
+            // Set the values of the resulting vector accordingly.
             storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, subresult);
             storm::utility::vector::setVectorValues<Type>(*result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
         }
@@ -260,9 +264,9 @@ public:
             // are neither 0 nor 1.
             storm::utility::vector::setVectorValues<Type>(*result, maybeStates, Type(0.5));
         } else {
-            // Otherwise, we have have to compute the probabilities.
+            // In this case we have have to compute the probabilities.
             
-            // First, we can eliminate the rows and columns from the original transition probability matrix.
+            // We can eliminate the rows and columns from the original transition probability matrix.
             storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates);
             // Converting the matrix from the fixpoint notation to the form needed for the equation
             // system. That is, we go from x = A*x + b to (I-A)x = b.
@@ -388,14 +392,14 @@ public:
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
 		storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel(), trueStates, *targetStates);
 		infinityStates.complement();
-        LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
+		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
+		LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
+		LOG4CPLUS_INFO(logger, "Found " << targetStates->getNumberOfSetBits() << " 'target' states.");
+		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
-		// Check whether there are states for which we have to compute the result.
-		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
-        
         // Check whether we need to compute exact rewards for some states.
         if (this->getInitialStates().isDisjointFrom(maybeStates)) {
             LOG4CPLUS_INFO(logger, "The rewards for the initial states were determined in a preprocessing step."
@@ -405,7 +409,6 @@ public:
             storm::utility::vector::setVectorValues<Type>(*result, maybeStates, storm::utility::constGetOne<Type>());
         } else {
             // In this case we have to compute the reward values for the remaining states.
-            const int maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
 
             // Now we can eliminate the rows and columns from the original transition probability matrix.
             storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates);
@@ -415,10 +418,10 @@ public:
             
             // Initialize the x vector with 1 for each element. This is the initial guess for
             // the iterative solvers.
-            std::vector<Type> x(maybeStatesSetBitCount, storm::utility::constGetOne<Type>());
+            std::vector<Type> x(submatrix.getColCount(), storm::utility::constGetOne<Type>());
             
             // Prepare the right-hand side of the equation system.
-            std::vector<Type> b(maybeStatesSetBitCount);
+            std::vector<Type> b(submatrix.getRowCount());
             if (this->getModel().hasTransitionRewards()) {
                 // If a transition-based reward model is available, we initialize the right-hand
                 // side to the vector resulting from summing the rows of the pointwise product
@@ -431,7 +434,7 @@ public:
                     // as well. As the state reward vector contains entries not just for the states
                     // that we still consider (i.e. maybeStates), we need to extract these values
                     // first.
-                    std::vector<Type> subStateRewards(maybeStatesSetBitCount);
+                    std::vector<Type> subStateRewards(b.size());
                     storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, this->getModel().getStateRewardVector());
                     storm::utility::vector::addVectorsInPlace(b, subStateRewards);
                 }
