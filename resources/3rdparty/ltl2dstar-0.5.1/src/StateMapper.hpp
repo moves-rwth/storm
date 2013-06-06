@@ -86,7 +86,7 @@ public:
 
 
 private:
-  /** A functor using the standard hash function on boost::shared_ptr */
+  /** A functor using the standard hash function on std::shared_ptr */
   template <typename K >
   struct std_hash {
     size_t operator()(const K& x) const {

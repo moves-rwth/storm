@@ -29,7 +29,7 @@
 
 #include "APElement.hpp"
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 
 /**
@@ -41,10 +41,10 @@ public:
    * @param nba the NBA
    */
   template<typename NBA_t>
-  static boost::shared_ptr<NBA_t> stutter_closure(NBA_t& nba) {
+  static std::shared_ptr<NBA_t> stutter_closure(NBA_t& nba) {
     APSet_cp apset=nba.getAPSet_cp();
     
-    boost::shared_ptr<NBA_t> nba_result_ptr(new NBA_t(apset));
+    std::shared_ptr<NBA_t> nba_result_ptr(new NBA_t(apset));
     NBA_t& result=*nba_result_ptr;
     
     unsigned int element_count=apset->powersetSize();
@@ -143,10 +143,10 @@ public:
    * @param label the symbol for which to perform the stutter closure
    */
   template<typename NBA_t>
-  static boost::shared_ptr<NBA_t> stutter_closure(NBA_t& nba, APElement label) {
+  static std::shared_ptr<NBA_t> stutter_closure(NBA_t& nba, APElement label) {
     APSet_cp apset=nba.getAPSet_cp();
     
-    boost::shared_ptr<NBA_t> nba_result_ptr(new NBA_t(apset));
+    std::shared_ptr<NBA_t> nba_result_ptr(new NBA_t(apset));
     NBA_t& result=*nba_result_ptr;
     
     unsigned int element_count=apset->powersetSize();

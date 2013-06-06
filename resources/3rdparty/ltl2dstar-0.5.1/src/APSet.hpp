@@ -26,11 +26,11 @@
 
 #include <cstring>
 #include <string>
+#include <memory>
 #include "common/Exceptions.hpp"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/iterator/counting_iterator.hpp>
-#include <boost/shared_ptr.hpp>
 
 typedef unsigned int ap_index_t;
 
@@ -183,10 +183,11 @@ private:
   ap_index_t array_size;
 };
 
-/** A reference counted pointer (boost::shared_ptr) to an APSet. */
-typedef boost::shared_ptr<APSet> APSet_p;
-/** A reference counted pointer (boost::shared_ptr) to a const APSet. */
-typedef boost::shared_ptr<const APSet> APSet_cp;
+#include <memory>
+/** A reference counted pointer (std::shared_ptr) to an APSet. */
+typedef std::shared_ptr<APSet> APSet_p;
+/** A reference counted pointer (std::shared_ptr) to a const APSet. */
+typedef std::shared_ptr<const APSet> APSet_cp;
 
 #endif
 

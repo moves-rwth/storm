@@ -30,8 +30,8 @@
 
 #include <vector>
 #include <stack>
-#include <boost/shared_ptr.hpp>
 #include <iostream>
+#include <memory>
 
 /**
  * A class for storing information about the Strongly Connected Components (SCCs)
@@ -228,7 +228,7 @@ private:
     std::stack<unsigned int> _stack;
 
     /** The SCC_DFS_Data for every state (state index -> DFS_DATA) */
-    std::vector<boost::shared_ptr<SCC_DFS_Data> > _dfs_data;
+    std::vector<std::shared_ptr<SCC_DFS_Data> > _dfs_data;
 
     /** The current scc number */
     unsigned int scc_nr;

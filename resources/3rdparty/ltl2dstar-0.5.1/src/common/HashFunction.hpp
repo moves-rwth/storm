@@ -70,7 +70,7 @@ typedef HashFunctionDJB2 StdHashFunction;
 
 
 
-/** A functor using the standard hash function on boost::shared_ptr */
+/** A functor using the standard hash function on std::shared_ptr */
 template <typename K >
 struct ptr_hash {
   size_t operator()(const K& x) const {

@@ -34,8 +34,6 @@
 #include <memory>
 #include <functional>
 
-#include <boost/shared_ptr.hpp>
-
 // forward declaration
 template <class SafraTreeVisitor> class SafraTreeWalker;
 
@@ -439,8 +437,8 @@ private:
   }
 };
 
-/** a boost::shared_ptr for SafraTree */
-typedef boost::shared_ptr<SafraTree> SafraTree_ptr;
+/** a std::shared_ptr for SafraTree */
+typedef std::shared_ptr<SafraTree> SafraTree_ptr;
 
 namespace std {
 

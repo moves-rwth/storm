@@ -125,7 +125,7 @@ public:
 	std::cerr << "WARNING: NBA might not be 100% stutter insensitive, applying stutter closure can create invalid results!" << std::endl;
       }
       
-      boost::shared_ptr<NBA_t> nba_closed=
+      std::shared_ptr<NBA_t> nba_closed=
 	NBAStutterClosure::stutter_closure(nba);
       
       if (can_stutter()) {      

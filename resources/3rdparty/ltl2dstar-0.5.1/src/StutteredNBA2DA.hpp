@@ -60,7 +60,7 @@ public:
   AcceptanceSignature& getSignature() {return _signature;}
 
   /** A shared_ptr to a TreeWithAcceptance */
-  typedef boost::shared_ptr<TreeWithAcceptance<Tree,AcceptanceSignature> > ptr;    
+  typedef std::shared_ptr<TreeWithAcceptance<Tree,AcceptanceSignature> > ptr;    
 
   /** Check if this TreeWithAcceptance is equal to another.
    * @param other the other TreeWithAcceptance.

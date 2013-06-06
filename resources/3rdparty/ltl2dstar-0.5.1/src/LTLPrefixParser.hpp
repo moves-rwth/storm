@@ -123,7 +123,7 @@ public:
 
     APSet_cp apset_=(predefined_apset.get()!=0)
       ? predefined_apset : 
-      boost::const_pointer_cast<APSet const>(apset);
+      std::const_pointer_cast<APSet const>(apset);
 
 
     return LTLFormula_ptr(new LTLFormula(ltl, apset_));

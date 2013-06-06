@@ -110,8 +110,8 @@ struct StdComparator {
  */
 template <class KeyPtr>
 struct PtrComparator {
-  typedef typename KeyPtr::value_type value_type;
-  typedef boost::shared_ptr<value_type> ptr_type;
+  typedef typename KeyPtr::element_type value_type;
+  typedef std::shared_ptr<value_type> ptr_type;
   
   /** equal_to functor */
   struct equal_to {

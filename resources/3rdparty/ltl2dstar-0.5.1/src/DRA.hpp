@@ -38,8 +38,7 @@
 #include <map>
 #include <string>
 
-#include "boost/shared_ptr.hpp"
-
+#include <memory>
 /**
  * A class representing a deterministic Rabin automaton.
  * <p>
@@ -71,8 +70,8 @@ class DRA : public DA<Label, EdgeContainer, RabinAcceptance> {
 
   typedef RabinAcceptance acceptance_condition_type;
 
-  /** Type of a reference counted pointer to the DRA (boost::shared_ptr) */
-  typedef boost::shared_ptr< DRA<Label,EdgeContainer> > shared_ptr;
+  /** Type of a reference counted pointer to the DRA (std::shared_ptr) */
+  typedef std::shared_ptr< DRA<Label,EdgeContainer> > shared_ptr;
 
   /** Create a new instance of the automaton. */
   virtual DA<Label,EdgeContainer,RabinAcceptance> *createInstance(APSet_cp ap_set) {

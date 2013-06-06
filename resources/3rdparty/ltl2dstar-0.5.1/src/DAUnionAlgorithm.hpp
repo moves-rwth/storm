@@ -23,6 +23,7 @@
 #include "NBA2DA.hpp"
 #include "StutteredNBA2DA.hpp"
 
+#include <memory>
 
 /** @file
  * Provides DAUnionAlgorithm for calculating the union of two DA.
@@ -56,7 +57,7 @@ struct UnionAcceptanceCalculator<RabinAcceptance> {
   /** RabinAcceptance signature type. */
   typedef RabinAcceptance::signature_type signature_t;
   /** shared_ptr of signature type. */
-  typedef boost::shared_ptr<signature_t> signature_ptr;
+  typedef std::shared_ptr<signature_t> signature_ptr;
   
   /**
    * Constructor. 
@@ -136,7 +137,7 @@ template <typename DA_t>
 class DAUnionAlgorithm {
 public:
   /** shared_ptr for DA_t type*/
-  typedef typename boost::shared_ptr<DA_t> DA_ptr;
+  typedef typename std::shared_ptr<DA_t> DA_ptr;
   /** state_type from DA_t */
   typedef typename DA_t::state_type da_state_t;
   /** acceptance condition type from DA_t */
@@ -151,9 +152,9 @@ public:
     /** Index of the state from the second automaton */
     unsigned int da_state_2;
     /** A shared_ptr with the acceptance signature of this state */
-    boost::shared_ptr<da_signature_t> signature;
+    std::shared_ptr<da_signature_t> signature;
     /** A shared_ptr to a string containing a detailed description of this state */
-    boost::shared_ptr<std::string> description;
+    std::shared_ptr<std::string> description;
 
     /** Constructor.
      * @param da_state_1_ index of the state in the first automaton
@@ -225,7 +226,7 @@ public:
      * @param description_ the description
      */
     void setDescription(const std::string& description_) {
-      description=boost::shared_ptr<std::string>(new std::string(description_));
+      description=std::shared_ptr<std::string>(new std::string(description_));
     }
     
     /** Generate a simple representation of this state 
@@ -259,7 +260,7 @@ public:
 
   };
   /** shared_ptr of UnionState */
-  typedef boost::shared_ptr<UnionState> UnionState_ptr;
+  typedef std::shared_ptr<UnionState> UnionState_ptr;
 
   /** A simple wrapper for UnionState_Result to accomodate the plugging in with fuzzy matching */
   struct UnionState_Result {
@@ -272,7 +273,7 @@ public:
     }
   };
   /** shared_ptr for UnionState_Result */
-  typedef boost::shared_ptr<UnionState_Result> UnionState_Result_ptr;
+  typedef std::shared_ptr<UnionState_Result> UnionState_Result_ptr;
 
   typedef UnionState_Result_ptr result_t;
   typedef UnionState_ptr state_t;

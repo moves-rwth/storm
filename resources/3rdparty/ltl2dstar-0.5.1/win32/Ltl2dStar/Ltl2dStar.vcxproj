@@ -1,0 +1,236 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BFAFC7BB-2EF8-4630-A377-F970EB7842B8}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Ltl2dStar</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>I:\C++ Projects\boost\boost_1_53_0;$(ProjectDir)..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>I:\C++ Projects\boost\boost_1_53_0;$(ProjectDir)..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\APElement.hpp" />
+    <ClInclude Include="..\..\src\APMonom.hpp" />
+    <ClInclude Include="..\..\src\APMonom2APElements.hpp" />
+    <ClInclude Include="..\..\src\APSet.hpp" />
+    <ClInclude Include="..\..\src\boost1\aligned_storage.hpp" />
+    <ClInclude Include="..\..\src\boost1\assert.hpp" />
+    <ClInclude Include="..\..\src\boost1\checked_delete.hpp" />
+    <ClInclude Include="..\..\src\boost1\config.hpp" />
+    <ClInclude Include="..\..\src\boost1\cstdint.hpp" />
+    <ClInclude Include="..\..\src\boost1\current_function.hpp" />
+    <ClInclude Include="..\..\src\boost1\function.hpp" />
+    <ClInclude Include="..\..\src\boost1\function_equal.hpp" />
+    <ClInclude Include="..\..\src\boost1\get_pointer.hpp" />
+    <ClInclude Include="..\..\src\boost1\implicit_cast.hpp" />
+    <ClInclude Include="..\..\src\boost1\indirect_reference.hpp" />
+    <ClInclude Include="..\..\src\boost1\iterator.hpp" />
+    <ClInclude Include="..\..\src\boost1\lexical_cast.hpp" />
+    <ClInclude Include="..\..\src\boost1\limits.hpp" />
+    <ClInclude Include="..\..\src\boost1\mem_fn.hpp" />
+    <ClInclude Include="..\..\src\boost1\non_type.hpp" />
+    <ClInclude Include="..\..\src\boost1\pointee.hpp" />
+    <ClInclude Include="..\..\src\boost1\ref.hpp" />
+    <ClInclude Include="..\..\src\boost1\scoped_ptr.hpp" />
+    <ClInclude Include="..\..\src\boost1\shared_ptr.hpp" />
+    <ClInclude Include="..\..\src\boost1\static_assert.hpp" />
+    <ClInclude Include="..\..\src\boost1\throw_exception.hpp" />
+    <ClInclude Include="..\..\src\boost1\tokenizer.hpp" />
+    <ClInclude Include="..\..\src\boost1\token_functions.hpp" />
+    <ClInclude Include="..\..\src\boost1\token_iterator.hpp" />
+    <ClInclude Include="..\..\src\boost1\type.hpp" />
+    <ClInclude Include="..\..\src\boost1\type_traits.hpp" />
+    <ClInclude Include="..\..\src\boost1\version.hpp" />
+    <ClInclude Include="..\..\src\common\BitSet.hpp" />
+    <ClInclude Include="..\..\src\common\BitSetIterator.hpp" />
+    <ClInclude Include="..\..\src\common\Exceptions.hpp" />
+    <ClInclude Include="..\..\src\common\fdstream.hpp" />
+    <ClInclude Include="..\..\src\common\HashFunction.hpp" />
+    <ClInclude Include="..\..\src\common\hash_map.hpp" />
+    <ClInclude Include="..\..\src\common\Index.hpp" />
+    <ClInclude Include="..\..\src\common\Indexable.hpp" />
+    <ClInclude Include="..\..\src\common\nested_iterator.hpp" />
+    <ClInclude Include="..\..\src\common\RunProgram.hpp" />
+    <ClInclude Include="..\..\src\common\SimpleBitSet.hpp" />
+    <ClInclude Include="..\..\src\common\StringAlgorithms.hpp" />
+    <ClInclude Include="..\..\src\common\TempFile.hpp" />
+    <ClInclude Include="..\..\src\common\TimeKeeper.hpp" />
+    <ClInclude Include="..\..\src\Configuration.hpp" />
+    <ClInclude Include="..\..\src\DA.hpp" />
+    <ClInclude Include="..\..\src\DAUnionAlgorithm.hpp" />
+    <ClInclude Include="..\..\src\DA_State.hpp" />
+    <ClInclude Include="..\..\src\DBA2DRA.hpp" />
+    <ClInclude Include="..\..\src\DRA.hpp" />
+    <ClInclude Include="..\..\src\DRA2NBA.hpp" />
+    <ClInclude Include="..\..\src\DRAOptimizations.hpp" />
+    <ClInclude Include="..\..\src\EdgeContainerExplicit_APElement.hpp" />
+    <ClInclude Include="..\..\src\GraphAlgorithms.hpp" />
+    <ClInclude Include="..\..\src\LTL2DRA.hpp" />
+    <ClInclude Include="..\..\src\LTL2DSTAR_Scheduler.hpp" />
+    <ClInclude Include="..\..\src\LTL2NBA.hpp" />
+    <ClInclude Include="..\..\src\LTLFormula.hpp" />
+    <ClInclude Include="..\..\src\LTLPrefixParser.hpp" />
+    <ClInclude Include="..\..\src\LTLSafetyAutomata.hpp" />
+    <ClInclude Include="..\..\src\NBA.hpp" />
+    <ClInclude Include="..\..\src\NBA2DA.hpp" />
+    <ClInclude Include="..\..\src\NBA2DRA.hpp" />
+    <ClInclude Include="..\..\src\NBAAnalysis.hpp" />
+    <ClInclude Include="..\..\src\NBAStutterClosure.hpp" />
+    <ClInclude Include="..\..\src\NBA_I.hpp" />
+    <ClInclude Include="..\..\src\NBA_State.hpp" />
+    <ClInclude Include="..\..\src\parsers\nba-parser-lbtt.tab.hpp" />
+    <ClInclude Include="..\..\src\parsers\nba-parser-promela.tab.hpp" />
+    <ClInclude Include="..\..\src\parsers\NBABuilder.hpp" />
+    <ClInclude Include="..\..\src\parsers\parser_interface.hpp" />
+    <ClInclude Include="..\..\src\RabinAcceptance.hpp" />
+    <ClInclude Include="..\..\src\SafrasAlgorithm.hpp" />
+    <ClInclude Include="..\..\src\SafraTree.hpp" />
+    <ClInclude Include="..\..\src\SafraTreeNode.hpp" />
+    <ClInclude Include="..\..\src\SafraTreeTemplate.hpp" />
+    <ClInclude Include="..\..\src\SafraTreeWalker.hpp" />
+    <ClInclude Include="..\..\src\StateMapper.hpp" />
+    <ClInclude Include="..\..\src\StateMapperFuzzy.hpp" />
+    <ClInclude Include="..\..\src\StutteredNBA2DA.hpp" />
+    <ClInclude Include="..\..\src\StutterSensitivenessInformation.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\APMonom.cpp" />
+    <ClCompile Include="..\..\src\common\BitSet.cpp" />
+    <ClCompile Include="..\..\src\common\RunProgram.posix.cpp" />
+    <ClCompile Include="..\..\src\common\RunProgram.win32.cpp" />
+    <ClCompile Include="..\..\src\LTL2DRA.cpp" />
+    <ClCompile Include="..\..\src\LTL2DSTAR_Scheduler.cpp" />
+    <ClCompile Include="..\..\src\parsers\nba-parser-lbtt.lex.cpp" />
+    <ClCompile Include="..\..\src\parsers\nba-parser-lbtt.tab.cpp" />
+    <ClCompile Include="..\..\src\parsers\nba-parser-promela.lex.cpp" />
+    <ClCompile Include="..\..\src\parsers\nba-parser-promela.tab.cpp" />
+    <ClCompile Include="..\..\src\StutterSensitivenessInformation.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

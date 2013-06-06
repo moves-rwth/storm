@@ -26,7 +26,7 @@
 
 #include "GraphAlgorithms.hpp"
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 
 /** 
@@ -39,13 +39,13 @@ private:
   NBA_t& _nba;
 
   /** Information about the SCCs of the NBA (cached) */
-  boost::shared_ptr<SCCs> _sccs;
+  std::shared_ptr<SCCs> _sccs;
   /** Information about the states where all the successor states are accepting (cached) */
-  boost::shared_ptr<BitSet> _allSuccAccepting;
+  std::shared_ptr<BitSet> _allSuccAccepting;
   /** Information about the states that have an accepting true self-loop (cached) */
-  boost::shared_ptr<BitSet> _accepting_true_loops;
+  std::shared_ptr<BitSet> _accepting_true_loops;
   /** Information about the reachability of states (cached) */
-  boost::shared_ptr<std::vector<BitSet> > _reachability;
+  std::shared_ptr<std::vector<BitSet> > _reachability;
 
 public:
   /** Constructor.
@@ -63,7 +63,7 @@ public:
    */
   SCCs& getSCCs() {
     if (!_sccs) {
-      _sccs=boost::shared_ptr<SCCs>(new SCCs());
+      _sccs=std::shared_ptr<SCCs>(new SCCs());
       GraphAlgorithms<NBA_t>::calculateSCCs(_nba, *_sccs);
     }
     return *_sccs;
@@ -116,7 +116,7 @@ public:
    */
   std::vector<BitSet>& getReachability() {
     if (!_reachability) {
-      _reachability=boost::shared_ptr<std::vector<BitSet> > (getSCCs().getReachabilityForAllStates());
+      _reachability=std::shared_ptr<std::vector<BitSet> > (getSCCs().getReachabilityForAllStates());
     }
 
     return *_reachability;
@@ -214,7 +214,7 @@ private:
    * only have accepting successors.
    */
   void calculateStatesWithAllSuccAccepting() {
-    _allSuccAccepting=boost::shared_ptr<BitSet>(new BitSet());
+    _allSuccAccepting=std::shared_ptr<BitSet>(new BitSet());
     BitSet& result=*_allSuccAccepting;
     SCCs& sccs=getSCCs();
 
@@ -286,7 +286,7 @@ private:
    * Calculate the set of states that are accepting and have a true self loop.
    */
   void calculateAcceptingTrueLoops() {
-    _accepting_true_loops=boost::shared_ptr<BitSet>(new BitSet());
+    _accepting_true_loops=std::shared_ptr<BitSet>(new BitSet());
     BitSet& isAcceptingTrueLoop=*_accepting_true_loops;
     SCCs& sccs=getSCCs();
     

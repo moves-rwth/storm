@@ -27,7 +27,7 @@
 #include "SafraTree.hpp"
 #include "common/BitSet.hpp"
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 /**
  * A SafraTreeTemplate consists of a SafraTree and two BitSets,
@@ -135,7 +135,7 @@ private:
   BitSet _restrictedNames;
 };
 
-/** A boost::shared_ptr for a SafraTreeTemplate */
-typedef boost::shared_ptr<SafraTreeTemplate> SafraTreeTemplate_ptr;
+/** A std::shared_ptr for a SafraTreeTemplate */
+typedef std::shared_ptr<SafraTreeTemplate> SafraTreeTemplate_ptr;
 
 #endif

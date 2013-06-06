@@ -166,7 +166,7 @@ public:
   }
 
   /** shared_ptr */
-  typedef boost::shared_ptr<StutterSensitivenessInformation> ptr;
+  typedef std::shared_ptr<StutterSensitivenessInformation> ptr;
 
   /** Static, do Timekeeping? */
   static bool hasTimekeeping() {
@@ -208,7 +208,7 @@ private:
    *  using nba and complement_nba */
   template <class NBA_t>
   bool is_stutter_insensitive(NBA_t& nba, NBA_t& nba_complement, APElement label) {
-    typedef boost::shared_ptr<NBA_t> NBA_ptr;
+    typedef std::shared_ptr<NBA_t> NBA_ptr;
     
     NBA_ptr stutter_closed_nba=NBAStutterClosure::stutter_closure(nba, label);
     

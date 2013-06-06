@@ -28,17 +28,17 @@
 #include "APMonom.hpp"
 #include "common/Exceptions.hpp"
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <iostream>
 #include <sstream>
 
 // forward declaration
 class LTLNode;
 /** Type of a shared_ptr to an LTLNode */
-typedef boost::shared_ptr<LTLNode> LTLNode_p;
+typedef std::shared_ptr<LTLNode> LTLNode_p;
 
 /** A node in the syntax tree of an LTL formula. Memory management is
- * automatic using boost::shared_ptr */
+ * automatic using std::shared_ptr */
 class LTLNode {
 public:
   enum type_t {T_AP,
@@ -519,8 +519,8 @@ private:
 
 // Forward declaration
 class LTLFormula;
-/** Type of boost::shared_ptr for LTLFormula */
-typedef boost::shared_ptr<LTLFormula> LTLFormula_ptr;
+/** Type of std::shared_ptr for LTLFormula */
+typedef std::shared_ptr<LTLFormula> LTLFormula_ptr;
 
 /** An LTLFormula is a tree of LTLNode_p and an underlying APSet*/
 class LTLFormula {

@@ -44,9 +44,9 @@ RunProgram::RunProgram(const std::string& program,
     command_line.append("\"");
   }
 
-  STARTUPINFO startUpInfo;
+  STARTUPINFOA startUpInfo;
   PROCESS_INFORMATION processInfo;
-  GetStartupInfo(&startUpInfo);
+  GetStartupInfoA(&startUpInfo);
   
   if (!inheritStdStreams) {
     startUpInfo.hStdInput=INVALID_HANDLE_VALUE;
@@ -67,7 +67,7 @@ RunProgram::RunProgram(const std::string& program,
     }
   }
 
-  if (CreateProcess((CHAR*)filename,
+  if (CreateProcessA((CHAR*)filename,
 		    (CHAR*)command_line.c_str(),
 		    0,  // process attributes
 		    0,  // thread attributes

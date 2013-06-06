@@ -29,8 +29,8 @@
 #include "common/BitSet.hpp"
 
 #include <boost/iterator/iterator_facade.hpp>
-#include <boost/shared_ptr.hpp>
 
+#include <memory>
 #include <string>
 #include <iostream>
 #include <iterator>
@@ -185,14 +185,14 @@ public:
     setStartState((*this)[state]);
   }
 
-  /** Type of a boost::shared_ptr for this NBA */
-  typedef boost::shared_ptr< NBA<Label,EdgeContainer> > shared_ptr;
+  /** Type of a std::shared_ptr for this NBA */
+  typedef std::shared_ptr< NBA<Label,EdgeContainer> > shared_ptr;
 
 
   bool isDeterministic();
 
   static 
-  boost::shared_ptr<NBA<Label, EdgeContainer> >
+  std::shared_ptr<NBA<Label, EdgeContainer> >
   product_automaton(NBA<Label, EdgeContainer>& nba_1, NBA<Label, EdgeContainer>& nba_2);
 
 private:
@@ -454,11 +454,11 @@ NBA<Label, EdgeContainer>::print_dot(std::ostream& out) {
 
 template <typename Label, 
 	  template <typename N> class EdgeContainer >
-boost::shared_ptr<NBA<Label, EdgeContainer> >
+std::shared_ptr<NBA<Label, EdgeContainer> >
 NBA<Label, EdgeContainer>::product_automaton(NBA<Label, EdgeContainer>& nba_1,
 					     NBA<Label, EdgeContainer>& nba_2) {
   assert(nba_1.getAPSet() == nba_2.getAPSet());
-  boost::shared_ptr<NBA<Label, EdgeContainer> > product_nba(new NBA<Label, EdgeContainer>(nba_1.getAPSet_cp()));
+  std::shared_ptr<NBA<Label, EdgeContainer> > product_nba(new NBA<Label, EdgeContainer>(nba_1.getAPSet_cp()));
   
   const APSet& apset=nba_1.getAPSet();
   assert(apset == nba_2.getAPSet());
