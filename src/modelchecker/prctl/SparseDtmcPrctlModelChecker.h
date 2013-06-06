@@ -418,7 +418,7 @@ public:
             
             // Initialize the x vector with 1 for each element. This is the initial guess for
             // the iterative solvers.
-            std::vector<Type> x(submatrix.getColCount(), storm::utility::constGetOne<Type>());
+            std::vector<Type> x(submatrix.getColumnCount(), storm::utility::constGetOne<Type>());
             
             // Prepare the right-hand side of the equation system.
             std::vector<Type> b(submatrix.getRowCount());

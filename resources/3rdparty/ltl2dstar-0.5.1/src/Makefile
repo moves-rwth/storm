@@ -1,4 +1,4 @@
-GPP = g++
+GPP = clang++
 
 #DEFINES  =
 #DEBUGFLAGS = -g -fno-default-inline -fkeep-inline-functions
