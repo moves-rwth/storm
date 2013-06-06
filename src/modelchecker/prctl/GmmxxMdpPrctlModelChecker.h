@@ -111,7 +111,6 @@ private:
 		unsigned maxIterations = s->get<unsigned>("maxiter");
 		bool relative = s->get<bool>("relative");
 
-
 		// Transform the transition probability matrix to the gmm++ format to use its arithmetic.
 		gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
 

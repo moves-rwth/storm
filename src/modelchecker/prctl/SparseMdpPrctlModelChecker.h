@@ -434,7 +434,7 @@ public:
 			std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
 
 			// Create vector for results for maybe states.
-			std::vector<Type> x(submatrix.getRowCount());
+			std::vector<Type> x(submatrix.getColumnCount());
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
