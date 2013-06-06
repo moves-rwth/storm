@@ -276,9 +276,6 @@
     <ClCompile Include="mtr\mtrGroup.c">
       <Filter>Source Files\MTR</Filter>
     </ClCompile>
-    <ClCompile Include="obj\cuddObj.cpp">
-      <Filter>Source Files\OBJ</Filter>
-    </ClCompile>
     <ClCompile Include="util\cpu_stats.c">
       <Filter>Source Files\UTIL</Filter>
     </ClCompile>
@@ -321,6 +318,9 @@
     <ClCompile Include="st\st.c">
       <Filter>Source Files\ST</Filter>
     </ClCompile>
+    <ClCompile Include="obj\cuddObj.cc">
+      <Filter>Source Files\OBJ</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\cudd.h">
@@ -356,5 +356,10 @@
     <ClInclude Include="include\st.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="obj\cuddObj.hh">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
