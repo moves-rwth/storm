@@ -955,21 +955,25 @@ public:
 	 */
 	void multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const {
 		// Initialize two iterators that 
-		ConstRowsIterator elementIt(*this);
-		ConstRowsIterator elementIte(*this, 1);
+		ConstRowsIterator matrixElementIt(*this);
+		ConstRowsIterator matrixElementIte(*this);
 		
 		// Iterate over all positions of the result vector and compute its value as the scalar
 		// product of the corresponding row with the input vector.
 		// Note that only the end iterator has to be moved by one row, because the other iterator
 		// is automatically moved forward one row by the inner loop.
-		for (auto it = result.begin(), ite = result.end(); it != ite; ++it, elementIte.moveToNextRow()) {
-			*it = storm::utility::constGetZero<T>();
+		for (auto& element : result) {
+            // Put the past-the-end iterator to the correct position.
+            matrixElementIte.moveToNextRow();
+
+            // Initialize the result to be 0.
+			element = storm::utility::constGetZero<T>();
 			
 			// Perform the scalar product.
-			for (; elementIt != elementIte; ++elementIt) {
-				*it += elementIt.value() * vector[elementIt.column()];
+			for (; matrixElementIt != matrixElementIte; ++matrixElementIt) {
+				element += matrixElementIt.value() * vector[matrixElementIt.column()];
 			}
-		}
+        }
 	}
 
 	/*!
