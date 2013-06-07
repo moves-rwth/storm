@@ -71,6 +71,7 @@ std::vector<double> SparseStateRewardParser(uint_fast64_t stateCount, std::strin
 			buf = trimWhitespaces(buf);
 		}
 	}
+	return stateRewards;
 }
 
 }  // namespace parser

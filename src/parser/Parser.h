@@ -17,6 +17,7 @@
 #include <fstream>
 #include <memory>
 #include <vector>
+#include <string>
 
 #include <boost/integer/integer_mask.hpp>
 #include "src/exceptions/FileIoException.h"
@@ -38,24 +39,15 @@ namespace parser {
 			// Intentionally left empty.
 		}
 
-		RewardMatrixInformationStruct(uint_fast64_t rowCount, uint_fast64_t columnCount, std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices)
+		RewardMatrixInformationStruct(uint_fast64_t rowCount, uint_fast64_t columnCount, std::vector<uint_fast64_t> const * const nondeterministicChoiceIndices)
 		: rowCount(rowCount), columnCount(columnCount), nondeterministicChoiceIndices(nondeterministicChoiceIndices) {
 			// Intentionally left empty.
 		}
 
 		uint_fast64_t rowCount;
 		uint_fast64_t columnCount;
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices;
+		std::vector<uint_fast64_t> const * const nondeterministicChoiceIndices;
 	};
-
-	/*!
-	 *  @brief Tests whether the given file exists and is readable.
-	 */
-	bool fileExistsAndIsReadable(const char* fileName) {
-		std::ifstream fin(fileName);
-		bool returnValue = !fin.fail();
-		return returnValue;
-	}
 
 	/*!
 	 *	@brief Opens a file and maps it to memory providing a char*
@@ -123,25 +115,40 @@ namespace parser {
 		~MappedFile();
 	};
 
-	class Parser {
-		//protected:
-			
-	};
-
 	/*!
-		*	@brief Parses integer and checks, if something has been parsed.
-		*/
+	 *	@brief Parses integer and checks, if something has been parsed.
+	 */
 	uint_fast64_t checked_strtol(const char* str, char** end);
 
 	/*!
-		*	@brief Parses floating point and checks, if something has been parsed.
-		*/
+	 *	@brief Parses floating point and checks, if something has been parsed.
+	 */
 	double checked_strtod(const char* str, char** end);
 	
 	/*!
-		*	@brief Skips common whitespaces in a string.
-		*/
+	 *	@brief Skips common whitespaces in a string.
+	 */
 	char* trimWhitespaces(char* buf);
+
+	/*!
+	 *  @brief Tests whether the given file exists and is readable.
+	 */
+	bool fileExistsAndIsReadable(const char* fileName);
+
+	/*!
+	 * @brief Enum Class Type containing all supported file endings.
+	 */
+	enum class SupportedLineEndingsEnum : unsigned short {
+		Unsupported = 0,
+		SlashR,
+		SlashN,
+		SlashRN
+	};
+
+	/*!
+	 * @briefs Analyzes the given file and tries to find out the used line endings.
+	 */
+	storm::parser::SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName);
 
 } // namespace parser
 } // namespace storm

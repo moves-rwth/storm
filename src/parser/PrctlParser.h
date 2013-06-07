@@ -18,7 +18,7 @@ namespace parser {
  * This class creates a PctlFormula object which can be accessed through the getFormula() method (of base
  * class PrctlParser). However, it will not delete this object.
  */
-class PrctlParser : Parser {
+class PrctlParser {
 	public:
 		/*!
 		 * Reads a PRCTL formula from its string representation and parses it into a formula tree, consisting of

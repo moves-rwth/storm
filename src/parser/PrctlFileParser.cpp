@@ -13,15 +13,7 @@
 namespace storm {
 namespace parser {
 
-PrctlFileParser::PrctlFileParser() {
-	//Intentionally left empty
-}
-
-PrctlFileParser::~PrctlFileParser() {
-	//intentionally left empty
-}
-
-std::list<storm::property::prctl::AbstractPrctlFormula<double>*> PrctlFileParser::parseFormulas(std::string filename) {
+std::list<storm::property::prctl::AbstractPrctlFormula<double>*> PrctlFileParser(std::string filename) {
 	// Open file
 	std::ifstream inputFileStream(filename, std::ios::in);
 

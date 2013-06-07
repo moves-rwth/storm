@@ -49,6 +49,16 @@ double storm::parser::checked_strtod(const char* str, char** end) {
 }
 
 /*!
+ *  @brief Tests whether the given file exists and is readable.
+ *  @return True iff the file exists and is readable.
+ */
+bool storm::parser::fileExistsAndIsReadable(const char* fileName) {
+	std::ifstream fin(fileName);
+	bool returnValue = !fin.fail();
+	return returnValue;
+}
+
+/*!
  *	Skips spaces, tabs, newlines and carriage returns. Returns pointer
  *	to first char that is not a whitespace.
  *	@param buf String buffer
@@ -57,6 +67,31 @@ double storm::parser::checked_strtod(const char* str, char** end) {
 char* storm::parser::trimWhitespaces(char* buf) {
 	while ((*buf == ' ') || (*buf == '\t') || (*buf == '\n') || (*buf == '\r')) buf++;
 	return buf;
+}
+
+/*!
+ * @briefs Analyzes the given file and tries to find out the used file endings.
+ */
+storm::parser::SupportedLineEndingsEnum storm::parser::findUsedLineEndings(std::string const& fileName) {
+	storm::parser::SupportedLineEndingsEnum result = storm::parser::SupportedLineEndingsEnum::Unsupported;
+
+	MappedFile fileMap(fileName.c_str());
+	char* buf = nullptr;
+	char* const bufferEnd = fileMap.dataend;
+
+	bool sawR = false;
+	for (buf = fileMap.data; buf != bufferEnd; ++buf) {
+		if (*buf == '\r') {
+			// check for following \n
+			if (((buf + sizeof(char)) < bufferEnd) && (*(buf + sizeof(char)) == '\n')) {
+				return storm::parser::SupportedLineEndingsEnum::SlashRN; 
+			}
+			return storm::parser::SupportedLineEndingsEnum::SlashR; 
+		} else if (*buf == '\n') {
+			return storm::parser::SupportedLineEndingsEnum::SlashN;
+		}
+	}
+	return storm::parser::SupportedLineEndingsEnum::Unsupported;
 }
 
 /*!

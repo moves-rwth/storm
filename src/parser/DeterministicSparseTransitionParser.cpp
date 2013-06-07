@@ -139,7 +139,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 
 	if (!fileExistsAndIsReadable(filename.c_str())) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
-		throw storm::exceptions::WrongFormatException();
+		throw storm::exceptions::FileIoException() << "The supplied Transition input file \"" << filename << "\" does not exist or is not readable by this process.";
 	}
 
 	/*

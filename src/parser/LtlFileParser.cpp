@@ -11,16 +11,7 @@
 namespace storm {
 namespace parser {
 
-LtlFileParser::LtlFileParser() {
-	// TODO Auto-generated constructor stub
-
-}
-
-LtlFileParser::~LtlFileParser() {
-	// TODO Auto-generated destructor stub
-}
-
-std::list<storm::property::ltl::AbstractLtlFormula<double>*> LtlFileParser::parseFormulas(std::string filename) {
+std::list<storm::property::ltl::AbstractLtlFormula<double>*> LtlFileParser(std::string filename) {
 	// Open file
 	std::ifstream inputFileStream(filename, std::ios::in);
 
@@ -35,8 +26,7 @@ std::list<storm::property::ltl::AbstractLtlFormula<double>*> LtlFileParser::pars
 		std::string line;
 		//The while loop reads the input file line by line
 		while (std::getline(inputFileStream, line)) {
-			LtlParser parser(line);
-			result.push_back(parser.getFormula());
+			result.push_back(storm::parser::LtlParser(line));
 		}
 	}
 

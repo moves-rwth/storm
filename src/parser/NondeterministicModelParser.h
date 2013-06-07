@@ -24,39 +24,32 @@ namespace parser {
  *
  *	@note The labeling representation in the file may use at most as much nodes as are specified in the mdp.
  */
-class NondeterministicModelParser: public storm::parser::Parser {
+
+storm::models::Mdp<double> NondeterministicModelParserAsMdp(std::string const & transitionSystemFile, std::string const & labelingFile,
+				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
+storm::models::Ctmdp<double> NondeterministicModelParserAsCtmdp(std::string const & transitionSystemFile, std::string const & labelingFile,
+				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
+
+
+/*!
+ * @brief This Class acts as a container much like std::pair for the five return values of the NondeterministicModelParser
+ */
+template <class T>
+class NondeterministicModelParserResultContainer {
 public:
-	NondeterministicModelParser(std::string const & transitionSystemFile, std::string const & labelingFile,
-			std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
-
-	std::shared_ptr<storm::models::Mdp<double>> getMdp() {
-		if (this->mdp == nullptr) {
-			this->mdp = std::shared_ptr<storm::models::Mdp<double>>(new storm::models::Mdp<double>(
-				this->probabilityMatrix, this->stateLabeling, this->rowMapping, this->stateRewards, this->transitionRewardMatrix
-			));
-		}
-		return this->mdp;
-	}
-
-	std::shared_ptr<storm::models::Ctmdp<double>> getCtmdp() {
-		if (this->ctmdp == nullptr) {
-			this->ctmdp = std::shared_ptr<storm::models::Ctmdp<double>>(new storm::models::Ctmdp<double>(
-				this->probabilityMatrix, this->stateLabeling, this->rowMapping, this->stateRewards, this->transitionRewardMatrix
-			));
-		}
-		return this->ctmdp;
-	}
-
+	storm::storage::SparseMatrix<T> transitionSystem;
+	storm::models::AtomicPropositionsLabeling labeling;
+	std::vector<uint_fast64_t> rowMapping;
+	boost::optional<std::vector<T>> stateRewards;
+	boost::optional<storm::storage::SparseMatrix<T>> transitionRewards;
+	NondeterministicModelParserResultContainer(storm::storage::SparseMatrix<T> transitionSystem, std::vector<uint_fast64_t> rowMapping, storm::models::AtomicPropositionsLabeling labeling) : transitionSystem(transitionSystem), rowMapping(rowMapping), labeling(labeling) { }
 private:
-	std::shared_ptr<storm::storage::SparseMatrix<double>> probabilityMatrix;
-	std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling;
-	std::shared_ptr<std::vector<uint_fast64_t>> rowMapping;
-	std::shared_ptr<std::vector<double>> stateRewards;
-	std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewardMatrix;
-
-	std::shared_ptr<storm::models::Mdp<double>> mdp;
-	std::shared_ptr<storm::models::Ctmdp<double>> ctmdp;
+	NondeterministicModelParserResultContainer() {}
 };
+
+
+NondeterministicModelParserResultContainer<double> parseNondeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
+				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
 
 } /* namespace parser */
 

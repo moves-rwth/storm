@@ -15,26 +15,13 @@
 namespace storm {
 namespace parser {
 
-class LtlFileParser {
-public:
-	/*!
-	 * Constructor
-	 */
-	LtlFileParser();
-
-	/*!
-	 * Destructor
-	 */
-	~LtlFileParser();
-
-	/*!
-	 * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.
-	 *
-	 * @param filename
-	 * @return The list of parsed formulas
-	 */
-	std::list<storm::property::ltl::AbstractLtlFormula<double>*> parseFormulas(std::string filename);
-};
+/*!
+ * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.
+ *
+ * @param filename
+ * @return The list of parsed formulas
+ */
+std::list<storm::property::ltl::AbstractLtlFormula<double>*> LtlFileParser(std::string filename);
 
 } //namespace parser
 } //namespace storm

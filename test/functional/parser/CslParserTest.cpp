@@ -10,144 +10,130 @@
 #include "src/parser/CslParser.h"
 
 TEST(CslParserTest, parseApOnlyTest) {
-	std::string ap = "ap";
-	storm::parser::CslParser* cslParser = nullptr;
+	std::string formula = "ap";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser(ap);
+		cslFormula = storm::parser::CslParser(formula);
 	);
 
-	ASSERT_NE(cslParser->getFormula(), nullptr);
+	ASSERT_NE(cslFormula, nullptr);
+	ASSERT_EQ(cslFormula->toString(), formula);
 
-
-	ASSERT_EQ(ap, cslParser->getFormula()->toString());
-
-	delete cslParser->getFormula();
-	delete cslParser;
-
+	delete cslFormula;
 }
 
 TEST(CslParserTest, parsePropositionalFormulaTest) {
-	storm::parser::CslParser* cslParser = nullptr;
+	std::string formula = "!(a & b) | a & ! c";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("!(a & b) | a & ! c")
+		cslFormula = storm::parser::CslParser(formula);
 	);
 
-	ASSERT_NE(cslParser->getFormula(), nullptr);
+	ASSERT_NE(cslFormula, nullptr);
+	ASSERT_EQ(cslFormula->toString(), "(!(a & b) | (a & !c))");
 
-
-	ASSERT_EQ(cslParser->getFormula()->toString(), "(!(a & b) | (a & !c))");
-
-	delete cslParser->getFormula();
-	delete cslParser;
-
+	delete cslFormula;
 }
 
 TEST(CslParserTest, parseProbabilisticFormulaTest) {
-	storm::parser::CslParser* cslParser = nullptr;
+	std::string formula = "P > 0.5 [ F a ]";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("P > 0.5 [ F a ]")
+		cslFormula = storm::parser::CslParser(formula);
 	);
 
-	ASSERT_NE(cslParser->getFormula(), nullptr);
+	ASSERT_NE(cslFormula, nullptr);
 
-	storm::property::csl::ProbabilisticBoundOperator<double>* op = static_cast<storm::property::csl::ProbabilisticBoundOperator<double>*>(cslParser->getFormula());
-
+	storm::property::csl::ProbabilisticBoundOperator<double>* op = static_cast<storm::property::csl::ProbabilisticBoundOperator<double>*>(cslFormula);
 	ASSERT_EQ(storm::property::GREATER, op->getComparisonOperator());
 	ASSERT_EQ(0.5, op->getBound());
 
-	ASSERT_EQ(cslParser->getFormula()->toString(), "P > 0.500000 [F a]");
+	ASSERT_EQ(cslFormula->toString(), "P > 0.500000 [F a]");
 
-	delete cslParser->getFormula();
-	delete cslParser;
-
+	delete cslFormula;
 }
 
 TEST(CslParserTest, parseSteadyStateBoundFormulaTest) {
-	storm::parser::CslParser* cslParser = nullptr;
+	std::string formula = "S >= 15 [ P < 0.2 [ a U<=3 b ] ]";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("S >= 15 [ P < 0.2 [ a U<=3 b ] ]")
+		cslFormula = storm::parser::CslParser(formula);
 	);
 
-	ASSERT_NE(cslParser->getFormula(), nullptr);
+	ASSERT_NE(cslFormula, nullptr);
 
-	storm::property::csl::SteadyStateBoundOperator<double>* op = static_cast<storm::property::csl::SteadyStateBoundOperator<double>*>(cslParser->getFormula());
-
+	storm::property::csl::SteadyStateBoundOperator<double>* op = static_cast<storm::property::csl::SteadyStateBoundOperator<double>*>(cslFormula);
 	ASSERT_EQ(storm::property::GREATER_EQUAL, op->getComparisonOperator());
 	ASSERT_EQ(15.0, op->getBound());
 
-	ASSERT_EQ("S >= 15.000000 [P < 0.200000 [a U[0.000000,3.000000] b]]", cslParser->getFormula()->toString());
+	ASSERT_EQ(cslFormula->toString(), "S >= 15.000000 [P < 0.200000 [a U[0.000000,3.000000] b]]");
 
-	delete cslParser->getFormula();
-	delete cslParser;
+	delete cslFormula;
 }
 
 TEST(CslParserTest, parseSteadyStateNoBoundFormulaTest) {
-	storm::parser::CslParser* cslParser = nullptr;
+	std::string formula = "S = ? [ P <= 0.5 [ F<=3 a ] ]";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("S = ? [ P <= 0.5 [ F<=3 a ] ]")
+		cslFormula = storm::parser::CslParser(formula);
 	);
 
-	ASSERT_NE(cslParser->getFormula(), nullptr);
+	ASSERT_NE(cslFormula, nullptr);
+	ASSERT_EQ(cslFormula->toString(), "S = ? [P <= 0.500000 [F[0.000000,3.000000] a]]");
 
-
-	ASSERT_EQ(cslParser->getFormula()->toString(), "S = ? [P <= 0.500000 [F[0.000000,3.000000] a]]");
-
-	delete cslParser->getFormula();
-	delete cslParser;
+	delete cslFormula;
 }
 
 TEST(CslParserTest, parseProbabilisticNoBoundFormulaTest) {
-	storm::parser::CslParser* cslParser = nullptr;
+	std::string formula = "P = ? [ a U [3,4] b & (!c) ]";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("P = ? [ a U [3,4] b & (!c) ]")
+		cslFormula = storm::parser::CslParser(formula);
 	);
 
-	ASSERT_NE(cslParser->getFormula(), nullptr);
+	ASSERT_NE(cslFormula, nullptr);
+	ASSERT_EQ(cslFormula->toString(), "P = ? [a U[3.000000,4.000000] (b & !c)]");
 
-
-	ASSERT_EQ(cslParser->getFormula()->toString(), "P = ? [a U[3.000000,4.000000] (b & !c)]");
-
-	delete cslParser->getFormula();
-	delete cslParser;
-
+	delete cslFormula;
 }
 
 
 TEST(CslParserTest, parseComplexFormulaTest) {
-	storm::parser::CslParser* cslParser = nullptr;
+	std::string formula = "S<=0.5 [ P <= 0.5 [ a U c ] ] & (P > 0.5 [ G b] | !P < 0.4 [ G P>0.9 [F >=7 a & b] ])  //and a comment";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
 	ASSERT_NO_THROW(
-			cslParser = new storm::parser::CslParser("S<=0.5 [ P <= 0.5 [ a U c ] ] & (P > 0.5 [ G b] | !P < 0.4 [ G P>0.9 [F >=7 a & b] ])  //and a comment")
+		cslFormula = storm::parser::CslParser(formula);
 	);
 
-	ASSERT_NE(cslParser->getFormula(), nullptr);
+	ASSERT_NE(cslFormula, nullptr);
+	ASSERT_EQ(cslFormula->toString(), "(S <= 0.500000 [P <= 0.500000 [a U c]] & (P > 0.500000 [G b] | !P < 0.400000 [G P > 0.900000 [F>=7.000000 (a & b)]]))");
 
-	ASSERT_EQ("(S <= 0.500000 [P <= 0.500000 [a U c]] & (P > 0.500000 [G b] | !P < 0.400000 [G P > 0.900000 [F>=7.000000 (a & b)]]))", cslParser->getFormula()->toString());
-	delete cslParser->getFormula();
-	delete cslParser;
-
+	delete cslFormula;
 }
 
 TEST(CslParserTest, wrongProbabilisticFormulaTest) {
-	storm::parser::CslParser* cslParser = nullptr;
-	ASSERT_THROW(cslParser = new storm::parser::CslParser("P > 0.5 [ a ]"),	storm::exceptions::WrongFormatException);
-
-	delete cslParser;
+	std::string formula = "P > 0.5 [ a ]";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	ASSERT_THROW(
+		cslFormula = storm::parser::CslParser(formula),	
+		storm::exceptions::WrongFormatException
+	);
 }
 
 TEST(CslParserTest, wrongFormulaTest) {
-	storm::parser::CslParser* cslParser = nullptr;
+	std::string formula = "(a | b) & +";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
 	ASSERT_THROW(
-			cslParser = new storm::parser::CslParser("(a | b) & +"),
-			storm::exceptions::WrongFormatException
+		cslFormula = storm::parser::CslParser(formula),	
+		storm::exceptions::WrongFormatException
 	);
-	delete cslParser;
 }
 
 TEST(CslParserTest, wrongFormulaTest2) {
-	storm::parser::CslParser* cslParser = nullptr;
+	std::string formula = "P>0 [ F & a ]";
+	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
 	ASSERT_THROW(
-			cslParser = new storm::parser::CslParser("P>0 [ F & a ]"),
-			storm::exceptions::WrongFormatException
+		cslFormula = storm::parser::CslParser(formula),	
+		storm::exceptions::WrongFormatException
 	);
-	delete cslParser;
 }

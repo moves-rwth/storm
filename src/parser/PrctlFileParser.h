@@ -16,34 +16,12 @@ namespace storm {
 namespace parser {
 
 /*!
- * Reads a PRCTL formula from a file and return the formula tree.
+ * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.
  *
- * @note
- * This class creates a PctlFormula object which can be accessed through the getFormula() method (of base
- * class PrctlParser). However, it will not delete this object.
+ * @param filename
+ * @return The list of parsed formulas
  */
-class PrctlFileParser {
-public:
-	/*!
-	 * Constructor
-	 */
-	PrctlFileParser();
-
-	/*!
-	 * Destructor.
-	 * At this time, empty
-	 *
-	 */
-	~PrctlFileParser();
-
-	/*!
-	 * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.
-	 *
-	 * @param filename
-	 * @return The list of parsed formulas
-	 */
-	std::list<storm::property::prctl::AbstractPrctlFormula<double>*> parseFormulas(std::string filename);
-};
+std::list<storm::property::prctl::AbstractPrctlFormula<double>*> PrctlFileParser(std::string filename);
 
 } /* namespace parser */
 } /* namespace storm */

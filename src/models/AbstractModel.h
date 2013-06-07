@@ -71,7 +71,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 			}
 
 			if (optionalTransitionRewardMatrix) { // Boost::Optional
-				this->stateRewardVector.reset(new storm::storage::SparseMatrix<T>(optionalTransitionRewardMatrix.get()));
+				this->transitionRewardMatrix.reset(new storm::storage::SparseMatrix<T>(optionalTransitionRewardMatrix.get()));
 			}
 		}
 

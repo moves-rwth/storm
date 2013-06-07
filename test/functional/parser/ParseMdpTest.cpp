@@ -11,21 +11,15 @@
 #include "src/parser/NondeterministicModelParser.h"
 
 TEST(ParseMdpTest, parseAndOutput) {
-	storm::parser::NondeterministicModelParser* mdpParser = nullptr;
-	ASSERT_NO_THROW(mdpParser = new storm::parser::NondeterministicModelParser(
-			STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general_input_01.tra",
-			STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general_input_01.lab"));
+	storm::models::Mdp<double> mdp = storm::parser::NondeterministicModelParserAsMdp(
+		STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general_input_01.tra",
+		STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general_input_01.lab");
+	storm::storage::SparseMatrix<double> const& matrix = mdp.getTransitionMatrix();
 
-	std::shared_ptr<storm::models::Mdp<double>> mdp = mdpParser->getMdp();
-	storm::storage::SparseMatrix<double> const& matrix = mdp->getTransitionMatrix();
-
-	ASSERT_EQ(mdp->getNumberOfStates(), (uint_fast64_t)3);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), (uint_fast64_t)11);
+	ASSERT_EQ(mdp.getNumberOfStates(), (uint_fast64_t)3);
+	ASSERT_EQ(mdp.getNumberOfTransitions(), (uint_fast64_t)11);
 	ASSERT_EQ(matrix.getRowCount(), (uint_fast64_t)(2 * 3));
 	ASSERT_EQ(matrix.getColumnCount(), (uint_fast64_t)3);
-	
-
-	delete mdpParser;
 }
 
 

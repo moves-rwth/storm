@@ -15,77 +15,67 @@
 #include <memory>
 
 TEST(ReadLabFileTest, NonExistingFileTest) {
-   //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
+   // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
    ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(0,STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(ReadLabFileTest, ParseTest) {
-	//This test is based on a test case from the original MRMC.
+	// This test is based on a test case from the original MRMC.
 	
-	
-	storm::parser::AtomicPropositionLabelingParser* parser = nullptr;
-	//Parsing the file
-	ASSERT_NO_THROW(parser = new storm::parser::AtomicPropositionLabelingParser(12, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general_input_01.lab"));
-	std::shared_ptr<storm::models::AtomicPropositionsLabeling> labeling(parser->getLabeling());
+	// Parsing the file
+	storm::models::AtomicPropositionsLabeling labeling = storm::parser::AtomicPropositionLabelingParser(12, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general_input_01.lab");
 
-	//Checking whether all propositions are in the labelling
+	// Checking whether all propositions are in the labelling
 
 	char phi[] = "phi", psi[] = "psi", smth[] = "smth";
 
-	if (labeling != nullptr) {
-		ASSERT_TRUE(labeling->containsAtomicProposition(phi));
-		ASSERT_TRUE(labeling->containsAtomicProposition(psi));
-		ASSERT_TRUE(labeling->containsAtomicProposition(smth));
+	ASSERT_TRUE(labeling.containsAtomicProposition(phi));
+	ASSERT_TRUE(labeling.containsAtomicProposition(psi));
+	ASSERT_TRUE(labeling.containsAtomicProposition(smth));
 
-		//Testing whether all and only the correct nodes are labeled with "phi"
-		ASSERT_TRUE(labeling->getStateHasAtomicProposition(phi,0));
-		ASSERT_TRUE(labeling->getStateHasAtomicProposition(phi,1));
-		ASSERT_TRUE(labeling->getStateHasAtomicProposition(phi,2));
+	// Testing whether all and only the correct nodes are labeled with "phi"
+	ASSERT_TRUE(labeling.getStateHasAtomicProposition(phi,0));
+	ASSERT_TRUE(labeling.getStateHasAtomicProposition(phi,1));
+	ASSERT_TRUE(labeling.getStateHasAtomicProposition(phi,2));
 
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(phi,3));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(phi,4));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(phi,5));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(phi,6));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(phi,7));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(phi,8));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(phi,9));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(phi,10));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(phi,11));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,3));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,4));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,5));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,6));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,7));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,8));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,9));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,10));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,11));
 
-		//Testing whether all and only the correct nodes are labeled with "psi"
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,0));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,1));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,2));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,3));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,4));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,5));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,6));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,7));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,8));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,9));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,10));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(psi,11));
+	//Testing whether all and only the correct nodes are labeled with "psi"
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,0));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,1));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,2));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,3));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,4));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,5));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,6));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,7));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,8));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,9));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,10));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,11));
 
-		//Testing whether all and only the correct nodes are labeled with "smth"
-		ASSERT_TRUE(labeling->getStateHasAtomicProposition(smth,2));
+	//Testing whether all and only the correct nodes are labeled with "smth"
+	ASSERT_TRUE(labeling.getStateHasAtomicProposition(smth,2));
 
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,0));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,1));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,3));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,4));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,5));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,6));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,7));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,8));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,9));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,10));
-		ASSERT_FALSE(labeling->getStateHasAtomicProposition(smth,11));
-
-		//Deleting the labeling
-		delete parser;
-	} else {
-		FAIL();
-	}
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,0));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,1));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,3));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,4));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,5));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,6));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,7));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,8));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,9));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,10));
+	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,11));
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest1) {

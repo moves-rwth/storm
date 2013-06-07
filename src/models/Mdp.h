@@ -51,6 +51,27 @@ public:
 		}
 	}
 
+	/*!
+	 * Constructs a MDP object from the given transition probability matrix and
+	 * the given labeling of the states.
+	 * All values are copied.
+	 * @param probabilityMatrix The transition probability relation of the
+	 * MDP given by a matrix.
+	 * @param stateLabeling The labeling that assigns a set of atomic
+	 * propositions to each state.
+	 */
+	Mdp(storm::storage::SparseMatrix<T> const& transitionMatrix, 
+			storm::models::AtomicPropositionsLabeling const& stateLabeling,
+			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
+			boost::optional<std::vector<T>> const& optionalStateRewardVector, 
+			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
+			: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+		if (!this->checkValidityOfProbabilityMatrix()) {
+			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
+			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
+		}
+	}
+
 	//! Copy Constructor
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given MDP.

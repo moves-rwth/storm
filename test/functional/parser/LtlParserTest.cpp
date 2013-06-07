@@ -10,34 +10,29 @@
 #include "src/parser/LtlParser.h"
 
 TEST(LtlParserTest, parseApOnlyTest) {
-	std::string ap = "ap";
-	storm::parser::LtlParser* ltlParser = nullptr;
+	std::string formula = "ap";
+	storm::property::ltl::AbstractLtlFormula<double>* ltlFormula = nullptr;
 	ASSERT_NO_THROW(
-			ltlParser = new storm::parser::LtlParser(ap);
+		ltlFormula = storm::parser::LtlParser(formula);
 	);
 
-	ASSERT_NE(ltlParser->getFormula(), nullptr);
+	ASSERT_NE(ltlFormula, nullptr);
+	ASSERT_EQ(ltlFormula->toString(), formula);
 
-
-	ASSERT_EQ(ltlParser->getFormula()->toString(), ap);
-
-	delete ltlParser->getFormula();
-	delete ltlParser;
+	delete ltlFormula;
 }
 
 TEST(LtlParserTest, parsePropositionalFormulaTest) {
-	storm::parser::LtlParser* ltlParser = nullptr;
+	std::string formula = "!(a & b) | a & ! c";
+	storm::property::ltl::AbstractLtlFormula<double>* ltlFormula = nullptr;
 	ASSERT_NO_THROW(
-			ltlParser = new storm::parser::LtlParser("!(a & b) | a & ! c")
+		ltlFormula = storm::parser::LtlParser(formula);
 	);
 
-	ASSERT_NE(ltlParser->getFormula(), nullptr);
+	ASSERT_NE(ltlFormula, nullptr);
+	ASSERT_EQ(ltlFormula->toString(), "(!(a & b) | (a & !c))");
 
-
-	ASSERT_EQ(ltlParser->getFormula()->toString(), "(!(a & b) | (a & !c))");
-
-	delete ltlParser->getFormula();
-	delete ltlParser;
+	delete ltlFormula;
 }
 
 /*!
@@ -45,18 +40,16 @@ TEST(LtlParserTest, parsePropositionalFormulaTest) {
  * "Eventually" operator.
  */
 TEST(LtlParserTest, parseAmbiguousFormulaTest) {
-	storm::parser::LtlParser* ltlParser = nullptr;
+	std::string formula = "F & b";
+	storm::property::ltl::AbstractLtlFormula<double>* ltlFormula = nullptr;
 	ASSERT_NO_THROW(
-			ltlParser = new storm::parser::LtlParser("F & b")
+		ltlFormula = storm::parser::LtlParser(formula);
 	);
 
-	ASSERT_NE(ltlParser->getFormula(), nullptr);
+	ASSERT_NE(ltlFormula, nullptr);
+	ASSERT_EQ(ltlFormula->toString(), "(F & b)");
 
-
-	ASSERT_EQ(ltlParser->getFormula()->toString(), "(F & b)");
-
-	delete ltlParser->getFormula();
-	delete ltlParser;
+	delete ltlFormula;
 }
 
 /*!
@@ -64,89 +57,85 @@ TEST(LtlParserTest, parseAmbiguousFormulaTest) {
  * depending where it occurs.
  */
 TEST(LtlParserTest, parseAmbiguousFormulaTest2) {
-	storm::parser::LtlParser* ltlParser = nullptr;
+	std::string formula = "F F";
+	storm::property::ltl::AbstractLtlFormula<double>* ltlFormula = nullptr;
 	ASSERT_NO_THROW(
-			ltlParser = new storm::parser::LtlParser("F F")
+		ltlFormula = storm::parser::LtlParser(formula);
 	);
 
-	ASSERT_NE(ltlParser->getFormula(), nullptr);
+	ASSERT_NE(ltlFormula, nullptr);
+	ASSERT_EQ(ltlFormula->toString(), "F F");
 
-
-	ASSERT_EQ(ltlParser->getFormula()->toString(), "F F");
-
-	delete ltlParser->getFormula();
-	delete ltlParser;
+	delete ltlFormula;
 }
 
 TEST(LtlParserTest, parseBoundedEventuallyFormulaTest) {
-	storm::parser::LtlParser* ltlParser = nullptr;
+	std::string formula = "F<=5 a";
+	storm::property::ltl::AbstractLtlFormula<double>* ltlFormula = nullptr;
 	ASSERT_NO_THROW(
-			ltlParser = new storm::parser::LtlParser("F<=5 a")
+		ltlFormula = storm::parser::LtlParser(formula);
 	);
 
-	ASSERT_NE(ltlParser->getFormula(), nullptr);
+	ASSERT_NE(ltlFormula, nullptr);
 
-	storm::property::ltl::BoundedEventually<double>* op = static_cast<storm::property::ltl::BoundedEventually<double>*>(ltlParser->getFormula());
-
+	storm::property::ltl::BoundedEventually<double>* op = static_cast<storm::property::ltl::BoundedEventually<double>*>(ltlFormula);
 	ASSERT_EQ(static_cast<uint_fast64_t>(5), op->getBound());
 
-	ASSERT_EQ(ltlParser->getFormula()->toString(), "F<=5 a");
 
-	delete ltlParser->getFormula();
-	delete ltlParser;
+	ASSERT_EQ(ltlFormula->toString(), "F<=5 a");
+
+	delete ltlFormula;
 }
 
 TEST(LtlParserTest, parseBoundedUntilFormulaTest) {
-	storm::parser::LtlParser* ltlParser = nullptr;
+	std::string formula = "a U<=3 b";
+	storm::property::ltl::AbstractLtlFormula<double>* ltlFormula = nullptr;
 	ASSERT_NO_THROW(
-			ltlParser = new storm::parser::LtlParser("a U<=3 b")
+		ltlFormula = storm::parser::LtlParser(formula);
 	);
 
-	ASSERT_NE(ltlParser->getFormula(), nullptr);
+	ASSERT_NE(ltlFormula, nullptr);
 
-	storm::property::ltl::BoundedUntil<double>* op = static_cast<storm::property::ltl::BoundedUntil<double>*>(ltlParser->getFormula());
-
+	storm::property::ltl::BoundedUntil<double>* op = static_cast<storm::property::ltl::BoundedUntil<double>*>(ltlFormula);
 	ASSERT_EQ(static_cast<uint_fast64_t>(3), op->getBound());
 
-	ASSERT_EQ("(a U<=3 b)", ltlParser->getFormula()->toString());
 
-	delete ltlParser->getFormula();
-	delete ltlParser;
+	ASSERT_EQ(ltlFormula->toString(), formula);
+
+	delete ltlFormula;
 }
 
 TEST(LtlParserTest, parseComplexUntilTest) {
-	storm::parser::LtlParser* ltlParser = nullptr;
+	std::string formula = "a U b U<=3 c";
+	storm::property::ltl::AbstractLtlFormula<double>* ltlFormula = nullptr;
 	ASSERT_NO_THROW(
-			ltlParser = new storm::parser::LtlParser("a U b U<=3 c")
+		ltlFormula = storm::parser::LtlParser(formula);
 	);
 
-	ASSERT_NE(ltlParser->getFormula(), nullptr);
+	ASSERT_NE(ltlFormula, nullptr);
+	ASSERT_EQ(ltlFormula->toString(), "((a U b) U<=3 c)");
 
-
-	ASSERT_EQ(ltlParser->getFormula()->toString(), "((a U b) U<=3 c)");
-
-	delete ltlParser->getFormula();
-	delete ltlParser;
+	delete ltlFormula;
 }
 
 TEST(LtlParserTest, parseComplexFormulaTest) {
-	storm::parser::LtlParser* ltlParser = nullptr;
+	std::string formula = "a U F b | G a & F<=3 a U<=7 b // and a comment";
+	storm::property::ltl::AbstractLtlFormula<double>* ltlFormula = nullptr;
 	ASSERT_NO_THROW(
-			ltlParser = new storm::parser::LtlParser("a U F b | G a & F<=3 a U<=7 b //and a comment :P")
+		ltlFormula = storm::parser::LtlParser(formula);
 	);
 
-	ASSERT_NE(ltlParser->getFormula(), nullptr);
+	ASSERT_NE(ltlFormula, nullptr);
+	ASSERT_EQ(ltlFormula->toString(), "(a U F (b | G (a & F<=3 (a U<=7 b))))");
 
-	ASSERT_EQ("(a U F (b | G (a & F<=3 (a U<=7 b))))", ltlParser->getFormula()->toString());
-	delete ltlParser->getFormula();
-	delete ltlParser;
+	delete ltlFormula;
 }
 
 TEST(LtlParserTest, wrongFormulaTest) {
-	storm::parser::LtlParser* ltlParser = nullptr;
+	std::string formula = "(a | c) & +";
+	storm::property::ltl::AbstractLtlFormula<double>* ltlFormula = nullptr;
 	ASSERT_THROW(
-			ltlParser = new storm::parser::LtlParser("(a | c) & +"),
-			storm::exceptions::WrongFormatException
+		ltlFormula = storm::parser::LtlParser(formula),
+		storm::exceptions::WrongFormatException
 	);
-	delete ltlParser;
 }

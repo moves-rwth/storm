@@ -24,7 +24,14 @@ std::string demangle(char const* symbol) {
 	char temp[128];
     
 	// Check for C++ symbol, on Non-MSVC Only
-	if (sscanf(symbol, "%*[^(]%*[^_]%127[^)+]", temp) == 1) {
+	int scanResult = 0;
+#ifdef WINDOWS
+	scanResult = sscanf_s(symbol, "%*[^(]%*[^_]%127[^)+]", temp, sizeof(temp));
+#else
+	scanResult = sscanf(symbol, "%*[^(]%*[^_]%127[^)+]", temp);
+#endif
+	
+	if (scanResult == 1) {
 #ifndef WINDOWS
 		char* demangled;
 		if (NULL != (demangled = abi::__cxa_demangle(temp, NULL, NULL, &status))) {
@@ -59,7 +66,13 @@ std::string demangle(char const* symbol) {
 	}
 
 	// Check for C symbol.
-	if (sscanf(symbol, "%127s", temp) == 1) {
+	scanResult = 0;
+#ifdef WINDOWS
+	scanResult = sscanf_s(symbol, "%127s", temp, sizeof(temp));
+#else
+	scanResult = sscanf(symbol, "%127s", temp);
+#endif
+	if (scanResult == 1) {
 		return temp;
 	}
     

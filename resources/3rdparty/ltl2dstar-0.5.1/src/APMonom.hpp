@@ -29,6 +29,10 @@
 #include <cassert>
 #include <iostream>
 
+// As TRUE and FALSE are defined to equal true and false on Windows, they need to be undefined.
+#undef TRUE
+#undef FALSE
+
 /**
  * Class representing a subset of 2^AP where AP is the set of 
  * atomic propositions (APSet). It stores two bits per AP: 

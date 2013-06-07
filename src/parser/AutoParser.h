@@ -30,7 +30,7 @@ namespace parser {
  *	can be obtained via getType() and getModel<ModelClass>().
  */
 template<class T>
-class AutoParser : Parser {
+class AutoParser {
 	public:
 		AutoParser(std::string const & transitionSystemFile, std::string const & labelingFile,
 				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "") : model(nullptr) {
@@ -47,23 +47,19 @@ class AutoParser : Parser {
 			// Do actual parsing
 			switch (type) {
 				case storm::models::DTMC: {
-					DeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-					this->model = parser.getDtmc();
+					this->model.reset(new storm::models::Dtmc<double>(DeterministicModelParserAsDtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
 					break;
 				}
 				case storm::models::CTMC: {
-					DeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-					this->model = parser.getCtmc();
+					this->model.reset(new storm::models::Ctmc<double>(DeterministicModelParserAsCtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
 					break;
 				}
 				case storm::models::MDP: {
-					NondeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-					this->model = parser.getMdp();
+					this->model.reset(new storm::models::Mdp<double>(NondeterministicModelParserAsMdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
 					break;
 				}
 				case storm::models::CTMDP: {
-					NondeterministicModelParser parser(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-					this->model = parser.getCtmdp();
+					this->model.reset(new storm::models::Ctmdp<double>(NondeterministicModelParserAsCtmdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
 					break;
 				}
 				default: ;  // Unknown
@@ -71,7 +67,7 @@ class AutoParser : Parser {
 
 
 			if (!this->model) {
-				LOG4CPLUS_WARN(logger, "Model is still null.");
+				LOG4CPLUS_WARN(logger, "Unknown/Unhandled Model Type. Model is still null.");
 			}
 		}
 		
@@ -101,13 +97,44 @@ class AutoParser : Parser {
 		 */
 		storm::models::ModelType analyzeHint(const std::string& filename) {
 			storm::models::ModelType hintType = storm::models::Unknown;
+			
+			// Parse the File and check for the Line Endings
+			storm::parser::SupportedLineEndingsEnum lineEndings = storm::parser::findUsedLineEndings(filename);
+			
 			// Open file
 			MappedFile file(filename.c_str());
 			char* buf = file.data;
 
 			// parse hint
 			char hint[128];
-			sscanf(buf, "%s\n", hint);
+			// %20s => The Input Hint can be AT MOST 120 chars long			
+			switch (lineEndings) {
+				case storm::parser::SupportedLineEndingsEnum::SlashN:
+#ifdef WINDOWS					
+					sscanf_s(buf, "%120s\n", hint, sizeof(hint));
+#else
+					sscanf(buf, "%120s\n", hint);
+#endif
+					break;
+				case storm::parser::SupportedLineEndingsEnum::SlashR:
+#ifdef WINDOWS					
+					sscanf_s(buf, "%120s\r", hint, sizeof(hint));
+#else
+					sscanf(buf, "%120s\r", hint);
+#endif
+					break;
+				case storm::parser::SupportedLineEndingsEnum::SlashRN:
+#ifdef WINDOWS					
+					sscanf_s(buf, "%120s\r\n", hint, sizeof(hint));
+#else
+					sscanf(buf, "%120s\r\n", hint);
+#endif
+					break;
+				default:
+					LOG4CPLUS_ERROR(logger, "The given input file \"" << filename << "\" has no or unsupported line endings. Please use either \\r, \\n or \\r\\n.");
+					throw storm::exceptions::WrongFormatException() << "The given input file \"" << filename << "\" has no or unsupported line endings. Please use either \\r, \\n or \\r\\n.";
+			}
+
 			for (char* c = hint; *c != '\0'; c++) *c = toupper(*c);
 
 			// check hint

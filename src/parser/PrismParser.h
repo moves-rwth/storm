@@ -31,7 +31,7 @@ using namespace storm::ir::expressions;
  * @param filename the name of the file to parse.
  * @return a shared pointer to the intermediate representation of the PRISM file.
  */
-storm::ir::Program parseFile(std::string const& filename);
+storm::ir::Program PrismParserFromFile(std::string const& filename);
 
 /*!
  * Parses the given input stream into the intermediate representation assuming it complies with
@@ -40,15 +40,7 @@ storm::ir::Program parseFile(std::string const& filename);
  * @param filename the name of the file the input stream belongs to. Used for diagnostics.
  * @return a shared pointer to the intermediate representation of the PRISM file.
  */
-storm::ir::Program parse(std::istream& inputStream, std::string const& filename);
-
-class PrismParser {
-public:
-	
-	
-private:
-	
-};
+storm::ir::Program PrismParser(std::istream& inputStream, std::string const& filename);
 
 } // namespace parser
 

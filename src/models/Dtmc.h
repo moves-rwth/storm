@@ -74,8 +74,8 @@ public:
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
 		}
-		if (this->getTransitionRewardMatrix() != nullptr) {
-			if (!this->getTransitionRewardMatrix()->containsAllPositionsOf(*this->getTransitionMatrix())) {
+		if (this->hasTransitionRewards()) {
+			if (!this->getTransitionRewardMatrix().containsAllPositionsOf(this->getTransitionMatrix())) {
 				LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
 				throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
 			}

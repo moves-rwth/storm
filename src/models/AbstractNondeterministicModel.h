@@ -35,6 +35,25 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			  nondeterministicChoiceIndices(nondeterministicChoiceIndices) {
 		}
 
+		/*! Constructs an abstract non-determinstic model from the given parameters.
+		 * All values are copied.
+		 * @param transitionMatrix The matrix representing the transitions in the model.
+		 * @param stateLabeling The labeling that assigns a set of atomic
+		 * propositions to each state.
+		 * @param choiceIndices A mapping from states to rows in the transition matrix.
+		 * @param stateRewardVector The reward values associated with the states.
+		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+		 */
+		AbstractNondeterministicModel(
+			storm::storage::SparseMatrix<T> const& transitionMatrix, 
+			storm::models::AtomicPropositionsLabeling const& stateLabeling,
+			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
+			boost::optional<std::vector<T>> const& optionalStateRewardVector, 
+			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
+			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+				this->nondeterministicChoiceIndices.reset(new std::vector<uint_fast64_t>(nondeterministicChoiceIndices));
+		}
+
 		/*!
 		 * Destructor.
 		 */
