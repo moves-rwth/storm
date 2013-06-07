@@ -5,53 +5,51 @@
  *      Author: Christian Dehnert
  */
 
-#include "Variable.h"
-
 #include <sstream>
 #include <map>
 #include <iostream>
+
+#include "Variable.h"
 
 namespace storm {
 
 namespace ir {
 
-// Initializes all members with their default constructors.
-Variable::Variable() : index(0), variableName(), initialValue() {
+Variable::Variable() : globalIndex(0), localIndex(0), variableName(), initialValue() {
 	// Nothing to do here.
 }
 
-// Initializes all members according to the given values.
-Variable::Variable(uint_fast64_t index, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue) : index(index), variableName(variableName), initialValue(initialValue) {
+Variable::Variable(uint_fast64_t globalIndex, uint_fast64_t localIndex, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue)
+    : globalIndex(globalIndex), localIndex(localIndex), variableName(variableName), initialValue(initialValue) {
 	// Nothing to do here.
 }
 
-Variable::Variable(const Variable& var, const std::string& newName, const uint_fast64_t newIndex, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints) {
-	this->index = newIndex;
-	this->variableName = newName;
+Variable::Variable(Variable const& var, std::string const& newName, uint_fast64_t const newGlobalIndex, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap)
+    : globalIndex(newGlobalIndex), localIndex(var.getLocalIndex()), variableName(var.getName()) {
 	if (var.initialValue != nullptr) {
-		this->initialValue = var.initialValue->clone(renaming, bools, ints);
+		this->initialValue = var.initialValue->clone(renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
 	}
 }
 
-// Return the name of the variable.
 std::string const& Variable::getName() const {
 	return variableName;
 }
 
-uint_fast64_t Variable::getIndex() const {
-	return index;
+uint_fast64_t Variable::getGlobalIndex() const {
+	return globalIndex;
+}
+    
+uint_fast64_t Variable::getLocalIndex() const {
+    return localIndex;
 }
 
-// Return the expression for the initial value of the variable.
 std::shared_ptr<storm::ir::expressions::BaseExpression> const& Variable::getInitialValue() const {
 	return initialValue;
 }
 
-// Set the initial value expression to the one provided.
 void Variable::setInitialValue(std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue) {
 	this->initialValue = initialValue;
 }
-
 
 } // namespace ir
 

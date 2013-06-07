@@ -5,25 +5,22 @@
  *      Author: Christian Dehnert
  */
 
-#include "RewardModel.h"
-
 #include <sstream>
+
+#include "RewardModel.h"
 
 namespace storm {
 
 namespace ir {
 
-// Initializes all members with their default constructors.
 RewardModel::RewardModel() : rewardModelName(), stateRewards(), transitionRewards() {
 	// Nothing to do here.
 }
 
-// Initializes all members according to the given values.
-RewardModel::RewardModel(std::string rewardModelName, std::vector<storm::ir::StateReward> stateRewards, std::vector<storm::ir::TransitionReward> transitionRewards) : rewardModelName(rewardModelName), stateRewards(stateRewards), transitionRewards(transitionRewards) {
+RewardModel::RewardModel(std::string const& rewardModelName, std::vector<storm::ir::StateReward> const& stateRewards, std::vector<storm::ir::TransitionReward> const& transitionRewards) : rewardModelName(rewardModelName), stateRewards(stateRewards), transitionRewards(transitionRewards) {
 	// Nothing to do here.
 }
 
-// Build a string representation of the reward model.
 std::string RewardModel::toString() const {
 	std::stringstream result;
 	result << "rewards \"" << rewardModelName << "\"" << std::endl;

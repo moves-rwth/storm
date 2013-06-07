@@ -5,51 +5,47 @@
  *      Author: Christian Dehnert
  */
 
-#include "Update.h"
-
-#include "src/exceptions/OutOfRangeException.h"
-
 #include <sstream>
+
+#include "Update.h"
+#include "src/exceptions/OutOfRangeException.h"
 
 namespace storm {
 
 namespace ir {
 
-// Initializes all members with their default constructors.
+
 Update::Update() : likelihoodExpression(), booleanAssignments(), integerAssignments() {
 	// Nothing to do here.
 }
 
-// Initializes all members according to the given values.
 Update::Update(std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression, std::map<std::string, storm::ir::Assignment> booleanAssignments, std::map<std::string, storm::ir::Assignment> integerAssignments)
 	: likelihoodExpression(likelihoodExpression), booleanAssignments(booleanAssignments), integerAssignments(integerAssignments) {
 	// Nothing to do here.
 }
 
-Update::Update(const Update& update, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints) {
+Update::Update(Update const& update, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap) {
 	for (auto it : update.booleanAssignments) {
 		if (renaming.count(it.first) > 0) {
-			this->booleanAssignments[renaming.at(it.first)] = Assignment(it.second, renaming, bools, ints);
+			this->booleanAssignments[renaming.at(it.first)] = Assignment(it.second, renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
 		} else {
-			this->booleanAssignments[it.first] = Assignment(it.second, renaming, bools, ints);
+			this->booleanAssignments[it.first] = Assignment(it.second, renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
 		}
 	}
 	for (auto it : update.integerAssignments) {
 		if (renaming.count(it.first) > 0) {
-			this->integerAssignments[renaming.at(it.first)] = Assignment(it.second, renaming, bools, ints);
+			this->integerAssignments[renaming.at(it.first)] = Assignment(it.second, renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
 		} else {
-			this->integerAssignments[it.first] = Assignment(it.second, renaming, bools, ints);
+			this->integerAssignments[it.first] = Assignment(it.second, renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
 		}
 	}
-	this->likelihoodExpression = update.likelihoodExpression->clone(renaming, bools, ints);
+	this->likelihoodExpression = update.likelihoodExpression->clone(renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
 }
 
-// Return the expression for the likelihood of the update.
 std::shared_ptr<storm::ir::expressions::BaseExpression> const& Update::getLikelihoodExpression() const {
 	return likelihoodExpression;
 }
 
-// Return the number of assignments.
 uint_fast64_t Update::getNumberOfBooleanAssignments() const {
 	return booleanAssignments.size();
 }
@@ -58,17 +54,14 @@ uint_fast64_t Update::getNumberOfIntegerAssignments() const {
 	return integerAssignments.size();
 }
 
-// Return the boolean variable name to assignment map.
 std::map<std::string, storm::ir::Assignment> const& Update::getBooleanAssignments() const {
 	return booleanAssignments;
 }
 
-// Return the integer variable name to assignment map.
 std::map<std::string, storm::ir::Assignment> const& Update::getIntegerAssignments() const {
 	return integerAssignments;
 }
 
-// Return the assignment for the boolean variable if it exists and throw an exception otherwise.
 storm::ir::Assignment const& Update::getBooleanAssignment(std::string variableName) const {
 	auto it = booleanAssignments.find(variableName);
 	if (it == booleanAssignments.end()) {
@@ -79,7 +72,6 @@ storm::ir::Assignment const& Update::getBooleanAssignment(std::string variableNa
 	return (*it).second;
 }
 
-// Return the assignment for the boolean variable if it exists and throw an exception otherwise.
 storm::ir::Assignment const& Update::getIntegerAssignment(std::string variableName) const {
 	auto it = integerAssignments.find(variableName);
 	if (it == integerAssignments.end()) {
@@ -90,7 +82,6 @@ storm::ir::Assignment const& Update::getIntegerAssignment(std::string variableNa
 	return (*it).second;
 }
 
-// Build a string representation of the update.
 std::string Update::toString() const {
 	std::stringstream result;
 	result << likelihoodExpression->toString() << " : ";

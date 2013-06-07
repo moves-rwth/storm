@@ -8,11 +8,11 @@
 #ifndef STORM_IR_REWARDMODEL_H_
 #define STORM_IR_REWARDMODEL_H_
 
-#include "StateReward.h"
-#include "TransitionReward.h"
-
 #include <string>
 #include <vector>
+
+#include "StateReward.h"
+#include "TransitionReward.h"
 
 namespace storm {
 
@@ -30,41 +30,47 @@ public:
 
 	/*!
 	 * Creates a reward module with the given name, state and transition rewards.
-	 * @param rewardModelName the name of the reward model.
-	 * @param stateRewards A vector of state-based reward.
-	 * @param transitionRewards A vector of transition-based reward.
+     *
+	 * @param rewardModelName The name of the reward model.
+	 * @param stateRewards A vector of state-based rewards.
+	 * @param transitionRewards A vector of transition-based rewards.
 	 */
-	RewardModel(std::string rewardModelName, std::vector<storm::ir::StateReward> stateRewards, std::vector<storm::ir::TransitionReward> transitionRewards);
+	RewardModel(std::string const& rewardModelName, std::vector<storm::ir::StateReward> const& stateRewards, std::vector<storm::ir::TransitionReward> const& transitionRewards);
 
 	/*!
-	 * Retrieves a string representation of this variable.
-	 * @returns a string representation of this variable.
+	 * Retrieves a string representation of this reward model.
+     *
+	 * @return a string representation of this reward model.
 	 */
 	std::string toString() const;
 
 	/*!
 	 * Check, if there are any state rewards.
+     *
 	 * @return True, iff there are any state rewards.
 	 */
 	bool hasStateRewards() const;
 
 	/*!
-	 * Retrieve state rewards.
-	 * @return State rewards.
+	 * Retrieves a vector of state rewards associated with this reward model.
+     *
+	 * @return A vector containing the state rewards associated with this reward model.
 	 */
-	std::vector<storm::ir::StateReward> getStateRewards() const;
+	std::vector<storm::ir::StateReward> const& getStateRewards() const;
 
 	/*!
 	 * Check, if there are any transition rewards.
-	 * @return True, iff there are any transition rewards.
+     *
+	 * @return True, iff there are any transition rewards associated with this reward model.
 	 */
 	bool hasTransitionRewards() const;
 
 	/*!
-	 * Retrieve transition rewards.
-	 * @return Transition rewards.
+	 * Retrieves a vector of transition rewards associated with this reward model.
+     *
+	 * @return A vector of transition rewards associated with this reward model.
 	 */
-	std::vector<storm::ir::TransitionReward> getTransitionRewards() const;
+	std::vector<storm::ir::TransitionReward> const& getTransitionRewards() const;
 
 private:
 	// The name of the reward model.
