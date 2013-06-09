@@ -20,43 +20,39 @@ Command::Command() : actionName(), guardExpression(), updates() {
 }
 
 // Initializes all members according to the given values.
-Command::Command(std::string actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> updates)
+Command::Command(std::string const& actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> const& updates)
 	: actionName(actionName), guardExpression(guardExpression), updates(updates) {
 	// Nothing to do here.
 }
 
-Command::Command(const Command& cmd, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints)
-	: actionName(cmd.actionName), guardExpression(cmd.guardExpression->clone(renaming, bools, ints)) {
-	if (renaming.count(this->actionName) > 0) {
-		this->actionName = renaming.at(this->actionName);
+Command::Command(Command const& oldCommand, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap)
+	: actionName(oldCommand.getActionName()), guardExpression(oldCommand.guardExpression->clone(renaming, booleanVariableToIndexMap, integerVariableToIndexMap)) {
+    auto renamingPair = renaming.find(this->actionName);
+	if (renamingPair != renaming.end()) {
+		this->actionName = renamingPair->first;
 	}
-	this->updates.reserve(cmd.updates.size());
-	for (Update u : cmd.updates) {
-		this->updates.emplace_back(u, renaming, bools, ints);
+	this->updates.reserve(oldCommand.getNumberOfUpdates());
+	for (Update const& update : oldCommand.updates) {
+		this->updates.emplace_back(update, renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
 	}
 }
 
-// Return the action name.
 std::string const& Command::getActionName() const {
 	return this->actionName;
 }
 
-// Return the expression for the guard.
 std::shared_ptr<storm::ir::expressions::BaseExpression> const& Command::getGuard() const {
 	return guardExpression;
 }
 
-// Return the number of updates.
 uint_fast64_t Command::getNumberOfUpdates() const {
 	return this->updates.size();
 }
 
-// Return the requested update.
 storm::ir::Update const& Command::getUpdate(uint_fast64_t index) const {
 	return this->updates[index];
 }
 
-// Build a string representation of the command.
 std::string Command::toString() const {
 	std::stringstream result;
 	result << "[" << actionName << "] " << guardExpression->toString() << " -> ";

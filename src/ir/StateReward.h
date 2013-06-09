@@ -35,7 +35,7 @@ public:
 	 * @param rewardValue An expression specifying the values of the rewards to attach to the
 	 * states.
 	 */
-	StateReward(std::shared_ptr<storm::ir::expressions::BaseExpression> statePredicate, std::shared_ptr<storm::ir::expressions::BaseExpression> rewardValue);
+	StateReward(std::shared_ptr<storm::ir::expressions::BaseExpression> const& statePredicate, std::shared_ptr<storm::ir::expressions::BaseExpression> const& rewardValue);
 
 	/*!
 	 * Retrieves a string representation of this state reward.

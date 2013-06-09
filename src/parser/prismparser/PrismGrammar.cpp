@@ -81,7 +81,7 @@ Module PrismGrammar::createModule(const std::string name, std::vector<BooleanVar
 
 void PrismGrammar::createIntegerVariable(const std::string name, std::shared_ptr<BaseExpression> lower, std::shared_ptr<BaseExpression> upper, std::shared_ptr<BaseExpression> init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
 	//std::cout << "Creating int " << name << " = " << init << std::endl;
-	uint_fast64_t id = this->state->addIntegerVariable(name, lower, upper);
+	uint_fast64_t id = this->state->addIntegerVariable(name);
 	vars.emplace_back(id, name, lower, upper, init);
 	varids[name] = id;
 	this->state->localIntegerVariables_.add(name, name);
@@ -181,7 +181,7 @@ PrismGrammar::PrismGrammar() : PrismGrammar::base_type(start), state(new Variabl
 	variableDefinition.name("variable declaration");
 
 	// This block defines all entities that are needed for parsing a module.
-	moduleDefinition = (qi::lit("module") >> FreeIdentifierGrammar::instance(this->state)[phoenix::bind(&VariableState::startModule, *this->state)]
+	moduleDefinition = (qi::lit("module") >> FreeIdentifierGrammar::instance(this->state)[phoenix::bind(&VariableState::clearLocalVariables, *this->state)]
 			>> *(variableDefinition(qi::_a, qi::_b, qi::_c, qi::_d)) >> +commandDefinition > qi::lit("endmodule"))
 			[qi::_val = phoenix::bind(&PrismGrammar::createModule, this, qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2)];
 

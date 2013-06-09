@@ -34,10 +34,10 @@ public:
 	 * @param variableName the name of the variable.
 	 * @param initialValue the expression that defines the initial value of the variable.
 	 */
-	Variable(uint_fast64_t globalIndex, uint_fast64_t localIndex, std::string variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>());
+	Variable(uint_fast64_t globalIndex, uint_fast64_t localIndex, std::string const& variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>());
 
 	/*!
-	 * Creates a copy of the given Variable and performs the provided renaming.
+	 * Creates a copy of the given variable and performs the provided renaming.
      *
 	 * @param oldVariable The variable to copy.
 	 * @param newName New name of this variable.
@@ -47,7 +47,7 @@ public:
      * @param booleanVariableToIndexMap A mapping from boolean variable names to their global indices.
      * @param integerVariableToIndexMap A mapping from integer variable names to their global indices.
 	 */
-	Variable(const Variable& oldVariable, const std::string& newName, const uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap);
+	Variable(Variable const& oldVariable, std::string const& newName, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap);
 
 	/*!
 	 * Retrieves the name of the variable.

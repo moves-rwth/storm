@@ -35,7 +35,7 @@ public:
 	 * @param likelihoodExpression An expression specifying the likelihood of this update.
 	 * @param assignments A map of variable names to their assignments.
 	 */
-	Update(std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression, std::map<std::string, storm::ir::Assignment> booleanAssignments, std::map<std::string, storm::ir::Assignment> integerAssignments);
+	Update(std::shared_ptr<storm::ir::expressions::BaseExpression> const& likelihoodExpression, std::map<std::string, storm::ir::Assignment> const& booleanAssignments, std::map<std::string, storm::ir::Assignment> const& integerAssignments);
 
     /*!
      * Creates a copy of the given update and performs the provided renaming.
@@ -88,14 +88,14 @@ public:
      *
 	 * @return A reference to the assignment for the boolean variable with the given name.
 	 */
-	storm::ir::Assignment const& getBooleanAssignment(std::string variableName) const;
+	storm::ir::Assignment const& getBooleanAssignment(std::string const& variableName) const;
 
 	/*!
 	 * Retrieves a reference to the assignment for the integer variable with the given name.
      *
 	 * @return A reference to the assignment for the integer variable with the given name.
 	 */
-	storm::ir::Assignment const& getIntegerAssignment(std::string variableName) const;
+	storm::ir::Assignment const& getIntegerAssignment(std::string const& variableName) const;
 
 	/*!
 	 * Retrieves a string representation of this update.

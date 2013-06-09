@@ -17,7 +17,7 @@ TransitionReward::TransitionReward() : commandName(), statePredicate(), rewardVa
 	// Nothing to do here.
 }
 
-TransitionReward::TransitionReward(std::string const& commandName, std::shared_ptr<storm::ir::expressions::BaseExpression> statePredicate, std::shared_ptr<storm::ir::expressions::BaseExpression> rewardValue) : commandName(commandName), statePredicate(statePredicate), rewardValue(rewardValue) {
+TransitionReward::TransitionReward(std::string const& commandName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& statePredicate, std::shared_ptr<storm::ir::expressions::BaseExpression> const& rewardValue) : commandName(commandName), statePredicate(statePredicate), rewardValue(rewardValue) {
 	// Nothing to do here.
 }
 

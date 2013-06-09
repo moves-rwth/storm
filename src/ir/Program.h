@@ -8,17 +8,17 @@
 #ifndef STORM_IR_PROGRAM_H_
 #define STORM_IR_PROGRAM_H_
 
+#include <map>
+#include <vector>
+#include <memory>
+#include <set>
+
 #include "expressions/BaseExpression.h"
 #include "expressions/BooleanConstantExpression.h"
 #include "expressions/IntegerConstantExpression.h"
 #include "expressions/DoubleConstantExpression.h"
 #include "Module.h"
 #include "RewardModel.h"
-
-#include <map>
-#include <vector>
-#include <memory>
-#include <set>
 
 namespace storm {
 
@@ -42,78 +42,85 @@ public:
 
 	/*!
 	 * Creates a program with the given model type, undefined constants, modules, rewards and labels.
-	 * @param modelType the type of the model that this program gives rise to.
-	 * @param booleanUndefinedConstantExpressions a map of undefined boolean constants to their
+     *
+	 * @param modelType The type of the model that this program gives rise to.
+	 * @param booleanUndefinedConstantExpressions A map of undefined boolean constants to their
 	 * expression nodes.
-	 * @param integerUndefinedConstantExpressions a map of undefined integer constants to their
+	 * @param integerUndefinedConstantExpressions A map of undefined integer constants to their
 	 * expression nodes.
-	 * @param doubleUndefinedConstantExpressions a map of undefined double constants to their
+	 * @param doubleUndefinedConstantExpressions A map of undefined double constants to their
 	 * expression nodes.
 	 * @param modules The modules of the program.
 	 * @param rewards The reward models of the program.
 	 * @param labels The labels defined for this model.
 	 */
-	Program(
-				ModelType modelType,
-				std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions,
-				std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions,
-				std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions,
-				std::vector<storm::ir::Module> modules,
-				std::map<std::string, storm::ir::RewardModel> rewards,
-				std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
+	Program(ModelType modelType,
+            std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions,
+            std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions,
+            std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions,
+            std::vector<storm::ir::Module> modules,
+            std::map<std::string, storm::ir::RewardModel> rewards,
+            std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
 
 	/*!
 	 * Retrieves the number of modules in the program.
-	 * @returns the number of modules in the program.
+     *
+	 * @return The number of modules in the program.
 	 */
 	uint_fast64_t getNumberOfModules() const;
 
 	/*!
 	 * Retrieves a reference to the module with the given index.
-	 * @param index the index of the module to retrieve.
+     *
+	 * @param index The index of the module to retrieve.
+     * @return The module with the given index.
 	 */
 	storm::ir::Module const& getModule(uint_fast64_t index) const;
 
 	/*!
 	 * Retrieves the model type of the model.
-	 * @returns the type of the model.
+     *
+	 * @return The type of the model.
 	 */
 	ModelType getModelType() const;
 
 	/*!
 	 * Retrieves a string representation of this program.
-	 * @returns a string representation of this program.
+     *
+	 * @return A string representation of this program.
 	 */
 	std::string toString() const;
 	
 	/*!
 	 * Retrieves the set of actions present in this module.
-	 * @returns the set of actions present in this module.
+     *
+	 * @return The set of actions present in this module.
 	 */
 	std::set<std::string> const& getActions() const;
 	
 	/*!
-	 * Retrieved the indices of all Modules within this program that contain
-	 * commands that are labelled with the given action.
-	 * @param action Name of the action.
-	 * @returns Indices of all matching modules.
+	 * Retrieves the indices of all modules within this program that contain commands that are labelled with the given
+     * action.
+     *
+	 * @param action The name of the action the modules are supposed to possess.
+	 * @return A set of indices of all matching modules.
 	 */
-	std::set<uint_fast64_t> const getModulesByAction(std::string const& action) const;
+	std::set<uint_fast64_t> const& getModulesByAction(std::string const& action) const;
 
 	/*!
-	 * Retrieve reward model with given name.
-	 * @param name Name of the reward model.
-	 * @return Reward model with given name.
+	 * Retrieves the reward model with the given name.
+     *
+	 * @param name The name of the reward model to return.
+	 * @return The reward model with the given name.
 	 */
-	storm::ir::RewardModel getRewardModel(std::string const & name) const;
+	storm::ir::RewardModel const& getRewardModel(std::string const& name) const;
 
 	/*!
-	 * Retrieves all labels.
-	 * @return All labels.
+	 * Retrieves all labels that are defined by the probabilitic program.
+     *
+	 * @return A set of labels that are defined in the program.
 	 */
-	std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> getLabels() const;
-
-	std::string getVariableString() const;
+	std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> const& getLabels() const;
 
 private:
 	// The type of the model.

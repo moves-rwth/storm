@@ -1,4 +1,5 @@
 #include "VariableState.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 namespace parser {
@@ -30,131 +31,110 @@ std::ostream& operator<<(std::ostream& out, VariableState::variableNamesStruct& 
 }
 
 
-VariableState::VariableState(bool firstRun)
-		: firstRun(firstRun), keywords(), nextBooleanVariableIndex(0), nextIntegerVariableIndex(0) {
+VariableState::VariableState(bool firstRun)	: firstRun(firstRun), keywords(), nextGlobalBooleanVariableIndex(0), nextGlobalIntegerVariableIndex(0) {
+    // Nothing to do here.
 }
 
-uint_fast64_t VariableState::addBooleanVariable(const std::string& name) {
+uint_fast64_t VariableState::getNextGlobalBooleanVariableIndex() const {
+    return this->nextGlobalBooleanVariableIndex;
+}
+    
+uint_fast64_t VariableState::getNextGlobalIntegerVariableIndex() const {
+    return this->nextGlobalIntegerVariableIndex;
+}
+    
+uint_fast64_t VariableState::addBooleanVariable(std::string const& name) {
 	if (firstRun) {
-		std::shared_ptr<VariableExpression> varExpr = std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::bool_, this->nextBooleanVariableIndex, name));
-		LOG4CPLUS_TRACE(logger, "Adding boolean variable " << name << " with new id " << this->nextBooleanVariableIndex);
-		this->booleanVariables_.add(name, varExpr);
+		LOG4CPLUS_TRACE(logger, "Adding boolean variable " << name << " with new id " << this->nextGlobalBooleanVariableIndex << ".");
+		this->booleanVariables_.add(name, std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::bool_, this->nextGlobalBooleanVariableIndex, name)));
 		this->booleanVariableNames_.add(name, name);
-		this->nextBooleanVariableIndex++;
-		return varExpr->getVariableIndex();
+		++this->nextGlobalBooleanVariableIndex;
+		return this->nextGlobalBooleanVariableIndex - 1;
 	} else {
 		std::shared_ptr<VariableExpression> res = this->booleanVariables_.at(name);
 		if (res != nullptr) {
 			return res->getVariableIndex();
 		} else {
-			LOG4CPLUS_ERROR(logger, "Boolean variable " << name << " was not created in first run.");
-			return 0;
+			LOG4CPLUS_ERROR(logger, "Boolean variable " << name << " does not exist.");
+            throw storm::exceptions::InvalidArgumentException() << "Boolean variable " << name << " does not exist.";
 		}
 	}
 }
 
-uint_fast64_t VariableState::addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper) {
+uint_fast64_t VariableState::addIntegerVariable(std::string const& name) {
 	if (firstRun) {
-		std::shared_ptr<VariableExpression> varExpr = std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::int_, this->nextIntegerVariableIndex, name, lower, upper));
-		LOG4CPLUS_TRACE(logger, "Adding integer variable " << name << " with new id " << this->nextIntegerVariableIndex);
-		this->integerVariables_.add(name, varExpr);
+		LOG4CPLUS_TRACE(logger, "Adding integer variable " << name << " with new id " << this->nextGlobalIntegerVariableIndex << ".");
+		this->integerVariables_.add(name, std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::int_, this->nextGlobalIntegerVariableIndex, name)));
 		this->integerVariableNames_.add(name, name);
-		this->nextIntegerVariableIndex++;
-		return varExpr->getVariableIndex();
+		++this->nextGlobalIntegerVariableIndex;
+		return this->nextGlobalIntegerVariableIndex - 1;
 	} else {
 		std::shared_ptr<VariableExpression> res = this->integerVariables_.at(name);
 		if (res != nullptr) {
 			return res->getVariableIndex();
 		} else {
-
-			LOG4CPLUS_ERROR(logger, "Integer variable " << name << " was not created in first run.");
-			return 0;
+			LOG4CPLUS_ERROR(logger, "Integer variable " << name << " does not exist.");
+            throw storm::exceptions::InvalidArgumentException() << "Integer variable " << name << " does not exist.";
 		}
 	}
 }
 
-std::shared_ptr<VariableExpression> VariableState::getBooleanVariable(const std::string& name) {
+std::shared_ptr<VariableExpression> VariableState::getBooleanVariableExpression(std::string const& name) {
 	std::shared_ptr<VariableExpression>* res = this->booleanVariables_.find(name);
 	if (res != nullptr) {
 		return *res;
 	} else {
 		if (firstRun) {
-			LOG4CPLUS_TRACE(logger, "Getting boolean variable " << name << ", was not yet created.");
-			return std::shared_ptr<VariableExpression>(new VariableExpression(BaseExpression::bool_, std::numeric_limits<uint_fast64_t>::max(), "bool", std::shared_ptr<BaseExpression>(nullptr), std::shared_ptr<BaseExpression>(nullptr)));
-		} else {
-			LOG4CPLUS_ERROR(logger, "Getting boolean variable " << name << ", but was not found. This variable does not exist.");
+			LOG4CPLUS_TRACE(logger, "Trying to retrieve boolean variable " << name << " that was not yet created; returning dummy instead.");
 			return std::shared_ptr<VariableExpression>(nullptr);
+		} else {
+			LOG4CPLUS_ERROR(logger, "Boolean variable " << name << " does not exist.");
+            throw storm::exceptions::InvalidArgumentException() << "Boolean variable " << name << " does not exist.";
 		}
 	}
 }
 
-std::shared_ptr<VariableExpression> VariableState::getIntegerVariable(const std::string& name) {
+std::shared_ptr<VariableExpression> VariableState::getIntegerVariableExpression(std::string const& name) {
 	std::shared_ptr<VariableExpression>* res = this->integerVariables_.find(name);
 	if (res != nullptr) {
 		return *res;
 	} else {
 		if (firstRun) {
-			LOG4CPLUS_TRACE(logger, "Getting integer variable " << name << ", was not yet created.");
-			return std::shared_ptr<VariableExpression>(new VariableExpression(BaseExpression::int_, std::numeric_limits<uint_fast64_t>::max(), "int", std::shared_ptr<BaseExpression>(nullptr), std::shared_ptr<BaseExpression>(nullptr)));
-		} else {
-			LOG4CPLUS_ERROR(logger, "Getting integer variable " << name << ", but was not found. This variable does not exist.");
+			LOG4CPLUS_TRACE(logger, "Trying to retrieve integer variable " << name << " that was not yet created; returning dummy instead.");
 			return std::shared_ptr<VariableExpression>(nullptr);
+		} else {
+			LOG4CPLUS_ERROR(logger, "Integer variable " << name << " does not exist.");
+            throw storm::exceptions::InvalidArgumentException() << "Integer variable " << name << " does not exist.";
 		}
 	}
 }
-std::shared_ptr<VariableExpression> VariableState::getVariable(const std::string& name) {
+    
+std::shared_ptr<VariableExpression> VariableState::getVariableExpression(std::string const& name) {
 	std::shared_ptr<VariableExpression>* res = this->integerVariables_.find(name);
 	if (res != nullptr) {
 		return *res;
-	} else {
-		res = this->booleanVariables_.find(name);
-		if (res != nullptr) {
-			return *res;
-		} else {
-			return std::shared_ptr<VariableExpression>(nullptr);
-		}
 	}
+    LOG4CPLUS_ERROR(logger, "Variable " << name << " does not exist.");
+    throw storm::exceptions::InvalidArgumentException() << "Variable " << name << " does not exist.";
 }
 
-void VariableState::performRenaming(const std::map<std::string, std::string>& renaming) {
-	for (auto it: renaming) {
-		std::shared_ptr<VariableExpression>* original = this->integerVariables_.find(it.first);
-		if (original != nullptr) {
-			std::shared_ptr<VariableExpression>* next = this->integerVariables_.find(it.second);
-			if (next == nullptr) {
-				this->addIntegerVariable(it.second, (*original)->getLowerBound(), (*original)->getUpperBound());
-			}
-		}
-		original = this->booleanVariables_.find(it.first);
-		if (original != nullptr) {
-			if (this->booleanVariables_.find(it.second) == nullptr) {
-				this->addBooleanVariable(it.second);
-			}
-		}
-		std::string* oldCmdName = this->commandNames_.find(it.first);
-		if (oldCmdName != nullptr) {
-			LOG4CPLUS_TRACE(logger, "Adding new command name " << it.second << " due to module renaming.");
-			this->commandNames_.at(it.second) = it.second;
-		}
-	}
-}
-
-void VariableState::startModule() {
+void VariableState::clearLocalVariables() {
 	this->localBooleanVariables_.clear();
 	this->localIntegerVariables_.clear();
 }
 
-bool VariableState::isFreeIdentifier(std::string& s) const {
-	if (this->integerVariableNames_.find(s) != nullptr) return false;
-	if (this->allConstantNames_.find(s) != nullptr) return false;
-	if (this->labelNames_.find(s) != nullptr) return false;
-	if (this->moduleNames_.find(s) != nullptr) return false;
-	if (this->keywords.find(s) != nullptr) return false;
+bool VariableState::isFreeIdentifier(std::string const& identifier) const {
+	if (this->integerVariableNames_.find(identifier) != nullptr) return false;
+	if (this->allConstantNames_.find(identifier) != nullptr) return false;
+	if (this->labelNames_.find(identifier) != nullptr) return false;
+	if (this->moduleNames_.find(identifier) != nullptr) return false;
+	if (this->keywords.find(identifier) != nullptr) return false;
 	return true;
 }
-bool VariableState::isIdentifier(std::string& s) const {
-	if (this->allConstantNames_.find(s) != nullptr) return false;
-	if (this->keywords.find(s) != nullptr) return false;
+    
+bool VariableState::isIdentifier(std::string const& identifier) const {
+	if (this->allConstantNames_.find(identifier) != nullptr) return false;
+	if (this->keywords.find(identifier) != nullptr) return false;
 	return true;
 }
 
@@ -166,6 +146,6 @@ void VariableState::prepareForSecondRun() {
 	this->firstRun = false;
 }
 
-}
-}
-}
+} // namespace prism
+} // namespace parser
+} // namespace storm

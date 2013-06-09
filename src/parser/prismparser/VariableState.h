@@ -8,13 +8,16 @@
 #ifndef VARIABLESTATE_H
 #define	VARIABLESTATE_H
 
+#include <iostream>
+
 #include "src/ir/IR.h"
 #include "Includes.h"
 #include "Tokens.h"
-#include <iostream>
 
 namespace storm {
+    
 namespace parser {
+    
 namespace prism {
 
 using namespace storm::ir;
@@ -34,6 +37,7 @@ struct VariableState : public storm::ir::VariableAdder {
 	 * Indicator, if we are still in the first run.
 	 */
 	bool firstRun;
+    
 	/*!
 	 * A parser for all reserved keywords.
 	 */
@@ -42,91 +46,107 @@ struct VariableState : public storm::ir::VariableAdder {
 	/*!
 	 * Internal counter for the index of the next new boolean variable.
 	 */
-	uint_fast64_t nextBooleanVariableIndex;
+	uint_fast64_t nextGlobalBooleanVariableIndex;
+    
+    /*!
+     * Retrieves the next free global index for a boolean variable.
+     *
+     * @return The next free global index for a boolean variable.
+     */
+    uint_fast64_t getNextGlobalBooleanVariableIndex() const;
+    
 	/*!
 	 * Internal counter for the index of the next new integer variable.
 	 */
-	uint_fast64_t nextIntegerVariableIndex;
+	uint_fast64_t nextGlobalIntegerVariableIndex;
 
+    /*!
+     * Retrieves the next free global index for a integer variable.
+     *
+     * @return The next free global index for a integer variable.
+     */
+    uint_fast64_t getNextGlobalIntegerVariableIndex() const;
+    
 	// Structures mapping variable and constant names to the corresponding expression nodes of
 	// the intermediate representation.
 	struct qi::symbols<char, std::shared_ptr<VariableExpression>> integerVariables_, booleanVariables_;
 	struct qi::symbols<char, std::shared_ptr<BaseExpression>> integerConstants_, booleanConstants_, doubleConstants_;
 
 	// A structure representing the identity function over identifier names.
-	struct variableNamesStruct : qi::symbols<char, std::string> { } integerVariableNames_, booleanVariableNames_, commandNames_, labelNames_, allConstantNames_, moduleNames_,
+	struct variableNamesStruct : qi::symbols<char, std::string> { }
+            integerVariableNames_, booleanVariableNames_, commandNames_, labelNames_, allConstantNames_, moduleNames_,
 			localBooleanVariables_, localIntegerVariables_, assignedLocalBooleanVariables_, assignedLocalIntegerVariables_;
 	
 	/*!
-	 * Add a new boolean variable with the given name.
-	 * @param name Name of the variable.
-	 * @return Index of the variable.
+	 * Adds a new boolean variable with the given name.
+     *
+	 * @param name The name of the variable.
+	 * @return The global index of the variable.
 	 */
-	uint_fast64_t addBooleanVariable(const std::string& name);
+	uint_fast64_t addBooleanVariable(std::string const& name);
+    
 	/*!
-	 * Add a new integer variable with the given name and constraints.
-	 * @param name Name of the variable.
-	 * @param lower Lower bound for the variable value.
-	 * @param upper Upper bound for the variable value.
-	 * @return Index of the variable.
+	 * Adds a new integer variable with the given name.
+     *
+	 * @param name The name of the variable.
+	 * @return The global index of the variable.
 	 */
-	uint_fast64_t addIntegerVariable(const std::string& name, const std::shared_ptr<storm::ir::expressions::BaseExpression> lower, const std::shared_ptr<storm::ir::expressions::BaseExpression> upper);
+	uint_fast64_t addIntegerVariable(std::string const& name);
 
 	/*!
-	 * Retrieve boolean Variable with given name.
-	 * @param name Variable name.
-	 * @returns Variable.
+	 * Retrieves the variable expression for the boolean variable with the given name.
+     *
+	 * @param name The name of the boolean variable for which to retrieve the variable expression.
+	 * @return The variable expression for the boolean variable with the given name.
 	 */
-	std::shared_ptr<VariableExpression> getBooleanVariable(const std::string& name);
+	std::shared_ptr<VariableExpression> getBooleanVariableExpression(std::string const& name);
+    
 	/*!
-	 * Retrieve integer Variable with given name.
-	 * @param name Variable name.
-	 * @returns Variable.
+	 * Retrieves the variable expression for the integer variable with the given name.
+     *
+	 * @param name The name of the integer variable for which to retrieve the variable expression.
+	 * @return The variable expression for the integer variable with the given name.
 	 */
-	std::shared_ptr<VariableExpression> getIntegerVariable(const std::string& name);
+	std::shared_ptr<VariableExpression> getIntegerVariableExpression(std::string const& name);
+    
 	/*!
-	 * Retrieve any Variable with given name.
-	 * @param name Variable name.
-	 * @returns Variable.
+	 * Retrieve the variable expression for the variable with the given name.
+     *
+	 * @param name The name of the variable for which to retrieve the variable expression.
+	 * @return The variable expression for the variable with the given name.
 	 */
-	std::shared_ptr<VariableExpression> getVariable(const std::string& name);
+	std::shared_ptr<VariableExpression> getVariableExpression(std::string const& name);
 
 	/*!
-	 * Perform operations necessary for a module renaming.
-	 * This includes creating new variables and constants.
-	 * @param renaming String mapping for renaming operation.
+	 * Clears all local variables.
 	 */
-	void performRenaming(const std::map<std::string, std::string>& renaming);
+	void clearLocalVariables();
 
 	/*!
-	 * Start with a new module.
-	 * Clears sets of local variables.
+	 * Check if the given string is a free identifier.
+     *
+	 * @param identifier A string to be checked.
+	 * @return True iff the given string is a free identifier.
 	 */
-	void startModule();
-
-	/*!
-	 * Check if given string is a free identifier.
-	 * @param s String.
-	 * @returns If s is a free identifier.
-	 */
-	bool isFreeIdentifier(std::string& s) const;
+	bool isFreeIdentifier(std::string const& identifier) const;
+    
 	/*!
 	 * Check if given string is a valid identifier.
-	 * @param s String.
-	 * @returns If s is a valid identifier.
+     *
+	 * @param identifier A string to be checked.
+	 * @return True iff the given string is an identifier.
 	 */
-	bool isIdentifier(std::string& s) const;
+	bool isIdentifier(std::string const& identifier) const;
 
 	/*!
-	 * Prepare state to proceed to second parser run.
-	 * Clears constants.
+	 * Prepare state to proceed to second parser run. Currently, this clears the constants.
 	 */
 	void prepareForSecondRun();
 };
 
-}
-}
-}
+} // namespace prism
+} // namespace parser
+} // namespace storm
 
 #endif	/* VARIABLESTATE_H */
 

@@ -17,7 +17,7 @@ StateReward::StateReward() : statePredicate(), rewardValue() {
 	// Nothing to do here.
 }
 
-StateReward::StateReward(std::shared_ptr<storm::ir::expressions::BaseExpression> statePredicate, std::shared_ptr<storm::ir::expressions::BaseExpression> rewardValue) : statePredicate(statePredicate), rewardValue(rewardValue) {
+StateReward::StateReward(std::shared_ptr<storm::ir::expressions::BaseExpression> const& statePredicate, std::shared_ptr<storm::ir::expressions::BaseExpression> const& rewardValue) : statePredicate(statePredicate), rewardValue(rewardValue) {
 	// Nothing to do here.
 }
 

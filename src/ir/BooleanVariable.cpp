@@ -5,31 +5,28 @@
  *      Author: Christian Dehnert
  */
 
-#include "BooleanVariable.h"
-
 #include <sstream>
+
+#include "BooleanVariable.h"
 
 namespace storm {
 
 namespace ir {
 
-// Initializes all members with their default constructors.
 BooleanVariable::BooleanVariable() : Variable() {
 	// Nothing to do here.
 }
 
-// Initializes all members according to the given values.
-BooleanVariable::BooleanVariable(uint_fast64_t index, std::string variableName,
-		std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue)
-		: Variable(index, variableName,  initialValue) {
+BooleanVariable::BooleanVariable(uint_fast64_t globalIndex, uint_fast64_t localIndex, std::string const& variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue)
+		: Variable(globalIndex, localIndex, variableName,  initialValue) {
 	// Nothing to do here.
 }
 
-BooleanVariable::BooleanVariable(const BooleanVariable& var, const std::string& newName, const std::map<std::string, std::string>& renaming, const std::map<std::string,uint_fast64_t>& bools, const std::map<std::string,uint_fast64_t>& ints)
-	: Variable(var, newName, bools.at(newName), renaming, bools, ints) {
+BooleanVariable::BooleanVariable(BooleanVariable const& oldVariable, std::string const& newName, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string,uint_fast64_t> const& integerVariableToIndexMap)
+	: Variable(oldVariable, newName, newGlobalIndex, renaming, booleanVariableToIndexMap, integerVariableToIndexMap) {
+    // Nothing to do here.
 }
 
-// Build a string representation of the variable.
 std::string BooleanVariable::toString() const {
 	std::stringstream result;
 	result << this->getName() << ": bool";
