@@ -86,7 +86,7 @@ std::shared_ptr<VariableExpression> VariableState::getBooleanVariableExpression(
 	} else {
 		if (firstRun) {
 			LOG4CPLUS_TRACE(logger, "Trying to retrieve boolean variable " << name << " that was not yet created; returning dummy instead.");
-			return std::shared_ptr<VariableExpression>(nullptr);
+			return std::shared_ptr<VariableExpression>(BaseExpression::bool_, 0, name);
 		} else {
 			LOG4CPLUS_ERROR(logger, "Boolean variable " << name << " does not exist.");
             throw storm::exceptions::InvalidArgumentException() << "Boolean variable " << name << " does not exist.";
@@ -101,7 +101,7 @@ std::shared_ptr<VariableExpression> VariableState::getIntegerVariableExpression(
 	} else {
 		if (firstRun) {
 			LOG4CPLUS_TRACE(logger, "Trying to retrieve integer variable " << name << " that was not yet created; returning dummy instead.");
-			return std::shared_ptr<VariableExpression>(nullptr);
+			return std::shared_ptr<VariableExpression>(BaseExpression::int_, 0, name);
 		} else {
 			LOG4CPLUS_ERROR(logger, "Integer variable " << name << " does not exist.");
             throw storm::exceptions::InvalidArgumentException() << "Integer variable " << name << " does not exist.";

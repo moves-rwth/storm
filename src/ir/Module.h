@@ -29,7 +29,7 @@ namespace ir {
          *
          * @param name The name of the boolean variable to add.
          */
-		virtual uint_fast64_t addBooleanVariable(std::string const& name) = 0;
+		uint_fast64_t addBooleanVariable(std::string const& name) = 0;
 
         /*!
          * Adds an integer variable with the given name, lower and upper bound.
@@ -38,17 +38,17 @@ namespace ir {
          * @param lower The lower bound of the integer variable.
          * @param upper The upper bound of the integer variable.
          */
-		virtual uint_fast64_t addIntegerVariable(std::string const& name) = 0;
+		uint_fast64_t addIntegerVariable(std::string const& name) = 0;
         
         /*!
          * Retrieves the next free (global) index for a boolean variable.
          */
-        virtual uint_fast64_t getNextGlobalBooleanVariableIndex() = 0;
+        uint_fast64_t getNextGlobalBooleanVariableIndex() const = 0;
         
         /*!
          * Retrieves the next free (global) index for a integer variable.
          */
-        virtual uint_fast64_t getNextGlobalIntegerVariableIndex() = 0;
+        uint_fast64_t getNextGlobalIntegerVariableIndex() const = 0;
 	};
 
 /*!
