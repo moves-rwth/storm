@@ -14,6 +14,8 @@
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 
+#include "src/utility/OsDetection.h"
+
 extern log4cplus::Logger logger;
 
 namespace storm {
@@ -36,13 +38,20 @@ public:
 
 		result->resizeNonZeros(static_cast<int>(realNonZeros));
 		//result->reserve(realNonZeros);
-
+#ifdef WINDOWS
+#	pragma warning(push)
+#	pragma warning(disable: 4244) // possible loss of data
+#endif
 		// Copy Row Indications
 		std::copy(matrix.rowIndications.begin(), matrix.rowIndications.end(), (result->outerIndexPtr()));
 		// Copy Columns Indications
 		std::copy(matrix.columnIndications.begin(), matrix.columnIndications.end(), (result->innerIndexPtr()));
 		// And do the same thing with the actual values.
 		std::copy(matrix.valueStorage.begin(), matrix.valueStorage.end(), (result->valuePtr()));
+
+#ifdef WINDOWS
+#	pragma warning(pop)
+#endif
 
 		LOG4CPLUS_DEBUG(logger, "Done converting matrix to Eigen format.");
 

@@ -31,32 +31,6 @@ template <class T>
 class Dtmc : public storm::models::AbstractDeterministicModel<T> {
 
 public:
-	//! Constructor
-	/*!
-	 * Constructs a DTMC object from the given transition probability matrix and
-	 * the given labeling of the states.
-	 * @param probabilityMatrix The transition probability function of the
-	 * DTMC given by a matrix.
-	 * @param stateLabeling The labeling that assigns a set of atomic
-	 * propositions to each state.
-	 */
-	Dtmc(std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix,
-			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
-			std::shared_ptr<std::vector<T>> stateRewardVector = nullptr,
-			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix = nullptr)
-			: AbstractDeterministicModel<T>(probabilityMatrix, stateLabeling, stateRewardVector, transitionRewardMatrix) {
-		if (!this->checkValidityOfProbabilityMatrix()) {
-			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
-			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
-		}
-		if (this->hasTransitionRewards()) {
-			if (!this->getTransitionRewardMatrix().containsAllPositionsOf(this->getTransitionMatrix())) {
-				LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
-				throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
-			}
-		}
-	}
-
 	/*!
 	 * Constructs a DTMC object from the given transition probability matrix and
 	 * the given labeling of the states.
@@ -82,12 +56,44 @@ public:
 		}
 	}
 
-	//! Copy Constructor
+	/*!
+	 * Constructs a DTMC object from the given transition probability matrix and
+	 * the given labeling of the states.
+	 * All values are moved.
+	 * @param probabilityMatrix The matrix representing the transitions in the model.
+	 * @param stateLabeling The labeling that assigns a set of atomic
+	 * propositions to each state.
+	 * @param stateRewardVector The reward values associated with the states.
+	 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+	 */
+	Dtmc(storm::storage::SparseMatrix<T>&& probabilityMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
+				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
+			: AbstractDeterministicModel<T>(probabilityMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+		if (!this->checkValidityOfProbabilityMatrix()) {
+			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
+			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
+		}
+		if (this->hasTransitionRewards()) {
+			if (!this->getTransitionRewardMatrix().containsAllPositionsOf(this->getTransitionMatrix())) {
+				LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+				throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
+			}
+		}
+	}
+
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given DTMC.
 	 * @param dtmc A reference to the DTMC that is to be copied.
 	 */
-	Dtmc(Dtmc<T> const& dtmc) : AbstractDeterministicModel<T>(dtmc) {
+	Dtmc(Dtmc<T> const & dtmc) : AbstractDeterministicModel<T>(dtmc) {
+		// Intentionally left empty.
+	}
+
+	/*!
+	 * Move Constructor. Performs a move on the given DTMC.
+	 * @param dtmc A reference to the DTMC that is to be moved.
+	 */
+	Dtmc(Dtmc<T>&& dtmc) : AbstractDeterministicModel<T>(dtmc) {
 		// Intentionally left empty.
 	}
 

@@ -19,23 +19,6 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 
 	public:
 		/*! Constructs an abstract non-determinstic model from the given parameters.
-		 * @param transitionMatrix The matrix representing the transitions in the model.
-		 * @param stateLabeling The labeling that assigns a set of atomic
-		 * propositions to each state.
-		 * @param choiceIndices A mapping from states to rows in the transition matrix.
-		 * @param stateRewardVector The reward values associated with the states.
-		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
-		 */
-		AbstractNondeterministicModel(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix,
-			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
-			std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices,
-			std::shared_ptr<std::vector<T>> stateRewardVector,
-			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix)
-			: AbstractModel<T>(transitionMatrix, stateLabeling, stateRewardVector, transitionRewardMatrix),
-			  nondeterministicChoiceIndices(nondeterministicChoiceIndices) {
-		}
-
-		/*! Constructs an abstract non-determinstic model from the given parameters.
 		 * All values are copied.
 		 * @param transitionMatrix The matrix representing the transitions in the model.
 		 * @param stateLabeling The labeling that assigns a set of atomic
@@ -51,7 +34,26 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			boost::optional<std::vector<T>> const& optionalStateRewardVector, 
 			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
 			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
-				this->nondeterministicChoiceIndices.reset(new std::vector<uint_fast64_t>(nondeterministicChoiceIndices));
+				this->nondeterministicChoiceIndices = nondeterministicChoiceIndices;
+		}
+
+		/*! Constructs an abstract non-determinstic model from the given parameters.
+		 * All values are moved.
+		 * @param transitionMatrix The matrix representing the transitions in the model.
+		 * @param stateLabeling The labeling that assigns a set of atomic
+		 * propositions to each state.
+		 * @param choiceIndices A mapping from states to rows in the transition matrix.
+		 * @param stateRewardVector The reward values associated with the states.
+		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+		 */
+		AbstractNondeterministicModel(
+			storm::storage::SparseMatrix<T>&& transitionMatrix, 
+			storm::models::AtomicPropositionsLabeling&& stateLabeling,
+			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
+			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
+			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
+			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+				this->nondeterministicChoiceIndices = std::move(nondeterministicChoiceIndices);
 		}
 
 		/*!
@@ -70,11 +72,19 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		}
 
 		/*!
+		 * Move Constructor.
+		 */
+		AbstractNondeterministicModel(AbstractNondeterministicModel&& other) : AbstractModel<T>(other),
+				nondeterministicChoiceIndices(std::move(other.nondeterministicChoiceIndices)) {
+			// Intentionally left empty.
+		}
+
+		/*!
 		 * Returns the number of choices for all states of the MDP.
 		 * @return The number of choices for all states of the MDP.
 		 */
 		uint_fast64_t getNumberOfChoices() const {
-			return this->transitionMatrix->getRowCount();
+			return this->transitionMatrix.getRowCount();
 		}
     
 		/*!
@@ -83,7 +93,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		 * measured in bytes.
 		 */
 		virtual uint_fast64_t getSizeInMemory() const {
-			return AbstractModel<T>::getSizeInMemory() + nondeterministicChoiceIndices->size() * sizeof(uint_fast64_t);
+			return AbstractModel<T>::getSizeInMemory() + nondeterministicChoiceIndices.size() * sizeof(uint_fast64_t);
 		}
 
 		/*!
@@ -93,7 +103,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		 * of a certain state.
 		 */
 		std::vector<uint_fast64_t> const& getNondeterministicChoiceIndices() const {
-			return *nondeterministicChoiceIndices;
+			return nondeterministicChoiceIndices;
 		}
     
         /*!
@@ -103,7 +113,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
          * @return An iterator to the successors of the given state.
          */
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const {
-            return this->transitionMatrix->constColumnIteratorBegin((*nondeterministicChoiceIndices)[state]);
+            return this->transitionMatrix.constColumnIteratorBegin(nondeterministicChoiceIndices[state]);
         }
     
         /*!
@@ -113,7 +123,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
          * @return An iterator pointing to the element past the successors of the given state.
          */
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
-            return this->transitionMatrix->constColumnIteratorEnd((*nondeterministicChoiceIndices)[state + 1] - 1);
+            return this->transitionMatrix.constColumnIteratorEnd(nondeterministicChoiceIndices[state + 1] - 1);
         }
 
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
@@ -187,7 +197,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
     
 	private:
 		/*! A vector of indices mapping states to the choices (rows) in the transition matrix. */
-		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices;
+		std::vector<uint_fast64_t> nondeterministicChoiceIndices;
 };
 
 } // namespace models

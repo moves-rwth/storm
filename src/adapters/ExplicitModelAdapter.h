@@ -121,14 +121,14 @@ private:
 	 * @param rewards List of state reward models.
 	 * @return Reward for every state.
 	 */
-	std::shared_ptr<std::vector<double>> getStateRewards(std::vector<storm::ir::StateReward> const & rewards);
+	std::vector<double> getStateRewards(std::vector<storm::ir::StateReward> const & rewards);
 	
 	/*!
 	 * Determines the labels for every reachable state, based on a list of available labels.
 	 * @param labels Mapping from label names to boolean expressions.
 	 * @returns The resulting labeling.
 	 */
-	std::shared_ptr<storm::models::AtomicPropositionsLabeling> getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
+	storm::models::AtomicPropositionsLabeling getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
 
 	/*!
 	 * Retrieves all active command labeled by some label, ordered by modules.
@@ -181,7 +181,7 @@ private:
 	 * @param intermediate Intermediate representation of transition mapping.
 	 * @return result matrix.
 	 */
-	std::shared_ptr<storm::storage::SparseMatrix<double>> buildDeterministicMatrix();
+	storm::storage::SparseMatrix<double> buildDeterministicMatrix();
 
 	/*!
 	 * Create matrix from intermediate mapping, assuming it is a mdp model.
@@ -189,7 +189,7 @@ private:
 	 * @param choices Overall number of choices for all nodes.
 	 * @return result matrix.
 	 */
-	std::shared_ptr<storm::storage::SparseMatrix<double>> buildNondeterministicMatrix();
+	storm::storage::SparseMatrix<double> buildNondeterministicMatrix();
 
 	/*!
 	 * Generate internal transition map from given model.
@@ -225,9 +225,9 @@ private:
 	// Number of choices. (Is number of rows in matrix of nondeterministic model.)
 	uint_fast64_t numberOfChoices;
 	// Number of choices for each state.
-	std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices;
+	std::vector<uint_fast64_t> choiceIndices;
 	// Rewards for transitions.
-	std::shared_ptr<storm::storage::SparseMatrix<double>> transitionRewards;
+	boost::optional<storm::storage::SparseMatrix<double>> transitionRewards;
 
 	/*!
 	 * Maps a source node to a list of probability distributions over target nodes.

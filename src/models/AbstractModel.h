@@ -35,19 +35,16 @@ template<class T>
 class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 
 	public:
-		/*! Constructs an abstract model from the given transition matrix and
-		 * the given labeling of the states.
-		 * @param transitionMatrix The matrix representing the transitions in the model.
-		 * @param stateLabeling The labeling that assigns a set of atomic
-		 * propositions to each state.
-		 * @param stateRewardVector The reward values associated with the states.
-		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+		/*! Move Constructor for an abstract model from the given transition matrix and
+		 * the given labeling of the states. Creates copies of all given references.
+		 * @param other The Source Abstract Model
 		 */
-		AbstractModel(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix,
-				std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
-				std::shared_ptr<std::vector<T>> stateRewardVector, std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix)
-				: transitionMatrix(transitionMatrix), stateLabeling(stateLabeling), stateRewardVector(stateRewardVector), transitionRewardMatrix(transitionRewardMatrix) {
-			// Intentionally left empty.
+		AbstractModel(AbstractModel<T>&& other) {
+			this->transitionMatrix = std::move(other.transitionMatrix);
+			this->stateLabeling = std::move(other.stateLabeling);
+					
+			this->stateRewardVector = std::move(other.stateRewardVector);
+			this->transitionRewardMatrix = std::move(other.transitionRewardMatrix);
 		}
 
 		/*! Constructs an abstract model from the given transition matrix and
@@ -59,20 +56,32 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix) {
-			this->transitionMatrix.reset(new storm::storage::SparseMatrix<T>(transitionMatrix));
-			this->stateLabeling.reset(new storm::models::AtomicPropositionsLabeling(stateLabeling));
+				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
+				: transitionMatrix(transitionMatrix), stateLabeling(stateLabeling) {
 					
-			this->stateRewardVector = nullptr;
-			this->transitionRewardMatrix = nullptr;
-
 			if (optionalStateRewardVector) { // Boost::Optional
-				this->stateRewardVector.reset(new std::vector<T>(optionalStateRewardVector.get()));
+				this->stateRewardVector.reset(optionalStateRewardVector.get());
 			}
-
 			if (optionalTransitionRewardMatrix) { // Boost::Optional
-				this->transitionRewardMatrix.reset(new storm::storage::SparseMatrix<T>(optionalTransitionRewardMatrix.get()));
+				this->transitionRewardMatrix.reset(optionalTransitionRewardMatrix.get());
 			}
+		}
+
+		/*! Constructs an abstract model from the given transition matrix and
+		 * the given labeling of the states. Moves all given references.
+		 * @param transitionMatrix The matrix representing the transitions in the model.
+		 * @param stateLabeling The labeling that assigns a set of atomic
+		 * propositions to each state.
+		 * @param stateRewardVector The reward values associated with the states.
+		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+		 */
+		AbstractModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
+				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix) {
+			this->transitionMatrix = std::move(transitionMatrix);
+			this->stateLabeling = std::move(stateLabeling);
+					
+			this->stateRewardVector = std::move(optionalStateRewardVector);
+			this->transitionRewardMatrix = std::move(optionalTransitionRewardMatrix);
 		}
 
 		/*!
@@ -254,7 +263,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * correspond to a state labeled with the given atomic proposition.
 		 */
 		storm::storage::BitVector const& getLabeledStates(std::string const& ap) const {
-			return stateLabeling->getLabeledStates(ap);
+			return stateLabeling.getLabeledStates(ap);
 		}
 
 		/*!
@@ -263,7 +272,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return True if the given atomic proposition is valid in this model.
 		 */
 		bool hasAtomicProposition(std::string const& atomicProposition) const {
-			return stateLabeling->containsAtomicProposition(atomicProposition);
+			return stateLabeling.containsAtomicProposition(atomicProposition);
 		}
 
 		/*!
@@ -273,7 +282,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * function.
 		 */
 		storm::storage::SparseMatrix<T> const& getTransitionMatrix() const {
-			return *transitionMatrix;
+			return transitionMatrix;
 		}
 
 		/*!
@@ -281,7 +290,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return A pointer to the matrix representing the transition rewards.
 		 */
 		storm::storage::SparseMatrix<T> const& getTransitionRewardMatrix() const {
-			return *transitionRewardMatrix;
+			return transitionRewardMatrix.get();
 		}
 
 		/*!
@@ -289,7 +298,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return A pointer to the vector representing the state rewards.
 		 */
 		std::vector<T> const& getStateRewardVector() const {
-			return *stateRewardVector;
+			return stateRewardVector.get();
 		}
 
 		/*!
@@ -299,7 +308,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return The set of labels with which the given state is labeled.
 		 */
 		std::set<std::string> getLabelsForState(uint_fast64_t state) const {
-			return stateLabeling->getPropositionsForState(state);
+			return stateLabeling.getPropositionsForState(state);
 		}
 
 		/*!
@@ -307,7 +316,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return The state labeling associated with this model.
 		 */
 		storm::models::AtomicPropositionsLabeling const& getStateLabeling() const {
-			return *stateLabeling;
+			return stateLabeling;
 		}
 
 		/*!
@@ -315,7 +324,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return True if this model has a state reward model.
 		 */
 		bool hasStateRewards() const {
-			return stateRewardVector != nullptr;
+			return stateRewardVector;
 		}
 
 		/*!
@@ -323,7 +332,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return True if this model has a transition reward model.
 		 */
 		bool hasTransitionRewards() const {
-			return transitionRewardMatrix != nullptr;
+			return transitionRewardMatrix;
 		}
 
 		/*!
@@ -332,12 +341,12 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * measured in bytes.
 		 */
 		virtual uint_fast64_t getSizeInMemory() const {
-			uint_fast64_t result = transitionMatrix->getSizeInMemory() + stateLabeling->getSizeInMemory();
-			if (stateRewardVector != nullptr) {
-				result += stateRewardVector->size() * sizeof(T);
+			uint_fast64_t result = transitionMatrix.getSizeInMemory() + stateLabeling.getSizeInMemory();
+			if (stateRewardVector) {
+				result += getStateRewardVector().size() * sizeof(T);
 			}
-			if (transitionRewardMatrix != nullptr) {
-				result += transitionRewardMatrix->getSizeInMemory();
+			if (hasTransitionRewards()) {
+				result += getTransitionRewardMatrix().getSizeInMemory();
 			}
 			return result;
 		}
@@ -430,17 +439,17 @@ protected:
         }
         
 		/*! A matrix representing the likelihoods of moving between states. */
-		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix;
+		storm::storage::SparseMatrix<T> transitionMatrix;
 
 private:
 		/*! The labeling of the states of the model. */
-		std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling;
+		storm::models::AtomicPropositionsLabeling stateLabeling;
 
 		/*! The state-based rewards of the model. */
-		std::shared_ptr<std::vector<T>> stateRewardVector;
+		boost::optional<std::vector<T>> stateRewardVector;
 
 		/*! The transition-based rewards of the model. */
-		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix;
+		boost::optional<storm::storage::SparseMatrix<T>> transitionRewardMatrix;
 };
 
 } // namespace models

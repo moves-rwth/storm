@@ -224,6 +224,25 @@ public:
 			  internalStatus(MatrixStatus::UnInitialized), currentSize(0), lastRow(0) {
         // Intentionally left empty.
 	}
+
+	/*!
+	 * Move Constructor.
+	 *
+	 * @param other The Matrix from which to move the content
+	 */
+	SparseMatrix(SparseMatrix&& other)
+		: rowCount(other.rowCount), colCount(other.colCount), nonZeroEntryCount(other.nonZeroEntryCount),
+		internalStatus(other.internalStatus), currentSize(other.currentSize), lastRow(other.lastRow),
+		valueStorage(std::move(other.valueStorage)), columnIndications(std::move(other.columnIndications)),
+		rowIndications(std::move(other.rowIndications)) {
+		// Now update the source matrix
+		other.rowCount = 0;
+		other.colCount = 0;
+		other.nonZeroEntryCount = 0;
+		other.internalStatus = MatrixStatus::Error;
+		other.currentSize = 0;
+		other.lastRow = 0;
+	}
     
     /*!
      * Constructs a sparse matrix object with the given (moved) contents.

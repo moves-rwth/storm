@@ -30,27 +30,6 @@ template <class T>
 class Mdp : public storm::models::AbstractNondeterministicModel<T> {
 
 public:
-	//! Constructor
-	/*!
-	 * Constructs a MDP object from the given transition probability matrix and
-	 * the given labeling of the states.
-	 * @param probabilityMatrix The transition probability relation of the
-	 * MDP given by a matrix.
-	 * @param stateLabeling The labeling that assigns a set of atomic
-	 * propositions to each state.
-	 */
-	Mdp(std::shared_ptr<storm::storage::SparseMatrix<T>> probabilityMatrix,
-			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
-			std::shared_ptr<std::vector<uint_fast64_t>> choiceIndices,
-			std::shared_ptr<std::vector<T>> stateRewardVector = nullptr,
-			std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix = nullptr)
-			: AbstractNondeterministicModel<T>(probabilityMatrix, stateLabeling, choiceIndices, stateRewardVector, transitionRewardMatrix) {
-		if (!this->checkValidityOfProbabilityMatrix()) {
-			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
-			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
-		}
-	}
-
 	/*!
 	 * Constructs a MDP object from the given transition probability matrix and
 	 * the given labeling of the states.
@@ -72,12 +51,43 @@ public:
 		}
 	}
 
-	//! Copy Constructor
+	/*!
+	 * Constructs a MDP object from the given transition probability matrix and
+	 * the given labeling of the states.
+	 * All values are moved.
+	 * @param probabilityMatrix The transition probability relation of the
+	 * MDP given by a matrix.
+	 * @param stateLabeling The labeling that assigns a set of atomic
+	 * propositions to each state.
+	 */
+	Mdp(storm::storage::SparseMatrix<T>&& transitionMatrix, 
+			storm::models::AtomicPropositionsLabeling&& stateLabeling,
+			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
+			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
+			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
+			: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+		if (!this->checkValidityOfProbabilityMatrix()) {
+			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
+			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
+		}
+	}
+
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given MDP.
 	 * @param mdp A reference to the MDP that is to be copied.
 	 */
-	Mdp(const Mdp<T> &mdp) : AbstractNondeterministicModel<T>(mdp) {
+	Mdp(Mdp<T> const & mdp) : AbstractNondeterministicModel<T>(mdp) {
+		if (!this->checkValidityOfProbabilityMatrix()) {
+			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
+			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
+		}
+	}
+
+	/*!
+	 * Move Constructor. Performs a move on the given MDP.
+	 * @param mdp A reference to the MDP that is to be moved.
+	 */
+	Mdp(Mdp<T>&& mdp) : AbstractNondeterministicModel<T>(mdp) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";

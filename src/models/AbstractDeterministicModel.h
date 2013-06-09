@@ -20,19 +20,6 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 
 	public:
 		/*! Constructs an abstract determinstic model from the given parameters.
-		 * @param transitionMatrix The matrix representing the transitions in the model.
-		 * @param stateLabeling The labeling that assigns a set of atomic
-		 * propositions to each state.
-		 * @param stateRewardVector The reward values associated with the states.
-		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
-		 */
-		AbstractDeterministicModel(std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix,
-			std::shared_ptr<storm::models::AtomicPropositionsLabeling> stateLabeling,
-			std::shared_ptr<std::vector<T>> stateRewardVector, std::shared_ptr<storm::storage::SparseMatrix<T>> transitionRewardMatrix)
-			: AbstractModel<T>(transitionMatrix, stateLabeling, stateRewardVector, transitionRewardMatrix) {
-		}
-
-		/*! Constructs an abstract determinstic model from the given parameters.
 		 * All values are copied.
 		 * @param transitionMatrix The matrix representing the transitions in the model.
 		 * @param stateLabeling The labeling that assigns a set of atomic
@@ -42,6 +29,19 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		 */
 		AbstractDeterministicModel(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
 				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
+			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+		}
+
+		/*! Constructs an abstract determinstic model from the given parameters.
+		 * Moves all references.
+		 * @param transitionMatrix The matrix representing the transitions in the model.
+		 * @param stateLabeling The labeling that assigns a set of atomic
+		 * propositions to each state.
+		 * @param stateRewardVector The reward values associated with the states.
+		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+		 */
+		AbstractDeterministicModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
+				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
 			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
 		}
 
@@ -66,7 +66,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
          * @return An iterator to the successors of the given state.
          */
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const {
-            return this->transitionMatrix->constColumnIteratorBegin(state);
+            return this->transitionMatrix.constColumnIteratorBegin(state);
         }
     
         /*!
@@ -76,7 +76,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
          * @return An iterator pointing to the element past the successors of the given state.
          */
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
-            return this->transitionMatrix->constColumnIteratorEnd(state);
+            return this->transitionMatrix.constColumnIteratorEnd(state);
         }
     
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {

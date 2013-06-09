@@ -58,6 +58,20 @@ public:
     }
 
 	/*!
+	 * Move Constructor that performs a move copy on the given atomic proposition labeling.
+     *
+	 * @param atomicPropositionsLabeling The atomic propositions labeling to copy.
+	 */
+	AtomicPropositionsLabeling(AtomicPropositionsLabeling&& atomicPropositionsLabeling)
+			: stateCount(atomicPropositionsLabeling.stateCount),
+			  apCountMax(atomicPropositionsLabeling.apCountMax),
+			  apsCurrent(atomicPropositionsLabeling.apsCurrent),
+			  nameToLabelingMap(std::move(atomicPropositionsLabeling.nameToLabelingMap)),
+              singleLabelings(std::move(atomicPropositionsLabeling.singleLabelings)) {
+        // Intentionally left empty.
+    }
+
+	/*!
 	 * (Empty) destructor.
 	 */
 	~AtomicPropositionsLabeling() {
