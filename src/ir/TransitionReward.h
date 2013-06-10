@@ -44,6 +44,27 @@ public:
 	 * @return A string representation of this transition reward.
 	 */
 	std::string toString() const;
+    
+    /*!
+     * Retrieves the action name that is associated with this transition reward.
+     *
+     * @return The action name that is associated with this transition reward.
+     */
+    std::string const& getActionName() const;
+    
+    /*!
+     * Retrieves the state predicate that is associated with this state reward.
+     *
+     * @return The state predicate that is associated with this state reward.
+     */
+    std::shared_ptr<storm::ir::expressions::BaseExpression> getStatePredicate() const;
+    
+    /*!
+     * Retrieves the reward value associated with this state reward.
+     *
+     * @return The reward value associated with this state reward.
+     */
+    std::shared_ptr<storm::ir::expressions::BaseExpression> getRewardValue() const;
 
 private:
 	// The name of the command this transition-based reward is attached to.

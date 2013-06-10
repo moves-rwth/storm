@@ -29,8 +29,8 @@ std::ostream& operator<<(std::ostream& out, qi::symbols<char, T>& symbols);
 /*!
  * This class contains the internal state that is needed for parsing a PRISM model.
  */
-struct VariableState {
-
+class VariableState {
+public:
     /*!
      * Creates a new variable state object. By default, this object will be set to a state in which
      * it is ready for performing a first run on some input. The first run creates all variables
@@ -113,17 +113,17 @@ struct VariableState {
 	 * Adds a new boolean variable with the given name.
      *
 	 * @param name The name of the variable.
-	 * @return A pair containing the local and global index of the variable.
+	 * @return The global index of the variable.
 	 */
-    virtual std::pair<uint_fast64_t, uint_fast64_t> addBooleanVariable(std::string const& name);
+    uint_fast64_t addBooleanVariable(std::string const& name);
     
 	/*!
 	 * Adds a new integer variable with the given name.
      *
 	 * @param name The name of the variable.
-	 * @return A pair containing the local and global index of the variable.
+	 * @return The global index of the variable.
 	 */
-    virtual std::pair<uint_fast64_t, uint_fast64_t> addIntegerVariable(std::string const& name);
+    uint_fast64_t addIntegerVariable(std::string const& name);
 
 	/*!
 	 * Retrieves the variable expression for the boolean variable with the given name.

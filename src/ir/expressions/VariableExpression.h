@@ -5,18 +5,10 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef VARIABLEEXPRESSION_H_
-#define VARIABLEEXPRESSION_H_
-
-#include <memory>
-#include <iostream>
+#ifndef STORM_IR_EXPRESSIONS_VARIABLEEXPRESSION_H_
+#define STORM_IR_EXPRESSIONS_VARIABLEEXPRESSION_H_
 
 #include "BaseExpression.h"
-#include "src/exceptions/InvalidArgumentException.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
 
 namespace storm {
 	
@@ -30,37 +22,60 @@ namespace storm {
 	namespace ir {
 		namespace expressions {
 			
+            /*!
+             * A class representing a variable in the expression tree.
+             */
 			class VariableExpression : public BaseExpression {
 			public:
-				VariableExpression(ReturnType type, std::string variableName);
+                /*!
+                 * Creates a variable expression of the given type with the given name. As this variable has no indices
+                 * it is only meant as a dummy and needs to be replaced with a "full" variable expression.
+                 *
+                 * @param type The type of the variable.
+                 * @param variableName The name of the variable.
+                 */
+				VariableExpression(ReturnType type, std::string const& variableName);
 				
-				VariableExpression(ReturnType type, uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string variableName);
+                /*!
+                 * Creates a variable expression of the given type with the given name and indices.
+                 *
+                 * @param type The type of the variable.
+                 * @param globalIndex The global (i.e. program-wide) index of the variable.
+                 * @param variableName The name of the variable.
+                 */
+				VariableExpression(ReturnType type, uint_fast64_t globalIndex, std::string const& variableName);
+                
+				virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
 				
-				VariableExpression(VariableExpression const& oldExpression, std::string const& newName, uint_fast64_t newGlobalIndex);
+				virtual void accept(ExpressionVisitor* visitor) override;
 				
-				virtual ~VariableExpression();
+				virtual std::string toString() const override;
 				
-				virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, parser::prismparser::VariableState const& variableState) const;
+				virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
 				
-				virtual void accept(ExpressionVisitor* visitor);
+				virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
 				
-				virtual std::string toString() const;
+				virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
 				
-				virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const;
-				
-				virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const;
-				
-				virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const;
-				
+                /*!
+                 * Retrieves the name of the variable.
+                 *
+                 * @return The name of the variable.
+                 */
 				std::string const& getVariableName() const;
 				
-				uint_fast64_t getLocalVariableIndex() const;
-				
+                /*!
+                 * Retrieves the global (i.e. program-wide) index of the variable.
+                 *
+                 * @return The global index of the variable.
+                 */
 				uint_fast64_t getGlobalVariableIndex() const;
 				
 			private:
-				uint_fast64_t localIndex;
+                // The global index of the variable.
 				uint_fast64_t globalIndex;
+                
+                // The name of the variable.
 				std::string variableName;
 			};
 			
@@ -68,4 +83,4 @@ namespace storm {
 	} // namespace ir
 } // namespace storm
 
-#endif /* VARIABLEEXPRESSION_H_ */
+#endif /* STORM_IR_EXPRESSIONS_VARIABLEEXPRESSION_H_ */

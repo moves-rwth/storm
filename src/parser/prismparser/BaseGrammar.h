@@ -63,7 +63,7 @@ namespace prism {
 		 * @returns Boolean literal.
 		 */
 		std::shared_ptr<BaseExpression> createBoolLiteral(const bool value) {
-			return std::shared_ptr<BooleanLiteral>(new BooleanLiteral(value));
+			return std::shared_ptr<BooleanLiteralExpression>(new BooleanLiteralExpression(value));
 		}
 		/*!
 		 * Create a new double literal with the given value.
@@ -71,7 +71,7 @@ namespace prism {
 		 * @returns Double literal.
 		 */
 		std::shared_ptr<BaseExpression> createDoubleLiteral(const double value) {
-			return std::shared_ptr<DoubleLiteral>(new DoubleLiteral(value));
+			return std::shared_ptr<DoubleLiteralExpression>(new DoubleLiteralExpression(value));
 		}
 		/*!
 		 * Create a new integer literal with the given value.
@@ -79,7 +79,7 @@ namespace prism {
 		 * @returns Integer literal.
 		 */
 		std::shared_ptr<BaseExpression> createIntLiteral(const int_fast64_t value) {
-			return std::shared_ptr<IntegerLiteral>(new IntegerLiteral(value));
+			return std::shared_ptr<IntegerLiteralExpression>(new IntegerLiteralExpression(value));
 		}
 		
 		/*!
@@ -184,7 +184,7 @@ namespace prism {
 		 * @returns Boolean variable.
 		 */
 		std::shared_ptr<BaseExpression> getBoolVariable(const std::string name) {
-			return state->getBooleanVariable(name);
+			return state->getBooleanVariableExpression(name);
 		}
 		/*!
 		 * Retrieve integer variable by name.
@@ -192,7 +192,7 @@ namespace prism {
 		 * @returns Integer variable.
 		 */
 		std::shared_ptr<BaseExpression> getIntVariable(const std::string name) {
-			return state->getIntegerVariable(name);
+			return state->getIntegerVariableExpression(name);
 		}
 
 		/*!

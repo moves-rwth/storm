@@ -22,6 +22,7 @@
 #include "src/parser/prismparser/IntegerExpressionGrammar.h"
 #include "src/parser/prismparser/IdentifierGrammars.h"
 #include "src/parser/prismparser/VariableState.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -63,33 +64,34 @@ void PrismGrammar::addBooleanAssignment(std::string const& variable, std::shared
 }
     
 Module PrismGrammar::renameModule(std::string const& newName, std::string const& oldName, std::map<std::string, std::string>& renaming) {
-	this->state->moduleNames_.add(name, name);
-	Module* old = this->moduleMap_.find(oldname);
+	this->state->moduleNames_.add(newName, newName);
+	Module* old = this->moduleMap_.find(oldName);
 	if (old == nullptr) {
 		LOG4CPLUS_ERROR(logger, "Renaming module failed: module " << oldName << " does not exist.");
 		throw storm::exceptions::InvalidArgumentException() << "Renaming module failed: module " << oldName << " does not exist.";
 	}
-	Module res(*old, newName, renaming, this->state);
-	this->moduleMap_.at(name) = res;
+	Module res(*old, newName, renaming, *this->state);
+	this->moduleMap_.at(newName) = res;
 	return res;
 }
     
-Module PrismGrammar::createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands) {
+Module PrismGrammar::createModule(std::string const& name, std::vector<BooleanVariable> const& bools, std::vector<IntegerVariable> const& ints, std::map<std::string, uint_fast64_t> const& boolids, std::map<std::string, uint_fast64_t> const& intids, std::vector<storm::ir::Command> const& commands) {
 	this->state->moduleNames_.add(name, name);
 	Module res(name, bools, ints, boolids, intids, commands);
 	this->moduleMap_.at(name) = res;
 	return res;
 }
 
-void PrismGrammar::createIntegerVariable(const std::string name, std::shared_ptr<BaseExpression> lower, std::shared_ptr<BaseExpression> upper, std::shared_ptr<BaseExpression> init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
+void PrismGrammar::createIntegerVariable(std::string const& name, std::shared_ptr<BaseExpression> const& lower, std::shared_ptr<BaseExpression> const& upper, std::shared_ptr<BaseExpression> const& init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
 	uint_fast64_t id = this->state->addIntegerVariable(name);
-	vars.emplace_back(id, name, lower, upper, init);
+	vars.emplace_back(this->state->nextLocalIntegerVariableIndex++, id, name, lower, upper, init);
 	varids[name] = id;
 	this->state->localIntegerVariables_.add(name, name);
 }
-void PrismGrammar::createBooleanVariable(const std::string name, std::shared_ptr<BaseExpression> init, std::vector<BooleanVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
+    
+void PrismGrammar::createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
 	uint_fast64_t id = this->state->addBooleanVariable(name);
-	vars.emplace_back(id, name, init);
+	vars.emplace_back(this->state->nextLocalIntegerVariableIndex++, id, name, init);
 	varids[name] = id;
 	this->state->localBooleanVariables_.add(name, name);
 }
@@ -148,8 +150,8 @@ PrismGrammar::PrismGrammar() : PrismGrammar::base_type(start), state(new Variabl
 
 	// This block defines all entities that are needed for parsing a single command.
 	assignmentDefinition =
-			(qi::lit("(") >> unassignedLocalIntegerVariableName > qi::lit("'") > qi::lit("=") > IntegerExpressionGrammar::instance(this->state) > qi::lit(")"))[phoenix::bind(&PrismGrammar::addIntAssignment, this, qi::_1, qi::_2, qi::_r2)] |
-			(qi::lit("(") >> unassignedLocalBooleanVariableName > qi::lit("'") > qi::lit("=") > BooleanExpressionGrammar::instance(this->state) > qi::lit(")"))[phoenix::bind(&PrismGrammar::addBoolAssignment, this, qi::_1, qi::_2, qi::_r1)];
+			(qi::lit("(") >> unassignedLocalIntegerVariableName > qi::lit("'") > qi::lit("=") > IntegerExpressionGrammar::instance(this->state) > qi::lit(")"))[phoenix::bind(&PrismGrammar::addIntegerAssignment, this, qi::_1, qi::_2, qi::_r2)] |
+			(qi::lit("(") >> unassignedLocalBooleanVariableName > qi::lit("'") > qi::lit("=") > BooleanExpressionGrammar::instance(this->state) > qi::lit(")"))[phoenix::bind(&PrismGrammar::addBooleanAssignment, this, qi::_1, qi::_2, qi::_r1)];
 	assignmentDefinition.name("assignment");
 	assignmentDefinitionList = assignmentDefinition(qi::_r1, qi::_r2) % "&";
 	assignmentDefinitionList.name("assignment list");

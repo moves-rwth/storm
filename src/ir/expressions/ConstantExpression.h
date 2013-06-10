@@ -8,7 +8,7 @@
 #ifndef STORM_IR_EXPRESSIONS_CONSTANTEXPRESSION_H_
 #define STORM_IR_EXPRESSIONS_CONSTANTEXPRESSION_H_
 
-#include "src/ir/expressions/BaseExpression.h"
+#include "BaseExpression.h"
 
 namespace storm {
     namespace ir {
@@ -26,7 +26,7 @@ namespace storm {
                  * @param type The type of the constant.
                  * @param constantName The name of the constant.
                  */
-                ConstantExpression(ReturnType type, std::string constantName);
+                ConstantExpression(ReturnType type, std::string const& constantName);
                 
                 /*!
                  * Retrieves the name of the constant.

@@ -192,7 +192,7 @@ private:
      * @param integerVariableToLocalIndexMap A mapping of boolean variables to module-local indices.
      * @param commands The commands associated with this module.
      */
-	Module createModule(std::string const& name, std::vector<BooleanVariable> const& booleanVariables, std::vector<IntegerVariable> const& integerVariables, std::map<std::string, uint_fast64_t> const& booleanVariableToLocalIndexMap, std::map<std::string, uint_fast64_t> integerVariableToLocalIndexMap, std::vector<storm::ir::Command> const& commands);
+	Module createModule(std::string const& name, std::vector<BooleanVariable> const& booleanVariables, std::vector<IntegerVariable> const& integerVariables, std::map<std::string, uint_fast64_t> const& booleanVariableToLocalIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToLocalIndexMap, std::vector<storm::ir::Command> const& commands);
 
     /*!
      * Creates an integer variable with the given name, domain and initial value and adds it to the
@@ -202,10 +202,9 @@ private:
      * @param lower The expression that defines the lower bound of the domain.
      * @param upper The expression that defines the upper bound of the domain.
      * @param init The expression that defines the initial value of the variable.
-     * @param integerVariableToLocalIndexMap A mapping of integer variables to local indices.
      * @param integerVariableToGlobalIndexMap A mapping of integer variables to global indices.
      */
-	void createIntegerVariable(std::string const& name, std::shared_ptr<BaseExpression> const& lower, std::shared_ptr<BaseExpression> const& upper, std::shared_ptr<BaseExpression> const& init, std::vector<IntegerVariable>& integerVariables, std::map<std::string, uint_fast64_t>& integerVariableToLocalIndexMap, std::map<std::string, uint_fast64_t>& integerVariableToGlobalIndexMap);
+	void createIntegerVariable(std::string const& name, std::shared_ptr<BaseExpression> const& lower, std::shared_ptr<BaseExpression> const& upper, std::shared_ptr<BaseExpression> const& init, std::vector<IntegerVariable>& integerVariables, std::map<std::string, uint_fast64_t>& integerVariableToGlobalIndexMap);
         
     /*!
     * Creates an boolean variable with the given name and initial value and adds it to the
@@ -213,10 +212,9 @@ private:
     *
     * @param name The name of the boolean variable.
     * @param init The expression that defines the initial value of the variable.
-    * @param booleanVariableToLocalIndexMap A mapping of boolean variables to local indices.
     * @param booleanVariableToGlobalIndexMap A mapping of boolean variables to global indices.
     */
-	void createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& booleanVariables, std::map<std::string, uint_fast64_t>& booleanVariableToLocalIndexMap, std::map<std::string, uint_fast64_t>& booleanVariableToGlobalIndexMap);
+	void createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& booleanVariables, std::map<std::string, uint_fast64_t>& booleanVariableToGlobalIndexMap);
 };
 
 

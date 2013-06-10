@@ -11,29 +11,35 @@
 #include "BaseExpression.h"
 
 namespace storm {
-
-namespace ir {
-
-namespace expressions {
-
-class UnaryExpression : public BaseExpression {
-public:
-	UnaryExpression(ReturnType type, std::shared_ptr<BaseExpression> child) : BaseExpression(type), child(child) {
-
-	}
-
-	std::shared_ptr<BaseExpression> const& getChild() const {
-		return child;
-	}
-
-private:
-	std::shared_ptr<BaseExpression> child;
-};
-
-} // namespace expressions
-
-} // namespace ir
-
+    namespace ir {
+        namespace expressions {
+            
+            /*!
+             * A class representing a generic unary expression.
+             */
+            class UnaryExpression : public BaseExpression {
+            public:
+                /*!
+                 * Constructs a unary expression with the given type and child.
+                 * @param type The type of the unary expression.
+                 * @param right The child of the unary expression.
+                 */
+                UnaryExpression(ReturnType type, std::shared_ptr<BaseExpression> child);
+                
+                /*!
+                 * Retrieves the child of the expression node.
+                 *
+                 * @return The child of the expression node.
+                 */
+                std::shared_ptr<BaseExpression> const& getChild() const;
+                
+            private:
+                // The left child of the unary expression.
+                std::shared_ptr<BaseExpression> child;
+            };
+            
+        } // namespace expressions
+    } // namespace ir
 } // namespace storm
 
 #endif /* STORM_IR_EXPRESSIONS_UNARYEXPRESSION_H_ */

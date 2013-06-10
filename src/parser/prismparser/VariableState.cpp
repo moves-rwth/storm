@@ -51,18 +51,18 @@ uint_fast64_t VariableState::getNextGlobalIntegerVariableIndex() const {
     return this->nextGlobalIntegerVariableIndex;
 }
     
-std::pair<uint_fast64_t, uint_fast64_t> VariableState::addBooleanVariable(std::string const& name) {
+uint_fast64_t VariableState::addBooleanVariable(std::string const& name) {
 	if (firstRun) {
 		LOG4CPLUS_TRACE(logger, "Adding boolean variable " << name << " with new id " << this->nextGlobalBooleanVariableIndex << ".");
-		this->booleanVariables_.add(name, std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::bool_, this->nextLocalBooleanVariableIndex, this->nextGlobalBooleanVariableIndex, name)));
+		this->booleanVariables_.add(name, std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::bool_, this->nextGlobalBooleanVariableIndex, name)));
 		this->booleanVariableNames_.add(name, name);
 		++this->nextGlobalBooleanVariableIndex;
         ++this->nextLocalBooleanVariableIndex;
-		return std::make_pair(this->nextLocalBooleanVariableIndex - 1, this->nextGlobalBooleanVariableIndex - 1);
+		return this->nextGlobalBooleanVariableIndex - 1;
 	} else {
 		std::shared_ptr<VariableExpression> variableExpression = this->booleanVariables_.at(name);
 		if (variableExpression != nullptr) {
-			return std::make_pair(variableExpression->getLocalVariableIndex(), variableExpression->getGlobalVariableIndex());
+			return variableExpression->getGlobalVariableIndex();
 		} else {
 			LOG4CPLUS_ERROR(logger, "Boolean variable " << name << " does not exist.");
             throw storm::exceptions::InvalidArgumentException() << "Boolean variable " << name << " does not exist.";
@@ -70,18 +70,18 @@ std::pair<uint_fast64_t, uint_fast64_t> VariableState::addBooleanVariable(std::s
 	}
 }
 
-std::pair<uint_fast64_t, uint_fast64_t> VariableState::addIntegerVariable(std::string const& name) {
+uint_fast64_t VariableState::addIntegerVariable(std::string const& name) {
 	if (firstRun) {
 		LOG4CPLUS_TRACE(logger, "Adding integer variable " << name << " with new id " << this->nextGlobalIntegerVariableIndex << ".");
-		this->integerVariables_.add(name, std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::int_, this->nextLocalIntegerVariableIndex, this->nextGlobalIntegerVariableIndex, name)));
+		this->integerVariables_.add(name, std::shared_ptr<VariableExpression>(new VariableExpression(storm::ir::expressions::BaseExpression::int_, this->nextGlobalIntegerVariableIndex, name)));
 		this->integerVariableNames_.add(name, name);
 		++this->nextGlobalIntegerVariableIndex;
         ++this->nextLocalIntegerVariableIndex;
-		return std::make_pair(this->nextLocalIntegerVariableIndex, this->nextGlobalIntegerVariableIndex - 1);
+		return this->nextGlobalIntegerVariableIndex - 1;
 	} else {
 		std::shared_ptr<VariableExpression> variableExpression = this->integerVariables_.at(name);
 		if (variableExpression != nullptr) {
-			return std::make_pair(variableExpression->getLocalVariableIndex(), variableExpression->getGlobalVariableIndex());
+			return variableExpression->getGlobalVariableIndex();
 		} else {
 			LOG4CPLUS_ERROR(logger, "Integer variable " << name << " does not exist.");
             throw storm::exceptions::InvalidArgumentException() << "Integer variable " << name << " does not exist.";
@@ -90,7 +90,7 @@ std::pair<uint_fast64_t, uint_fast64_t> VariableState::addIntegerVariable(std::s
 }
 
 std::shared_ptr<VariableExpression> VariableState::getBooleanVariableExpression(std::string const& name) const {
-	std::shared_ptr<VariableExpression>* variableExpression = this->booleanVariables_.find(name);
+	std::shared_ptr<VariableExpression> const* variableExpression = this->booleanVariables_.find(name);
 	if (variableExpression != nullptr) {
 		return *variableExpression;
 	} else {
@@ -105,7 +105,7 @@ std::shared_ptr<VariableExpression> VariableState::getBooleanVariableExpression(
 }
 
 std::shared_ptr<VariableExpression> VariableState::getIntegerVariableExpression(std::string const& name) const {
-	std::shared_ptr<VariableExpression>* variableExpression = this->integerVariables_.find(name);
+	std::shared_ptr<VariableExpression> const* variableExpression = this->integerVariables_.find(name);
 	if (variableExpression != nullptr) {
 		return *variableExpression;
 	} else {
@@ -120,7 +120,7 @@ std::shared_ptr<VariableExpression> VariableState::getIntegerVariableExpression(
 }
     
 std::shared_ptr<VariableExpression> VariableState::getVariableExpression(std::string const& name) const {
-	std::shared_ptr<VariableExpression>* variableExpression = this->integerVariables_.find(name);
+	std::shared_ptr<VariableExpression> const* variableExpression = this->integerVariables_.find(name);
 	if (variableExpression != nullptr) {
 		return *variableExpression;
 	}

@@ -26,7 +26,7 @@ namespace storm {
                  */
                 DoubleLiteralExpression(double value);
                 
-                virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, parser::prismparser::VariableState const& variableState) const override;
+                virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
                 
                 virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
                 
@@ -35,7 +35,7 @@ namespace storm {
                 virtual std::string toString() const override;
                 
             private:
-                // The value of the boolean literal.
+                // The value of the double literal.
                 double value;
             };
             

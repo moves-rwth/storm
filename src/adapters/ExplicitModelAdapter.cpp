@@ -107,13 +107,15 @@ namespace adapters {
 		return ss.str();
 	}
 
-	std::shared_ptr<std::vector<double>> ExplicitModelAdapter::getStateRewards(std::vector<storm::ir::StateReward> const & rewards) {
+	std::shared_ptr<std::vector<double>> ExplicitModelAdapter::getStateRewards(std::vector<storm::ir::StateReward> const& rewards) {
 		std::shared_ptr<std::vector<double>> results(new std::vector<double>(this->allStates.size()));
 		for (uint_fast64_t index = 0; index < this->allStates.size(); index++) {
 			(*results)[index] = 0;
 			for (auto reward: rewards) {
-				// Add this reward to the state.
-				(*results)[index] += reward.getReward(this->allStates[index]);
+				// Add this reward to the state if the state is included in the state reward.
+                if (reward.getStatePredicate()->getValueAsBool(this->allStates[index]) == true) {
+                    (*results)[index] += reward.getRewardValue()->getValueAsDouble(this->allStates[index]);
+                }
 			}
 		}
 		return results;
@@ -154,13 +156,13 @@ namespace adapters {
 
 			for (uint_fast64_t j = 0; j < module.getNumberOfBooleanVariables(); ++j) {
 				storm::ir::BooleanVariable var = module.getBooleanVariable(j);
-				this->booleanVariables[var.getIndex()] = var;
-				this->booleanVariableToIndexMap[var.getName()] = var.getIndex();
+				this->booleanVariables[var.getGlobalIndex()] = var;
+				this->booleanVariableToIndexMap[var.getName()] = var.getGlobalIndex();
 			}
 			for (uint_fast64_t j = 0; j < module.getNumberOfIntegerVariables(); ++j) {
 				storm::ir::IntegerVariable var = module.getIntegerVariable(j);
-				this->integerVariables[var.getIndex()] = var;
-				this->integerVariableToIndexMap[var.getName()] = var.getIndex();
+				this->integerVariables[var.getGlobalIndex()] = var;
+				this->integerVariableToIndexMap[var.getName()] = var.getGlobalIndex();
 			}
 		}
 	}
@@ -185,13 +187,13 @@ namespace adapters {
 		for (uint_fast64_t i = 0; i < this->program.getNumberOfModules(); ++i) {
 			storm::ir::Module const& module = this->program.getModule(i);
 			
-			std::shared_ptr<std::set<uint_fast64_t>> ids = module.getCommandsByAction(action);
-			if (ids->size() == 0) continue;
+			std::set<uint_fast64_t> const& ids = module.getCommandsByAction(action);
+			if (ids.size() == 0) continue;
 			std::list<storm::ir::Command> commands;
 			
 			// Look up commands by their id. Add, if guard holds.
-			for (uint_fast64_t id : *ids) {
-				storm::ir::Command cmd = module.getCommand(id);
+			for (uint_fast64_t id : ids) {
+				storm::ir::Command const& cmd = module.getCommand(id);
 				if (cmd.getGuard()->getValueAsBool(state)) {
 					commands.push_back(module.getCommand(id));
 				}
@@ -468,7 +470,9 @@ namespace adapters {
 					map[elem.first] += elem.second;
 					if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
 						for (auto reward : this->rewardModel->getTransitionRewards()) {
-							rewardMap[elem.first] += reward.getReward(choice.first, this->allStates[state]);
+                            if (reward.getStatePredicate()->getValueAsBool(this->allStates[state]) == true) {
+                                rewardMap[elem.first] += reward.getRewardValue()->getValueAsDouble(this->allStates[state]);
+                            }
 						}
 					}
 				}
@@ -513,7 +517,9 @@ namespace adapters {
 					if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
 						double rewardValue = 0;
 						for (auto reward : this->rewardModel->getTransitionRewards()) {
-							rewardValue = reward.getReward(choice.first, this->allStates[state]);
+                            if (reward.getStatePredicate()->getValueAsBool(this->allStates[state]) == true) {
+                                rewardValue = reward.getRewardValue()->getValueAsDouble(this->allStates[state]);
+                            }
 						}
 						this->transitionRewards->addNextValue(nextRow, it.first, rewardValue);
 					}

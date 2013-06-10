@@ -13,11 +13,11 @@ namespace storm {
     namespace ir {
         namespace expressions {
             
-            DoubleConstantExpression::DoubleConstantExpression(std::string const& constantName) : ConstantExpression(double_, constantName), defined(false), value(0) {
+            DoubleConstantExpression::DoubleConstantExpression(std::string const& constantName) : ConstantExpression(double_, constantName), value(0), defined(false) {
                 // Nothing to do here.
             }
             
-            std::shared_ptr<BaseExpression> DoubleConstantExpression::clone(std::map<std::string, std::string> const& renaming, parser::prismparser::VariableState const& variableState) const {
+            std::shared_ptr<BaseExpression> DoubleConstantExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new DoubleConstantExpression(*this));
             }
             
@@ -30,24 +30,24 @@ namespace storm {
                 }
             }
             
-            virtual void DoubleConstantExpression::accept(ExpressionVisitor* visitor) {
+            void DoubleConstantExpression::accept(ExpressionVisitor* visitor) {
                 visitor->visit(this);
             }
             
-            virtual std::string DoubleConstantExpression::toString() const {
+            std::string DoubleConstantExpression::toString() const {
                 std::stringstream result;
-                result << this->constantName;
+                result << this->getConstantName();
                 if (defined) {
                     result << "[" << value << "]";
                 }
                 return result.str();
             }
             
-            bool DoubleConstantExpression::isDefined() {
+            bool DoubleConstantExpression::isDefined() const {
                 return defined;
             }
             
-            double DoubleConstantExpression::getValue() {
+            double DoubleConstantExpression::getValue() const {
                 return value;
             }
             

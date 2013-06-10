@@ -26,7 +26,15 @@ std::string StateReward::toString() const {
 	result << "\t" << statePredicate->toString() << ": " << rewardValue->toString() << ";";
 	return result.str();
 }
+    
+std::shared_ptr<storm::ir::expressions::BaseExpression> StateReward::getStatePredicate() const {
+    return this->statePredicate;
+}
 
+std::shared_ptr<storm::ir::expressions::BaseExpression> StateReward::getRewardValue() const {
+    return this->rewardValue;
+}
+    
 } // namespace ir
 
 } // namespace storm

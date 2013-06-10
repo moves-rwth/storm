@@ -27,6 +27,18 @@ std::string TransitionReward::toString() const {
 	return result.str();
 }
 
+std::string const& TransitionReward::getActionName() const {
+    return this->commandName;
+}
+    
+std::shared_ptr<storm::ir::expressions::BaseExpression> TransitionReward::getStatePredicate() const {
+    return this->statePredicate;
+}
+    
+std::shared_ptr<storm::ir::expressions::BaseExpression> TransitionReward::getRewardValue() const {
+    return this->rewardValue;
+}
+    
 } // namespace ir
 
 } // namespace storm

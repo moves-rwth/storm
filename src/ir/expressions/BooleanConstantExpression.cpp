@@ -18,7 +18,7 @@ namespace storm {
                 value = false;
             }
             
-            std::shared_ptr<BaseExpression> BooleanConstantExpression::clone(std::map<std::string, std::string> const& renaming, parser::prismparser::VariableState const& variableState) const {
+            std::shared_ptr<BaseExpression> BooleanConstantExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new BooleanConstantExpression(*this));
             }
             

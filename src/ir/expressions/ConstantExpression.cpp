@@ -5,13 +5,13 @@
  *      Author: Christian Dehnert
  */
 
-#include "src/ir/expressions/ConstantExpression.h"
+#include "ConstantExpression.h"
 
 namespace storm {
     namespace ir {
         namespace expressions {
             
-            ConstantExpression::ConstantExpression(ReturnType type, std::string constantName) : BaseExpression(type), constantName(constantName) {
+            ConstantExpression::ConstantExpression(ReturnType type, std::string const& constantName) : BaseExpression(type), constantName(constantName) {
                 // Nothing to do here.
             }
             
@@ -19,7 +19,7 @@ namespace storm {
                 return constantName;
             }
             
-            virtual std::string ConstantExpression::toString() const {
+            std::string ConstantExpression::toString() const {
                 return constantName;
             }
             

@@ -2,80 +2,60 @@
  * UnaryBooleanFunctionExpression.h
  *
  *  Created on: 03.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef UNARYBOOLEANFUNCTIONEXPRESSION_H_
-#define UNARYBOOLEANFUNCTIONEXPRESSION_H_
+#ifndef STORM_IR_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_
+#define STORM_IR_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_
 
-#include "src/ir/expressions/UnaryExpression.h"
+#include "UnaryExpression.h"
 
 namespace storm {
+    namespace ir {
+        namespace expressions {
+            
+            /*!
+             * A class representing a unary function expression of boolean type.
+             */
+            class UnaryBooleanFunctionExpression : public UnaryExpression {
+            public:
+                /*!
+                 * An enum type specifying the different functions applicable.
+                 */
+                enum FunctionType {NOT};
+                
+                /*!
+                 * Creates a unary boolean function expression tree node with the given child and function type.
+                 *
+                 * @param child The child of the node.
+                 * @param functionType The operator that is to be applied to the two children.
+                 */
+                UnaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> child, FunctionType functionType);
+                
+                virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
 
-namespace ir {
+                /*!
+                 * Retrieves the operator that is associated with this node.
+                 *
+                 * @param The operator that is associated with this node.
+                 */
+                FunctionType getFunctionType() const {
+                    return functionType;
+                }
+                
+                virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
+                
+                virtual void accept(ExpressionVisitor* visitor) override;
+                
+                virtual std::string toString() const override;
+                                
+            private:
+                // The operator that is associated with this node.
+                FunctionType functionType;
+            };
+            
+        } // namespace expressions
+    } // namespace ir
+} // namespace storm
 
-namespace expressions {
-
-class UnaryBooleanFunctionExpression : public UnaryExpression {
-public:
-	enum FunctionType {NOT};
-
-	UnaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> child, FunctionType functionType) : UnaryExpression(bool_, child), functionType(functionType) {
-
-	}
-
-	virtual ~UnaryBooleanFunctionExpression() {
-
-	}
-
-	virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, parser::prismparser::VariableState const& variableState) const {
-		return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getChild()->clone(renaming, variableState), this->functionType));
-	}
-
-	FunctionType getFunctionType() const {
-		return functionType;
-	}
-
-	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-		bool resultChild = this->getChild()->getValueAsBool(variableValues);
-		switch(functionType) {
-		case NOT: return !resultChild; break;
-		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-				<< "Unknown boolean unary operator: '" << functionType << "'.";
-		}
-	}
-
-	virtual void accept(ExpressionVisitor* visitor) {
-		visitor->visit(this);
-	}
-
-	virtual std::string toString() const {
-		std::string result = "";
-		switch (functionType) {
-		case NOT: result += "!"; break;
-		}
-		result += "(" + this->getChild()->toString() + ")";
-
-		return result;
-	}
-	virtual std::string dump(std::string prefix) const {
-		std::stringstream result;
-		result << prefix << "UnaryBooleanFunctionExpression" << std::endl;
-		switch (functionType) {
-		case NOT: result << prefix << "!" << std::endl; break;
-		}
-		result << this->getChild()->dump(prefix + "\t");
-		return result.str();
-	}
-
-private:
-	FunctionType functionType;
-};
-
-}
-
-}
-
-}
-
-#endif /* UNARYBOOLEANFUNCTIONEXPRESSION_H_ */
+#endif /* STORM_IR_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_ */

@@ -18,7 +18,7 @@ namespace storm {
                 // Nothing to do here.
             }
             
-            std::shared_ptr<BaseExpression> BinaryBooleanFunctionExpression::clone(std::map<std::string, std::string> const& renaming, parser::prismparser::VariableState const& variableState) const {
+            std::shared_ptr<BaseExpression> BinaryBooleanFunctionExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(this->getLeft()->clone(renaming, variableState), this->getRight()->clone(renaming, variableState), this->functionType));
             }
             
