@@ -2,88 +2,67 @@
  * BooleanConstantExpression.h
  *
  *  Created on: 04.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef BOOLEANCONSTANTEXPRESSION_H_
-#define BOOLEANCONSTANTEXPRESSION_H_
+#ifndef STORM_IR_EXPRESSIONS_BOOLEANCONSTANTEXPRESSION_H_
+#define STORM_IR_EXPRESSIONS_BOOLEANCONSTANTEXPRESSION_H_
 
 #include "ConstantExpression.h"
 
-#include <boost/lexical_cast.hpp>
-
 namespace storm {
+    namespace ir {
+        namespace expressions {
+            
+            /*!
+             * A class representing a boolean constant expression.
+             */
+            class BooleanConstantExpression : public ConstantExpression {
+            public:
+                /*!
+                 * Creates a boolean constant expression with the given constant name.
+                 *
+                 * @param constantName The name of the constant to use.
+                 */
+                BooleanConstantExpression(std::string const& constantName);
+                
+                virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, parser::prismparser::VariableState const& variableState) const override;
+                
+                virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
+                
+                virtual void accept(ExpressionVisitor* visitor) override;
+                
+                virtual std::string toString() const override;
 
-namespace ir {
+                /*!
+                 * Retrieves whether the constant is defined or not.
+                 *
+                 * @return True if the constant is defined.
+                 */
+                bool isDefined() const;
+                
+                /*!
+                 * Retrieves the value of the constant if it is defined and false otherwise.
+                 */
+                bool getValue() const;
+                
+                /*!
+                 * Defines the constant using the given value.
+                 *
+                 * @param value The value to use for defining the constant.
+                 */
+                void define(bool value);
+                
+            private:
+                // This member stores the value of the constant if it is defined.
+                bool value;
+                
+                // A flag indicating whether the member is defined or not.
+                bool defined;
+            };
+            
+        } // namespace expressions
+    } // namespace ir
+} // namespace storm
 
-namespace expressions {
-
-class BooleanConstantExpression : public ConstantExpression {
-public:
-	BooleanConstantExpression(std::string constantName) : ConstantExpression(bool_, constantName) {
-		defined = false;
-		value = false;
-	}
-	BooleanConstantExpression(const BooleanConstantExpression& bce)
-		: ConstantExpression(bce), value(bce.value), defined(bce.defined) {
-	}
-
-	virtual ~BooleanConstantExpression() {
-
-	}
-
-	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
-		return std::shared_ptr<BaseExpression>(new BooleanConstantExpression(*this));
-	}
-
-	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-		if (!defined) {
-			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-					<< "Boolean constant '" << this->getConstantName() << "' is undefined.";
-		} else {
-			return value;
-		}
-	}
-
-	virtual void accept(ExpressionVisitor* visitor) {
-		visitor->visit(this);
-	}
-
-	virtual std::string toString() const {
-		std::string result = this->constantName;
-		if (defined) {
-			result += "[" + boost::lexical_cast<std::string>(value) + "]";
-		}
-		return result;
-	}
-	
-	virtual std::string dump(std::string prefix) const {
-		std::stringstream result;
-		result << prefix << "BooleanConstantExpression " << this->toString() << std::endl;
-		return result.str();
-	}
-
-	bool isDefined() {
-		return defined;
-	}
-
-	bool getValue() {
-		return value;
-	}
-
-	void define(bool value) {
-		defined = true;
-		this->value = value;
-	}
-
-	bool value;
-	bool defined;
-};
-
-}
-
-}
-
-}
-
-#endif /* BOOLEANCONSTANTEXPRESSION_H_ */
+#endif /* STORM_IR_EXPRESSIONS_BOOLEANCONSTANTEXPRESSION_H_ */

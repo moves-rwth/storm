@@ -2,54 +2,48 @@
  * ConstantExpression.h
  *
  *  Created on: 03.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
-#ifndef CONSTANTEXPRESSION_H_
-#define CONSTANTEXPRESSION_H_
+#ifndef STORM_IR_EXPRESSIONS_CONSTANTEXPRESSION_H_
+#define STORM_IR_EXPRESSIONS_CONSTANTEXPRESSION_H_
 
 #include "src/ir/expressions/BaseExpression.h"
 
 namespace storm {
+    namespace ir {
+        namespace expressions {
+            
+            /*!
+             * A class representing a generic constant expression.
+             */
+            class ConstantExpression : public BaseExpression {
+            public:
+                
+                /*!
+                 * Constructs a constant expression of the given type with the given constant name.
+                 *
+                 * @param type The type of the constant.
+                 * @param constantName The name of the constant.
+                 */
+                ConstantExpression(ReturnType type, std::string constantName);
+                
+                /*!
+                 * Retrieves the name of the constant.
+                 *
+                 * @return The name of the constant.
+                 */
+                std::string const& getConstantName() const;
+                
+                virtual std::string toString() const override;
+                
+            private:
+                // The name of the constant.
+                std::string constantName;
+            };
+            
+        } // namespace expressions
+    } // namespace ir
+} // namespace storm
 
-namespace ir {
-
-namespace expressions {
-
-class ConstantExpression : public BaseExpression {
-public:
-	std::string constantName;
-
-	ConstantExpression(ReturnType type, std::string constantName) : BaseExpression(type), constantName(constantName) {
-	}
-	ConstantExpression(const ConstantExpression& ce)
-		: BaseExpression(ce), constantName(ce.constantName) {
-
-	}
-
-	virtual ~ConstantExpression() {
-
-	}
-
-	std::string const& getConstantName() const {
-		return constantName;
-	}
-
-	virtual std::string toString() const {
-		return constantName;
-	}
-	
-	virtual std::string dump(std::string prefix) const {
-		std::stringstream result;
-		result << prefix << "ConstantExpression " << this->toString() << std::endl;
-		return result.str();
-	}
-};
-
-}
-
-}
-
-}
-
-#endif /* CONSTANTEXPRESSION_H_ */
+#endif /* STORM_IR_EXPRESSIONS_CONSTANTEXPRESSION_H_ */

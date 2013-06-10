@@ -29,7 +29,7 @@ std::ostream& operator<<(std::ostream& out, qi::symbols<char, T>& symbols);
 /*!
  * This class contains the internal state that is needed for parsing a PRISM model.
  */
-struct VariableState : public storm::ir::VariableAdder {
+struct VariableState {
 
     /*!
      * Creates a new variable state object. By default, this object will be set to a state in which
@@ -115,7 +115,7 @@ struct VariableState : public storm::ir::VariableAdder {
 	 * @param name The name of the variable.
 	 * @return A pair containing the local and global index of the variable.
 	 */
-    std::pair<uint_fast64_t, uint_fast64_t> addBooleanVariable(std::string const& name);
+    virtual std::pair<uint_fast64_t, uint_fast64_t> addBooleanVariable(std::string const& name);
     
 	/*!
 	 * Adds a new integer variable with the given name.
@@ -123,7 +123,7 @@ struct VariableState : public storm::ir::VariableAdder {
 	 * @param name The name of the variable.
 	 * @return A pair containing the local and global index of the variable.
 	 */
-    std::pair<uint_fast64_t, uint_fast64_t> addIntegerVariable(std::string const& name);
+    virtual std::pair<uint_fast64_t, uint_fast64_t> addIntegerVariable(std::string const& name);
 
 	/*!
 	 * Retrieves the variable expression for the boolean variable with the given name.

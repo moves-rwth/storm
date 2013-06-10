@@ -14,7 +14,6 @@
 #include <vector>
 #include <memory>
 
-#include "VariableStateInterface.h"
 #include "BooleanVariable.h"
 #include "IntegerVariable.h"
 #include "Command.h"
@@ -22,8 +21,14 @@
 
 namespace storm {
 
+namespace parser {
+namespace prismparser {
+    class VariableState;
+} // namespace prismparser
+} // namespace parser
+    
 namespace ir {
-
+    
 /*!
  * A class representing a module.
  */
@@ -65,7 +70,7 @@ public:
      * @param adder An instance of the VariableAdder interface that keeps track of all the variables in the probabilistic
      * program.
 	 */
-	Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap, std::shared_ptr<VariableStateInterface> const& variableState);
+	Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap, parser::prismparser::VariableState const& variableState);
 
 	/*!
 	 * Retrieves the number of boolean variables in the module.

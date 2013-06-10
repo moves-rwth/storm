@@ -28,7 +28,7 @@ public:
 
 	}
 
-	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
+	virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, parser::prismparser::VariableState const& variableState) const {
 		return std::shared_ptr<BaseExpression>(new IntegerConstantExpression(*this));
 	}
 

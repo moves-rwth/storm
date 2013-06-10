@@ -1,14 +1,12 @@
 /* 
- * File:   BoostIncludes.h
- * Author: nafur
+ * File:   Includes
+ * Author: Gereon Kremer
  *
  * Created on April 10, 2013, 4:46 PM
  */
 
 #ifndef BOOSTINCLUDES_H
 #define	BOOSTINCLUDES_H
-
-#define DEBUGPRISM
 
 // Used for Boost spirit.
 #include <boost/typeof/typeof.hpp>

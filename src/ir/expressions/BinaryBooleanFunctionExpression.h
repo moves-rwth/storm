@@ -2,7 +2,7 @@
  * BinaryBooleanFunctionExpression.h
  *
  *  Created on: 03.01.2013
- *      Author: chris
+ *      Author: Christian Dehnert
  */
 
 #ifndef STORM_IR_EXPRESSIONS_BINARYBOOLEANFUNCTIONEXPRESSION_H_
@@ -10,82 +10,51 @@
 
 #include "src/ir/expressions/BinaryExpression.h"
 
-#include <memory>
-#include <sstream>
-
 namespace storm {
-
-namespace ir {
-
-namespace expressions {
-
-class BinaryBooleanFunctionExpression : public BinaryExpression {
-public:
-	enum FunctionType {AND, OR};
-
-	BinaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right, FunctionType functionType) : BinaryExpression(bool_, left, right), functionType(functionType) {
-
-	}
-
-	virtual ~BinaryBooleanFunctionExpression() {
-
-	}
-
-	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
-		return std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(this->getLeft()->clone(renaming, bools, ints), this->getRight()->clone(renaming, bools, ints), this->functionType));
-	}
-
-	virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-		bool resultLeft = this->getLeft()->getValueAsBool(variableValues);
-		bool resultRight = this->getRight()->getValueAsBool(variableValues);
-		switch(functionType) {
-		case AND: return resultLeft & resultRight; break;
-		case OR: return resultLeft | resultRight; break;
-		default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-				<< "Unknown boolean binary operator: '" << functionType << "'.";
-		}
-	}
-
-	FunctionType getFunctionType() const {
-		return functionType;
-	}
-
-	virtual void accept(ExpressionVisitor* visitor) {
-		visitor->visit(this);
-	}
-
-	virtual std::string toString() const {
-		std::stringstream result;
-		result << this->getLeft()->toString();
-		switch (functionType) {
-		case AND: result << " & "; break;
-		case OR: result << " | "; break;
-		}
-		result << this->getRight()->toString();
-
-		return result.str();
-	}
-	
-	virtual std::string dump(std::string prefix) const {
-		std::stringstream result;
-		result << prefix << "BinaryBooleanFunctionExpression" << std::endl;
-		result << this->getLeft()->dump(prefix + "\t");
-		switch (functionType) {
-		case AND: result << prefix << "&" << std::endl; break;
-		case OR: result << prefix << "|" << std::endl; break;
-		}
-		result << this->getRight()->dump(prefix + "\t");
-		return result.str();
-	}
-
-private:
-	FunctionType functionType;
-};
-
-} // namespace expressions
-
-} // namespace ir
-
+    namespace ir {
+        namespace expressions {
+            
+            /*!
+             * A class representing a binary function expression of boolean type.
+             */
+            class BinaryBooleanFunctionExpression : public BinaryExpression {
+            public:
+                /*!
+                 * An enum type specifying the different functions applicable.
+                 */
+                enum FunctionType {AND, OR};
+                
+                /*!
+                 * Creates a binary boolean function expression tree node with the given children and function type.
+                 *
+                 * @param left The left child of the node.
+                 * @param right The right child of the node.
+                 * @param functionType The operator that is to be applied to the two children.
+                 */
+                BinaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right, FunctionType functionType);
+                
+                virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, parser::prismparser::VariableState const& variableState) const override;
+                
+                virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
+                
+                /*!
+                 * Retrieves the operator that is associated with this node.
+                 *
+                 * @param The operator that is associated with this node.
+                 */
+                FunctionType getFunctionType() const;
+                
+                virtual void accept(ExpressionVisitor* visitor) override;
+                
+                virtual std::string toString() const override;
+                                
+            private:
+                // The operator that is associated with this node.
+                FunctionType functionType;
+            };
+            
+        } // namespace expressions
+    } // namespace ir    
 } // namespace storm
 
 #endif /* STORM_IR_EXPRESSIONS_BINARYBOOLEANFUNCTIONEXPRESSION_H_ */
