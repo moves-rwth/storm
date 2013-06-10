@@ -29,9 +29,9 @@ namespace storm {
                 ConstantExpression(ReturnType type, std::string const& constantName);
                 
                 /*!
-                 * Copy-constructs a constant expression from the given constant expression.
+                 * Copy-constructs from the given expression.
                  *
-                 * @param constantExpression The constant expression to copy.
+                 * @param constantExpression The expression to copy.
                  */
                 ConstantExpression(ConstantExpression const& constantExpression);
                 

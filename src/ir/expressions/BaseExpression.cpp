@@ -18,6 +18,10 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            BaseExpression::BaseExpression(BaseExpression const& baseExpression) : type(baseExpression.type) {
+                // Nothing to do here.
+            }
+            
             BaseExpression::~BaseExpression() {
                 // Nothing to do here.
             }

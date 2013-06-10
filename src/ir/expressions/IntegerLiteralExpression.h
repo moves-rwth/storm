@@ -26,6 +26,13 @@ namespace storm {
                  */
                 IntegerLiteralExpression(int_fast64_t value);
                 
+                /*!
+                 * Copy-constructs from the given expression.
+                 *
+                 * @param integerLiteralExpression The expression to copy.
+                 */
+                IntegerLiteralExpression(IntegerLiteralExpression const& integerLiteralExpression);
+                
                 virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
                 
                 virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;

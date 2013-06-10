@@ -26,6 +26,13 @@ namespace storm {
                  */
                 DoubleConstantExpression(std::string const& constantName);
                 
+                /*!
+                 * Copy-constructs from the given expression.
+                 *
+                 * @param doubleConstantExpression The expression to copy.
+                 */
+                DoubleConstantExpression(DoubleConstantExpression const& doubleConstantExpression);
+                
                 virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
                 
                 virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;

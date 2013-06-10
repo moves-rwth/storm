@@ -17,6 +17,11 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            DoubleConstantExpression::DoubleConstantExpression(DoubleConstantExpression const& doubleConstantExpression)
+            : ConstantExpression(doubleConstantExpression), value(doubleConstantExpression.value), defined(doubleConstantExpression.defined) {
+                // Nothing to do here.
+            }
+            
             std::shared_ptr<BaseExpression> DoubleConstantExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new DoubleConstantExpression(*this));
             }

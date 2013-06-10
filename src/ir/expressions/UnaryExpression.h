@@ -27,6 +27,13 @@ namespace storm {
                 UnaryExpression(ReturnType type, std::shared_ptr<BaseExpression> child);
                 
                 /*!
+                 * Copy-constructs from the given expression.
+                 *
+                 * @param unaryExpression The expression to copy.
+                 */
+                UnaryExpression(UnaryExpression const& unaryExpression);
+                
+                /*!
                  * Retrieves the child of the expression node.
                  *
                  * @return The child of the expression node.

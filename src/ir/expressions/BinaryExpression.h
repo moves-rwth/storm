@@ -28,6 +28,13 @@ namespace storm {
                 BinaryExpression(ReturnType type, std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right);
                 
                 /*!
+                 * Copy-constructs from the given expression.
+                 *
+                 * @param binaryExpression The expression to copy.
+                 */
+                BinaryExpression(BinaryExpression const& binaryExpression);
+                
+                /*!
                  * Retrieves the left child of the expression node.
                  *
                  * @return The left child of the expression node.

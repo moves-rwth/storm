@@ -17,6 +17,11 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            IntegerConstantExpression::IntegerConstantExpression(IntegerConstantExpression const& integerConstantExpression)
+            : ConstantExpression(integerConstantExpression), value(integerConstantExpression.value), defined(integerConstantExpression.defined) {
+                // Nothing to do here.
+            }
+            
             std::shared_ptr<BaseExpression> IntegerConstantExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new IntegerConstantExpression(*this));
             }

@@ -32,6 +32,13 @@ namespace storm {
                  */
                 UnaryNumericalFunctionExpression(ReturnType type, std::shared_ptr<BaseExpression> child, FunctionType functionType);
                 
+                /*!
+                 * Copy-constructs from the given expression.
+                 *
+                 * @param unaryNumericalFunctionExpression The expression to copy.
+                 */
+                UnaryNumericalFunctionExpression(UnaryNumericalFunctionExpression const& unaryNumericalFunctionExpression);
+                
                 virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
                 
                 virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;

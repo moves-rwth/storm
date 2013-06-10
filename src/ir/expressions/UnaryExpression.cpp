@@ -15,6 +15,10 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            UnaryExpression::UnaryExpression(UnaryExpression const& unaryExpression) : BaseExpression(unaryExpression), child(unaryExpression.child) {
+                // Nothing to do here.
+            }
+            
             std::shared_ptr<BaseExpression> const& UnaryExpression::getChild() const {
                 return child;
             }

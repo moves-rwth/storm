@@ -45,6 +45,13 @@ namespace storm {
                  */
 				VariableExpression(ReturnType type, uint_fast64_t globalIndex, std::string const& variableName);
                 
+                /*!
+                 * Copy-constructs from the given expression.
+                 *
+                 * @param variableExpression The expression to copy.
+                 */
+                VariableExpression(VariableExpression const& variableExpression);
+                
 				virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
 				
 				virtual void accept(ExpressionVisitor* visitor) override;

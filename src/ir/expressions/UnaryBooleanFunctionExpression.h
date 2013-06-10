@@ -32,6 +32,13 @@ namespace storm {
                  */
                 UnaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> child, FunctionType functionType);
                 
+                /*!
+                 * Copy-constructs from the given expression.
+                 *
+                 * @param unaryBooleanFunctionExpression The expression to copy.
+                 */
+                UnaryBooleanFunctionExpression(UnaryBooleanFunctionExpression const& unaryBooleanFunctionExpression);
+                
                 virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
 
                 /*!

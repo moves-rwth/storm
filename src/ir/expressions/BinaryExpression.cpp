@@ -16,6 +16,10 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            BinaryExpression::BinaryExpression(BinaryExpression const& binaryExpression) : BaseExpression(binaryExpression.getType()), left(binaryExpression.left), right(binaryExpression.right) {
+                // Nothing to do here.
+            }
+
             std::shared_ptr<BaseExpression> const& BinaryExpression::getLeft() const {
                 return left;
             }

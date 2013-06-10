@@ -15,6 +15,11 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            BooleanLiteralExpression::BooleanLiteralExpression(BooleanLiteralExpression const& booleanLiteralExpression)
+            : BaseExpression(booleanLiteralExpression), value(booleanLiteralExpression.value) {
+                // Nothing to do here.
+            }
+
             std::shared_ptr<BaseExpression> BooleanLiteralExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->value));
             }

@@ -15,7 +15,12 @@ namespace storm {
             
             BinaryRelationExpression::BinaryRelationExpression(std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right, RelationType relationType)
             : BinaryExpression(bool_, left, right), relationType(relationType) {
-                // Nothing to do here
+                // Nothing to do here.
+            }
+            
+            BinaryRelationExpression::BinaryRelationExpression(BinaryRelationExpression const& binaryRelationExpression)
+            : BinaryExpression(binaryRelationExpression), relationType(binaryRelationExpression.relationType) {
+                // Nothing to do here.
             }
             
             std::shared_ptr<BaseExpression> BinaryRelationExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {

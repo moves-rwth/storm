@@ -17,6 +17,11 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            DoubleLiteralExpression::DoubleLiteralExpression(DoubleLiteralExpression const& doubleLiteralExpression)
+            : BaseExpression(doubleLiteralExpression), value(doubleLiteralExpression.value) {
+                // Nothing to do here.
+            }
+            
             std::shared_ptr<BaseExpression> DoubleLiteralExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->value));
             }

@@ -34,6 +34,13 @@ namespace storm {
                  */
                 BinaryNumericalFunctionExpression(ReturnType type, std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right, FunctionType functionType);
                 
+                /*!
+                 * Copy-constructs from the given expression.
+                 *
+                 * @param binaryNumericalFunctionExpression The expression to copy.
+                 */
+                BinaryNumericalFunctionExpression(BinaryNumericalFunctionExpression const& binaryNumericalFunctionExpression);
+
                 virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
                 
                 /*!
