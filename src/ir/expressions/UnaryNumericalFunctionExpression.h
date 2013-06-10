@@ -43,9 +43,7 @@ namespace storm {
                  *
                  * @param The operator that is associated with this node.
                  */
-                FunctionType getFunctionType() const {
-                    return functionType;
-                }
+                FunctionType getFunctionType() const;
                 
                 virtual void accept(ExpressionVisitor* visitor) override;
                 

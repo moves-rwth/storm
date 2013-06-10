@@ -39,9 +39,7 @@ namespace storm {
                  *
                  * @param The operator that is associated with this node.
                  */
-                FunctionType getFunctionType() const {
-                    return functionType;
-                }
+                FunctionType getFunctionType() const;
                 
                 virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
                 
