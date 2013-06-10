@@ -14,42 +14,15 @@
 #include <vector>
 #include <memory>
 
+#include "VariableStateInterface.h"
 #include "BooleanVariable.h"
 #include "IntegerVariable.h"
-#include "expressions/VariableExpression.h"
 #include "Command.h"
+#include "expressions/VariableExpression.h"
 
 namespace storm {
 
 namespace ir {
-
-	struct VariableAdder {
-        /*!
-         * Adds an integer variable with the given name, lower and upper bound.
-         *
-         * @param name The name of the boolean variable to add.
-         */
-		uint_fast64_t addBooleanVariable(std::string const& name) = 0;
-
-        /*!
-         * Adds an integer variable with the given name, lower and upper bound.
-         *
-         * @param name The name of the integer variable to add.
-         * @param lower The lower bound of the integer variable.
-         * @param upper The upper bound of the integer variable.
-         */
-		uint_fast64_t addIntegerVariable(std::string const& name) = 0;
-        
-        /*!
-         * Retrieves the next free (global) index for a boolean variable.
-         */
-        uint_fast64_t getNextGlobalBooleanVariableIndex() const = 0;
-        
-        /*!
-         * Retrieves the next free (global) index for a integer variable.
-         */
-        uint_fast64_t getNextGlobalIntegerVariableIndex() const = 0;
-	};
 
 /*!
  * A class representing a module.
@@ -92,7 +65,7 @@ public:
      * @param adder An instance of the VariableAdder interface that keeps track of all the variables in the probabilistic
      * program.
 	 */
-	Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap, std::shared_ptr<VariableAdder> const& adder);
+	Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap, std::shared_ptr<VariableStateInterface> const& variableState);
 
 	/*!
 	 * Retrieves the number of boolean variables in the module.

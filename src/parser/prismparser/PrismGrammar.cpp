@@ -5,6 +5,11 @@
  *      Author: chris
  */
 
+// Needed for file IO.
+#include <fstream>
+#include <iomanip>
+#include <limits>
+
 #include "PrismGrammar.h"
 
 #include "src/utility/OsDetection.h"
@@ -17,11 +22,6 @@
 #include "src/parser/prismparser/IntegerExpressionGrammar.h"
 #include "src/parser/prismparser/IdentifierGrammars.h"
 #include "src/parser/prismparser/VariableState.h"
-
-// Needed for file IO.
-#include <fstream>
-#include <iomanip>
-#include <limits>
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -41,37 +41,39 @@ void dump(const std::string& s) {
 	std::cerr << "Dump: " << s << std::endl;
 }
 
-std::shared_ptr<BaseExpression> PrismGrammar::addIntegerConstant(const std::string& name, const std::shared_ptr<BaseExpression> value) {
+std::shared_ptr<BaseExpression> PrismGrammar::addIntegerConstant(std::string const& name, std::shared_ptr<BaseExpression> const& value) {
 	this->state->integerConstants_.add(name, value);
 	this->state->allConstantNames_.add(name, name);
 	return value;
 }
 
-void PrismGrammar::addLabel(const std::string& name, std::shared_ptr<BaseExpression> value, std::map<std::string, std::shared_ptr<BaseExpression>>& mapping) {
+void PrismGrammar::addLabel(std::string const& name, std::shared_ptr<BaseExpression> const& value, std::map<std::string, std::shared_ptr<BaseExpression>>& nameToExpressionMap) {
 	this->state->labelNames_.add(name, name);
-	mapping[name] = value;
+	nameToExpressionMap[name] = value;
 }
-void PrismGrammar::addIntAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping) {
-	//std::cout << "Adding int assignment for " << variable << std::endl;
+    
+void PrismGrammar::addIntegerAssignment(std::string const& variable, std::shared_ptr<BaseExpression> const& value, std::map<std::string, Assignment>& variableToAssignmentMap) {
 	this->state->assignedLocalIntegerVariables_.add(variable, variable);
-	mapping[variable] = Assignment(variable, value);
+	variableToAssignmentMap[variable] = Assignment(variable, value);
 }
-void PrismGrammar::addBoolAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping) {
-	//std::cout << "Adding bool assignment for " << variable << std::endl;
+    
+void PrismGrammar::addBooleanAssignment(std::string const& variable, std::shared_ptr<BaseExpression> const& value, std::map<std::string, Assignment>& variableToAssigmentMap) {
 	this->state->assignedLocalBooleanVariables_.add(variable, variable);
-	mapping[variable] = Assignment(variable, value);
+	variableToAssigmentMap[variable] = Assignment(variable, value);
 }
-Module PrismGrammar::renameModule(const std::string& name, const std::string& oldname, std::map<std::string, std::string>& mapping) {
+    
+Module PrismGrammar::renameModule(std::string const& newName, std::string const& oldName, std::map<std::string, std::string>& renaming) {
 	this->state->moduleNames_.add(name, name);
 	Module* old = this->moduleMap_.find(oldname);
 	if (old == nullptr) {
-		LOG4CPLUS_ERROR(logger, "Renaming module failed: module " << oldname << " does not exist!");
-		throw "Renaming module failed";
+		LOG4CPLUS_ERROR(logger, "Renaming module failed: module " << oldName << " does not exist.");
+		throw storm::exceptions::InvalidArgumentException() << "Renaming module failed: module " << oldName << " does not exist.";
 	}
-	Module res(*old, name, mapping, this->state);
+	Module res(*old, newName, renaming, this->state);
 	this->moduleMap_.at(name) = res;
 	return res;
 }
+    
 Module PrismGrammar::createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands) {
 	this->state->moduleNames_.add(name, name);
 	Module res(name, bools, ints, boolids, intids, commands);
@@ -80,14 +82,12 @@ Module PrismGrammar::createModule(const std::string name, std::vector<BooleanVar
 }
 
 void PrismGrammar::createIntegerVariable(const std::string name, std::shared_ptr<BaseExpression> lower, std::shared_ptr<BaseExpression> upper, std::shared_ptr<BaseExpression> init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
-	//std::cout << "Creating int " << name << " = " << init << std::endl;
 	uint_fast64_t id = this->state->addIntegerVariable(name);
 	vars.emplace_back(id, name, lower, upper, init);
 	varids[name] = id;
 	this->state->localIntegerVariables_.add(name, name);
 }
 void PrismGrammar::createBooleanVariable(const std::string name, std::shared_ptr<BaseExpression> init, std::vector<BooleanVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
-	//std::cout << "Creating bool " << name << std::endl;
 	uint_fast64_t id = this->state->addBooleanVariable(name);
 	vars.emplace_back(id, name, init);
 	varids[name] = id;

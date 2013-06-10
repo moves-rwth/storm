@@ -27,10 +27,18 @@ template<typename T>
 std::ostream& operator<<(std::ostream& out, qi::symbols<char, T>& symbols);
 
 /*!
- * This class contains the state that is needed during the parsing of a prism model.
+ * This class contains the internal state that is needed for parsing a PRISM model.
  */
 struct VariableState : public storm::ir::VariableAdder {
 
+    /*!
+     * Creates a new variable state object. By default, this object will be set to a state in which
+     * it is ready for performing a first run on some input. The first run creates all variables
+     * while the second one checks for the correct usage of variables in expressions.
+     *
+     * @param firstRun If set, this object will be in a state ready for performing the first run. If
+     * set to false, this object will assume that it has all variable data already.
+     */
 	VariableState(bool firstRun = true);
 	
 	/*!
@@ -43,6 +51,30 @@ struct VariableState : public storm::ir::VariableAdder {
 	 */
 	keywordsStruct keywords;
 
+    /*!
+     * Internal counter for the local index of the next new boolean variable.
+     */
+    uint_fast64_t nextLocalBooleanVariableIndex;
+    
+    /*!
+     * Retrieves the next free local index for a boolean variable.
+     *
+     * @return The next free local index for a boolean variable.
+     */
+    uint_fast64_t getNextLocalBooleanVariableIndex() const;
+
+    /*!
+     * Internal counter for the local index of the next new integer variable.
+     */
+    uint_fast64_t nextLocalIntegerVariableIndex;
+    
+    /*!
+     * Retrieves the next free global index for a integer variable.
+     *
+     * @return The next free global index for a integer variable.
+     */
+    uint_fast64_t getNextLocalIntegerVariableIndex() const;
+    
 	/*!
 	 * Internal counter for the index of the next new boolean variable.
 	 */
@@ -81,17 +113,17 @@ struct VariableState : public storm::ir::VariableAdder {
 	 * Adds a new boolean variable with the given name.
      *
 	 * @param name The name of the variable.
-	 * @return The global index of the variable.
+	 * @return A pair containing the local and global index of the variable.
 	 */
-	uint_fast64_t addBooleanVariable(std::string const& name);
+    std::pair<uint_fast64_t, uint_fast64_t> addBooleanVariable(std::string const& name);
     
 	/*!
 	 * Adds a new integer variable with the given name.
      *
 	 * @param name The name of the variable.
-	 * @return The global index of the variable.
+	 * @return A pair containing the local and global index of the variable.
 	 */
-	uint_fast64_t addIntegerVariable(std::string const& name);
+    std::pair<uint_fast64_t, uint_fast64_t> addIntegerVariable(std::string const& name);
 
 	/*!
 	 * Retrieves the variable expression for the boolean variable with the given name.
@@ -99,7 +131,7 @@ struct VariableState : public storm::ir::VariableAdder {
 	 * @param name The name of the boolean variable for which to retrieve the variable expression.
 	 * @return The variable expression for the boolean variable with the given name.
 	 */
-	std::shared_ptr<VariableExpression> getBooleanVariableExpression(std::string const& name);
+	std::shared_ptr<VariableExpression> getBooleanVariableExpression(std::string const& name) const;
     
 	/*!
 	 * Retrieves the variable expression for the integer variable with the given name.
@@ -107,7 +139,7 @@ struct VariableState : public storm::ir::VariableAdder {
 	 * @param name The name of the integer variable for which to retrieve the variable expression.
 	 * @return The variable expression for the integer variable with the given name.
 	 */
-	std::shared_ptr<VariableExpression> getIntegerVariableExpression(std::string const& name);
+	std::shared_ptr<VariableExpression> getIntegerVariableExpression(std::string const& name) const;
     
 	/*!
 	 * Retrieve the variable expression for the variable with the given name.
@@ -115,7 +147,7 @@ struct VariableState : public storm::ir::VariableAdder {
 	 * @param name The name of the variable for which to retrieve the variable expression.
 	 * @return The variable expression for the variable with the given name.
 	 */
-	std::shared_ptr<VariableExpression> getVariableExpression(std::string const& name);
+	std::shared_ptr<VariableExpression> getVariableExpression(std::string const& name) const;
 
 	/*!
 	 * Clears all local variables.

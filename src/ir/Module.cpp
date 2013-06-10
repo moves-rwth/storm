@@ -38,7 +38,7 @@ Module::Module(std::string const& moduleName,
 	this->collectActions();
 }
 
-Module::Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap, std::shared_ptr<VariableAdder> const& adder)
+Module::Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap, std::shared_ptr<VariableStateInterface> const& variableState)
 	: moduleName(newModuleName), booleanVariableToLocalIndexMap(oldModule.booleanVariableToLocalIndexMap), integerVariableToLocalIndexMap(oldModule.integerVariableToLocalIndexMap) {
 	LOG4CPLUS_TRACE(logger, "Start renaming " << oldModule.getName() << " to " << moduleName << ".");
 
@@ -51,8 +51,8 @@ Module::Module(Module const& oldModule, std::string const& newModuleName, std::m
             LOG4CPLUS_ERROR(logger, "Boolean variable " << moduleName << "." << booleanVariable.getName() << " was not renamed.");
             throw storm::exceptions::InvalidArgumentException() << "Boolean variable " << moduleName << "." << booleanVariable.getName() << " was not renamed.";
         } else {
-            this->booleanVariables.emplace_back(booleanVariable, renamingPair->second, adder->getNextGlobalBooleanVariableIndex(), renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
-            adder->addBooleanVariable(renamingPair->second);
+            this->booleanVariables.emplace_back(booleanVariable, renamingPair->second, variableState->getNextGlobalBooleanVariableIndex(), renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
+            variableState->addBooleanVariable(renamingPair->second);
         }
     }
     // Now do the same for the integer variables.
@@ -63,8 +63,8 @@ Module::Module(Module const& oldModule, std::string const& newModuleName, std::m
             LOG4CPLUS_ERROR(logger, "Integer variable " << moduleName << "." << integerVariable.getName() << " was not renamed.");
             throw storm::exceptions::InvalidArgumentException() << "Integer variable " << moduleName << "." << integerVariable.getName() << " was not renamed.";
         } else {
-            this->integerVariables.emplace_back(integerVariable, renamingPair->second, adder->getNextGlobalIntegerVariableIndex(), renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
-            adder->addIntegerVariable(renamingPair->second);
+            this->integerVariables.emplace_back(integerVariable, renamingPair->second, variableState->getNextGlobalIntegerVariableIndex(), renaming, booleanVariableToIndexMap, integerVariableToIndexMap);
+            variableState->addIntegerVariable(renamingPair->second);
         }
     }
 

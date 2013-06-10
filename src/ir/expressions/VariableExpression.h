@@ -8,10 +8,12 @@
 #ifndef VARIABLEEXPRESSION_H_
 #define VARIABLEEXPRESSION_H_
 
-#include "src/ir/expressions/BaseExpression.h"
-
 #include <memory>
 #include <iostream>
+
+#include "src/ir/VariableStateInterface.h"
+#include "BaseExpression.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -25,32 +27,41 @@ namespace expressions {
 
 class VariableExpression : public BaseExpression {
 public:
-	VariableExpression(ReturnType type, uint_fast64_t index, std::string variableName,
-			std::shared_ptr<BaseExpression> lowerBound = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr),
-			std::shared_ptr<BaseExpression> upperBound = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr))
-			: BaseExpression(type), index(index), variableName(variableName),
-			  lowerBound(lowerBound), upperBound(upperBound) {
+    VariableExpression(ReturnType type, std::string variableName) : BaseExpression(type), localIndex(0), globalIndex(0), variableName(variableName) {
+        // Nothing to do here.
+    }
+    
+	VariableExpression(ReturnType type, uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string variableName)
+			: BaseExpression(type), localIndex(localIndex), globalIndex(globalIndex), variableName(variableName) {
+        // Nothing to do here.
 	}
+    
+    VariableExpression(VariableExpression const& oldExpression, std::string const& newName, uint_fast64_t newGlobalIndex)
+        : BaseExpression(oldExpression.getType()), localIndex(oldExpression.localIndex), globalIndex(newGlobalIndex), variableName(newName) {
+        // Nothing to do here.
+    }
 
 	virtual ~VariableExpression() {
+        // Nothing to do here.
 	}
 
-	virtual std::shared_ptr<BaseExpression> clone(const std::map<std::string, std::string>& renaming, const std::map<std::string, uint_fast64_t>& bools, const std::map<std::string, uint_fast64_t>& ints) {
-		std::shared_ptr<BaseExpression> lower = this->lowerBound, upper = this->upperBound;
-		if (lower != nullptr) lower = lower->clone(renaming, bools, ints);
-		if (upper != nullptr) upper = upper->clone(renaming, bools, ints);
-		if (renaming.count(this->variableName) > 0) {
-			std::string newName = renaming.at(this->variableName);
+    virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, std::shared_ptr<VariableStateInterface> const& variableState) {
+        // Perform the proper cloning.
+    }
+    
+	virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, std::map<std::string, uint_fast64_t> const& booleanVariableToIndexMap, std::map<std::string, uint_fast64_t> const& integerVariableToIndexMap) {
+        auto renamingPair = renaming.find(this->variableName);
+        if (renamingPair != renaming.end()) {
 			if (this->getType() == bool_) {
-				return std::shared_ptr<BaseExpression>(new VariableExpression(bool_, bools.at(newName), newName, lower, upper));
+				return std::shared_ptr<BaseExpression>(new VariableExpression(bool_, this->localIndex, booleanVariableToIndexMap.at(renamingPair->second), renamingPair->second));
 			} else if (this->getType() == int_) {
-				return std::shared_ptr<BaseExpression>(new VariableExpression(int_, ints.at(newName), newName, lower, upper));
+				return std::shared_ptr<BaseExpression>(new VariableExpression(int_, this->localIndex, integerVariableToIndexMap.at(renamingPair->second), renamingPair->second));
 			} else {
-				LOG4CPLUS_ERROR(logger, "ERROR: Renaming variable " << this->variableName << " that is neither bool nor int.");
-				return std::shared_ptr<BaseExpression>(nullptr);
+				LOG4CPLUS_ERROR(logger, "Renaming variable " << this->variableName << " that is neither bool nor int.");
+				throw storm::exceptions::InvalidArgumentException() << "Renaming variable " << this->variableName << " that is neither bool nor int.";
 			}
 		} else {
-			return std::shared_ptr<BaseExpression>(new VariableExpression(this->getType(), this->index, this->variableName, lower, upper));
+			return std::shared_ptr<BaseExpression>(new VariableExpression(this->getType(), this->localIndex, this->globalIndex, this->variableName));
 		}
 	}
 
@@ -67,14 +78,6 @@ public:
 	virtual std::string dump(std::string prefix) const {
 		std::stringstream result;
 		result << prefix << this->variableName << " " << index << std::endl;
-		if (this->lowerBound != nullptr) {
-			result << prefix << "lower bound" << std::endl;
-			result << this->lowerBound->dump(prefix + "\t");
-		}
-		if (this->upperBound != nullptr) {
-			result << prefix << "upper bound" << std::endl;
-			result << this->upperBound->dump(prefix + "\t");
-		}
 		return result.str();
 	}
 
@@ -84,7 +87,7 @@ public:
 		}
 
 		if (variableValues != nullptr) {
-			return variableValues->second[index];
+			return variableValues->second[globalIndex];
 		} else {
 			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression"
 					<< " involving variables without variable values.";
@@ -97,7 +100,7 @@ public:
 		}
 
 		if (variableValues != nullptr) {
-			return variableValues->first[index];
+			return variableValues->first[globalIndex];
 		} else {
 			throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression"
 					<< " involving variables without variable values.";
@@ -117,24 +120,18 @@ public:
 		return variableName;
 	}
 
-	std::shared_ptr<BaseExpression> const& getLowerBound() const {
-		return lowerBound;
+	uint_fast64_t getLocalVariableIndex() const {
+		return this->localIndex;
 	}
-
-	std::shared_ptr<BaseExpression> const& getUpperBound() const {
-		return upperBound;
-	}
-
-	uint_fast64_t getVariableIndex() const {
-		return this->index;
+    
+    uint_fast64_t getGlobalVariableIndex() const {
+		return this->globalIndex;
 	}
 
 private:
-	uint_fast64_t index;
+	uint_fast64_t localIndex;
+    uint_fast64_t globalIndex;
 	std::string variableName;
-
-	std::shared_ptr<BaseExpression> lowerBound;
-	std::shared_ptr<BaseExpression> upperBound;
 };
 
 }

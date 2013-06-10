@@ -47,8 +47,21 @@ class PrismGrammar : public qi::grammar<
 	>,
 	Skipper> {
 public:
+    /*!
+     * Default constructor that creates an empty and functional grammar.
+     */
 	PrismGrammar();
+        
+    /*!
+     * Puts all sub-grammars into the mode for performing the second run. A two-run model was chosen
+     * because modules can involve variables that are only declared afterwards, so the first run
+     * creates all variables and the second one tries to parse the full model.
+     */
 	void prepareForSecondRun();
+        
+    /*!
+     * Resets all sub-grammars, i.e. puts them into an initial state.
+     */
 	void resetGrammars();
 
 private:
@@ -122,15 +135,88 @@ private:
 	storm::parser::prism::modelTypeStruct modelType_;
 	storm::parser::prism::relationalOperatorStruct relations_;
 
-	std::shared_ptr<BaseExpression> addIntegerConstant(const std::string& name, const std::shared_ptr<BaseExpression> value);
-	void addLabel(const std::string& name, std::shared_ptr<BaseExpression> value, std::map<std::string, std::shared_ptr<BaseExpression>>& mapping);
-	void addBoolAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping);
-	void addIntAssignment(const std::string& variable, std::shared_ptr<BaseExpression> value, std::map<std::string, Assignment>& mapping);
-	Module renameModule(const std::string& name, const std::string& oldname, std::map<std::string, std::string>& mapping);
-	Module createModule(const std::string name, std::vector<BooleanVariable>& bools, std::vector<IntegerVariable>& ints, std::map<std::string, uint_fast64_t>& boolids, std::map<std::string, uint_fast64_t> intids, std::vector<storm::ir::Command> commands);
+    /*!
+     * Adds a constant of type integer with the given name and value.
+     *
+     * @param name The name of the constant.
+     * @param value An expression definining the value of the constant.
+     */
+	std::shared_ptr<BaseExpression> addIntegerConstant(std::string const& name, std::shared_ptr<BaseExpression> const& value);
+    
+    /*!
+     * Adds a label with the given name and expression to the given label-to-expression map.
+     *
+     * @param name The name of the label.
+     * @param expression The expression associated with the label.
+     * @param nameToExpressionMap The map to which the label is added.
+     */
+	void addLabel(std::string const& name, std::shared_ptr<BaseExpression> const& value, std::map<std::string, std::shared_ptr<BaseExpression>>& nameToExpressionMap);
+        
+    /*!
+     * Adds a boolean assignment for the given variable with the given expression and adds it to the
+     * provided variable-to-assignment map.
+     *
+     * @param variable The name of the variable that the assignment targets.
+     * @param expression The expression that is assigned to the variable.
+     * @param variableToAssignmentMap The map to which the assignment is added.
+     */
+	void addBooleanAssignment(std::string const& variable, std::shared_ptr<BaseExpression> const& expression, std::map<std::string, Assignment>& variableToAssignmentMap);
+        
+    /*!
+    * Adds a boolean assignment for the given variable with the given expression and adds it to the
+    * provided variable-to-assignment map.
+    *
+    * @param variable The name of the variable that the assignment targets.
+    * @param expression The expression that is assigned to the variable.
+    * @param variableToAssignmentMap The map to which the assignment is added.
+    */
+	void addIntegerAssignment(std::string const& variable, std::shared_ptr<BaseExpression> const& value, std::map<std::string, Assignment>& variableToAssignmentMap);
+        
+    /*!
+     * Creates a module by renaming, i.e. takes the module given by the old name, creates a new module
+     * with the given name which renames all identifiers according to the given mapping.
+     *
+     * @param name The name of the new module.
+     * @param oldName The name of the module that is to be copied (modulo renaming).
+     * @param renaming A mapping from identifiers to their new names.
+     */
+	Module renameModule(std::string const& name, std::string const& oldName, std::map<std::string, std::string>& renaming);
+        
+    /*!
+     * Creates a new module with the given name, boolean and integer variables and commands.
+     *
+     * @param name The name of the module to create.
+     * @param booleanVariables The boolean variables of the module.
+     * @param integerVariables The integer variables of the module.
+     * @param booleanVariableToLocalIndexMap A mapping of boolean variables to module-local indices.
+     * @param integerVariableToLocalIndexMap A mapping of boolean variables to module-local indices.
+     * @param commands The commands associated with this module.
+     */
+	Module createModule(std::string const& name, std::vector<BooleanVariable> const& booleanVariables, std::vector<IntegerVariable> const& integerVariables, std::map<std::string, uint_fast64_t> const& booleanVariableToLocalIndexMap, std::map<std::string, uint_fast64_t> integerVariableToLocalIndexMap, std::vector<storm::ir::Command> const& commands);
 
-	void createIntegerVariable(const std::string name, std::shared_ptr<BaseExpression> lower, std::shared_ptr<BaseExpression> upper, std::shared_ptr<BaseExpression> init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids);
-	void createBooleanVariable(const std::string name, std::shared_ptr<BaseExpression> init, std::vector<BooleanVariable>& vars, std::map<std::string, uint_fast64_t>& varids);
+    /*!
+     * Creates an integer variable with the given name, domain and initial value and adds it to the
+     * provided list of integer variables and the given mappings.
+     *
+     * @param name The name of the integer variable.
+     * @param lower The expression that defines the lower bound of the domain.
+     * @param upper The expression that defines the upper bound of the domain.
+     * @param init The expression that defines the initial value of the variable.
+     * @param integerVariableToLocalIndexMap A mapping of integer variables to local indices.
+     * @param integerVariableToGlobalIndexMap A mapping of integer variables to global indices.
+     */
+	void createIntegerVariable(std::string const& name, std::shared_ptr<BaseExpression> const& lower, std::shared_ptr<BaseExpression> const& upper, std::shared_ptr<BaseExpression> const& init, std::vector<IntegerVariable>& integerVariables, std::map<std::string, uint_fast64_t>& integerVariableToLocalIndexMap, std::map<std::string, uint_fast64_t>& integerVariableToGlobalIndexMap);
+        
+    /*!
+    * Creates an boolean variable with the given name and initial value and adds it to the
+    * provided list of boolean variables and the given mappings.
+    *
+    * @param name The name of the boolean variable.
+    * @param init The expression that defines the initial value of the variable.
+    * @param booleanVariableToLocalIndexMap A mapping of boolean variables to local indices.
+    * @param booleanVariableToGlobalIndexMap A mapping of boolean variables to global indices.
+    */
+	void createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& booleanVariables, std::map<std::string, uint_fast64_t>& booleanVariableToLocalIndexMap, std::map<std::string, uint_fast64_t>& booleanVariableToGlobalIndexMap);
 };
 
 
