@@ -15,6 +15,10 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            ConstantExpression::ConstantExpression(ConstantExpression const& constantExpression) : BaseExpression(constantExpression.getType()), constantName(constantExpression.constantName) {
+                // Nothing to do here
+            }
+
             std::string const& ConstantExpression::getConstantName() const {
                 return constantName;
             }

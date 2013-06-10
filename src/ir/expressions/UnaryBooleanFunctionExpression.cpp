@@ -5,9 +5,6 @@
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_IR_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_
-#define STORM_IR_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_
-
 #include <sstream>
 
 #include "UnaryBooleanFunctionExpression.h"
@@ -24,7 +21,7 @@ namespace storm {
                 return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getChild()->clone(renaming, variableState), this->functionType));
             }
             
-            FunctionType UnaryBooleanFunctionExpression::getFunctionType() const {
+            UnaryBooleanFunctionExpression::FunctionType UnaryBooleanFunctionExpression::getFunctionType() const {
                 return functionType;
             }
             

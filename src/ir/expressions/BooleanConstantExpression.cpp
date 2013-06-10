@@ -13,9 +13,8 @@ namespace storm {
     namespace ir {
         namespace expressions {
             
-            BooleanConstantExpression::BooleanConstantExpression(std::string const& constantName) : ConstantExpression(bool_, constantName) {
-                defined = false;
-                value = false;
+            BooleanConstantExpression::BooleanConstantExpression(std::string const& constantName) : ConstantExpression(bool_, constantName), value(false), defined(false) {
+                // Nothing to do here.
             }
             
             std::shared_ptr<BaseExpression> BooleanConstantExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {

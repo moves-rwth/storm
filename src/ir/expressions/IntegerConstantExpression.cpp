@@ -5,6 +5,8 @@
  *      Author: Christian Dehnert
  */
 
+#include <sstream>
+
 #include "IntegerConstantExpression.h"
 
 namespace storm {

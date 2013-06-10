@@ -45,7 +45,7 @@ namespace storm {
                 }
             }
             
-            FunctionType UnaryNumericalFunctionExpression::getFunctionType() const {
+            UnaryNumericalFunctionExpression::FunctionType UnaryNumericalFunctionExpression::getFunctionType() const {
                 return functionType;
             }
             
