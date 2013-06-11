@@ -25,7 +25,7 @@ namespace storm {
         }
         
         Variable::Variable(Variable const& var, std::string const& newName, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState)
-        : localIndex(var.getLocalIndex()), globalIndex(newGlobalIndex), variableName(var.getName()) {
+        : localIndex(var.getLocalIndex()), globalIndex(newGlobalIndex), variableName(newName) {
             if (var.initialValue != nullptr) {
                 this->initialValue = var.initialValue->clone(renaming, variableState);
             }

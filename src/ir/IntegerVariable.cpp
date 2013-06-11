@@ -28,6 +28,7 @@ namespace storm {
         
         IntegerVariable::IntegerVariable(IntegerVariable const& oldVariable, std::string const& newName, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState)
         : Variable(oldVariable, newName, newGlobalIndex, renaming, variableState), lowerBound(oldVariable.lowerBound->clone(renaming, variableState)), upperBound(oldVariable.upperBound->clone(renaming, variableState)) {
+            // Nothing to do here.
         }
         
         std::shared_ptr<storm::ir::expressions::BaseExpression> IntegerVariable::getLowerBound() const {

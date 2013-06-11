@@ -51,8 +51,8 @@ namespace storm {
                     LOG4CPLUS_ERROR(logger, "Boolean variable " << moduleName << "." << booleanVariable.getName() << " was not renamed.");
                     throw storm::exceptions::InvalidArgumentException() << "Boolean variable " << moduleName << "." << booleanVariable.getName() << " was not renamed.";
                 } else {
-                    this->booleanVariables.emplace_back(booleanVariable, renamingPair->second, variableState.getNextGlobalBooleanVariableIndex(), renaming, variableState);
-                    variableState.addBooleanVariable(renamingPair->second);
+                    uint_fast64_t globalIndex = variableState.addBooleanVariable(renamingPair->second);
+                    this->booleanVariables.emplace_back(booleanVariable, renamingPair->second, globalIndex, renaming, variableState);
                 }
             }
             // Now do the same for the integer variables.
@@ -63,8 +63,8 @@ namespace storm {
                     LOG4CPLUS_ERROR(logger, "Integer variable " << moduleName << "." << integerVariable.getName() << " was not renamed.");
                     throw storm::exceptions::InvalidArgumentException() << "Integer variable " << moduleName << "." << integerVariable.getName() << " was not renamed.";
                 } else {
-                    this->integerVariables.emplace_back(integerVariable, renamingPair->second, variableState.getNextGlobalIntegerVariableIndex(), renaming, variableState);
-                    variableState.addIntegerVariable(renamingPair->second);
+                    uint_fast64_t globalIndex = variableState.addIntegerVariable(renamingPair->second);
+                    this->integerVariables.emplace_back(integerVariable, renamingPair->second, globalIndex, renaming, variableState);
                 }
             }
             

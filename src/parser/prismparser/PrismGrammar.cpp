@@ -38,10 +38,6 @@ namespace storm {
 namespace parser {
 namespace prism {
 
-void dump(const std::string& s) {
-	std::cerr << "Dump: " << s << std::endl;
-}
-
 std::shared_ptr<BaseExpression> PrismGrammar::addIntegerConstant(std::string const& name, std::shared_ptr<BaseExpression> const& value) {
 	this->state->integerConstants_.add(name, value);
 	this->state->allConstantNames_.add(name, name);
