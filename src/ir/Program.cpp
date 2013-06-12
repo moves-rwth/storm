@@ -19,20 +19,30 @@ extern log4cplus::Logger logger;
 namespace storm {
     namespace ir {
         
-        Program::Program() : modelType(UNDEFINED), booleanUndefinedConstantExpressions(), integerUndefinedConstantExpressions(), doubleUndefinedConstantExpressions(), modules(), rewards(), actions(), actionsToModuleIndexMap() {
+        Program::Program() : modelType(UNDEFINED), booleanUndefinedConstantExpressions(), integerUndefinedConstantExpressions(), doubleUndefinedConstantExpressions(), modules(), rewards(), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
             // Nothing to do here.
         }
         
         Program::Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules, std::map<std::string, storm::ir::RewardModel> rewards, std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels)
-        : modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), modules(modules), rewards(rewards), labels(labels), actionsToModuleIndexMap() {
+        : modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), modules(modules), rewards(rewards), labels(labels), actionsToModuleIndexMap(), variableToModuleIndexMap() {
             // Now build the mapping from action names to module indices so that the lookup can later be performed quickly.
-            for (unsigned int moduleId = 0; moduleId < this->modules.size(); moduleId++) {
-                for (auto const& action : this->modules[moduleId].getActions()) {
+            for (unsigned int moduleIndex = 0; moduleIndex < this->modules.size(); moduleIndex++) {
+                Module const& module = this->modules[moduleIndex];
+                
+                for (auto const& action : module.getActions()) {
                     if (this->actionsToModuleIndexMap.count(action) == 0) {
                         this->actionsToModuleIndexMap[action] = std::set<uint_fast64_t>();
                     }
-                    this->actionsToModuleIndexMap[action].insert(moduleId);
+                    this->actionsToModuleIndexMap[action].insert(moduleIndex);
                     this->actions.insert(action);
+                }
+                
+                // Put in the appropriate entries for the mapping from variable names to module index.
+                for (uint_fast64_t booleanVariableIndex = 0; booleanVariableIndex < module.getNumberOfBooleanVariables(); ++booleanVariableIndex) {
+                    this->variableToModuleIndexMap[module.getBooleanVariable(booleanVariableIndex).getName()] = moduleIndex;
+                }
+                for (uint_fast64_t integerVariableIndex = 0; integerVariableIndex < module.getNumberOfIntegerVariables(); ++integerVariableIndex) {
+                    this->variableToModuleIndexMap[module.getIntegerVariable(integerVariableIndex).getName()] = moduleIndex;
                 }
             }
         }
@@ -97,6 +107,14 @@ namespace storm {
                 throw storm::exceptions::OutOfRangeException() << "Action name '" << action << "' does not exist.";
             }
             return actionModuleSetPair->second;
+        }
+        
+        uint_fast64_t Program::getModuleIndexForVariable(std::string const& variableName) const {
+            auto variableNameToModuleIndexPair = this->variableToModuleIndexMap.find(variableName);
+            if (variableNameToModuleIndexPair != this->variableToModuleIndexMap.end()) {
+                return variableNameToModuleIndexPair->second;
+            }
+            throw storm::exceptions::OutOfRangeException() << "Variable '" << variableName << "' does not exist.";
         }
         
         storm::ir::RewardModel const& Program::getRewardModel(std::string const& name) const {

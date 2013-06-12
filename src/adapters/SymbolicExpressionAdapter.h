@@ -22,7 +22,7 @@ namespace adapters {
 
 class SymbolicExpressionAdapter : public storm::ir::expressions::ExpressionVisitor {
 public:
-	SymbolicExpressionAdapter(std::unordered_map<std::string, std::vector<ADD*>>& variableToDecisionDiagramVariableMap) : stack(), variableToDecisionDiagramVariableMap(variableToDecisionDiagramVariableMap) {
+	SymbolicExpressionAdapter(storm::ir::Program const& program, std::unordered_map<std::string, std::vector<ADD*>>& variableToDecisionDiagramVariableMap) : program(program), stack(), variableToDecisionDiagramVariableMap(variableToDecisionDiagramVariableMap) {
 
 	}
 
@@ -131,7 +131,7 @@ public:
 		stack.push(new ADD(*cuddUtility->getConstant(expression->getValue() ? 1 : 0)));
 	}
 
-	virtual void visit(storm::ir::expressions::BooleanLiteral* expression) {
+	virtual void visit(storm::ir::expressions::BooleanLiteralExpression* expression) {
 		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
 		stack.push(new ADD(*cuddUtility->getConstant(expression->getValueAsBool(nullptr) ? 1 : 0)));
 	}
@@ -146,7 +146,7 @@ public:
 		stack.push(new ADD(*cuddUtility->getConstant(expression->getValue())));
 	}
 
-	virtual void visit(storm::ir::expressions::DoubleLiteral* expression) {
+	virtual void visit(storm::ir::expressions::DoubleLiteralExpression* expression) {
 		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
 		stack.push(new ADD(*cuddUtility->getConstant(expression->getValueAsDouble(nullptr))));
 	}
@@ -161,7 +161,7 @@ public:
 		stack.push(new ADD(*cuddUtility->getConstant(static_cast<double>(expression->getValue()))));
 	}
 
-	virtual void visit(storm::ir::expressions::IntegerLiteral* expression) {
+	virtual void visit(storm::ir::expressions::IntegerLiteralExpression* expression) {
 		storm::utility::CuddUtility* cuddUtility = storm::utility::cuddUtilityInstance();
 		stack.push(new ADD(*cuddUtility->getConstant(static_cast<double>(expression->getValueAsInt(nullptr)))));
 	}
@@ -208,8 +208,10 @@ public:
 		if (expression->getType() == storm::ir::expressions::BaseExpression::bool_) {
 			cuddUtility->setValueAtIndex(result, 1, variables, 1);
 		} else {
-			int64_t low = expression->getLowerBound()->getValueAsInt(nullptr);
-			int64_t high = expression->getUpperBound()->getValueAsInt(nullptr);
+            storm::ir::Module const& module = program.getModule(program.getModuleIndexForVariable(expression->getVariableName()));
+            storm::ir::IntegerVariable const& integerVariable = module.getIntegerVariable(expression->getVariableName());
+			int64_t low = integerVariable.getLowerBound()->getValueAsInt(nullptr);
+			int64_t high = integerVariable.getUpperBound()->getValueAsInt(nullptr);
 
 			for (int_fast64_t i = low; i <= high; ++i) {
 				cuddUtility->setValueAtIndex(result, i - low, variables, static_cast<double>(i));
@@ -220,6 +222,7 @@ public:
 	}
 
 private:
+    storm::ir::Program const& program;
 	std::stack<ADD*> stack;
 	std::unordered_map<std::string, std::vector<ADD*>>& variableToDecisionDiagramVariableMap;
 };

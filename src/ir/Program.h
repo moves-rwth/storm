@@ -107,6 +107,14 @@ namespace storm {
             std::set<uint_fast64_t> const& getModulesByAction(std::string const& action) const;
             
             /*!
+             * Retrieves the index of the module in which the given variable name was declared.
+             *
+             * @param variableName The name of the variable to search.
+             * @return The index of the module in which the given variable name was declared.
+             */
+            uint_fast64_t getModuleIndexForVariable(std::string const& variableName) const;
+            
+            /*!
              * Retrieves the reward model with the given name.
              *
              * @param name The name of the reward model to return.
@@ -148,6 +156,9 @@ namespace storm {
             
             // A map of actions to the set of modules containing commands labelled with this action.
             std::map<std::string, std::set<uint_fast64_t>> actionsToModuleIndexMap;
+            
+            // A mapping from variable names to the modules in which they were declared.
+            std::map<std::string, uint_fast64_t> variableToModuleIndexMap;
         };
         
     } // namespace ir

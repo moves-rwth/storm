@@ -266,10 +266,12 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		}
 
 		/*!
-		 * Returns the set of states with which the given state is labeled.
-		 * @return The set of states with which the given state is labeled.
+		 * Returns the set of labels with which the given state is labeled.
+         *
+         * @param state The state for which to return the set of labels.
+		 * @return The set of labels with which the given state is labeled.
 		 */
-		std::set<std::string> const getPropositionsForState(uint_fast64_t const& state) const {
+		std::set<std::string> getLabelsForState(uint_fast64_t state) const {
 			return stateLabeling->getPropositionsForState(state);
 		}
 
@@ -312,6 +314,70 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 			}
 			return result;
 		}
+    
+        /*!
+         * Exports the model to the dot-format and prints the result to the given stream.
+         *
+         * @param outStream The stream to which the model is to be written. 
+         * @param includeLabling If set to true, the states will be exported with their labels.
+         * @param subsystem If not null, this represents the subsystem that is to be exported.
+         * @param firstValue If not null, the values in this vector are attached to the states.
+         * @param secondValue If not null, the values in this vector are attached to the states.
+         * @param stateColoring If not null, this is a mapping from states to color codes.
+         * @param colors A mapping of color codes to color names.
+         * @return A string containing the exported model in dot-format.
+         */
+        virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr) const {
+            outStream << "digraph deterministicModel {" << std::endl;
+        
+            for (uint_fast64_t stateIndex = 0, highestStateIndex = this->getNumberOfStates() - 1; stateIndex <= highestStateIndex; ++stateIndex) {
+                outStream << "\t" << stateIndex;
+                if (includeLabeling || firstValue != nullptr || secondValue != nullptr || stateColoring != nullptr) {
+                    outStream << " [ ";
+                    if (includeLabeling || firstValue != nullptr || secondValue != nullptr) {
+                        outStream << "label = \"";
+                    
+                        // Now print the state labeling to the stream if requested.
+                        if (includeLabeling) {
+                            bool insertComma = true;
+                            for (std::string const& label : this->getLabelsForState(stateIndex)) {
+                                if (insertComma) {
+                                    outStream << ", ";
+                                    insertComma = false;
+                                }
+                                outStream << label;
+                            }
+                        }
+                    
+                        // If we are to include some values for the state as well, we do so now.
+                        if (firstValue != nullptr || secondValue != nullptr) {
+                            outStream << "[";
+                            if (firstValue != nullptr) {
+                                outStream << (*firstValue)[stateIndex];
+                                if (secondValue != nullptr) {
+                                    outStream << ", ";
+                                }
+                            }
+                            if (secondValue != nullptr) {
+                                outStream << (*secondValue)[stateIndex];
+                            }
+                            outStream << "]";
+                        }
+                        outStream << "\"";
+                    
+                        // Now, we color the states if there were colors given.
+                        if (stateColoring != nullptr && colors != nullptr) {
+                            outStream << ", ";
+                            outStream << " fillcolor = \"" << (*colors)[(*stateColoring)[stateIndex]] << "\"";
+                        }
+                    }
+                    outStream << " ]";
+                }
+                outStream << ";";
+            }
+            
+            outStream << "}" << std::endl;
+        }
 
 		/*!
 		 * Prints information about the model to the specified stream.

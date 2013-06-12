@@ -48,6 +48,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 
 void printUsage() {
 #ifndef WINDOWS	
@@ -288,6 +289,7 @@ int main(const int argc, const char* argv[]) {
 			switch (parser.getType()) {
 			case storm::models::DTMC:
 				LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+                parser.getModel<storm::models::Dtmc<double>>()->writeDotToStream(std::cout);
                 modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Dtmc<double>>());
 				checkPrctlFormulae(*modelchecker);
 				break;
@@ -301,7 +303,7 @@ int main(const int argc, const char* argv[]) {
                 LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
                 break;
 			case storm::models::CTMDP:
-                LOG4CPLUS_INFO(logger, "Model is a CTMC.");
+                LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
                 LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
 				break;
 			case storm::models::Unknown:

@@ -25,16 +25,16 @@ namespace adapters {
 class SymbolicModelAdapter {
 public:
 
-	SymbolicModelAdapter() : cuddUtility(storm::utility::cuddUtilityInstance()), allDecisionDiagramVariables(),
+	SymbolicModelAdapter(storm::ir::Program const& program) : program(program), cuddUtility(storm::utility::cuddUtilityInstance()), allDecisionDiagramVariables(),
 		allRowDecisionDiagramVariables(), allColumnDecisionDiagramVariables(), booleanRowDecisionDiagramVariables(),
 		integerRowDecisionDiagramVariables(), booleanColumnDecisionDiagramVariables(), integerColumnDecisionDiagramVariables(),
 		variableToRowDecisionDiagramVariableMap(), variableToColumnDecisionDiagramVariableMap(),
 		variableToIdentityDecisionDiagramMap(),
-		rowExpressionAdapter(variableToRowDecisionDiagramVariableMap), columnExpressionAdapter(variableToColumnDecisionDiagramVariableMap) {
+		rowExpressionAdapter(program, variableToRowDecisionDiagramVariableMap), columnExpressionAdapter(program, variableToColumnDecisionDiagramVariableMap) {
 
 	}
 
-	void toMTBDD(storm::ir::Program const& program) {
+	void toMTBDD() {
 		LOG4CPLUS_INFO(logger, "Creating MTBDD representation for probabilistic program.");
 		createDecisionDiagramVariables(program);
 		createIdentityDecisionDiagrams(program);
@@ -122,6 +122,7 @@ public:
 	}
 
 private:
+    storm::ir::Program const& program;
 	storm::utility::CuddUtility* cuddUtility;
 
 	std::vector<ADD*> allDecisionDiagramVariables;

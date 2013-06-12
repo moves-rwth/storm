@@ -84,6 +84,13 @@ namespace storm {
             storm::ir::BooleanVariable const& getBooleanVariable(uint_fast64_t index) const;
             
             /*!
+             * Retrieves a reference to the boolean variable with the given name.
+             *
+             * @return A reference to the boolean variable with the given name.
+             */
+            storm::ir::BooleanVariable const& getBooleanVariable(std::string const& variableName) const;
+            
+            /*!
              * Retrieves the number of integer variables in the module.
              *
              * @return The number of integer variables in the module.
@@ -96,6 +103,13 @@ namespace storm {
              * @return A reference to the integer variable with the given index.
              */
             storm::ir::IntegerVariable const& getIntegerVariable(uint_fast64_t index) const;
+            
+            /*!
+             * Retrieves a reference to the boolean variable with the given name.
+             *
+             * @return A reference to the boolean variable with the given name.
+             */
+            storm::ir::IntegerVariable const& getIntegerVariable(std::string const& variableName) const;
             
             /*!
              * Retrieves the number of commands of this module.

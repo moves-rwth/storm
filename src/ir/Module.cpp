@@ -86,11 +86,21 @@ namespace storm {
             return this->booleanVariables[index];
         }
         
+        storm::ir::BooleanVariable const& Module::getBooleanVariable(std::string const& variableName) const {
+            uint_fast64_t index = this->getBooleanVariableIndex(variableName);
+            return this->booleanVariables[index];
+        }
+        
         uint_fast64_t Module::getNumberOfIntegerVariables() const {
             return this->integerVariables.size();
         }
         
         storm::ir::IntegerVariable const& Module::getIntegerVariable(uint_fast64_t index) const {
+            return this->integerVariables[index];
+        }
+        
+        storm::ir::IntegerVariable const& Module::getIntegerVariable(std::string const& variableName) const {
+            uint_fast64_t index = this->getIntegerVariableIndex(variableName);
             return this->integerVariables[index];
         }
         

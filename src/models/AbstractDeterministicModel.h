@@ -4,6 +4,7 @@
 #include "AbstractModel.h"
 
 #include <memory>
+#include <sstream>
 
 namespace storm {
 
@@ -64,6 +65,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
             return this->transitionMatrix->constColumnIteratorEnd(state);
         }
+    
 };
 
 } // namespace models
