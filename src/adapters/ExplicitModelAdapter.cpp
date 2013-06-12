@@ -13,6 +13,7 @@
 #include "src/models/Dtmc.h"
 #include "src/models/Ctmc.h"
 #include "src/models/Mdp.h"
+#include "src/models/Ctmdp.h"
 
 typedef std::pair<std::vector<bool>, std::vector<int_fast64_t>> StateType;
 
@@ -80,9 +81,11 @@ namespace adapters {
 				break;
 			}
 			case storm::ir::Program::CTMDP:
-				// Todo
-				//return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmdp<double>(matrix, stateLabeling, stateRewards, transitionRewardMatrix));
+			{
+				storm::storage::SparseMatrix<double> matrix = this->buildNondeterministicMatrix();
+				return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmdp<double>(matrix, stateLabeling, this->choiceIndices, stateRewards, this->transitionRewards));
 				break;
+			}
 			default:
 				LOG4CPLUS_ERROR(logger, "Error while creating model from probabilistic program: We can't handle this model type.");
 				throw storm::exceptions::WrongFormatException() << "Error while creating model from probabilistic program: We can't handle this model type.";
@@ -453,7 +456,7 @@ namespace adapters {
 		storm::storage::SparseMatrix<double> result(allStates.size());
 		result.initialize(numberOfTransitions);
 		if ((this->rewardModel != nullptr) && (this->rewardModel->hasTransitionRewards())) {
-			this->transitionRewards.reset(storm::storage::SparseMatrix<double>(allStates.size()));
+			this->transitionRewards.reset(std::move(storm::storage::SparseMatrix<double>(allStates.size())));
 			this->transitionRewards.get().initialize(numberOfTransitions);
 		}
 		for (uint_fast64_t state = 0; state < this->allStates.size(); state++) {
