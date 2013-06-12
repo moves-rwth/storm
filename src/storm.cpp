@@ -241,8 +241,7 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	storm::settings::Settings* s = storm::settings::instance();
 	if (s->isSet("prctl")) {
 		LOG4CPLUS_INFO(logger, "Parsing prctl file: " << s->getString("prctl") << ".");
-		storm::parser::PrctlFileParser fileParser;
-		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = fileParser.parseFormulas(s->getString("prctl"));
+		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(s->getString("prctl"));
         
         for (auto formula : formulaList) {
             modelchecker.check(*formula);
@@ -317,8 +316,7 @@ int main(const int argc, const char* argv[]) {
             }
 		} else if (s->isSet("symbolic")) {
 			std::string arg = s->getString("symbolic");
-			storm::parser::PrismParser parser;
-			storm::adapters::ExplicitModelAdapter adapter(parser.parseFile(arg));
+			storm::adapters::ExplicitModelAdapter adapter(storm::parser::PrismParserFromFile(arg));
 			std::shared_ptr<storm::models::AbstractModel<double>> model = adapter.getModel();
 			model->printModelInformationToStream(std::cout);
 		}
