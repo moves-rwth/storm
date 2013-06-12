@@ -94,7 +94,6 @@ public:
 		}
 	}
 
-	//! Destructor
 	/*!
 	 * Destructor.
 	 */

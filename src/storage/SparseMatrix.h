@@ -243,6 +243,18 @@ public:
 		other.currentSize = 0;
 		other.lastRow = 0;
 	}
+
+	/*!
+	 * Copy Constructor.
+	 *
+	 * @param other The Matrix from which to copy the content
+	 */
+	SparseMatrix(SparseMatrix const& other)
+		: rowCount(other.rowCount), colCount(other.colCount), nonZeroEntryCount(other.nonZeroEntryCount),
+		internalStatus(other.internalStatus), currentSize(other.currentSize),
+		valueStorage(other.valueStorage), columnIndications(other.columnIndications),
+		rowIndications(other.rowIndications), lastRow(other.lastRow) {
+	}
     
     /*!
      * Constructs a sparse matrix object with the given (moved) contents.

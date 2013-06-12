@@ -35,6 +35,18 @@ template<class T>
 class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 
 	public:
+		/*! Copy Constructor for an abstract model from the given transition matrix and
+		 * the given labeling of the states. Creates copies of all given references.
+		 * @param other The Source Abstract Model
+		 */
+		AbstractModel(AbstractModel<T> const& other) 
+			: transitionMatrix(other.transitionMatrix), 
+			stateLabeling(other.stateLabeling),
+			stateRewardVector(other.stateRewardVector),
+			transitionRewardMatrix(other.transitionRewardMatrix) {
+			// Intentionally left empty.
+		}
+
 		/*! Move Constructor for an abstract model from the given transition matrix and
 		 * the given labeling of the states. Creates copies of all given references.
 		 * @param other The Source Abstract Model

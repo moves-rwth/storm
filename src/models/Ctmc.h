@@ -53,7 +53,6 @@ public:
 			: AbstractDeterministicModel<T>(rateMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
 	}
 
-	//! Copy Constructor
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given CTMC.
 	 * @param ctmc A reference to the CTMC that is to be copied.
