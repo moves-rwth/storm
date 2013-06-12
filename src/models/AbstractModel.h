@@ -4,6 +4,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
+#include "src/utility/Hash.h"
 
 #include <memory>
 #include <vector>
@@ -377,6 +378,23 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             out << "-------------------------------------------------------------- " << std::endl;
         }
     
+		/*!
+		 * Calculates a hash over all values contained in this Model.
+		 * @return size_t A Hash Value
+		 */
+		virtual size_t getHash() const {
+			std::size_t result = 0;
+			boost::hash_combine(result, transitionMatrix.getHash());
+			boost::hash_combine(result, stateLabeling.getHash());
+			if (stateRewardVector) {
+				boost::hash_combine(result, storm::utility::Hash<T>::getHash(stateRewardVector.get()));
+			}
+			if (transitionRewardMatrix) {
+				boost::hash_combine(result, transitionRewardMatrix.get().getHash());
+			}
+			return result;
+		}
+
 protected:
         /*!
          * Exports the model to the dot-format and prints the result to the given stream.

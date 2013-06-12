@@ -78,6 +78,14 @@ class AbstractDeterministicModel: public AbstractModel<T> {
         virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
             return this->transitionMatrix.constColumnIteratorEnd(state);
         }
+
+		/*!
+		 * Calculates a hash over all values contained in this Model.
+		 * @return size_t A Hash Value
+		 */
+		virtual std::size_t getHash() const override {
+			return AbstractModel::getHash();
+		}
     
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
             AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);

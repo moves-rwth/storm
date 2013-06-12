@@ -103,6 +103,14 @@ public:
 		return CTMDP;
 	}
 
+	/*!
+	 * Calculates a hash over all values contained in this Model.
+	 * @return size_t A Hash Value
+	 */
+	virtual std::size_t getHash() const override {
+		return AbstractNondeterministicModel::getHash();
+	}
+
 private:
 
 	/*!

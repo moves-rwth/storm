@@ -17,6 +17,7 @@
 #include "src/storage/JacobiDecomposition.h"
 
 #include "src/utility/ConstTemplates.h"
+#include "src/utility/Hash.h"
 #include "Eigen/Sparse"
 #include "gmm/gmm_matrix.h"
 
@@ -1230,6 +1231,25 @@ public:
 
 		// Return final result.
 		return result.str();
+	}
+
+	/*!
+	 * Calculates a hash over all values contained in this Sparse Matrix.
+	 * @return size_t A Hash Value
+	 */
+	std::size_t getHash() const {
+		std::size_t result = 0;
+
+		boost::hash_combine(result, rowCount);
+		boost::hash_combine(result, colCount);
+		boost::hash_combine(result, nonZeroEntryCount);
+		boost::hash_combine(result, currentSize);
+		boost::hash_combine(result, lastRow);
+		boost::hash_combine(result, storm::utility::Hash<T>::getHash(valueStorage));
+		boost::hash_combine(result, storm::utility::Hash<uint_fast64_t>::getHash(columnIndications));
+		boost::hash_combine(result, storm::utility::Hash<uint_fast64_t>::getHash(rowIndications));
+
+		return result;
 	}
 
 private:

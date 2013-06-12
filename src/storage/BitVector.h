@@ -11,6 +11,7 @@
 #include "src/exceptions/OutOfRangeException.h"
 
 #include "src/utility/OsDetection.h"
+#include "src/utility/Hash.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 
@@ -80,6 +81,7 @@ public:
 		bool operator!=(const constIndexIterator& rhs) const {
 			return currentIndex != rhs.currentIndex;
 		}
+
 	private:
 
 		/*! The bit vector to search for set bits. */
@@ -626,6 +628,23 @@ public:
 		result << "]";
 
 		return result.str();
+	}
+
+	/*!
+	 * Calculates a hash over all values contained in this Sparse Matrix.
+	 * @return size_t A Hash Value
+	 */
+	std::size_t getHash() const {
+		std::size_t result = 0;
+
+		boost::hash_combine(result, bucketCount);
+		boost::hash_combine(result, bitCount);
+		
+		for (uint_fast64_t i = 0; i < bucketCount; ++i) {
+			boost::hash_combine(result, bucketArray[i]);
+		}
+
+		return result;
 	}
 
 private:

@@ -15,6 +15,8 @@
 #include <unordered_map>
 #include <set>
 
+#include "src/utility/Hash.h"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 
@@ -232,6 +234,29 @@ public:
 	std::unordered_map<std::string, uint_fast64_t> const& getNameToLabelingMap() const
 			{
 		return this->nameToLabelingMap;
+	}
+
+	/*!
+	 * Calculates a hash over all values contained in this Sparse Matrix.
+	 * @return size_t A Hash Value
+	 */
+	std::size_t getHash() const {
+		std::size_t result = 0;
+
+		boost::hash_combine(result, stateCount);
+		boost::hash_combine(result, apCountMax);
+		boost::hash_combine(result, apsCurrent);
+		
+		for (auto it = nameToLabelingMap.begin(); it != nameToLabelingMap.end(); ++it) {
+			boost::hash_combine(result, it->first);
+			boost::hash_combine(result, it->second);
+		}
+
+		for (auto it = singleLabelings.begin(); it != singleLabelings.end(); ++it) {
+			boost::hash_combine(result, it->getHash());
+		}
+
+		return result;
 	}
 
 private:

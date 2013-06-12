@@ -109,6 +109,14 @@ public:
 		return DTMC;
 	}
 
+	/*!
+	 * Calculates a hash over all values contained in this Model.
+	 * @return size_t A Hash Value
+	 */
+	virtual std::size_t getHash() const override {
+		return AbstractDeterministicModel::getHash();
+	}
+
 private:
 	/*!
 	 *	@brief Perform some sanity checks.

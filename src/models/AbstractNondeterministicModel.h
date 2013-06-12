@@ -126,6 +126,17 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
             return this->transitionMatrix.constColumnIteratorEnd(nondeterministicChoiceIndices[state + 1] - 1);
         }
 
+		/*!
+		 * Calculates a hash over all values contained in this Model.
+		 * @return size_t A Hash Value
+		 */
+		virtual size_t getHash() const override {
+			std::size_t result = 0;
+			boost::hash_combine(result, AbstractModel::getHash());
+			boost::hash_combine(result, storm::utility::Hash<uint_fast64_t>::getHash(nondeterministicChoiceIndices));
+			return result;
+		}
+
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
             AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
         
