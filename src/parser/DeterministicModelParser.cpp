@@ -56,7 +56,7 @@ DeterministicModelParserResultContainer<double> parseDeterministicModel(std::str
  */
 storm::models::Dtmc<double> DeterministicModelParserAsDtmc(std::string const & transitionSystemFile, std::string const & labelingFile,
 														   std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	DeterministicModelParserResultContainer<double> parserResult = parseDeterministicModel(transitionRewardFile, labelingFile, stateRewardFile, transitionRewardFile);
+	DeterministicModelParserResultContainer<double> parserResult = parseDeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
 	return storm::models::Dtmc<double>(parserResult.transitionSystem, parserResult.labeling, parserResult.stateRewards, parserResult.transitionRewards);
 }
 
@@ -67,7 +67,7 @@ storm::models::Dtmc<double> DeterministicModelParserAsDtmc(std::string const & t
  */
 storm::models::Ctmc<double> DeterministicModelParserAsCtmc(std::string const & transitionSystemFile, std::string const & labelingFile,
 				std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	DeterministicModelParserResultContainer<double> parserResult = parseDeterministicModel(transitionRewardFile, labelingFile, stateRewardFile, transitionRewardFile);
+	DeterministicModelParserResultContainer<double> parserResult = parseDeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
 	return storm::models::Ctmc<double>(parserResult.transitionSystem, parserResult.labeling, parserResult.stateRewards, parserResult.transitionRewards);
 }
 
