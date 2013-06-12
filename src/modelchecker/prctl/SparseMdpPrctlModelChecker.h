@@ -442,9 +442,9 @@ public:
 		storm::storage::BitVector infinityStates;
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
 		if (this->minimumOperatorStack.top()) {
-			infinityStates = storm::utility::graph::performProb1A(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates);
+			infinityStates = std::move(storm::utility::graph::performProb1A(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates));
 		} else {
-			infinityStates = storm::utility::graph::performProb1E(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates);
+			infinityStates = std::move(storm::utility::graph::performProb1E(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates));
 		}
 		infinityStates.complement();
 		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
