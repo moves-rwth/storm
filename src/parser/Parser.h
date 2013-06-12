@@ -148,7 +148,7 @@ namespace parser {
 	/*!
 	 * @briefs Analyzes the given file and tries to find out the used line endings.
 	 */
-	storm::parser::SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName);
+	storm::parser::SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName, bool throwOnUnsupported = false);
 
 } // namespace parser
 } // namespace storm

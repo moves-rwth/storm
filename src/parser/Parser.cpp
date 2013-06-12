@@ -72,9 +72,7 @@ char* storm::parser::trimWhitespaces(char* buf) {
 /*!
  * @briefs Analyzes the given file and tries to find out the used file endings.
  */
-storm::parser::SupportedLineEndingsEnum storm::parser::findUsedLineEndings(std::string const& fileName) {
-	storm::parser::SupportedLineEndingsEnum result = storm::parser::SupportedLineEndingsEnum::Unsupported;
-
+storm::parser::SupportedLineEndingsEnum storm::parser::findUsedLineEndings(std::string const& fileName, bool throwOnUnsupported) {
 	MappedFile fileMap(fileName.c_str());
 	char* buf = nullptr;
 	char* const bufferEnd = fileMap.dataend;
@@ -91,6 +89,13 @@ storm::parser::SupportedLineEndingsEnum storm::parser::findUsedLineEndings(std::
 			return storm::parser::SupportedLineEndingsEnum::SlashN;
 		}
 	}
+
+	if (throwOnUnsupported) {
+		LOG4CPLUS_ERROR(logger, "Error while parsing \"" << fileName << "\": Unsupported or unknown line-endings. Please use either of \\r, \\n or \\r\\n");
+		throw storm::exceptions::WrongFormatException() << "Error while parsing \"" << fileName << "\": Unsupported or unknown line-endings. Please use either of \\r, \\n or \\r\\n";
+	}
+	LOG4CPLUS_WARN(logger, "Error while parsing \"" << fileName << "\": Unsupported or unknown line-endings. Please use either of \\r, \\n or \\r\\n");
+
 	return storm::parser::SupportedLineEndingsEnum::Unsupported;
 }
 

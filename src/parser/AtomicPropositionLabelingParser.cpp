@@ -49,13 +49,42 @@ storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser(uint_f
 		throw storm::exceptions::FileIoException() << "The supplied Labeling input file \"" << filename << "\" does not exist or is not readable by this process.";
 	}
 
+	/*
+	 *	Find out about the used line endings.
+	 */
+	SupportedLineEndingsEnum lineEndings = findUsedLineEndings(filename, true);
+
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
 
 	/*
 	 *	First run: obtain number of propositions.
 	 */
-	char separator[] = " \r\n\t";
+	char separator[5];// = " \r\n\t";
+	switch (lineEndings) {
+		case SupportedLineEndingsEnum::SlashN:
+			separator[0] = ' ';
+			separator[1] = '\n';
+			separator[2] = '\t';
+			separator[3] = '\0';
+			separator[4] = '\0';
+			break;
+		case SupportedLineEndingsEnum::SlashR:
+			separator[0] = ' ';
+			separator[1] = '\r';
+			separator[2] = '\t';
+			separator[3] = '\0';
+			separator[4] = '\0';  
+			break;
+		case SupportedLineEndingsEnum::SlashRN:
+			separator[0] = ' ';
+			separator[1] = '\r';
+			separator[2] = '\n';
+			separator[3] = '\t';
+			separator[4] = '\0';
+			break;
+	}
+
 	bool foundDecl = false, foundEnd = false;
 	uint_fast32_t proposition_count = 0;
 	{
@@ -160,7 +189,7 @@ storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser(uint_f
 			 *	parse node number, then iterate over propositions
 			 */
 			node = checked_strtol(buf, &buf);
-			while ((buf[0] != '\n') && (buf[0] != '\0')) {
+			while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
 				cnt = strcspn(buf, separator);
 				if (cnt == 0) {
 					/*
@@ -168,7 +197,7 @@ storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser(uint_f
 					 *	if it's a newline, we continue with next node
 					 *	otherwise we skip it and try again
 					 */
-					if (buf[0] == '\n') break;
+					if (buf[0] == '\n' || buf[0] == '\r') break;
 					buf++;
 				} else {
 					/*

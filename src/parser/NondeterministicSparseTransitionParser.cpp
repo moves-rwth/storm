@@ -49,14 +49,25 @@ namespace parser {
  *	@param maxnode Is set to highest id of all nodes.
  *	@return The number of non-zero elements.
  */
-uint_fast64_t firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
+uint_fast64_t firstPass(char* buf, SupportedLineEndingsEnum lineEndings, uint_fast64_t& choices, int_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
 	bool isRewardFile = rewardMatrixInformation != nullptr;
 
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
 	if (!isRewardFile) {
-		buf = strchr(buf, '\n') + 1;  // skip format hint
+		// skip format hint
+		switch (lineEndings) {
+			case SupportedLineEndingsEnum::SlashN:
+				buf = strchr(buf, '\n') + 1;  
+				break;
+			case SupportedLineEndingsEnum::SlashR:
+				buf = strchr(buf, '\r') + 1;  
+				break;
+			case SupportedLineEndingsEnum::SlashRN:
+				buf = strchr(buf, '\r') + 2;
+				break;
+		}
 	}
 
 	/*
@@ -149,7 +160,17 @@ uint_fast64_t firstPass(char* buf, uint_fast64_t& choices, int_fast64_t& maxnode
 		/*
 		 *	Proceed to beginning of next line.
 		 */
-		buf += strcspn(buf, " \t\n\r");
+		switch (lineEndings) {
+			case SupportedLineEndingsEnum::SlashN:
+				buf += strcspn(buf, " \t\n");
+				break;
+			case SupportedLineEndingsEnum::SlashR:
+				buf += strcspn(buf, " \t\r");
+				break;
+			case SupportedLineEndingsEnum::SlashRN:
+				buf += strcspn(buf, " \t\r\n");
+				break;
+		}
 		buf = trimWhitespaces(buf);
 	}
 
@@ -191,6 +212,11 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 	bool isRewardFile = rewardMatrixInformation != nullptr;
 
 	/*
+	 *	Find out about the used line endings.
+	 */
+	SupportedLineEndingsEnum lineEndings = findUsedLineEndings(filename, true);
+
+	/*
 	 *	Open file.
 	 */
 	MappedFile file(filename.c_str());
@@ -201,7 +227,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 	 */
 	int_fast64_t maxnode;
 	uint_fast64_t choices;
-	uint_fast64_t nonzero = firstPass(file.data, choices, maxnode, rewardMatrixInformation);
+	uint_fast64_t nonzero = firstPass(file.data, lineEndings, choices, maxnode, rewardMatrixInformation);
 
 	/*
 	 *	If first pass returned zero, the file format was wrong.
@@ -221,7 +247,18 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 	 *	Skip file header.
 	 */
 	if (!isRewardFile) {
-		buf = strchr(buf, '\n') + 1;  // skip format hint
+		// skip format hint
+		switch (lineEndings) {
+			case SupportedLineEndingsEnum::SlashN:
+				buf = strchr(buf, '\n') + 1;  
+				break;
+			case SupportedLineEndingsEnum::SlashR:
+				buf = strchr(buf, '\r') + 1;  
+				break;
+			case SupportedLineEndingsEnum::SlashRN:
+				buf = strchr(buf, '\r') + 2;
+				break;
+		}
 	}
 
 	if (isRewardFile) {
@@ -338,7 +375,17 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 		if (buf[0] == ' ') {
 			++buf;
 		}
-		buf += strcspn(buf, " \t\n\r");
+		switch (lineEndings) {
+			case SupportedLineEndingsEnum::SlashN:
+				buf += strcspn(buf, " \t\n");
+				break;
+			case SupportedLineEndingsEnum::SlashR:
+				buf += strcspn(buf, " \t\r");
+				break;
+			case SupportedLineEndingsEnum::SlashRN:
+				buf += strcspn(buf, " \t\r\n");
+				break;
+		}
 		buf = trimWhitespaces(buf);
 	}
 

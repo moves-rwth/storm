@@ -44,15 +44,27 @@ namespace parser {
  *	@param buf Data to scan. Is expected to be some char array.
  *	@param maxnode Is set to highest id of all nodes.
  */
-uint_fast64_t firstPass(char* buf, uint_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
+uint_fast64_t firstPass(char* buf, SupportedLineEndingsEnum lineEndings, uint_fast64_t& maxnode, RewardMatrixInformationStruct* rewardMatrixInformation) {
 	bool isRewardMatrix = rewardMatrixInformation != nullptr;
 
 	uint_fast64_t nonZeroEntryCount = 0;
+
 	/*
 	 *	Check file header and extract number of transitions.
 	 */
 	if (!isRewardMatrix) {
-		buf = strchr(buf, '\n') + 1;  // skip format hint
+		// skip format hint
+		switch (lineEndings) {
+			case SupportedLineEndingsEnum::SlashN:
+				buf = strchr(buf, '\n') + 1;  
+				break;
+			case SupportedLineEndingsEnum::SlashR:
+				buf = strchr(buf, '\r') + 1;  
+				break;
+			case SupportedLineEndingsEnum::SlashRN:
+				buf = strchr(buf, '\r') + 2;
+				break;
+		}
 	}
 
 	/*
@@ -129,7 +141,7 @@ uint_fast64_t firstPass(char* buf, uint_fast64_t& maxnode, RewardMatrixInformati
  *	@return a pointer to the created sparse matrix.
  */
 
-storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::string const &filename, bool insertDiagonalEntriesIfMissing, RewardMatrixInformationStruct* rewardMatrixInformation) {
+storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::string const& filename, bool insertDiagonalEntriesIfMissing, RewardMatrixInformationStruct* rewardMatrixInformation) {
 	/*
 	 *	Enforce locale where decimal point is '.'.
 	 */
@@ -143,6 +155,11 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 	}
 
 	/*
+	 *	Find out about the used line endings.
+	 */
+	SupportedLineEndingsEnum lineEndings = findUsedLineEndings(filename, true);
+
+	/*
 	 *	Open file.
 	 */
 	MappedFile file(filename.c_str());
@@ -152,7 +169,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 	 *	Perform first pass, i.e. count entries that are not zero.
 	 */
 	uint_fast64_t maxStateId;
-	uint_fast64_t nonZeroEntryCount = firstPass(file.data, maxStateId, rewardMatrixInformation);
+	uint_fast64_t nonZeroEntryCount = firstPass(file.data, lineEndings, maxStateId, rewardMatrixInformation);
 
 	LOG4CPLUS_INFO(logger, "First pass on " << filename << " shows " << nonZeroEntryCount << " NonZeros.");
 
@@ -174,7 +191,18 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 	 *	Read file header, extract number of states.
 	 */
 	if (!isRewardMatrix) {
-		buf = strchr(buf, '\n') + 1;  // skip format hint
+		// skip format hint
+		switch (lineEndings) {
+			case SupportedLineEndingsEnum::SlashN:
+				buf = strchr(buf, '\n') + 1;  
+				break;
+			case SupportedLineEndingsEnum::SlashR:
+				buf = strchr(buf, '\r') + 1;  
+				break;
+			case SupportedLineEndingsEnum::SlashRN:
+				buf = strchr(buf, '\r') + 2;
+				break;
+		}
 	}
 
 	// If the matrix that is being parsed is a reward matrix, it should match the size of the
