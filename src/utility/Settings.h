@@ -178,11 +178,6 @@ namespace settings {
 			void secondRun(int const argc, char const * const argv[], char const * const filename);
 			
 			/*!
-			 *	@brief	Option description for positional arguments on command line.
-			 */
-			bpo::positional_options_description positional;
-			
-			/*!
 			 *	@brief	Collecting option descriptions.
 			 */
 			static std::unique_ptr<bpo::options_description> desc;

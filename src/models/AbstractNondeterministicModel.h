@@ -97,6 +97,73 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
             return this->transitionMatrix->constColumnIteratorEnd((*nondeterministicChoiceIndices)[state + 1] - 1);
         }
 
+        virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
+            AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
+        
+            // Initialize the two iterators that we are going to use.
+            typename storm::storage::SparseMatrix<T>::ConstRowsIterator transitionIt = this->getTransitionMatrix().begin();
+            typename storm::storage::SparseMatrix<T>::ConstRowsIterator transitionIte = this->getTransitionMatrix().begin();
+
+            for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
+                uint_fast64_t rowCount = (*nondeterministicChoiceIndices)[state + 1] - (*nondeterministicChoiceIndices)[state];
+                bool highlightChoice = true;
+                for (uint_fast64_t row = 0; row < rowCount; ++row) {
+                    if (scheduler != nullptr) {
+                        // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
+                        if ((*scheduler)[state] == row) {
+                            highlightChoice = true;
+                        } else {
+                            highlightChoice = false;
+                        }
+                    }
+                    
+                    // For each nondeterministic choice, we draw an arrow to an intermediate node to better display
+                    // the grouping of transitions.
+                    outStream << "\t\"" << state << "c" << row << "\" [shape = \"point\"";
+                    
+                    // If we were given a scheduler to highlight, we do so now.
+                    if (scheduler != nullptr) {
+                        if (highlightChoice) {
+                            outStream << ", fillcolor=\"red\"";
+                        }
+                    }
+                    outStream << "];" << std::endl;
+                    
+                    outStream << "\t" << state << " -> \"" << state << "c" << row << "\"";
+                    
+                    // If we were given a scheduler to highlight, we do so now.
+                    if (scheduler != nullptr) {
+                        if (highlightChoice) {
+                            outStream << " [color=\"red\", penwidth = 2]";
+                        } else {
+                            outStream << " [style = \"dotted\"]";
+                        }
+                    }
+                    outStream << ";" << std::endl;
+                    
+                    // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
+                    transitionIte.moveToNextRow();
+                    for (; transitionIt != transitionIte; ++transitionIt) {
+                        outStream << "\t\"" << state << "c" << row << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ]";
+                        
+                        // If we were given a scheduler to highlight, we do so now.
+                        if (scheduler != nullptr) {
+                            if (highlightChoice) {
+                                outStream << " [color=\"red\", penwidth = 2]";
+                            } else {
+                                outStream << " [style = \"dotted\"]";
+                            }
+                        }
+                        outStream << ";" << std::endl;
+                    }
+                }
+            }
+        
+            if (finalizeOutput) {
+                outStream << "}" << std::endl;
+            }
+        }
+    
 	private:
 		/*! A vector of indices mapping states to the choices (rows) in the transition matrix. */
 		std::shared_ptr<std::vector<uint_fast64_t>> nondeterministicChoiceIndices;

@@ -316,6 +316,21 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		}
     
         /*!
+         * Prints information about the model to the specified stream.
+         * @param out The stream the information is to be printed to.
+         */
+        void printModelInformationToStream(std::ostream& out) const {
+            out << "-------------------------------------------------------------- " << std::endl;
+            out << "Model type: \t\t" << this->getType() << std::endl;
+            out << "States: \t\t" << this->getNumberOfStates() << std::endl;
+            out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
+            this->getStateLabeling().printAtomicPropositionsInformationToStream(out);
+            out << "Size in memory: \t" << (this->getSizeInMemory())/1024 << " kbytes" << std::endl;
+            out << "-------------------------------------------------------------- " << std::endl;
+        }
+    
+protected:
+        /*!
          * Exports the model to the dot-format and prints the result to the given stream.
          *
          * @param outStream The stream to which the model is to be written. 
@@ -325,41 +340,45 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param secondValue If not null, the values in this vector are attached to the states.
          * @param stateColoring If not null, this is a mapping from states to color codes.
          * @param colors A mapping of color codes to color names.
+         * @param finalizeOutput A flag that sets whether or not the dot stream is closed with a curly brace.
          * @return A string containing the exported model in dot-format.
          */
-        virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr) const {
+        virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const {
             outStream << "digraph deterministicModel {" << std::endl;
         
-            for (uint_fast64_t stateIndex = 0, highestStateIndex = this->getNumberOfStates() - 1; stateIndex <= highestStateIndex; ++stateIndex) {
-                outStream << "\t" << stateIndex;
+            for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
+                outStream << "\t" << state;
                 if (includeLabeling || firstValue != nullptr || secondValue != nullptr || stateColoring != nullptr) {
                     outStream << " [ ";
                     if (includeLabeling || firstValue != nullptr || secondValue != nullptr) {
-                        outStream << "label = \"";
+                        outStream << "label = \"" << state << ": ";
                     
                         // Now print the state labeling to the stream if requested.
                         if (includeLabeling) {
-                            bool insertComma = true;
-                            for (std::string const& label : this->getLabelsForState(stateIndex)) {
-                                if (insertComma) {
+                            outStream << "{";
+                            bool includeComma = false;
+                            for (std::string const& label : this->getLabelsForState(state)) {
+                                if (includeComma) {
                                     outStream << ", ";
-                                    insertComma = false;
+                                } else {
+                                    includeComma = true;
                                 }
                                 outStream << label;
                             }
+                            outStream << "}";
                         }
                     
                         // If we are to include some values for the state as well, we do so now.
                         if (firstValue != nullptr || secondValue != nullptr) {
                             outStream << "[";
                             if (firstValue != nullptr) {
-                                outStream << (*firstValue)[stateIndex];
+                                outStream << (*firstValue)[state];
                                 if (secondValue != nullptr) {
                                     outStream << ", ";
                                 }
                             }
                             if (secondValue != nullptr) {
-                                outStream << (*secondValue)[stateIndex];
+                                outStream << (*secondValue)[state];
                             }
                             outStream << "]";
                         }
@@ -368,35 +387,19 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                         // Now, we color the states if there were colors given.
                         if (stateColoring != nullptr && colors != nullptr) {
                             outStream << ", ";
-                            outStream << " fillcolor = \"" << (*colors)[(*stateColoring)[stateIndex]] << "\"";
+                            outStream << " fillcolor = \"" << (*colors)[(*stateColoring)[state]] << "\"";
                         }
                     }
                     outStream << " ]";
                 }
-                outStream << ";";
+                outStream << ";" << std::endl;
             }
             
-            outStream << "}" << std::endl;
+            if (finalizeOutput) {
+                outStream << "}" << std::endl;
+            }
         }
 
-		/*!
-		 * Prints information about the model to the specified stream.
-		 * @param out The stream the information is to be printed to.
-		 */
-		void printModelInformationToStream(std::ostream& out) const {
-			out << "-------------------------------------------------------------- "
-				<< std::endl;
-			out << "Model type: \t\t" << this->getType() << std::endl;
-			out << "States: \t\t" << this->getNumberOfStates() << std::endl;
-			out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
-			this->getStateLabeling().printAtomicPropositionsInformationToStream(out);
-			out << "Size in memory: \t"
-				<< (this->getSizeInMemory())/1024 << " kbytes" << std::endl;
-			out << "-------------------------------------------------------------- "
-				<< std::endl;
-		}
-
-protected:
 		/*! A matrix representing the likelihoods of moving between states. */
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix;
 

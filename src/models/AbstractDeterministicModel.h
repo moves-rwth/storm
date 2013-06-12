@@ -66,10 +66,22 @@ class AbstractDeterministicModel: public AbstractModel<T> {
             return this->transitionMatrix->constColumnIteratorEnd(state);
         }
     
+        virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
+            AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
+            
+            for (auto const& transition : *this->transitionMatrix) {
+                if (transition.value() != storm::utility::constGetZero<T>()) {
+                    outStream << "\t" << transition.row() << " -> " << transition.column() << " [ label= \"" << transition.value() << "\" ];" << std::endl;
+                }
+            }
+                        
+            if (finalizeOutput) {
+                outStream << "}" << std::endl;
+            }
+        }
 };
 
 } // namespace models
-
 } // namespace storm
 
 #endif /* STORM_MODELS_ABSTRACTDETERMINISTICMODEL_H_ */

@@ -1009,7 +1009,7 @@ public:
 	 * @returns A const iterator that points past the last element of the matrix.
 	 */
 	ConstRowsIterator end() const {
-		return ConstRowsIterator(this->rowCount);
+		return ConstRowsIterator(*this, this->rowCount);
 	}
 	
 	/*!
@@ -1019,7 +1019,7 @@ public:
 	 * @returns A const iterator that points to the first element after the given row.
 	 */
 	ConstRowsIterator end(uint_fast64_t row) const {
-		return ConstRowsIterator(row + 1);
+		return ConstRowsIterator(*this, row + 1);
 	}
 
 	/*!

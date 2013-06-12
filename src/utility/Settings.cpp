@@ -137,7 +137,7 @@ void Settings::initDescriptions() {
 		("trace", "be extremely verbose, expect lots of output")
 		("logfile,l", bpo::value<std::string>(), "name of the log file")
 		("configfile,c", bpo::value<std::string>(), "name of config file")
-		("explicit", bpo::value<std::vector<std::string>>()->notifier(&checkExplicit), "name of transition and labeling file")
+		("explicit", bpo::value<std::vector<std::string>>()->multitoken()->notifier(&checkExplicit), "name of transition and labeling file")
 		("symbolic", bpo::value<std::string>(), "name of prism file")
 		("prctl", bpo::value<std::string>(), "text file containing prctl formulas")
 		("csl", bpo::value<std::string>(), "text file containing csl formulas")
@@ -151,7 +151,7 @@ void Settings::initDescriptions() {
 /*!
  *	Perform a sloppy parsing run: parse command line and config file (if
  *	given), but allow for unregistered options, do not check requirements
- *	from options_description objects, do not check positional arguments.
+ *	from options_description objects.
  */
 void Settings::firstRun(int const argc, char const * const argv[], char const * const filename) {
 	LOG4CPLUS_DEBUG(logger, "Performing first run.");
@@ -171,12 +171,12 @@ void Settings::firstRun(int const argc, char const * const argv[], char const * 
 /*!
  *	Perform the second parser run: parse command line and config file (if
  *	given) and check for unregistered options, requirements from
- *	options_description objects and positional arguments.
+ *	options_description objects.
  */
 void Settings::secondRun(int const argc, char const * const argv[], char const * const filename) {
 	LOG4CPLUS_DEBUG(logger, "Performing second run.");
 	// Parse command line.
-	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::desc)).positional(this->positional).run(), this->vm);
+	bpo::store(bpo::command_line_parser(argc, argv).options(*(Settings::desc)).run(), this->vm);
 	/*
 	 *	Load config file if specified.
 	 */
@@ -189,8 +189,7 @@ void Settings::secondRun(int const argc, char const * const argv[], char const *
 
 
 /*!
- *	Print a short general usage information consisting of the positional
- *	options and the list of available command line options.
+ *	Print a short general usage information consisting of the the list of available command line options.
  *
  *	Use it like this:
  *	@code std::cout << storm::settings::help; @endcode
