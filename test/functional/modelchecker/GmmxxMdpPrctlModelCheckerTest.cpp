@@ -13,6 +13,12 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
     
+	std::cout << "GmmxxMdpPrctlModelCheckerTest - MatrixData" << std::endl;
+	std::cout << "Number of Choices: " << mdp.get()->getNumberOfChoices() << std::endl;
+	std::cout << "Number of States: " << mdp.get()->getNumberOfStates() << std::endl;
+	std::cout << "Number of Transitions: " << mdp.get()->getNumberOfTransitions() << std::endl;
+	std::cout << "MDP Hash: " << mdp.get()->getHash() << std::endl;
+
 	ASSERT_EQ(mdp->getNumberOfStates(), 169u);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 436u);
 
