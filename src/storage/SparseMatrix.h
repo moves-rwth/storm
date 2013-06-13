@@ -233,9 +233,9 @@ public:
 	 */
 	SparseMatrix(SparseMatrix&& other)
 		: rowCount(other.rowCount), colCount(other.colCount), nonZeroEntryCount(other.nonZeroEntryCount),
-		internalStatus(other.internalStatus), currentSize(other.currentSize), lastRow(other.lastRow),
 		valueStorage(std::move(other.valueStorage)), columnIndications(std::move(other.columnIndications)),
-		rowIndications(std::move(other.rowIndications)) {
+		rowIndications(std::move(other.rowIndications)), internalStatus(other.internalStatus), 
+		currentSize(other.currentSize), lastRow(other.lastRow) {
 		// Now update the source matrix
 		other.rowCount = 0;
 		other.colCount = 0;
@@ -250,11 +250,11 @@ public:
 	 *
 	 * @param other The Matrix from which to copy the content
 	 */
-	SparseMatrix(SparseMatrix const& other)
+	SparseMatrix(const SparseMatrix & other)
 		: rowCount(other.rowCount), colCount(other.colCount), nonZeroEntryCount(other.nonZeroEntryCount),
-		internalStatus(other.internalStatus), currentSize(other.currentSize),
 		valueStorage(other.valueStorage), columnIndications(other.columnIndications),
-		rowIndications(other.rowIndications), lastRow(other.lastRow) {
+		rowIndications(other.rowIndications), internalStatus(other.internalStatus), 
+		currentSize(other.currentSize), lastRow(other.lastRow) {
 	}
     
     /*!
