@@ -32,7 +32,7 @@ NondeterministicModelParserResultContainer<double> parseNondeterministicModel(st
 	NondeterministicSparseTransitionParserResult_t nondeterministicSparseTransitionParserResult = storm::parser::NondeterministicSparseTransitionParser(transitionSystemFile);
 	storm::storage::SparseMatrix<double> resultTransitionSystem = nondeterministicSparseTransitionParserResult.first;
 
-	uint_fast64_t stateCount = resultTransitionSystem.getRowCount();
+	uint_fast64_t stateCount = resultTransitionSystem.getColumnCount();
 
 	storm::models::AtomicPropositionsLabeling resultLabeling = storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile);
 
