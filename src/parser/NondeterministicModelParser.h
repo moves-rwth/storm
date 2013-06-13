@@ -42,7 +42,7 @@ public:
 	std::vector<uint_fast64_t> rowMapping;
 	boost::optional<std::vector<T>> stateRewards;
 	boost::optional<storm::storage::SparseMatrix<T>> transitionRewards;
-	NondeterministicModelParserResultContainer(storm::storage::SparseMatrix<T> transitionSystem, std::vector<uint_fast64_t> rowMapping, storm::models::AtomicPropositionsLabeling labeling) : transitionSystem(transitionSystem), rowMapping(rowMapping), labeling(labeling) { }
+	NondeterministicModelParserResultContainer(storm::storage::SparseMatrix<T> transitionSystem, std::vector<uint_fast64_t> rowMapping, storm::models::AtomicPropositionsLabeling labeling) : transitionSystem(transitionSystem), labeling(labeling), rowMapping(rowMapping) { }
 private:
 	NondeterministicModelParserResultContainer() {}
 };
