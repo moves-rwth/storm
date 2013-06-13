@@ -100,7 +100,7 @@ TEST(LtlParserTest, parseBoundedUntilFormulaTest) {
 	ASSERT_EQ(static_cast<uint_fast64_t>(3), op->getBound());
 
 
-	ASSERT_EQ(ltlFormula->toString(), formula);
+	ASSERT_EQ(ltlFormula->toString(), "(a U<=3 b)");
 
 	delete ltlFormula;
 }
