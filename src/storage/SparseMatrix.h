@@ -231,7 +231,7 @@ public:
 	 *
 	 * @param other The Matrix from which to move the content
 	 */
-	SparseMatrix(SparseMatrix&& other)
+	SparseMatrix(SparseMatrix<T>&& other)
 		: rowCount(other.rowCount), colCount(other.colCount), nonZeroEntryCount(other.nonZeroEntryCount),
 		valueStorage(std::move(other.valueStorage)), columnIndications(std::move(other.columnIndications)),
 		rowIndications(std::move(other.rowIndications)), internalStatus(other.internalStatus), 
@@ -250,7 +250,7 @@ public:
 	 *
 	 * @param other The Matrix from which to copy the content
 	 */
-	SparseMatrix(const SparseMatrix & other)
+	SparseMatrix(const SparseMatrix<T> & other)
 		: rowCount(other.rowCount), colCount(other.colCount), nonZeroEntryCount(other.nonZeroEntryCount),
 		valueStorage(other.valueStorage), columnIndications(other.columnIndications),
 		rowIndications(other.rowIndications), internalStatus(other.internalStatus), 
@@ -258,15 +258,24 @@ public:
 	}
 
 	/*!
-	 * Copy Assignment Constructor.
+	 * Copy Assignment Operator.
 	 *
 	 * @param other The Matrix from which to copy the content
 	 */
-	storm::storage::SparseMatrix<T>& operator=(const SparseMatrix & other)
-		: rowCount(other.rowCount), colCount(other.colCount), nonZeroEntryCount(other.nonZeroEntryCount),
-		valueStorage(other.valueStorage), columnIndications(other.columnIndications),
-		rowIndications(other.rowIndications), internalStatus(other.internalStatus), 
-		currentSize(other.currentSize), lastRow(other.lastRow) {
+	storm::storage::SparseMatrix<T>& operator=(const SparseMatrix<T> & other) {
+		this->rowCount = other.rowCount;
+		this->colCount = other.colCount;
+		this->nonZeroEntryCount = other.nonZeroEntryCount;
+
+		this->valueStorage = other.valueStorage;
+		this->columnIndications = other.columnIndications;
+		this->rowIndications = other.rowIndications;
+
+		this->internalStatus = other.internalStatus;
+		this->currentSize = other.currentSize;
+		this->lastRow = other.lastRow;
+
+		return *this;
 	}
     
     /*!
