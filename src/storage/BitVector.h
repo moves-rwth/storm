@@ -143,7 +143,7 @@ public:
 	 * Copy Constructor. Performs a deep copy of the given bit vector.
 	 * @param bv A reference to the bit vector to be copied.
 	 */
-	BitVector(BitVector const& bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
+	BitVector(const BitVector & bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
 		LOG4CPLUS_DEBUG(logger, "Invoking copy constructor.");
 		bucketArray = new uint64_t[bucketCount];
 		std::copy(bv.bucketArray, bv.bucketArray + this->bucketCount, this->bucketArray);

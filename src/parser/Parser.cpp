@@ -162,6 +162,39 @@ void storm::parser::scanForModelHint(char* targetBuffer, uint_fast64_t targetBuf
 }
 
 /*!
+ * @brief Returns the matching Separator-String in the format of "BLANK\t\NEWLINESYMBOL(S)\0
+ */
+void storm::parser::getMatchingSeparatorString(char* targetBuffer, uint_fast64_t targetBufferSize, storm::parser::SupportedLineEndingsEnum lineEndings) {
+	if (targetBufferSize < 5) {
+		LOG4CPLUS_ERROR(logger, "storm::parser::getMatchingSeparatorString: The passed Target Buffer is too small.");
+		throw;
+	}
+	switch (lineEndings) {
+		case SupportedLineEndingsEnum::SlashN: {
+			char source[] = " \n\t";
+			strncpy(targetBuffer, targetBufferSize, source, sizeof(source));
+			break;
+											   }
+		case SupportedLineEndingsEnum::SlashR: {
+			char source[] = " \r\t";
+			strncpy(targetBuffer, targetBufferSize, source, sizeof(source));
+			break;
+											   }
+		case SupportedLineEndingsEnum::SlashRN: {
+			char source[] = " \r\n\t";
+			strncpy(targetBuffer, targetBufferSize, source, sizeof(source));
+			break;
+												}
+		default:
+		case SupportedLineEndingsEnum::Unsupported:
+			// This Line will never be reached as the Parser would have thrown already.
+			LOG4CPLUS_ERROR(logger, "storm::parser::getMatchingSeparatorString: The passed lineEndings were Unsupported. Check your input file.");
+			throw;
+			break;
+	}
+}
+
+/*!
  *	Will stat the given file, open it and map it to memory.
  *	If anything of this fails, an appropriate exception is raised
  *	and a log entry is written.

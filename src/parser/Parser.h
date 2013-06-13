@@ -163,6 +163,11 @@ namespace parser {
 	 */
 	void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char const* buffer, storm::parser::SupportedLineEndingsEnum lineEndings);
 
+	/*!
+	 * @brief Returns the matching Separator-String in the format of "BLANK\t\NEWLINESYMBOL(S)\0
+	 */
+	void getMatchingSeparatorString(char* targetBuffer, uint_fast64_t targetBufferSize, storm::parser::SupportedLineEndingsEnum lineEndings);
+
 } // namespace parser
 } // namespace storm
 

@@ -61,34 +61,7 @@ storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser(uint_f
 	 *	First run: obtain number of propositions.
 	 */
 	char separator[5];// = " \r\n\t";
-	switch (lineEndings) {
-		case SupportedLineEndingsEnum::SlashN:
-			separator[0] = ' ';
-			separator[1] = '\n';
-			separator[2] = '\t';
-			separator[3] = '\0';
-			separator[4] = '\0';
-			break;
-		case SupportedLineEndingsEnum::SlashR:
-			separator[0] = ' ';
-			separator[1] = '\r';
-			separator[2] = '\t';
-			separator[3] = '\0';
-			separator[4] = '\0';  
-			break;
-		case SupportedLineEndingsEnum::SlashRN:
-			separator[0] = ' ';
-			separator[1] = '\r';
-			separator[2] = '\n';
-			separator[3] = '\t';
-			separator[4] = '\0';
-			break;
-		default:
-		case SupportedLineEndingsEnum::Unsupported:
-			// This Line will never be reached as the Parser would have thrown already.
-			throw;
-			break;
-	}
+	storm::parser::getMatchingSeparatorString(separator, sizeof(separator), lineEndings);
 
 	bool foundDecl = false, foundEnd = false;
 	uint_fast32_t proposition_count = 0;
@@ -214,7 +187,7 @@ storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser(uint_f
 					buf += cnt;
 				}
 			}
-			buf = trimWhitespaces(buf);
+			buf = storm::parser::trimWhitespaces(buf);
 		}
 	}
 	return labeling;
