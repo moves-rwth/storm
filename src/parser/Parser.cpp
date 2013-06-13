@@ -102,7 +102,7 @@ storm::parser::SupportedLineEndingsEnum storm::parser::findUsedLineEndings(std::
 /*!
  * @brief Encapsulates the usage of function @strchr to forward to the next line
  */
-char* forwardToNextLine(char* buffer, storm::parser::SupportedLineEndingsEnum lineEndings) {
+char* storm::parser::forwardToNextLine(char* buffer, storm::parser::SupportedLineEndingsEnum lineEndings) {
 	switch (lineEndings) {
 		case storm::parser::SupportedLineEndingsEnum::SlashN:
 			return strchr(buffer, '\n') + 1;  
@@ -127,7 +127,7 @@ char* forwardToNextLine(char* buffer, storm::parser::SupportedLineEndingsEnum li
  * @param targetBuffer The Target for the hint, must be at least 64 bytes long
  * @param buffer The Source Buffer from which the Model Hint will be read
  */
-void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char const* buffer, storm::parser::SupportedLineEndingsEnum lineEndings) {
+void storm::parser::scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char const* buffer, storm::parser::SupportedLineEndingsEnum lineEndings) {
 	if (targetBufferSize <= 4) {
 		throw;
 	}
