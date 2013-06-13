@@ -227,6 +227,24 @@ public:
 		return result;
 	}
 
+    /*!
+	 * Check the given formula that is an until formula.
+	 *
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+     * @param scheduler If <code>qualitative</code> is false and this vector is non-null and has as many elements as
+     * there are states in the MDP, this vector will represent a scheduler for the model that achieves the probability
+     * returned by model checking. To this end, the vector will hold the nondeterministic choice made for each state.
+	 * @return The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
+	 */
+	virtual std::vector<Type>* checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative) const {
+        return this->checkUntil(formula, qualitative, nullptr);
+    }
+    
 	/*!
 	 * Check the given formula that is an until formula.
 	 *
@@ -235,10 +253,13 @@ public:
 	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
 	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
 	 * bounds 0 and 1.
-	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+     * @param scheduler If <code>qualitative</code> is false and this vector is non-null and has as many elements as
+     * there are states in the MDP, this vector will represent a scheduler for the model that achieves the probability
+     * returned by model checking. To this end, the vector will hold the nondeterministic choice made for each state.
+	 * @return The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative) const {
+	std::vector<Type>* checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
 		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
 		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
@@ -378,6 +399,21 @@ public:
 		return result;
 	}
 
+    /*!
+	 * Checks the given formula that is a reachability reward formula.
+	 *
+	 * @param formula The formula to check.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bound 0. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bound 0.
+	 * @return The reward values for the given formula for every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact values might not be computed.
+	 */
+	virtual std::vector<Type>* checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
+        return this->checkReachabilityReward(formula, qualitative, nullptr);
+    }
+    
 	/*!
 	 * Checks the given formula that is a reachability reward formula.
 	 *
@@ -386,10 +422,13 @@ public:
 	 * results are only compared against the bound 0. If set to true, this will most likely results that are only
 	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
 	 * bound 0.
-	 * @returns The reward values for the given formula for every state of the model associated with this model
+     * @param scheduler If <code>qualitative</code> is false and this vector is non-null and has as many elements as
+     * there are states in the MDP, this vector will represent a scheduler for the model that achieves the probability
+     * returned by model checking. To this end, the vector will hold the nondeterministic choice made for each state.
+	 * @return The reward values for the given formula for every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type>* checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
+	std::vector<Type>* checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
@@ -465,7 +504,7 @@ public:
 			}
 
 			// Solve the corresponding system of equations.
-			this->solveEquationSystem(submatrix, x, b, subNondeterministicChoiceIndices);
+			this->solveEquationSystem(submatrix, x, b, subNondeterministicChoiceIndices, scheduler);
 
 			// Set values of resulting vector according to result.
 			storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
@@ -481,6 +520,22 @@ public:
 	}
 
 protected:
+    /*!
+     * Computes the vector of choices that need to be made to minimize/maximize the model checking result for each state.
+     *
+     * @param nondeterministicResult The model checking result for nondeterministic choices of all states.
+     * @param takenChoices The output vector that is to store the taken choices.
+     * @param nondeterministicChoiceIndices The assignment of states to their nondeterministic choices in the matrix.
+     */
+    void computeTakenChoices(std::vector<Type> const& nondeterministicResult, std::vector<uint_fast64_t>& takenChoices, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+        std::vector<Type> temporaryResult(nondeterministicChoiceIndices.size() - 1);
+        if (this->minimumOperatorStack.top()) {
+            storm::utility::vector::reduceVectorMin(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
+        } else {
+            storm::utility::vector::reduceVectorMax(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
+        }
+    }
+    
 	/*!
 	 * A stack used for storing whether we are currently computing min or max probabilities or rewards, respectively.
 	 * The topmost element is true if and only if we are currently computing minimum probabilities or rewards.
@@ -532,9 +587,12 @@ private:
 	 * may be ignored.
 	 * @param b The right-hand side of the equation system.
      * @param nondeterministicChoiceIndices The assignment of states to their rows in the matrix.
+     * @param takenChoices If not null, this vector will be filled with the nondeterministic choices taken by the states
+     * to achieve the solution of the equation system. This assumes that the given vector has at least as many elements
+     * as there are states in the MDP.
 	 * @returns The solution vector x of the system of linear equations as the content of the parameter x.
 	 */
-	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<uint_fast64_t>* takenChoices = nullptr) const {
 		// Get the settings object to customize solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
@@ -575,6 +633,11 @@ private:
 			newX = swap;
 			++iterations;
 		}
+        
+        // If we were requested to record the taken choices, we have to construct the vector now.
+        if (takenChoices != nullptr) {
+            this->computeTakenChoices(multiplyResult, *takenChoices, nondeterministicChoiceIndices);
+        }
 
 		// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
 		// is currently stored in currentX, but x is the output vector.
@@ -592,7 +655,7 @@ private:
 			LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
 		}
 	}
-
+    
 	/*!
 	 * Computes the nondeterministic choice indices vector resulting from reducing the full system to the states given
 	 * by the parameter constraint.

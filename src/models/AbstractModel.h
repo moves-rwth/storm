@@ -347,59 +347,61 @@ protected:
             outStream << "digraph deterministicModel {" << std::endl;
         
             for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
-                outStream << "\t" << state;
-                if (includeLabeling || firstValue != nullptr || secondValue != nullptr || stateColoring != nullptr) {
-                    outStream << " [ ";
-                    if (includeLabeling || firstValue != nullptr || secondValue != nullptr) {
-                        outStream << "label = \"" << state << ": ";
+                if (subsystem == nullptr || subsystem->get(state)) {
+                    outStream << "\t" << state;
+                    if (includeLabeling || firstValue != nullptr || secondValue != nullptr || stateColoring != nullptr) {
+                        outStream << " [ ";
+                        if (includeLabeling || firstValue != nullptr || secondValue != nullptr) {
+                            outStream << "label = \"" << state << ": ";
                     
-                        // Now print the state labeling to the stream if requested.
-                        if (includeLabeling) {
-                            outStream << "{";
-                            bool includeComma = false;
-                            for (std::string const& label : this->getLabelsForState(state)) {
-                                if (includeComma) {
-                                    outStream << ", ";
-                                } else {
-                                    includeComma = true;
+                            // Now print the state labeling to the stream if requested.
+                            if (includeLabeling) {
+                                outStream << "{";
+                                bool includeComma = false;
+                                for (std::string const& label : this->getLabelsForState(state)) {
+                                    if (includeComma) {
+                                        outStream << ", ";
+                                    } else {
+                                        includeComma = true;
+                                    }
+                                    outStream << label;
                                 }
-                                outStream << label;
+                                outStream << "}";
                             }
-                            outStream << "}";
-                        }
                     
-                        // If we are to include some values for the state as well, we do so now.
-                        if (firstValue != nullptr || secondValue != nullptr) {
-                            outStream << "[";
-                            if (firstValue != nullptr) {
-                                outStream << (*firstValue)[state];
+                            // If we are to include some values for the state as well, we do so now.
+                            if (firstValue != nullptr || secondValue != nullptr) {
+                                outStream << "[";
+                                if (firstValue != nullptr) {
+                                    outStream << (*firstValue)[state];
+                                    if (secondValue != nullptr) {
+                                        outStream << ", ";
+                                    }
+                                }
                                 if (secondValue != nullptr) {
-                                    outStream << ", ";
+                                    outStream << (*secondValue)[state];
                                 }
+                                outStream << "]";
                             }
-                            if (secondValue != nullptr) {
-                                outStream << (*secondValue)[state];
-                            }
-                            outStream << "]";
-                        }
-                        outStream << "\"";
+                            outStream << "\"";
                     
-                        // Now, we color the states if there were colors given.
-                        if (stateColoring != nullptr && colors != nullptr) {
-                            outStream << ", ";
-                            outStream << " fillcolor = \"" << (*colors)[(*stateColoring)[state]] << "\"";
+                            // Now, we color the states if there were colors given.
+                            if (stateColoring != nullptr && colors != nullptr) {
+                                outStream << ", ";
+                                outStream << " fillcolor = \"" << (*colors)[(*stateColoring)[state]] << "\"";
+                            }
                         }
+                        outStream << " ]";
                     }
-                    outStream << " ]";
+                    outStream << ";" << std::endl;
                 }
-                outStream << ";" << std::endl;
             }
             
             if (finalizeOutput) {
                 outStream << "}" << std::endl;
             }
         }
-
+        
 		/*! A matrix representing the likelihoods of moving between states. */
 		std::shared_ptr<storm::storage::SparseMatrix<T>> transitionMatrix;
 

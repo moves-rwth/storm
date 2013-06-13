@@ -144,17 +144,19 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
                     // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
                     transitionIte.moveToNextRow();
                     for (; transitionIt != transitionIte; ++transitionIt) {
-                        outStream << "\t\"" << state << "c" << row << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ]";
+                        if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
+                            outStream << "\t\"" << state << "c" << row << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ]";
                         
-                        // If we were given a scheduler to highlight, we do so now.
-                        if (scheduler != nullptr) {
-                            if (highlightChoice) {
-                                outStream << " [color=\"red\", penwidth = 2]";
-                            } else {
-                                outStream << " [style = \"dotted\"]";
+                            // If we were given a scheduler to highlight, we do so now.
+                            if (scheduler != nullptr) {
+                                if (highlightChoice) {
+                                    outStream << " [color=\"red\", penwidth = 2]";
+                                } else {
+                                    outStream << " [style = \"dotted\"]";
+                                }
                             }
+                            outStream << ";" << std::endl;
                         }
-                        outStream << ";" << std::endl;
                     }
                 }
             }

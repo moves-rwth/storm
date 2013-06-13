@@ -102,7 +102,7 @@ private:
 	 * @return The solution of the system of linear equations in form of the elements of the vector
 	 * x.
 	 */
-	void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+	void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<uint_fast64_t>* takenChoices = nullptr) const override {
 		// Get the settings object to customize solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
@@ -145,6 +145,11 @@ private:
 			newX = swap;
 			++iterations;
 		}
+        
+        // If we were requested to record the taken choices, we have to construct the vector now.
+        if (takenChoices != nullptr) {
+            this->computeTakenChoices(multiplyResult, *takenChoices, nondeterministicChoiceIndices);
+        }
 
 		// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
 		// is currently stored in currentX, but x is the output vector.

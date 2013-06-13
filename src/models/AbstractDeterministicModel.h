@@ -71,7 +71,9 @@ class AbstractDeterministicModel: public AbstractModel<T> {
             
             for (auto const& transition : *this->transitionMatrix) {
                 if (transition.value() != storm::utility::constGetZero<T>()) {
-                    outStream << "\t" << transition.row() << " -> " << transition.column() << " [ label= \"" << transition.value() << "\" ];" << std::endl;
+                    if (subsystem == nullptr || subsystem->get(transition.column())) {
+                        outStream << "\t" << transition.row() << " -> " << transition.column() << " [ label= \"" << transition.value() << "\" ];" << std::endl;
+                    }
                 }
             }
                         

@@ -155,16 +155,22 @@ void addVectorsInPlace(std::vector<T>& target, std::vector<T> const& summand) {
  * @param rowGrouping A vector that specifies the begin and end of each group of elements in the values vector.
  * @param filter A function that compares two elements v1 and v2 according to some filter criterion. This function must
  * return true iff v1 is supposed to be taken instead of v2.
+ * @param choices If non-null, this vector is used to store the choices made during the selection.
  */
 template<class T>
-void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::function<bool (T const&, T const&)> filter) {
+void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::function<bool (T const&, T const&)> filter, std::vector<uint_fast64_t>* choices = nullptr) {
     uint_fast64_t currentSourceRow = 0;
     uint_fast64_t currentTargetRow = -1;
-    for (auto it = source.cbegin(), ite = source.cend(); it != ite; ++it, ++currentSourceRow) {
+    uint_fast64_t currentLocalRow = 0;
+    for (auto it = source.cbegin(), ite = source.cend(); it != ite; ++it, ++currentSourceRow, ++currentLocalRow) {
         // Check whether we have considered all source rows for the current target row.
         if (rowGrouping[currentTargetRow + 1] <= currentSourceRow || currentSourceRow == 0) {
+            currentLocalRow = 0;
             ++currentTargetRow;
             target[currentTargetRow] = source[currentSourceRow];
+            if (choices != nullptr) {
+                (*choices)[currentTargetRow] = 0;
+            }
             continue;
         }
             
@@ -172,6 +178,9 @@ void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vec
         // value is actually lower.
         if (filter(*it, target[currentTargetRow])) {
             target[currentTargetRow] = *it;
+            if (choices != nullptr) {
+                (*choices)[currentTargetRow] = currentLocalRow;
+            }
         }
     }
 }
@@ -181,10 +190,11 @@ void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vec
  *
  * @param source The source vector which is to be reduced.
  * @param target The target vector into which a single element from each row group is written.
- * @param rowGrouping A vector that specifies the begin and end of each group of elements in the values vector.
+ * @param rowGrouping A vector that specifies the begin and end of each group of elements in the source vector.
+ * @param choices If non-null, this vector is used to store the choices made during the selection.
  */
 template<class T>
-void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping) {
+void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
 	reduceVector<T>(source, target, rowGrouping, std::less<T>());
 }
 
@@ -193,13 +203,14 @@ void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::
  *
  * @param source The source vector which is to be reduced.
  * @param target The target vector into which a single element from each row group is written.
- * @param rowGrouping A vector that specifies the begin and end of each group of elements in the values vector.
+ * @param rowGrouping A vector that specifies the begin and end of each group of elements in the source vector.
+ * @param choices If non-null, this vector is used to store the choices made during the selection.
  */
 template<class T>
-void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping) {
+void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
     reduceVector<T>(source, target, rowGrouping, std::greater<T>());
 }
-
+    
 /*!
  * Compares the given elements and determines whether they are equal modulo the given precision. The provided flag
  * additionaly specifies whether the error is computed in relative or absolute terms.
