@@ -132,8 +132,11 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		 */
 		virtual size_t getHash() const override {
 			std::size_t result = 0;
+			std::size_t hashTmp = storm::utility::Hash<uint_fast64_t>::getHash(nondeterministicChoiceIndices);
+			std::cout << "nondeterministicChoiceIndices Hash: " << hashTmp << std::endl;
+
 			boost::hash_combine(result, AbstractModel<T>::getHash());
-			boost::hash_combine(result, storm::utility::Hash<uint_fast64_t>::getHash(nondeterministicChoiceIndices));
+			boost::hash_combine(result, hashTmp);
 			return result;
 		}
 

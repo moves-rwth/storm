@@ -384,13 +384,21 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 */
 		virtual size_t getHash() const {
 			std::size_t result = 0;
-			boost::hash_combine(result, transitionMatrix.getHash());
-			boost::hash_combine(result, stateLabeling.getHash());
+			std::size_t hashTmp = transitionMatrix.getHash();
+			std::cout << "Transition Matrix Hash: " << hashTmp << std::endl;
+			boost::hash_combine(result, hashTmp);
+			hashTmp = stateLabeling.getHash();
+			std::cout << "StateLabeling Hash: " << hashTmp << std::endl;
+			boost::hash_combine(result, hashTmp);
 			if (stateRewardVector) {
-				boost::hash_combine(result, storm::utility::Hash<T>::getHash(stateRewardVector.get()));
+				hashTmp = storm::utility::Hash<T>::getHash(stateRewardVector.get());
+				std::cout << "State Reward Vector Hash: " << hashTmp << std::endl;
+				boost::hash_combine(result, hashTmp);
 			}
 			if (transitionRewardMatrix) {
-				boost::hash_combine(result, transitionRewardMatrix.get().getHash());
+				hashTmp = transitionRewardMatrix.get().getHash();
+				std::cout << "Transition Reward Matrix Hash: " << hashTmp << std::endl;
+				boost::hash_combine(result, hashTmp);
 			}
 			return result;
 		}
