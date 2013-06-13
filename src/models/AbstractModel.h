@@ -371,7 +371,7 @@ protected:
                     
                             // If we are to include some values for the state as well, we do so now.
                             if (firstValue != nullptr || secondValue != nullptr) {
-                                outStream << "[";
+                                outStream << " [";
                                 if (firstValue != nullptr) {
                                     outStream << (*firstValue)[state];
                                     if (secondValue != nullptr) {
@@ -388,7 +388,7 @@ protected:
                             // Now, we color the states if there were colors given.
                             if (stateColoring != nullptr && colors != nullptr) {
                                 outStream << ", ";
-                                outStream << " fillcolor = \"" << (*colors)[(*stateColoring)[state]] << "\"";
+                                outStream << " style = filled, fillcolor = " << (*colors)[(*stateColoring)[state]];
                             }
                         }
                         outStream << " ]";

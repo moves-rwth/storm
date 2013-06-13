@@ -242,12 +242,13 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type>* checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative) const {
-        return this->checkUntil(formula, qualitative, nullptr);
+        return this->checkUntil(this->minimumOperatorStack.top(), formula, qualitative, nullptr);
     }
     
 	/*!
 	 * Check the given formula that is an until formula.
 	 *
+     * @param minimize If set, the probability is minimized and maximized otherwise.
 	 * @param formula The formula to check.
 	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
 	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
@@ -259,7 +260,7 @@ public:
 	 * @return The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	std::vector<Type>* checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+	std::vector<Type>* checkUntil(bool minimize, const storm::property::prctl::Until<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
 		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
 		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
@@ -267,7 +268,7 @@ public:
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
         std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
-		if (this->minimumOperatorStack.top()) {
+		if (minimize) {
 			statesWithProbability01 = storm::utility::graph::performProb01Min(this->getModel(), *leftStates, *rightStates);
 		} else {
 			statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel(), *leftStates, *rightStates);
@@ -316,7 +317,7 @@ public:
 			std::vector<Type> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, submatrix.getRowCount());
 
 			// Solve the corresponding system of equations.
-			this->solveEquationSystem(submatrix, x, b, subNondeterministicChoiceIndices);
+			this->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
 
 			// Set values of resulting vector according to result.
 			storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
@@ -411,12 +412,13 @@ public:
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
 	virtual std::vector<Type>* checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
-        return this->checkReachabilityReward(formula, qualitative, nullptr);
+        return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula, qualitative, nullptr);
     }
     
 	/*!
 	 * Checks the given formula that is a reachability reward formula.
 	 *
+     * @param minimize If set, the reward is to be minimized and maximized otherwise.
 	 * @param formula The formula to check.
 	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
 	 * results are only compared against the bound 0. If set to true, this will most likely results that are only
@@ -428,7 +430,7 @@ public:
 	 * @return The reward values for the given formula for every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	std::vector<Type>* checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+	std::vector<Type>* checkReachabilityReward(bool minimize, const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
@@ -441,7 +443,7 @@ public:
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector infinityStates;
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		if (this->minimumOperatorStack.top()) {
+		if (minimize) {
 			infinityStates = storm::utility::graph::performProb1A(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates);
 		} else {
 			infinityStates = storm::utility::graph::performProb1E(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates);
@@ -504,7 +506,7 @@ public:
 			}
 
 			// Solve the corresponding system of equations.
-			this->solveEquationSystem(submatrix, x, b, subNondeterministicChoiceIndices, scheduler);
+			this->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices, scheduler);
 
 			// Set values of resulting vector according to result.
 			storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
@@ -523,13 +525,14 @@ protected:
     /*!
      * Computes the vector of choices that need to be made to minimize/maximize the model checking result for each state.
      *
+     * @param minimize If set, all choices are resolved such that the solution value becomes minimal and maximal otherwise.
      * @param nondeterministicResult The model checking result for nondeterministic choices of all states.
      * @param takenChoices The output vector that is to store the taken choices.
      * @param nondeterministicChoiceIndices The assignment of states to their nondeterministic choices in the matrix.
      */
-    void computeTakenChoices(std::vector<Type> const& nondeterministicResult, std::vector<uint_fast64_t>& takenChoices, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+    void computeTakenChoices(bool minimize, std::vector<Type> const& nondeterministicResult, std::vector<uint_fast64_t>& takenChoices, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
         std::vector<Type> temporaryResult(nondeterministicChoiceIndices.size() - 1);
-        if (this->minimumOperatorStack.top()) {
+        if (minimize) {
             storm::utility::vector::reduceVectorMin(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
         } else {
             storm::utility::vector::reduceVectorMax(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
@@ -582,6 +585,7 @@ private:
 	/*!
 	 * Solves the equation system A*x = b given by the parameters.
 	 *
+     * @param minimize If set, all choices are resolved such that the solution value becomes minimal and maximal otherwise.
 	 * @param A The matrix specifying the coefficients of the linear equations.
 	 * @param x The solution vector x. The initial values of x represent a guess of the real values to the solver, but
 	 * may be ignored.
@@ -592,7 +596,7 @@ private:
      * as there are states in the MDP.
 	 * @returns The solution vector x of the system of linear equations as the content of the parameter x.
 	 */
-	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<uint_fast64_t>* takenChoices = nullptr) const {
+	virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<uint_fast64_t>* takenChoices = nullptr) const {
 		// Get the settings object to customize solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
@@ -618,7 +622,7 @@ private:
 
 			// Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
 			// element of the min/max operator stack.
-			if (this->minimumOperatorStack.top()) {
+			if (minimize) {
 				storm::utility::vector::reduceVectorMin(multiplyResult, *newX, nondeterministicChoiceIndices);
 			} else {
 				storm::utility::vector::reduceVectorMax(multiplyResult, *newX, nondeterministicChoiceIndices);
@@ -636,7 +640,7 @@ private:
         
         // If we were requested to record the taken choices, we have to construct the vector now.
         if (takenChoices != nullptr) {
-            this->computeTakenChoices(multiplyResult, *takenChoices, nondeterministicChoiceIndices);
+            this->computeTakenChoices(minimize, multiplyResult, *takenChoices, nondeterministicChoiceIndices);
         }
 
 		// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
