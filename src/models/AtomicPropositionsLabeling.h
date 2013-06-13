@@ -138,7 +138,7 @@ public:
 	 * @param state The index of a state.
 	 * @returns The set of atomic propositions for the given state.
 	 */
-	std::set<std::string> getPropositionsForState(uint_fast64_t state) {
+	std::set<std::string> getPropositionsForState(uint_fast64_t state) const {
 		if (state >= stateCount) {
 			LOG4CPLUS_ERROR(logger, "State index out of range.");
 			throw storm::exceptions::OutOfRangeException("State index out of range.");
