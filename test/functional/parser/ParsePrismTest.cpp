@@ -9,7 +9,7 @@
 
 TEST(ParsePrismTest, parseCrowds5_5) {
 	storm::ir::Program program;
-	ASSERT_NO_THROW(program = storm::parser::PrismParserFromFile("examples/dtmc/crowds/crowds5_5.pm"));
+	ASSERT_NO_THROW(program = storm::parser::PrismParserFromFile(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.pm"));
 	storm::adapters::ExplicitModelAdapter adapter(program);
 
 	std::shared_ptr<storm::models::Dtmc<double>> model = adapter.getModel()->as<storm::models::Dtmc<double>>();
@@ -20,7 +20,7 @@ TEST(ParsePrismTest, parseCrowds5_5) {
 
 TEST(ParsePrismTest, parseTwoDice) {
 	storm::ir::Program program;
-	ASSERT_NO_THROW(program = storm::parser::PrismParserFromFile("examples/mdp/two_dice/two_dice.nm"));
+	ASSERT_NO_THROW(program = storm::parser::PrismParserFromFile(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.nm"));
 	storm::adapters::ExplicitModelAdapter adapter(program);
 
 	std::shared_ptr<storm::models::Mdp<double>> model = adapter.getModel()->as<storm::models::Mdp<double>>();
