@@ -84,7 +84,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		 * @return size_t A Hash Value
 		 */
 		virtual std::size_t getHash() const override {
-			return AbstractModel::getHash();
+			return AbstractModel<T>::getHash();
 		}
     
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {

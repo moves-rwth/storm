@@ -114,7 +114,7 @@ public:
 	 * @return size_t A Hash Value
 	 */
 	virtual std::size_t getHash() const override {
-		return AbstractDeterministicModel::getHash();
+		return AbstractDeterministicModel<T>::getHash();
 	}
 
 private:
