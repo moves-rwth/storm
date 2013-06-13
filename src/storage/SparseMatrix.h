@@ -256,6 +256,18 @@ public:
 		rowIndications(other.rowIndications), internalStatus(other.internalStatus), 
 		currentSize(other.currentSize), lastRow(other.lastRow) {
 	}
+
+	/*!
+	 * Copy Assignment Constructor.
+	 *
+	 * @param other The Matrix from which to copy the content
+	 */
+	storm::storage::SparseMatrix<T>& operator=(const SparseMatrix & other)
+		: rowCount(other.rowCount), colCount(other.colCount), nonZeroEntryCount(other.nonZeroEntryCount),
+		valueStorage(other.valueStorage), columnIndications(other.columnIndications),
+		rowIndications(other.rowIndications), internalStatus(other.internalStatus), 
+		currentSize(other.currentSize), lastRow(other.lastRow) {
+	}
     
     /*!
      * Constructs a sparse matrix object with the given (moved) contents.
