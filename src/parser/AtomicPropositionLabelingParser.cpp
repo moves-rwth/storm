@@ -83,6 +83,11 @@ storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser(uint_f
 			separator[3] = '\t';
 			separator[4] = '\0';
 			break;
+		default:
+		case SupportedLineEndingsEnum::Unsupported:
+			// This Line will never be reached as the Parser would have thrown already.
+			throw;
+			break;
 	}
 
 	bool foundDecl = false, foundEnd = false;

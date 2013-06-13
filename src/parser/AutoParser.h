@@ -108,32 +108,7 @@ class AutoParser {
 			// parse hint
 			char hint[128];
 			// %20s => The Input Hint can be AT MOST 120 chars long			
-			switch (lineEndings) {
-				case storm::parser::SupportedLineEndingsEnum::SlashN:
-#ifdef WINDOWS					
-					sscanf_s(buf, "%120s\n", hint, sizeof(hint));
-#else
-					sscanf(buf, "%120s\n", hint);
-#endif
-					break;
-				case storm::parser::SupportedLineEndingsEnum::SlashR:
-#ifdef WINDOWS					
-					sscanf_s(buf, "%120s\r", hint, sizeof(hint));
-#else
-					sscanf(buf, "%120s\r", hint);
-#endif
-					break;
-				case storm::parser::SupportedLineEndingsEnum::SlashRN:
-#ifdef WINDOWS					
-					sscanf_s(buf, "%120s\r\n", hint, sizeof(hint));
-#else
-					sscanf(buf, "%120s\r\n", hint);
-#endif
-					break;
-				default:
-					LOG4CPLUS_ERROR(logger, "The given input file \"" << filename << "\" has no or unsupported line endings. Please use either \\r, \\n or \\r\\n.");
-					throw storm::exceptions::WrongFormatException() << "The given input file \"" << filename << "\" has no or unsupported line endings. Please use either \\r, \\n or \\r\\n.";
-			}
+			storm::parser::scanForModelHint(hint, sizeof(hint), buf, lineEndings);
 
 			for (char* c = hint; *c != '\0'; c++) *c = toupper(*c);
 

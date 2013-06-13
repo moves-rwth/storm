@@ -54,17 +54,7 @@ uint_fast64_t firstPass(char* buf, SupportedLineEndingsEnum lineEndings, uint_fa
 	 */
 	if (!isRewardMatrix) {
 		// skip format hint
-		switch (lineEndings) {
-			case SupportedLineEndingsEnum::SlashN:
-				buf = strchr(buf, '\n') + 1;  
-				break;
-			case SupportedLineEndingsEnum::SlashR:
-				buf = strchr(buf, '\r') + 1;  
-				break;
-			case SupportedLineEndingsEnum::SlashRN:
-				buf = strchr(buf, '\r') + 2;
-				break;
-		}
+		buf = storm::parser::forwardToNextLine(buf, lineEndings);
 	}
 
 	/*
@@ -192,17 +182,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 	 */
 	if (!isRewardMatrix) {
 		// skip format hint
-		switch (lineEndings) {
-			case SupportedLineEndingsEnum::SlashN:
-				buf = strchr(buf, '\n') + 1;  
-				break;
-			case SupportedLineEndingsEnum::SlashR:
-				buf = strchr(buf, '\r') + 1;  
-				break;
-			case SupportedLineEndingsEnum::SlashRN:
-				buf = strchr(buf, '\r') + 2;
-				break;
-		}
+		buf = storm::parser::forwardToNextLine(buf, lineEndings);
 	}
 
 	// If the matrix that is being parsed is a reward matrix, it should match the size of the

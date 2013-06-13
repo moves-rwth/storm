@@ -100,6 +100,68 @@ storm::parser::SupportedLineEndingsEnum storm::parser::findUsedLineEndings(std::
 }
 
 /*!
+ * @brief Encapsulates the usage of function @strchr to forward to the next line
+ */
+char* forwardToNextLine(char* buffer, storm::parser::SupportedLineEndingsEnum lineEndings) {
+	switch (lineEndings) {
+		case storm::parser::SupportedLineEndingsEnum::SlashN:
+			return strchr(buffer, '\n') + 1;  
+			break;
+		case storm::parser::SupportedLineEndingsEnum::SlashR:
+			return strchr(buffer, '\r') + 1;  
+			break;
+		case storm::parser::SupportedLineEndingsEnum::SlashRN:
+			return strchr(buffer, '\r') + 2;
+			break;
+		default:
+		case storm::parser::SupportedLineEndingsEnum::Unsupported:
+			// This Line will never be reached as the Parser would have thrown already.
+			throw;
+			break;
+	}
+	return nullptr;
+}
+
+/*!
+ * @brief Encapsulates the usage of function @sscanf to scan for the model type hint
+ * @param targetBuffer The Target for the hint, must be at least 64 bytes long
+ * @param buffer The Source Buffer from which the Model Hint will be read
+ */
+void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char const* buffer, storm::parser::SupportedLineEndingsEnum lineEndings) {
+	if (targetBufferSize <= 4) {
+		throw;
+	}
+	switch (lineEndings) {
+		case storm::parser::SupportedLineEndingsEnum::SlashN:
+#ifdef WINDOWS					
+			sscanf_s(buffer, "%60s\n", targetBuffer, targetBufferSize);
+#else
+			sscanf(buffer, "%60s\n", targetBuffer);
+#endif
+			break;
+		case storm::parser::SupportedLineEndingsEnum::SlashR:
+#ifdef WINDOWS					
+			sscanf_s(buffer, "%60s\r", targetBuffer, sizeof(targetBufferSize));
+#else
+			sscanf(buffer, "%60s\r", targetBuffer);
+#endif
+			break;
+		case storm::parser::SupportedLineEndingsEnum::SlashRN:
+#ifdef WINDOWS					
+			sscanf_s(buffer, "%60s\r\n", targetBuffer, sizeof(targetBufferSize));
+#else
+			sscanf(buffer, "%60s\r\n", targetBuffer);
+#endif
+			break;
+		default:
+		case storm::parser::SupportedLineEndingsEnum::Unsupported:
+			// This Line will never be reached as the Parser would have thrown already.
+			throw;
+			break;
+	}
+}
+
+/*!
  *	Will stat the given file, open it and map it to memory.
  *	If anything of this fails, an appropriate exception is raised
  *	and a log entry is written.

@@ -57,17 +57,7 @@ uint_fast64_t firstPass(char* buf, SupportedLineEndingsEnum lineEndings, uint_fa
 	 */
 	if (!isRewardFile) {
 		// skip format hint
-		switch (lineEndings) {
-			case SupportedLineEndingsEnum::SlashN:
-				buf = strchr(buf, '\n') + 1;  
-				break;
-			case SupportedLineEndingsEnum::SlashR:
-				buf = strchr(buf, '\r') + 1;  
-				break;
-			case SupportedLineEndingsEnum::SlashRN:
-				buf = strchr(buf, '\r') + 2;
-				break;
-		}
+		buf = storm::parser::forwardToNextLine(buf, lineEndings);
 	}
 
 	/*
@@ -170,6 +160,11 @@ uint_fast64_t firstPass(char* buf, SupportedLineEndingsEnum lineEndings, uint_fa
 			case SupportedLineEndingsEnum::SlashRN:
 				buf += strcspn(buf, " \t\r\n");
 				break;
+			default:
+			case storm::parser::SupportedLineEndingsEnum::Unsupported:
+				// This Line will never be reached as the Parser would have thrown already.
+				throw;
+				break;
 		}
 		buf = trimWhitespaces(buf);
 	}
@@ -248,17 +243,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 	 */
 	if (!isRewardFile) {
 		// skip format hint
-		switch (lineEndings) {
-			case SupportedLineEndingsEnum::SlashN:
-				buf = strchr(buf, '\n') + 1;  
-				break;
-			case SupportedLineEndingsEnum::SlashR:
-				buf = strchr(buf, '\r') + 1;  
-				break;
-			case SupportedLineEndingsEnum::SlashRN:
-				buf = strchr(buf, '\r') + 2;
-				break;
-		}
+		buf = storm::parser::forwardToNextLine(buf, lineEndings);
 	}
 
 	if (isRewardFile) {
@@ -384,6 +369,11 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 				break;
 			case SupportedLineEndingsEnum::SlashRN:
 				buf += strcspn(buf, " \t\r\n");
+				break;
+			default:
+			case storm::parser::SupportedLineEndingsEnum::Unsupported:
+				// This Line will never be reached as the Parser would have thrown already.
+				throw;
 				break;
 		}
 		buf = trimWhitespaces(buf);

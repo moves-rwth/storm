@@ -150,6 +150,19 @@ namespace parser {
 	 */
 	storm::parser::SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName, bool throwOnUnsupported = false);
 
+	/*!
+	 * @brief Encapsulates the usage of function @strchr to forward to the next line
+	 */
+	char* forwardToNextLine(char* buffer, storm::parser::SupportedLineEndingsEnum lineEndings);
+
+	/*!
+	 * @brief Encapsulates the usage of function @sscanf to scan for the model type hint
+	 * @param targetBuffer The Target for the hint, should be at least 64 bytes long
+	 * @param buffer The Source Buffer from which the Model Hint will be read
+
+	 */
+	void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char const* buffer, storm::parser::SupportedLineEndingsEnum lineEndings);
+
 } // namespace parser
 } // namespace storm
 
