@@ -80,15 +80,19 @@ Module PrismGrammar::createModule(std::string const& name, std::vector<BooleanVa
 
 void PrismGrammar::createIntegerVariable(std::string const& name, std::shared_ptr<BaseExpression> const& lower, std::shared_ptr<BaseExpression> const& upper, std::shared_ptr<BaseExpression> const& init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
 	uint_fast64_t id = this->state->addIntegerVariable(name);
-	vars.emplace_back(this->state->nextLocalIntegerVariableIndex++, id, name, lower, upper, init);
-	varids[name] = id;
+    uint_fast64_t newLocalIndex = this->state->nextLocalIntegerVariableIndex;
+	vars.emplace_back(newLocalIndex, id, name, lower, upper, init);
+	varids[name] = newLocalIndex;
+    ++this->state->nextLocalIntegerVariableIndex;
 	this->state->localIntegerVariables_.add(name, name);
 }
     
 void PrismGrammar::createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& vars, std::map<std::string, uint_fast64_t>& varids) {
 	uint_fast64_t id = this->state->addBooleanVariable(name);
-	vars.emplace_back(this->state->nextLocalIntegerVariableIndex++, id, name, init);
-	varids[name] = id;
+    uint_fast64_t newLocalIndex = this->state->nextLocalBooleanVariableIndex;
+	vars.emplace_back(newLocalIndex, id, name, init);
+	varids[name] = newLocalIndex;
+    ++this->state->nextLocalBooleanVariableIndex;
 	this->state->localBooleanVariables_.add(name, name);
 }
 
