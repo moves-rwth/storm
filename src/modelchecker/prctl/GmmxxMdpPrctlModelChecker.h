@@ -95,6 +95,7 @@ private:
 	/*!
 	 * Solves the given equation system under the given parameters using the power method.
 	 *
+     * @param minimize If set, all choices are resolved such that the solution value becomes minimal and maximal otherwise.
 	 * @param A The matrix A specifying the coefficients of the equations.
 	 * @param x The vector x for which to solve the equations. The initial value of the elements of
 	 * this vector are used as the initial guess and might thus influence performance and convergence.
@@ -102,7 +103,7 @@ private:
 	 * @return The solution of the system of linear equations in form of the elements of the vector
 	 * x.
 	 */
-	void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<uint_fast64_t>* takenChoices = nullptr) const override {
+	void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<uint_fast64_t>* takenChoices = nullptr) const override {
 		// Get the settings object to customize solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
@@ -130,7 +131,7 @@ private:
 			gmm::add(b, multiplyResult);
             
 			// Reduce the vector x' by applying min/max for all non-deterministic choices.
-			if (this->minimumOperatorStack.top()) {
+			if (minimize) {
 				storm::utility::vector::reduceVectorMin(multiplyResult, *newX, nondeterministicChoiceIndices);
 			} else {
 				storm::utility::vector::reduceVectorMax(multiplyResult, *newX, nondeterministicChoiceIndices);
@@ -148,7 +149,7 @@ private:
         
         // If we were requested to record the taken choices, we have to construct the vector now.
         if (takenChoices != nullptr) {
-            this->computeTakenChoices(multiplyResult, *takenChoices, nondeterministicChoiceIndices);
+            this->computeTakenChoices(minimize, multiplyResult, *takenChoices, nondeterministicChoiceIndices);
         }
 
 		// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
