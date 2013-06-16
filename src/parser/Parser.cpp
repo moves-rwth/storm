@@ -7,6 +7,7 @@
 
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/utility/OsDetection.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -172,17 +173,29 @@ void storm::parser::getMatchingSeparatorString(char* targetBuffer, uint_fast64_t
 	switch (lineEndings) {
 		case SupportedLineEndingsEnum::SlashN: {
 			char source[] = " \n\t";
+#ifdef WINDOWS			
 			strncpy(targetBuffer, targetBufferSize, source, sizeof(source));
+#else
+			strncpy(targetBuffer, source, targetBufferSize);
+#endif
 			break;
 											   }
 		case SupportedLineEndingsEnum::SlashR: {
 			char source[] = " \r\t";
+#ifdef WINDOWS			
 			strncpy(targetBuffer, targetBufferSize, source, sizeof(source));
+#else
+			strncpy(targetBuffer, source, targetBufferSize);
+#endif
 			break;
 											   }
 		case SupportedLineEndingsEnum::SlashRN: {
 			char source[] = " \r\n\t";
+#ifdef WINDOWS			
 			strncpy(targetBuffer, targetBufferSize, source, sizeof(source));
+#else
+			strncpy(targetBuffer, source, targetBufferSize);
+#endif
 			break;
 												}
 		default:
