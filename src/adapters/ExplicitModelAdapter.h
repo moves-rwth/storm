@@ -69,6 +69,9 @@ public:
 	std::shared_ptr<storm::models::AbstractModel<double>> getModel(std::string const & rewardModelName = "");
 
 private:
+	// Copying/Moving is disabled for this class
+	ExplicitModelAdapter(ExplicitModelAdapter const& other) {}
+	ExplicitModelAdapter(ExplicitModelAdapter && other) {}
 
 	double precision;
 

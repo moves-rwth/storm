@@ -29,20 +29,21 @@ namespace parser {
 NondeterministicModelParserResultContainer<double> parseNondeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
 		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 
-	NondeterministicSparseTransitionParserResult_t nondeterministicSparseTransitionParserResult = storm::parser::NondeterministicSparseTransitionParser(transitionSystemFile);
-	storm::storage::SparseMatrix<double> resultTransitionSystem = nondeterministicSparseTransitionParserResult.first;
+	NondeterministicSparseTransitionParserResult_t nondeterministicSparseTransitionParserResult(std::move(storm::parser::NondeterministicSparseTransitionParser(transitionSystemFile)));
+	storm::storage::SparseMatrix<double> resultTransitionSystem(std::move(nondeterministicSparseTransitionParserResult.first));
 
 	uint_fast64_t stateCount = resultTransitionSystem.getColumnCount();
+	uint_fast64_t rowCount = resultTransitionSystem.getRowCount();
 
-	storm::models::AtomicPropositionsLabeling resultLabeling = storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile);
+	storm::models::AtomicPropositionsLabeling resultLabeling(std::move(storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile)));
 
-	NondeterministicModelParserResultContainer<double> result(resultTransitionSystem, nondeterministicSparseTransitionParserResult.second, resultLabeling);
+	NondeterministicModelParserResultContainer<double> result(std::move(resultTransitionSystem), std::move(nondeterministicSparseTransitionParserResult.second), std::move(resultLabeling));
 	
 	if (stateRewardFile != "") {
 		result.stateRewards.reset(storm::parser::SparseStateRewardParser(stateCount, stateRewardFile));
 	}
 	if (transitionRewardFile != "") {
-		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(nondeterministicSparseTransitionParserResult.first.getRowCount(), nondeterministicSparseTransitionParserResult.first.getColumnCount(), &nondeterministicSparseTransitionParserResult.second);
+		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(rowCount, stateCount, &result.rowMapping);
 		result.transitionRewards.reset(storm::parser::NondeterministicSparseTransitionParser(transitionRewardFile, rewardMatrixInfo).first);
 		delete rewardMatrixInfo;
 	}
@@ -57,7 +58,7 @@ NondeterministicModelParserResultContainer<double> parseNondeterministicModel(st
 storm::models::Mdp<double> NondeterministicModelParserAsMdp(std::string const & transitionSystemFile, std::string const & labelingFile,
 														 std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	NondeterministicModelParserResultContainer<double> parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-	return storm::models::Mdp<double>(parserResult.transitionSystem, parserResult.labeling, parserResult.rowMapping, parserResult.stateRewards, parserResult.transitionRewards);
+	return storm::models::Mdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards));
 }
 
 /*!
@@ -68,7 +69,7 @@ storm::models::Mdp<double> NondeterministicModelParserAsMdp(std::string const & 
 storm::models::Ctmdp<double> NondeterministicModelParserAsCtmdp(std::string const & transitionSystemFile, std::string const & labelingFile,
 															 std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	NondeterministicModelParserResultContainer<double> parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-	return storm::models::Ctmdp<double>(parserResult.transitionSystem, parserResult.labeling, parserResult.rowMapping, parserResult.stateRewards, parserResult.transitionRewards);
+	return storm::models::Ctmdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards));
 }
 
 } /* namespace parser */

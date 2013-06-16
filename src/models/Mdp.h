@@ -65,7 +65,8 @@ public:
 			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
 			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
-			: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
+			: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
@@ -87,7 +88,7 @@ public:
 	 * Move Constructor. Performs a move on the given MDP.
 	 * @param mdp A reference to the MDP that is to be moved.
 	 */
-	Mdp(Mdp<T>&& mdp) : AbstractNondeterministicModel<T>(mdp) {
+	Mdp(Mdp<T>&& mdp) : AbstractNondeterministicModel<T>(std::move(mdp)) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";

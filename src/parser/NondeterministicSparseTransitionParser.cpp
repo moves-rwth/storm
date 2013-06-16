@@ -390,7 +390,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 	 */	
 	matrix.finalize();
 
-	return std::make_pair(matrix, rowMapping);
+	return std::make_pair(std::move(matrix), std::move(rowMapping));
 }
 
 }  // namespace parser

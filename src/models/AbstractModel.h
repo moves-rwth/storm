@@ -52,12 +52,12 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * the given labeling of the states. Creates copies of all given references.
 		 * @param other The Source Abstract Model
 		 */
-		AbstractModel(AbstractModel<T>&& other) {
-			this->transitionMatrix = std::move(other.transitionMatrix);
-			this->stateLabeling = std::move(other.stateLabeling);
-					
-			this->stateRewardVector = std::move(other.stateRewardVector);
-			this->transitionRewardMatrix = std::move(other.transitionRewardMatrix);
+		AbstractModel(AbstractModel<T>&& other)
+			: transitionMatrix(std::move(other.transitionMatrix)),
+			stateLabeling(std::move(other.stateLabeling)),		
+			stateRewardVector(std::move(other.stateRewardVector)),
+			transitionRewardMatrix(std::move(other.transitionRewardMatrix)) {
+			// Intentionally left empty.
 		}
 
 		/*! Constructs an abstract model from the given transition matrix and
@@ -89,13 +89,9 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
-				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix) {
-			this->transitionMatrix = std::move(transitionMatrix);
-			this->stateLabeling = std::move(stateLabeling);
-					
-			this->stateRewardVector = std::move(optionalStateRewardVector);
-			this->transitionRewardMatrix = std::move(optionalTransitionRewardMatrix);
-		}
+				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix) :
+				transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)), 
+				stateRewardVector(std::move(optionalStateRewardVector)), transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)) { }
 
 		/*!
 		 * Destructor.

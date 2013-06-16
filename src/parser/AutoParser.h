@@ -47,19 +47,19 @@ class AutoParser {
 			// Do actual parsing
 			switch (type) {
 				case storm::models::DTMC: {
-					this->model.reset(new storm::models::Dtmc<double>(DeterministicModelParserAsDtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
+					this->model.reset(new storm::models::Dtmc<double>(std::move(DeterministicModelParserAsDtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
 					break;
 				}
 				case storm::models::CTMC: {
-					this->model.reset(new storm::models::Ctmc<double>(DeterministicModelParserAsCtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
+					this->model.reset(new storm::models::Ctmc<double>(std::move(DeterministicModelParserAsCtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
 					break;
 				}
 				case storm::models::MDP: {
-					this->model.reset(new storm::models::Mdp<double>(NondeterministicModelParserAsMdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
+					this->model.reset(new storm::models::Mdp<double>(std::move(NondeterministicModelParserAsMdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
 					break;
 				}
 				case storm::models::CTMDP: {
-					this->model.reset(new storm::models::Ctmdp<double>(NondeterministicModelParserAsCtmdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
+					this->model.reset(new storm::models::Ctmdp<double>(std::move(NondeterministicModelParserAsCtmdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
 					break;
 				}
 				default: ;  // Unknown

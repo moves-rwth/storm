@@ -63,7 +63,8 @@ public:
 			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
 			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
-			: AbstractNondeterministicModel<T>(probabilityMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
+			: AbstractNondeterministicModel<T>(std::move(probabilityMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
@@ -85,7 +86,7 @@ public:
 	 * Move Constructor. Performs a move on the given CTMDP.
 	 * @param ctmdp A reference to the CTMDP that is to be moved.
 	 */
-	Ctmdp(Ctmdp<T>&& ctmdp) : AbstractNondeterministicModel<T>(ctmdp) {
+	Ctmdp(Ctmdp<T>&& ctmdp) : AbstractNondeterministicModel<T>(std::move(ctmdp)) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";

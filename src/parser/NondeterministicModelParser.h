@@ -42,7 +42,13 @@ public:
 	std::vector<uint_fast64_t> rowMapping;
 	boost::optional<std::vector<T>> stateRewards;
 	boost::optional<storm::storage::SparseMatrix<T>> transitionRewards;
-	NondeterministicModelParserResultContainer(storm::storage::SparseMatrix<T> transitionSystem, std::vector<uint_fast64_t> rowMapping, storm::models::AtomicPropositionsLabeling labeling) : transitionSystem(transitionSystem), labeling(labeling), rowMapping(rowMapping) { }
+	NondeterministicModelParserResultContainer(storm::storage::SparseMatrix<T>& transitionSystem, std::vector<uint_fast64_t>& rowMapping, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling), rowMapping(rowMapping) { }
+	NondeterministicModelParserResultContainer(storm::storage::SparseMatrix<T>&& transitionSystem, std::vector<uint_fast64_t>&& rowMapping, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)), rowMapping(std::move(rowMapping)) { }
+
+	NondeterministicModelParserResultContainer(const NondeterministicModelParserResultContainer & other) : transitionSystem(other.transitionSystem), 
+		labeling(other.labeling), rowMapping(other.rowMapping), stateRewards(other.stateRewards), transitionRewards(other.transitionRewards) {}
+	NondeterministicModelParserResultContainer(NondeterministicModelParserResultContainer && other) : transitionSystem(std::move(other.transitionSystem)), 
+		labeling(std::move(other.labeling)), rowMapping(std::move(other.rowMapping)), stateRewards(std::move(other.stateRewards)), transitionRewards(std::move(other.transitionRewards)) {}
 private:
 	NondeterministicModelParserResultContainer() {}
 };

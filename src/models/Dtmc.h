@@ -68,7 +68,8 @@ public:
 	 */
 	Dtmc(storm::storage::SparseMatrix<T>&& probabilityMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
 				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
-			: AbstractDeterministicModel<T>(probabilityMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+				// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
+			: AbstractDeterministicModel<T>(std::move(probabilityMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
@@ -93,7 +94,7 @@ public:
 	 * Move Constructor. Performs a move on the given DTMC.
 	 * @param dtmc A reference to the DTMC that is to be moved.
 	 */
-	Dtmc(Dtmc<T>&& dtmc) : AbstractDeterministicModel<T>(dtmc) {
+	Dtmc(Dtmc<T>&& dtmc) : AbstractDeterministicModel<T>(std::move(dtmc)) {
 		// Intentionally left empty.
 	}
 

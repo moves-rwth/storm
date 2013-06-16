@@ -38,6 +38,7 @@ public:
 	Ctmc(storm::storage::SparseMatrix<T> const& rateMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
 				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
 			: AbstractDeterministicModel<T>(rateMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -50,7 +51,9 @@ public:
 	 */
 	Ctmc(storm::storage::SparseMatrix<T>&& rateMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
 				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
-			: AbstractDeterministicModel<T>(rateMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
+			: AbstractDeterministicModel<T>(std::move(rateMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -65,7 +68,7 @@ public:
 	 * Move Constructor. Performs a move on the given CTMC.
 	 * @param ctmc A reference to the CTMC that is to be moved from.
 	 */
-	Ctmc(Ctmc<T>&& ctmc) : AbstractDeterministicModel<T>(ctmc) {
+	Ctmc(Ctmc<T>&& ctmc) : AbstractDeterministicModel<T>(std::move(ctmc)) {
 		// Intentionally left empty.
 	}
 

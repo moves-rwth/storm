@@ -42,7 +42,9 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		 */
 		AbstractDeterministicModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
 				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
-			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+				// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
+			: AbstractModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)) {
+			// Intentionally left empty.
 		}
 
 		/*!
@@ -56,6 +58,13 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		 * Copy Constructor.
 		 */
 		AbstractDeterministicModel(AbstractDeterministicModel const& other) : AbstractModel<T>(other) {
+			// Intentionally left empty.
+		}
+
+		/*!
+		 * Move Constructor.
+		 */
+		AbstractDeterministicModel(AbstractDeterministicModel && other) : AbstractModel<T>(std::move(other)) {
 			// Intentionally left empty.
 		}
     

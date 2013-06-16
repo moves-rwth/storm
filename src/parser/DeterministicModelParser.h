@@ -42,6 +42,12 @@ public:
 	boost::optional<std::vector<T>> stateRewards;
 	boost::optional<storm::storage::SparseMatrix<T>> transitionRewards;
 	DeterministicModelParserResultContainer(storm::storage::SparseMatrix<T>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) { }
+	DeterministicModelParserResultContainer(storm::storage::SparseMatrix<T>&& transitionSystem, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) { }
+
+	DeterministicModelParserResultContainer(const DeterministicModelParserResultContainer & other) : transitionSystem(other.transitionSystem), 
+		labeling(other.labeling), stateRewards(other.stateRewards), transitionRewards(other.transitionRewards) {}
+	DeterministicModelParserResultContainer(DeterministicModelParserResultContainer && other) : transitionSystem(std::move(other.transitionSystem)), 
+		labeling(std::move(other.labeling)), stateRewards(std::move(other.stateRewards)), transitionRewards(std::move(other.transitionRewards)) {}
 private:
 	DeterministicModelParserResultContainer() {}
 };

@@ -52,8 +52,10 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
 			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
-			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
-				this->nondeterministicChoiceIndices = std::move(nondeterministicChoiceIndices);
+			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
+			: AbstractModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)), 
+			nondeterministicChoiceIndices(std::move(nondeterministicChoiceIndices)) {
+			// Intentionally left empty.	
 		}
 
 		/*!
@@ -74,7 +76,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		/*!
 		 * Move Constructor.
 		 */
-		AbstractNondeterministicModel(AbstractNondeterministicModel&& other) : AbstractModel<T>(other),
+		AbstractNondeterministicModel(AbstractNondeterministicModel&& other) : AbstractModel<T>(std::move(other)),
 				nondeterministicChoiceIndices(std::move(other.nondeterministicChoiceIndices)) {
 			// Intentionally left empty.
 		}
