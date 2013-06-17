@@ -68,7 +68,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	std::vector<Type>* checkNoBoundOperator(const storm::property::prctl::AbstractNoBoundOperator<Type>& formula) const {
+	virtual std::vector<Type>* checkNoBoundOperator(const storm::property::prctl::AbstractNoBoundOperator<Type>& formula) const {
 		// Check if the operator was an non-optimality operator and report an error in that case.
 		if (!formula.isOptimalityOperator()) {
 			LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
@@ -261,7 +261,7 @@ public:
 	 * @return The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	std::vector<Type>* checkUntil(bool minimize, const storm::property::prctl::Until<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+	virtual std::vector<Type>* checkUntil(bool minimize, const storm::property::prctl::Until<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
 		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
 		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
@@ -310,12 +310,12 @@ public:
 			// Get the "new" nondeterministic choice indices for the submatrix.
 			std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
 
-			// Create vector for results for maybe states.
-			std::vector<Type> x(maybeStates.getNumberOfSetBits());
-
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
 			std::vector<Type> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, submatrix.getRowCount());
+
+			// Create vector for results for maybe states.
+			std::vector<Type> x = this->getInitialValueIterationValues(submatrix, formula);
 
 			// Solve the corresponding system of equations.
 			this->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
@@ -431,7 +431,7 @@ public:
 	 * @return The reward values for the given formula for every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	std::vector<Type>* checkReachabilityReward(bool minimize, const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+	virtual std::vector<Type>* checkReachabilityReward(bool minimize, const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
@@ -441,19 +441,6 @@ public:
 		// Determine the states for which the target predicate holds.
 		storm::storage::BitVector* targetStates = formula.getChild().check(*this);
 
-        std::vector<uint_fast64_t> usedScheduler(this->getModel().getNumberOfStates());
-        
-        storm::models::Dtmc<Type> dtmc(this->getModel().getTransitionMatrix().getSubmatrix(usedScheduler, this->getModel().getNondeterministicChoiceIndices()),
-                                       storm::models::AtomicPropositionsLabeling(this->getModel().getStateLabeling()),
-                                       this->getModel().hasStateRewards() ? boost::optional<std::vector<Type>>(this->getModel().getStateRewardVector()) : boost::optional<std::vector<Type>>(),
-                                       this->getModel().hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<Type>>(this->getModel().getTransitionRewardMatrix().getSubmatrix(usedScheduler, this->getModel().getNondeterministicChoiceIndices(), false)) : boost::optional<storm::storage::SparseMatrix<Type>>());
-        
-        dtmc.printModelInformationToStream(std::cout);
-        
-        storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<Type> mc(dtmc);
-        formula.check(mc, qualitative);
-        exit(-1);
-        
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector infinityStates;
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
@@ -468,8 +455,6 @@ public:
 		LOG4CPLUS_INFO(logger, "Found " << targetStates->getNumberOfSetBits() << " 'target' states.");
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
-        
-        
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
@@ -489,9 +474,6 @@ public:
 
 			// Get the "new" nondeterministic choice indices for the submatrix.
 			std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
-
-			// Create vector for results for maybe states.
-			std::vector<Type> x(submatrix.getColumnCount());
 
 			// Prepare the right-hand side of the equation system. For entry i this corresponds to
 			// the accumulated probability of going from state i to some 'yes' state.
@@ -520,6 +502,9 @@ public:
 				// first.
 				storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, this->getModel().getNondeterministicChoiceIndices(), this->getModel().getStateRewardVector());
 			}
+
+			// Create vector for results for maybe states.
+			std::vector<Type> x = this->getInitialValueIterationValues(submatrix, formula);
 
 			// Solve the corresponding system of equations.
 			this->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices, scheduler);
@@ -613,7 +598,9 @@ private:
 	 * @returns The solution vector x of the system of linear equations as the content of the parameter x.
 	 */
 	virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<uint_fast64_t>* takenChoices = nullptr) const {
-		// Get the settings object to customize solving.
+        LOG4CPLUS_INFO(logger, "Starting iterative solver.");
+		
+        // Get the settings object to customize solving.
 		storm::settings::Settings* s = storm::settings::instance();
 
 		// Get relevant user-defined settings for solving the equations.
@@ -708,6 +695,30 @@ private:
 
 		return subNondeterministicChoiceIndices;
 	}
+    
+    /*!
+     * Retrieves the values to be used as the initial values for the value iteration techniques.
+     *
+     * @param submatrix The matrix that will be used for value iteration later.
+     */
+    std::vector<Type> getInitialValueIterationValues(storm::storage::SparseMatrix<Type> const& submatrix, storm::property::prctl::AbstractPathFormula<Type> const& formula) const {
+        // std::vector<uint_fast64_t> scheduler(submatrix.getColumnCount());
+        std::vector<uint_fast64_t> scheduler(this->getModel().getNumberOfStates());
+        
+        storm::models::Dtmc<Type> dtmc(this->getModel().getTransitionMatrix().getSubmatrix(scheduler, this->getModel().getNondeterministicChoiceIndices()),
+                                       storm::models::AtomicPropositionsLabeling(this->getModel().getStateLabeling()),
+                                       this->getModel().hasStateRewards() ? boost::optional<std::vector<Type>>(this->getModel().getStateRewardVector()) : boost::optional<std::vector<Type>>(),
+                                       this->getModel().hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<Type>>(this->getModel().getTransitionRewardMatrix().getSubmatrix(scheduler, this->getModel().getNondeterministicChoiceIndices(), false)) : boost::optional<storm::storage::SparseMatrix<Type>>());
+        
+        storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<Type> modelChecker(dtmc);
+        
+        std::vector<Type>* modelCheckingResult = formula.check(modelChecker, false);
+        std::vector<Type> result(std::move(*modelCheckingResult));
+        delete modelCheckingResult;
+        
+        return result;
+    }
+    
 };
 
 } // namespace prctl
