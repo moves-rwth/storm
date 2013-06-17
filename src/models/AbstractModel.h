@@ -408,11 +408,14 @@ protected:
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const {
             outStream << "digraph deterministicModel {" << std::endl;
         
+            // Write all states to the stream.
             for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
                 if (subsystem == nullptr || subsystem->get(state)) {
                     outStream << "\t" << state;
                     if (includeLabeling || firstValue != nullptr || secondValue != nullptr || stateColoring != nullptr) {
                         outStream << " [ ";
+                        
+                        // If we need to print some extra information, do so now.
                         if (includeLabeling || firstValue != nullptr || secondValue != nullptr) {
                             outStream << "label = \"" << state << ": ";
                     
@@ -459,6 +462,7 @@ protected:
                 }
             }
             
+            // If this methods has not been called from a derived class, we want to close the digraph here.
             if (finalizeOutput) {
                 outStream << "}" << std::endl;
             }

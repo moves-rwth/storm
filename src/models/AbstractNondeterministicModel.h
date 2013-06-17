@@ -149,9 +149,12 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
             typename storm::storage::SparseMatrix<T>::ConstRowsIterator transitionIt = this->getTransitionMatrix().begin();
             typename storm::storage::SparseMatrix<T>::ConstRowsIterator transitionIte = this->getTransitionMatrix().begin();
 
+            // Write the probability distributions for all the states.
             for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
                 uint_fast64_t rowCount = nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state];
                 bool highlightChoice = true;
+                
+                // For this, we need to iterate over all available nondeterministic choices in the current state.
                 for (uint_fast64_t row = 0; row < rowCount; ++row) {
                     if (scheduler != nullptr) {
                         // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
