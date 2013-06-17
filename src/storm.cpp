@@ -285,10 +285,10 @@ int main(const int argc, const char* argv[]) {
 
 			// Depending on the model type, the appropriate model checking procedure is chosen.
             storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
+            parser.getModel<storm::models::AbstractModel<double>>()->printModelInformationToStream(std::cout);
 			switch (parser.getType()) {
 			case storm::models::DTMC:
 				LOG4CPLUS_INFO(logger, "Model is a DTMC.");
-                parser.getModel<storm::models::Dtmc<double>>()->writeDotToStream(std::cout);
                 modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Dtmc<double>>());
 				checkPrctlFormulae(*modelchecker);
 				break;
