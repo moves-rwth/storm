@@ -126,6 +126,7 @@ private:
 		// Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
 		// of iterations.
 		while (!converged && iterations < maxIterations) {
+            std::cout << "iter: " << iterations << std::endl;
 			// Compute x' = A*x + b.
 			gmm::mult(*gmmxxMatrix, *currentX, multiplyResult);
 			gmm::add(b, multiplyResult);
@@ -140,6 +141,13 @@ private:
 			// Determine whether the method converged.
 			converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, precision, relative);
 
+            if (!converged) {
+                for (uint_fast64_t i = 0; i < newX->size(); ++i) {
+                    std::cout << (*currentX)[i] << " vs. " << (*newX)[i] << std::endl;
+                }
+            }
+            
+            
 			// Update environment variables.
 			swap = currentX;
 			currentX = newX;
