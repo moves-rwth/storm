@@ -60,11 +60,11 @@ public:
 		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(matrix.rowCount, matrix.colCount);
 
 		// Move Row Indications
-		result->jc(std::move(matrix.rowIndications));
+		result->jc = std::vector<uint_fast64_t>(std::move(matrix.rowIndications));
 		// Move Columns Indications
-		result->ir(std::move(matrix.columnIndications));
+		result->ir = std::vector<uint_fast64_t>(std::move(matrix.columnIndications));
 		// And do the same thing with the actual values.
-		result->pr(std::move(matrix.valueStorage));
+		result->pr = std::vector<T>(std::move(matrix.valueStorage));
 
 		LOG4CPLUS_DEBUG(logger, "Done converting matrix to gmm++ format.");
 
@@ -128,11 +128,11 @@ public:
 		result->setState(result->Initialized);
 
 		// Move Row Indications
-		result->rowIndications(std::move(matrix.jc));
+		result->rowIndications = std::vector<uint_fast64_t>(std::move(matrix.jc));
 		// Move Columns Indications
-		result->columnIndications(std::move(matrix.ir));
+		result->columnIndications = std::vector<uint_fast64_t>(std::move(matrix.ir));
 		// And do the same thing with the actual values.
-		result->valueStorage(std::move(matrix.pr));
+		result->valueStorage = std::vector<T>(std::move(matrix.pr));
 
 		result->currentSize = realNonZeros;
 		result->lastRow = matrix.nrows() - 1;
