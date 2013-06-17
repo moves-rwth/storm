@@ -10,7 +10,7 @@
 
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/adapters/GmmxxAdapter.h"
-#include "src/storage/JacobiDecomposition.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/utility/ConstTemplates.h"
 #include "src/utility/Settings.h"
 
@@ -241,12 +241,12 @@ private:
 		bool relative = s->get<bool>("relative");
 
 		// Get a Jacobi decomposition of the matrix A.
-		storm::storage::JacobiDecomposition<Type>* jacobiDecomposition = A.getJacobiDecomposition();
+		storm::storage::SparseMatrix<Type>::SparseJacobiDecomposition_t jacobiDecomposition = A.getJacobiDecomposition();
 
 		// Convert the (inverted) diagonal matrix to gmm++'s format.
-		gmm::csr_matrix<Type>* gmmxxDiagonalInverted = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiDInvReference());
+		gmm::csr_matrix<Type>* gmmxxDiagonalInverted = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(std::move(jacobiDecomposition.second));
 		// Convert the LU matrix to gmm++'s format.
-		gmm::csr_matrix<Type>* gmmxxLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(jacobiDecomposition->getJacobiLUReference());
+		gmm::csr_matrix<Type>* gmmxxLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(std::move(jacobiDecomposition.first));
 
 		LOG4CPLUS_INFO(logger, "Starting iterative Jacobi Solver.");
 
@@ -295,7 +295,6 @@ private:
 
 		// Also delete the other dynamically allocated variables.
 		delete residuum;
-		delete jacobiDecomposition;
 		delete gmmxxDiagonalInverted;
 		delete gmmxxLU;
 

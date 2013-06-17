@@ -491,7 +491,7 @@ namespace gmm
 
   template <typename T, int shift = 0>
   struct csc_matrix {
-    typedef unsigned int IND_TYPE;
+    typedef unsigned long long IND_TYPE;
 
     std::vector<T> pr;
     std::vector<IND_TYPE> ir;
@@ -639,7 +639,7 @@ namespace gmm
   template <typename T, int shift = 0>
   struct csr_matrix {
 
-    typedef unsigned int IND_TYPE;
+	  typedef unsigned long long IND_TYPE;
 
     std::vector<T> pr;        // values.
     std::vector<IND_TYPE> ir; // col indices.

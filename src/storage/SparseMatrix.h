@@ -14,7 +14,6 @@
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/storage/BitVector.h"
-#include "src/storage/JacobiDecomposition.h"
 
 #include "src/utility/ConstTemplates.h"
 #include "src/utility/Hash.h"
@@ -46,6 +45,11 @@ namespace storage {
 template<class T>
 class SparseMatrix {
 public:
+	/*!
+	 * Return Type of the Jacobi Decompostion
+	 */
+	typedef std::pair<storm::storage::SparseMatrix<T>, storm::storage::SparseMatrix<T>> SparseJacobiDecomposition_t;
+
 	/*!
 	 * Declare adapter classes as friends to use internal data.
 	 */
@@ -938,29 +942,30 @@ public:
 	/*!
 	 * Calculates the Jacobi-Decomposition of this sparse matrix.
 	 * The source Sparse Matrix must be square.
-	 * @return A pointer to a class containing the matrix L+U and the inverted diagonal matrix D^-1
+	 * @return A std::pair containing the matrix L+U and the inverted diagonal matrix D^-1
 	 */
-	storm::storage::JacobiDecomposition<T>* getJacobiDecomposition() const {
+	SparseJacobiDecomposition_t getJacobiDecomposition() const {
 		uint_fast64_t rowCount = this->getRowCount();
 		uint_fast64_t colCount = this->getColumnCount();
 		if (rowCount != colCount) {
 			throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::getJacobiDecomposition requires the Matrix to be square.";
 		}
-		storm::storage::SparseMatrix<T> *resultLU = new storm::storage::SparseMatrix<T>(*this);
-		storm::storage::SparseMatrix<T> *resultDinv = new storm::storage::SparseMatrix<T>(rowCount, colCount);
+		storm::storage::SparseMatrix<T> resultLU(*this);
+		storm::storage::SparseMatrix<T> resultDinv(rowCount, colCount);
 		// no entries apart from those on the diagonal (rowCount)
-		resultDinv->initialize(rowCount);
+		resultDinv.initialize(rowCount);
 
 		// constant 1 for diagonal inversion
 		T constOne = storm::utility::constGetOne<T>();
 
 		// copy diagonal entries to other matrix
-		for (unsigned int i = 0; i < rowCount; ++i) {
-			resultDinv->addNextValue(i, i, constOne / resultLU->getValue(i, i));
-			resultLU->getValue(i, i) = storm::utility::constGetZero<T>();
+		for (uint_fast64_t i = 0; i < rowCount; ++i) {
+			resultDinv.addNextValue(i, i, constOne / resultLU.getValue(i, i));
+			resultLU.getValue(i, i) = storm::utility::constGetZero<T>();
 		}
+		resultDinv.finalize();
 
-		return new storm::storage::JacobiDecomposition<T>(resultLU, resultDinv);
+		return std::make_pair(std::move(resultLU), std::move(resultDinv));
 	}
 
 	/*!
