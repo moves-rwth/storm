@@ -378,7 +378,7 @@ public:
 	}
     
     /*!
-     * Inserts a value at the given row and column with the given value. After all elements have been added,
+     * Inserts a value at the given row and column with the given value. After all elements have been inserted,
      * a call to finalize() is mandatory.
      * NOTE: This is a linear inserter. It must be called consecutively for each element, row by row *and* column by
      * column.
@@ -870,6 +870,63 @@ public:
 		LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
 		return result;
 	}
+    
+    SparseMatrix getSubmatrix(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = true) const {
+        LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix (of unknown size).");
+        
+        // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for diagonal
+        // entries.
+        uint_fast64_t subNonZeroEntries = 0;
+        for (uint_fast64_t rowGroupIndex = 0, rowGroupIndexEnd = rowGroupToRowIndexMapping.size(); rowGroupIndex < rowGroupIndexEnd; ++rowGroupIndex) {
+            // Determine which row we need to select from the current row group.
+            uint_fast64_t rowToCopy = rowGroupIndices[rowGroupIndex] + rowGroupToRowIndexMapping[rowGroupIndex];
+            
+            // Iterate through that row and count the number of slots we have to reserve for copying.
+            bool foundDiagonalElement = false;
+            for (uint_fast64_t i = rowIndications[rowToCopy], rowEnd = rowIndications[rowToCopy + 1]; i < rowEnd; ++i) {
+                if (columnIndications[i] == rowGroupIndex) {
+                    foundDiagonalElement = true;
+                }
+                ++subNonZeroEntries;
+            }
+            if (insertDiagonalEntries && !foundDiagonalElement) {
+                ++subNonZeroEntries;
+            }
+        }
+        
+        LOG4CPLUS_DEBUG(logger, "Determined size of submatrix to be " << (rowGroupIndices.size() - 1) << "x" << colCount << " with " << subNonZeroEntries << " non-zero elements.");
+        
+        // Now create the matrix to be returned with the appropriate size.
+        SparseMatrix<T> submatrix(rowGroupIndices.size() - 1, colCount);
+        submatrix.initialize(subNonZeroEntries);
+        
+        // Copy over the selected lines from the source matrix.
+        for (uint_fast64_t rowGroupIndex = 0, rowGroupIndexEnd = rowGroupToRowIndexMapping.size(); rowGroupIndex < rowGroupIndexEnd; ++rowGroupIndex) {
+            // Determine which row we need to select from the current row group.
+            uint_fast64_t rowToCopy = rowGroupIndices[rowGroupIndex] + rowGroupToRowIndexMapping[rowGroupIndex];
+            
+            // Iterate through that row and copy the entries. This also inserts a zero element on the diagonal if there
+            // is no entry yet.
+            bool insertedDiagonalElement = false;
+            for (uint_fast64_t i = rowIndications[rowToCopy], rowEnd = rowIndications[rowToCopy + 1]; i < rowEnd; ++i) {
+                if (columnIndications[i] == rowGroupIndex) {
+                    insertedDiagonalElement = true;
+                } else if (insertDiagonalEntries && !insertedDiagonalElement && columnIndications[i] > rowGroupIndex) {
+                    submatrix.addNextValue(rowGroupIndex, rowGroupIndex, storm::utility::constGetZero<T>());
+                    insertedDiagonalElement = true;
+                }
+                submatrix.addNextValue(rowGroupIndex, columnIndications[i], valueStorage[i]);
+            }
+            if (insertDiagonalEntries && !insertedDiagonalElement) {
+                submatrix.addNextValue(rowGroupIndex, rowGroupIndex, storm::utility::constGetZero<T>());
+            }
+        }
+        
+        // Finalize created matrix and return result.
+        submatrix.finalize();
+        LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
+        return submatrix;
+    }
 
 	/*!
 	 * Performs a change to the matrix that is needed if this matrix is to be interpreted as a

@@ -9,6 +9,7 @@
 #define STORM_MODELCHECKER_PRCTL_SPARSEMDPPRCTLMODELCHECKER_H_
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
+#include "src/modelchecker/prctl/GmmxxDtmcPrctlModelChecker.h"
 #include "src/models/Mdp.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
@@ -440,6 +441,19 @@ public:
 		// Determine the states for which the target predicate holds.
 		storm::storage::BitVector* targetStates = formula.getChild().check(*this);
 
+        std::vector<uint_fast64_t> usedScheduler(this->getModel().getNumberOfStates());
+        
+        storm::models::Dtmc<Type> dtmc(this->getModel().getTransitionMatrix().getSubmatrix(usedScheduler, this->getModel().getNondeterministicChoiceIndices()),
+                                       storm::models::AtomicPropositionsLabeling(this->getModel().getStateLabeling()),
+                                       this->getModel().hasStateRewards() ? boost::optional<std::vector<Type>>(this->getModel().getStateRewardVector()) : boost::optional<std::vector<Type>>(),
+                                       this->getModel().hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<Type>>(this->getModel().getTransitionRewardMatrix().getSubmatrix(usedScheduler, this->getModel().getNondeterministicChoiceIndices(), false)) : boost::optional<storm::storage::SparseMatrix<Type>>());
+        
+        dtmc.printModelInformationToStream(std::cout);
+        
+        storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<Type> mc(dtmc);
+        formula.check(mc, qualitative);
+        exit(-1);
+        
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector infinityStates;
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
@@ -454,6 +468,8 @@ public:
 		LOG4CPLUS_INFO(logger, "Found " << targetStates->getNumberOfSetBits() << " 'target' states.");
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
+        
+        
 		// Create resulting vector.
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
 
