@@ -99,6 +99,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
             AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
             
+            // Simply iterate over all transitions and draw the arrows with probability information attached.
             for (auto const& transition : this->transitionMatrix) {
                 if (transition.value() != storm::utility::constGetZero<T>()) {
                     if (subsystem == nullptr || subsystem->get(transition.column())) {
