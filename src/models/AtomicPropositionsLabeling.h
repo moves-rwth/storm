@@ -58,6 +58,23 @@ public:
               singleLabelings(atomicPropositionsLabeling.singleLabelings) {
         // Intentionally left empty.
     }
+    
+    /*!
+     * Copy constructor that performs a deep copy of the given atomic proposition labeling while restricting to the states
+     * given by the bit vector.
+     *
+	 * @param atomicPropositionsLabeling The atomic propositions labeling to copy.
+     * @param substates A subset of the states that is to be copied.
+     */
+    AtomicPropositionsLabeling(AtomicPropositionsLabeling const& atomicPropositionsLabeling, storm::storage::BitVector const& substates)
+            : stateCount(substates.getNumberOfSetBits()), apCountMax(atomicPropositionsLabeling.apCountMax), apsCurrent(atomicPropositionsLabeling.apsCurrent),
+            nameToLabelingMap(atomicPropositionsLabeling.nameToLabelingMap) {
+        // Now we need to copy the fraction of the single labelings given by the substates.
+        singleLabelings.reserve(apCountMax);
+        for (auto const& labeling : atomicPropositionsLabeling.singleLabelings) {
+            singleLabelings.emplace_back(labeling, substates);
+        }
+    }
 
 	/*!
 	 * Move Constructor that performs a move copy on the given atomic proposition labeling.

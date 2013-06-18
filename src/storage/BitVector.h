@@ -150,6 +150,26 @@ public:
 	}
     
     /*!
+	 * Copy Constructor. Performs a deep copy of the bits in the given bit vector that are given by the filter.
+	 * @param bv A reference to the bit vector to be copied.
+     * @param filter The filter to apply for copying.
+	 */
+    BitVector(BitVector const& other, BitVector const& filter) : bitCount(filter.getNumberOfSetBits()), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
+        // Determine the number of buckets we need for the given bit count and create bucket array.
+        bucketCount = bitCount >> 6;
+        if ((bitCount & mod64mask) != 0) {
+            ++bucketCount;
+        }
+        this->bucketArray = new uint64_t[bucketCount]();
+        
+        // Now copy over all bits given by the filter.
+        uint_fast64_t nextPosition = 0;
+        for (auto position : filter) {
+            this->set(nextPosition, other.get(position));
+        }
+    }
+    
+    /*!
      * Move constructor. Move constructs the bit vector from the given bit vector.
      *
      */

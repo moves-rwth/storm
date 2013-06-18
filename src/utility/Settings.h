@@ -125,17 +125,17 @@ namespace settings {
 			 *	@endcode
 			 */
 			template <typename T>
-			static void registerModule() {
+			static void registerSolver() {
 				// Get trigger values.
-				std::pair< std::string, std::string > trigger = T::getOptionTrigger();
+				std::string const& name = T::getName();
 				// Build description name.
 				std::stringstream str;
-				str << "Options for " << T::getModuleName() << " (" << trigger.first << " = " << trigger.second << ")";
+				str << "Options for " << name << ":";
 				std::shared_ptr<bpo::options_description> desc = std::shared_ptr<bpo::options_description>(new bpo::options_description(str.str()));
 				// Put options into description.
 				T::putOptions(desc.get());
 				// Store module.
-				Settings::modules[ trigger ] = desc;
+				Settings::modules[name] = desc;
 			}
 			
 			friend std::ostream& help(std::ostream& os);
@@ -185,7 +185,7 @@ namespace settings {
 			/*!
 			 *	@brief	Contains option descriptions for all modules.
 			 */
-			static std::map< std::pair< std::string, std::string >, std::shared_ptr<bpo::options_description> > modules;
+			static std::map<std::string, std::shared_ptr<bpo::options_description>> modules;
 			
 			/*!
 			 *	@brief	option mapping.

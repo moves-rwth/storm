@@ -10,6 +10,7 @@
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
 #include "src/models/Dtmc.h"
+#include "src/solver/AbstractLinearEquationSolver.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
@@ -26,21 +27,22 @@ namespace prctl {
 template<class Type>
 class SparseDtmcPrctlModelChecker : public AbstractModelChecker<Type> {
 
-public:
 	/*!
 	 * Constructs a SparseDtmcPrctlModelChecker with the given model.
 	 *
 	 * @param model The DTMC to be checked.
 	 */
-	explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model) : AbstractModelChecker<Type>(model) {
+	explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model, storm::solver::AbstractLinearEquationSolver<Type>* linearEquationSolver) : AbstractModelChecker<Type>(model), linearEquationSolver(linearEquationSolver) {
 		// Intentionally left empty.
 	}
+    
+public:
 
 	/*!
 	 * Copy constructs a SparseDtmcPrctlModelChecker from the given model checker. In particular, this means that the newly
 	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	explicit SparseDtmcPrctlModelChecker(storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<Type> const& modelChecker) : AbstractModelChecker<Type>(modelChecker) {
+	explicit SparseDtmcPrctlModelChecker(storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<Type> const& modelChecker) : AbstractModelChecker<Type>(modelChecker), linearEquationSolver(modelChecker.linearEquationSolver->clone()) {
 		// Intentionally left empty.
 	}
 
@@ -120,7 +122,11 @@ public:
             storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
             
             // Perform the matrix vector multiplication as often as required by the formula bound.
-            this->performMatrixVectorMultiplication(submatrix, subresult, nullptr, formula.getBound());
+            if (linearEquationSolver != nullptr) {
+                this->linearEquationSolver->performMatrixVectorMultiplication(submatrix, subresult, nullptr, formula.getBound());
+            } else {
+                throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
+            }
             
             // Set the values of the resulting vector accordingly.
             storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, subresult);
@@ -156,8 +162,12 @@ public:
 		delete nextStates;
 
 		// Perform one single matrix-vector multiplication.
-		this->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result);
-
+        if (linearEquationSolver != nullptr) {
+            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result);
+        } else {
+            throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
+        }
+        
 		// Return result.
 		return result;
 	}
@@ -282,7 +292,11 @@ public:
             std::vector<Type> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
             
             // Now solve the created system of linear equations.
-            this->solveEquationSystem(submatrix, x, b);
+            if (linearEquationSolver != nullptr) {
+                this->linearEquationSolver->solveEquationSystem(submatrix, x, b);
+            } else {
+                throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
+            }
             
             // Set values of resulting vector according to result.
             storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
@@ -317,7 +331,11 @@ public:
 		std::vector<Type>* result = new std::vector<Type>(this->getModel().getStateRewardVector());
 
 		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
-		this->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result, nullptr, formula.getBound());
+        if (linearEquationSolver != nullptr) {
+            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result, nullptr, formula.getBound());
+        } else {
+            throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
+        }
 
 		// Return result.
 		return result;
@@ -361,7 +379,11 @@ public:
 		}
 
 		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
-		this->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result, &totalRewardVector, formula.getBound());
+        if (linearEquationSolver != nullptr) {
+            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result, &totalRewardVector, formula.getBound());
+        } else {
+            throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
+        }
 
 		// Return result.
 		return result;
@@ -448,7 +470,11 @@ public:
             }
             
             // Now solve the resulting equation system.
-            this->solveEquationSystem(submatrix, x, b);
+            if (linearEquationSolver != nullptr) {
+                this->linearEquationSolver->solveEquationSystem(submatrix, x, b);
+            } else {
+                throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
+            }
             
             // Set values of resulting vector according to result.
             storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
@@ -464,29 +490,8 @@ public:
 	}
 
 private:
-	/*!
-	 * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes x[i+1] = A*x[i] + b
-	 * until x[n], where x[0] = x.
-	 *
-	 * @param A The matrix that is to be multiplied against the vector.
-	 * @param x The initial vector that is to be multiplied against the matrix. This is also the output parameter,
-	 * i.e. after the method returns, this vector will contain the computed values.
-	 * @param b If not null, this vector is being added to the result after each matrix-vector multiplication.
-	 * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
-	 * @returns The result of the repeated matrix-vector multiplication as the content of the parameter vector.
-	 */
-	virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const = 0;
-
-	/*!
-	 * Solves the equation system A*x = b given by the parameters.
-	 *
-	 * @param A The matrix specifying the coefficients of the linear equations.
-	 * @param x The solution vector x. The initial values of x represent a guess of the real values to the solver, but
-	 * may be ignored.
-	 * @param b The right-hand side of the equation system.
-	 * @returns The solution vector x of the system of linear equations as the content of the parameter x.
-	 */
-	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const = 0;
+    // An object that is used for solving linear equations and performing matrix-vector multiplication.
+    std::unique_ptr<storm::solver::AbstractLinearEquationSolver<Type>> linearEquationSolver;
 };
 
 } // namespace prctl

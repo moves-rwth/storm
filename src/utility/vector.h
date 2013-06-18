@@ -101,6 +101,23 @@ void selectVectorValues(std::vector<T>& vector, storm::storage::BitVector const&
 }
 
 /*!
+ * Selects one element out of each row group and writes it to the target vector.
+ *
+ * @param vector The target vector to which the values are written.
+ * @param rowGroupToRowIndexMapping A mapping from row group indices to an offset that specifies which of the values to
+ * take from the row group.
+ * @param rowGrouping A vector that specifies the begin and end of each group of elements in the values vector.
+ * @param values The vector from which to select the values.
+ */
+template<class T>
+void selectVectorValues(std::vector<T>& vector, std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGrouping, std::vector<T> const& values) {
+    uint_fast64_t oldPosition = 0;
+    for (uint_fast64_t i = 0; i < vector.size(); ++i) {
+        vector[i] = values[rowGrouping[i] + rowGroupToRowIndexMapping[i]];
+    }
+}
+
+/*!
  * Selects values from a vector at the specified positions and writes them into another vector as often as given by
  * the size of the corresponding group of elements.
  *

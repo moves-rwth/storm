@@ -141,6 +141,7 @@ file(GLOB_RECURSE STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PR
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
 file(GLOB STORM_IR_FILES ${PROJECT_SOURCE_DIR}/src/ir/*.h ${PROJECT_SOURCE_DIR}/src/ir/*.cpp)
 file(GLOB_RECURSE STORM_IR_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/ir/expressions/*.h ${PROJECT_SOURCE_DIR}/src/ir/expressions/*.cpp)
+file(GLOB_RECURSE STORM_SOLVER_FILES ${PROJECT_SOURCE_DIR}/src/solver/*.h ${PROJECT_SOURCE_DIR}/src/solver/*.cpp)
 
 # Test Sources
 # Note that the tests also need the source files, except for the main file
@@ -164,6 +165,7 @@ source_group(storage FILES ${STORM_STORAGE_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 source_group(ir FILES ${STORM_IR_FILES})
 source_group(ir\\expressions FILES ${STORM_IR_EXPRESSIONS_FILES})
+source_group(solver FILES ${STORM_SOLVER_FILES})
 source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
 source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES})
 

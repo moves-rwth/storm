@@ -100,20 +100,20 @@ Settings::Settings(int const argc, char const * const argv[], char const * const
 		}
 		LOG4CPLUS_DEBUG(logger, "Finished loading config.");
 	}
-	catch (bpo::reading_file e) {
+	catch (bpo::reading_file const& e) {
 		std::cerr << "Could not read config file " << filename << std::endl;
 		LOG4CPLUS_ERROR(logger, "Could not read config file");
 	}
-	catch (bpo::required_option e) {
+	catch (bpo::required_option const& e) {
 		throw storm::exceptions::InvalidSettingsException() << "Required option missing";
 	}
-	catch (bpo::validation_error e) {
+	catch (bpo::validation_error const& e) {
 		throw storm::exceptions::InvalidSettingsException() << "Validation failed: " << e.what();
 	}
-	catch (bpo::invalid_command_line_syntax e) {
+	catch (bpo::invalid_command_line_syntax const& e) {
 		throw storm::exceptions::InvalidSettingsException() << e.what();
 	}
-	catch (bpo::error e) {
+	catch (bpo::error const& e) {
 		throw storm::exceptions::InvalidSettingsException() << e.what();
 	}
 }
