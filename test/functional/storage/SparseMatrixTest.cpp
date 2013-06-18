@@ -315,3 +315,72 @@ TEST(SparseMatrixTest, ConversionToSparseEigen_RowMajor_SparseMatrixTest) {
 	delete esm;
 	delete ssm;
 }
+
+#ifdef STORM_USE_TBB
+TEST(SparseMatrixTest, TBBMatrixMultTest) {
+	storm::storage::SparseMatrix<double> matrix(10, 10);
+	ASSERT_NO_THROW(matrix.initialize(100));
+	double values[100];
+	std::vector<double> x;
+	x.resize(10);
+	for (uint_fast64_t i = 0; i < 100; ++i) {
+		values[i] = i + 1.0;
+		if (i < 10) {
+			x[i] = 1.0;
+		}
+		matrix.addNextValue(i / 10, i % 10, values[i]);
+	}
+	ASSERT_NO_THROW(matrix.finalize());
+	ASSERT_EQ(matrix.getState(), storm::storage::SparseMatrix<double>::MatrixStatus::ReadReady);
+
+	std::vector<double> result;
+	result.resize(10);
+
+	matrix.multiplyWithVector(x, result);
+
+	for (uint_fast64_t i = 0; i < 10; ++i) {
+		double rowSum = 0.0;
+		for (uint_fast64_t j = 0; j < 10; ++j) {
+			rowSum += values[10 * i + j];
+		}
+		ASSERT_EQ(rowSum, result.at(i));
+	}
+}
+
+TEST(SparseMatrixTest, TBBSparseMatrixMultTest) {
+	storm::storage::SparseMatrix<double> matrix(10, 10);
+	ASSERT_NO_THROW(matrix.initialize(50));
+	double values[100];
+	std::vector<double> x;
+	x.resize(10);
+	for (uint_fast64_t i = 0; i < 100; ++i) {
+		if (i % 2 == 0) {
+			values[i] = i + 1.0;
+			matrix.addNextValue(i / 10, i % 10, i + 1.0);
+		} else {
+			values[i] = 0.0;
+		}
+
+		if (i < 10) {
+			x[i] = 1.0;
+		}
+		
+	}
+	ASSERT_NO_THROW(matrix.finalize());
+	ASSERT_EQ(matrix.getState(), storm::storage::SparseMatrix<double>::MatrixStatus::ReadReady);
+
+	std::vector<double> result;
+	result.resize(10);
+
+	matrix.multiplyWithVector(x, result);
+
+	for (uint_fast64_t i = 0; i < 10; ++i) {
+		double rowSum = 0.0;
+		for (uint_fast64_t j = 0; j < 10; ++j) {
+			rowSum += values[10 * i + j];
+		}
+		ASSERT_EQ(rowSum, result.at(i));
+	}
+}
+
+#endif // STORM_USE_TBB
