@@ -217,11 +217,11 @@ if (TBB_FOUND)
 	message(STATUS "Found TBB with Interface Version ${TBB_INTERFACE_VERSION}")
 	
 	if(USE_INTELTBB)
-		add_definitions(-DGMM_USE_TBB)
+		add_definitions(-DSTORM_USE_TBB)
+		
+		include_directories(${TBB_INCLUDE_DIRS})
+		link_directories(${TBB_LIBRARY_DIRS})
 	endif()
-	
-	include_directories(${TBB_INCLUDE_DIRS})
-	link_directories(${TBB_LIBRARY_DIRS})
 endif(TBB_FOUND)
 
 # Add Eigen to the included directories

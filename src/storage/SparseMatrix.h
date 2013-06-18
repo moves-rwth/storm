@@ -9,6 +9,12 @@
 #include <set>
 #include "boost/integer/integer_mask.hpp"
 
+#ifdef STORM_USE_TBB
+#	include <new> // This fixes a potential dependency ordering problem between GMM and TBB
+#	include "tbb/tbb.h"
+#	include <iterator>
+#endif
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
@@ -76,7 +82,7 @@ public:
 		 *
 		 * @param matrix The matrix on which this iterator operates.
 		 */
-		ConstRowsIterator(SparseMatrix<T> const& matrix, uint_fast64_t row = 0) : matrix(matrix), posIndex(matrix.rowIndications[row]), rowIndex(row) {
+		ConstRowsIterator(SparseMatrix<T> const& matrix, uint_fast64_t row = 0) : matrix(&matrix), posIndex(matrix.rowIndications[row]), rowIndex(row) {
 			// Intentionally left empty.
 		}
 
@@ -87,7 +93,7 @@ public:
 		 */
 		ConstRowsIterator& operator++() {
 			++posIndex;
-			if (posIndex >= matrix.rowIndications[rowIndex + 1]) {
+			if (posIndex >= matrix->rowIndications[rowIndex + 1]) {
 				++rowIndex;
 			}
 			return *this;
@@ -125,6 +131,17 @@ public:
 			return this->posIndex != other.posIndex;
 		}
 
+		/*!
+		 * Assignment operator
+		 */
+		ConstRowsIterator& operator=( const ConstRowsIterator& rhs) {
+			this->matrix = rhs.matrix;
+			this->posIndex = rhs.posIndex;
+			this->rowIndex = rhs.rowIndex;
+
+			return *this;
+		}
+
         /*!
          * Retrieves the row that is associated with the current non-zero element this iterator
          * points to.
@@ -142,7 +159,7 @@ public:
 		 * @returns The column of the current non-zero element this iterator points to.
          */
 		uint_fast64_t column() const {
-			return matrix.columnIndications[posIndex];
+			return matrix->columnIndications[posIndex];
 		}
 		
 		/*!
@@ -159,7 +176,7 @@ public:
 		 * @returns The value of the current non-zero element this iterator points to.
          */
 		T const& value() const {
-			return matrix.valueStorage[posIndex];
+			return matrix->valueStorage[posIndex];
 		}
 
         /*!
@@ -169,7 +186,7 @@ public:
          */
 		void moveToRow(uint_fast64_t row) {
 			this->rowIndex = row;
-			this->posIndex = matrix.rowIndications[row];
+			this->posIndex = matrix->rowIndications[row];
 		}
 
         /*!
@@ -179,9 +196,22 @@ public:
 			moveToRow(rowIndex + 1);
 		}
 
+		/*!
+		 * Calculates the size of the current row
+		 */
+		uint_fast64_t rowSize() {
+			return (matrix->rowIndications[this->rowIndex + 1] - matrix->rowIndications[this->rowIndex]);
+		}
+
+		/*!
+		 * Moves the column-pointer forward
+		 */
+		void advance(uint_fast64_t count) {
+			this->posIndex += count;
+		}
 	private:
         // A constant reference to the matrix this iterator is associated with.
-		SparseMatrix<T> const& matrix;
+		SparseMatrix<T> const* matrix;
         
         // The current index in the list of all non-zero elements of the matrix this iterator points to.
 		uint_fast64_t posIndex;
@@ -1069,6 +1099,9 @@ public:
 	 * vector.
 	 */
 	void multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const {
+#ifdef STORM_USE_TBB
+		tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size()), tbbHelper_MatrixRowVectorScalarProduct<storm::storage::SparseMatrix<T>, std::vector<T>, T>(this, &vector, &result));
+#else
 		// Initialize two iterators that 
 		ConstRowsIterator matrixElementIt(*this);
 		ConstRowsIterator matrixElementIte(*this);
@@ -1089,6 +1122,7 @@ public:
 				element += matrixElementIt.value() * vector[matrixElementIt.column()];
 			}
         }
+#endif
 	}
 
 	/*!
@@ -1431,6 +1465,47 @@ private:
 		}
 	}
 };
+
+#ifdef STORM_USE_TBB
+	/*!
+	 *	This function is a helper for Parallel Execution of the multipliyWithVector functionality.
+	 *  It uses Intels TBB parallel_for paradigm to split up the row/vector multiplication and summation
+	 */
+	template <typename M, typename V, typename T>
+	class tbbHelper_MatrixRowVectorScalarProduct {
+	private:
+		V * resultVector;
+		V const* vectorX;
+		M const* matrixA;
+
+	public:
+		tbbHelper_MatrixRowVectorScalarProduct(M const* matrixA, V const* vectorX, V * resultVector) : matrixA(matrixA), vectorX(vectorX), resultVector(resultVector) {}
+
+		void operator() (const tbb::blocked_range<uint_fast64_t>& r) const {
+			// Initialize two iterators that 
+			M::ConstRowsIterator matrixElementIt(*matrixA, r.begin());
+			M::ConstRowsIterator matrixElementIte(*matrixA, r.begin());
+		
+			for (uint_fast64_t rowNumber = r.begin(); rowNumber != r.end(); ++rowNumber) {
+				// Put the past-the-end iterator to the correct position.
+				matrixElementIte.moveToNextRow();
+
+				// Initialize the result to be 0.
+				T element = storm::utility::constGetZero<T>();
+			
+				// Perform the scalar product.
+				for (; matrixElementIt != matrixElementIte; ++matrixElementIt) {
+					element += matrixElementIt.value() * vectorX->at(matrixElementIt.column());
+				}
+				
+				// Write back to the result Vector
+				resultVector->at(rowNumber) = element;
+			}
+		}
+	
+	};
+#endif
+
 
 } // namespace storage
 } // namespace storm
