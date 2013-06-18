@@ -16,11 +16,11 @@ namespace storm {
         class GmmxxNondeterministicLinearEquationSolver : public AbstractNondeterministicLinearEquationSolver<Type> {
         public:
             
-            virtual AbstractLinearEquationSolver<Type>* clone() const {
+            virtual AbstractNondeterministicLinearEquationSolver<Type>* clone() const {
                 return new GmmxxNondeterministicLinearEquationSolver<Type>();
             }
             
-            virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const {
+            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const override {
                 // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
                 gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
                 
@@ -36,7 +36,7 @@ namespace storm {
                         gmm::add(*b, multiplyResult);
                     }
                     
-                    if (this->minimumOperatorStack.top()) {
+                    if (minimize) {
                         storm::utility::vector::reduceVectorMin(multiplyResult, x, nondeterministicChoiceIndices);
                     } else {
                         storm::utility::vector::reduceVectorMax(multiplyResult, x, nondeterministicChoiceIndices);
@@ -47,7 +47,7 @@ namespace storm {
                 delete gmmxxMatrix;
             }
             
-            void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<uint_fast64_t>* takenChoices = nullptr) const override {
+            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const override {
                 // Get the settings object to customize solving.
                 storm::settings::Settings* s = storm::settings::instance();
                 
@@ -89,11 +89,6 @@ namespace storm {
                     currentX = newX;
                     newX = swap;
                     ++iterations;
-                }
-                
-                // If we were requested to record the taken choices, we have to construct the vector now.
-                if (takenChoices != nullptr) {
-                    this->computeTakenChoices(minimize, multiplyResult, *takenChoices, nondeterministicChoiceIndices);
                 }
                 
                 // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result

@@ -124,6 +124,26 @@ void checkExplicit(const std::vector<std::string>& filenames) {
 	}
 }
 
+    /*!
+     * Validates whether the given lemethod matches one of the available ones.
+     * Throws an exception of type InvalidSettings in case the selected method is illegal.
+     */
+    static void validateLeMethod(const std::string& lemethod) {
+        if ((lemethod != "bicgstab") && (lemethod != "qmr") && (lemethod != "jacobi")) {
+            throw exceptions::InvalidSettingsException() << "Argument " << lemethod << " for option 'lemethod' is invalid.";
+        }
+    }
+    
+    /*!
+     * Validates whether the given preconditioner matches one of the available ones.
+     * Throws an exception of type InvalidSettings in case the selected preconditioner is illegal.
+     */
+    static void validatePreconditioner(const std::string& preconditioner) {
+        if ((preconditioner != "ilu") && (preconditioner != "diagonal") && (preconditioner != "ildlt") && (preconditioner != "none")) {
+            throw exceptions::InvalidSettingsException() << "Argument " << preconditioner << " for option 'precond' is invalid.";
+        }
+    }
+    
 /*!
  *	Initially fill options_description objects.
  */
@@ -145,6 +165,13 @@ void Settings::initDescriptions() {
 		("transrew", bpo::value<std::string>()->default_value(""), "name of transition reward file")
 		("staterew", bpo::value<std::string>()->default_value(""), "name of state reward file")
 		("fix-deadlocks", "insert self-loops for states without outgoing transitions")
+        ("lemethod", boost::program_options::value<std::string>()->default_value("bicgstab")->notifier(&storm::settings::validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, qmr, jacobi}.")
+        ("maxiter", boost::program_options::value<unsigned>()->default_value(10000), "Sets the maximal number of iterations for iterative equation solving.")
+        ("precision", boost::program_options::value<double>()->default_value(1e-6), "Sets the precision for iterative equation solving.")
+        ("precond", boost::program_options::value<std::string>()->default_value("ilu")->notifier(&validatePreconditioner), "Sets the preconditioning technique for linear equation solving. Must be in {ilu, diagonal, ildlt, none}.")
+        ("relative", boost::program_options::value<bool>()->default_value(true), "Sets whether the relative or absolute error is considered for detecting convergence.")
+        ("use-heuristic-presolve", boost::program_options::value<bool>()->default_value(false), "Sets whether heuristic methods should be applied to get better initial values for value iteration.")
+        ("matrixlib", boost::program_options::value<std::string>()->default_value("gmm++"), "Sets which matrix library is to be used for numerical solving.")
 	;
 }
 

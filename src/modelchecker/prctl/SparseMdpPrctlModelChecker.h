@@ -9,11 +9,12 @@
 #define STORM_MODELCHECKER_PRCTL_SPARSEMDPPRCTLMODELCHECKER_H_
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
-#include "src/modelchecker/prctl/GmmxxDtmcPrctlModelChecker.h"
 #include "src/solver/AbstractNondeterministicLinearEquationSolver.h"
+#include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/models/Mdp.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
+#include "src/utility/Settings.h"
 
 #include <vector>
 #include <stack>
@@ -614,15 +615,20 @@ namespace storm {
                  * @param submatrix The matrix that will be used for value iteration later.
                  */
                 std::vector<Type> getInitialValueIterationValues(storm::storage::SparseMatrix<Type> const& submatrix, std::vector<uint_fast64_t> const& subNondeterministicChoiceIndices, std::vector<Type> const& rightHandSide) const {
-                    //        std::vector<uint_fast64_t> scheduler(submatrix.getColumnCount());
-                    //        std::vector<Type> result(scheduler.size(), Type(0.5));
-                    //        std::vector<Type> b(scheduler.size());
-                    //        storm::utility::vector::selectVectorValues(b, scheduler, subNondeterministicChoiceIndices, rightHandSide);
-                    //        storm::storage::SparseMatrix<Type> A(submatrix.getSubmatrix(scheduler, subNondeterministicChoiceIndices));
-                    //        A.convertToEquationSystem();
-                    //        this->solveEquationSystem(A, result, b);
-                    std::vector<Type> result(submatrix.getColumnCount());
-                    return result;
+                    storm::settings::Settings* s = storm::settings::instance();
+                    if (s->get<bool>("use-heuristic-presolve")) {
+                        std::vector<uint_fast64_t> scheduler(submatrix.getColumnCount());
+                        std::vector<Type> result(scheduler.size(), Type(0.5));
+                        std::vector<Type> b(scheduler.size());
+                        storm::utility::vector::selectVectorValues(b, scheduler, subNondeterministicChoiceIndices, rightHandSide);
+                        storm::storage::SparseMatrix<Type> A(submatrix.getSubmatrix(scheduler, subNondeterministicChoiceIndices));
+                        A.convertToEquationSystem();
+                        std::unique_ptr<storm::solver::GmmxxLinearEquationSolver<Type>> solver(new storm::solver::GmmxxLinearEquationSolver<Type>());
+                        solver->solveEquationSystem(A, result, b);
+                        return result;
+                    } else {
+                        return std::vector<Type>(submatrix.getColumnCount(), Type(0.5));
+                    }
                 }
                 
                 // An object that is used for solving linear equations and performing matrix-vector multiplication.

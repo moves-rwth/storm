@@ -5,6 +5,7 @@
 #include "src/adapters/GmmxxAdapter.h"
 #include "src/utility/ConstTemplates.h"
 #include "src/utility/Settings.h"
+#include "src/utility/vector.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"

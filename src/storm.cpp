@@ -22,10 +22,12 @@
 #include "src/models/Dtmc.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
-#include "src/modelchecker/prctl/EigenDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
-//#include "src/solver/GraphAnalyzer.h"
 #include "src/utility/Settings.h"
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
@@ -199,7 +201,7 @@ storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecke
     // Create the appropriate model checker.
 	storm::settings::Settings* s = storm::settings::instance();
 	if (s->getString("matrixlib") == "gmm++") {
-		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::AbstractLinearEquationSolver<double>());
+		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 	}
     
 	// The control flow should never reach this point, as there is a default setting for matrixlib.
@@ -218,9 +220,9 @@ storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecke
     // Create the appropriate model checker.
 	storm::settings::Settings* s = storm::settings::instance();
 	if (s->getString("matrixlib") == "gmm++") {
-		return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp, new storm::solver::GmmxxNondeterministicEquationSolver<double>());
+		return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<double>());
 	} else if (s->getString("matrixlib") == "native") {
-        return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp, new storm::solver::AbstractNondeterministicEquationSolver<double>());
+        return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
     }
     
 	// The control flow should never reach this point, as there is a default setting for matrixlib.

@@ -16,7 +16,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 169u);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 436u);
     
-	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
     
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("two");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -113,8 +113,8 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	std::shared_ptr<storm::models::Mdp<double>> stateRewardMdp = stateRewardParser.getModel<storm::models::Mdp<double>>();
     
-	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
-    
+    storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
+
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
 	rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
@@ -143,7 +143,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	std::shared_ptr<storm::models::Mdp<double>> stateAndTransitionRewardMdp = stateAndTransitionRewardParser.getModel<storm::models::Mdp<double>>();
     
-	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
+	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
@@ -179,7 +179,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 3172u);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144u);
 
-	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);

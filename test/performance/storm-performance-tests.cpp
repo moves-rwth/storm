@@ -7,7 +7,6 @@
 #include "log4cplus/fileappender.h"
 
 #include "src/utility/Settings.h"
-#include "src/modelchecker/prctl/GmmxxDtmcPrctlModelChecker.h"
 
 log4cplus::Logger logger;
 
@@ -34,7 +33,6 @@ void setUpLogging() {
  * Creates an empty settings object as the standard instance of the Settings class.
  */
 void createEmptyOptions() {
-    storm::settings::Settings::registerModule<storm::modelchecker::prctl::GmmxxDtmcPrctlModelChecker<double>>();
     const char* newArgv[] = {"storm-performance-tests"};
     storm::settings::Settings* s = storm::settings::newInstance(1, newArgv, nullptr, true);
 }

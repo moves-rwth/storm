@@ -27,7 +27,8 @@ namespace prctl {
 template<class Type>
 class SparseDtmcPrctlModelChecker : public AbstractModelChecker<Type> {
 
-	/*!
+public:
+    /*!
 	 * Constructs a SparseDtmcPrctlModelChecker with the given model.
 	 *
 	 * @param model The DTMC to be checked.
@@ -36,8 +37,6 @@ class SparseDtmcPrctlModelChecker : public AbstractModelChecker<Type> {
 		// Intentionally left empty.
 	}
     
-public:
-
 	/*!
 	 * Copy constructs a SparseDtmcPrctlModelChecker from the given model checker. In particular, this means that the newly
 	 * constructed model checker will have the model of the given model checker as its associated model.
