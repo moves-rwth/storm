@@ -627,7 +627,7 @@ namespace storm {
                         solver->solveEquationSystem(A, result, b);
                         return result;
                     } else {
-                        return std::vector<Type>(submatrix.getColumnCount(), Type(0.5));
+                        return std::vector<Type>(submatrix.getColumnCount());
                     }
                 }
                 
