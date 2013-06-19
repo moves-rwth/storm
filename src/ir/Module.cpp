@@ -7,6 +7,7 @@
 
 #include <sstream>
 #include <iostream>
+#include "utility/OsDetection.h"
 
 #include "Module.h"
 #include "src/parser/prismparser/VariableState.h"

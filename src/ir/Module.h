@@ -8,7 +8,13 @@
 #ifndef STORM_IR_MODULE_H_
 #define STORM_IR_MODULE_H_
 
+#include "utility/OsDetection.h"
+
+#ifdef LINUX
+#include <boost/container/map.hpp>
+#endif
 #include <map>
+
 #include <set>
 #include <string>
 #include <vector>
@@ -199,7 +205,11 @@ namespace storm {
             std::set<std::string> actions;
             
             // A map of actions to the set of commands labeled with this action.
+#ifdef LINUX
+            boost::container::map<std::string, std::set<uint_fast64_t>> actionsToCommandIndexMap;
+#else
             std::map<std::string, std::set<uint_fast64_t>> actionsToCommandIndexMap;
+#endif
         };
         
     } // namespace ir
