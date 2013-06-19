@@ -540,6 +540,24 @@ namespace storm {
                     storm::utility::vector::setVectorValues(*result, *targetStates, storm::utility::constGetZero<Type>());
                     storm::utility::vector::setVectorValues(*result, infinityStates, storm::utility::constGetInfinity<Type>());
                     
+//                    std::vector<uint_fast64_t> myScheduler(this->getModel().getNumberOfStates());
+//                    this->computeTakenChoices(this->minimumOperatorStack.top(), *result, myScheduler, this->getModel().getNondeterministicChoiceIndices());
+//                    std::cout << "min? " << this->minimumOperatorStack.top() << " 487: " << myScheduler[487] << std::endl;
+//                    std::cout << "513: " << (*result)[513] << " 484: " << (*result)[484] << std::endl;
+//                    std::cout << "real scheduler: " << myScheduler << std::endl;
+//                    storm::storage::BitVector subsys(this->getModel().getNumberOfStates(), true);
+//                    
+//                    std::vector<uint_fast64_t> stateColoring(this->getModel().getNumberOfStates());
+//                    for (auto target : *targetStates) {
+//                        stateColoring[target] = 1;
+//                    }
+//                    
+//                    std::vector<std::string> colors(2);
+//                    colors[0] = "white";
+//                    colors[1] = "blue";
+//                    
+//                    this->getModel().writeDotToStream(std::cout, true, &subsys, result, nullptr, &stateColoring, &colors, &myScheduler);
+                    
                     // If we were required to generate a scheduler, do so now.
                     if (scheduler != nullptr) {
                         this->computeTakenChoices(this->minimumOperatorStack.top(), *result, *scheduler, this->getModel().getNondeterministicChoiceIndices());
@@ -559,13 +577,19 @@ namespace storm {
                  * @param takenChoices The output vector that is to store the taken choices.
                  * @param nondeterministicChoiceIndices The assignment of states to their nondeterministic choices in the matrix.
                  */
-                void computeTakenChoices(bool minimize, std::vector<Type> const& nondeterministicResult, std::vector<uint_fast64_t>& takenChoices, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
-                    std::vector<Type> temporaryResult(nondeterministicChoiceIndices.size() - 1);
-                    if (minimize) {
-                        storm::utility::vector::reduceVectorMin(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
-                    } else {
-                        storm::utility::vector::reduceVectorMax(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
-                    }
+                void computeTakenChoices(bool minimize, std::vector<Type> const& result, std::vector<uint_fast64_t>& takenChoices, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+//                    std::vector<Type> nondeterministicResult(this->getModel().getTransitionMatrix().getColumnCount());
+//                    std::vector<Type> temporaryResult(nondeterministicChoiceIndices.size() - 1);
+//                    if (linearEquationSolver != nullptr) {
+//                        this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), );
+//                    } else {
+//                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
+//                    }
+//                    if (minimize) {
+//                        storm::utility::vector::reduceVectorMin(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
+//                    } else {
+//                        storm::utility::vector::reduceVectorMax(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
+//                    }
                 }
                 
                 /*!
@@ -575,7 +599,6 @@ namespace storm {
                 mutable std::stack<bool> minimumOperatorStack;
                 
             private:
-                
                 /*!
                  * Computes the nondeterministic choice indices vector resulting from reducing the full system to the states given
                  * by the parameter constraint.
@@ -616,6 +639,7 @@ namespace storm {
                  */
                 std::vector<Type> getInitialValueIterationValues(storm::storage::SparseMatrix<Type> const& submatrix, std::vector<uint_fast64_t> const& subNondeterministicChoiceIndices, std::vector<Type> const& rightHandSide) const {
                     storm::settings::Settings* s = storm::settings::instance();
+                    double precision = s->get<double>("precision");
                     if (s->get<bool>("use-heuristic-presolve")) {
                         std::vector<uint_fast64_t> scheduler(submatrix.getColumnCount());
                         std::vector<Type> result(scheduler.size(), Type(0.5));
@@ -625,6 +649,15 @@ namespace storm {
                         A.convertToEquationSystem();
                         std::unique_ptr<storm::solver::GmmxxLinearEquationSolver<Type>> solver(new storm::solver::GmmxxLinearEquationSolver<Type>());
                         solver->solveEquationSystem(A, result, b);
+                        
+                        // As there are sometimes some very small values in the vector due to numerical solving, we set
+                        // them to zero, because they otherwise require a certain number of value iterations.
+                        for (auto& value : result) {
+                            if (value < precision) {
+                                value = 0;
+                            }
+                        }
+                        
                         return result;
                     } else {
                         return std::vector<Type>(submatrix.getColumnCount());

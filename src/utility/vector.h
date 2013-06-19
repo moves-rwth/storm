@@ -191,8 +191,7 @@ void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vec
             continue;
         }
             
-        // We have to minimize the value, so only overwrite the current value if the
-        // value is actually lower.
+        // We have to upate the value, so only overwrite the current value if the value passes the filter.
         if (filter(*it, target[currentTargetRow])) {
             target[currentTargetRow] = *it;
             if (choices != nullptr) {
@@ -212,7 +211,7 @@ void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vec
  */
 template<class T>
 void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-	reduceVector<T>(source, target, rowGrouping, std::less<T>());
+	reduceVector<T>(source, target, rowGrouping, std::less<T>(), choices);
 }
 
 /*!
@@ -225,7 +224,7 @@ void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::
  */
 template<class T>
 void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-    reduceVector<T>(source, target, rowGrouping, std::greater<T>());
+    reduceVector<T>(source, target, rowGrouping, std::greater<T>(), choices);
 }
     
 /*!
