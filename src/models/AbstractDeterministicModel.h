@@ -100,10 +100,12 @@ class AbstractDeterministicModel: public AbstractModel<T> {
             AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
             
             // Simply iterate over all transitions and draw the arrows with probability information attached.
-            for (auto const& transition : this->transitionMatrix) {
-                if (transition.value() != storm::utility::constGetZero<T>()) {
-                    if (subsystem == nullptr || subsystem->get(transition.column())) {
-                        outStream << "\t" << transition.row() << " -> " << transition.column() << " [ label= \"" << transition.value() << "\" ];" << std::endl;
+            for (uint_fast64_t i = 0; i < this->transitionMatrix.getRowCount(); ++i) {
+                for (auto transitionIt = this->transitionMatrix.begin(i), transitionIte = this->transitionMatrix.end(i); transitionIt != transitionIte; ++transitionIt) {
+                    if (*transitionIt != storm::utility::constGetZero<T>()) {
+                        if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
+                            outStream << "\t" << i << " -> " << transitionIt.column() << " [ label= \"" << *transitionIt << "\" ];" << std::endl;
+                        }
                     }
                 }
             }

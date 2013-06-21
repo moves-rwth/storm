@@ -143,7 +143,7 @@ void selectVectorValuesRepeatedly(std::vector<T>& vector, storm::storage::BitVec
  */
 template<class T>
 void subtractFromConstantOneVector(std::vector<T>& vector) {
-	for (auto element : vector) {
+	for (auto& element : vector) {
 		element = storm::utility::constGetOne<T>() - element;
 	}
 }

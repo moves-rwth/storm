@@ -430,9 +430,7 @@ public:
             storm::utility::vector::setVectorValues<Type>(*result, maybeStates, storm::utility::constGetOne<Type>());
         } else {
             // In this case we have to compute the reward values for the remaining states.
-			uint_fast64_t maybeStatesSetBitCount = maybeStates.getNumberOfSetBits();
-
-            // Now we can eliminate the rows and columns from the original transition probability matrix.
+            // We can eliminate the rows and columns from the original transition probability matrix.
             storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates);
             // Converting the matrix from the fixpoint notation to the form needed for the equation
             // system. That is, we go from x = A*x + b to (I-A)x = b.

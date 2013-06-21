@@ -75,14 +75,14 @@ public:
 	 * (row, column) in addition to the value itself. This is a const iterator in the sense that it is not possible to
 	 * modify the matrix with it.
 	 */
-	class ConstRowsIterator {
+	class Iterator {
 	public:
 		/*!
 		 * Constructs an iterator over the elements of the given matrix.
 		 *
 		 * @param matrix The matrix on which this iterator operates.
 		 */
-		ConstRowsIterator(SparseMatrix<T> const& matrix, uint_fast64_t row = 0) : matrix(&matrix), posIndex(matrix.rowIndications[row]), rowIndex(row) {
+		Iterator(T* valuePtr, uint_fast64_t* columnPtr) : valuePtr(valuePtr), columnPtr(columnPtr) {
 			// Intentionally left empty.
 		}
 
@@ -91,11 +91,9 @@ public:
 		 *
 		 * @returns A reference to itself.
 		 */
-		ConstRowsIterator& operator++() {
-			++posIndex;
-			if (posIndex >= matrix->rowIndications[rowIndex + 1]) {
-				++rowIndex;
-			}
+		Iterator& operator++() {
+			++valuePtr;
+            ++columnPtr;
 			return *this;
 		}
 		
@@ -105,8 +103,8 @@ public:
 		 *
 		 * @returns A reference to itself.
 		 */
-		ConstRowsIterator& operator*() {
-			return *this;
+		T& operator*() {
+			return *valuePtr;
 		}
 
 		/*!
@@ -116,8 +114,8 @@ public:
 		 *
 		 * @return True iff the given iterator points to the same index as the current iterator.
 		 */
-		bool operator==(ConstRowsIterator const& other) const {
-			return this->posIndex == other.posIndex;
+		bool operator==(Iterator const& other) const {
+			return this->valuePtr == other.valuePtr;
 		}
 
 		/*!
@@ -127,29 +125,17 @@ public:
 		 *
 		 * @return True iff the given iterator points to a differnent index as the current iterator.
 		 */
-		bool operator!=(ConstRowsIterator const& other) const {
-			return this->posIndex != other.posIndex;
+		bool operator!=(Iterator const& other) const {
+			return this->valuePtr != other.valuePtr;
 		}
 
 		/*!
 		 * Assignment operator
 		 */
-		ConstRowsIterator& operator=( const ConstRowsIterator& rhs) {
-			this->matrix = rhs.matrix;
-			this->posIndex = rhs.posIndex;
-			this->rowIndex = rhs.rowIndex;
-
+		Iterator& operator=(Iterator const& rhs) {
+			this->valuePtr = rhs.valuePtr;
+			this->columnPtr = rhs.columnPtr;
 			return *this;
-		}
-
-        /*!
-         * Retrieves the row that is associated with the current non-zero element this iterator
-         * points to.
-		 *
-		 * @returns The row of the current non-zero element this iterator points to.
-         */
-		uint_fast64_t row() const {
-			return this->rowIndex;
 		}
 
         /*!
@@ -159,15 +145,7 @@ public:
 		 * @returns The column of the current non-zero element this iterator points to.
          */
 		uint_fast64_t column() const {
-			return matrix->columnIndications[posIndex];
-		}
-		
-		/*!
-		 * Retrieves the internal index of this iterator. This index corresponds to the position of
-		 * the current element in the vector of non-zero values of the matrix.
-		 */
-		uint_fast64_t index() const {
-			return this->posIndex;
+			return *columnPtr;
 		}
 		
         /*!
@@ -175,53 +153,104 @@ public:
 		 *
 		 * @returns The value of the current non-zero element this iterator points to.
          */
-		T const& value() const {
-			return matrix->valueStorage[posIndex];
+		T& value() {
+			return *valuePtr;
 		}
-
-        /*!
-         * Moves the iterator to the beginning of the given row.
-         *
-         * @param row The row this iterator is to be moved to.
-         */
-		void moveToRow(uint_fast64_t row) {
-			this->rowIndex = row;
-			this->posIndex = matrix->rowIndications[row];
-		}
-
-        /*!
-         * Moves the iterator to the beginning of the next row.
-         */
-		void moveToNextRow() {
-			moveToRow(rowIndex + 1);
-		}
-
-		/*!
-		 * Calculates the size of the current row
-		 */
-		uint_fast64_t rowSize() {
-			return (matrix->rowIndications[this->rowIndex + 1] - matrix->rowIndications[this->rowIndex]);
-		}
-
-		/*!
-		 * Moves the column-pointer forward
-		 */
-		void advance(uint_fast64_t count) {
-			this->posIndex += count;
-		}
-	private:
-        // A constant reference to the matrix this iterator is associated with.
-		SparseMatrix<T> const* matrix;
-        
-        // The current index in the list of all non-zero elements of the matrix this iterator points to.
-		uint_fast64_t posIndex;
-        
-        // The row of the element this iterator currently points to.
-		uint_fast64_t rowIndex;
+private:
+        T* valuePtr;
+        uint_fast64_t* columnPtr;
 	};
-
-    // Declare the iterator as a friend class to grant access to private data members of the matrix.
-	friend class ConstRowsIterator;
+    
+    /*!
+	 * Iterator class that is able to iterate over the non-zero elements of a matrix and return the position
+	 * (row, column) in addition to the value itself. This is a const iterator in the sense that it is not possible to
+	 * modify the matrix with it.
+	 */
+	class ConstIterator {
+	public:
+		/*!
+		 * Constructs an iterator over the elements of the given matrix.
+		 *
+		 * @param matrix The matrix on which this iterator operates.
+		 */
+		ConstIterator(T const* valuePtr, uint_fast64_t const* columnPtr) : valuePtr(valuePtr), columnPtr(columnPtr) {
+			// Intentionally left empty.
+		}
+        
+		/*!
+		 * Moves the iterator the next non-zero element of the matrix.
+		 *
+		 * @returns A reference to itself.
+		 */
+		ConstIterator& operator++() {
+			++valuePtr;
+            ++columnPtr;
+			return *this;
+		}
+		
+		/*!
+		 * Dereferencing operator for this iterator. Actually returns a reference to itself. This is
+		 * needed, because the range-based for-loop in C++11 dereferences the iterator automatically.
+		 *
+		 * @returns A reference to itself.
+		 */
+		T const& operator*() {
+			return *valuePtr;
+		}
+        
+		/*!
+		 * Comparison operator that compares the current iterator with the given one in terms of
+         * the indices they point to. Note that this does not check whether the iterators are
+         * interpreted over the same matrix.
+		 *
+		 * @return True iff the given iterator points to the same index as the current iterator.
+		 */
+		bool operator==(ConstIterator const& other) const {
+			return this->valuePtr == other.valuePtr;
+		}
+        
+		/*!
+		 * Comparison operator that compares the current iterator with the given one in terms of
+         * the indices they point to. Note that this does not check whether the iterators are
+         * interpreted over the same matrix.
+		 *
+		 * @return True iff the given iterator points to a differnent index as the current iterator.
+		 */
+		bool operator!=(ConstIterator const& other) const {
+			return this->valuePtr != other.valuePtr;
+		}
+        
+		/*!
+		 * Assignment operator
+		 */
+		ConstIterator& operator=(ConstIterator const& rhs) {
+			this->valuePtr = rhs.valuePtr;
+			this->columnPtr = rhs.columnPtr;
+			return *this;
+		}
+        
+        /*!
+         * Retrieves the column that is associated with the current non-zero element this iterator
+         * points to.
+		 *
+		 * @returns The column of the current non-zero element this iterator points to.
+         */
+		uint_fast64_t column() const {
+			return *columnPtr;
+		}
+		
+        /*!
+         * Retrieves the value of the current non-zero element this iterator points to.
+		 *
+		 * @returns The value of the current non-zero element this iterator points to.
+         */
+		T const& value() {
+			return *valuePtr;
+		}
+    private:
+        T const* valuePtr;
+        uint_fast64_t const* columnPtr;
+	};
 
 	/*!
 	 * An enum representing the internal state of the Matrix
@@ -1102,25 +1131,13 @@ public:
 #ifdef STORM_USE_TBB
 		tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size()), tbbHelper_MatrixRowVectorScalarProduct<storm::storage::SparseMatrix<T>, std::vector<T>, T>(this, &vector, &result));
 #else
-		// Initialize two iterators that 
-		ConstRowsIterator matrixElementIt(*this);
-		ConstRowsIterator matrixElementIte(*this);
-		
-		// Iterate over all positions of the result vector and compute its value as the scalar
-		// product of the corresponding row with the input vector.
-		// Note that only the end iterator has to be moved by one row, because the other iterator
-		// is automatically moved forward one row by the inner loop.
-		for (auto& element : result) {
-            // Put the past-the-end iterator to the correct position.
-            matrixElementIte.moveToNextRow();
+        auto elementIt = this->begin();
+        for (uint_fast64_t i = 0; i < this->rowCount; ++i) {
+            result[i] = storm::utility::constGetZero<T>();
 
-            // Initialize the result to be 0.
-			element = storm::utility::constGetZero<T>();
-			
-			// Perform the scalar product.
-			for (; matrixElementIt != matrixElementIte; ++matrixElementIt) {
-				element += matrixElementIt.value() * vector[matrixElementIt.column()];
-			}
+            for (auto elementIte = this->end(i); elementIt != elementIte; ++elementIt) {
+                result[i] += *elementIt * vector[elementIt.column()];
+            }
         }
 #endif
 	}
@@ -1148,8 +1165,12 @@ public:
 	 * @returns An iterator to the elements of the matrix that cannot be used for modifying the
 	 * contents.
 	 */
-	ConstRowsIterator begin(uint_fast64_t row = 0) const {
-		return ConstRowsIterator(*this, row);
+	Iterator begin(uint_fast64_t row = 0) {
+		return Iterator(this->valueStorage.data() + this->rowIndications[row], this->columnIndications.data() + this->rowIndications[row]);
+	}
+    
+	ConstIterator begin(uint_fast64_t row = 0) const {
+		return ConstIterator(this->valueStorage.data() + this->rowIndications[row], this->columnIndications.data() + this->rowIndications[row]);
 	}
 	
 	/*!
@@ -1157,8 +1178,12 @@ public:
 	 *
 	 * @returns A const iterator that points past the last element of the matrix.
 	 */
-	ConstRowsIterator end() const {
-		return ConstRowsIterator(*this, this->rowCount);
+	Iterator end() {
+		return Iterator(this->valueStorage.data() + nonZeroEntryCount, nullptr);
+	}
+    
+    ConstIterator end() const {
+		return ConstIterator(this->valueStorage.data() + nonZeroEntryCount, nullptr);
 	}
 	
 	/*!
@@ -1167,8 +1192,12 @@ public:
 	 * @returns row The row past which this iterator has to point.
 	 * @returns A const iterator that points to the first element after the given row.
 	 */
-	ConstRowsIterator end(uint_fast64_t row) const {
-		return ConstRowsIterator(*this, row + 1);
+	Iterator end(uint_fast64_t row) {
+		return Iterator(&this->valueStorage[0] + this->rowIndications[row + 1], nullptr);
+	}
+    
+    ConstIterator end(uint_fast64_t row) const {
+		return ConstIterator(&this->valueStorage[0] + this->rowIndications[row + 1], nullptr);
 	}
 
 	/*!

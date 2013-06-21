@@ -318,7 +318,7 @@ namespace storm {
                         
                         // Create vector for results for maybe states.
                         std::vector<Type> x = this->getInitialValueIterationValues(submatrix, subNondeterministicChoiceIndices, b);
-                        
+                                                
                         // Solve the corresponding system of equations.
                         if (linearEquationSolver != nullptr) {
                             this->linearEquationSolver->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
