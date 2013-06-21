@@ -406,7 +406,7 @@ protected:
          * @return A string containing the exported model in dot-format.
          */
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const {
-            outStream << "digraph deterministicModel {" << std::endl;
+            outStream << "digraph model {" << std::endl;
         
             // Write all states to the stream.
             for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
