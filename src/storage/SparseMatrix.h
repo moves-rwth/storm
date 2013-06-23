@@ -69,189 +69,180 @@ public:
 	 */
 	typedef uint_fast64_t const* ConstIndexIterator;
 	typedef T const* ConstValueIterator;
-
-	/*!
-	 * Iterator class that is able to iterate over the non-zero elements of a matrix and return the position
-	 * (row, column) in addition to the value itself. This is a const iterator in the sense that it is not possible to
-	 * modify the matrix with it.
-	 */
-	class Iterator {
-	public:
-		/*!
-		 * Constructs an iterator over the elements of the given matrix.
-		 *
-		 * @param matrix The matrix on which this iterator operates.
-		 */
-		Iterator(T* valuePtr, uint_fast64_t* columnPtr) : valuePtr(valuePtr), columnPtr(columnPtr) {
-			// Intentionally left empty.
-		}
-
-		/*!
-		 * Moves the iterator the next non-zero element of the matrix.
-		 *
-		 * @returns A reference to itself.
-		 */
-		Iterator& operator++() {
-			++valuePtr;
-            ++columnPtr;
-			return *this;
-		}
-		
-		/*!
-		 * Dereferencing operator for this iterator. Actually returns a reference to itself. This is
-		 * needed, because the range-based for-loop in C++11 dereferences the iterator automatically.
-		 *
-		 * @returns A reference to itself.
-		 */
-		T& operator*() {
-			return *valuePtr;
-		}
-
-		/*!
-		 * Comparison operator that compares the current iterator with the given one in terms of
-         * the indices they point to. Note that this does not check whether the iterators are
-         * interpreted over the same matrix.
-		 *
-		 * @return True iff the given iterator points to the same index as the current iterator.
-		 */
-		bool operator==(Iterator const& other) const {
-			return this->valuePtr == other.valuePtr;
-		}
-
-		/*!
-		 * Comparison operator that compares the current iterator with the given one in terms of
-         * the indices they point to. Note that this does not check whether the iterators are
-         * interpreted over the same matrix.
-		 *
-		 * @return True iff the given iterator points to a differnent index as the current iterator.
-		 */
-		bool operator!=(Iterator const& other) const {
-			return this->valuePtr != other.valuePtr;
-		}
-
-		/*!
-		 * Assignment operator
-		 */
-		Iterator& operator=(Iterator const& rhs) {
-			this->valuePtr = rhs.valuePtr;
-			this->columnPtr = rhs.columnPtr;
-			return *this;
-		}
-
-        /*!
-         * Retrieves the column that is associated with the current non-zero element this iterator
-         * points to.
-		 *
-		 * @returns The column of the current non-zero element this iterator points to.
-         */
-		uint_fast64_t column() const {
-			return *columnPtr;
-		}
-		
-        /*!
-         * Retrieves the value of the current non-zero element this iterator points to.
-		 *
-		 * @returns The value of the current non-zero element this iterator points to.
-         */
-		T& value() {
-			return *valuePtr;
-		}
-private:
-        T* valuePtr;
-        uint_fast64_t* columnPtr;
-	};
     
     /*!
-	 * Iterator class that is able to iterate over the non-zero elements of a matrix and return the position
-	 * (row, column) in addition to the value itself. This is a const iterator in the sense that it is not possible to
-	 * modify the matrix with it.
+	 * A class representing an iterator over a continguous number of rows of the matrix.
 	 */
 	class ConstIterator {
 	public:
 		/*!
-		 * Constructs an iterator over the elements of the given matrix.
+		 * Constructs an iterator from the given parameters.
 		 *
-		 * @param matrix The matrix on which this iterator operates.
+		 * @param valuePtr A pointer to the value of the first element that is to be iterated over.
+         * @param columnPtr A pointer to the column of the first element that is to be iterated over.
 		 */
 		ConstIterator(T const* valuePtr, uint_fast64_t const* columnPtr) : valuePtr(valuePtr), columnPtr(columnPtr) {
 			// Intentionally left empty.
 		}
         
 		/*!
-		 * Moves the iterator the next non-zero element of the matrix.
+		 * Moves the iterator to the next non-zero element.
 		 *
-		 * @returns A reference to itself.
+		 * @return A reference to itself.
 		 */
 		ConstIterator& operator++() {
 			++valuePtr;
             ++columnPtr;
 			return *this;
 		}
-		
-		/*!
-		 * Dereferencing operator for this iterator. Actually returns a reference to itself. This is
-		 * needed, because the range-based for-loop in C++11 dereferences the iterator automatically.
-		 *
-		 * @returns A reference to itself.
-		 */
-		T const& operator*() {
-			return *valuePtr;
-		}
         
 		/*!
-		 * Comparison operator that compares the current iterator with the given one in terms of
-         * the indices they point to. Note that this does not check whether the iterators are
-         * interpreted over the same matrix.
+		 * Compares the two iterators for inequality.
 		 *
-		 * @return True iff the given iterator points to the same index as the current iterator.
-		 */
-		bool operator==(ConstIterator const& other) const {
-			return this->valuePtr == other.valuePtr;
-		}
-        
-		/*!
-		 * Comparison operator that compares the current iterator with the given one in terms of
-         * the indices they point to. Note that this does not check whether the iterators are
-         * interpreted over the same matrix.
-		 *
-		 * @return True iff the given iterator points to a differnent index as the current iterator.
+		 * @return True iff the given iterator points to a different index as the current iterator.
 		 */
 		bool operator!=(ConstIterator const& other) const {
 			return this->valuePtr != other.valuePtr;
 		}
         
 		/*!
-		 * Assignment operator
+		 * Assigns the position of the given iterator to the current iterator.
+         *
+         * @return A reference to itself.
 		 */
-		ConstIterator& operator=(ConstIterator const& rhs) {
-			this->valuePtr = rhs.valuePtr;
-			this->columnPtr = rhs.columnPtr;
+		ConstIterator& operator=(ConstIterator const& other) {
+			this->valuePtr = other.valuePtr;
+			this->columnPtr = other.columnPtr;
 			return *this;
 		}
         
         /*!
-         * Retrieves the column that is associated with the current non-zero element this iterator
-         * points to.
+         * Retrieves the column that is associated with the current non-zero element to which this iterator
+         * points.
 		 *
-		 * @returns The column of the current non-zero element this iterator points to.
+		 * @return The column of the current non-zero element to which this iterator points.
          */
 		uint_fast64_t column() const {
 			return *columnPtr;
 		}
 		
         /*!
-         * Retrieves the value of the current non-zero element this iterator points to.
+         * Retrieves the value of the current non-zero element to which this iterator points.
 		 *
-		 * @returns The value of the current non-zero element this iterator points to.
+		 * @return The value of the current non-zero element to which this iterator points.
          */
 		T const& value() {
 			return *valuePtr;
 		}
+        
     private:
+        // A pointer to the value of the current non-zero element.
         T const* valuePtr;
+        
+        // A pointer to the column of the current non-zero element.
         uint_fast64_t const* columnPtr;
 	};
+    
+    /*!
+     * This class represents a single row of the matrix.
+     */
+    class Row {
+    public:
+        /*!
+         * Constructs a row from the given parameters.
+         *
+         * @param valuePtr A pointer to the value of the first non-zero element of the row.
+         * @param columnPtr A pointer to the column of the first non-zero element of the row.
+         * @param entryCount The number of non-zero elements of this row.
+         */
+        Row(T const* valuePtr, uint_fast64_t const* columnPtr, uint_fast64_t entryCount) : valuePtr(valuePtr), columnPtr(columnPtr), entryCount(entryCount) {
+            // Intentionally left empty.
+        }
+        
+        /*!
+         * Retrieves an iterator that points to the beginning of the row.
+         *
+         * @return An iterator that points to the beginning of the row.
+         */
+        ConstIterator begin() const {
+            return ConstIterator(valuePtr, columnPtr);
+        }
+        
+        /*!
+         * Retrieves an iterator that points past the last element of the row.
+         *
+         * @return An iterator that points past the last element of the row.
+         */
+        ConstIterator end() const {
+            return ConstIterator(valuePtr + entryCount, columnPtr + entryCount);
+        }
+        
+    private:
+        // The pointer to the value of the first element.
+        T const* valuePtr;
+        
+        // The pointer to the column of the first element.
+        uint_fast64_t const* columnPtr;
+        
+        // The number of non-zero entries in this row.
+        uint_fast64_t entryCount;
+    };
 
+    /*!
+     * This class represents an iterator to all rows of the matrix.
+     */
+    class ConstRowIterator {
+    public:
+        /*!
+         * Constructs a new iterator with the given parameters.
+         *
+         * @param startValuePtr A pointer to the value of the first non-zero element of the matrix.
+         * @param startColumnPtr A pointer to the column of the first non-zero element of the matrix.
+         * @param rowPtr A pointer to the index at which the first row begins.
+         */
+        ConstRowIterator(T const* startValuePtr, uint_fast64_t const* startColumnPtr, uint_fast64_t const* rowPtr) : startValuePtr(startValuePtr), startColumnPtr(startColumnPtr), rowPtr(rowPtr) {
+            // Intentionally left empty.
+        }
+        
+        /*!
+         * This sets the iterator to point to the next row.
+         *
+         * @return A reference to itself.
+         */
+        ConstRowIterator& operator++() {
+			++rowPtr;
+			return *this;
+		}
+        
+        /*!
+         * Retrieves an iterator that points to the beginning of the current row.
+         *
+         * @return An iterator that points to the beginning of the current row.
+         */
+        ConstIterator begin() const {
+            return ConstIterator(startValuePtr + *rowPtr, startColumnPtr + *rowPtr);
+        }
+        
+        /*!
+         * Retrieves an iterator that points past the end of the current row.
+         *
+         * @return An iterator that points past the end of the current row.
+         */
+        ConstIterator end() const {
+            return ConstIterator(startValuePtr + *(rowPtr + 1), startColumnPtr + *(rowPtr + 1));
+        }
+        
+    private:
+        // The pointer to the value of the first non-zero element of the matrix.
+        T const* startValuePtr;
+        
+        // A pointer to the column of the first non-zero element of the matrix.
+        uint_fast64_t const* startColumnPtr;
+        
+        // A pointer to the index at which the current row starts.
+        uint_fast64_t const* rowPtr;
+    };
+    
 	/*!
 	 * An enum representing the internal state of the Matrix
 	 * After creating the Matrix using the Constructor, the Object is in state UnInitialized. After
@@ -1131,14 +1122,19 @@ private:
 #ifdef STORM_USE_TBB
 		tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size()), tbbHelper_MatrixRowVectorScalarProduct<storm::storage::SparseMatrix<T>, std::vector<T>, T>(this, &vector, &result));
 #else
-        auto elementIt = this->begin();
-        for (uint_fast64_t i = 0; i < this->rowCount; ++i) {
-            result[i] = storm::utility::constGetZero<T>();
+        ConstRowIterator rowIt = this->begin();
+        
+        // std::cout << this->toString() << std::endl;
+        // std::cout << vector << std::endl;
+        
+        for (auto resultIt = result.begin(), resultIte = result.end(); resultIt != resultIte; ++resultIt, ++rowIt) {
+            *resultIt = storm::utility::constGetZero<T>();
 
-            for (auto elementIte = this->end(i); elementIt != elementIte; ++elementIt) {
-                result[i] += *elementIt * vector[elementIt.column()];
+            for (auto elementIt = rowIt.begin(), elementIte = rowIt.end(); elementIt != elementIte; ++elementIt) {
+                *resultIt += elementIt.value() * vector[elementIt.column()];
             }
         }
+        // std::cout << result << std::endl;
 #endif
 	}
 
@@ -1158,48 +1154,29 @@ private:
 		return size;
 	}
 
-	/*!
-	 * Returns a const iterator to the elements of the matrix.
-	 * @param row If given, this specifies the starting row of the iterator.
-	 *
-	 * @returns An iterator to the elements of the matrix that cannot be used for modifying the
-	 * contents.
-	 */
-	Iterator begin(uint_fast64_t row = 0) {
-		return Iterator(this->valueStorage.data() + this->rowIndications[row], this->columnIndications.data() + this->rowIndications[row]);
-	}
+    void moveToRow(ConstIterator& it, uint_fast64_t rowOffset) const {
+        // std::cout << rowOffset << " / " << this->nonZeroEntryCount << std::endl;
+        it.moveTo(this->valueStorage.data() + rowOffset, this->columnIndications.data() + rowOffset);
+    }
     
-	ConstIterator begin(uint_fast64_t row = 0) const {
-		return ConstIterator(this->valueStorage.data() + this->rowIndications[row], this->columnIndications.data() + this->rowIndications[row]);
+	/*!
+	 * Returns a const iterator to the rows of the matrix.
+	 *
+	 * @return A const iterator to the rows of the matrix.
+	 */
+	ConstRowIterator begin() const {
+		return ConstRowIterator(this->valueStorage.data(), this->columnIndications.data(), this->rowIndications.data());
 	}
 	
 	/*!
-	 * Returns a const iterator that points to the first element after the matrix.
+	 * Returns a const iterator that points to past the last row of the matrix.
 	 *
-	 * @returns A const iterator that points past the last element of the matrix.
+	 * @return A const iterator that points to past the last row of the matrix
 	 */
-	Iterator end() {
-		return Iterator(this->valueStorage.data() + nonZeroEntryCount, nullptr);
-	}
-    
-    ConstIterator end() const {
-		return ConstIterator(this->valueStorage.data() + nonZeroEntryCount, nullptr);
+    ConstRowIterator end() const {
+		return ConstRowIterator(this->valueStorage.data() + nonZeroEntryCount, this->columnIndications.data() + nonZeroEntryCount, this->rowIndications.data() + rowCount);
 	}
 	
-	/*!
-	 * Returns a const iterator that points to the first element after the given row.
-	 *
-	 * @returns row The row past which this iterator has to point.
-	 * @returns A const iterator that points to the first element after the given row.
-	 */
-	Iterator end(uint_fast64_t row) {
-		return Iterator(&this->valueStorage[0] + this->rowIndications[row + 1], nullptr);
-	}
-    
-    ConstIterator end(uint_fast64_t row) const {
-		return ConstIterator(&this->valueStorage[0] + this->rowIndications[row + 1], nullptr);
-	}
-
 	/*!
 	 * Returns an iterator to the columns of the non-zero entries of the matrix.
 	 *

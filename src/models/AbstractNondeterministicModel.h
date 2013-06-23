@@ -146,12 +146,13 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
             AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
 
             // Write the probability distributions for all the states.
+            auto rowIt = this->transitionMatrix.begin();
             for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
                 uint_fast64_t rowCount = nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state];
                 bool highlightChoice = true;
                 
                 // For this, we need to iterate over all available nondeterministic choices in the current state.
-                for (uint_fast64_t row = 0; row < rowCount; ++row) {
+                for (uint_fast64_t row = 0; row < rowCount; ++row, ++rowIt) {
                     if (scheduler != nullptr) {
                         // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
                         if ((*scheduler)[state] == row) {
@@ -186,9 +187,9 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
                     outStream << ";" << std::endl;
                     
                     // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
-                    for (auto transitionIt = this->getTransitionMatrix().begin(nondeterministicChoiceIndices[state] + rowCount), transitionIte = this->getTransitionMatrix().begin(nondeterministicChoiceIndices[state + 1]); transitionIt != transitionIte; ++transitionIt) {
+                    for (auto transitionIt = rowIt.begin(), transitionIte = rowIt.end(); transitionIt != transitionIte; ++transitionIt) {
                         if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
-                            outStream << "\t\"" << state << "c" << row << "\" -> " << transitionIt.column() << " [ label= \"" << *transitionIt << "\" ]";
+                            outStream << "\t\"" << state << "c" << row << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ]";
                         
                             // If we were given a scheduler to highlight, we do so now.
                             if (scheduler != nullptr) {
