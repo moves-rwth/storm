@@ -68,24 +68,16 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 			// Intentionally left empty.
 		}
     
-        /*!
-         * Returns an iterator to the successors of the given state.
-         *
-         * @param state The state for which to return the iterator.
-         * @return An iterator to the successors of the given state.
-         */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const {
-            return this->transitionMatrix.constColumnIteratorBegin(state);
+        virtual typename storm::storage::SparseMatrix<T>::Rows getRows(uint_fast64_t state) const override {
+            return this->transitionMatrix.getRows(state, state);
         }
     
-        /*!
-         * Returns an iterator pointing to the element past the successors of the given state.
-         *
-         * @param state The state for which to return the iterator.
-         * @return An iterator pointing to the element past the successors of the given state.
-         */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
-            return this->transitionMatrix.constColumnIteratorEnd(state);
+        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorBegin(uint_fast64_t state) const override {
+            return this->transitionMatrix.begin(state);
+        }
+    
+        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorEnd(uint_fast64_t state) const override {
+            return this->transitionMatrix.end(state);
         }
 
 		/*!

@@ -108,24 +108,16 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			return nondeterministicChoiceIndices;
 		}
     
-        /*!
-         * Returns an iterator to the successors of the given state.
-         *
-         * @param state The state for which to return the iterator.
-         * @return An iterator to the successors of the given state.
-         */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const {
-            return this->transitionMatrix.constColumnIteratorBegin(nondeterministicChoiceIndices[state]);
+        virtual typename storm::storage::SparseMatrix<T>::Rows getRows(uint_fast64_t state) const override {
+            return this->transitionMatrix.getRows(nondeterministicChoiceIndices[state], nondeterministicChoiceIndices[state + 1] - 1);
         }
     
-        /*!
-         * Returns an iterator pointing to the element past the successors of the given state.
-         *
-         * @param state The state for which to return the iterator.
-         * @return An iterator pointing to the element past the successors of the given state.
-         */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const {
-            return this->transitionMatrix.constColumnIteratorEnd(nondeterministicChoiceIndices[state + 1] - 1);
+        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorBegin(uint_fast64_t state) const override {
+            return this->transitionMatrix.begin(nondeterministicChoiceIndices[state]);
+        }
+    
+        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorEnd(uint_fast64_t state) const override {
+            return this->transitionMatrix.end(nondeterministicChoiceIndices[state + 1] - 1);
         }
 
 		/*!

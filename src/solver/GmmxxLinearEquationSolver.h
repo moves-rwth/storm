@@ -177,7 +177,7 @@ namespace storm {
                 std::vector<Type>* xCurrent = &x;
                 
                 // Target vector for precision calculation.
-                std::vector<Type>* residuum = new std::vector<Type>(x.size());
+                std::vector<Type> tmpX(x.size());
                 
                 // Set up additional environment variables.
                 uint_fast64_t iterationCount = 0;
@@ -185,11 +185,11 @@ namespace storm {
                 
                 while (!converged && iterationCount < maxIterations) {
                     // R * x_k (xCurrent is x_k) -> xNext
-                    gmm::mult(*gmmxxLU, *xCurrent, *xNext);
+                    gmm::mult(*gmmxxLU, *xCurrent, tmpX);
                     // b - R * x_k (xNext contains R * x_k) -> xNext
-                    gmm::add(b, gmm::scaled(*xNext, -1.0), *xNext);
+                    gmm::add(b, gmm::scaled(tmpX, -1.0), tmpX);
                     // D^-1 * (b - R * x_k) -> xNext
-                    gmm::mult(*gmmxxDiagonalInverted, *xNext, *xNext);
+                    gmm::mult(*gmmxxDiagonalInverted, tmpX, *xNext);
                     
                     // Swap xNext with xCurrent so that the next iteration can use xCurrent again without having to copy the
                     // vector.
@@ -214,7 +214,6 @@ namespace storm {
                 delete xCopy;
                 
                 // Also delete the other dynamically allocated variables.
-                delete residuum;
                 delete gmmxxDiagonalInverted;
                 delete gmmxxLU;
                 

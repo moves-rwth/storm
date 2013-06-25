@@ -279,10 +279,6 @@ namespace storm {
                     storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
                     storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
                     
-                    // Delete sub-results that are obsolete now.
-                    delete leftStates;
-                    delete rightStates;
-                    
                     storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
                     LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
                     LOG4CPLUS_INFO(logger, "Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
@@ -317,7 +313,7 @@ namespace storm {
                         std::vector<Type> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, submatrix.getRowCount());
                         
                         // Create vector for results for maybe states.
-                        std::vector<Type> x = this->getInitialValueIterationValues(submatrix, subNondeterministicChoiceIndices, b);
+                        std::vector<Type> x = this->getInitialValueIterationValues(minimize, submatrix, subNondeterministicChoiceIndices, b, statesWithProbability1, maybeStates);
                                                 
                         // Solve the corresponding system of equations.
                         if (linearEquationSolver != nullptr) {
@@ -339,6 +335,9 @@ namespace storm {
                         this->computeTakenChoices(this->minimumOperatorStack.top(), false, *result, *scheduler, this->getModel().getNondeterministicChoiceIndices());
                     }
                     
+                    // Delete sub-results that are obsolete now.
+                    delete leftStates;
+                    delete rightStates;
                     return result;
                 }
                 
@@ -523,7 +522,7 @@ namespace storm {
                         }
                         
                         // Create vector for results for maybe states.
-                        std::vector<Type> x = this->getInitialValueIterationValues(submatrix, subNondeterministicChoiceIndices, b);
+                        std::vector<Type> x = this->getInitialValueIterationValues(minimize, submatrix, subNondeterministicChoiceIndices, b, *targetStates, maybeStates);
                         
                         // Solve the corresponding system of equations.
                         if (linearEquationSolver != nullptr) {
@@ -645,11 +644,20 @@ namespace storm {
                  *
                  * @param submatrix The matrix that will be used for value iteration later.
                  */
-                std::vector<Type> getInitialValueIterationValues(storm::storage::SparseMatrix<Type> const& submatrix, std::vector<uint_fast64_t> const& subNondeterministicChoiceIndices, std::vector<Type> const& rightHandSide) const {
+                std::vector<Type> getInitialValueIterationValues(bool minimize, storm::storage::SparseMatrix<Type> const& submatrix,
+                                                                 std::vector<uint_fast64_t> const& subNondeterministicChoiceIndices,
+                                                                 std::vector<Type> const& rightHandSide,
+                                                                 storm::storage::BitVector const& targetStates,
+                                                                 storm::storage::BitVector const& maybeStates) const {
                     storm::settings::Settings* s = storm::settings::instance();
                     double precision = s->get<double>("precision");
                     if (s->get<bool>("use-heuristic-presolve")) {
-                        std::vector<uint_fast64_t> scheduler(submatrix.getColumnCount());
+                        
+                        std::pair<std::vector<Type>, std::vector<uint_fast64_t>> distancesAndPredecessorsPair = storm::utility::graph::performDijkstra(this->getModel(),
+                                                                                                                                                       this->getModel().template getBackwardTransitions<Type>([](Type const& value) -> Type { return value; }),
+                                                                                                                                                       minimize? ~(maybeStates | targetStates) : targetStates, &maybeStates);
+                        
+                        std::vector<uint_fast64_t> scheduler = this->convertShortestPathsToScheduler(maybeStates, distancesAndPredecessorsPair.second);
                         std::vector<Type> result(scheduler.size(), Type(0.5));
                         std::vector<Type> b(scheduler.size());
                         storm::utility::vector::selectVectorValues(b, scheduler, subNondeterministicChoiceIndices, rightHandSide);
@@ -670,6 +678,31 @@ namespace storm {
                     } else {
                         return std::vector<Type>(submatrix.getColumnCount());
                     }
+                }
+                
+                std::vector<uint_fast64_t> convertShortestPathsToScheduler(storm::storage::BitVector const& maybeStates, std::vector<uint_fast64_t> const& shortestPathSuccessors) const {
+                    std::vector<uint_fast64_t> scheduler(maybeStates.getNumberOfSetBits());
+
+                    Type maxProbability = 0;
+                    uint_fast64_t currentStateIndex = 0;
+                    for (auto state : maybeStates) {
+                        maxProbability = 0;
+                        
+                        for (uint_fast64_t row = 0, rowEnd = this->getModel().getNondeterministicChoiceIndices()[state + 1] - this->getModel().getNondeterministicChoiceIndices()[state]; row < rowEnd; ++row) {
+                            typename storm::storage::SparseMatrix<Type>::Rows currentRow = this->getModel().getTransitionMatrix().getRows(this->getModel().getNondeterministicChoiceIndices()[state] + row, this->getModel().getNondeterministicChoiceIndices()[state] + row);
+                            
+                            for (auto& transition : currentRow) {
+                                if (transition.column() == shortestPathSuccessors[state] && transition.value() > maxProbability) {
+                                    maxProbability = transition.value();
+                                    scheduler[currentStateIndex] = row;
+                                }
+                            }
+                        }
+                        
+                        ++currentStateIndex;
+                    }
+                    
+                    return scheduler;
                 }
                 
                 // An object that is used for solving linear equations and performing matrix-vector multiplication.

@@ -96,6 +96,16 @@ public:
 			return *this;
 		}
         
+        /*!
+         * Dereferences the iterator by returning a reference to itself. This is needed for making use of the range-based
+         * for loop over transitions.
+         *
+         * @return A reference to itself.
+         */
+        ConstIterator& operator*() {
+            return *this;
+        }
+        
 		/*!
 		 * Compares the two iterators for inequality.
 		 *
@@ -144,34 +154,34 @@ public:
 	};
     
     /*!
-     * This class represents a single row of the matrix.
+     * This class represents a number of consecutive rows of the matrix.
      */
-    class Row {
+    class Rows {
     public:
         /*!
          * Constructs a row from the given parameters.
          *
-         * @param valuePtr A pointer to the value of the first non-zero element of the row.
-         * @param columnPtr A pointer to the column of the first non-zero element of the row.
-         * @param entryCount The number of non-zero elements of this row.
+         * @param valuePtr A pointer to the value of the first non-zero element of the rows.
+         * @param columnPtr A pointer to the column of the first non-zero element of the rows.
+         * @param entryCount The number of non-zero elements of the rows.
          */
-        Row(T const* valuePtr, uint_fast64_t const* columnPtr, uint_fast64_t entryCount) : valuePtr(valuePtr), columnPtr(columnPtr), entryCount(entryCount) {
+        Rows(T const* valuePtr, uint_fast64_t const* columnPtr, uint_fast64_t entryCount) : valuePtr(valuePtr), columnPtr(columnPtr), entryCount(entryCount) {
             // Intentionally left empty.
         }
         
         /*!
-         * Retrieves an iterator that points to the beginning of the row.
+         * Retrieves an iterator that points to the beginning of the rows.
          *
-         * @return An iterator that points to the beginning of the row.
+         * @return An iterator that points to the beginning of the rows.
          */
         ConstIterator begin() const {
             return ConstIterator(valuePtr, columnPtr);
         }
         
         /*!
-         * Retrieves an iterator that points past the last element of the row.
+         * Retrieves an iterator that points past the last element of the rows.
          *
-         * @return An iterator that points past the last element of the row.
+         * @return An iterator that points past the last element of the rows.
          */
         ConstIterator end() const {
             return ConstIterator(valuePtr + entryCount, columnPtr + entryCount);
@@ -184,7 +194,7 @@ public:
         // The pointer to the column of the first element.
         uint_fast64_t const* columnPtr;
         
-        // The number of non-zero entries in this row.
+        // The number of non-zero entries in the rows.
         uint_fast64_t entryCount;
     };
 
@@ -213,6 +223,13 @@ public:
 			++rowPtr;
 			return *this;
 		}
+        
+        /*!
+         * Compares the iterator to the given row iterator.
+         */
+        bool operator!=(ConstRowIterator const& other) const {
+            return this->rowPtr != other.rowPtr;
+        }
         
         /*!
          * Retrieves an iterator that points to the beginning of the current row.
@@ -1124,9 +1141,6 @@ public:
 #else
         ConstRowIterator rowIt = this->begin();
         
-        // std::cout << this->toString() << std::endl;
-        // std::cout << vector << std::endl;
-        
         for (auto resultIt = result.begin(), resultIte = result.end(); resultIt != resultIte; ++resultIt, ++rowIt) {
             *resultIt = storm::utility::constGetZero<T>();
 
@@ -1134,7 +1148,6 @@ public:
                 *resultIt += elementIt.value() * vector[elementIt.column()];
             }
         }
-        // std::cout << result << std::endl;
 #endif
 	}
 
@@ -1153,19 +1166,26 @@ public:
 		size += sizeof(uint_fast64_t) * rowIndications.capacity();
 		return size;
 	}
-
-    void moveToRow(ConstIterator& it, uint_fast64_t rowOffset) const {
-        // std::cout << rowOffset << " / " << this->nonZeroEntryCount << std::endl;
-        it.moveTo(this->valueStorage.data() + rowOffset, this->columnIndications.data() + rowOffset);
+    
+    /*!
+     * Returns an object representing the consecutive rows given by the parameters.
+     *
+     * @param The starting row.
+     * @param The ending row (which is included in the result).
+     * @return An object representing the consecutive rows given by the parameters.
+     */
+    Rows getRows(uint_fast64_t startRow, uint_fast64_t endRow) const {
+        return Rows(this->valueStorage.data() + this->rowIndications[startRow], this->columnIndications.data() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
     }
     
 	/*!
 	 * Returns a const iterator to the rows of the matrix.
 	 *
+     * @param initialRow The initial row to which this iterator points.
 	 * @return A const iterator to the rows of the matrix.
 	 */
-	ConstRowIterator begin() const {
-		return ConstRowIterator(this->valueStorage.data(), this->columnIndications.data(), this->rowIndications.data());
+	ConstRowIterator begin(uint_fast64_t initialRow = 0) const {
+		return ConstRowIterator(this->valueStorage.data(), this->columnIndications.data(), this->rowIndications.data() + initialRow);
 	}
 	
 	/*!
@@ -1174,9 +1194,19 @@ public:
 	 * @return A const iterator that points to past the last row of the matrix
 	 */
     ConstRowIterator end() const {
-		return ConstRowIterator(this->valueStorage.data() + nonZeroEntryCount, this->columnIndications.data() + nonZeroEntryCount, this->rowIndications.data() + rowCount);
+		return ConstRowIterator(this->valueStorage.data(), this->columnIndications.data(), this->rowIndications.data() + rowCount);
 	}
 	
+	/*!
+	 * Returns a const iterator that points past the given row.
+	 *
+     * @param row The row past which this iterator points.
+	 * @return A const iterator that points past the given row.
+	 */
+    ConstRowIterator end(uint_fast64_t row) const {
+		return ConstRowIterator(this->valueStorage.data(), this->columnIndications.data(), this->rowIndications.data() + row + 1);
+	}
+
 	/*!
 	 * Returns an iterator to the columns of the non-zero entries of the matrix.
 	 *

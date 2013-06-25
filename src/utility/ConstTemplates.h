@@ -160,7 +160,7 @@ inline int_fast32_t constGetInfinity() {
 template<>
 inline uint_fast64_t constGetInfinity() {
 	throw storm::exceptions::InvalidArgumentException() << "Integer has no infinity.";
-	return std::numeric_limits<int_fast64_t>::max();
+	return std::numeric_limits<uint_fast64_t>::max();
 }
 
 /*!

@@ -158,8 +158,9 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 // Now, we determine the blocks which are reachable (in one step) from the current block.
                 std::set<uint_fast64_t> allTargetBlocks;
                 for (auto state : block) {
-                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator succIt = this->constStateSuccessorIteratorBegin(state), succIte = this->constStateSuccessorIteratorEnd(state); succIt != succIte; ++succIt) {
-                        uint_fast64_t targetBlock = stateToBlockMap[*succIt];
+                    typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(state);
+                    for (auto& transition : rows) {
+                        uint_fast64_t targetBlock = stateToBlockMap[transition.column()];
                         
                         // We only need to consider transitions that are actually leaving the SCC.
                         if (targetBlock != currentBlockIndex) {
@@ -185,18 +186,32 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          *
          * @return A sparse matrix that represents the backward transitions of this model.
          */
-        virtual storm::storage::SparseMatrix<bool> getBackwardTransitions() const {
+        storm::storage::SparseMatrix<bool> getBackwardTransitions() const {
+            return getBackwardTransitions<bool>([](T const& value) -> bool { return value != 0; });
+        }
+    
+        /*!
+         * Retrieves the backward transition relation of the model, i.e. a set of transitions
+         * between states that correspond to the reversed transition relation of this model.
+         *
+         * @return A sparse matrix that represents the backward transitions of this model.
+         */
+        template <typename TransitionType>
+        storm::storage::SparseMatrix<TransitionType> getBackwardTransitions(std::function<TransitionType(T const&)> const& selectionFunction) const {
             uint_fast64_t numberOfStates = this->getNumberOfStates();
             uint_fast64_t numberOfTransitions = this->getNumberOfTransitions();
             
             std::vector<uint_fast64_t> rowIndications(numberOfStates + 1);
             std::vector<uint_fast64_t> columnIndications(numberOfTransitions);
-            std::vector<bool> values(numberOfTransitions, true);
+            std::vector<TransitionType> values(numberOfTransitions, selectionFunction(0));
             
             // First, we need to count how many backward transitions each state has.
             for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                for (auto rowIt = this->constStateSuccessorIteratorBegin(i), rowIte = this->constStateSuccessorIteratorEnd(i); rowIt != rowIte; ++rowIt) {
-                    rowIndications[*rowIt + 1]++;
+                typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(i);
+                for (auto& transition : rows) {
+                    if (transition.value() > 0) {
+                        ++rowIndications[transition.column() + 1];
+                    }
                 }
             }
             
@@ -218,27 +233,39 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             // Now we are ready to actually fill in the list of predecessors for
             // every state. Again, we start by considering all but the last row.
             for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                for (auto rowIt = this->constStateSuccessorIteratorBegin(i), rowIte = this->constStateSuccessorIteratorEnd(i); rowIt != rowIte; ++rowIt) {
-                    columnIndications[nextIndices[*rowIt]++] = i;
+                typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(i);
+                for (auto& transition : rows) {
+                    if (transition.value() > 0) {
+                        values[nextIndices[transition.column()]] = selectionFunction(transition.value());
+                        columnIndications[nextIndices[transition.column()]++] = i;
+                    }
                 }
             }
             
-            storm::storage::SparseMatrix<bool> backwardTransitionMatrix(numberOfStates, numberOfStates,
-                                                                        numberOfTransitions,
-                                                                        std::move(rowIndications),
-                                                                        std::move(columnIndications),
-                                                                        std::move(values));
+            storm::storage::SparseMatrix<TransitionType> backwardTransitionMatrix(numberOfStates, numberOfStates,
+                                                                                  numberOfTransitions,
+                                                                                  std::move(rowIndications),
+                                                                                  std::move(columnIndications),
+                                                                                  std::move(values));
             
             return backwardTransitionMatrix;
         }
 
+        /*!
+         * Returns an object representing the matrix rows associated with the given state.
+         *
+         * @param state The state for which to retrieve the rows.
+         * @return An object representing the matrix rows associated with the given state.
+         */
+        virtual typename storm::storage::SparseMatrix<T>::Rows getRows(uint_fast64_t state) const = 0;
+    
         /*!
          * Returns an iterator to the successors of the given state.
          *
          * @param state The state for which to return the iterator.
          * @return An iterator to the successors of the given state.
          */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorBegin(uint_fast64_t state) const = 0;
+        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorBegin(uint_fast64_t state) const = 0;
     
         /*!
          * Returns an iterator pointing to the element past the successors of the given state.
@@ -246,8 +273,8 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param state The state for which to return the iterator.
          * @return An iterator pointing to the element past the successors of the given state.
          */
-        virtual typename storm::storage::SparseMatrix<T>::ConstIndexIterator constStateSuccessorIteratorEnd(uint_fast64_t state) const = 0;
-    
+        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorEnd(uint_fast64_t state) const = 0;
+        
 		/*!
 		 * Returns the state space size of the model.
 		 * @return The size of the state space of the model.

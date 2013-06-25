@@ -8,8 +8,12 @@
 #ifndef STORM_UTILITY_GRAPH_H_
 #define STORM_UTILITY_GRAPH_H_
 
+#include <set>
+#include <limits>
+
 #include "src/models/AbstractDeterministicModel.h"
 #include "src/models/AbstractNondeterministicModel.h"
+#include "ConstTemplates.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"
@@ -756,6 +760,72 @@ namespace graph {
         
         return topologicalSort;
 	}
+    
+    template<typename T>
+    struct DistanceCompare {
+        bool operator()(std::pair<T, uint_fast64_t> const& lhs, std::pair<T, uint_fast64_t> const& rhs) const {
+            return lhs.first < rhs.first || (lhs.first == rhs.first && lhs.second < rhs.second);
+        }
+    };
+    
+    template <typename T>
+    std::pair<std::vector<T>, std::vector<uint_fast64_t>> performDijkstra(storm::models::AbstractModel<T> const& model,
+                                                                          storm::storage::SparseMatrix<T> const& transitions,
+                                                                          storm::storage::BitVector const& startingStates,
+// FIXME: The case in which there are target states given should be handled properly.                                                                          
+//                                                                          storm::storage::BitVector* targetStates = nullptr,
+                                                                          storm::storage::BitVector const* filterStates = nullptr) {
+        
+        LOG4CPLUS_INFO(logger, "Performing Dijkstra search.");
+        
+        const uint_fast64_t noPredecessorValue = std::numeric_limits<uint_fast64_t>::max();
+        std::vector<T> distances(model.getNumberOfStates(), storm::utility::constGetInfinity<T>());
+        std::vector<uint_fast64_t> predecessors(model.getNumberOfStates(), noPredecessorValue);
+        
+        // Set the distance to 0 for all starting states.
+        std::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> distanceStateSet;
+        for (auto state : startingStates) {
+            distanceStateSet.emplace(storm::utility::constGetZero<T>(), state);
+            distances[state] = 0;
+        }
+        
+        while (!distanceStateSet.empty()) {
+            // Get the state with the least distance from the set and remove it.
+            std::pair<T, uint_fast64_t> distanceStatePair = *distanceStateSet.begin();
+            distanceStateSet.erase(distanceStateSet.begin());
+
+            // Now check the new distances for all successors of the current state.
+            typename storm::storage::SparseMatrix<T>::Rows row = transitions.getRows(distanceStatePair.second, distanceStatePair.second);
+            for (auto& transition : row) {
+                // Only follow the transition if it lies within the filtered states.
+                if (filterStates != nullptr && filterStates->get(transition.column())) {
+                    // Calculate the distance we achieve when we take the path to the successor via the current state.
+                    T newDistance = distanceStatePair.first + std::log(storm::utility::constGetOne<T>() / transition.value());
+                    
+                    // We found a cheaper way to get to the target state of the transition.
+                    if (newDistance < distances[transition.column()]) {
+                        // Remove the old distance.
+                        if (distances[transition.column()] != noPredecessorValue) {
+                            distanceStateSet.erase(std::make_pair(distances[transition.column()], transition.column()));
+                        }
+                        
+                        // Set and add the new distance.
+                        distances[transition.column()] = newDistance;
+                        predecessors[transition.column()] = distanceStatePair.second;
+                        distanceStateSet.insert(std::make_pair(newDistance, transition.column()));
+                    }
+                }
+            }
+        }
+        
+        std::pair<std::vector<T>, std::vector<uint_fast64_t>> result;
+        result.first = std::move(distances);
+        result.second = std::move(predecessors);
+        
+        LOG4CPLUS_INFO(logger, "Done performing Dijkstra search.");
+
+        return result;
+    }
     
 } // namespace graph
 

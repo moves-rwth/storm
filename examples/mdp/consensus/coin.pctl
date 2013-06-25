@@ -11,10 +11,10 @@ Pmin=? [ F finished & all_coins_equal_1 ]
 Pmax=? [ F finished & !agree ]
 
 // Min/max probability of finishing within k steps
-Pmin=? [ F<=50 finished ]
-Pmax=? [ F<=50 finished ]
+// Pmin=? [ F<=50 finished ]
+// Pmax=? [ F<=50 finished ]
 
 // Min/max expected steps to finish
-Rmin=? [ F finished ]
-Rmax=? [ F finished ]
+// Rmin=? [ F finished ]
+// Rmax=? [ F finished ]
 
