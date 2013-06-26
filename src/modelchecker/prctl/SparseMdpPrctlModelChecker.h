@@ -8,6 +8,10 @@
 #ifndef STORM_MODELCHECKER_PRCTL_SPARSEMDPPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_PRCTL_SPARSEMDPPRCTLMODELCHECKER_H_
 
+#include <vector>
+#include <stack>
+#include <fstream>
+
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
 #include "src/solver/AbstractNondeterministicLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
@@ -15,9 +19,6 @@
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 #include "src/utility/Settings.h"
-
-#include <vector>
-#include <stack>
 
 namespace storm {
     namespace modelchecker {
@@ -287,6 +288,8 @@ namespace storm {
                     // Create resulting vector.
                     std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
                     
+                    std::vector<uint_fast64_t> guessedScheduler;
+                    
                     // Check whether we need to compute exact probabilities for some states.
                     if (this->getInitialStates().isDisjointFrom(maybeStates) || qualitative) {
                         if (qualitative) {
@@ -313,7 +316,7 @@ namespace storm {
                         std::vector<Type> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, submatrix.getRowCount());
                         
                         // Create vector for results for maybe states.
-                        std::vector<Type> x = this->getInitialValueIterationValues(minimize, submatrix, subNondeterministicChoiceIndices, b, statesWithProbability1, maybeStates);
+                        std::vector<Type> x = this->getInitialValueIterationValues(minimize, submatrix, subNondeterministicChoiceIndices, b, statesWithProbability1, maybeStates, &guessedScheduler);
                                                 
                         // Solve the corresponding system of equations.
                         if (linearEquationSolver != nullptr) {
@@ -329,6 +332,44 @@ namespace storm {
                     // Set values of resulting vector that are known exactly.
                     storm::utility::vector::setVectorValues<Type>(*result, statesWithProbability0, storm::utility::constGetZero<Type>());
                     storm::utility::vector::setVectorValues<Type>(*result, statesWithProbability1, storm::utility::constGetOne<Type>());
+                    
+                    // Output a scheduler for debug purposes.
+                    std::vector<uint_fast64_t> myScheduler(this->getModel().getNumberOfStates());
+                    this->computeTakenChoices(this->minimumOperatorStack.top(), false, *result, myScheduler, this->getModel().getNondeterministicChoiceIndices());
+                    
+                    std::vector<uint_fast64_t> stateColoring(this->getModel().getNumberOfStates());
+                    for (auto target : statesWithProbability1) {
+                        stateColoring[target] = 1;
+                    }
+                    
+                    std::vector<std::string> colors(2);
+                    colors[0] = "white";
+                    colors[1] = "blue";
+                    
+                    std::ofstream outFile;
+                    outFile.open("real.dot");
+                    storm::storage::BitVector filterStates(this->getModel().getNumberOfStates(), true);
+                    this->getModel().writeDotToStream(outFile, true, &filterStates, result, nullptr, &stateColoring, &colors, &myScheduler);
+                    outFile.close();
+                    
+                    std::cout << "=========== Scheduler Comparison ===========" << std::endl;
+                    uint_fast64_t index = 0;
+                    for (auto state : maybeStates) {
+                        if (myScheduler[state] != guessedScheduler[index]) {
+                            std::cout << state << " right: " << myScheduler[state] << ", wrong: " << guessedScheduler[index] << std::endl;
+                            std::cout << "Correct: " << std::endl;
+                            typename storm::storage::SparseMatrix<Type>::Rows correctRow = this->getModel().getTransitionMatrix().getRow(this->getModel().getNondeterministicChoiceIndices()[state] + myScheduler[state]);
+                            for (auto& transition : correctRow) {
+                                std::cout << "target " << transition.column() << " with prob " << transition.value() << std::endl;
+                            }
+                            std::cout << "Incorrect: " << std::endl;
+                            typename storm::storage::SparseMatrix<Type>::Rows incorrectRow = this->getModel().getTransitionMatrix().getRow(this->getModel().getNondeterministicChoiceIndices()[state] + myScheduler[state]);
+                            for (auto& transition : incorrectRow) {
+                                std::cout << "target " << transition.column() << " with prob " << transition.value() << std::endl;
+                            }
+                        }
+                        ++index;
+                    }
                     
                     // If we were required to generate a scheduler, do so now.
                     if (scheduler != nullptr) {
@@ -648,16 +689,36 @@ namespace storm {
                                                                  std::vector<uint_fast64_t> const& subNondeterministicChoiceIndices,
                                                                  std::vector<Type> const& rightHandSide,
                                                                  storm::storage::BitVector const& targetStates,
-                                                                 storm::storage::BitVector const& maybeStates) const {
+                                                                 storm::storage::BitVector const& maybeStates,
+                                                                 std::vector<uint_fast64_t>* guessedScheduler = nullptr) const {
                     storm::settings::Settings* s = storm::settings::instance();
                     double precision = s->get<double>("precision");
                     if (s->get<bool>("use-heuristic-presolve")) {
-                        
                         std::pair<std::vector<Type>, std::vector<uint_fast64_t>> distancesAndPredecessorsPair = storm::utility::graph::performDijkstra(this->getModel(),
                                                                                                                                                        this->getModel().template getBackwardTransitions<Type>([](Type const& value) -> Type { return value; }),
-                                                                                                                                                       minimize? ~(maybeStates | targetStates) : targetStates, &maybeStates);
+                                                                                                                                                       minimize ? ~(maybeStates | targetStates) : targetStates, &maybeStates);
                         
-                        std::vector<uint_fast64_t> scheduler = this->convertShortestPathsToScheduler(maybeStates, distancesAndPredecessorsPair.second);
+                        std::pair<std::vector<Type>, std::vector<uint_fast64_t>> distancesAndPredecessorsPair2 = storm::utility::graph::performDijkstra(this->getModel(),
+                                                                                                                                                       this->getModel().template getBackwardTransitions<Type>([](Type const& value) -> Type { return value; }),
+                                                                                                                                                       minimize ? targetStates : ~(maybeStates | targetStates), &maybeStates);
+                        
+                        std::vector<uint_fast64_t> scheduler = this->convertShortestPathsToScheduler(false, maybeStates, distancesAndPredecessorsPair.first, distancesAndPredecessorsPair.second);
+                                                
+                        std::vector<uint_fast64_t> stateColoring(this->getModel().getNumberOfStates());
+                        for (auto target : targetStates) {
+                            stateColoring[target] = 1;
+                        }
+                        
+                        std::vector<std::string> colors(2);
+                        colors[0] = "white";
+                        colors[1] = "blue";
+                        
+                        std::ofstream outFile;
+                        outFile.open("guessed.dot");
+                        storm::storage::BitVector filterStates(this->getModel().getNumberOfStates(), true);
+                        this->getModel().writeDotToStream(outFile, true, &filterStates, &distancesAndPredecessorsPair.first, &distancesAndPredecessorsPair2.first, &stateColoring, &colors);
+                        outFile.close();
+                        
                         std::vector<Type> result(scheduler.size(), Type(0.5));
                         std::vector<Type> b(scheduler.size());
                         storm::utility::vector::selectVectorValues(b, scheduler, subNondeterministicChoiceIndices, rightHandSide);
@@ -674,28 +735,39 @@ namespace storm {
                             }
                         }
                         
+                        if (guessedScheduler != nullptr) {
+                            *guessedScheduler = std::move(scheduler);
+                        }
+                        
                         return result;
                     } else {
                         return std::vector<Type>(submatrix.getColumnCount());
                     }
                 }
                 
-                std::vector<uint_fast64_t> convertShortestPathsToScheduler(storm::storage::BitVector const& maybeStates, std::vector<uint_fast64_t> const& shortestPathSuccessors) const {
+                std::vector<uint_fast64_t> convertShortestPathsToScheduler(bool minimize, storm::storage::BitVector const& maybeStates, std::vector<Type> const& distances, std::vector<uint_fast64_t> const& shortestPathSuccessors) const {
                     std::vector<uint_fast64_t> scheduler(maybeStates.getNumberOfSetBits());
 
-                    Type maxProbability = 0;
+                    Type extremalProbability = minimize ? 1 : 0;
+                    Type currentProbability = 0;
                     uint_fast64_t currentStateIndex = 0;
                     for (auto state : maybeStates) {
-                        maxProbability = 0;
+                        extremalProbability = minimize ? 1 : 0;
                         
                         for (uint_fast64_t row = 0, rowEnd = this->getModel().getNondeterministicChoiceIndices()[state + 1] - this->getModel().getNondeterministicChoiceIndices()[state]; row < rowEnd; ++row) {
-                            typename storm::storage::SparseMatrix<Type>::Rows currentRow = this->getModel().getTransitionMatrix().getRows(this->getModel().getNondeterministicChoiceIndices()[state] + row, this->getModel().getNondeterministicChoiceIndices()[state] + row);
+                            typename storm::storage::SparseMatrix<Type>::Rows currentRow = this->getModel().getTransitionMatrix().getRow(this->getModel().getNondeterministicChoiceIndices()[state] + row);
+                            currentProbability = 0;
                             
                             for (auto& transition : currentRow) {
-                                if (transition.column() == shortestPathSuccessors[state] && transition.value() > maxProbability) {
-                                    maxProbability = transition.value();
-                                    scheduler[currentStateIndex] = row;
-                                }
+                                currentProbability += transition.value() * (1 / std::exp(distances[transition.column()]));
+                            }
+                            
+                            if (minimize && currentProbability < extremalProbability) {
+                                extremalProbability = currentProbability;
+                                scheduler[currentStateIndex] = row;
+                            } else if (!minimize && currentProbability > extremalProbability) {
+                                extremalProbability = currentProbability;
+                                scheduler[currentStateIndex] = row;
                             }
                         }
                         

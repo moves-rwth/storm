@@ -74,6 +74,7 @@
 #include "gmm_kernel.h"
 #include "gmm_iter.h"
 #include "gmm_modified_gram_schmidt.h"
+#include "gmm_dense_Householder.h"
 
 namespace gmm {
 

@@ -1170,12 +1170,22 @@ public:
     /*!
      * Returns an object representing the consecutive rows given by the parameters.
      *
-     * @param The starting row.
-     * @param The ending row (which is included in the result).
+     * @param startRow The starting row.
+     * @param endRow The ending row (which is included in the result).
      * @return An object representing the consecutive rows given by the parameters.
      */
     Rows getRows(uint_fast64_t startRow, uint_fast64_t endRow) const {
         return Rows(this->valueStorage.data() + this->rowIndications[startRow], this->columnIndications.data() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
+    }
+    
+    /*!
+     * Returns an object representing the given row.
+     *
+     * @param row The chosen row.
+     * @return An object representing the given row.
+     */
+    Rows getRow(uint_fast64_t row) const {
+        return getRows(row, row);
     }
     
 	/*!

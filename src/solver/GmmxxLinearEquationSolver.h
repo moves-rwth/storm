@@ -93,6 +93,44 @@ namespace storm {
                         LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
                     }
                     delete gmmA;
+                } else if (s->getString("lemethod") == "lscg") {
+                    LOG4CPLUS_INFO(logger, "Using LSCG method.");
+                    // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
+                    gmm::csr_matrix<Type>* gmmA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
+                    
+                    if (precond != "none") {
+                        LOG4CPLUS_WARN(logger, "Requested preconditioner '" << precond << "', which is unavailable for the LSCG method. Dropping preconditioner.");
+                    }
+                    gmm::least_squares_cg(*gmmA, x, b, iter);
+                    
+                    // Check if the solver converged and issue a warning otherwise.
+                    if (iter.converged()) {
+                        LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    } else {
+                        LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+                    }
+                    delete gmmA;
+                } else if (s->getString("lemethod") == "gmres") {
+                    LOG4CPLUS_INFO(logger, "Using GMRES method.");
+                    // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
+                    gmm::csr_matrix<Type>* gmmA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
+                    if (precond == "ilu") {
+                        gmm::gmres(*gmmA, x, b, gmm::ilu_precond<gmm::csr_matrix<Type>>(*gmmA), 50, iter);
+                    } else if (precond == "diagonal") {
+                        gmm::gmres(*gmmA, x, b, gmm::diagonal_precond<gmm::csr_matrix<Type>>(*gmmA), 50, iter);
+                    } else if (precond == "ildlt") {
+                        gmm::gmres(*gmmA, x, b, gmm::ildlt_precond<gmm::csr_matrix<Type>>(*gmmA), 50, iter);
+                    } else if (precond == "none") {
+                        gmm::gmres(*gmmA, x, b, gmm::identity_matrix(), 50, iter);
+                    }
+                    
+                    // Check if the solver converged and issue a warning otherwise.
+                    if (iter.converged()) {
+                        LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    } else {
+                        LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+                    }
+                    delete gmmA;
                 } else if (s->getString("lemethod") == "jacobi") {
                     LOG4CPLUS_INFO(logger, "Using Jacobi method.");
                     uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(A, x, b);
