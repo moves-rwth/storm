@@ -618,7 +618,7 @@ namespace graph {
 			// If the current state is the root of a SCC, we need to pop all states of the SCC from
 			// the algorithm's stack.
 			if (lowlinks[currentState] == stateIndices[currentState]) {
-				stronglyConnectedComponents.push_back(std::vector<uint_fast64_t>());
+				stronglyConnectedComponents.emplace_back();
                 
 				uint_fast64_t lastState = 0;
 				do {
@@ -761,6 +761,9 @@ namespace graph {
         return topologicalSort;
 	}
     
+    /*!
+     * A class needed to compare the distances for two states in the Dijkstra search.
+     */
     template<typename T>
     struct DistanceCompare {
         bool operator()(std::pair<T, uint_fast64_t> const& lhs, std::pair<T, uint_fast64_t> const& rhs) const {
@@ -768,62 +771,69 @@ namespace graph {
         }
     };
     
+    /*!
+     * Performs a Dijkstra search from the given starting states to determine the most probable paths to all other states
+     * by only passing through the given state set.
+     *
+     * @param model The model whose state space is to be searched.
+     * @param transitions The transitions wrt to which to compute the most probable paths.
+     * @param startingStates The starting states of the Dijkstra search.
+     * @param filterStates A set of states that must not be left on any path.
+     */
     template <typename T>
     std::pair<std::vector<T>, std::vector<uint_fast64_t>> performDijkstra(storm::models::AbstractModel<T> const& model,
                                                                           storm::storage::SparseMatrix<T> const& transitions,
                                                                           storm::storage::BitVector const& startingStates,
-// FIXME: The case in which there are target states given should be handled properly.                                                                          
-//                                                                          storm::storage::BitVector* targetStates = nullptr,
                                                                           storm::storage::BitVector const* filterStates = nullptr) {
         
         LOG4CPLUS_INFO(logger, "Performing Dijkstra search.");
         
-        const uint_fast64_t noPredecessorValue = std::numeric_limits<uint_fast64_t>::max();
-        std::vector<T> distances(model.getNumberOfStates(), storm::utility::constGetInfinity<T>());
+        const uint_fast64_t noPredecessorValue = storm::utility::constGetZero<T>();
+        std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::constGetZero<T>());
         std::vector<uint_fast64_t> predecessors(model.getNumberOfStates(), noPredecessorValue);
         
-        // Set the distance to 0 for all starting states.
-        std::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> distanceStateSet;
+        // Set the probability to 1 for all starting states.
+        std::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
         for (auto state : startingStates) {
-            distanceStateSet.emplace(storm::utility::constGetZero<T>(), state);
-            distances[state] = 0;
+            probabilityStateSet.emplace(storm::utility::constGetZero<T>(), state);
+            probabilities[state] = 1;
         }
         
-        while (!distanceStateSet.empty()) {
+        // As long as there is one reachable state, we need to consider it.
+        while (!probabilityStateSet.empty()) {
             // Get the state with the least distance from the set and remove it.
-            std::pair<T, uint_fast64_t> distanceStatePair = *distanceStateSet.begin();
-            distanceStateSet.erase(distanceStateSet.begin());
+            std::pair<T, uint_fast64_t> probabilityStatePair = *probabilityStateSet.begin();
+            probabilityStateSet.erase(probabilityStateSet.begin());
 
             // Now check the new distances for all successors of the current state.
-            typename storm::storage::SparseMatrix<T>::Rows row = transitions.getRows(distanceStatePair.second, distanceStatePair.second);
+            typename storm::storage::SparseMatrix<T>::Rows row = transitions.getRows(probabilityStatePair.second, probabilityStatePair.second);
             for (auto& transition : row) {
                 // Only follow the transition if it lies within the filtered states.
                 if (filterStates != nullptr && filterStates->get(transition.column())) {
                     // Calculate the distance we achieve when we take the path to the successor via the current state.
-                    T newDistance = distanceStatePair.first + std::log(storm::utility::constGetOne<T>() / transition.value());
+                    T newDistance = probabilityStatePair.first * transition.value();
                     
                     // We found a cheaper way to get to the target state of the transition.
-                    if (newDistance < distances[transition.column()]) {
+                    if (newDistance > probabilities[transition.column()]) {
                         // Remove the old distance.
-                        if (distances[transition.column()] != noPredecessorValue) {
-                            distanceStateSet.erase(std::make_pair(distances[transition.column()], transition.column()));
+                        if (probabilities[transition.column()] != noPredecessorValue) {
+                            probabilityStateSet.erase(std::make_pair(probabilities[transition.column()], transition.column()));
                         }
                         
                         // Set and add the new distance.
-                        distances[transition.column()] = newDistance;
-                        predecessors[transition.column()] = distanceStatePair.second;
-                        distanceStateSet.insert(std::make_pair(newDistance, transition.column()));
+                        probabilities[transition.column()] = newDistance;
+                        predecessors[transition.column()] = probabilityStatePair.second;
+                        probabilityStateSet.insert(std::make_pair(newDistance, transition.column()));
                     }
                 }
             }
         }
         
+        // Move the values into the result and return it.
         std::pair<std::vector<T>, std::vector<uint_fast64_t>> result;
-        result.first = std::move(distances);
+        result.first = std::move(probabilities);
         result.second = std::move(predecessors);
-        
         LOG4CPLUS_INFO(logger, "Done performing Dijkstra search.");
-
         return result;
     }
     
