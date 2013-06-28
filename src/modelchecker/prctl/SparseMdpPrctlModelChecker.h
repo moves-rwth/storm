@@ -713,11 +713,11 @@ namespace storm {
                     std::vector<uint_fast64_t> scheduler(maybeStates.getNumberOfSetBits());
 
                     // For each of the states we need to resolve the nondeterministic choice based on the information we are given.
-                    Type maxProbability = 0;
+                    Type maxProbability = -storm::utility::constGetInfinity<Type>();
                     Type currentProbability = 0;
                     uint_fast64_t currentStateIndex = 0;
                     for (auto state : maybeStates) {
-                        maxProbability = 0;
+                        maxProbability = -storm::utility::constGetInfinity<Type>();
                         
                         for (uint_fast64_t row = 0, rowEnd = this->getModel().getNondeterministicChoiceIndices()[state + 1] - this->getModel().getNondeterministicChoiceIndices()[state]; row < rowEnd; ++row) {
                             typename storm::storage::SparseMatrix<Type>::Rows currentRow = this->getModel().getTransitionMatrix().getRow(this->getModel().getNondeterministicChoiceIndices()[state] + row);
@@ -725,9 +725,10 @@ namespace storm {
                             
                             for (auto& transition : currentRow) {
                                 currentProbability += transition.value() * distancesToTarget[transition.column()];
+                                // currentProbability -= transition.value() * (1 - distancesToNonTarget[transition.column()]);
                             }
                             
-                            if (currentProbability < maxProbability) {
+                            if (currentProbability > maxProbability) {
                                 maxProbability = currentProbability;
                                 scheduler[currentStateIndex] = row;
                             }
