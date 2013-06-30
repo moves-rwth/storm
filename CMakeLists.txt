@@ -50,11 +50,16 @@ set(CUDD_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/cudd $
 message(STATUS "CUDD_INCLUDE_DIRS is ${CUDD_INCLUDE_DIRS}")
 message(STATUS "CUDD_LIBRARY_DIRS is ${CUDD_LIBRARY_DIRS}")
 
-#Set all ltl2dstar references to the verion in the repository
-#set(LTL2DSTAR_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
-#set(LTL2DSTAR_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
-#message(STATUS "LTL2DSTAR_INCLUDE_DIRS is ${LTL2DSTAR_INCLUDE_DIRS}")
-#message(STATUS "LTL2DSTAR_LIBRARY_DIRS is ${LTL2DSTAR_LIBRARY_DIRS}")
+# Set all ltl2dstar references to the version in the repository
+set(LTL2DSTAR_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
+if (MSVC)
+	set(LTL2DSTAR_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/win32/Ltl2dStar/x64/Release)
+else()
+	set(LTL2DSTAR_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
+endif()
+
+message(STATUS "LTL2DSTAR_INCLUDE_DIRS is ${LTL2DSTAR_INCLUDE_DIRS}")
+message(STATUS "LTL2DSTAR_LIBRARY_DIRS is ${LTL2DSTAR_LIBRARY_DIRS}")
 
 # Now define all available custom options
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
@@ -104,7 +109,13 @@ else(CLANG)
 	set (CLANG ON)
     # Set standard flags for clang
     set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O3")
-    set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall -Werror -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE")
+    if(UNIX AND NOT APPLE)
+      set(CLANG_STDLIB libstdc++)
+    else()
+      set(CLANG_STDLIB libc++)
+    endif()
+    
+    set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE")
     
     set (CMAKE_CXX_FLAGS_DEBUG "-g")
     
@@ -141,7 +152,6 @@ file(GLOB_RECURSE STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PR
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
 file(GLOB STORM_IR_FILES ${PROJECT_SOURCE_DIR}/src/ir/*.h ${PROJECT_SOURCE_DIR}/src/ir/*.cpp)
 file(GLOB_RECURSE STORM_IR_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/ir/expressions/*.h ${PROJECT_SOURCE_DIR}/src/ir/expressions/*.cpp)
-file(GLOB_RECURSE STORM_SOLVER_FILES ${PROJECT_SOURCE_DIR}/src/solver/*.h ${PROJECT_SOURCE_DIR}/src/solver/*.cpp)
 
 # Test Sources
 # Note that the tests also need the source files, except for the main file
@@ -165,7 +175,6 @@ source_group(storage FILES ${STORM_STORAGE_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 source_group(ir FILES ${STORM_IR_FILES})
 source_group(ir\\expressions FILES ${STORM_IR_EXPRESSIONS_FILES})
-source_group(solver FILES ${STORM_SOLVER_FILES})
 source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
 source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES})
 
@@ -217,11 +226,11 @@ if (TBB_FOUND)
 	message(STATUS "Found TBB with Interface Version ${TBB_INTERFACE_VERSION}")
 	
 	if(USE_INTELTBB)
-		add_definitions(-DSTORM_USE_TBB)
-		
-		include_directories(${TBB_INCLUDE_DIRS})
-		link_directories(${TBB_LIBRARY_DIRS})
+		add_definitions(-DGMM_USE_TBB)
 	endif()
+	
+	include_directories(${TBB_INCLUDE_DIRS})
+	link_directories(${TBB_LIBRARY_DIRS})
 endif(TBB_FOUND)
 
 # Add Eigen to the included directories
@@ -369,7 +378,10 @@ endif(CUDD_LIBRARY_DIRS)
 
 if (LTL2DSTAR_LIBRARY_DIRS)
   if (MSVC)
-      #TODO
+	  set(ltl2dstarMsvcLibs "optimized" "${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/win32/Ltl2dStar/x64/Release/Ltl2dStar.lib" "debug" "${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/win32/Ltl2dStar/x64/Debug/Ltl2dStar.lib")
+	  target_link_libraries(storm ${ltl2dstarMsvcLibs})
+	  target_link_libraries(storm-functional-tests ${ltl2dstarMsvcLibs})
+	  target_link_libraries(storm-performance-tests ${ltl2dstarMsvcLibs})
   else ()
       target_link_libraries(storm "-lltl2dstar")
       target_link_libraries(storm-functional-tests "-lltl2dstar")

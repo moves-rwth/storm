@@ -11,6 +11,13 @@
 #include <set>
 #include <limits>
 
+#include "utility/OsDetection.h"
+
+//GCC 4.7 does not support method emplace yet, therefore use boost map on Linux
+#ifdef LINUX
+#include <boost/container/set.hpp>
+#endif
+
 #include "src/models/AbstractDeterministicModel.h"
 #include "src/models/AbstractNondeterministicModel.h"
 #include "ConstTemplates.h"
@@ -791,7 +798,11 @@ namespace storm {
                 std::vector<uint_fast64_t> predecessors(model.getNumberOfStates(), noPredecessorValue);
                 
                 // Set the probability to 1 for all starting states.
+#ifdef LINUX
+					 boost::container::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
+#else
                 std::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
+#endif
                 for (auto state : startingStates) {
                     probabilityStateSet.emplace(storm::utility::constGetOne<T>(), state);
                     probabilities[state] = storm::utility::constGetOne<T>();
