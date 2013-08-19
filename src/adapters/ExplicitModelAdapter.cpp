@@ -141,7 +141,6 @@ namespace adapters {
         results.addAtomicProposition("init");
         StateType* initialState = this->getInitialState();
         uint_fast64_t initialIndex = this->stateToIndexMap[initialState];
-        std::cout << initialIndex << std::endl;
         results.addAtomicPropositionToState("init", initialIndex);
         delete initialState;
         
@@ -258,9 +257,7 @@ namespace adapters {
 			} else {
 				// Initial value was given.
 				bool initialValue = this->booleanVariables[i].getInitialValue()->getValueAsBool(nullptr);
-				for (auto it : this->allStates) {
-					std::get<0>(*initialState)[i] = initialValue;
-				}
+				std::get<0>(*initialState)[i] = initialValue;
 			}
 		}
 		// Now process integer variables.
@@ -272,9 +269,7 @@ namespace adapters {
             } else {
 				// Initial value was given.
 				int_fast64_t initialValue = this->integerVariables[i].getInitialValue()->getValueAsInt(nullptr);
-				for (auto it : this->allStates) {
-					std::get<1>(*initialState)[i] = initialValue;
-				}
+                std::get<1>(*initialState)[i] = initialValue;
 			}
 		}
 		LOG4CPLUS_DEBUG(logger, "Generated initial state.");
@@ -405,7 +400,6 @@ namespace adapters {
 				// Move new states to resultStates.
 				resultStates.clear();
 				resultStates.insert(newStates.begin(), newStates.end());
-
 			}
 
 			if (resultStates.size() > 0) {
@@ -413,7 +407,7 @@ namespace adapters {
 				std::map<uint_fast64_t, double>* states = &res.back().second;
 
 				// Now add our final result states to our global result.
-				for (auto it : resultStates) {
+				for (auto const& it : resultStates) {
 					uint_fast64_t newStateID = this->getOrAddStateId(it.first);
 					(*states)[newStateID] = it.second;
 				}
@@ -534,7 +528,6 @@ namespace adapters {
 	void ExplicitModelAdapter::buildTransitionMap() {
 		LOG4CPLUS_DEBUG(logger, "Starting to create transition map from program...");
 		this->clearInternalState();
-		
         this->allStates.clear();
 		this->allStates.push_back(this->getInitialState());
         stateToIndexMap[this->allStates[0]] = 0;
