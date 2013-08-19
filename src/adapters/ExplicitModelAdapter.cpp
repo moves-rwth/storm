@@ -123,9 +123,9 @@ namespace adapters {
 	}
 
 	storm::models::AtomicPropositionsLabeling ExplicitModelAdapter::getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels) {
-		storm::models::AtomicPropositionsLabeling results(this->allStates.size(), labels.size());
+		storm::models::AtomicPropositionsLabeling results(this->allStates.size(), labels.size() + 1);
 		// Initialize labeling.
-		for (auto it: labels) {
+		for (auto it : labels) {
 			results.addAtomicProposition(it.first);
 		}
 		for (uint_fast64_t index = 0; index < this->allStates.size(); index++) {
@@ -136,6 +136,15 @@ namespace adapters {
 				}
 			}
 		}
+        
+        // Also label the initial state.
+        results.addAtomicProposition("init");
+        StateType* initialState = this->getInitialState();
+        uint_fast64_t initialIndex = this->stateToIndexMap[initialState];
+        std::cout << initialIndex << std::endl;
+        results.addAtomicPropositionToState("init", initialIndex);
+        delete initialState;
+        
 		return results;
 	}
 	
@@ -188,8 +197,12 @@ namespace adapters {
 		for (uint_fast64_t i = 0; i < this->program.getNumberOfModules(); ++i) {
 			storm::ir::Module const& module = this->program.getModule(i);
 			
+            // If the module has no command labeled with the given action, skip this module.
+            if (!module.hasAction(action)) {
+                continue;
+            }
+            
 			std::set<uint_fast64_t> const& ids = module.getCommandsByAction(action);
-			if (ids.size() == 0) continue;
 			std::list<storm::ir::Command> commands;
 			
 			// Look up commands by their id. Add, if guard holds.
@@ -229,32 +242,24 @@ namespace adapters {
 	}
 
 	/*!
-	 * Generates all initial states and adds them to allStates.
+     * Generates the initial state.
 	 */
-	void ExplicitModelAdapter::generateInitialStates() {
-		// Create a fresh state which can hold as many boolean and integer variables as there are.
-		this->allStates.clear();
-		this->allStates.push_back(new StateType());
-		this->allStates[0]->first.resize(this->booleanVariables.size());
-		this->allStates[0]->second.resize(this->integerVariables.size());
+    StateType* ExplicitModelAdapter::getInitialState() {
+        StateType* initialState = new StateType();
+        initialState->first.resize(this->booleanVariables.size());
+        initialState->second.resize(this->integerVariables.size());
 
 		// Start with boolean variables.
 		for (uint_fast64_t i = 0; i < this->booleanVariables.size(); ++i) {
 			// Check if an initial value is given
 			if (this->booleanVariables[i].getInitialValue().get() == nullptr) {
-				// No initial value was given.
-				uint_fast64_t size = this->allStates.size();
-				for (uint_fast64_t pos = 0; pos < size; pos++) {
-					// Duplicate each state, one with true and one with false.
-					this->allStates.push_back(new StateType(*this->allStates[pos]));
-					std::get<0>(*this->allStates[pos])[i] = false;
-					std::get<0>(*this->allStates[size + pos])[i] = true;
-				}
+                // If no initial value was given, we assume that the variable is initially false.
+                std::get<0>(*initialState)[i] = false;
 			} else {
 				// Initial value was given.
-				bool initialValue = this->booleanVariables[i].getInitialValue()->getValueAsBool(this->allStates[0]);
+				bool initialValue = this->booleanVariables[i].getInitialValue()->getValueAsBool(nullptr);
 				for (auto it : this->allStates) {
-					std::get<0>(*it)[i] = initialValue;
+					std::get<0>(*initialState)[i] = initialValue;
 				}
 			}
 		}
@@ -262,30 +267,18 @@ namespace adapters {
 		for (uint_fast64_t i = 0; i < this->integerVariables.size(); ++i) {
 			// Check if an initial value was given.
 			if (this->integerVariables[i].getInitialValue().get() == nullptr) {
-				// No initial value was given.
-				uint_fast64_t size = this->allStates.size();
-				int_fast64_t lower = this->integerVariables[i].getLowerBound()->getValueAsInt(this->allStates[0]);
-				int_fast64_t upper = this->integerVariables[i].getUpperBound()->getValueAsInt(this->allStates[0]);
-
-				// Duplicate all states for all values in variable interval.
-				for (int_fast64_t value = lower; value <= upper; value++) {
-					for (uint_fast64_t pos = 0; pos < size; pos++) {
-						// If value is lower bound, we reuse the existing state, otherwise we create a new one.
-						if (value > lower) this->allStates.push_back(new StateType(*this->allStates[pos]));
-						// Set value to current state.
-						std::get<1>(*this->allStates[(value - lower) * size + pos])[i] = value;
-					}
-				}
-			} else {
+				// No initial value was given, so we assume that the variable initially has the least value it can take.
+                std::get<1>(*initialState)[i] = this->integerVariables[i].getLowerBound()->getValueAsInt(nullptr);
+            } else {
 				// Initial value was given.
-				int_fast64_t initialValue = this->integerVariables[i].getInitialValue()->getValueAsInt(this->allStates[0]);
+				int_fast64_t initialValue = this->integerVariables[i].getInitialValue()->getValueAsInt(nullptr);
 				for (auto it : this->allStates) {
-					std::get<1>(*it)[i] = initialValue;
+					std::get<1>(*initialState)[i] = initialValue;
 				}
 			}
 		}
-		stateToIndexMap[this->allStates[0]] = 0;
-		LOG4CPLUS_DEBUG(logger, "Generated " << this->allStates.size() << " initial states.");
+		LOG4CPLUS_DEBUG(logger, "Generated initial state.");
+        return initialState;
 	}
 
 	/*!
@@ -390,7 +383,7 @@ namespace adapters {
 						for (auto it : resultStates) {
 							// Apply the new update and get resulting state.
 							StateType* newState = this->applyUpdate(it.first, this->allStates[stateID], update);
-							probSum += update.getLikelihoodExpression()->getValueAsDouble(it.first);
+							probSum += it.second * update.getLikelihoodExpression()->getValueAsDouble(it.first);
 							// Insert the new state into newStates array.
 							// Take care of calculation of likelihood, combine identical states.
 							auto s = newStates.find(newState);
@@ -542,7 +535,10 @@ namespace adapters {
 		LOG4CPLUS_DEBUG(logger, "Starting to create transition map from program...");
 		this->clearInternalState();
 		
-		this->generateInitialStates();
+        this->allStates.clear();
+		this->allStates.push_back(this->getInitialState());
+        stateToIndexMap[this->allStates[0]] = 0;
+        
 		for (uint_fast64_t curIndex = 0; curIndex < this->allStates.size(); curIndex++)
 		{
 			this->addUnlabeledTransitions(curIndex, this->transitionMap[curIndex]);

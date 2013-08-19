@@ -26,6 +26,10 @@ namespace storm {
                 return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->value));
             }
             
+            double IntegerLiteralExpression::getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
+                return value;
+            }
+            
             int_fast64_t IntegerLiteralExpression::getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
                 return value;
             }

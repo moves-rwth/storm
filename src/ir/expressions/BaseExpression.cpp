@@ -45,7 +45,7 @@ namespace storm {
             }
             
             double BaseExpression::getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-                if (type != bool_) {
+                if (type != double_ && type != int_) {
                     throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression of type '"
                     << this->getTypeName() << "' as 'double'.";
                 }

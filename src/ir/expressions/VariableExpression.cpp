@@ -30,9 +30,17 @@ namespace storm {
                 // Perform the proper cloning.
                 auto renamingPair = renaming.find(this->variableName);
                 if (renamingPair != renaming.end()) {
-                    return variableState.getVariableExpression(renamingPair->second);
+                    if (this->getType() == int_) {
+                        return variableState.getIntegerVariableExpression(renamingPair->second);
+                    } else {
+                        return variableState.getBooleanVariableExpression(renamingPair->second);
+                    }
                 } else {
-                    return variableState.getVariableExpression(this->variableName);
+                    if (this->getType() == int_) {
+                        return variableState.getIntegerVariableExpression(this->variableName);
+                    } else {
+                        return variableState.getBooleanVariableExpression(this->variableName);
+                    }
                 }
             }
             
@@ -52,8 +60,7 @@ namespace storm {
                 if (variableValues != nullptr) {
                     return variableValues->second[globalIndex];
                 } else {
-                    throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression"
-                    << " involving variables without variable values.";
+                    throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression involving variables without variable values.";
                 }
             }
             
@@ -65,18 +72,21 @@ namespace storm {
                 if (variableValues != nullptr) {
                     return variableValues->first[globalIndex];
                 } else {
-                    throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression"
-                    << " involving variables without variable values.";
+                    throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression involving variables without variable values.";
                 }
             }
             
             double VariableExpression::getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-                if (this->getType() != double_) {
+                if (this->getType() != double_ && this->getType() != int_) {
                     BaseExpression::getValueAsDouble(variableValues);
                 }
                 
-                throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression with "
-                << " variable '" << variableName << "' of type double.";
+                // Because only int variables can deliver a double value, we only need to check them.
+                if (variableValues != nullptr) {
+                    return variableValues->second[globalIndex];
+                } else {
+                    throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression with variable '" << variableName << "' of type double.";
+                }
             }
             
             std::string const& VariableExpression::getVariableName() const {

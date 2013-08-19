@@ -124,6 +124,11 @@ std::shared_ptr<VariableExpression> VariableState::getVariableExpression(std::st
 	if (variableExpression != nullptr) {
 		return *variableExpression;
 	}
+    
+    variableExpression = this->booleanVariables_.find(name);
+	if (variableExpression != nullptr) {
+		return *variableExpression;
+	}
     LOG4CPLUS_ERROR(logger, "Variable " << name << " does not exist.");
     throw storm::exceptions::InvalidArgumentException() << "Variable " << name << " does not exist.";
 }

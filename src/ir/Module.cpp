@@ -155,6 +155,14 @@ namespace storm {
             return this->actions;
         }
         
+        bool Module::hasAction(std::string const& action) const {
+            auto const& actionEntry = this->actions.find(action);
+            if (actionEntry != this->actions.end()) {
+                return true;
+            }
+            return false;
+        }
+        
         std::set<uint_fast64_t> const& Module::getCommandsByAction(std::string const& action) const {
             auto actionsCommandSetPair = this->actionsToCommandIndexMap.find(action);
             if (actionsCommandSetPair != this->actionsToCommandIndexMap.end()) {

@@ -126,20 +126,20 @@ t_ref = MPI_Wtime();
       size_type i = 0; inner.init();
       
       do {
-	mult(A, KS[i], u);
-	mult(M, u, KS[i+1]);
-	orthogonalize(KS, mat_col(H, i), i);
-	R a = gmm::vect_norm2(KS[i+1]);
-	H(i+1, i) = T(a);
-	gmm::scale(KS[i+1], T(1) / a);
-	for (size_type k = 0; k < i; ++k)
-	  Apply_Givens_rotation_left(H(k,i), H(k+1,i), c_rot[k], s_rot[k]);
+          mult(A, KS[i], u);
+          mult(M, u, KS[i+1]);
+          orthogonalize(KS, mat_col(H, i), i);
+          R a = gmm::vect_norm2(KS[i+1]);
+          H(i+1, i) = T(a);
+          gmm::scale(KS[i+1], T(1) / a);
+          for (size_type k = 0; k < i; ++k)
+              Apply_Givens_rotation_left(H(k,i), H(k+1,i), c_rot[k], s_rot[k]);
 	
-	Givens_rotation(H(i,i), H(i+1,i), c_rot[i], s_rot[i]);
-	Apply_Givens_rotation_left(H(i,i), H(i+1,i), c_rot[i], s_rot[i]);
-	Apply_Givens_rotation_left(s[i], s[i+1], c_rot[i], s_rot[i]);
+          Givens_rotation(H(i,i), H(i+1,i), c_rot[i], s_rot[i]);
+          Apply_Givens_rotation_left(H(i,i), H(i+1,i), c_rot[i], s_rot[i]);
+          Apply_Givens_rotation_left(s[i], s[i+1], c_rot[i], s_rot[i]);
 	
-	++inner, ++outer, ++i;
+          ++inner, ++outer, ++i;
       } while (! inner.finished(gmm::abs(s[i])));
 
       upper_tri_solve(H, s, i, false);

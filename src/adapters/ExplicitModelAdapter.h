@@ -149,9 +149,11 @@ private:
 	std::unique_ptr<std::list<std::list<storm::ir::Command>>> getActiveCommandsByAction(StateType const * state, std::string& action);
 
 	/*!
-	 * Generates all initial states and adds them to allStates.
+	 * Generates the initial state.
+     *
+     * @return The initial state.
 	 */
-	void generateInitialStates();
+    StateType* getInitialState();
 	
 	/*!
 	 * Retrieves the state id of the given state.

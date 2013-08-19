@@ -169,6 +169,14 @@ namespace storm {
             std::set<std::string> const& getActions() const;
             
             /*!
+             * Retrieves whether or not this module contains a command labeled with the given action.
+             *
+             * @param action The action name to look for in this module.
+             * @return True if the module has at least one command labeled with the given action.
+             */
+            bool hasAction(std::string const& action) const;
+            
+            /*!
              * Retrieves the indices of all commands within this module that are labelled by the given action.
              *
              * @param action The action with which the commands have to be labelled.

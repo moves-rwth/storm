@@ -165,7 +165,7 @@ void Settings::initDescriptions() {
 		("transrew", bpo::value<std::string>()->default_value(""), "name of transition reward file")
 		("staterew", bpo::value<std::string>()->default_value(""), "name of state reward file")
 		("fix-deadlocks", "insert self-loops for states without outgoing transitions")
-        ("lemethod", boost::program_options::value<std::string>()->default_value("bicgstab")->notifier(&storm::settings::validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, qmr, lscg, gmres, jacobi}.")
+        ("lemethod", boost::program_options::value<std::string>()->default_value("gmres")->notifier(&storm::settings::validateLeMethod), "Sets the method used for linear equation solving. Must be in {bicgstab, qmr, lscg, gmres, jacobi}.")
         ("maxiter", boost::program_options::value<unsigned>()->default_value(10000), "Sets the maximal number of iterations for iterative equation solving.")
         ("precision", boost::program_options::value<double>()->default_value(1e-6), "Sets the precision for iterative equation solving.")
         ("precond", boost::program_options::value<std::string>()->default_value("ilu")->notifier(&validatePreconditioner), "Sets the preconditioning technique for linear equation solving. Must be in {ilu, diagonal, ildlt, none}.")

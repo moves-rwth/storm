@@ -37,7 +37,7 @@ namespace storm {
             }
             
             double UnaryNumericalFunctionExpression::getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-                if (this->getType() != double_) {
+                if (this->getType() != double_ && this->getType() != int_) {
                     BaseExpression::getValueAsDouble(variableValues);
                 }
                 

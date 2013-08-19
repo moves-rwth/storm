@@ -1,8 +1,8 @@
-GPP = clang++
+GPP = clang++ -std=c++11 -stdlib=libc++
 
 #DEFINES  =
 #DEBUGFLAGS = -g -fno-default-inline -fkeep-inline-functions
-OPTFLAGS = -O3 -fkeep-inline-functions
+OPTFLAGS = -O4 -fkeep-inline-functions
 
 LIBRARY = libltl2dstar.a
 EXECUTABLE = ltl2dstar

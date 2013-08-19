@@ -26,6 +26,10 @@ namespace storm {
                 return std::shared_ptr<BaseExpression>(new IntegerConstantExpression(*this));
             }
             
+            double IntegerConstantExpression::getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
+                return getValueAsInt(variableValues);
+            }
+            
             int_fast64_t IntegerConstantExpression::getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
                 if (!defined) {
                     throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
