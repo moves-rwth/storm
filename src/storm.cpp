@@ -28,7 +28,7 @@
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
 
@@ -110,7 +110,7 @@ void initializeLogger() {
  * Sets up the logging to file.
  */
 void setUpFileLogging() {
-	storm::settings::Settings* s = storm::settings::instance();
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(s->getString("logfile")));
 	fileLogAppender->setName("mainFileAppender");
 	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %F:%L: %m%n")));
