@@ -28,8 +28,12 @@
 namespace storm {
 	namespace settings {
 
+		class Settings;
+
 		class Option {
 		public:
+
+			friend class storm::settings::Settings;
 			/*
 			std::string longName;
 			std::string shortName;

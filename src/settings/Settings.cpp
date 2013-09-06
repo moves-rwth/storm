@@ -44,7 +44,7 @@ storm::settings::stringPair_t storm::settings::Settings::splitOptionString(std::
 void storm::settings::Settings::handleAssignment(std::string const& longOptionName, std::vector<std::string> arguments) {
 	std::string optionName = storm::utility::StringHelper::stringToLower(longOptionName);
 
-	Option* option = this->optionsAccumulator->getPtrByLongName(optionName);
+	Option* option = this->getPtrByLongName(optionName);
 	
 	// Mark as Set
 	option->setHasOptionBeenSet();
@@ -135,21 +135,21 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 			if (nextOption.at(0) == '-' && nextOption.at(1) != '-') {
 				// Short Option
 				std::string nextShortOptionName = storm::utility::StringHelper::stringToLower(nextOption.substr(1, nextOption.size() - 1));
-				if (!this->optionsAccumulator->containsShortName(nextShortOptionName)) {
+				if (!this->containsShortName(nextShortOptionName)) {
 					// LOG
 					throw storm::exceptions::OptionParserException() << "Found an unknown ShortName for an Option: \"" << nextShortOptionName << "\".";
 				} else {
-					longOptionName = this->optionsAccumulator->getByShortName(nextShortOptionName).getLongName();
+					longOptionName = this->getByShortName(nextShortOptionName).getLongName();
 					optionActive = true;
 				}
 			} else {
 				// Long Option
 				std::string nextLongOptionName = storm::utility::StringHelper::stringToLower(nextOption.substr(2, nextOption.size() - 2));
-				if (!this->optionsAccumulator->containsLongName(nextLongOptionName)) {
+				if (!this->containsLongName(nextLongOptionName)) {
 					// LOG
 					throw storm::exceptions::OptionParserException() << "Found an unknown LongName for an Option: \"" << nextLongOptionName << "\".";
 				} else {
-					longOptionName = this->optionsAccumulator->getByLongName(nextLongOptionName).getLongName();
+					longOptionName = this->getByLongName(nextLongOptionName).getLongName();
 					optionActive = true;
 				}
 			}
@@ -163,7 +163,7 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 		}
 	}
 
-	for (auto it = this->optionsAccumulator->options.cbegin(); it != this->optionsAccumulator->options.cend(); ++it) {
+	for (auto it = this->options.cbegin(); it != this->options.cend(); ++it) {
 		if (!it->second.get()->getHasOptionBeenSet()) {
 			if (it->second.get()->getIsRequired()) {
 				throw storm::exceptions::OptionParserException() << "Option \"" << it->second.get()->getLongName() << "\" is marked as required, but was not set!";
@@ -179,7 +179,7 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 
 bool storm::settings::Settings::registerNewModule(ModuleRegistrationFunction_t registrationFunction) {
 	Settings* myInstance = Settings::getInstance();
-	return registrationFunction(myInstance->optionsAccumulator);
+	return registrationFunction(myInstance);
 }
 
 storm::settings::Settings* storm::settings::Settings::getInstance() {
@@ -190,6 +190,93 @@ storm::settings::Settings* storm::settings::Settings::getInstance() {
 	return &pInstance;
 }
 
-void storm::settings::Settings::addOptions(OptionsAccumulator const& options) {
-	this->optionsAccumulator->join(options);
+storm::settings::Settings& storm::settings::Settings::addOption(Option* option) {
+	// For automatic management of option's lifetime
+	std::shared_ptr<Option> optionPtr(option);
+	
+	std::string lowerLongName = storm::utility::StringHelper::stringToLower(option->getLongName());
+	std::string lowerShortName = storm::utility::StringHelper::stringToLower(option->getShortName());
+	
+	auto longNameIterator = this->options.find(lowerLongName);
+	auto shortNameIterator = this->shortNames.find(lowerShortName);
+
+	if (longNameIterator == this->options.end()) {
+		// Not found
+		if (!(shortNameIterator == this->shortNames.end())) {
+			// There exists an option which uses the same shortname
+			// LOG
+			throw storm::exceptions::OptionUnificationException() << "Error: The Option \"" << shortNameIterator->second << "\" from Module \"" << this->options.find(shortNameIterator->second)->second.get()->getModuleName() << "\" uses the same ShortName as the Option \"" << option->getLongName() << "\" from Module \"" << option->getModuleName() << "\"!";
+		}
+		
+		// Copy Shared_ptr
+		this->options.insert(std::make_pair(lowerLongName, std::shared_ptr<Option>(optionPtr)));
+		this->optionPointers.push_back(std::shared_ptr<Option>(optionPtr));
+		this->shortNames.insert(std::make_pair(lowerShortName, lowerLongName));
+	} else {
+		// This will fail if the shortNames are not identical, so no additional checks here.
+		longNameIterator->second.get()->unify(*option);
+	}
+
+	return *this;
+}
+
+std::string storm::settings::Settings::getHelpText() const {
+	
+	// Copy all option names into a vector and sort it
+	std::vector<std::string> optionNames;
+	optionNames.reserve(this->options.size());
+
+	size_t longNameMaxSize = 0;
+	size_t shortNameMaxSize = 0;
+	size_t argumentNameMaxSize = 0;
+	// Get the maximum size of the long and short Names and copy the long names for sorting
+	std::for_each(this->options.cbegin(), this->options.cend(), [&] (std::pair<std::string, std::shared_ptr<storm::settings::Option>> const& it) -> void { 
+		longNameMaxSize = std::max(longNameMaxSize, it.first.size()); 
+		shortNameMaxSize = std::max(shortNameMaxSize, it.second.get()->getShortName().size()); 
+		optionNames.push_back(it.first);
+		std::for_each(it.second.get()->arguments.cbegin(), it.second.get()->arguments.cend(), [&] (std::shared_ptr<ArgumentBase> const& arg) -> void {
+			argumentNameMaxSize = std::max(argumentNameMaxSize, arg.get()->getArgumentName().size());
+		});
+	});
+	// Sort the long names
+	std::sort(optionNames.begin(), optionNames.end(), [] (std::string const& a, std::string const& b) -> bool { return a.compare(b) < 0; });
+
+	std::stringstream ss;
+	
+	/*
+		Layout:
+		--longName -shortName Description
+			ArgumentName (ArgumentType) ArgumentDescription
+	*/
+	const std::string delimiter = "   ";
+
+	for (auto it = optionNames.cbegin(); it != optionNames.cend(); ++it) {
+		Option const& o = this->getByLongName(*it);
+		std::string const& longName = o.getLongName();
+		ss << delimiter << "--" << longName;
+		// Fill up the remaining space after the long Name
+		for (uint_fast64_t i = longName.size(); i < longNameMaxSize; ++i) {
+			ss << " ";
+		}
+		std::string const& shortName = o.getShortName();
+		ss << delimiter << "-" << shortName;
+		// Fill up the remaining space after the short Name
+		for (uint_fast64_t i = shortName.size(); i < shortNameMaxSize; ++i) {
+			ss << " ";
+		}
+		ss << delimiter << o.getDescription() << std::endl;
+
+		for (auto i = 0; i < o.getArgumentCount(); ++i) {
+			ArgumentBase const& a = o.getArgument(i);
+			std::string const& argumentName = a.getArgumentName();
+			ss << delimiter << delimiter << "Arg " << (i+1) << ": " << argumentName;
+			// Fill up the remaining space after the argument Name
+			for (uint_fast64_t i = argumentName.size(); i < argumentNameMaxSize; ++i) {
+				ss << " ";
+			}
+			ss << "(" << ArgumentTypeHelper::toString(a.getArgumentType()) << ")" << delimiter << a.getArgumentDescription() << std::endl;
+		}
+	}
+
+	return ss.str();
 }

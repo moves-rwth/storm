@@ -21,6 +21,7 @@
 
 namespace storm {
 	namespace settings {
+
 		template<typename T>
 		class Argument : public ArgumentBase {
 		public:

@@ -33,7 +33,7 @@ namespace storm {
 namespace settings {
 	class Settings;
 
-	typedef std::function<bool (OptionsAccumulator*)> ModuleRegistrationFunction_t;
+	typedef std::function<bool (Settings*)> ModuleRegistrationFunction_t;
 
 	typedef bool (*stringValidationFunction_t)(const std::string);
 	typedef bool (*integerValidationFunction_t)(const int_fast64_t);
@@ -43,14 +43,6 @@ namespace settings {
 
 	typedef std::pair<std::string, std::string> stringPair_t;
 	typedef std::pair<bool, std::string> fromStringAssignmentResult_t;
-
-	/*
-	typedef std::function<bool (std::string const)> stringValidationFunction_t;
-	typedef std::function<bool (int_fast64_t const)> integerValidationFunction_t;
-	typedef std::function<bool (uint_fast64_t const)> unsignedIntegerValidationFunction_t;
-	typedef std::function<bool (double const)> doubleValidationFunction_t;
-	typedef std::function<bool (bool const)> booleanValidationFunction_t;
-	*/
 
 	class Destroyer;
 
@@ -76,46 +68,69 @@ namespace settings {
 			static bool registerNewModule(ModuleRegistrationFunction_t registrationFunction);
 			
 			/*!
-			 * Parsing
+			 * This parses the command line of the application and matches it to all prior registered options
+			 * @throws OptionParserException
 			 */
 			static void parse(int const argc, char const * const argv[]);
 
-			void addOptions(OptionsAccumulator const& options);
-
 			std::vector<std::shared_ptr<Option>> const& getOptions() const {
-				return this->optionsAccumulator->optionPointers;
+				return this->optionPointers;
 			}
 
-			// COPY INTERFACE OF OPTIONSACCUMULATOR
+			// PUBLIC INTERFACE OF OPTIONSACCUMULATOR (now internal)
 			/*!
 			* Returns true IFF an option with the specified longName exists.
 			*/
-			bool containsOptionByLongName(std::string const& longName) {
-				return this->optionsAccumulator->containsLongName(longName);
+			bool containsOptionByLongName(std::string const& longName) const {
+				return this->containsLongName(longName);
 			}
 
 			/*!
 			* Returns true IFF an option with the specified shortName exists.
 			*/
-			bool containsOptionByShortName(std::string const& shortName) {
-				return this->optionsAccumulator->containsLongName(shortName);
+			bool containsOptionByShortName(std::string const& shortName) const {
+				return this->containsLongName(shortName);
 			}
 
 			/*!
 			* Returns a reference to the Option with the specified longName.
 			* Throws an Exception of Type IllegalArgumentException if there is no such Option.
 			*/
-			Option const& getOptionByLongName(std::string const& longName) {
-				return this->optionsAccumulator->getByLongName(longName);
+			Option const& getOptionByLongName(std::string const& longName) const {
+				return this->getByLongName(longName);
 			}
 
 			/*!
 			* Returns a reference to the Option with the specified shortName.
 			* Throws an Exception of Type IllegalArgumentException if there is no such Option.
 			*/
-			Option const& getOptionByShortName(std::string const& shortName) {
-				return this->optionsAccumulator->getByShortName(shortName);
+			Option const& getOptionByShortName(std::string const& shortName) const {
+				return this->getByShortName(shortName);
 			}
+			
+			/*!
+			 * Adds the given option to the set of known options.
+			 * Unifying with existing options is done automatically.
+			 * Ownership of the Option is handed over when calling this function!
+			 * Returns a reference to the settings instance
+			 * @throws OptionUnificationException
+			 */
+			Settings& addOption(Option* option);
+
+			/*!
+			 * Returns true iff there is an Option with the specified longName and it has been set
+			 * @return bool true if the option exists and has been set
+			 * @throws InvalidArgumentException
+			 */
+			bool isSet(std::string const& longName) const {
+				return this->getByLongName(longName).getHasOptionBeenSet();
+			}
+
+			/*
+			 * This generated a list of all registered options and their arguments together with descriptions and defaults.
+			 * @return A std::string containing the help text, delimited by \n
+			 */
+			std::string getHelpText() const;
 
 			static Settings* getInstance();
 			friend class Destroyer;
@@ -127,8 +142,8 @@ namespace settings {
 			 *	an instance manually, one should always use the
 			 *	newInstance() method.
 			 */
-			Settings(): optionsAccumulator(nullptr) {
-				this->optionsAccumulator = new OptionsAccumulator();
+			Settings() {
+				//
 			}
 			
 			/*!
@@ -138,16 +153,25 @@ namespace settings {
 			 *	The object is automatically destroyed when the program terminates by the destroyer.
 			 */
 			virtual ~Settings() {
-				delete this->optionsAccumulator;
 				this->instance = nullptr;
 			}
 
 			void parseCommandLine(int const argc, char const * const argv[]);
 
 			/*!
-			 *	@brief	The registered options
-			 */
-			OptionsAccumulator* optionsAccumulator;
+			* The map holding the information regarding registered options and their types
+			*/
+			std::unordered_map<std::string, std::shared_ptr<Option>> options;
+
+			/*!
+			* The vector holding a pointer to all options
+			*/
+			std::vector<std::shared_ptr<Option>> optionPointers;
+
+			/*!
+			* The map holding the information regarding registered options and their short names
+			*/
+			std::unordered_map<std::string, std::string> shortNames;
 
 			/*!
 			 *	@brief	actual instance of this class.
@@ -166,6 +190,69 @@ namespace settings {
 			std::vector<std::string> argvToStringArray(int const argc, char const * const argv[]);
 			std::vector<bool> scanForOptions(std::vector<std::string> const& arguments);
 			bool checkArgumentSyntaxForOption(std::string const& argvString);
+
+			/*!
+			* Returns true IFF this accumulator contains an option with the specified longName.
+			*/
+			bool containsLongName(std::string const& longName) const {
+				return (this->options.find(storm::utility::StringHelper::stringToLower(longName)) != this->options.end());
+			}
+
+			/*!
+			* Returns true IFF this accumulator contains an option with the specified shortName.
+			*/
+			bool containsShortName(std::string const& shortName) const {
+				return (this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName)) != this->shortNames.end());
+			}
+
+			/*!
+			* Returns a reference to the Option with the specified longName.
+			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
+			*/
+			Option& getByLongName(std::string const& longName) const {
+				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
+				if (longNameIterator == this->options.end()) {
+					throw storm::exceptions::IllegalArgumentException() << "This Accumulator does not contain an Option named \"" << longName << "\"!";
+				}
+				return *longNameIterator->second.get();
+			}
+
+			/*!
+			* Returns a pointer to the Option with the specified longName.
+			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
+			* @throws InvalidArgumentException
+			*/
+			Option* getPtrByLongName(std::string const& longName) const {
+				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
+				if (longNameIterator == this->options.end()) {
+					throw storm::exceptions::IllegalArgumentException() << "This Accumulator does not contain an Option named \"" << longName << "\"!";
+				}
+				return longNameIterator->second.get();
+			}
+
+			/*!
+			* Returns a reference to the Option with the specified shortName.
+			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
+			*/
+			Option& getByShortName(std::string const& shortName) const {
+				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
+				if (shortNameIterator == this->shortNames.end()) {
+					throw storm::exceptions::IllegalArgumentException() << "This Accumulator does not contain an Option with ShortName \"" << shortName << "\"!";
+				}
+				return *(this->options.find(shortNameIterator->second)->second.get());
+			}
+
+			/*!
+			* Returns a pointer to the Option with the specified shortName.
+			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
+			*/
+			Option* getPtrByShortName(std::string const& shortName) const {
+				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
+				if (shortNameIterator == this->shortNames.end()) {
+					throw storm::exceptions::IllegalArgumentException() << "This Accumulator does not contain an Option with ShortName \"" << shortName << "\"!";
+				}
+				return this->options.find(shortNameIterator->second)->second.get();
+			}
 	};
 
 	/*!

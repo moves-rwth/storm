@@ -111,7 +111,7 @@ void initializeLogger() {
  */
 void setUpFileLogging() {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(s->getString("logfile")));
+	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(s->getOptionByLongName("logfile").getArgument(0).getValueAsString()));
 	fileLogAppender->setName("mainFileAppender");
 	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %F:%L: %m%n")));
 	logger.addAppender(fileLogAppender);
@@ -144,31 +144,31 @@ void printHeader(const int argc, const char* argv[]) {
 bool parseOptions(const int argc, const char* argv[]) {
 	storm::settings::Settings* s = nullptr;
 	try {
-		s = storm::settings::newInstance(argc, argv, nullptr);
-	} catch (storm::exceptions::InvalidSettingsException& e) {
+		storm::settings::Settings::parse(argc, argv);
+	} catch (storm::exceptions::OptionParserException& e) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
-		std::cout << std::endl << storm::settings::help;
+		std::cout << std::endl << storm::settings::Settings::getInstance()->getHelpText();
 		return false;
 	}
 
 	if (s->isSet("help")) {
-		std::cout << storm::settings::help;
+		std::cout << storm::settings::Settings::getInstance()->getHelpText();
 		return false;
 	}
 
 	if (s->isSet("verbose")) {
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
-		LOG4CPLUS_INFO(logger, "Enable verbose mode, log output gets printed to console.");
+		LOG4CPLUS_INFO(logger, "Enabled verbose mode, log output gets printed to console.");
 	}
 	if (s->isSet("debug")) {
 		logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL);
-		LOG4CPLUS_INFO(logger, "Enable very verbose mode, log output gets printed to console.");
+		LOG4CPLUS_INFO(logger, "Enabled very verbose mode, log output gets printed to console.");
 	}
 	if (s->isSet("trace")) {
 		logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL);
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::TRACE_LOG_LEVEL);
-		LOG4CPLUS_INFO(logger, "Enable trace mode, log output gets printed to console.");
+		LOG4CPLUS_INFO(logger, "Enabled trace mode, log output gets printed to console.");
 	}
 	if (s->isSet("logfile")) {
 		setUpFileLogging();
@@ -199,7 +199,7 @@ void cleanUp() {
  */
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double>& dtmc) {
     // Create the appropriate model checker.
-	storm::settings::Settings* s = storm::settings::instance();
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	if (s->getString("matrixlib") == "gmm++") {
 		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 	}
