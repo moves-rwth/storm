@@ -34,8 +34,14 @@ void setUpLogging() {
  * Creates an empty settings object as the standard instance of the Settings class.
  */
 void createEmptyOptions() {
-    const char* newArgv[] = {"storm-performance-tests"};
-	storm::settings::Settings::parse(1, newArgv);
+    const char* newArgv[] = {"storm-functional-tests"};
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	try {
+		storm::settings::Settings::parse(1, newArgv);
+	} catch (storm::exceptions::OptionParserException& e) {
+		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
+		std::cout << std::endl << s->getHelpText();
+	}
 }
 
 int main(int argc, char* argv[]) {

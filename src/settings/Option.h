@@ -230,11 +230,10 @@ namespace storm {
 				std::unordered_set<std::string> argumentNameSet;
 				for (auto i = arguments.begin(); i != arguments.end(); ++i) {
 					bool isCurrentArgumentOptional = i->get()->getIsOptional();
-					// If this Option is optional, all arguments must have default values
-					if (!this->isRequired && !i->get()->getHasDefaultValue()) {
+					//if (!this->isRequired && !i->get()->getHasDefaultValue()) {
 						// LOG
-						throw storm::exceptions::IllegalArgumentException() << "Error: The Argument Vector specified for Option \"" << getLongName() << "\" is invalid!\nIt contains an argument without a default value, but the containing option is optional and therefor requires all arguments to provide default values.";
-					}
+					//	throw storm::exceptions::IllegalArgumentException() << "Error: The Argument Vector specified for Option \"" << getLongName() << "\" is invalid!\nIt contains an argument without a default value, but the containing option is optional and therefor requires all arguments to provide default values.";
+					//}
 
 					if (!isCurrentArgumentOptional && lastEntryWasOptional) {
 						// LOG

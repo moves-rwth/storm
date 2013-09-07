@@ -35,7 +35,13 @@ void setUpLogging() {
  */
 void createEmptyOptions() {
     const char* newArgv[] = {"storm-performance-tests", "--maxIterations", "20000"};
-    storm::settings::Settings::parse(3, newArgv);
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	try {
+		storm::settings::Settings::parse(3, newArgv);
+	} catch (storm::exceptions::OptionParserException& e) {
+		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
+		std::cout << std::endl << s->getHelpText();
+	}
 }
 
 int main(int argc, char* argv[]) {

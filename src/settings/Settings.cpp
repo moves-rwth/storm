@@ -170,7 +170,9 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 			} else {
 				// Set defaults on optional values
 				for (auto i = 0; i < it->second.get()->getArgumentCount(); ++i) {
-					it->second.get()->getArgument(i).setFromDefaultValue();
+					if (it->second.get()->getArgument(i).getHasDefaultValue()) {
+						it->second.get()->getArgument(i).setFromDefaultValue();
+					}
 				}
 			}
 		}
@@ -179,7 +181,23 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 
 bool storm::settings::Settings::registerNewModule(ModuleRegistrationFunction_t registrationFunction) {
 	Settings* myInstance = Settings::getInstance();
-	return registrationFunction(myInstance);
+	bool result = false;
+	try {
+		result = registrationFunction(myInstance);
+	} catch (storm::exceptions::IllegalArgumentException e) {
+		std::cout << "Internal Error while setting up available Options!" << std::endl << "IllegalArgumentException: " << e.what() << "." << std::endl;
+		std::cout << std::endl << myInstance->getHelpText();
+		return false;
+	} catch (storm::exceptions::IllegalArgumentValueException e) {
+		std::cout << "Internal Error while setting up available Options!" << std::endl << "IllegalArgumentValueException: " << e.what() << "." << std::endl;
+		std::cout << std::endl << myInstance->getHelpText();
+		return false;
+	} catch (storm::exceptions::IllegalFunctionCallException e) {
+		std::cout << "Internal Error while setting up available Options!" << std::endl << "IllegalFunctionCallException: " << e.what() << "." << std::endl;
+		std::cout << std::endl << myInstance->getHelpText();
+		return false;
+	}
+	return result;
 }
 
 storm::settings::Settings* storm::settings::Settings::getInstance() {

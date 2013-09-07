@@ -156,9 +156,9 @@ namespace storm {
 			virtual std::string getValueAsString() const override {
 				switch (this->argumentType) {
 					case ArgumentType::String:
-						return ArgumentTypeInferation::inferToString(ArgumentType::String, this->argumentValue);
+						return ArgumentTypeInferation::inferToString(ArgumentType::String, this->getArgumentValue());
 					case ArgumentType::Boolean: {
-						bool iValue = ArgumentTypeInferation::inferToBoolean(ArgumentType::Boolean, this->argumentValue);
+						bool iValue = ArgumentTypeInferation::inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
 						if (iValue) {
 							return "true";
 						} else {
@@ -175,7 +175,7 @@ namespace storm {
 			virtual int_fast64_t getValueAsInteger() const override {
 				switch (this->argumentType) {
 					case ArgumentType::Integer:
-						return ArgumentTypeInferation::inferToInteger(ArgumentType::Integer, this->argumentValue);
+						return ArgumentTypeInferation::inferToInteger(ArgumentType::Integer, this->getArgumentValue());
 					default:
 						throw storm::exceptions::IllegalFunctionCallException() << "Error: getValueAsInteger() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!";
 
@@ -185,7 +185,7 @@ namespace storm {
 			virtual uint_fast64_t getValueAsUnsignedInteger() const override {
 				switch (this->argumentType) {
 					case ArgumentType::UnsignedInteger:
-						return ArgumentTypeInferation::inferToUnsignedInteger(ArgumentType::UnsignedInteger, this->argumentValue);
+						return ArgumentTypeInferation::inferToUnsignedInteger(ArgumentType::UnsignedInteger, this->getArgumentValue());
 					default:
 						throw storm::exceptions::IllegalFunctionCallException() << "Error: getValueAsUnsignedInteger() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!";
 
@@ -195,7 +195,7 @@ namespace storm {
 			virtual double getValueAsDouble() const override {
 				switch (this->argumentType) {
 					case ArgumentType::Double:
-						return ArgumentTypeInferation::inferToDouble(ArgumentType::Double, this->argumentValue);
+						return ArgumentTypeInferation::inferToDouble(ArgumentType::Double, this->getArgumentValue());
 					default:
 						throw storm::exceptions::IllegalFunctionCallException() << "Error: getValueAsDouble() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!";
 
@@ -205,7 +205,7 @@ namespace storm {
 			virtual bool getValueAsBoolean() const override {
 				switch (this->argumentType) {
 					case ArgumentType::Boolean:
-						return ArgumentTypeInferation::inferToBoolean(ArgumentType::Boolean, this->argumentValue);
+						return ArgumentTypeInferation::inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
 					default:
 						throw storm::exceptions::IllegalFunctionCallException() << "Error: getValueAsBoolean() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!";
 

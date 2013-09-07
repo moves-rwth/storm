@@ -94,12 +94,12 @@ namespace storm {
 
 #define MACROsetDefaultValue(funcName, funcType) ArgumentBuilder& PPCAT(setDefaultValue, funcName) (funcType const& defaultValue) { \
 				if (this->argumentType != ArgumentType::funcName) { \
-					throw storm::exceptions::IllegalFunctionCallException() << "Error: You tried adding a default Value for a \"" << ArgumentTypeHelper::toString(ArgumentType::String) << "\" Argument, but this Argument is configured to be of Type \"" << ArgumentTypeHelper::toString(this->argumentType) << "\"."; \
+					throw storm::exceptions::IllegalFunctionCallException() << "Error: You tried adding a default Value for a \"" << ArgumentTypeHelper::toString(ArgumentType::String) << "\" Argument, but the Argument \"" << this->argumentName << "\" is configured to be of Type \"" << ArgumentTypeHelper::toString(this->argumentType) << "\"."; \
 				} \
 				PPCAT(this->defaultValue_, funcName) = defaultValue; \
 				std::string errorMessageTarget = ""; \
 				if (!this->validateDefaultForEach(errorMessageTarget)) { \
-					throw storm::exceptions::IllegalArgumentValueException() << "Error: You tried adding a default Value for an Argument, but a Validation Function rejected it:\r\n" << errorMessageTarget; \
+					throw storm::exceptions::IllegalArgumentValueException() << "Error: You tried adding a default Value for the Argument \"" << this->argumentName << "\", but a Validation Function rejected it:\r\n" << errorMessageTarget; \
 				} \
 				this->hasDefaultValue = true; \
 				return *this; \

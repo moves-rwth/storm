@@ -46,20 +46,16 @@ namespace settings {
 	class Destroyer;
 
 	/*!
-	 *	@brief	Wrapper around boost::program_options to handle configuration options.
+	 *	@brief	Settings class with command line parser and type validation
 	 *
-	 *	This class uses boost::program_options to read options from the
-	 *	commandline and additionally load options from a file.
 	 *
 	 *	It is meant to be used as a singleton. Call 
-	 *	@code storm::settings::newInstance(argc, argv, filename) @endcode
-	 *	to initialize it and obtain an instance for the first time.
-	 *	Afterwards, use
-	 *	@code storm::settings::instance() @endcode
+	 *	@code storm::settings::Settings::getInstance() @endcode
+	 *	to initialize it and obtain an instance.
 	 *
 	 *	This class can be customized by other parts of the software using
 	 *	option modules. An option module can be anything that implements the
-	 *	interface specified by registerModule().
+	 *	interface specified by registerModule() and does a static initialization call to this function.
 	 */
 	class Settings {
 		public:
@@ -221,7 +217,7 @@ namespace settings {
 			Option& getByLongName(std::string const& longName) const {
 				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
 				if (longNameIterator == this->options.end()) {
-					throw storm::exceptions::IllegalArgumentException() << "This Accumulator does not contain an Option named \"" << longName << "\"!";
+					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option named \"" << longName << "\"!";
 				}
 				return *longNameIterator->second.get();
 			}
@@ -234,7 +230,7 @@ namespace settings {
 			Option* getPtrByLongName(std::string const& longName) const {
 				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
 				if (longNameIterator == this->options.end()) {
-					throw storm::exceptions::IllegalArgumentException() << "This Accumulator does not contain an Option named \"" << longName << "\"!";
+					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option named \"" << longName << "\"!";
 				}
 				return longNameIterator->second.get();
 			}
@@ -246,7 +242,7 @@ namespace settings {
 			Option& getByShortName(std::string const& shortName) const {
 				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
 				if (shortNameIterator == this->shortNames.end()) {
-					throw storm::exceptions::IllegalArgumentException() << "This Accumulator does not contain an Option with ShortName \"" << shortName << "\"!";
+					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option with ShortName \"" << shortName << "\"!";
 				}
 				return *(this->options.find(shortNameIterator->second)->second.get());
 			}
@@ -258,7 +254,7 @@ namespace settings {
 			Option* getPtrByShortName(std::string const& shortName) const {
 				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
 				if (shortNameIterator == this->shortNames.end()) {
-					throw storm::exceptions::IllegalArgumentException() << "This Accumulator does not contain an Option with ShortName \"" << shortName << "\"!";
+					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option with ShortName \"" << shortName << "\"!";
 				}
 				return this->options.find(shortNameIterator->second)->second.get();
 			}

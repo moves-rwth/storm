@@ -281,8 +281,14 @@ int main(const int argc, const char* argv[]) {
 		if (s->isSet("explicit")) {
 			std::string const chosenTransitionSystemFile = s->getOptionByLongName("explicit").getArgument(0).getValueAsString();
 			std::string const chosenLabelingFile = s->getOptionByLongName("explicit").getArgument(1).getValueAsString();
-			std::string const chosenStateRewardsFile = s->getOptionByLongName("stateRewards").getArgument(0).getValueAsString();
-			std::string const chosenTransitionRewardsFile = s->getOptionByLongName("transitionRewards").getArgument(0).getValueAsString();
+			std::string chosenStateRewardsFile = "";
+			if (s->isSet("stateRewards")) {
+				chosenStateRewardsFile = s->getOptionByLongName("stateRewards").getArgument(0).getValueAsString();
+			}
+			std::string chosenTransitionRewardsFile = "";
+			if (s->isSet("transitionRewards")) {
+				chosenTransitionRewardsFile = s->getOptionByLongName("transitionRewards").getArgument(0).getValueAsString();
+			}
 
 			storm::parser::AutoParser<double> parser(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
 
