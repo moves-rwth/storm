@@ -27,6 +27,8 @@ namespace storm {
 		public:
 			typedef std::function<bool (const T, std::string&)> userValidationFunction_t;
 
+			typedef T argumentType_t;
+
 			/*
 			T argumentValue;
 			ArgumentType argumentType;

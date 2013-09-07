@@ -6,7 +6,7 @@
 #include "src/parser/AutoParser.h"
 
 TEST(SparseMdpPrctlModelCheckerTest, Dice) {
-	storm::settings::Settings* s = storm::settings::instance();
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
     
 	ASSERT_EQ(parser.getType(), storm::models::MDP);
@@ -25,7 +25,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 	std::vector<double>* result = mc.checkNoBoundOperator(*probFormula);
     
 	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[0] - 0.0277777612209320068), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0277777612209320068), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete probFormula;
 	delete result;
@@ -36,7 +36,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*probFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.0277777612209320068), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0277777612209320068), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete probFormula;
 	delete result;
@@ -47,7 +47,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*probFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.0555555224418640136), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0555555224418640136), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete probFormula;
 	delete result;
@@ -58,7 +58,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*probFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.0555555224418640136), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0555555224418640136), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete probFormula;
 	delete result;
@@ -69,7 +69,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*probFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.083333283662796020508), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.083333283662796020508), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete probFormula;
 	delete result;
@@ -80,7 +80,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*probFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 0.083333283662796020508), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.083333283662796020508), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete probFormula;
 	delete result;
@@ -91,7 +91,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;
@@ -102,7 +102,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);;
     
-	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;
@@ -121,7 +121,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;
@@ -132,7 +132,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 7.3333294987678527832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;
@@ -151,7 +151,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333294987678527832)), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333294987678527832)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;
@@ -162,14 +162,14 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333294987678527832)), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333294987678527832)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;
 }
 
 TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
-	storm::settings::Settings* s = storm::settings::instance();
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::MDP);
@@ -189,7 +189,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -202,7 +202,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -215,7 +215,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result; 
@@ -228,7 +228,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.0625), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -239,7 +239,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.checkNoBoundOperator(*rewardFormula);;
 
-	ASSERT_LT(std::abs((*result)[0] - 4.28568908480604982), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 4.28568908480604982), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete rewardFormula;
 	delete result;
@@ -252,7 +252,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 4.2856904354441400784), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 4.2856904354441400784), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete rewardFormula;
 	delete result;

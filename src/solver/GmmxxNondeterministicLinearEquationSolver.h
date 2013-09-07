@@ -49,12 +49,12 @@ namespace storm {
             
             virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const override {
                 // Get the settings object to customize solving.
-                storm::settings::Settings* s = storm::settings::instance();
+                storm::settings::Settings* s = storm::settings::Settings::getInstance();
                 
                 // Get relevant user-defined settings for solving the equations.
-                double precision = s->get<double>("precision");
-                unsigned maxIterations = s->get<unsigned>("maxiter");
-                bool relative = s->get<bool>("relative");
+                double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+                uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
+				bool relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
                 
                 // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
                 gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);

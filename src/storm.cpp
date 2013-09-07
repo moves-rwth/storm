@@ -90,6 +90,27 @@ void printUsage() {
 #endif
 }
 
+bool registerStandardOptions(storm::settings::Settings* settings) {
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "help", "h", "Shows all available Options, Arguments and Descriptions").build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "verbose", "v", "Be verbose").build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "debug", "", "Be very verbose (intended for debugging)").build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "trace", "", "Be extremly verbose (intended for debugging, heavy performance impacts)").build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "logfile", "l", "If specified, the log output will also be written to this file").addArgument(storm::settings::ArgumentBuilder::createStringArgument("logFileName", "The path and name of the File to write to").build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "configfile", "c", "If specified, this file will be read and parsed for additional configuration settings").addArgument(storm::settings::ArgumentBuilder::createStringArgument("configFileName", "The path and name of the File to read from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "explicit", "", "Explicit parsing from Transition- and Labeling Files").addArgument(storm::settings::ArgumentBuilder::createStringArgument("transitionFileName", "The path and name of the File to read the transition system from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).addArgument(storm::settings::ArgumentBuilder::createStringArgument("labelingFileName", "The path and name of the File to read the labeling from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator).build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "symbolic", "", "Parse the given PRISM File").addArgument(storm::settings::ArgumentBuilder::createStringArgument("prismFileName", "The path and name of the File to read the PRISM Model from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "prctl", "", "Evaluates the PRCTL Formulas given in the File").addArgument(storm::settings::ArgumentBuilder::createStringArgument("prctlFileName", "The path and name of the File to read PRCTL Formulas from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "csl", "", "Evaluates the CSL Formulas given in the File").addArgument(storm::settings::ArgumentBuilder::createStringArgument("cslFileName", "The path and name of the File to read CSL Formulas from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "ltl", "", "Evaluates the LTL Formulas given in the File").addArgument(storm::settings::ArgumentBuilder::createStringArgument("ltlFileName", "The path and name of the File to read LTL Formulas from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "transitionRewards", "", "If specified, the model will have these transition rewards").addArgument(storm::settings::ArgumentBuilder::createStringArgument("transitionRewardsFileName", "The path and name of the File to read the Transition Rewards from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).setDefaultValueString("").setIsOptional(true).build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "stateRewards", "", "If specified, the model will have these state rewards").addArgument(storm::settings::ArgumentBuilder::createStringArgument("stateRewardsFileName", "The path and name of the File to read the State Rewards from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).setDefaultValueString("").setIsOptional(true).build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "fixDeadlocks", "", "Insert Self-Loops for States with no outgoing transitions").build());
+	std::vector<std::string> matrixLibrarys;
+	matrixLibrarys.push_back("gmm++");
+	matrixLibrarys.push_back("native");
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "matrixLibrary", "m", "Which matrix library is to be used in numerical solving").addArgument(storm::settings::ArgumentBuilder::createStringArgument("matrixLibraryName", "Name of a buildin Library").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(matrixLibrarys)).setDefaultValueString("gmm++").build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "useHeurisiticPresolve", "", "Sets whether heuristic methods should be applied to get better initial values for value iteration").build());
+}
 
 log4cplus::Logger logger;
 
@@ -200,7 +221,8 @@ void cleanUp() {
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double>& dtmc) {
     // Create the appropriate model checker.
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	if (s->getString("matrixlib") == "gmm++") {
+	std::string const chosenMatrixLibrary = s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString();
+	if (chosenMatrixLibrary == "gmm++") {
 		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 	}
     
@@ -218,10 +240,11 @@ storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecke
  */
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
     // Create the appropriate model checker.
-	storm::settings::Settings* s = storm::settings::instance();
-	if (s->getString("matrixlib") == "gmm++") {
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	std::string const chosenMatrixLibrary = s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString();
+	if (chosenMatrixLibrary == "gmm++") {
 		return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<double>());
-	} else if (s->getString("matrixlib") == "native") {
+	} else if (chosenMatrixLibrary == "native") {
         return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
     }
     
@@ -237,10 +260,11 @@ storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecke
  * @param modelchecker The model checker that is to be invoked on all given formulae.
  */
 void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double> const& modelchecker) {
-	storm::settings::Settings* s = storm::settings::instance();
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	if (s->isSet("prctl")) {
-		LOG4CPLUS_INFO(logger, "Parsing prctl file: " << s->getString("prctl") << ".");
-		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(s->getString("prctl"));
+		std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
+		LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
+		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
         
         for (auto formula : formulaList) {
             modelchecker.check(*formula);
@@ -274,13 +298,17 @@ int main(const int argc, const char* argv[]) {
 
 		// Now, the settings are received and the specified model is parsed. The actual actions taken depend on whether
         // the model was provided in explicit or symbolic format.
-		storm::settings::Settings* s = storm::settings::instance();
+		storm::settings::Settings* s = storm::settings::Settings::getInstance();
 		if (s->isSet("explicit")) {
-			std::vector<std::string> args = s->get<std::vector<std::string>>("explicit");
-			storm::parser::AutoParser<double> parser(args[0], args[1], s->getString("staterew"), s->getString("transrew"));
+			std::string const chosenTransitionSystemFile = s->getOptionByLongName("explicit").getArgument(0).getValueAsString();
+			std::string const chosenLabelingFile = s->getOptionByLongName("explicit").getArgument(1).getValueAsString();
+			std::string const chosenStateRewardsFile = s->getOptionByLongName("stateRewards").getArgument(0).getValueAsString();
+			std::string const chosenTransitionRewardsFile = s->getOptionByLongName("transitionRewards").getArgument(0).getValueAsString();
+
+			storm::parser::AutoParser<double> parser(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
 
             // Determine which engine is to be used to choose the right model checker.
-			LOG4CPLUS_DEBUG(logger, s->getString("matrixlib"));
+			LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
 
 			// Depending on the model type, the appropriate model checking procedure is chosen.
             storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
@@ -314,7 +342,7 @@ int main(const int argc, const char* argv[]) {
                 delete modelchecker;
             }
 		} else if (s->isSet("symbolic")) {
-			std::string arg = s->getString("symbolic");
+			std::string const arg = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
 			storm::adapters::ExplicitModelAdapter adapter(storm::parser::PrismParserFromFile(arg));
 			std::shared_ptr<storm::models::AbstractModel<double>> model = adapter.getModel();
 			model->printModelInformationToStream(std::cout);

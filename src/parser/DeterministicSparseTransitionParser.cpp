@@ -23,7 +23,7 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "boost/integer/integer_mask.hpp"
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -210,7 +210,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 
 	int_fast64_t row, lastRow = -1, col;
 	double val;
-	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
+	bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
 	bool hadDeadlocks = false;
 	bool rowHadDiagonalEntry = false;
 
@@ -278,7 +278,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 		}
 	}
 
-	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
 
 	/*
 	 *	Finalize Matrix.

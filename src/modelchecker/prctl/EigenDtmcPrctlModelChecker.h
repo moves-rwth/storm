@@ -86,7 +86,7 @@ private:
 	 */
 	virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>** vector, std::vector<Type>& b) const {
 		// Get the settings object to customize linear solving.
-		storm::settings::Settings* s = storm::settings::instance();
+		storm::settings::Settings* s = storm::settings::Settings::getInstance();
 
 		// Transform the submatric matrix to the eigen format to use its solvers
 		Eigen::SparseMatrix<Type, 1, int_fast32_t>* eigenMatrix = storm::adapters::EigenAdapter::toEigenSparseMatrix<Type>(matrix);
@@ -97,8 +97,9 @@ private:
 			// decomposition failed
 			LOG4CPLUS_ERROR(logger, "Decomposition of matrix failed!");
 		}
-		solver.setMaxIterations(s->get<unsigned>("maxiter"));
-		solver.setTolerance(s->get<double>("precision"));
+		uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
+		solver.setMaxIterations(static_cast<int>(maxIterations));
+		solver.setTolerance(s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 		std::cout << matrix.toString(nullptr) << std::endl;
 		std::cout << **vector << std::endl;

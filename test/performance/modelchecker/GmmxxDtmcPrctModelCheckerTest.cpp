@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/parser/AutoParser.h"
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
-	storm::settings::Settings* s = storm::settings::instance();
-	s->set("fix-deadlocks");
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	s->set("fixDeadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
@@ -29,7 +29,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.2296803699), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.2296803699), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -44,7 +44,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
     
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.05072232915), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.05072232915), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -59,7 +59,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.2274230551), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.2274230551), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -67,8 +67,8 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
-	storm::settings::Settings* s = storm::settings::instance();
-	s->set("fix-deadlocks");
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	s->set("fixDeadlocks");
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.pick.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
@@ -90,7 +90,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -105,7 +105,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.999394979327824395376467), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0.999394979327824395376467), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -120,7 +120,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1.02521744572240791626427), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1.02521744572240791626427), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete rewardFormula;
 	delete result;

@@ -17,7 +17,7 @@
 #include "AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 
 namespace storm {
 
@@ -126,8 +126,8 @@ private:
 	 */
 	bool checkValidityOfProbabilityMatrix() {
 		// Get the settings object to customize linear solving.
-		storm::settings::Settings* s = storm::settings::instance();
-		double precision = s->get<double>("precision");
+		storm::settings::Settings* s = storm::settings::Settings::getInstance();
+		double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
 
 		if (this->getTransitionMatrix().getRowCount() != this->getTransitionMatrix().getColumnCount()) {
 			// not square

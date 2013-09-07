@@ -3,7 +3,7 @@
 
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/vector.h"
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 
 #include <vector>
 
@@ -73,12 +73,12 @@ namespace storm {
                 LOG4CPLUS_INFO(logger, "Starting iterative solver.");
                 
                 // Get the settings object to customize solving.
-                storm::settings::Settings* s = storm::settings::instance();
+				storm::settings::Settings* s = storm::settings::Settings::getInstance();
                 
                 // Get relevant user-defined settings for solving the equations.
-                double precision = s->get<double>("precision");
-                unsigned maxIterations = s->get<unsigned>("maxiter");
-                bool relative = s->get<bool>("relative");
+                double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+                uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
+                bool relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
                 
                 // Set up the environment for the power method.
                 std::vector<Type> multiplyResult(A.getRowCount());

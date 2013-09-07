@@ -21,7 +21,7 @@
 #include <utility>
 #include <string>
 
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "boost/integer/integer_mask.hpp"
@@ -283,7 +283,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 	int_fast64_t source, target, lastsource = -1, choice, lastchoice = -1;
 	uint_fast64_t curRow = -1;
 	double val;
-	bool fixDeadlocks = storm::settings::instance()->isSet("fix-deadlocks");
+	bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
 	bool hadDeadlocks = false;
 
 	/*
@@ -383,7 +383,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 		rowMapping.at(node) = curRow + 1;
 	}
 
-	if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fix-deadlocks to insert self-loops on the fly.";
+	if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
 
 	/*
 	 * Finalize matrix.

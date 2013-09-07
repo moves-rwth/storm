@@ -4,7 +4,7 @@
 #include "AbstractLinearEquationSolver.h"
 #include "src/adapters/GmmxxAdapter.h"
 #include "src/utility/ConstTemplates.h"
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 #include "src/utility/vector.h"
 
 #include "gmm/gmm_matrix.h"
@@ -14,7 +14,7 @@
 
 namespace storm {
     namespace solver {
-        
+
         template<class Type>
         class GmmxxLinearEquationSolver : public AbstractLinearEquationSolver<Type> {
         public:
@@ -25,16 +25,22 @@ namespace storm {
             
             virtual void solveEquationSystem(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const {
                 // Get the settings object to customize linear solving.
-                storm::settings::Settings* s = storm::settings::instance();
+                storm::settings::Settings* s = storm::settings::Settings::getInstance();
                 
                 // Prepare an iteration object that determines the accuracy, maximum number of iterations
                 // and the like.
-                gmm::iteration iter(s->get<double>("precision"), 0, s->get<unsigned>("maxiter"));
+				uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
+                gmm::iteration iter(s->getOptionByLongName("precision").getArgument(0).getValueAsDouble(), 0, maxIterations);
                 
                 // Print some information about the used preconditioner.
-                const std::string& precond = s->getString("precond");
+                std::string const precond = s->getOptionByLongName("preconditioner").getArgument(0).getValueAsString();
                 LOG4CPLUS_INFO(logger, "Starting iterative solver.");
-                if (s->getString("lemethod") == "jacobi") {
+
+				// ALL available solvers must be declared in the cpp File, where the options are registered!
+				// Dito for the Preconditioners
+
+				std::string const chosenLeMethod = s->getOptionByLongName("leMethod").getArgument(0).getValueAsString();
+                if (chosenLeMethod == "jacobi") {
                     if (precond != "none") {
                         LOG4CPLUS_WARN(logger, "Requested preconditioner '" << precond << "', which is unavailable for the Jacobi method. Dropping preconditioner.");
                     }
@@ -51,7 +57,7 @@ namespace storm {
                 }
                 
                 // Now do the actual solving.
-                if (s->getString("lemethod") == "bicgstab") {
+                if (chosenLeMethod == "bicgstab") {
                     LOG4CPLUS_INFO(logger, "Using BiCGStab method.");
                     // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
                     gmm::csr_matrix<Type>* gmmA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
@@ -72,7 +78,7 @@ namespace storm {
                         LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
                     }
                     delete gmmA;
-                } else if (s->getString("lemethod") == "qmr") {
+                } else if (chosenLeMethod == "qmr") {
                     LOG4CPLUS_INFO(logger, "Using QMR method.");
                     // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
                     gmm::csr_matrix<Type>* gmmA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
@@ -93,7 +99,7 @@ namespace storm {
                         LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
                     }
                     delete gmmA;
-                } else if (s->getString("lemethod") == "lscg") {
+                } else if (chosenLeMethod == "lscg") {
                     LOG4CPLUS_INFO(logger, "Using LSCG method.");
                     // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
                     gmm::csr_matrix<Type>* gmmA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
@@ -110,7 +116,7 @@ namespace storm {
                         LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
                     }
                     delete gmmA;
-                } else if (s->getString("lemethod") == "gmres") {
+                } else if (chosenLeMethod == "gmres") {
                     LOG4CPLUS_INFO(logger, "Using GMRES method.");
                     // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
                     gmm::csr_matrix<Type>* gmmA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
@@ -131,12 +137,12 @@ namespace storm {
                         LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
                     }
                     delete gmmA;
-                } else if (s->getString("lemethod") == "jacobi") {
+                } else if (chosenLeMethod == "jacobi") {
                     LOG4CPLUS_INFO(logger, "Using Jacobi method.");
                     uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(A, x, b);
-                    
+                    uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
                     // Check if the solver converged and issue a warning otherwise.
-                    if (iterations < s->get<unsigned>("maxiter")) {
+					if (iterations < maxIterations) {
                         LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
                     } else {
                         LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
@@ -192,11 +198,11 @@ namespace storm {
              */
             uint_fast64_t solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b) const {
                 // Get the settings object to customize linear solving.
-                storm::settings::Settings* s = storm::settings::instance();
+                storm::settings::Settings* s = storm::settings::Settings::getInstance();
                 
-                double precision = s->get<double>("precision");
-                uint_fast64_t maxIterations = s->get<unsigned>("maxiter");
-                bool relative = s->get<bool>("relative");
+                double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+				uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
+				bool relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
                 
                 // Get a Jacobi decomposition of the matrix A.
                 typename storm::storage::SparseMatrix<Type>::SparseJacobiDecomposition_t jacobiDecomposition = A.getJacobiDecomposition();

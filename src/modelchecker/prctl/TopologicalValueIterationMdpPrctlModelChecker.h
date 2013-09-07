@@ -60,12 +60,12 @@ private:
 	 */
 	void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
 		// Get the settings object to customize solving.
-		storm::settings::Settings* s = storm::settings::instance();
+		storm::settings::Settings* s = storm::settings::Settings::getInstance();
 
 		// Get relevant user-defined settings for solving the equations.
-		double precision = s->get<double>("precision");
-		unsigned maxIterations = s->get<unsigned>("maxiter");
-		bool relative = s->get<bool>("relative");
+		double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+		uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
+		bool relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
 
 		// Now, we need to determine the SCCs of the MDP and a topological sort.
         std::vector<std::vector<uint_fast64_t>> stronglyConnectedComponents = storm::utility::graph::performSccDecomposition(this->getModel(), stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);

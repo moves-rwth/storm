@@ -211,7 +211,10 @@ storm::settings::Settings& storm::settings::Settings::addOption(Option* option) 
 		// Copy Shared_ptr
 		this->options.insert(std::make_pair(lowerLongName, std::shared_ptr<Option>(optionPtr)));
 		this->optionPointers.push_back(std::shared_ptr<Option>(optionPtr));
-		this->shortNames.insert(std::make_pair(lowerShortName, lowerLongName));
+		// Ignore Options with empty shortName
+		if (!lowerShortName.empty()) {
+			this->shortNames.insert(std::make_pair(lowerShortName, lowerLongName));
+		}
 	} else {
 		// This will fail if the shortNames are not identical, so no additional checks here.
 		longNameIterator->second.get()->unify(*option);

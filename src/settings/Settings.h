@@ -13,7 +13,6 @@
 
 #include "src/settings/Option.h"
 #include "src/settings/OptionBuilder.h"
-#include "src/settings/OptionsAccumulator.h"
 #include "src/settings/ArgumentBase.h"
 #include "src/settings/Argument.h"
 #include "src/settings/ArgumentBuilder.h"

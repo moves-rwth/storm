@@ -1,7 +1,7 @@
 #include "src/adapters/ExplicitModelAdapter.h"
 
 #include "src/storage/SparseMatrix.h"
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 #include "src/exceptions/WrongFormatException.h"
 
 #include "src/ir/Program.h"
@@ -32,8 +32,8 @@ namespace adapters {
 			allStates(), stateToIndexMap(), numberOfTransitions(0), numberOfChoices(0), transitionMap() {
 		// Get variables from program.
 		this->initializeVariables();
-		storm::settings::Settings* s = storm::settings::instance();
-		this->precision = s->get<double>("precision");
+		storm::settings::Settings* s = storm::settings::Settings::getInstance();
+		this->precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
 	}
 
 	ExplicitModelAdapter::~ExplicitModelAdapter() {
@@ -214,8 +214,7 @@ namespace adapters {
 			res->push_back(commands);
 		}
 		// Sort the result in the vague hope that having small lists at the beginning will speed up the expanding.
-		// This is how lambdas may look like in C++...
-		res->sort([](const std::list<storm::ir::Command>& a, const std::list<storm::ir::Command>& b){ return a.size() < b.size(); });
+		res->sort([] (const std::list<storm::ir::Command>& a, const std::list<storm::ir::Command>& b) -> bool { return a.size() < b.size(); });
 		return res;
 	}
 	
@@ -540,7 +539,7 @@ namespace adapters {
 			this->numberOfChoices += this->transitionMap[curIndex].size();
 			if (this->transitionMap[curIndex].size() == 0) {
 				// This is a deadlock state.
-				if (storm::settings::instance()->isSet("fix-deadlocks")) {
+				if (storm::settings::Settings::getInstance()->isSet("fixDeadlocks")) {
 					this->numberOfTransitions++;
 					this->numberOfChoices++;
 					this->transitionMap[curIndex].emplace_back();

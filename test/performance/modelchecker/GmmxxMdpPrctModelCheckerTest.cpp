@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/parser/AutoParser.h"
 
 TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
-	storm::settings::Settings* s = storm::settings::instance();
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::MDP);
@@ -29,7 +29,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -44,7 +44,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -59,7 +59,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -74,7 +74,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -87,7 +87,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	result = mc.checkNoBoundOperator(*rewardFormula);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_LT(std::abs((*result)[0] - 6.172433512), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 6.172433512), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete rewardFormula;
 	delete result;
@@ -102,14 +102,14 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 6.1724344), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[0] - 6.1724344), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete rewardFormula;
 	delete result;
 }
 
 TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
-	storm::settings::Settings* s = storm::settings::instance();
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
     s->set<unsigned>("maxiter", 20000);
     
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "");
@@ -133,7 +133,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[31168] - 1), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     delete probFormula;
     delete result;
@@ -150,7 +150,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[31168] - 0.43742828319177884388579), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0.43742828319177884388579), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     delete probFormula;
     delete result;
@@ -166,7 +166,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);    
-	ASSERT_LT(std::abs((*result)[31168] - 0.52932863686144482340267813924583606421947479248047), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0.52932863686144482340267813924583606421947479248047), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     delete probFormula;
     delete result;
@@ -183,7 +183,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 0.1041409700076474653673841), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0.1041409700076474653673841), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     delete probFormula;
     delete result;
@@ -197,7 +197,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 0), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     delete probFormula;
     delete result;
@@ -211,7 +211,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 0), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     delete probFormula;
     delete result;
@@ -225,7 +225,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
     ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 1725.5933133943854045), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 1725.5933133943854045), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;
@@ -239,7 +239,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 2183.1424220082612919213715), s->get<double>("precision"));
+	ASSERT_LT(std::abs((*result)[31168] - 2183.1424220082612919213715), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;

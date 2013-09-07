@@ -18,7 +18,7 @@
 #include "src/models/Mdp.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 
 namespace storm {
     namespace modelchecker {
@@ -648,9 +648,9 @@ namespace storm {
                                                                  storm::storage::BitVector const& maybeStates,
                                                                  std::vector<uint_fast64_t>* guessedScheduler = nullptr,
                                                                  std::pair<std::vector<Type>, std::vector<Type>>* distancePairs = nullptr) const {
-                    storm::settings::Settings* s = storm::settings::instance();
-                    double precision = s->get<double>("precision");
-                    if (s->get<bool>("use-heuristic-presolve")) {
+					storm::settings::Settings* s = storm::settings::Settings::getInstance();
+                    double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+					if (s->isSet("useHeuristicPresolve")) {
                         // Compute both the most probable paths to target states as well as the most probable path to non-target states.
                         // Note that here target state means a state does not *not* satisfy the property that is to be reached
                         // if we want to minimize the reachability probability.

@@ -15,6 +15,7 @@
 #include "ArgumentTypeInferationHelper.h"
 #include "ArgumentBase.h"
 #include "Argument.h"
+#include "ArgumentValidators.h"
 
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/IllegalArgumentTypeException.h"
@@ -25,43 +26,6 @@ namespace storm {
 		class ArgumentBuilder {
 		public:
 			~ArgumentBuilder() {}
-
-			template<class T>
-			static std::function<bool (T const, std::string&)> rangeValidatorIncluding(T const lowerBound, T const upperBound) {
-				return std::bind([](T const lowerBound, T const upperBound, T const value, std::string& errorMessageTarget) -> bool {
-					bool lowerBoundCondition = (lowerBound <= value);
-					bool upperBoundCondition = (value <= upperBound);
-					if (!lowerBoundCondition) { 
-						std::ostringstream stream;
-						stream << " Lower Bound Condition not met: " << lowerBound << " is not <= " << value;
-						errorMessageTarget.append(stream.str());
-					}
-					if (!upperBoundCondition) { 
-						std::ostringstream stream;
-						stream << " Upper Bound Condition not met: " << value << " is not <= " << upperBound; 
-						errorMessageTarget.append(stream.str());
-					}
-					return (lowerBoundCondition && upperBoundCondition);
-				}, lowerBound, upperBound, std::placeholders::_1, std::placeholders::_2);
-			}
-			template<class T>
-			static std::function<bool (T const, std::string&)> rangeValidatorExcluding(T const lowerBound, T const upperBound) {
-				return std::bind([](T const lowerBound, T const upperBound, T const value, std::string& errorMessageTarget) -> bool { 
-					bool lowerBoundCondition = (lowerBound < value);
-					bool upperBoundCondition = (value < upperBound);
-					if (!lowerBoundCondition) { 
-						std::ostringstream stream;
-						stream << " Lower Bound Condition not met: " << lowerBound << " is not < " << value;
-						errorMessageTarget.append(stream.str());
-					}
-					if (!upperBoundCondition) { 
-						std::ostringstream stream;
-						stream << " Upper Bound Condition not met: " << value << " is not < " << upperBound; 
-						errorMessageTarget.append(stream.str());
-					}
-					return (lowerBoundCondition && upperBoundCondition);
-				}, lowerBound, upperBound, std::placeholders::_1, std::placeholders::_2);
-			}
 
 			/*
 				Preparation Functions for all ArgumentType's
