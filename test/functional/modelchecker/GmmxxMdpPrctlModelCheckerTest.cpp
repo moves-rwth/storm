@@ -3,7 +3,7 @@
 
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
 #include "src/parser/AutoParser.h"
 
 TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {

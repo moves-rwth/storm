@@ -6,7 +6,8 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
+#include "src/utility/StormOptions.h" // Registers all standard options
 
 log4cplus::Logger logger;
 
@@ -34,7 +35,7 @@ void setUpLogging() {
  */
 void createEmptyOptions() {
     const char* newArgv[] = {"storm-performance-tests"};
-    storm::settings::Settings* s = storm::settings::newInstance(1, newArgv, nullptr, true);
+	storm::settings::Settings::parse(1, newArgv);
 }
 
 int main(int argc, char* argv[]) {

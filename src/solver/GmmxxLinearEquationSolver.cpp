@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-bool optionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
+bool GmmxxLinearEquationSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
 
 	std::vector<std::string> methods;
 	methods.push_back("bicgstab");

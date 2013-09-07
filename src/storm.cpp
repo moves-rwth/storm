@@ -29,6 +29,7 @@
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/settings/Settings.h"
+#include "src/utility/StormOptions.h" // Registers all standard options
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
 
@@ -90,28 +91,6 @@ void printUsage() {
 #endif
 }
 
-bool registerStandardOptions(storm::settings::Settings* settings) {
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "help", "h", "Shows all available Options, Arguments and Descriptions").build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "verbose", "v", "Be verbose").build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "debug", "", "Be very verbose (intended for debugging)").build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "trace", "", "Be extremly verbose (intended for debugging, heavy performance impacts)").build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "logfile", "l", "If specified, the log output will also be written to this file").addArgument(storm::settings::ArgumentBuilder::createStringArgument("logFileName", "The path and name of the File to write to").build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "configfile", "c", "If specified, this file will be read and parsed for additional configuration settings").addArgument(storm::settings::ArgumentBuilder::createStringArgument("configFileName", "The path and name of the File to read from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "explicit", "", "Explicit parsing from Transition- and Labeling Files").addArgument(storm::settings::ArgumentBuilder::createStringArgument("transitionFileName", "The path and name of the File to read the transition system from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).addArgument(storm::settings::ArgumentBuilder::createStringArgument("labelingFileName", "The path and name of the File to read the labeling from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator).build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "symbolic", "", "Parse the given PRISM File").addArgument(storm::settings::ArgumentBuilder::createStringArgument("prismFileName", "The path and name of the File to read the PRISM Model from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "prctl", "", "Evaluates the PRCTL Formulas given in the File").addArgument(storm::settings::ArgumentBuilder::createStringArgument("prctlFileName", "The path and name of the File to read PRCTL Formulas from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "csl", "", "Evaluates the CSL Formulas given in the File").addArgument(storm::settings::ArgumentBuilder::createStringArgument("cslFileName", "The path and name of the File to read CSL Formulas from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "ltl", "", "Evaluates the LTL Formulas given in the File").addArgument(storm::settings::ArgumentBuilder::createStringArgument("ltlFileName", "The path and name of the File to read LTL Formulas from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "transitionRewards", "", "If specified, the model will have these transition rewards").addArgument(storm::settings::ArgumentBuilder::createStringArgument("transitionRewardsFileName", "The path and name of the File to read the Transition Rewards from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).setDefaultValueString("").setIsOptional(true).build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "stateRewards", "", "If specified, the model will have these state rewards").addArgument(storm::settings::ArgumentBuilder::createStringArgument("stateRewardsFileName", "The path and name of the File to read the State Rewards from").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).setDefaultValueString("").setIsOptional(true).build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "fixDeadlocks", "", "Insert Self-Loops for States with no outgoing transitions").build());
-	std::vector<std::string> matrixLibrarys;
-	matrixLibrarys.push_back("gmm++");
-	matrixLibrarys.push_back("native");
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "matrixLibrary", "m", "Which matrix library is to be used in numerical solving").addArgument(storm::settings::ArgumentBuilder::createStringArgument("matrixLibraryName", "Name of a buildin Library").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(matrixLibrarys)).setDefaultValueString("gmm++").build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "useHeurisiticPresolve", "", "Sets whether heuristic methods should be applied to get better initial values for value iteration").build());
-}
-
 log4cplus::Logger logger;
 
 /*!
@@ -163,12 +142,12 @@ void printHeader(const int argc, const char* argv[]) {
  * @return True iff the program should continue to run after parsing the options.
  */
 bool parseOptions(const int argc, const char* argv[]) {
-	storm::settings::Settings* s = nullptr;
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	try {
 		storm::settings::Settings::parse(argc, argv);
 	} catch (storm::exceptions::OptionParserException& e) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
-		std::cout << std::endl << storm::settings::Settings::getInstance()->getHelpText();
+		std::cout << std::endl << s->getHelpText();
 		return false;
 	}
 

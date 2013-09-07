@@ -109,7 +109,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
     // Increase the maximal number of iterations, because the solver does not converge otherwise.
-    s->set<unsigned>("maxiter", 20000);
+	// This is done in the main cpp unit
     
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "");
     

@@ -6,7 +6,8 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
-#include "src/utility/Settings.h"
+#include "src/settings/Settings.h"
+#include "src/utility/StormOptions.h" // Registers all standard options
 
 log4cplus::Logger logger;
 
@@ -33,8 +34,8 @@ void setUpLogging() {
  * Creates an empty settings object as the standard instance of the Settings class.
  */
 void createEmptyOptions() {
-    const char* newArgv[] = {"storm-performance-tests"};
-    storm::settings::Settings* s = storm::settings::newInstance(1, newArgv, nullptr, true);
+    const char* newArgv[] = {"storm-performance-tests", "--maxIterations", "20000"};
+    storm::settings::Settings::parse(3, newArgv);
 }
 
 int main(int argc, char* argv[]) {

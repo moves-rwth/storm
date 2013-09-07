@@ -110,8 +110,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-    s->set<unsigned>("maxiter", 20000);
-    
+
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "");
     
 	ASSERT_EQ(parser.getType(), storm::models::MDP);

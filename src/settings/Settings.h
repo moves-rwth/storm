@@ -125,6 +125,16 @@ namespace settings {
 				return this->getByLongName(longName).getHasOptionBeenSet();
 			}
 
+			/*!
+			 * Sets the Option with the specified longName
+			 * This function requires the Option to have no arguments
+			 * This is for TESTING only and should not be used outside of the testing code!
+			 * @throws InvalidArgumentException
+			 */
+			void set(std::string const& longName) const {
+				return this->getByLongName(longName).setHasOptionBeenSet();
+			}
+
 			/*
 			 * This generated a list of all registered options and their arguments together with descriptions and defaults.
 			 * @return A std::string containing the help text, delimited by \n
