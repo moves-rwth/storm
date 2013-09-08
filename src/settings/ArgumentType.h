@@ -3,6 +3,10 @@
 
 #include "src/exceptions/InternalTypeErrorException.h"
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
+
 namespace storm {
 	namespace settings {
 		enum class ArgumentType {
@@ -38,8 +42,10 @@ namespace storm {
 				case ArgumentType::Boolean:
 					return argumentTypeBoolean;
 					break;
-				default:
-					throw storm::exceptions::InternalTypeErrorException() << "ERROR:\n" << "Missing a Switch Case in the ArgumentTypeHelper!\n" << "It seems there is a new ArgumentType, but it was not added to the Helper Class!";
+				default: {
+					LOG4CPLUS_ERROR(logger, "ArgumentTypeHelper::toString: Missing Case in ArgumentTypeHelper's switch/case Code.");
+					throw storm::exceptions::InternalTypeErrorException() << "Missing a Switch Case in the ArgumentTypeHelper!\n" << "It seems there is a new ArgumentType, but it was not added to the Helper Class!";
+					}
 				}
 			}
 		private:

@@ -22,12 +22,15 @@
 // Exceptions that should be catched when performing a parsing run
 #include "src/exceptions/OptionParserException.h"
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+
+extern log4cplus::Logger logger;
+
 namespace storm {
 
 /*!
  *	@brief Contains Settings class and associated methods.
- *
- *	The settings namespace contains the Settings class some friend methods like instance().
  */
 namespace settings {
 	class Settings;
@@ -60,6 +63,9 @@ namespace settings {
 	class Settings {
 		public:
 
+			/*!
+			 * This function handles the static initialization registration of modules and their options
+			 */
 			static bool registerNewModule(ModuleRegistrationFunction_t registrationFunction);
 			
 			/*!
@@ -131,12 +137,16 @@ namespace settings {
 				return this->getByLongName(longName).setHasOptionBeenSet();
 			}
 
-			/*
+			/*!
 			 * This generated a list of all registered options and their arguments together with descriptions and defaults.
 			 * @return A std::string containing the help text, delimited by \n
 			 */
 			std::string getHelpText() const;
 
+			/*!
+			 * This function is the Singleton interface for the Settings class
+			 * @return Settings* A Pointer to the singleton instance of Settings 
+			 */
 			static Settings* getInstance();
 			friend class Destroyer;
 		private:
@@ -158,9 +168,14 @@ namespace settings {
 			 *	The object is automatically destroyed when the program terminates by the destroyer.
 			 */
 			virtual ~Settings() {
-				this->instance = nullptr;
+				//
 			}
 
+			/*!
+			 * Parser for the commdand line parameters of the program.
+			 * The first entry of argv will be ignored, as it represents the program name.
+			 * @throws OptionParserException
+			 */
 			void parseCommandLine(int const argc, char const * const argv[]);
 
 			/*!
@@ -177,11 +192,6 @@ namespace settings {
 			* The map holding the information regarding registered options and their short names
 			*/
 			std::unordered_map<std::string, std::string> shortNames;
-
-			/*!
-			 *	@brief	actual instance of this class.
-			 */
-			static Settings* instance;
  			
  			/*!
  			 *	@brief	Destroyer object.
@@ -197,14 +207,16 @@ namespace settings {
 			bool checkArgumentSyntaxForOption(std::string const& argvString);
 
 			/*!
-			* Returns true IFF this accumulator contains an option with the specified longName.
+			* Returns true IFF this contains an option with the specified longName.
+			* @return bool true iff there is an option with the specified longName
 			*/
 			bool containsLongName(std::string const& longName) const {
 				return (this->options.find(storm::utility::StringHelper::stringToLower(longName)) != this->options.end());
 			}
 
 			/*!
-			* Returns true IFF this accumulator contains an option with the specified shortName.
+			* Returns true IFF this contains an option with the specified shortName.
+			* @return bool true iff there is an option with the specified shortName
 			*/
 			bool containsShortName(std::string const& shortName) const {
 				return (this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName)) != this->shortNames.end());
@@ -213,10 +225,12 @@ namespace settings {
 			/*!
 			* Returns a reference to the Option with the specified longName.
 			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
+			* @throws InvalidArgumentException
 			*/
 			Option& getByLongName(std::string const& longName) const {
 				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
 				if (longNameIterator == this->options.end()) {
+					LOG4CPLUS_ERROR(logger, "Settings::getByLongName: This program does not contain an Option named \"" << longName << "\"!");
 					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option named \"" << longName << "\"!";
 				}
 				return *longNameIterator->second.get();
@@ -230,6 +244,7 @@ namespace settings {
 			Option* getPtrByLongName(std::string const& longName) const {
 				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
 				if (longNameIterator == this->options.end()) {
+					LOG4CPLUS_ERROR(logger, "Settings::getPtrByLongName: This program does not contain an Option named \"" << longName << "\"!");
 					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option named \"" << longName << "\"!";
 				}
 				return longNameIterator->second.get();
@@ -238,10 +253,12 @@ namespace settings {
 			/*!
 			* Returns a reference to the Option with the specified shortName.
 			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
+			* @throws InvalidArgumentException
 			*/
 			Option& getByShortName(std::string const& shortName) const {
 				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
 				if (shortNameIterator == this->shortNames.end()) {
+					LOG4CPLUS_ERROR(logger, "Settings::getByShortName: This program does not contain an Option named \"" << shortName << "\"!");
 					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option with ShortName \"" << shortName << "\"!";
 				}
 				return *(this->options.find(shortNameIterator->second)->second.get());
@@ -250,10 +267,12 @@ namespace settings {
 			/*!
 			* Returns a pointer to the Option with the specified shortName.
 			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
+			* @throws InvalidArgumentException
 			*/
 			Option* getPtrByShortName(std::string const& shortName) const {
 				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
 				if (shortNameIterator == this->shortNames.end()) {
+					LOG4CPLUS_ERROR(logger, "Settings::getPtrByShortName: This program does not contain an Option named \"" << shortName << "\"!");
 					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option with ShortName \"" << shortName << "\"!";
 				}
 				return this->options.find(shortNameIterator->second)->second.get();
@@ -281,8 +300,7 @@ namespace settings {
 			 */
 			virtual ~Destroyer() {
 				if (this->settingsInstance != nullptr) {
-					std::cout << "Destroying Settings Instance..." << std::endl;
-					this->settingsInstance->instance = nullptr;
+					//LOG4CPLUS_DEBUG(logger, "Destroyer::~Destroyer: Destroying Settings Instance...");
 					// The C++11 Method of Singleton deletes its instance on its own
 					//delete this->settingsInstance;
 					this->settingsInstance = nullptr;

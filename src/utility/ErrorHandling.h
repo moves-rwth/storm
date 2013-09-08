@@ -86,10 +86,10 @@ std::string demangle(char const* symbol) {
  * @param sig The code of the signal that needs to be handled.
  */
 void signalHandler(int sig) {
-#define SIZE 128
 	LOG4CPLUS_FATAL(logger, "The program received signal " << sig << ". The following backtrace shows the status upon reception of the signal.");
 
 #ifndef WINDOWS
+#	define SIZE 128
 	void *buffer[SIZE];
  	char **strings;
 	int nptrs;

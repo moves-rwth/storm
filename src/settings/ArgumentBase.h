@@ -7,6 +7,10 @@
 #include "ArgumentType.h"
 #include "src/utility/StringHelper.h"
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
+
 namespace storm {
 	namespace settings {
 
@@ -16,7 +20,7 @@ namespace storm {
 		public:
 			ArgumentBase(std::string const& argumentName, std::string const& argumentDescription, bool isOptional) : isOptional(isOptional), hasBeenSet(false), argumentName(argumentName), argumentDescription(argumentDescription) {}
 			virtual ~ArgumentBase() {
-				std::cout << "Destructing an ArgumentBase." << std::endl;
+				//LOG4CPLUS_DEBUG(logger, "ArgumentBase::~ArgumentBase: Destructing ArgumentBase \"" << this->getArgumentName() << "\"");
 			}
 			virtual ArgumentType getArgumentType() const = 0;
 
