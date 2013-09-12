@@ -2,7 +2,7 @@
 
 #include "Eigen/Sparse"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 
 TEST(EigenSparseMatrixTest, BasicReadWriteTest) {
 	// 25 rows, 50 non zero entries

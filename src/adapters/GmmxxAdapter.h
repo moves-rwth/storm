@@ -9,6 +9,7 @@
 #define STORM_ADAPTERS_GMMXXADAPTER_H_
 
 #include "src/storage/SparseMatrix.h"
+#include <new>
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -59,12 +60,20 @@ public:
 		// Prepare the resulting matrix.
 		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(matrix.rowCount, matrix.colCount);
 
-		// Move Row Indications
-		result->jc = std::vector<uint_fast64_t>(std::move(matrix.rowIndications));
-		// Move Columns Indications
-		result->ir = std::vector<uint_fast64_t>(std::move(matrix.columnIndications));
-		// And do the same thing with the actual values.
-		result->pr = std::vector<T>(std::move(matrix.valueStorage));
+		typedef unsigned long long IND_TYPE;
+        typedef std::vector<IND_TYPE> vectorType_ull_t;
+        typedef std::vector<T> vectorType_T_t; 
+
+        // Move Row Indications
+        result->jc.~vectorType_ull_t(); // Call Destructor inplace
+		new (&result->jc) vectorType_ull_t(std::move(matrix.rowIndications));
+        // Move Columns Indications
+        result->ir.~vectorType_ull_t(); // Call Destructor inplace
+        new (&result->ir) vectorType_ull_t(std::move(matrix.columnIndications));
+        // And do the same thing with the actual values.
+        result->pr.~vectorType_T_t(); // Call Destructor inplace
+        new (&result->pr) vectorType_T_t(std::move(matrix.valueStorage));
+
 
 		LOG4CPLUS_DEBUG(logger, "Done converting matrix to gmm++ format.");
 

@@ -16,6 +16,7 @@
 #include "src/settings/ArgumentTypeInferationHelper.h"
 #include "src/utility/StringHelper.h"
 #include "src/exceptions/ArgumentUnificationException.h"
+#include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/IllegalArgumentValueException.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 
@@ -50,11 +51,11 @@ namespace storm {
 				}
 			}
 
-			Argument(std::string const& argumentName, std::string const& argumentDescription, std::vector<userValidationFunction_t> const& validationFunctions, bool isOptional, T defaultValue): ArgumentBase(argumentName, argumentDescription, isOptional), argumentType(ArgumentTypeInferation::inferToEnumType<T>()), userValidationFunction(validationFunctions), hasDefaultValue(true), defaultValue(defaultValue) {
+			Argument(std::string const& argumentName, std::string const& argumentDescription, std::vector<userValidationFunction_t> const& validationFunctions, bool isOptional, T defaultValue): ArgumentBase(argumentName, argumentDescription, isOptional), argumentType(ArgumentTypeInferation::inferToEnumType<T>()), userValidationFunction(validationFunctions), defaultValue(defaultValue), hasDefaultValue(true) {
 			
 			}
 
-			Argument(Argument const& other) : ArgumentBase(other.argumentName, other.argumentDescription, other.isOptional), argumentType(other.argumentType), hasDefaultValue(other.hasDefaultValue), defaultValue(other.defaultValue) {
+			Argument(Argument const& other) : ArgumentBase(other.argumentName, other.argumentDescription, other.isOptional), argumentType(other.argumentType), defaultValue(other.defaultValue), hasDefaultValue(other.hasDefaultValue) {
 				this->userValidationFunction.reserve(other.userValidationFunction.size());
 				for (auto i = 0; i < other.userValidationFunction.size(); ++i) {
 					this->userValidationFunction.push_back(userValidationFunction_t(other.userValidationFunction.at(i)));

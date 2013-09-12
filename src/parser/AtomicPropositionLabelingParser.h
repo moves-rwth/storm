@@ -2,7 +2,7 @@
 #define STORM_PARSER_LABPARSER_H_
 
 #include "src/models/AtomicPropositionsLabeling.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 
 #include "src/parser/Parser.h"
 

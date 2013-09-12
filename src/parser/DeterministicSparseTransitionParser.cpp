@@ -22,7 +22,7 @@
 
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 #include "src/settings/Settings.h"
 
 #include "log4cplus/logger.h"

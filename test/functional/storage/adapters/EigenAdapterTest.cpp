@@ -3,7 +3,7 @@
 #include "Eigen/Sparse"
 #include "src/adapters/EigenAdapter.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 
 #define STORM_EIGENADAPTERTEST_SIMPLEDENSESQUARECOPY_SIZE 5
 #define STORM_EIGENADAPTERTEST_SIMPLESPARSESQUARECOPY_SIZE 5

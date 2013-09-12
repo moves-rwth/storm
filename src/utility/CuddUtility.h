@@ -10,7 +10,7 @@
 
 #include "cuddObj.hh"
 
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 
 namespace storm {
 

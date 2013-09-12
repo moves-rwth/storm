@@ -3,7 +3,7 @@
 #include "gmm/gmm_matrix.h"
 #include "src/adapters/StormAdapter.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 
 #define STORM_STORMADAPTERTEST_SIMPLEDENSESQUARECOPY_SIZE 5
 #define STORM_STORMADAPTERTEST_SIMPLESPARSESQUARECOPY_SIZE 5

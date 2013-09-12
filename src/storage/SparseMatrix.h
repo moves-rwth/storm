@@ -7,7 +7,7 @@
 #include <iostream>
 #include <iterator>
 #include <set>
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 
 #ifdef STORM_USE_TBB
 #	include <new> // This fixes a potential dependency ordering problem between GMM and TBB

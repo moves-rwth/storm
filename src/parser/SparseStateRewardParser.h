@@ -1,7 +1,7 @@
 #ifndef STORM_PARSER_SPARSESTATEREWARDPARSER_H_
 #define STORM_PARSER_SPARSESTATEREWARDPARSER_H_
 
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 #include "src/parser/Parser.h"
 #include <memory>
 #include <vector>

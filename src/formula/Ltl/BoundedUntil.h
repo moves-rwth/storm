@@ -10,7 +10,7 @@
 
 #include "src/formula/abstract/BoundedUntil.h"
 #include "AbstractLtlFormula.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 #include <string>
 #include "src/modelchecker/ltl/ForwardDeclarations.h"
 

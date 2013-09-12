@@ -11,7 +11,7 @@
 #include "src/formula/abstract/BoundedEventually.h"
 #include "AbstractLtlFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 #include <string>
 #include "src/modelchecker/ltl/ForwardDeclarations.h"
 

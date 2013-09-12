@@ -4,7 +4,7 @@
 #include <exception>
 #include <new>
 #include <cmath>
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidArgumentException.h"

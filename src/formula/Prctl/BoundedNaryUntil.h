@@ -11,7 +11,7 @@
 #include "src/formula/abstract/BoundedNaryUntil.h"
 #include "src/formula/Prctl/AbstractPathFormula.h"
 #include "src/formula/Prctl/AbstractStateFormula.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <tuple>

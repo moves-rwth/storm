@@ -9,7 +9,7 @@
 #define STORM_FORMULA_ABSTRACT_BOUNDEDNARYUNTIL_H_
 
 #include "src/formula/abstract/AbstractFormula.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <tuple>

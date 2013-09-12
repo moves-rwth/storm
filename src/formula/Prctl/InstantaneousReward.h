@@ -12,7 +12,7 @@
 #include "AbstractStateFormula.h"
 #include "src/formula/abstract/InstantaneousReward.h"
 #include "src/formula/AbstractFormulaChecker.h"
-#include "boost/integer/integer_mask.hpp"
+#include <cstdint>
 #include <string>
 
 namespace storm {
