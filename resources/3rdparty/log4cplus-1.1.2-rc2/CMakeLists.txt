@@ -23,6 +23,8 @@ message (STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
 
 set(BUILD_SHARED_LIBS TRUE CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
 
+message(STATUS "Building shared libs: ${BUILD_SHARED_LIBS}")
+
 if (WIN32)
   set (UNICODE_DEFAULT ON)
 else (WIN32)
@@ -32,6 +34,7 @@ endif (WIN32)
 if (MSVC)
   set (LOG4CPLUS_WORKING_LOCALE_DEFAULT ON)
 else (MSVC)
+  set (CMAKE_CXX_FLAGS "-std=c++11")
   set (LOG4CPLUS_WORKING_LOCALE_DEFAULT OFF)
 endif (MSVC)
 
