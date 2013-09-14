@@ -48,7 +48,7 @@ namespace storm {
 				: longName(longOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), hasBeenSet(false) {
 				// Copy all Arguments
 				this->arguments.reserve(optionArguments.size());
-				for (auto i = 0; i < optionArguments.size(); ++i) {
+				for (uint_fast64_t i = 0; i < optionArguments.size(); ++i) {
 					// Clone gives a deep copy
 					this->arguments.push_back(std::shared_ptr<ArgumentBase>(optionArguments.at(i).get()->clone()));
 				}

@@ -92,7 +92,7 @@ bool storm::settings::Settings::checkArgumentSyntaxForOption(std::string const& 
 		return false;
 	}
 
-	for (auto i = 2; i < argvString.size(); ++i) {
+	for (size_t i = 2; i < argvString.size(); ++i) {
 		if (!isalpha(argvString.at(i))) {
 			return false;
 		}
@@ -118,7 +118,7 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 	bool optionActive = false;
 	std::string longOptionName;
 	std::vector<std::string> argCache;
-	for (auto i = 0; i <= stringArgv.size(); ++i) {
+	for (size_t i = 0; i <= stringArgv.size(); ++i) {
 		if (i == stringArgv.size()) {
 			if (optionActive) {
 				this->handleAssignment(longOptionName, argCache);
@@ -170,7 +170,7 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 				throw storm::exceptions::OptionParserException() << "Option \"" << it->second.get()->getLongName() << "\" is marked as required, but was not set!";
 			} else {
 				// Set defaults on optional values
-				for (auto i = 0; i < it->second.get()->getArgumentCount(); ++i) {
+				for (uint_fast64_t i = 0; i < it->second.get()->getArgumentCount(); ++i) {
 					if (it->second.get()->getArgument(i).getHasDefaultValue()) {
 						it->second.get()->getArgument(i).setFromDefaultValue();
 					}

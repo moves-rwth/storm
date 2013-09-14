@@ -85,6 +85,9 @@ endif()
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 
+# Path to the no-strict-aliasing target
+set(CONVERSIONHELPER_TARGET "${PROJECT_SOURCE_DIR}/src/utility/ConversionHelper.cpp")
+
 if(CMAKE_COMPILER_IS_GNUCC)
     message(STATUS "Using GCC")
     # Set standard flags for GCC
@@ -98,12 +101,17 @@ if(CMAKE_COMPILER_IS_GNUCC)
     if (USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
     endif(USE_POPCNT)
+	
+	# Set the no-strict-aliasing target for GCC
+	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
 elseif(MSVC)
     message(STATUS "Using MSVC")
 	# required for GMM to compile, ugly error directive in their code
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE)
 	# required as the PRCTL Parser bloats object files (COFF) beyond their maximum size (see http://msdn.microsoft.com/en-us/library/8578y171(v=vs.110).aspx)
 	add_definitions(/bigobj)
+	
+	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
     message(STATUS "Using CLANG")
 	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
@@ -124,6 +132,9 @@ else(CLANG)
     if (USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
     endif(USE_POPCNT)    
+	
+	# Set the no-strict-aliasing target for Clang
+	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
 endif()
 
 # Add the binary folder to the search path for include files so that we will find storm-config.h

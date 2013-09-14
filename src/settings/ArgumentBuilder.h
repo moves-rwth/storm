@@ -176,19 +176,19 @@ namespace storm {
 				defaultValue_String(other.defaultValue_String), defaultValue_Integer(other.defaultValue_Integer), defaultValue_UnsignedInteger(other.defaultValue_UnsignedInteger), defaultValue_Double(other.defaultValue_Double), defaultValue_Boolean(other.defaultValue_Boolean),
 				hasDefaultValue(other.hasDefaultValue) {
 				// Copy all userFunctions
-				for (auto i = 0; i < userValidationFunction_String.size(); ++i) {
+				for (uint_fast64_t i = 0; i < userValidationFunction_String.size(); ++i) {
 					this->userValidationFunction_String.push_back(storm::settings::Argument<std::string>::userValidationFunction_t(other.userValidationFunction_String.at(i)));
 				}
-				for (auto i = 0; i < userValidationFunction_Integer.size(); ++i) {
+				for (uint_fast64_t i = 0; i < userValidationFunction_Integer.size(); ++i) {
 					this->userValidationFunction_Integer.push_back(storm::settings::Argument<int_fast64_t>::userValidationFunction_t(other.userValidationFunction_Integer.at(i)));
 				}
-				for (auto i = 0; i < userValidationFunction_UnsignedInteger.size(); ++i) {
+				for (uint_fast64_t i = 0; i < userValidationFunction_UnsignedInteger.size(); ++i) {
 					this->userValidationFunction_UnsignedInteger.push_back(storm::settings::Argument<uint_fast64_t>::userValidationFunction_t(other.userValidationFunction_UnsignedInteger.at(i)));
 				}
-				for (auto i = 0; i < userValidationFunction_Double.size(); ++i) {
+				for (uint_fast64_t i = 0; i < userValidationFunction_Double.size(); ++i) {
 					this->userValidationFunction_Double.push_back(storm::settings::Argument<double>::userValidationFunction_t(other.userValidationFunction_Double.at(i)));
 				}
-				for (auto i = 0; i < userValidationFunction_Boolean.size(); ++i) {
+				for (uint_fast64_t i = 0; i < userValidationFunction_Boolean.size(); ++i) {
 					this->userValidationFunction_Boolean.push_back(storm::settings::Argument<bool>::userValidationFunction_t(other.userValidationFunction_Boolean.at(i)));
 				}
 			}

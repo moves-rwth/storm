@@ -57,7 +57,7 @@ namespace storm {
 
 			Argument(Argument const& other) : ArgumentBase(other.argumentName, other.argumentDescription, other.isOptional), argumentType(other.argumentType), defaultValue(other.defaultValue), hasDefaultValue(other.hasDefaultValue) {
 				this->userValidationFunction.reserve(other.userValidationFunction.size());
-				for (auto i = 0; i < other.userValidationFunction.size(); ++i) {
+				for (size_t i = 0; i < other.userValidationFunction.size(); ++i) {
 					this->userValidationFunction.push_back(userValidationFunction_t(other.userValidationFunction.at(i)));
 				}
 			}

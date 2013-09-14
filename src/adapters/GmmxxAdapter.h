@@ -8,8 +8,10 @@
 #ifndef STORM_ADAPTERS_GMMXXADAPTER_H_
 #define STORM_ADAPTERS_GMMXXADAPTER_H_
 
-#include "src/storage/SparseMatrix.h"
 #include <new>
+
+#include "src/storage/SparseMatrix.h"
+#include "src/utility/ConversionHelper.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -66,10 +68,10 @@ public:
 
         // Move Row Indications
         result->jc.~vectorType_ull_t(); // Call Destructor inplace
-		new (&result->jc) vectorType_ull_t(std::move(matrix.rowIndications));
+		new (&result->jc) vectorType_ull_t(std::move(storm::utility::ConversionHelper::toUnsignedLongLong(&matrix.rowIndications)));
         // Move Columns Indications
         result->ir.~vectorType_ull_t(); // Call Destructor inplace
-        new (&result->ir) vectorType_ull_t(std::move(matrix.columnIndications));
+        new (&result->ir) vectorType_ull_t(std::move(storm::utility::ConversionHelper::toUnsignedLongLong(&matrix.columnIndications)));
         // And do the same thing with the actual values.
         result->pr.~vectorType_T_t(); // Call Destructor inplace
         new (&result->pr) vectorType_T_t(std::move(matrix.valueStorage));
