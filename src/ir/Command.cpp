@@ -18,13 +18,13 @@ namespace storm {
             // Nothing to do here.
         }
         
-        Command::Command(std::string const& actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> const& updates)
-        : actionName(actionName), guardExpression(guardExpression), updates(updates) {
+        Command::Command(uint_fast64_t globalIndex, std::string const& actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> const& updates)
+        : actionName(actionName), guardExpression(guardExpression), updates(updates), globalIndex(globalIndex) {
             // Nothing to do here.
         }
         
-        Command::Command(Command const& oldCommand, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState)
-        : actionName(oldCommand.getActionName()), guardExpression(oldCommand.guardExpression->clone(renaming, variableState)) {
+        Command::Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState)
+        : actionName(oldCommand.getActionName()), guardExpression(oldCommand.guardExpression->clone(renaming, variableState)), globalIndex(newGlobalIndex) {
             auto renamingPair = renaming.find(this->actionName);
             if (renamingPair != renaming.end()) {
                 this->actionName = renamingPair->first;
@@ -49,6 +49,10 @@ namespace storm {
         
         storm::ir::Update const& Command::getUpdate(uint_fast64_t index) const {
             return this->updates[index];
+        }
+        
+        uint_fast64_t Command::getGlobalIndex() const {
+            return this->globalIndex;
         }
         
         std::string Command::toString() const {

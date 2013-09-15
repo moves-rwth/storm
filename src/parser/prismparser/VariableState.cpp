@@ -31,7 +31,7 @@ std::ostream& operator<<(std::ostream& out, VariableState::variableNamesStruct& 
 }
 
 
-VariableState::VariableState(bool firstRun)	: firstRun(firstRun), keywords(), nextLocalBooleanVariableIndex(0), nextLocalIntegerVariableIndex(0), nextGlobalBooleanVariableIndex(0), nextGlobalIntegerVariableIndex(0) {
+VariableState::VariableState(bool firstRun)	: firstRun(firstRun), keywords(), nextLocalBooleanVariableIndex(0), nextLocalIntegerVariableIndex(0), nextGlobalBooleanVariableIndex(0), nextGlobalIntegerVariableIndex(0), nextGlobalCommandIndex(0) {
     // Nothing to do here.
 }
 
@@ -49,6 +49,10 @@ uint_fast64_t VariableState::getNextGlobalBooleanVariableIndex() const {
     
 uint_fast64_t VariableState::getNextGlobalIntegerVariableIndex() const {
     return this->nextGlobalIntegerVariableIndex;
+}
+    
+uint_fast64_t VariableState::getNextGlobalCommandIndex() const {
+    return this->nextGlobalCommandIndex;
 }
     
 uint_fast64_t VariableState::addBooleanVariable(std::string const& name) {
@@ -161,6 +165,7 @@ void VariableState::prepareForSecondRun() {
 	doubleConstants_.clear();
 	allConstantNames_.clear();
 	this->firstRun = false;
+    nextGlobalCommandIndex = 0;
 }
 
 } // namespace prism

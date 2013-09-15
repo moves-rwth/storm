@@ -108,8 +108,9 @@ void createRewardModel(std::string name, std::vector<StateReward>& stateRewards,
 Update createUpdate(std::shared_ptr<BaseExpression> likelihood, std::map<std::string, Assignment>& bools, std::map<std::string, Assignment> ints) {
 	return Update(likelihood, bools, ints);
 }
-Command createCommand(std::string& label, std::shared_ptr<BaseExpression> guard, std::vector<Update>& updates) {
-	return Command(label, guard, updates);
+Command PrismGrammar::createCommand(std::string const& label, std::shared_ptr<BaseExpression> guard, std::vector<Update> const& updates) {
+    this->state->nextGlobalCommandIndex++;
+	return Command(this->state->getNextGlobalCommandIndex() - 1, label, guard, updates);
 }
 Program createProgram(
 		Program::ModelType modelType,
@@ -164,7 +165,7 @@ PrismGrammar::PrismGrammar() : PrismGrammar::base_type(start), state(new Variabl
 				qi::lit("[") > -(
 					(FreeIdentifierGrammar::instance(this->state)[phoenix::bind(this->state->commandNames_.add, qi::_1, qi::_1)] | commandName)[qi::_a = qi::_1]
 				) > qi::lit("]") > BooleanExpressionGrammar::instance(this->state) > qi::lit("->") > updateListDefinition > qi::lit(";")
-			)[qi::_val = phoenix::bind(&createCommand, qi::_a, qi::_2, qi::_3)];
+                )[qi::_val = phoenix::bind(&PrismGrammar::createCommand, this, qi::_a, qi::_2, qi::_3)];
 	commandDefinition.name("command");
 
 	// This block defines all entities that are needed for parsing variable definitions.

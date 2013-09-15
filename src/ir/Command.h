@@ -38,21 +38,23 @@ namespace storm {
             /*!
              * Creates a command with the given name, guard and updates.
              *
+             * @param globalIndex The global index of the command.
              * @param actionName The action name of the command.
              * @param guardExpression the expression that defines the guard of the command.
              * @param updates A list of updates that is associated with this command.
              */
-            Command(std::string const& actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> const& updates);
+            Command(uint_fast64_t globalIndex, std::string const& actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> const& updates);
             
             /*!
              * Creates a copy of the given command and performs the provided renaming.
              *
              * @param oldCommand The command to copy.
+             * @param newGlobalIndex The global index of the copy of the command.
              * @param renaming A mapping from names that are to be renamed to the names they are to be
              * replaced with.
              * @param variableState An object knowing about the variables in the system.
              */
-            Command(Command const& oldCommand, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
+            Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
             
             /*!
              * Retrieves the action name of this command.
@@ -83,6 +85,13 @@ namespace storm {
             storm::ir::Update const& getUpdate(uint_fast64_t index) const;
             
             /*!
+             * Retrieves the global index of the command, that is, a unique index over all modules.
+             *
+             * @return The global index of the command.
+             */
+            uint_fast64_t getGlobalIndex() const;
+            
+            /*!
              * Retrieves a string representation of this command.
              *
              * @return A string representation of this command.
@@ -98,6 +107,9 @@ namespace storm {
             
             // The list of updates of the command.
             std::vector<storm::ir::Update> updates;
+            
+            // The global index of the command.
+            uint_fast64_t globalIndex;
         };
         
     } // namespace ir

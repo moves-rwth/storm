@@ -41,8 +41,10 @@ public:
 			storm::models::AtomicPropositionsLabeling const& stateLabeling,
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>> const& optionalStateRewardVector, 
-			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
-			: AbstractNondeterministicModel<T>(probabilityMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
+            boost::optional<std::vector<std::list<uint_fast64_t>>> const& optionalChoiceLabeling)
+			: AbstractNondeterministicModel<T>(probabilityMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix,
+                                               optionalChoiceLabeling) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
@@ -62,9 +64,11 @@ public:
 			storm::models::AtomicPropositionsLabeling&& stateLabeling,
 			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
-			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
+			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
+            boost::optional<std::vector<std::list<uint_fast64_t>>> const& optionalChoiceLabeling)
 			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
-			: AbstractNondeterministicModel<T>(std::move(probabilityMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)) {
+			: AbstractNondeterministicModel<T>(std::move(probabilityMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
+                                               std::move(optionalChoiceLabeling)) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";

@@ -18,7 +18,7 @@ namespace models {
  *  @brief  Enumeration of all supported types of models.
  */
 enum ModelType {
-    Unknown, DTMC, CTMC, MDP, CTMDP
+    Unknown, DTMC, CTMC, MDP, UPDATE_LABELED_MDP, CTMDP
 };
 
 /*!
@@ -44,7 +44,8 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 			: transitionMatrix(other.transitionMatrix), 
 			stateLabeling(other.stateLabeling),
 			stateRewardVector(other.stateRewardVector),
-			transitionRewardMatrix(other.transitionRewardMatrix) {
+			transitionRewardMatrix(other.transitionRewardMatrix),
+            choiceLabeling(other.choiceLabeling) {
 			// Intentionally left empty.
 		}
 
@@ -56,7 +57,8 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 			: transitionMatrix(std::move(other.transitionMatrix)),
 			stateLabeling(std::move(other.stateLabeling)),		
 			stateRewardVector(std::move(other.stateRewardVector)),
-			transitionRewardMatrix(std::move(other.transitionRewardMatrix)) {
+			transitionRewardMatrix(std::move(other.transitionRewardMatrix)),
+            choiceLabeling(std::move(other.choiceLabeling)) {
 			// Intentionally left empty.
 		}
 
@@ -67,17 +69,22 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * propositions to each state.
 		 * @param stateRewardVector The reward values associated with the states.
 		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+         * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
+				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
+                boost::optional<std::vector<std::list<uint_fast64_t>>> const& optionalChoiceLabeling)
 				: transitionMatrix(transitionMatrix), stateLabeling(stateLabeling) {
 					
-			if (optionalStateRewardVector) { // Boost::Optional
+			if (optionalStateRewardVector) {
 				this->stateRewardVector.reset(optionalStateRewardVector.get());
 			}
-			if (optionalTransitionRewardMatrix) { // Boost::Optional
+			if (optionalTransitionRewardMatrix) {
 				this->transitionRewardMatrix.reset(optionalTransitionRewardMatrix.get());
 			}
+            if (optionalChoiceLabeling) {
+                this->choiceLabeling.reset(optionalChoiceLabeling.get());
+            }
 		}
 
 		/*! Constructs an abstract model from the given transition matrix and
@@ -89,9 +96,11 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
-				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix) :
+				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
+                boost::optional<std::vector<std::list<uint_fast64_t>>>&& optionalChoiceLabeling) :
 				transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)), 
-				stateRewardVector(std::move(optionalStateRewardVector)), transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)) { }
+				stateRewardVector(std::move(optionalStateRewardVector)), transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)),
+                choiceLabeling(std::move(optionalChoiceLabeling)) { }
 
 		/*!
 		 * Destructor.
@@ -507,6 +516,9 @@ private:
 
 		/*! The transition-based rewards of the model. */
 		boost::optional<storm::storage::SparseMatrix<T>> transitionRewardMatrix;
+    
+        /*! The labeling that is associated with the choices for each state. */
+        boost::optional<std::vector<std::list<uint_fast64_t>>> choiceLabeling;
 };
 
 } // namespace models

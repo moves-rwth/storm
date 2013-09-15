@@ -36,8 +36,9 @@ public:
 	 * propositions to each state.
 	 */
 	Ctmc(storm::storage::SparseMatrix<T> const& rateMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
-			: AbstractDeterministicModel<T>(rateMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
+                boost::optional<std::vector<std::list<uint_fast64_t>>> const& optionalChoiceLabeling)
+			: AbstractDeterministicModel<T>(rateMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 		// Intentionally left empty.
 	}
 
@@ -50,9 +51,11 @@ public:
 	 * propositions to each state.
 	 */
 	Ctmc(storm::storage::SparseMatrix<T>&& rateMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
-				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
+				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
+                boost::optional<std::vector<std::list<uint_fast64_t>>>&& optionalChoiceLabeling)
 			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
-			: AbstractDeterministicModel<T>(std::move(rateMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)) {
+			: AbstractDeterministicModel<T>(std::move(rateMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
+                                            std::move(optionalChoiceLabeling)) {
 		// Intentionally left empty.
 	}
 

@@ -72,7 +72,8 @@ namespace storm {
             // Now we are ready to clone all commands and rename them if requested.
             this->commands.reserve(oldModule.getNumberOfCommands());
             for (Command const& command : oldModule.commands) {
-                this->commands.emplace_back(command, renaming, variableState);
+                this->commands.emplace_back(command, variableState.getNextGlobalCommandIndex(), renaming, variableState);
+                variableState.nextGlobalCommandIndex++;
             }
             this->collectActions();
             

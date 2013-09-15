@@ -28,8 +28,9 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
 		 */
 		AbstractDeterministicModel(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
-			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
+                boost::optional<std::vector<std::list<uint_fast64_t>>> const& optionalChoiceLabeling)
+			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 		}
 
 		/*! Constructs an abstract determinstic model from the given parameters.
@@ -41,9 +42,11 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
 		 */
 		AbstractDeterministicModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
-				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
+				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
+                boost::optional<std::vector<std::list<uint_fast64_t>>>&& optionalChoiceLabeling)
 				// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
-			: AbstractModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)) {
+			: AbstractModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
+                               std::move(optionalChoiceLabeling)) {
 			// Intentionally left empty.
 		}
 

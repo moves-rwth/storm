@@ -26,14 +26,16 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		 * @param choiceIndices A mapping from states to rows in the transition matrix.
 		 * @param stateRewardVector The reward values associated with the states.
 		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+         * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 		 */
 		AbstractNondeterministicModel(
 			storm::storage::SparseMatrix<T> const& transitionMatrix, 
 			storm::models::AtomicPropositionsLabeling const& stateLabeling,
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>> const& optionalStateRewardVector, 
-			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
-			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
+            boost::optional<std::vector<std::list<uint_fast64_t>>> const& optionalChoiceLabeling)
+			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 				this->nondeterministicChoiceIndices = nondeterministicChoiceIndices;
 		}
 
@@ -51,10 +53,11 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			storm::models::AtomicPropositionsLabeling&& stateLabeling,
 			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
-			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
+			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
+            boost::optional<std::vector<std::list<uint_fast64_t>>>&& optionalChoiceLabeling)
 			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
-			: AbstractModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)), 
-			nondeterministicChoiceIndices(std::move(nondeterministicChoiceIndices)) {
+			: AbstractModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
+                               std::move(optionalChoiceLabeling)), nondeterministicChoiceIndices(std::move(nondeterministicChoiceIndices)) {
 			// Intentionally left empty.	
 		}
 

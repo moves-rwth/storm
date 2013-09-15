@@ -31,20 +31,25 @@ class Mdp : public storm::models::AbstractNondeterministicModel<T> {
 
 public:
 	/*!
-	 * Constructs a MDP object from the given transition probability matrix and
-	 * the given labeling of the states.
+	 * Constructs a MDP object from the given transition probability matrix and the given labeling of the states.
 	 * All values are copied.
-	 * @param probabilityMatrix The transition probability relation of the
-	 * MDP given by a matrix.
-	 * @param stateLabeling The labeling that assigns a set of atomic
-	 * propositions to each state.
+     *
+	 * @param probabilityMatrix The transition probability relation of the MDP given by a matrix.
+	 * @param stateLabeling The labeling that assigns a set of atomic propositions to each state.
+     * @param nondeterministicChoiceIndices The row indices in the sparse matrix at which the nondeterministic
+     * choices of a given state begin.
+     * @param optionalStateRewardVector A vector assigning rewards to states.
+     * @param optionalTransitionRewardVector A sparse matrix that represents an assignment of rewards to the transitions.
+     * @param optionalChoiceLabeling A vector that represents the labels associated with each nondeterministic choice of
+     * a state.
 	 */
 	Mdp(storm::storage::SparseMatrix<T> const& transitionMatrix, 
 			storm::models::AtomicPropositionsLabeling const& stateLabeling,
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>> const& optionalStateRewardVector, 
-			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix)
-			: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
+            boost::optional<std::vector<std::list<uint_fast64_t>>> const& optionalChoiceLabeling)
+			: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
@@ -64,9 +69,11 @@ public:
 			storm::models::AtomicPropositionsLabeling&& stateLabeling,
 			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
-			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix)
+			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
+            boost::optional<std::vector<std::list<uint_fast64_t>>>&& optionalChoiceLabeling)
 			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
-			: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix)) {
+			: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
+                                               std::move(optionalChoiceLabeling)) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";

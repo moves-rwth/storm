@@ -215,6 +215,16 @@ private:
     * @param booleanVariableToGlobalIndexMap A mapping of boolean variables to global indices.
     */
 	void createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& booleanVariables, std::map<std::string, uint_fast64_t>& booleanVariableToGlobalIndexMap);
+    
+    /*!
+     * Creates a command with the given label, guard and updates.
+     *
+     * @param label The label of the command.
+     * @param guard The guard of the command.
+     * @param updates The updates associated with the command.
+     */
+    Command createCommand(std::string const& label, std::shared_ptr<BaseExpression> guard, std::vector<Update> const& updates);
+
 };
 
 

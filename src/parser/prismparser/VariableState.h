@@ -99,6 +99,18 @@ public:
      */
     uint_fast64_t getNextGlobalIntegerVariableIndex() const;
     
+    /*!
+     * Internal counter for the index of the next command.
+     */
+    uint_fast64_t nextGlobalCommandIndex;
+    
+    /*!
+     * Retrieves the next free global index for a command.
+     *
+     * @return The next free global index for a command.
+     */
+    uint_fast64_t getNextGlobalCommandIndex() const;
+    
 	// Structures mapping variable and constant names to the corresponding expression nodes of
 	// the intermediate representation.
 	struct qi::symbols<char, std::shared_ptr<VariableExpression>> integerVariables_, booleanVariables_;

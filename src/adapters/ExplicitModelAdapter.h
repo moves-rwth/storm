@@ -5,8 +5,8 @@
  * Created on March 15, 2013, 11:42 AM
  */
 
-#ifndef EXPLICITMODELADAPTER_H
-#define	EXPLICITMODELADAPTER_H
+#ifndef STORM_ADAPTERS_EXPLICITMODELADAPTER_H
+#define	STORM_ADAPTERS_EXPLICITMODELADAPTER_H
 
 #include <memory>
 #include <unordered_map>
@@ -23,226 +23,272 @@
 #include "src/storage/SparseMatrix.h"
 
 namespace storm {
-namespace adapters {
-
-/*!
- * Model state, represented by the values of all variables.
- */
-typedef std::pair<std::vector<bool>, std::vector<int_fast64_t>> StateType;
-
-class StateHash {
-public:
-	std::size_t operator()(StateType* state) const {
-		size_t seed = 0;
-		for (auto it : state->first) {
-			boost::hash_combine<bool>(seed, it);
-		}
-		for (auto it : state->second) {
-			boost::hash_combine<int_fast64_t>(seed, it);
-		}
-		return seed;
-	}
-};
-
-class StateCompare {
-public:
-	bool operator()(StateType* state1, StateType* state2) const {
-		return *state1 == *state2;
-	}
-};
-
-class ExplicitModelAdapter {
-public:
-	/*!
-	 * Initialize adapter with given program.
-	 */
-	ExplicitModelAdapter(storm::ir::Program program);
-	~ExplicitModelAdapter();
-
-	/*!
-	 * Convert program to an AbstractModel.
-	 * The model will be of the type specified in the program.
-	 * The model will contain rewards that are specified by the given reward model.
-	 * @param rewardModelName Name of reward model to be added to the model.
-	 * @return Model resulting from the program.
-	 */
-	std::shared_ptr<storm::models::AbstractModel<double>> getModel(std::string const & rewardModelName = "");
-
-private:
-	// Copying/Moving is disabled for this class
-	ExplicitModelAdapter(ExplicitModelAdapter const& other) {}
-	ExplicitModelAdapter(ExplicitModelAdapter && other) {}
-
-	double precision;
-
-	/*!
-	 * Set some boolean variable in the given state object.
-	 * @param state State to be changed.
-	 * @param index Index of boolean variable.
-	 * @param value New value.
-	 */
-	static void setValue(StateType* const state, uint_fast64_t const index, bool const value);
-	/*!
-	 * Set some integer variable in the given state object.
-	 * @param state State to be changed.
-	 * @param index Index of integer variable.
-	 * @param value New value.
-	 */
-	static void setValue(StateType* const state, uint_fast64_t const index, int_fast64_t const value);
-	/*!
-	 * Transforms a state into a somewhat readable string.
-	 * @param state State.
-	 * @return String representation of the state.
-	 */
-	static std::string toString(StateType const * const state);
-	/*!
-	 * Apply an update to the given state and return the resulting new state object.
-	 * This methods creates a copy of the given state.
-	 * @params state Current state.
-	 * @params update Update to be applied.
-	 * @return Resulting state.
-	 */
-	StateType* applyUpdate(StateType const * const state, storm::ir::Update const& update) const;
-	/*!
-	 * Apply an update to a given state and return the resulting new state object.
-	 * Updates are done using the variable values from a given baseState.
-	 * @params state State to be updated.
-	 * @params baseState State used for update variables.
-	 * @params update Update to be applied.
-	 * @return Resulting state.
-	 */
-	StateType* applyUpdate(StateType const * const state, StateType const * const baseState, storm::ir::Update const& update) const;
-
-	/*!
-	 * Reads and combines variables from all program modules and stores them.
-	 * Also creates a map to obtain a variable index from a variable map efficiently.
-	 */
-	void initializeVariables();
-
-	/*!
-	 * Calculate state reward for every reachable state based on given reward models.
-	 * @param rewards List of state reward models.
-	 * @return Reward for every state.
-	 */
-	std::vector<double> getStateRewards(std::vector<storm::ir::StateReward> const & rewards);
-	
-	/*!
-	 * Determines the labels for every reachable state, based on a list of available labels.
-	 * @param labels Mapping from label names to boolean expressions.
-	 * @returns The resulting labeling.
-	 */
-	storm::models::AtomicPropositionsLabeling getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
-
-	/*!
-	 * Retrieves all active command labeled by some label, ordered by modules.
-	 *
-	 * This function will iterate over all modules and retrieve all commands that are labeled with the given action and active for the current state.
-	 * The result will be a list of lists of commands.
-	 *
-	 * For each module that has appropriately labeled commands, there will be a list.
-	 * If none of these commands is active, this list is empty.
-	 * Note the difference between *no list* and *empty list*: Modules that produce no list are not relevant for this action while an empty list means, that it is not possible to do anything with this label.
-	 * @param state Current state.
-	 * @param action Action label.
-	 * @return Active commands.
-	 */
-	std::unique_ptr<std::list<std::list<storm::ir::Command>>> getActiveCommandsByAction(StateType const * state, std::string& action);
-
-	/*!
-	 * Generates the initial state.
-     *
-     * @return The initial state.
-	 */
-    StateType* getInitialState();
-	
-	/*!
-	 * Retrieves the state id of the given state.
-	 * If the state has not been hit yet, it will be added to allStates and given a new id.
-	 * In this case, the pointer must not be deleted, as it is used within allStates.
-	 * If the state is already known, the pointer is deleted and the old state id is returned.
-	 * Hence, the given state pointer should not be used afterwards.
-	 * @param state Pointer to state, shall not be used afterwards.
-	 * @returns State id of given state.
-	 */
-	uint_fast64_t getOrAddStateId(StateType * state);
-
-	/*!
-	 * Expands all unlabeled transitions for a given state and adds them to the given list of results.
-	 * @params state State to be explored.
-	 * @params res Intermediate transition map.
-	 */
-	void addUnlabeledTransitions(const uint_fast64_t stateID, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>& res);
-	
-	/*!
-	 * Explores reachable state from given state by using labeled transitions.
-	 * Found transitions are stored in given map.
-	 * @param stateID State to be explored.
-	 * @param res Intermediate transition map.
-	 */
-	void addLabeledTransitions(const uint_fast64_t stateID, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>& res);
-
-	/*!
-	 * Create matrix from intermediate mapping, assuming it is a dtmc model.
-	 * @param intermediate Intermediate representation of transition mapping.
-	 * @return result matrix.
-	 */
-	storm::storage::SparseMatrix<double> buildDeterministicMatrix();
-
-	/*!
-	 * Create matrix from intermediate mapping, assuming it is a mdp model.
-	 * @param intermediate Intermediate representation of transition mapping.
-	 * @param choices Overall number of choices for all nodes.
-	 * @return result matrix.
-	 */
-	storm::storage::SparseMatrix<double> buildNondeterministicMatrix();
-
-	/*!
-	 * Generate internal transition map from given model.
-	 * Starts with all initial states and explores the reachable state space.
-	 */
-	void buildTransitionMap();
-	
-	/*!
-	 * Clear all members that are initialized during the computation.
-	 */
-	void clearInternalState();
-
-	// Program that should be converted.
-	storm::ir::Program program;
-	// List of all boolean variables.
-	std::vector<storm::ir::BooleanVariable> booleanVariables;
-	// List of all integer variables.
-	std::vector<storm::ir::IntegerVariable> integerVariables;
-	// Maps boolean variable names to their index.
-	std::map<std::string, uint_fast64_t> booleanVariableToIndexMap;
-	// Maps integer variable names to their index.
-	std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
-
-	//// Members that are filled during the conversion.
-	// Selected reward model.
-	std::unique_ptr<storm::ir::RewardModel> rewardModel;
-	// List of all reachable states.
-	std::vector<StateType*> allStates;
-	// Maps states to their index (within allStates).
-	std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
-	// Number of transitions.
-	uint_fast64_t numberOfTransitions;
-	// Number of choices. (Is number of rows in matrix of nondeterministic model.)
-	uint_fast64_t numberOfChoices;
-	// Number of choices for each state.
-	std::vector<uint_fast64_t> choiceIndices;
-	// Rewards for transitions.
-	boost::optional<storm::storage::SparseMatrix<double>> transitionRewards;
-
-	/*!
-	 * Maps a source node to a list of probability distributions over target nodes.
-	 * Each such distribution corresponds to an unlabeled command or a feasible combination of labeled commands.
-	 * Therefore, each distribution is represented by a label and a mapping from target nodes to their probabilities.
-	 */
-	std::map<uint_fast64_t, std::list<std::pair<std::string, std::map<uint_fast64_t, double>>>> transitionMap;
-};
-
-} // namespace adapters
+    namespace adapters {
+        
+        /*!
+         * A state of the model, i.e. a valuation of all variables.
+         */
+        typedef std::pair<std::vector<bool>, std::vector<int_fast64_t>> StateType;
+        
+        /*!
+         * A helper class that provides the functionality to compute a hash value for states of the model.
+         */
+        class StateHash {
+        public:
+            std::size_t operator()(StateType* state) const {
+                size_t seed = 0;
+                for (auto it : state->first) {
+                    boost::hash_combine<bool>(seed, it);
+                }
+                for (auto it : state->second) {
+                    boost::hash_combine<int_fast64_t>(seed, it);
+                }
+                return seed;
+            }
+        };
+        
+        /*!
+         * A helper class that provides the functionality to compare states of the model.
+         */
+        class StateCompare {
+        public:
+            bool operator()(StateType* state1, StateType* state2) const {
+                return *state1 == *state2;
+            }
+        };
+        
+        class ExplicitModelAdapter {
+        public:
+            /*!
+             * Initializes the adapter with the given program.
+             *
+             * @param program The program from which to build the explicit model.
+             */
+            ExplicitModelAdapter(storm::ir::Program program);
+            
+            /*!
+             * Destroys the adapter.
+             */
+            ~ExplicitModelAdapter();
+            
+            /*!
+             * Convert the program given at construction time to an abstract model. The type of the model is the one
+             * specified in the program. The given reward model name selects the rewards that the model will contain.
+             *
+             * @param rewardModelName The name of reward model to be added to the model. This must be either a reward
+             * model of the program or the empty string. In the latter case, the constructed model will contain no 
+             * rewards.
+             * @return The explicit model that was given by the probabilistic program.
+             */
+            std::shared_ptr<storm::models::AbstractModel<double>> getModel(std::string const& rewardModelName = "");
+            
+        private:
+            // Copying/Moving is disabled for this class
+            ExplicitModelAdapter(ExplicitModelAdapter const& other) { }
+            ExplicitModelAdapter(ExplicitModelAdapter && other) { }
+            
+            /*!
+             * The precision that is to be used for sanity checks internally.
+             */
+            double precision;
+            
+            /*!
+             * Sets some boolean variable in the given state object.
+             *
+             * @param state The state to modify.
+             * @param index The index of the boolean variable to modify.
+             * @param value The new value of the variable.
+             */
+            static void setValue(StateType* state, uint_fast64_t index, bool value);
+            
+            /*!
+             * Set some integer variable in the given state object.
+             *
+             * @param state The state to modify.
+             * @param index index of the integer variable to modify.
+             * @param value The new value of the variable.
+             */
+            static void setValue(StateType* state, uint_fast64_t index, int_fast64_t value);
+            
+            /*!
+             * Transforms a state into a somewhat readable string.
+             *
+             * @param state The state to transform into a string.
+             * @return A string representation of the state.
+             */
+            static std::string toString(StateType const* state);
+            
+            /*!
+             * Applies an update to the given state and returns the resulting new state object. This methods does not
+             * modify the given state but returns a new one.
+             *
+             * @params state The state to which to apply the update.
+             * @params update The update to apply.
+             * @return The resulting state.
+             */
+            StateType* applyUpdate(StateType const* state, storm::ir::Update const& update) const;
+            
+            /*!
+             * Applies an update to the given state and returns the resulting new state object. The update is evaluated
+             * over the variable values of the given base state. This methods does not modify the given state but
+             * returns a new one.
+             *
+             * @params state The state to which to apply the update.
+             * @params baseState The state used for evaluating the update.
+             * @params update The update to apply.
+             * @return The resulting state.
+             */
+            StateType* applyUpdate(StateType const* state, StateType const* baseState, storm::ir::Update const& update) const;
+            
+            /*!
+             * Prepares internal data structures associated with the variables in the program that are used during the
+             * translation.
+             */
+            void initializeVariables();
+            
+            /*!
+             * Retrieves the state rewards for every reachable state based on the given state rewards.
+             *
+             * @param rewards The rewards to use.
+             * @return The reward values for every (reachable) state.
+             */
+            std::vector<double> getStateRewards(std::vector<storm::ir::StateReward> const& rewards);
+            
+            /*!
+             * Computes the labels for every reachable state based on a list of available labels.
+             *
+             * @param labels A mapping from label names to boolean expressions to use for the labeling.
+             * @return The resulting labeling.
+             */
+            storm::models::AtomicPropositionsLabeling getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
+            
+            /*!
+             * Retrieves all commands that are labeled with the given label and enabled in the given state, grouped by
+             * modules.
+             *
+             * This function will iterate over all modules and retrieve all commands that are labeled with the given
+             * action and active (i.e. enabled) in the current state. The result is a list of lists of commands in which
+             * the inner lists contain all commands of exactly one module. If a module does not have *any* (including
+             * disabled) commands, there will not be a list of commands of that module in the result. If, however, the
+             * module has a command with a relevant label, but no enabled one, nothing is returned to indicate that there
+             * is no legal transition possible.
+             *
+             * @param state The current state.
+             * @param action The action label to select.
+             * @return A list of lists of active commands or nothing.
+             */
+            boost::optional<std::vector<std::list<storm::ir::Command>>> getActiveCommandsByAction(StateType const* state, std::string const& action);
+            
+            /*!
+             * Generates the initial state.
+             *
+             * @return The initial state.
+             */
+            StateType* getInitialState();
+            
+            /*!
+             * Retrieves the state id of the given state. If the state has not been encountered yet, it will be added to
+             * the lists of all states with a new id. If the state was already known, the object that is pointed to by
+             * the given state pointer is deleted and the old state id is returned. Note that the pointer should not be
+             * used after invoking this method.
+             *
+             * @param state A pointer to a state for which to retrieve the index. This must not be used after the call.
+             * @return The state id of the given state.
+             */
+            uint_fast64_t getOrAddStateIndex(StateType* state);
+            
+            /*!
+             * Expands all unlabeled (i.e. independent) transitions of the given state and adds them to the transition list.
+             *
+             * @param stateIndex The state to expand.
+             * @params transitionList The current list of transitions for this state.
+             */
+            void addUnlabeledTransitions(uint_fast64_t stateIndex, std::list<std::pair<std::pair<std::string, std::list<uint_fast64_t>>, std::map<uint_fast64_t, double>>>& transitionList);
+            
+            /*!
+             * Expands all labeled (i.e. synchronizing) transitions of the given state and adds them to the transition list.
+             *
+             * @param stateIndex The index of the state to expand.
+             * @param transitionList The current list of transitions for this state.
+             */
+            void addLabeledTransitions(uint_fast64_t stateIndex, std::list<std::pair<std::pair<std::string, std::list<uint_fast64_t>>, std::map<uint_fast64_t, double>>>& transitionList);
+            
+            /*!
+             * Builds the transition matrix of a deterministic model from the current list of transitions.
+             *
+             * @return The transition matrix.
+             */
+            storm::storage::SparseMatrix<double> buildDeterministicMatrix();
+            
+            /*!
+             * Builds the transition matrix of a nondeterministic model from the current list of transitions.
+             *
+             * @return result The transition matrix.
+             */
+            storm::storage::SparseMatrix<double> buildNondeterministicMatrix();
+            
+            /*!
+             * Generate the (internal) list of all transitions of the model.
+             */
+            void buildTransitionMap();
+            
+            /*!
+             * Clear all members that are initialized during the computation.
+             */
+            void clearInternalState();
+            
+            // Program that is to be converted.
+            storm::ir::Program program;
+            
+            // List of all boolean variables.
+            std::vector<storm::ir::BooleanVariable> booleanVariables;
+            
+            // List of all integer variables.
+            std::vector<storm::ir::IntegerVariable> integerVariables;
+            
+            // A mapping of boolean variable names to their indices.
+            std::map<std::string, uint_fast64_t> booleanVariableToIndexMap;
+            
+            // A mapping of integer variable names to their indices.
+            std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
+            
+            //// Members that are filled during the conversion.
+            // The selected reward model.
+            std::unique_ptr<storm::ir::RewardModel> rewardModel;
+            
+            // A list of all reachable states.
+            std::vector<StateType*> allStates;
+            
+            // A mapping of states to their indices (within the list of all states).
+            std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
+            
+            // The number of transitions.
+            uint_fast64_t numberOfTransitions;
+            
+            // The number of choices in a nondeterminstic model. (This corresponds to the number of rows of the matrix
+            // used to represent the nondeterministic model.)
+            uint_fast64_t numberOfChoices;
+            
+            // The number of choices for each state of a nondeterministic model.
+            std::vector<uint_fast64_t> choiceIndices;
+            
+            // The result of the translation of transition rewards to a sparse matrix (if any).
+            boost::optional<storm::storage::SparseMatrix<double>> transitionRewards;
+            
+            // A labeling for the choices of each state.
+            std::vector<std::list<uint_fast64_t>> choiceLabeling;
+            
+            /*!
+             * Maps a source state to a list of probability distributions over target states. Each distribution
+             * corresponds to an unlabeled command or a feasible combination of labeled commands. Therefore, each
+             * distribution is represented by a structure that contains the label of the participating commands, a list
+             * of labels associated with that particular command combination and a mapping from target states to their
+             * probabilities.
+             */
+            std::map<uint_fast64_t, std::list<std::pair<std::pair<std::string, std::list<uint_fast64_t>>, std::map<uint_fast64_t, double>>>> transitionMap;
+        };
+        
+    } // namespace adapters
 } // namespace storm
 
-#endif	/* EXPLICITMODELADAPTER_H */
+#endif	/* STORM_ADAPTERS_EXPLICITMODELADAPTER_H */
