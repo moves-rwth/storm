@@ -26,12 +26,15 @@
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
+#include "src/counterexamples/MinimalLabelSetGenerator.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
-#include "src/settings/Settings.h"
-#include "src/utility/StormOptions.h" // Registers all standard options
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
+
+#include "src/settings/Settings.h"
+// Registers all standard options
+#include "src/utility/StormOptions.h" 
 
 #include "src/parser/PrctlFileParser.h"
 #include "src/parser/LtlFileParser.h"
