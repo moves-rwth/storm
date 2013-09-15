@@ -108,7 +108,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.1522173670950556501), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 0.1522194965), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -175,7 +175,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1.0448979591835938496), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 1.044879046), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete rewardFormula;
 	delete result;
