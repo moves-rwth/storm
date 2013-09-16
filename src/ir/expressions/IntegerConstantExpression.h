@@ -17,7 +17,7 @@ namespace storm {
             /*!
              * A class representing a constant expression of type integer.
              */
-            class IntegerConstantExpression : public ConstantExpression {
+            class IntegerConstantExpression : public ConstantExpression<int_fast64_t> {
             public:
                 /*!
                  * Creates an integer constant expression with the given constant name.
@@ -40,34 +40,6 @@ namespace storm {
                 virtual int_fast64_t getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
                 
                 virtual void accept(ExpressionVisitor* visitor) override;
-                
-                virtual std::string toString() const override;
-                
-                /*!
-                 * Retrieves whether the constant is defined or not.
-                 *
-                 * @return True if the constant is defined.
-                 */
-                bool isDefined() const;
-                
-                /*!
-                 * Retrieves the value of the constant if it is defined and false otherwise.
-                 */
-                int_fast64_t getValue() const;
-                
-                /*!
-                 * Defines the constant using the given value.
-                 *
-                 * @param value The value to use for defining the constant.
-                 */
-                void define(int_fast64_t value);
-                
-            private:
-                // This member stores the value of the constant if it is defined.
-                int_fast64_t value;
-                
-                // A flag indicating whether the member is defined or not.
-                bool defined;
             };
             
         } // namespace expressions

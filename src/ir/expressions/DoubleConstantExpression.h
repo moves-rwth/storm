@@ -17,7 +17,7 @@ namespace storm {
             /*!
              * A class representing a constant expression of type double.
              */
-            class DoubleConstantExpression : public ConstantExpression {
+            class DoubleConstantExpression : public ConstantExpression<double> {
             public:
                 /*!
                  * Creates a double constant expression with the given constant name.
@@ -38,34 +38,6 @@ namespace storm {
                 virtual double getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
                 
                 virtual void accept(ExpressionVisitor* visitor) override;
-                
-                virtual std::string toString() const override;
-                
-                /*!
-                 * Retrieves whether the constant is defined or not.
-                 *
-                 * @return True if the constant is defined.
-                 */
-                bool isDefined() const;
-                
-                /*!
-                 * Retrieves the value of the constant if it is defined and false otherwise.
-                 */
-                double getValue() const;
-                
-                /*!
-                 * Defines the constant using the given value.
-                 *
-                 * @param value The value to use for defining the constant.
-                 */
-                void define(double value);
-                
-            private:
-                // This member stores the value of the constant if it is defined.
-                bool value;
-                
-                // A flag indicating whether the member is defined or not.
-                bool defined;
             };
             
         } // namespace expressions

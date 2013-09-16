@@ -5,20 +5,17 @@
  *      Author: Christian Dehnert
  */
 
-#include <sstream>
-
 #include "DoubleConstantExpression.h"
 
 namespace storm {
     namespace ir {
         namespace expressions {
             
-            DoubleConstantExpression::DoubleConstantExpression(std::string const& constantName) : ConstantExpression(double_, constantName), value(0), defined(false) {
+            DoubleConstantExpression::DoubleConstantExpression(std::string const& constantName) : ConstantExpression<double>(double_, constantName) {
                 // Nothing to do here.
             }
             
-            DoubleConstantExpression::DoubleConstantExpression(DoubleConstantExpression const& doubleConstantExpression)
-            : ConstantExpression(doubleConstantExpression), value(doubleConstantExpression.value), defined(doubleConstantExpression.defined) {
+            DoubleConstantExpression::DoubleConstantExpression(DoubleConstantExpression const& doubleConstantExpression) : ConstantExpression(doubleConstantExpression) {
                 // Nothing to do here.
             }
             
@@ -27,38 +24,16 @@ namespace storm {
             }
             
             double DoubleConstantExpression::getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-                if (!defined) {
+                if (!this->isDefined()) {
                     throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
                     << "Double constant '" << this->getConstantName() << "' is undefined.";
                 } else {
-                    return value;
+                    return this->getValue();
                 }
             }
             
             void DoubleConstantExpression::accept(ExpressionVisitor* visitor) {
                 visitor->visit(this);
-            }
-            
-            std::string DoubleConstantExpression::toString() const {
-                std::stringstream result;
-                result << this->getConstantName();
-                if (defined) {
-                    result << "[" << value << "]";
-                }
-                return result.str();
-            }
-            
-            bool DoubleConstantExpression::isDefined() const {
-                return defined;
-            }
-            
-            double DoubleConstantExpression::getValue() const {
-                return value;
-            }
-            
-            void DoubleConstantExpression::define(double value) {
-                defined = true;
-                this->value = value;
             }
             
         } // namespace expressions
