@@ -203,5 +203,17 @@ namespace storm {
             }
         }
         
+        std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> const& Program::getBooleanUndefinedConstantExpressionsMap() const {
+            return this->booleanUndefinedConstantExpressions;
+        }
+        
+        std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> const& Program::getIntegerUndefinedConstantExpressionsMap() const {
+            return this->integerUndefinedConstantExpressions;
+        }
+
+        std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> const& Program::getDoubleUndefinedConstantExpressionsMap() const {
+            return this->doubleUndefinedConstantExpressions;
+        }
+        
     } // namespace ir
 } // namepsace storm

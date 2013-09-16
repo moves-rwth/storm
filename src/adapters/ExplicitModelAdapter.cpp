@@ -39,7 +39,7 @@ namespace storm {
             this->clearInternalState();
         }
         
-        std::shared_ptr<storm::models::AbstractModel<double>> ExplicitModelAdapter::getModel(std::string const& constantDefinitionString, std::string const& rewardModelName) {
+        void ExplicitModelAdapter::defineUndefinedConstants(std::string const& constantDefinitionString) {
             // Parse the string that defines the undefined constants of the model and make sure that it contains exactly
             // one value for each undefined constant of the model.
             std::vector<std::string> definitions;
@@ -52,7 +52,7 @@ namespace storm {
                 if (positionOfAssignmentOperator == std::string::npos) {
                     throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: syntax error.";
                 }
-
+                
                 // Now extract the variable name and the value from the string.
                 std::string constantName = definition.substr(0, positionOfAssignmentOperator);
                 boost::trim(constantName);
@@ -86,12 +86,28 @@ namespace storm {
                     } catch (std::out_of_range const& e) {
                         throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << " (value too big).";
                     }
-
+                    
                 } else {
                     throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: unknown undefined constant " << constantName << ".";
                 }
-                
             }
+        }
+        
+        void ExplicitModelAdapter::undefineUndefinedConstants() {
+            for (auto nameExpressionPair : program.getBooleanUndefinedConstantExpressionsMap()) {
+                nameExpressionPair.second->undefine();
+            }
+            for (auto nameExpressionPair : program.getIntegerUndefinedConstantExpressionsMap()) {
+                nameExpressionPair.second->undefine();
+            }
+            for (auto nameExpressionPair : program.getDoubleUndefinedConstantExpressionsMap()) {
+                nameExpressionPair.second->undefine();
+            }
+        }
+        
+        std::shared_ptr<storm::models::AbstractModel<double>> ExplicitModelAdapter::getModel(std::string const& constantDefinitionString, std::string const& rewardModelName) {
+            // Start by defining the remaining constants in the model.
+            this->defineUndefinedConstants(constantDefinitionString);
             
             // Initialize reward model.
             this->rewardModel = nullptr;
@@ -111,31 +127,32 @@ namespace storm {
                 stateRewards.reset(this->getStateRewards(this->rewardModel->getStateRewards()));
             }
             
+            std::shared_ptr<storm::models::AbstractModel<double>> result;
             // Build and return actual model.
             switch (this->program.getModelType())
             {
                 case storm::ir::Program::DTMC:
                 {
                     storm::storage::SparseMatrix<double> matrix = this->buildDeterministicMatrix();
-                    return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Dtmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards, this->choiceLabeling));
+                    result = std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Dtmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards, this->choiceLabeling));
                     break;
                 }
                 case storm::ir::Program::CTMC:
                 {
                     storm::storage::SparseMatrix<double> matrix = this->buildDeterministicMatrix();
-                    return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards, this->choiceLabeling));
+                    result = std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmc<double>(matrix, stateLabeling, stateRewards, this->transitionRewards, this->choiceLabeling));
                     break;
                 }
                 case storm::ir::Program::MDP:
                 {
                     storm::storage::SparseMatrix<double> matrix = this->buildNondeterministicMatrix();
-                    return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Mdp<double>(matrix, stateLabeling, this->choiceIndices, stateRewards, this->transitionRewards, this->choiceLabeling));
+                    result = std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Mdp<double>(matrix, stateLabeling, this->choiceIndices, stateRewards, this->transitionRewards, this->choiceLabeling));
                     break;
                 }
                 case storm::ir::Program::CTMDP:
                 {
                     storm::storage::SparseMatrix<double> matrix = this->buildNondeterministicMatrix();
-                    return std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmdp<double>(matrix, stateLabeling, this->choiceIndices, stateRewards, this->transitionRewards, this->choiceLabeling));
+                    result = std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmdp<double>(matrix, stateLabeling, this->choiceIndices, stateRewards, this->transitionRewards, this->choiceLabeling));
                     break;
                 }
                 default:
@@ -143,6 +160,11 @@ namespace storm {
                     throw storm::exceptions::WrongFormatException() << "Error while creating model from probabilistic program: cannot handle this model type.";
                     break;
             }
+            
+            // Undefine the constants so that the program can be used again somewhere else.
+            undefineUndefinedConstants();
+            
+            return result;
         }
         
         void ExplicitModelAdapter::setValue(StateType* state, uint_fast64_t index, bool value) {
@@ -418,6 +440,8 @@ namespace storm {
                         std::unordered_map<StateType*, double, StateHash, StateCompare>* newTargetStates = new std::unordered_map<StateType*, double, StateHash, StateCompare>();
                         (*currentTargetStates)[new StateType(*currentState)] = 1.0;
 
+                        // FIXME: This does not check whether a global variable is written multiple times. While the
+                        // behaviour for this is undefined anyway, a warning should be issued in that case.
                         double probabilitySum = 0;
                         for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                             storm::ir::Command const& command = *iteratorList[i];

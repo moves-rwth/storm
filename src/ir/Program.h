@@ -212,6 +212,27 @@ namespace storm {
              */
             std::shared_ptr<storm::ir::expressions::DoubleConstantExpression> getUndefinedDoubleConstantExpression(std::string const& constantName) const;
             
+            /*!
+             * Retrieves the mapping of undefined boolean constant names to their expression objects.
+             *
+             * @return The mapping of undefined boolean constant names to their expression objects.
+             */
+            std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> const& getBooleanUndefinedConstantExpressionsMap() const;
+
+            /*!
+             * Retrieves the mapping of undefined integer constant names to their expression objects.
+             *
+             * @return The mapping of undefined integer constant names to their expression objects.
+             */
+            std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> const& getIntegerUndefinedConstantExpressionsMap() const;
+
+            /*!
+             * Retrieves the mapping of undefined double constant names to their expression objects.
+             *
+             * @return The mapping of undefined double constant names to their expression objects.
+             */
+            std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> const& getDoubleUndefinedConstantExpressionsMap() const;
+            
         private:
             // The type of the model.
             ModelType modelType;

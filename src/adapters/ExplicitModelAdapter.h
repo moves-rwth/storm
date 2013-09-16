@@ -239,6 +239,18 @@ namespace storm {
              */
             void clearInternalState();
             
+            /*!
+             * Defines the undefined constants of the program using the given string.
+             *
+             * @param constantDefinitionString A comma-separated list of constant definitions.
+             */
+            void defineUndefinedConstants(std::string const& constantDefinitionString);
+            
+            /*!
+             * Sets all values of program constants to undefined again.
+             */
+            void undefineUndefinedConstants();
+            
             // Program that is to be converted.
             storm::ir::Program program;
             

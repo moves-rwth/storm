@@ -108,6 +108,14 @@ namespace storm {
                     this->valueStructPointer->value = value;
                 }
                 
+                /*!
+                 * Undefines the value that was previously set for this constant (if any).
+                 */
+                void undefine() {
+                    this->valueStructPointer->defined = false;
+                    this->valueStructPointer->value = T();
+                }
+                
             private:
                 // The name of the constant.
                 std::string constantName;
