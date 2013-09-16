@@ -23,8 +23,18 @@ namespace storm {
             // Nothing to do here.
         }
         
-        Program::Program(ModelType modelType, std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions, std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions, std::vector<storm::ir::Module> modules, std::map<std::string, storm::ir::RewardModel> rewards, std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels)
-        : modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), modules(modules), rewards(rewards), labels(labels), actionsToModuleIndexMap(), variableToModuleIndexMap() {
+        Program::Program(ModelType modelType,
+                         std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> const& booleanUndefinedConstantExpressions,
+                         std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> const& integerUndefinedConstantExpressions,
+                         std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> const& doubleUndefinedConstantExpressions,
+                         std::vector<BooleanVariable> const& globalBooleanVariables,
+                         std::vector<IntegerVariable> const& globalIntegerVariables,
+                         std::map<std::string, uint_fast64_t> const& globalBooleanVariableToIndexMap,
+                         std::map<std::string, uint_fast64_t> const& globalIntegerVariableToIndexMap,
+                         std::vector<storm::ir::Module> const& modules,
+                         std::map<std::string, storm::ir::RewardModel> const& rewards,
+                         std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> const& labels)
+        : modelType(modelType), booleanUndefinedConstantExpressions(booleanUndefinedConstantExpressions), integerUndefinedConstantExpressions(integerUndefinedConstantExpressions), doubleUndefinedConstantExpressions(doubleUndefinedConstantExpressions), globalBooleanVariables(globalBooleanVariables), globalIntegerVariables(globalIntegerVariables), globalBooleanVariableToIndexMap(globalBooleanVariableToIndexMap), globalIntegerVariableToIndexMap(globalIntegerVariableToIndexMap), modules(modules), rewards(rewards), labels(labels), actionsToModuleIndexMap(), variableToModuleIndexMap() {
             // Now build the mapping from action names to module indices so that the lookup can later be performed quickly.
             for (unsigned int moduleIndex = 0; moduleIndex < this->modules.size(); moduleIndex++) {
                 Module const& module = this->modules[moduleIndex];
@@ -88,6 +98,14 @@ namespace storm {
             return result.str();
         }
         
+        storm::ir::BooleanVariable const& Program::getGlobalBooleanVariable(uint_fast64_t index) const {
+            return this->globalBooleanVariables[index];
+        }
+        
+        storm::ir::IntegerVariable const& Program::getGlobalIntegerVariable(uint_fast64_t index) const {
+            return this->globalIntegerVariables[index];
+        }
+        
         uint_fast64_t Program::getNumberOfModules() const {
             return this->modules.size();
         }
@@ -117,6 +135,14 @@ namespace storm {
             throw storm::exceptions::OutOfRangeException() << "Variable '" << variableName << "' does not exist.";
         }
         
+        uint_fast64_t Program::getNumberOfGlobalBooleanVariables() const {
+            return this->globalBooleanVariables.size();
+        }
+        
+        uint_fast64_t Program::getNumberOfGlobalIntegerVariables() const {
+            return this->globalIntegerVariables.size();
+        }
+        
         storm::ir::RewardModel const& Program::getRewardModel(std::string const& name) const {
             auto nameRewardModelPair = this->rewards.find(name);
             if (nameRewardModelPair == this->rewards.end()) {
@@ -128,6 +154,45 @@ namespace storm {
         
         std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> const& Program::getLabels() const {
             return this->labels;
+        }
+        
+        bool Program::hasUndefinedBooleanConstant(std::string const& constantName) const {
+            return this->booleanUndefinedConstantExpressions.find(constantName) != this->booleanUndefinedConstantExpressions.end();
+        }
+        
+        std::shared_ptr<storm::ir::expressions::BooleanConstantExpression> Program::getUndefinedBooleanConstantExpression(std::string const& constantName) const {
+            auto constantExpressionPair = this->booleanUndefinedConstantExpressions.find(constantName);
+            if (constantExpressionPair != this->booleanUndefinedConstantExpressions.end()) {
+                return constantExpressionPair->second;
+            } else {
+                throw storm::exceptions::InvalidArgumentException() << "Unknown undefined boolean constant " << constantName << ".";
+            }
+        }
+        
+        bool Program::hasUndefinedIntegerConstant(std::string const& constantName) const {
+            return this->integerUndefinedConstantExpressions.find(constantName) != this->integerUndefinedConstantExpressions.end();
+        }
+        
+        std::shared_ptr<storm::ir::expressions::IntegerConstantExpression> Program::getUndefinedIntegerConstantExpression(std::string const& constantName) const {
+            auto constantExpressionPair = this->integerUndefinedConstantExpressions.find(constantName);
+            if (constantExpressionPair != this->integerUndefinedConstantExpressions.end()) {
+                return constantExpressionPair->second;
+            } else {
+                throw storm::exceptions::InvalidArgumentException() << "Unknown undefined integer constant " << constantName << ".";
+            }
+        }
+        
+        bool Program::hasUndefinedDoubleConstant(std::string const& constantName) const {
+            return this->doubleUndefinedConstantExpressions.find(constantName) != this->doubleUndefinedConstantExpressions.end();
+        }
+        
+        std::shared_ptr<storm::ir::expressions::DoubleConstantExpression> Program::getUndefinedDoubleConstantExpression(std::string const& constantName) const {
+            auto constantExpressionPair = this->doubleUndefinedConstantExpressions.find(constantName);
+            if (constantExpressionPair != this->doubleUndefinedConstantExpressions.end()) {
+                return constantExpressionPair->second;
+            } else {
+                throw storm::exceptions::InvalidArgumentException() << "Unknown undefined double constant " << constantName << ".";
+            }
         }
         
     } // namespace ir

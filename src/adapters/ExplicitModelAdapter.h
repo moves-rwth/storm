@@ -75,12 +75,14 @@ namespace storm {
              * Convert the program given at construction time to an abstract model. The type of the model is the one
              * specified in the program. The given reward model name selects the rewards that the model will contain.
              *
+             * @param constantDefinitionString A string that contains a comma-separated definition of all undefined
+             * constants in the model.
              * @param rewardModelName The name of reward model to be added to the model. This must be either a reward
              * model of the program or the empty string. In the latter case, the constructed model will contain no 
              * rewards.
              * @return The explicit model that was given by the probabilistic program.
              */
-            std::shared_ptr<storm::models::AbstractModel<double>> getModel(std::string const& rewardModelName = "");
+            std::shared_ptr<storm::models::AbstractModel<double>> getModel(std::string const& constantDefinitionString = "", std::string const& rewardModelName = "");
             
         private:
             // Copying/Moving is disabled for this class

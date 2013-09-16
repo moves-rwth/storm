@@ -33,9 +33,17 @@ endif (WIN32)
 
 if (MSVC)
   set (LOG4CPLUS_WORKING_LOCALE_DEFAULT ON)
-else (MSVC)
+elseif(CMAKE_COMPILER_IS_GNUCC)
   set (CMAKE_CXX_FLAGS "-std=c++11")
   set (LOG4CPLUS_WORKING_LOCALE_DEFAULT OFF)
+else(CLANG)
+	set (CLANG ON)
+    if(UNIX AND NOT APPLE)
+      set(CLANG_STDLIB libstdc++)
+    else()
+      set(CLANG_STDLIB libc++)
+    endif()
+    set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=${CLANG_STDLIB}")
 endif (MSVC)
 
 option(LOG4CPLUS_WORKING_LOCALE "Define for compilers/standard libraries that support more than just the C locale."

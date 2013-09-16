@@ -12,10 +12,9 @@
 #include <gurobi_c++.h>
 #endif
 
-#include "src/models/Mdp.h" 
+#include "src/models/Mdp.h"
 #include "src/exceptions/NotImplementedException.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/storage/BitVector.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace counterexamples {
@@ -27,10 +26,50 @@ namespace storm {
         template <class T>
         class MinimalLabelSetGenerator {
 
+        public:
+            
             static std::unordered_set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, T lowerProbabilityBound, bool checkThresholdFeasible = false) {
 #ifdef HAVE_GUROBI
-                // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
-                // (2) Identify relevant labels and states.
+                // (0) Check whether the MDP is indeed labeled.
+                if (!labeledMdp.hasChoiceLabels()) {
+                    throw storm::exceptions::InvalidArgumentException() << "Minimal label set generation is impossible for unlabeled model.";
+                }
+                
+                // (1) TODO: check whether its possible to exceed the threshold if checkThresholdFeasible is set.
+                
+                // (2) Identify relevant and problematic states.
+                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+                storm::storage::BitVector relevantStates = storm::utility::graph::performProbGreater0A(labeledMdp, backwardTransitions, phiStates, psiStates);
+                relevantStates.complement();
+                storm::storage::BitVector problematicStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                problematicStates &= relevantStates;
+                
+                // (3) Determine set of relevant labels.
+                std::unordered_set<uint_fast64_t> relevantLabels;
+                storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
+                std::vector<std::list<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                // Now traverse all choices of all relevant states and check whether there is a relevant target state.
+                // If so, the associated labels become relevant.
+                for (auto state : relevantStates) {
+                    for (uint_fast64_t row = nondeterministicChoiceIndices[state]; row < nondeterministicChoiceIndices[state - 1]; ++row) {
+                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(row); successorIt != transitionMatrix.constColumnIteratorEnd(row); ++successorIt) {
+                            // If there is a relevant successor, we need to add the labels of the current choice.
+                            if (relevantStates.get(*successorIt)) {
+                                for (auto const& label : choiceLabeling[row]) {
+                                    relevantLabels.insert(label);
+                                }
+                            }
+                        }
+                    }
+                }
+                std::cout << "relevant labels: " << std::endl;
+                for (auto const& label : relevantLabels) {
+                    std::cout << "label: " << label << std::endl;
+                }
+                
+                return relevantLabels;
+                
                 // (3) Encode resulting system as MILP problem.
                 //  (3.1) Initialize MILP solver.
                 //  (3.2) Create variables.

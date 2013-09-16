@@ -6,7 +6,7 @@
  */
 
 #include <sstream>
-
+#include <iostream>
 #include "IntegerConstantExpression.h"
 
 namespace storm {
@@ -14,11 +14,13 @@ namespace storm {
         namespace expressions {
             
             IntegerConstantExpression::IntegerConstantExpression(std::string const& constantName) : ConstantExpression(int_, constantName), value(0), defined(false) {
+                std::cout << "Creating constant integer expression with constant name " << constantName << "[" << this << "]" << std::endl;
                 // Nothing to do here.
             }
             
             IntegerConstantExpression::IntegerConstantExpression(IntegerConstantExpression const& integerConstantExpression)
             : ConstantExpression(integerConstantExpression), value(integerConstantExpression.value), defined(integerConstantExpression.defined) {
+                std::cout << "Creating constant integer expression as copy of " << integerConstantExpression.toString() << "[" << this << "]" << std::endl;
                 // Nothing to do here.
             }
             

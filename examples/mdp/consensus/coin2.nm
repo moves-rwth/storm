@@ -29,18 +29,18 @@ module process1
 	// flip coin
 	[] (pc1=0)  -> 0.5 : (coin1'=0) & (pc1'=1) + 0.5 : (coin1'=1) & (pc1'=1);
 	// write tails -1  (reset coin to add regularity)
-	[] (pc1=1) & (coin1=0) & (counter>0) -> (counter'=counter-1) & (pc1'=2) & (coin1'=0);
+	[] (pc1=1) & (coin1=0) & (counter>0) -> 1 : (counter'=counter-1) & (pc1'=2) & (coin1'=0);
 	// write heads +1 (reset coin to add regularity)
-	[] (pc1=1) & (coin1=1) & (counter<range) -> (counter'=counter+1) & (pc1'=2) & (coin1'=0);
+	[] (pc1=1) & (coin1=1) & (counter<range) -> 1 : (counter'=counter+1) & (pc1'=2) & (coin1'=0);
 	// check
 	// decide tails
-	[] (pc1=2) & (counter<=left) -> (pc1'=3) & (coin1'=0);
+	[] (pc1=2) & (counter<=left) -> 1 : (pc1'=3) & (coin1'=0);
 	// decide heads
-	[] (pc1=2) & (counter>=right) -> (pc1'=3) & (coin1'=1);
+	[] (pc1=2) & (counter>=right) -> 1 : (pc1'=3) & (coin1'=1);
 	// flip again
-	[] (pc1=2) & (counter>left) & (counter<right) -> (pc1'=0);
+	[] (pc1=2) & (counter>left) & (counter<right) -> 1 : (pc1'=0);
 	// loop (all loop together when done)
-	[done] (pc1=3) -> (pc1'=3);
+	[done] (pc1=3) -> 1 : (pc1'=3);
 
 endmodule
 

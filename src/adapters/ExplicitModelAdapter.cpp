@@ -15,6 +15,8 @@
 #include "src/models/Mdp.h"
 #include "src/models/Ctmdp.h"
 
+#include <boost/algorithm/string.hpp>
+
 #include <sstream>
 
 #include "log4cplus/logger.h"
@@ -37,7 +39,60 @@ namespace storm {
             this->clearInternalState();
         }
         
-        std::shared_ptr<storm::models::AbstractModel<double>> ExplicitModelAdapter::getModel(std::string const& rewardModelName) {
+        std::shared_ptr<storm::models::AbstractModel<double>> ExplicitModelAdapter::getModel(std::string const& constantDefinitionString, std::string const& rewardModelName) {
+            // Parse the string that defines the undefined constants of the model and make sure that it contains exactly
+            // one value for each undefined constant of the model.
+            std::vector<std::string> definitions;
+            boost::split(definitions, constantDefinitionString, boost::is_any_of(","));
+            for (auto& definition : definitions) {
+                boost::trim(definition);
+                
+                // Check whether the token could be a legal constant definition.
+                uint_fast64_t positionOfAssignmentOperator = definition.find('=');
+                if (positionOfAssignmentOperator == std::string::npos) {
+                    throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: syntax error.";
+                }
+
+                // Now extract the variable name and the value from the string.
+                std::string constantName = definition.substr(0, positionOfAssignmentOperator);
+                boost::trim(constantName);
+                std::string value = definition.substr(positionOfAssignmentOperator + 1);
+                boost::trim(value);
+                
+                // Check whether the constant is a legal undefined constant of the program and if so, of what type it is.
+                if (program.hasUndefinedBooleanConstant(constantName)) {
+                    if (value == "true") {
+                        program.getUndefinedBooleanConstantExpression(constantName)->define(true);
+                    } else if (value == "false") {
+                        program.getUndefinedBooleanConstantExpression(constantName)->define(false);
+                    } else {
+                        throw storm::exceptions::InvalidArgumentException() << "Illegal value for boolean constant: " << value << ".";
+                    }
+                } else if (program.hasUndefinedIntegerConstant(constantName)) {
+                    try {
+                        int_fast64_t integerValue = std::stoi(value);
+                        program.getUndefinedIntegerConstantExpression(constantName)->define(integerValue);
+                    } catch (std::invalid_argument const& e) {
+                        throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << ".";
+                    } catch (std::out_of_range const& e) {
+                        throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << " (value too big).";
+                    }
+                } else if (program.hasUndefinedDoubleConstant(constantName)) {
+                    try {
+                        double doubleValue = std::stod(value);
+                        program.getUndefinedDoubleConstantExpression(constantName)->define(doubleValue);
+                    } catch (std::invalid_argument const& e) {
+                        throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << ".";
+                    } catch (std::out_of_range const& e) {
+                        throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << " (value too big).";
+                    }
+
+                } else {
+                    throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: unknown undefined constant " << constantName << ".";
+                }
+                
+            }
+            
             // Initialize reward model.
             this->rewardModel = nullptr;
             if (rewardModelName != "") {
@@ -149,15 +204,27 @@ namespace storm {
             uint_fast64_t numberOfBooleanVariables = 0;
             
             // Count number of variables.
+            numberOfBooleanVariables += program.getNumberOfGlobalBooleanVariables();
+            numberOfIntegerVariables += program.getNumberOfGlobalIntegerVariables();
             for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
-                numberOfIntegerVariables += program.getModule(i).getNumberOfIntegerVariables();
                 numberOfBooleanVariables += program.getModule(i).getNumberOfBooleanVariables();
+                numberOfIntegerVariables += program.getModule(i).getNumberOfIntegerVariables();
             }
             
             this->booleanVariables.resize(numberOfBooleanVariables);
             this->integerVariables.resize(numberOfIntegerVariables);
             
             // Create variables.
+            for (uint_fast64_t i = 0; i < program.getNumberOfGlobalBooleanVariables(); ++i) {
+                storm::ir::BooleanVariable var = program.getGlobalBooleanVariable(i);
+                this->booleanVariables[var.getGlobalIndex()] = var;
+                this->booleanVariableToIndexMap[var.getName()] = var.getGlobalIndex();
+            }
+            for (uint_fast64_t i = 0; i < program.getNumberOfGlobalIntegerVariables(); ++i) {
+                storm::ir::IntegerVariable var = program.getGlobalIntegerVariable(i);
+                this->integerVariables[var.getGlobalIndex()] = var;
+                this->integerVariableToIndexMap[var.getName()] = var.getGlobalIndex();
+            }
             for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
                 storm::ir::Module const& module = program.getModule(i);
                 

@@ -31,6 +31,13 @@ namespace prism {
 using namespace storm::ir;
 using namespace storm::ir::expressions;
 
+struct GlobalVariableInformation {
+    std::vector<BooleanVariable> booleanVariables;
+    std::vector<IntegerVariable> integerVariables;
+    std::map<std::string, uint_fast64_t> booleanVariableToIndexMap;
+    std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
+};
+    
 /*!
  * The Boost spirit grammar for the PRISM language. Returns the intermediate representation of
  * the input that complies with the PRISM syntax.
@@ -42,6 +49,7 @@ class PrismGrammar : public qi::grammar<
 		std::map<std::string, std::shared_ptr<BooleanConstantExpression>>,
 		std::map<std::string, std::shared_ptr<IntegerConstantExpression>>,
 		std::map<std::string, std::shared_ptr<DoubleConstantExpression>>,
+        GlobalVariableInformation,
 		std::map<std::string, RewardModel>,
 		std::map<std::string, std::shared_ptr<BaseExpression>>
 	>,
@@ -68,7 +76,7 @@ private:
 
 	std::shared_ptr<storm::parser::prism::VariableState> state;
 	struct qi::symbols<char, Module> moduleMap_;
-
+        
 	// The starting point of the grammar.
 	qi::rule<
 			Iterator,
@@ -77,6 +85,7 @@ private:
 				std::map<std::string, std::shared_ptr<BooleanConstantExpression>>,
 				std::map<std::string, std::shared_ptr<IntegerConstantExpression>>,
 				std::map<std::string, std::shared_ptr<DoubleConstantExpression>>,
+                GlobalVariableInformation,
 				std::map<std::string, RewardModel>,
 				std::map<std::string, std::shared_ptr<BaseExpression>>
 			>,
@@ -84,6 +93,9 @@ private:
 	qi::rule<Iterator, Program::ModelType(), Skipper> modelTypeDefinition;
 	qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BooleanConstantExpression>>&, std::map<std::string, std::shared_ptr<IntegerConstantExpression>>&, std::map<std::string, std::shared_ptr<DoubleConstantExpression>>&), Skipper> constantDefinitionList;
 	qi::rule<Iterator, std::vector<Module>(), Skipper> moduleDefinitionList;
+        
+    // Rules for global variable definitions
+    qi::rule<Iterator, qi::unused_type(GlobalVariableInformation&), Skipper> globalVariableDefinitionList;
 
 	// Rules for module definition.
 	qi::rule<Iterator, Module(), qi::locals<std::vector<BooleanVariable>, std::vector<IntegerVariable>, std::map<std::string, uint_fast64_t>, std::map<std::string, uint_fast64_t>>, Skipper> moduleDefinition;
@@ -91,8 +103,8 @@ private:
 
 	// Rules for variable definitions.
 	qi::rule<Iterator, qi::unused_type(std::vector<BooleanVariable>&, std::vector<IntegerVariable>&, std::map<std::string, uint_fast64_t>&, std::map<std::string, uint_fast64_t>&), Skipper> variableDefinition;
-	qi::rule<Iterator, qi::unused_type(std::vector<BooleanVariable>&, std::map<std::string, uint_fast64_t>&), qi::locals<uint_fast64_t, std::shared_ptr<BaseExpression>>, Skipper> booleanVariableDefinition;
-	qi::rule<Iterator, qi::unused_type(std::vector<IntegerVariable>&, std::map<std::string, uint_fast64_t>&), qi::locals<uint_fast64_t, std::shared_ptr<BaseExpression>>, Skipper> integerVariableDefinition;
+	qi::rule<Iterator, qi::unused_type(std::vector<BooleanVariable>&, std::map<std::string, uint_fast64_t>&, bool), qi::locals<uint_fast64_t, std::shared_ptr<BaseExpression>>, Skipper> booleanVariableDefinition;
+	qi::rule<Iterator, qi::unused_type(std::vector<IntegerVariable>&, std::map<std::string, uint_fast64_t>&, bool), qi::locals<uint_fast64_t, std::shared_ptr<BaseExpression>>, Skipper> integerVariableDefinition;
 
 	// Rules for command definitions.
 	qi::rule<Iterator, Command(), qi::locals<std::string>, Skipper> commandDefinition;
@@ -180,7 +192,7 @@ private:
      * @param oldName The name of the module that is to be copied (modulo renaming).
      * @param renaming A mapping from identifiers to their new names.
      */
-	Module renameModule(std::string const& name, std::string const& oldName, std::map<std::string, std::string>& renaming);
+	Module renameModule(std::string const& name, std::string const& oldName, std::map<std::string, std::string> const& renaming);
         
     /*!
      * Creates a new module with the given name, boolean and integer variables and commands.
@@ -203,8 +215,9 @@ private:
      * @param upper The expression that defines the upper bound of the domain.
      * @param init The expression that defines the initial value of the variable.
      * @param integerVariableToGlobalIndexMap A mapping of integer variables to global indices.
+     * @param isGlobalVariable A flag indicating whether the variable is supposed to be global or not.
      */
-	void createIntegerVariable(std::string const& name, std::shared_ptr<BaseExpression> const& lower, std::shared_ptr<BaseExpression> const& upper, std::shared_ptr<BaseExpression> const& init, std::vector<IntegerVariable>& integerVariables, std::map<std::string, uint_fast64_t>& integerVariableToGlobalIndexMap);
+	void createIntegerVariable(std::string const& name, std::shared_ptr<BaseExpression> const& lower, std::shared_ptr<BaseExpression> const& upper, std::shared_ptr<BaseExpression> const& init, std::vector<IntegerVariable>& integerVariables, std::map<std::string, uint_fast64_t>& integerVariableToGlobalIndexMap, bool isGlobalVariable);
         
     /*!
     * Creates an boolean variable with the given name and initial value and adds it to the
@@ -213,8 +226,9 @@ private:
     * @param name The name of the boolean variable.
     * @param init The expression that defines the initial value of the variable.
     * @param booleanVariableToGlobalIndexMap A mapping of boolean variables to global indices.
+    * @param isGlobalVariable A flag indicating whether the variable is supposed to be global or not.
     */
-	void createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& booleanVariables, std::map<std::string, uint_fast64_t>& booleanVariableToGlobalIndexMap);
+	void createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& booleanVariables, std::map<std::string, uint_fast64_t>& booleanVariableToGlobalIndexMap, bool isGlobalVariable);
     
     /*!
      * Creates a command with the given label, guard and updates.

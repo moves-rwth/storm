@@ -332,8 +332,16 @@ int main(const int argc, const char* argv[]) {
 		} else if (s->isSet("symbolic")) {
 			std::string const arg = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
 			storm::adapters::ExplicitModelAdapter adapter(storm::parser::PrismParserFromFile(arg));
-			std::shared_ptr<storm::models::AbstractModel<double>> model = adapter.getModel();
+			std::shared_ptr<storm::models::AbstractModel<double>> model = adapter.getModel("K=2");
 			model->printModelInformationToStream(std::cout);
+            
+            if (model->getType() == storm::models::MDP) {
+                std::shared_ptr<storm::models::Mdp<double>> labeledMdp = model->as<storm::models::Mdp<double>>();
+                storm::storage::BitVector const& finishedStates = labeledMdp->getLabeledStates("finished");
+                storm::storage::BitVector const& allCoinsEqualStates = labeledMdp->getLabeledStates("agree");
+                storm::storage::BitVector targetStates = finishedStates & allCoinsEqualStates;
+                storm::counterexamples::MinimalLabelSetGenerator<double>::getMinimalLabelSet(*labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), targetStates, 0.4, true);
+            }
 		}
 
         // Perform clean-up and terminate.

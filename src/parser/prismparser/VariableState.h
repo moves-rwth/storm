@@ -119,7 +119,8 @@ public:
 	// A structure representing the identity function over identifier names.
 	struct variableNamesStruct : qi::symbols<char, std::string> { }
             integerVariableNames_, booleanVariableNames_, commandNames_, labelNames_, allConstantNames_, moduleNames_,
-			localBooleanVariables_, localIntegerVariables_, assignedLocalBooleanVariables_, assignedLocalIntegerVariables_;
+			localBooleanVariables_, localIntegerVariables_, assignedBooleanVariables_, assignedIntegerVariables_,
+            globalBooleanVariables_, globalIntegerVariables_;
 	
 	/*!
 	 * Adds a new boolean variable with the given name.

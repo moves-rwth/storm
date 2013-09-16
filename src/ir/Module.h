@@ -51,8 +51,8 @@ namespace storm {
              * @param moduleName The name of the module.
              * @param booleanVariables The boolean variables defined by the module.
              * @param integerVariables The integer variables defined by the module.
-             * @param booleanVariableToLocalIndexMap A mapping of boolean variables to global (i.e. module-local) indices.
-             * @param integerVariableToLocalIndexMap A mapping of integer variables to global (i.e. module-local) indices.
+             * @param booleanVariableToLocalIndexMap A mapping of boolean variables to local (i.e. module-local) indices.
+             * @param integerVariableToLocalIndexMap A mapping of integer variables to local (i.e. module-local) indices.
              * @param commands The commands of the module.
              */
             Module(std::string const& moduleName, std::vector<storm::ir::BooleanVariable> const& booleanVariables,

@@ -49,17 +49,27 @@ namespace storm {
              * expression nodes.
              * @param doubleUndefinedConstantExpressions A map of undefined double constants to their
              * expression nodes.
+             * @param globalBooleanVariables A list of global boolean variables.
+             * @param globalIntegerVariables A list of global integer variables.
+             * @param globalBooleanVariableToIndexMap A mapping from global boolean variable names to the index in the
+             * list of global boolean variables.
+             * @param globalIntegerVariableToIndexMap A mapping from global integer variable names to the index in the
+             * list of global integer variables.
              * @param modules The modules of the program.
              * @param rewards The reward models of the program.
              * @param labels The labels defined for this model.
              */
             Program(ModelType modelType,
-                    std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions,
-                    std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions,
-                    std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions,
-                    std::vector<storm::ir::Module> modules,
-                    std::map<std::string, storm::ir::RewardModel> rewards,
-                    std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
+                    std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> const& booleanUndefinedConstantExpressions,
+                    std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> const& integerUndefinedConstantExpressions,
+                    std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> const& doubleUndefinedConstantExpressions,
+                    std::vector<BooleanVariable> const& globalBooleanVariables,
+                    std::vector<IntegerVariable> const& globalIntegerVariables,
+                    std::map<std::string, uint_fast64_t> const& globalBooleanVariableToIndexMap,
+                    std::map<std::string, uint_fast64_t> const& globalIntegerVariableToIndexMap,
+                    std::vector<storm::ir::Module> const& modules,
+                    std::map<std::string, storm::ir::RewardModel> const& rewards,
+                    std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> const& labels);
             
             /*!
              * Retrieves the number of modules in the program.
@@ -91,6 +101,20 @@ namespace storm {
             std::string toString() const;
             
             /*!
+             * Retrieves a reference to the global boolean variable with the given index.
+             *
+             * @return A reference to the global boolean variable with the given index.
+             */
+            storm::ir::BooleanVariable const& getGlobalBooleanVariable(uint_fast64_t index) const;
+            
+            /*!
+             * Retrieves a reference to the global integer variable with the given index.
+             *
+             * @return A reference to the global integer variable with the given index.
+             */
+            storm::ir::IntegerVariable const& getGlobalIntegerVariable(uint_fast64_t index) const;
+            
+            /*!
              * Retrieves the set of actions present in this module.
              *
              * @return The set of actions present in this module.
@@ -115,6 +139,20 @@ namespace storm {
             uint_fast64_t getModuleIndexForVariable(std::string const& variableName) const;
             
             /*!
+             * Retrieves the number of global boolean variables of the program.
+             *
+             * @return The number of global boolean variables of the program.
+             */
+            uint_fast64_t getNumberOfGlobalBooleanVariables() const;
+            
+            /*!
+             * Retrieves the number of global integer variables of the program.
+             *
+             * @return The number of global integer variables of the program.
+             */
+            uint_fast64_t getNumberOfGlobalIntegerVariables() const;
+            
+            /*!
              * Retrieves the reward model with the given name.
              *
              * @param name The name of the reward model to return.
@@ -129,6 +167,51 @@ namespace storm {
              */
             std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> const& getLabels() const;
             
+            /*!
+             * Retrieves whether the given constant name is an undefined boolean constant of the program.
+             *
+             * @return True if the given constant name is an undefined boolean constant of the program.
+             */
+            bool hasUndefinedBooleanConstant(std::string const& constantName) const;
+            
+            /*!
+             * Retrieves the expression associated with the given undefined boolean constant.
+             *
+             * @param constantName The name of the undefined boolean constant for which to retrieve the expression.
+             * @return The expression associated with the given undefined boolean constant.
+             */
+            std::shared_ptr<storm::ir::expressions::BooleanConstantExpression> getUndefinedBooleanConstantExpression(std::string const& constantName) const;
+            
+            /*!
+             * Retrieves whether the given constant name is an undefined integer constant of the program.
+             *
+             * @return True if the given constant name is an undefined integer constant of the program.
+             */
+            bool hasUndefinedIntegerConstant(std::string const& constantName) const;
+            
+            /*!
+             * Retrieves the expression associated with the given undefined integer constant.
+             *
+             * @param constantName The name of the undefined integer constant for which to retrieve the expression.
+             * @return The expression associated with the given undefined integer constant.
+             */
+            std::shared_ptr<storm::ir::expressions::IntegerConstantExpression> getUndefinedIntegerConstantExpression(std::string const& constantName) const;
+
+            /*!
+             * Retrieves whether the given constant name is an undefined double constant of the program.
+             *
+             * @return True if the given constant name is an undefined double constant of the program.
+             */
+            bool hasUndefinedDoubleConstant(std::string const& constantName) const;
+            
+            /*!
+             * Retrieves the expression associated with the given undefined double constant.
+             *
+             * @param constantName The name of the undefined double constant for which to retrieve the expression.
+             * @return The expression associated with the given undefined double constant.
+             */
+            std::shared_ptr<storm::ir::expressions::DoubleConstantExpression> getUndefinedDoubleConstantExpression(std::string const& constantName) const;
+            
         private:
             // The type of the model.
             ModelType modelType;
@@ -141,6 +224,18 @@ namespace storm {
             
             // A map of undefined double constants to their expressions nodes.
             std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions;
+            
+            // A list of global boolean variables.
+            std::vector<BooleanVariable> globalBooleanVariables;
+            
+            // A list of global integer variables.
+            std::vector<IntegerVariable> globalIntegerVariables;
+            
+            // A mapping from global boolean variable names to their indices.
+            std::map<std::string, uint_fast64_t> globalBooleanVariableToIndexMap;
+            
+            // A mapping from global integer variable names to their indices.
+            std::map<std::string, uint_fast64_t> globalIntegerVariableToIndexMap;
             
             // The modules associated with the program.
             std::vector<storm::ir::Module> modules;

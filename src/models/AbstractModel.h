@@ -18,7 +18,7 @@ namespace models {
  *  @brief  Enumeration of all supported types of models.
  */
 enum ModelType {
-    Unknown, DTMC, CTMC, MDP, UPDATE_LABELED_MDP, CTMDP
+    Unknown, DTMC, CTMC, MDP, CTMDP
 };
 
 /*!
@@ -345,6 +345,14 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		std::vector<T> const& getStateRewardVector() const {
 			return stateRewardVector.get();
 		}
+    
+        /*!
+         * Returns the labels for the choices of the model, if there are any.
+         * @return The labels for the choices of the model.
+         */
+        std::vector<std::list<uint_fast64_t>> const& getChoiceLabeling() const {
+            return choiceLabeling.get();
+        }
 
 		/*!
 		 * Returns the set of labels with which the given state is labeled.
@@ -379,6 +387,14 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		bool hasTransitionRewards() const {
 			return transitionRewardMatrix;
 		}
+    
+        /*!
+         * Retrieves whether this model has a labeling for the choices.
+         * @return True if this model has a labeling.
+         */
+        bool hasChoiceLabels() const {
+            return choiceLabeling;
+        }
 
 		/*!
 		 * Retrieves the size of the internal representation of the model in memory.
