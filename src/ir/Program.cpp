@@ -83,6 +83,14 @@ namespace storm {
             }
             result << std::endl;
             
+            for (auto const& element : globalBooleanVariables) {
+                result << "global " << element.toString() << std::endl;
+            }
+            for (auto const& element : globalIntegerVariables) {
+                result << "global " << element.toString() << std::endl;
+            }
+            result << std::endl;
+            
             for (auto const& module : modules) {
                 result << module.toString() << std::endl;
             }

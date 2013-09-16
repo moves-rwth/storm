@@ -137,6 +137,21 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			return result;
 		}
 
+        /*!
+         * Prints information about the model to the specified stream.
+         * @param out The stream the information is to be printed to.
+         */
+        virtual void printModelInformationToStream(std::ostream& out) const override {
+            out << "-------------------------------------------------------------- " << std::endl;
+            out << "Model type: \t\t" << this->getType() << std::endl;
+            out << "States: \t\t" << this->getNumberOfStates() << std::endl;
+            out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
+            out << "Choices: \t\t" << this->getNumberOfChoices() << std::endl;
+            this->getStateLabeling().printAtomicPropositionsInformationToStream(out);
+            out << "Size in memory: \t" << (this->getSizeInMemory())/1024 << " kbytes" << std::endl;
+            out << "-------------------------------------------------------------- " << std::endl;
+        }
+    
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
             AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
 

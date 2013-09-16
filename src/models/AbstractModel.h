@@ -416,7 +416,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * Prints information about the model to the specified stream.
          * @param out The stream the information is to be printed to.
          */
-        void printModelInformationToStream(std::ostream& out) const {
+        virtual void printModelInformationToStream(std::ostream& out) const {
             out << "-------------------------------------------------------------- " << std::endl;
             out << "Model type: \t\t" << this->getType() << std::endl;
             out << "States: \t\t" << this->getNumberOfStates() << std::endl;
