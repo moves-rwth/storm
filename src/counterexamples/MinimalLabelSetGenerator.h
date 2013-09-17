@@ -39,9 +39,10 @@ namespace storm {
                 
                 // (2) Identify relevant and problematic states.
                 storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
-                storm::storage::BitVector relevantStates = storm::utility::graph::performProbGreater0A(labeledMdp, backwardTransitions, phiStates, psiStates);
-                relevantStates.complement();
+                storm::storage::BitVector relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                relevantStates &= ~psiStates;
                 storm::storage::BitVector problematicStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                problematicStates.complement();
                 problematicStates &= relevantStates;
                 
                 // (3) Determine set of relevant labels.
@@ -52,7 +53,7 @@ namespace storm {
                 // Now traverse all choices of all relevant states and check whether there is a relevant target state.
                 // If so, the associated labels become relevant.
                 for (auto state : relevantStates) {
-                    for (uint_fast64_t row = nondeterministicChoiceIndices[state]; row < nondeterministicChoiceIndices[state - 1]; ++row) {
+                    for (uint_fast64_t row = nondeterministicChoiceIndices[state]; row < nondeterministicChoiceIndices[state + 1]; ++row) {
                         for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(row); successorIt != transitionMatrix.constColumnIteratorEnd(row); ++successorIt) {
                             // If there is a relevant successor, we need to add the labels of the current choice.
                             if (relevantStates.get(*successorIt)) {
@@ -63,21 +64,33 @@ namespace storm {
                         }
                     }
                 }
-                std::cout << "relevant labels: " << std::endl;
-                for (auto const& label : relevantLabels) {
-                    std::cout << "label: " << label << std::endl;
-                }
-                
-                return relevantLabels;
+                LOG4CPLUS_INFO(logger, "Found " << relevantLabels.size() << " relevant labels.");
                 
                 // (3) Encode resulting system as MILP problem.
-                //  (3.1) Initialize MILP solver.
+                //  (3.1) Initialize MILP solver and model.
+                // GRBEnv env;
+                // GRBModel model = GRBModel(env);
+                
                 //  (3.2) Create variables.
+                
+                // Create variables for involved labels.
+                std::vector<std::pair<uint_fast64_t, GRBVar>> labelVariables;
+                std::stringstream variableNameBuffer;
+                for (auto const& label : relevantLabels) {
+                    variableNameBuffer.clear();
+                    variableNameBuffer << "label" << label;
+                    // labelVariables.emplace_back(label, model.addVar(0.0, 1.0, 0.0, GRB_BINARY, variableNameBuffer.str()));
+                }
+                
                 //  (3.3) Construct objective function.
                 //  (3.4) Construct constraint system.
                 // (4) Read off result from MILP variables.
                 // (5) Potentially verify whether the resulting system exceeds the given threshold.
                 // (6) Return result.
+                
+                // FIXME: Return fake result for the time being.
+                return relevantLabels;
+                
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable if StoRM is compiled without support for Gurobi.";
 #endif
