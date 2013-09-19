@@ -332,7 +332,7 @@ int main(const int argc, const char* argv[]) {
 		} else if (s->isSet("symbolic")) {
 			std::string const arg = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
 			storm::adapters::ExplicitModelAdapter adapter(storm::parser::PrismParserFromFile(arg));
-			std::shared_ptr<storm::models::AbstractModel<double>> model = adapter.getModel("K=2");
+			std::shared_ptr<storm::models::AbstractModel<double>> model = adapter.getModel("K=1");
 			model->printModelInformationToStream(std::cout);
             
             if (model->getType() == storm::models::MDP) {
