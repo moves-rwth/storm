@@ -121,7 +121,7 @@ qst(void *base, char *max)
 	 * max with loser of first and take larger.  Things are set up to
 	 * prefer the middle, then the first in case of ties.
 	 */
-	lo = max - base;		/* number of elements as chars */
+	lo = max - ((char*)base);		/* number of elements as chars */
 	do	{
 		mid = i = ((char*)base) + qsz * ((lo / qsz) >> 1);
 		if (lo >= mthresh) {
@@ -189,7 +189,7 @@ qst(void *base, char *max)
 		 * of at least size THRESH.
 		 */
 		i = (j = mid) + qsz;
-		if ((lo = j - base) <= (hi = max - i)) {
+		if ((lo = j - ((char*)base)) <= (hi = max - i)) {
 			if (lo >= thresh)
 				qst(base, j);
 			base = i;
