@@ -351,7 +351,7 @@ DddmpWriteNodeIndexCnfBis (
 
 *****************************************************************************/
 
-static int
+int
 DddmpWriteNodeIndexCnf (
   DdNode *f    /* IN: BDD node */,
   int *cnfIds  /* IN: possible source for the index to be written */,
@@ -386,7 +386,7 @@ DddmpWriteNodeIndexCnf (
 
 ******************************************************************************/
 
-static int
+int
 DddmpReadNodeIndexCnf (
   DdNode *f     /* IN: BDD node */
   )
@@ -447,7 +447,7 @@ DddmpClearVisitedCnfRecur (
 
 ******************************************************************************/
 
-static int
+int
 DddmpVisitedCnf (
   DdNode *f      /* IN: BDD node to be tested */
   )
@@ -469,7 +469,7 @@ DddmpVisitedCnf (
 
 ******************************************************************************/
 
-static void
+void
 DddmpSetVisitedCnf (
   DdNode *f     /* IN: BDD node to be marked (as visited) */
   )
