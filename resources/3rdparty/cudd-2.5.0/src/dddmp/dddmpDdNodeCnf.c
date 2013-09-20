@@ -54,11 +54,11 @@
 /* Static function prototypes                                                */
 /*---------------------------------------------------------------------------*/
 
-static int DddmpWriteNodeIndexCnf(DdNode *f, int *cnfIds, int id);
-static int DddmpReadNodeIndexCnf(DdNode *f);
+int DddmpWriteNodeIndexCnf(DdNode *f, int *cnfIds, int id);
+int DddmpReadNodeIndexCnf(DdNode *f);
 static int DddmpClearVisitedCnfRecur(DdNode *f);
-static int DddmpVisitedCnf(DdNode *f);
-static void DddmpSetVisitedCnf(DdNode *f);
+int DddmpVisitedCnf(DdNode *f);
+void DddmpSetVisitedCnf(DdNode *f);
 static void DddmpClearVisitedCnf(DdNode *f);
 static int NumberNodeRecurCnf(DdNode *f, int *cnfIds, int id);
 static void DddmpDdNodesCheckIncomingAndScanPath(DdNode *f, int pathLengthCurrent, int edgeInTh, int pathLengthTh);
