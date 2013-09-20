@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 typedef  int (*QSFP)(const void *, const void *);
 void cudd__qsort (void* base, int n, int size, QSFP compar);
 
@@ -24,7 +26,7 @@ static  int		qsz;			/* size of each record */
 static  int		thresh;			/* THRESHold in chars */
 static  int		mthresh;		/* MTHRESHold in chars */
 
-static	void		qst (void *base, char *max);
+void		qst (void *base, char *max);
 
 #ifdef __cplusplus
 }

@@ -104,8 +104,8 @@ cudd__qsort(
  * (And there are only three places where this is done).
  */
 
-static void
-qst(char *base, char *max)
+void
+qst(void *base, char *max)
 {
 	register char c, *i, *j, *jj;
 	register int ii;
@@ -123,9 +123,9 @@ qst(char *base, char *max)
 	 */
 	lo = max - base;		/* number of elements as chars */
 	do	{
-		mid = i = base + qsz * ((lo / qsz) >> 1);
+		mid = i = ((char*)base) + qsz * ((lo / qsz) >> 1);
 		if (lo >= mthresh) {
-			j = ((*qcmp)((jj = base), i) > 0 ? jj : i);
+			j = ((*qcmp)((jj = ((char*)base)), i) > 0 ? jj : i);
 			if ((*qcmp)(j, (tmp = max - qsz)) > 0) {
 				/* switch to first loser */
 				j = (j == jj ? i : jj);
@@ -144,7 +144,7 @@ qst(char *base, char *max)
 		/*
 		 * Semi-standard quicksort partitioning/swapping
 		 */
-		for (i = base, j = max - qsz; ; ) {
+		for (i = ((char*)base), j = max - qsz; ; ) {
 			while (i < mid && (*qcmp)(i, mid) <= 0)
 				i += qsz;
 			while (j > mid) {
