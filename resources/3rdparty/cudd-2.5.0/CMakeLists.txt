@@ -1,11 +1,13 @@
 cmake_minimum_required (VERSION 2.8.6)
 
 # Set project name
-project (cudd C)
+project (cudd C CXX)
 
 # Main Sources
 file(GLOB_RECURSE CUDD_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
+file(GLOB_RECURSE CUDD_HEADERS_CXX ${PROJECT_SOURCE_DIR}/src/*.hh)
 file(GLOB_RECURSE CUDD_SOURCES ${PROJECT_SOURCE_DIR}/src/*.c)
+file(GLOB_RECURSE CUDD_SOURCES_CXX ${PROJECT_SOURCE_DIR}/src/*.cc)
 
 
 # Add base folder for better inclusion paths
@@ -24,4 +26,4 @@ if(MSVC)
 endif()
 
 # Add the library
-add_library(cudd ${CUDD_SOURCES} ${CUDD_HEADERS})
+add_library(cudd ${CUDD_SOURCES} ${CUDD_HEADERS} ${CUDD_HEADERS_CXX} ${CUDD_SOURCES_CXX})

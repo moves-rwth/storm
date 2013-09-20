@@ -138,7 +138,7 @@ public:
     DD(Cudd const & manager, DdNode *ddNode);
     DD(const DD &from);
     virtual ~DD();
-    operator bool() const { return node; }
+    operator bool() const { return node != 0; }
     DdManager *manager() const;
     DdNode * getNode() const;
     DdNode * getRegularNode() const;

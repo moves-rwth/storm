@@ -352,7 +352,7 @@ BDD::operator<=(
   const BDD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    return Cudd_bddLeq(mgr,node,other.node);
+    return Cudd_bddLeq(mgr,node,other.node) != 0;
 
 } // BDD::operator<=
 
@@ -362,7 +362,7 @@ BDD::operator>=(
   const BDD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    return Cudd_bddLeq(mgr,other.node,node);
+    return Cudd_bddLeq(mgr,other.node,node) != 0;
 
 } // BDD::operator>=
 
@@ -372,7 +372,7 @@ BDD::operator<(
   const BDD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    return node != other.node && Cudd_bddLeq(mgr,node,other.node);
+    return node != other.node && (Cudd_bddLeq(mgr,node,other.node) != 0);
 
 } // BDD::operator<
 
@@ -382,7 +382,7 @@ BDD::operator>(
   const BDD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    return node != other.node && Cudd_bddLeq(mgr,other.node,node);
+    return node != other.node && (Cudd_bddLeq(mgr,other.node,node) != 0);
 
 } // BDD::operator>
 
@@ -605,7 +605,7 @@ ADD::operator<=(
   const ADD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    return Cudd_addLeq(mgr,node,other.node);
+    return Cudd_addLeq(mgr,node,other.node) != 0;
 
 } // ADD::operator<=
 
@@ -615,7 +615,7 @@ ADD::operator>=(
   const ADD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    return Cudd_addLeq(mgr,other.node,node);
+    return Cudd_addLeq(mgr,other.node,node) != 0;
 
 } // ADD::operator>=
 
@@ -625,7 +625,7 @@ ADD::operator<(
   const ADD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    return node != other.node && Cudd_addLeq(mgr,node,other.node);
+    return node != other.node && (Cudd_addLeq(mgr,node,other.node) != 0);
 
 } // ADD::operator<
 
@@ -635,7 +635,7 @@ ADD::operator>(
   const ADD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    return node != other.node && Cudd_addLeq(mgr,other.node,node);
+    return node != other.node && (Cudd_addLeq(mgr,other.node,node) != 0);
 
 } // ADD::operator>
 
@@ -1505,7 +1505,7 @@ Cudd::UnsetTimeLimit() const
 bool
 Cudd::TimeLimited() const
 {
-    return Cudd_TimeLimited(p->manager);
+    return Cudd_TimeLimited(p->manager) != 0;
 
 } // Cudd::TimeLimited
 
@@ -1531,7 +1531,7 @@ bool
 Cudd::ReorderingStatus(
   Cudd_ReorderingType * method) const
 {
-    return Cudd_ReorderingStatus(p->manager, method);
+    return Cudd_ReorderingStatus(p->manager, method) != 0;
 
 } // Cudd::ReorderingStatus
 
@@ -1557,7 +1557,7 @@ bool
 Cudd::ReorderingStatusZdd(
   Cudd_ReorderingType * method) const
 {
-    return Cudd_ReorderingStatusZdd(p->manager, method);
+    return Cudd_ReorderingStatusZdd(p->manager, method) != 0;
 
 } // Cudd::ReorderingStatusZdd
 
@@ -1565,7 +1565,7 @@ Cudd::ReorderingStatusZdd(
 bool
 Cudd::zddRealignmentEnabled() const
 {
-    return Cudd_zddRealignmentEnabled(p->manager);
+    return Cudd_zddRealignmentEnabled(p->manager) != 0;
 
 } // Cudd::zddRealignmentEnabled
 
@@ -1589,7 +1589,7 @@ Cudd::zddRealignDisable() const
 bool
 Cudd::bddRealignmentEnabled() const
 {
-    return Cudd_bddRealignmentEnabled(p->manager);
+    return Cudd_bddRealignmentEnabled(p->manager) != 0;
 
 } // Cudd::bddRealignmentEnabled
 
@@ -2004,7 +2004,7 @@ Cudd::SetGroupcheck(
 bool
 Cudd::GarbageCollectionEnabled() const
 {
-    return Cudd_GarbageCollectionEnabled(p->manager);
+    return Cudd_GarbageCollectionEnabled(p->manager) != 0;
 
 } // Cudd::GarbageCollectionEnabled
 
@@ -2028,7 +2028,7 @@ Cudd::DisableGarbageCollection() const
 bool
 Cudd::DeadAreCounted() const
 {
-    return Cudd_DeadAreCounted(p->manager);
+    return Cudd_DeadAreCounted(p->manager) != 0;
 
 } // Cudd::DeadAreCounted
 
@@ -2210,7 +2210,7 @@ Cudd::IsInHook(
   DD_HFP f,
   Cudd_HookType where) const
 {
-    return Cudd_IsInHook(p->manager, f, where);
+    return Cudd_IsInHook(p->manager, f, where) != 0;
 
 } // Cudd::IsInHook
 
@@ -2236,7 +2236,7 @@ Cudd::DisableReorderingReporting() const
 bool
 Cudd::ReorderingReporting() const
 {
-    return Cudd_ReorderingReporting(p->manager);
+    return Cudd_ReorderingReporting(p->manager) != 0;
 
 } // Cudd::ReorderingReporting
 
@@ -2365,7 +2365,7 @@ Cudd::bddUnbindVar(int index) const
 bool
 Cudd::bddVarIsBound(int index) const
 {
-    return Cudd_bddVarIsBound(p->manager, index);
+    return Cudd_bddVarIsBound(p->manager, index) != 0;
 
 } // Cudd::bddVarIsBound
 
@@ -2700,7 +2700,7 @@ ADD::Leq(
   const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
-    return Cudd_addLeq(mgr, node, g.node);
+    return Cudd_addLeq(mgr, node, g.node) != 0;
 
 } // ADD::Leq
 
@@ -2744,14 +2744,14 @@ Cudd::Walsh(
   vector<ADD> x,
   vector<ADD> y)
 {
-    int n = x.size();
+    size_t n = x.size();
     DdNode **X = new DdNode *[n];
     DdNode **Y = new DdNode *[n];
     for (int i = 0; i < n; i++) {
 	X[i] = x[i].getNode();
 	Y[i] = y[i].getNode();
     }
-    DdNode *result = Cudd_addWalsh(p->manager, X, Y, n);
+    DdNode *result = Cudd_addWalsh(p->manager, X, Y, static_cast<int>(n));
     delete [] X;
     delete [] Y;
     checkReturnValue(result);
@@ -3172,7 +3172,7 @@ BDD::VarIsDependent(
   const BDD& var) const
 {
     DdManager *mgr = p->manager;
-    return Cudd_bddVarIsDependent(mgr, node, var.node);
+    return Cudd_bddVarIsDependent(mgr, node, var.node) != 0;
 
 } // BDD::VarIsDependent
 
@@ -3335,7 +3335,7 @@ BDD::Leq(
   const BDD& g) const
 {
     DdManager *mgr = checkSameManager(g);
-    return Cudd_bddLeq(mgr, node, g.node);
+    return Cudd_bddLeq(mgr, node, g.node) != 0;
 
 } // BDD::Leq
 
@@ -3540,7 +3540,7 @@ ADD::SwapVariables(
   vector<ADD> x,
   vector<ADD> y) const
 {
-    int n = x.size();
+    size_t n = x.size();
     DdManager *mgr = p->manager;
     DdNode **X = new DdNode *[n];
     DdNode **Y = new DdNode *[n];
@@ -3548,7 +3548,7 @@ ADD::SwapVariables(
 	X[i] = x[i].node;
 	Y[i] = y[i].node;
     }
-    DdNode *result = Cudd_addSwapVariables(mgr, node, X, Y, n);
+    DdNode *result = Cudd_addSwapVariables(mgr, node, X, Y, static_cast<int>(n));
     delete [] X;
     delete [] Y;
     checkReturnValue(result);
@@ -3574,7 +3574,7 @@ BDD::SwapVariables(
   std::vector<BDD> x,
   std::vector<BDD> y) const
 {
-    int n = x.size();
+    size_t n = x.size();
     DdManager *mgr = p->manager;
     DdNode **X = new DdNode *[n];
     DdNode **Y = new DdNode *[n];
@@ -3582,7 +3582,7 @@ BDD::SwapVariables(
         X[i] = x[i].node;
         Y[i] = y[i].node;
     }
-    DdNode *result = Cudd_bddSwapVariables(mgr, node, X, Y, n);
+    DdNode *result = Cudd_bddSwapVariables(mgr, node, X, Y, static_cast<int>(n));
     delete [] X;
     delete [] Y;
     checkReturnValue(result);
@@ -3595,13 +3595,13 @@ BDD
 BDD::AdjPermuteX(
   vector<BDD> x) const
 {
-    int n = x.size();
+    size_t n = x.size();
     DdManager *mgr = p->manager;
     DdNode **X = new DdNode *[n];
     for (int i = 0; i < n; i++) {
 	X[i] = x[i].node;
     }
-    DdNode *result = Cudd_bddAdjPermuteX(mgr, node, X, n);
+    DdNode *result = Cudd_bddAdjPermuteX(mgr, node, X, static_cast<int>(n));
     delete [] X;
     checkReturnValue(result);
     return BDD(p, result);
@@ -3811,7 +3811,7 @@ bool
 ABDD::IsCube() const
 {
     DdManager *mgr = p->manager;
-    return Cudd_CheckCube(mgr, node);
+    return Cudd_CheckCube(mgr, node) != 0;
 
 } // ABDD::IsCube
 
@@ -3833,7 +3833,7 @@ BDD::IsVarEssential(
   int phase) const
 {
     DdManager *mgr = p->manager;
-    return Cudd_bddIsVarEssential(mgr, node, id, phase);
+    return Cudd_bddIsVarEssential(mgr, node, id, phase) != 0;
 
 } // BDD::IsVarEssential
 
@@ -3860,12 +3860,12 @@ Cudd::DumpBlif(
   int mv) const
 {
     DdManager *mgr = p->manager;
-    int n = nodes.size();
+    size_t n = nodes.size();
     DdNode **F = new DdNode *[n];
-    for (int i = 0; i < n; i ++) {
+    for (size_t i = 0; i < n; i ++) {
 	F[i] = nodes[i].getNode();
     }
-    int result = Cudd_DumpBlif(mgr, n, F, inames, onames, mname, fp, mv);
+    int result = Cudd_DumpBlif(mgr, static_cast<int>(n), F, inames, onames, mname, fp, mv);
     delete [] F;
     checkReturnValue(result);
 
@@ -4702,7 +4702,7 @@ ABDD::EquivDC(
 {
     DdManager *mgr = checkSameManager(G);
     checkSameManager(D);
-    return Cudd_EquivDC(mgr, node, G.node, D.node);
+    return Cudd_EquivDC(mgr, node, G.node, D.node) != 0;
 
 } // ABDD::EquivDC
 
@@ -4714,7 +4714,7 @@ BDD::LeqUnless(
     DdManager *mgr = checkSameManager(G);
     checkSameManager(D);
     int res = Cudd_bddLeqUnless(mgr, node, G.node, D.node);
-    return res;
+    return res != 0;
 
 } // BDD::LeqUnless
 
@@ -4726,7 +4726,7 @@ ADD::EqualSupNorm(
   int pr) const
 {
     DdManager *mgr = checkSameManager(g);
-    return Cudd_EqualSupNorm(mgr, node, g.node, tolerance, pr);
+    return Cudd_EqualSupNorm(mgr, node, g.node, tolerance, pr) != 0;
 
 } // ADD::EqualSupNorm
 
@@ -5009,7 +5009,7 @@ Cudd::SharingSize(
     for (vector<BDD>::size_type i = 0; i != n; ++i) {
 	nodeArray[i] = v[i].getNode();
     }
-    int result = Cudd_SharingSize(nodeArray, n);
+    int result = Cudd_SharingSize(nodeArray, static_cast<int>(n));
     delete [] nodeArray;
     checkReturnValue(n == 0 || result > 0);
     return result;

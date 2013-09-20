@@ -63,6 +63,8 @@ elseif(MSVC)
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE /D_CRT_SECURE_NO_WARNINGS)
 	# required as the PRCTL Parser bloats object files (COFF) beyond their maximum size (see http://msdn.microsoft.com/en-us/library/8578y171(v=vs.110).aspx)
 	add_definitions(/bigobj)
+	# required by GTest and PrismGrammar::createIntegerVariable
+	add_definitions(/D_VARIADIC_MAX=10)
 	
 	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
@@ -240,7 +242,13 @@ target_link_libraries(storm-performance-tests ${Boost_LIBRARIES})
 ##
 #############################################################
 add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/cudd")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/epd")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/mtr")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/nanotrav")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/obj")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/st")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/util")
 target_link_libraries(storm cudd)
 target_link_libraries(storm-functional-tests cudd)
 target_link_libraries(storm-performance-tests cudd)
@@ -274,12 +282,14 @@ add_test(NAME storm-performance-tests COMMAND storm-performance-tests)
 ##	Log4CPlus
 ##
 #############################################################
-set(BUILD_SHARED_LIBS NO)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+set(LOG4CPLUS_BUILD_TESTING NO)
+set(LOG4CPLUS_USE_UNICODE OFF)
 add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2/include")
-target_link_libraries(storm log4cplus)
-target_link_libraries(storm-functional-tests log4cplus)
-target_link_libraries(storm-performance-tests log4cplus)
+target_link_libraries(storm log4cplusS)
+target_link_libraries(storm-functional-tests log4cplusS)
+target_link_libraries(storm-performance-tests log4cplusS)
 if (UNIX AND NOT APPLE)
 	target_link_libraries(storm rt)
 	if (STORM_USE_COTIRE)

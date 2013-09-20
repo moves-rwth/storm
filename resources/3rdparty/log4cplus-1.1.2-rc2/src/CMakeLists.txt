@@ -51,7 +51,7 @@ set (log4cplus_sources
 
 #message (STATUS "Type: ${UNIX}|${CYGWIN}|${WIN32}")
 
-if ("${UNIX}" OR "${CYGWIN}")
+if ("${UNIX}" OR "${CYGWIN}" OR APPLE)
   set (log4cplus_sources ${log4cplus_sources}
     socket-unix.cxx)
 elseif (WIN32)
@@ -67,6 +67,8 @@ endif ()
 
 if (UNICODE)
   add_definitions (-DUNICODE -D_UNICODE -UMBCS -U_MBCS)
+else(UNICODE)
+  add_definitions (-UUNICODE -U_UNICODE -DMBCS -D_MBCS)
 endif (UNICODE)
 if (WIN32)
   add_definitions (-DMINGW_HAS_SECURE_API=1)
