@@ -110,6 +110,23 @@ class AbstractDeterministicModel: public AbstractModel<T> {
                 outStream << "}" << std::endl;
             }
         }
+
+		/*!
+		 * Assigns this model a new set of choiceLabels, giving each state a label with the stateId
+		 * @return void
+		 */
+		virtual void setStateIdBasedChoiceLabeling() override {
+			std::vector<std::list<uint_fast64_t>> newChoiceLabeling;
+
+			size_t stateCount = this->getNumberOfStates();
+			newChoiceLabeling.resize(stateCount);
+
+			for (size_t state = 0; state < stateCount; ++state) {
+				newChoiceLabeling.at(state).push_back(state);
+			}
+
+			this->choiceLabeling.reset(newChoiceLabeling);
+		}
 };
 
 } // namespace models

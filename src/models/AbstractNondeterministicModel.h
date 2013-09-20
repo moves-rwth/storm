@@ -219,7 +219,26 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
                 outStream << "}" << std::endl;
             }
         }
-    
+		
+		/*!
+		 * Assigns this model a new set of choiceLabels, giving each choice a label with the stateId
+		 * @return void
+		 */
+		virtual void setStateIdBasedChoiceLabeling() override {
+			std::vector<std::list<uint_fast64_t>> newChoiceLabeling;
+
+			size_t stateCount = this->getNumberOfStates();
+			size_t choiceCount = this->getNumberOfChoices();
+			newChoiceLabeling.resize(choiceCount);
+
+			for (size_t state = 0; state < stateCount; ++state) {
+				for (size_t choice = this->nondeterministicChoiceIndices.at(state); choice < this->nondeterministicChoiceIndices.at(state + 1); ++choice) {
+					newChoiceLabeling.at(choice).push_back(state);
+				}
+			}
+
+			this->choiceLabeling.reset(newChoiceLabeling);
+		}
 	private:
 		/*! A vector of indices mapping states to the choices (rows) in the transition matrix. */
 		std::vector<uint_fast64_t> nondeterministicChoiceIndices;

@@ -443,6 +443,11 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 			return result;
 		}
 
+		/*!
+		 * Assigns this model a new set of choiceLabels, giving each choice the stateId
+		 * @return void
+		 */
+		virtual void setStateIdBasedChoiceLabeling() = 0;
 protected:
         /*!
          * Exports the model to the dot-format and prints the result to the given stream.
@@ -523,6 +528,8 @@ protected:
 		/*! A matrix representing the likelihoods of moving between states. */
 		storm::storage::SparseMatrix<T> transitionMatrix;
 
+		/*! The labeling that is associated with the choices for each state. */
+        boost::optional<std::vector<std::list<uint_fast64_t>>> choiceLabeling;
 private:
 		/*! The labeling of the states of the model. */
 		storm::models::AtomicPropositionsLabeling stateLabeling;
@@ -532,9 +539,6 @@ private:
 
 		/*! The transition-based rewards of the model. */
 		boost::optional<storm::storage::SparseMatrix<T>> transitionRewardMatrix;
-    
-        /*! The labeling that is associated with the choices for each state. */
-        boost::optional<std::vector<std::list<uint_fast64_t>>> choiceLabeling;
 };
 
 } // namespace models
