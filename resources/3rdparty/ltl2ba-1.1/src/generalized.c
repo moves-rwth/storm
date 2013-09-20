@@ -35,8 +35,10 @@
 
 extern FILE *tl_out;
 extern ATrans **transition;
+#ifndef WIN32
 extern struct rusage tr_debut, tr_fin;
 extern struct timeval t_diff;
+#endif
 extern int tl_verbose, tl_stats, tl_simp_diff, tl_simp_fly, tl_fjtofj,
   tl_simp_scc, *final_set, node_id;
 extern char **sym_table;
@@ -118,7 +120,9 @@ int simplify_gtrans() /* simplifies the transitions */
   GState *s;
   GTrans *t, *t1;
 
+#ifndef WIN32
   if(tl_stats) getrusage(RUSAGE_SELF, &tr_debut);
+#endif
 
   for(s = gstates->nxt; s != gstates; s = s->nxt) {
     t = s->trans->nxt;
@@ -149,10 +153,12 @@ int simplify_gtrans() /* simplifies the transitions */
   }
   
   if(tl_stats) {
-    getrusage(RUSAGE_SELF, &tr_fin);
+#ifndef WIN32
+	  getrusage(RUSAGE_SELF, &tr_fin);
     timeval_subtract (&t_diff, &tr_fin.ru_utime, &tr_debut.ru_utime);
     fprintf(tl_out, "\nSimplification of the generalized Buchi automaton - transitions: %i.%06is",
 		t_diff.tv_sec, t_diff.tv_usec);
+#endif
     fprintf(tl_out, "\n%i transitions removed\n", changed);
   }
 
@@ -218,8 +224,9 @@ int simplify_gstates() /* eliminates redundant states */
 {
   int changed = 0;
   GState *a, *b;
-
+#ifndef WIN32
   if(tl_stats) getrusage(RUSAGE_SELF, &tr_debut);
+#endif
 
   for(a = gstates->nxt; a != gstates; a = a->nxt) {
     if(a->trans == a->trans->nxt) { /* a has no transitions */
@@ -242,10 +249,12 @@ int simplify_gstates() /* eliminates redundant states */
   retarget_all_gtrans();
 
   if(tl_stats) {
-    getrusage(RUSAGE_SELF, &tr_fin);
+#ifndef WIN32
+	getrusage(RUSAGE_SELF, &tr_fin);
     timeval_subtract (&t_diff, &tr_fin.ru_utime, &tr_debut.ru_utime);
     fprintf(tl_out, "\nSimplification of the generalized Buchi automaton - states: %i.%06is",
 		t_diff.tv_sec, t_diff.tv_usec);
+#endif
     fprintf(tl_out, "\n%i states removed\n", changed);
   }
 
@@ -571,8 +580,9 @@ void mk_generalized()
   ATrans *t;
   GState *s;
   int i;
-
+#ifndef WIN32
   if(tl_stats) getrusage(RUSAGE_SELF, &tr_debut);
+#endif
 
   fin = new_set(0);
   bad_scc = 0; /* will be initialized in simplify_gscc */
@@ -616,10 +626,12 @@ void mk_generalized()
   retarget_all_gtrans();
 
   if(tl_stats) {
+#ifndef WIN32
     getrusage(RUSAGE_SELF, &tr_fin);
     timeval_subtract (&t_diff, &tr_fin.ru_utime, &tr_debut.ru_utime);
     fprintf(tl_out, "\nBuilding the generalized Buchi automaton : %i.%06is",
 		t_diff.tv_sec, t_diff.tv_usec);
+#endif
     fprintf(tl_out, "\n%i states, %i transitions\n", gstate_count, gtrans_count);
   }
 

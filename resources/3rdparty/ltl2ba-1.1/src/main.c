@@ -209,7 +209,7 @@ main(int argc, char *argv[])
 
 /* Subtract the `struct timeval' values X and Y, storing the result X-Y in RESULT.
    Return 1 if the difference is negative, otherwise 0.  */
- 
+#ifndef WIN32
 int
 timeval_subtract (result, x, y)
 struct timeval *result, *x, *y;
@@ -226,6 +226,7 @@ struct timeval *result, *x, *y;
 	/* Return 1 if result is negative. */
 	return x->tv_sec < y->tv_sec;
 }
+#endif
 
 static void
 tl_endstats(void)

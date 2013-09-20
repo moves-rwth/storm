@@ -33,8 +33,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/time.h>
-#include <sys/resource.h>
+#ifdef WIN32
+#	include <time.h>
+#	define NOMINMAX
+
+#	undef TRUE
+#	undef FALSE
+#	undef OR
+#	undef AND
+
+#define unlink _unlink
+
+#else
+#	include <sys/time.h>
+#	include <sys/resource.h>
+#endif
 
 typedef struct Symbol {
 char		*name;
@@ -186,7 +199,9 @@ void	a_stats(void);
 void	addtrans(Graph *, char *, Node *, char *);
 void	cache_stats(void);
 void	dump(Node *);
+#ifndef WIN32
 void	exit(int);
+#endif
 void	Fatal(char *, char *);
 void	fatal(char *, char *);
 void	fsm_print(void);
@@ -225,7 +240,9 @@ int  included_set(int *, int *, int);
 int  in_set(int *, int);
 int  *list_set(int *, int);
 
+#ifndef WIN32
 int timeval_subtract (struct timeval *, struct timeval *, struct timeval *);
+#endif
 
 #define ZN	(Node *)0
 #define ZS	(Symbol *)0
@@ -245,4 +262,6 @@ typedef Node	*Nodeptr;
 
 #define Assert(x, y)	{ if (!(x)) { tl_explain(y); \
 			  Fatal(": assertion failed\n",(char *)0); } }
-#define min(x,y)        ((x<y)?x:y)
+#ifndef WIN32
+#	define min(x,y)        ((x<y)?x:y)
+#endif
