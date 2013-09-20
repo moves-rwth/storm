@@ -190,7 +190,7 @@ extern int DddmpNumberDdNodesCnf(DdManager *ddMgr, DdNode **f, int rootN, int *c
 extern int DddmpDdNodesCountEdgesAndNumber(DdManager *ddMgr, DdNode **f, int rootN, int edgeInTh, int pathLengthTh, int *cnfIds, int id);
 extern void DddmpUnnumberDdNodesCnf(DdManager *ddMgr, DdNode **f, int rootN);
 extern int DddmpPrintBddAndNext(DdManager *ddMgr, DdNode **f, int rootN);
-extern int DddmpWriteNodeIndexCnf(DdNode *f, int id);
+extern int DddmpWriteNodeIndexCnfBis(DdNode *f, int id);
 extern int DddmpVisitedCnf(DdNode *f);
 extern void DddmpSetVisitedCnf(DdNode *f);
 extern int DddmpReadNodeIndexCnf(DdNode *f);

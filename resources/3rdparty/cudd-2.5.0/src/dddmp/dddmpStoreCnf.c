@@ -1486,7 +1486,7 @@ StoreCnfBestSharedRecur (
   idf = DddmpReadNodeIndexCnf (node);
   if (idf > 0) {
     /* Cheat the Recur Function about the Index of the Current Node */
-    DddmpWriteNodeIndexCnf (node, 0);
+    DddmpWriteNodeIndexCnfBis (node, 0);
 
 #if DDDMP_DEBUG_CNF
     fprintf (fp, "Else of XNOR\n");
@@ -1507,7 +1507,7 @@ StoreCnfBestSharedRecur (
       fp, list, clauseN, varMax);
 
     /* Set Back Index of Current Node */
-    DddmpWriteNodeIndexCnf (node, idf);
+    DddmpWriteNodeIndexCnfBis (node, idf);
   }
 
   /* Mark node as visited. */
