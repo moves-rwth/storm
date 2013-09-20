@@ -15,6 +15,8 @@
 #include "src/models/Mdp.h"
 #include "src/models/Ctmdp.h"
 
+#include <algorithm>
+#include <functional>
 #include <boost/algorithm/string.hpp>
 
 #include <sstream>
@@ -22,6 +24,42 @@
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
+
+bool ExplicitModelAdapterOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
+	instance->addOption(storm::settings::OptionBuilder("ExplicitModelAdapter", "constants", "", "Specifies the constant replacements to use in Explicit Models").addArgument(storm::settings::ArgumentBuilder::createStringArgument("constantString", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3").addValidationFunctionString(
+		[] (std::string const& s) -> bool {
+			// since regex is not yet implemented in gccs C++11, we have to check by hand
+			std::vector<std::string> constants;
+			// split for single assignment expressions
+			boost::split(constants, s, boost::is_any_of(","));
+			for (auto it = constants.cbegin(); it != constants.cend(); ++it) {
+				std::vector<std::string> constant;
+				boost::split(constant, *it, boost::is_any_of("="));
+				if (constant.size() != 2) {
+					return false;
+				}
+				// Constant Name check
+				bool error = false;
+				std::for_each(constant.at(0).cbegin(), constant.at(0).cend(), [&error] (const std::string::value_type value) -> void {
+					if (!(('a' <= value && value <= 'z') || ('A' <= value && value <= 'Z') || ('0' <= value && value <= '9'))) {
+						error = true;
+					}
+				});
+				// Value Check
+				std::for_each(constant.at(1).cbegin(), constant.at(1).cend(), [&error] (const std::string::value_type value) -> void {
+					if (!(('a' <= value && value <= 'z') || ('A' <= value && value <= 'Z') || ('0' <= value && value <= '9'))) {
+						error = true;
+					}
+				});
+				if (error) {
+					return false;
+				}
+			}
+
+			return true;
+	}).setDefaultValueString("").build()).build());
+	return true;
+});
 
 namespace storm {
     namespace adapters {
