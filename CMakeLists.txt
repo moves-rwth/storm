@@ -269,6 +269,7 @@ target_link_libraries(storm-performance-tests ltl2dstar)
 ##	Google Test gtest
 ##
 #############################################################
+set(gtest_force_shared_crt ON)
 add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.7.0")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.7.0/include")
 enable_testing()
