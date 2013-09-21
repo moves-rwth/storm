@@ -71,7 +71,9 @@ namespace storm {
                 std::unordered_map<uint_fast64_t, uint_fast64_t> stateToProbabilityVariableIndexMap;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> problematicStateToVariableIndexMap;
                 std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, uint_fast64_t, PairHash> problematicTransitionToVariableIndexMap;
-                uint_fast64_t nextFreeVariableIndex = 0;
+                uint_fast64_t nextFreeVariableIndex;
+
+				VariableInformation() : nextFreeVariableIndex(0) {}
             };
 
             /*!
