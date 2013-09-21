@@ -451,13 +451,14 @@ std::equal_to<SafraTree_ptr>::operator()
 }
 
 /** overload less for SafraTree_ptr to compare the actual trees */
+/*
 template <>
 inline bool
 std::less<SafraTree_ptr>::operator()
   (SafraTree_ptr const& x, SafraTree_ptr const& y) const {
   return (*x)<(*y);
 }
-
+*/
 };
 
 
