@@ -120,18 +120,18 @@ namespace storm {
                     try {
                         int_fast64_t integerValue = std::stoi(value);
                         program.getUndefinedIntegerConstantExpression(constantName)->define(integerValue);
-                    } catch (std::invalid_argument const& e) {
+                    } catch (std::invalid_argument const&) {
                         throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << ".";
-                    } catch (std::out_of_range const& e) {
+                    } catch (std::out_of_range const&) {
                         throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << " (value too big).";
                     }
                 } else if (program.hasUndefinedDoubleConstant(constantName)) {
                     try {
                         double doubleValue = std::stod(value);
                         program.getUndefinedDoubleConstantExpression(constantName)->define(doubleValue);
-                    } catch (std::invalid_argument const& e) {
+                    } catch (std::invalid_argument const&) {
                         throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << ".";
-                    } catch (std::out_of_range const& e) {
+                    } catch (std::out_of_range const&) {
                         throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << " (value too big).";
                     }
                     
