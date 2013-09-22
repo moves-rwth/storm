@@ -83,7 +83,7 @@ namespace storm {
                 
                 // Because only int variables can deliver a double value, we only need to check them.
                 if (variableValues != nullptr) {
-                    return variableValues->second[globalIndex];
+                    return static_cast<double>(variableValues->second[globalIndex]);
                 } else {
                     throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression with variable '" << variableName << "' of type double.";
                 }

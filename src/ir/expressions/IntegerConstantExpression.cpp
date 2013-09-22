@@ -24,7 +24,7 @@ namespace storm {
             }
             
             double IntegerConstantExpression::getValueAsDouble(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
-                return getValueAsInt(variableValues);
+                return static_cast<double>(getValueAsInt(variableValues));
             }
             
             int_fast64_t IntegerConstantExpression::getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {

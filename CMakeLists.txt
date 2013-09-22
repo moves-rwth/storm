@@ -7,36 +7,6 @@ project (storm CXX C)
 set (STORM_CPP_VERSION_MAJOR 1)
 set (STORM_CPP_VERSION_MINOR 0)
 
-# Set all GTest references to the version in the repository and show it as output
-set (GTEST_INCLUDE_DIR resources/3rdparty/gtest-1.6.0/include)
-if(MSVC)
-	set (STORM_LIB_SUFFIX lib)
-	set (GTEST_LIBRARY_DEBUG ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Debug/gtest.${STORM_LIB_SUFFIX})
-	set (GTEST_MAIN_LIBRARY_DEBUG ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Debug/gtest_main.${STORM_LIB_SUFFIX})
-	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Release/gtest.${STORM_LIB_SUFFIX})
-	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/build/Release/gtest_main.${STORM_LIB_SUFFIX})
-	set (GTEST_LIBRARIES optimized ${GTEST_LIBRARY} debug ${GTEST_LIBRARY_DEBUG})
-else()
-	set (STORM_LIB_SUFFIX a)
-	set (GTEST_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest.${STORM_LIB_SUFFIX})
-	set (GTEST_MAIN_LIBRARY ${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.6.0/libgtest_main.${STORM_LIB_SUFFIX})
-	set (GTEST_LIBRARIES ${GTEST_LIBRARY} ${GTEST_MAIN_LIBRARY}) # as we dont use FindGTest anymore
-endif()
-message(STATUS "GTEST_INCLUDE_DIR is ${GTEST_INCLUDE_DIR}")
-message(STATUS "GTEST_LIBRARY is ${GTEST_LIBRARY}")
-message(STATUS "GTEST_MAIN_LIBRARY is ${GTEST_MAIN_LIBRARY}")
-
-# Set all log4cplus references the version in the repository
-set (LOG4CPLUS_BASE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2)
-set (LOG4CPLUS_INCLUDE_DIR ${LOG4CPLUS_BASE_DIR}/include)
-if (MSVC)
-	set (LOG4CPLUS_LIBRARIES optimized ${LOG4CPLUS_BASE_DIR}/msvc10/x64/bin.Release/log4cplusS.${STORM_LIB_SUFFIX} debug ${LOG4CPLUS_BASE_DIR}/msvc10/x64/bin.Debug/log4cplusSD.${STORM_LIB_SUFFIX})
-else()
-	set (LOG4CPLUS_LIBRARIES ${LOG4CPLUS_BASE_DIR}/src/liblog4cplusS.${STORM_LIB_SUFFIX})
-endif()
-message(STATUS "LOG4CPLUS_INCLUDE_DIR is ${LOG4CPLUS_INCLUDE_DIR}")
-message(STATUS "LOG4CPLUS_LIBRARY is ${LOG4CPLUS_LIBRARIES}")
-
 # Set all Eigen references the version in the repository
 set(EIGEN3_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen)
 message(STATUS "EIGEN3_INCLUDE_DIR is ${EIGEN3_INCLUDE_DIR}")
@@ -44,23 +14,6 @@ message(STATUS "EIGEN3_INCLUDE_DIR is ${EIGEN3_INCLUDE_DIR}")
 # Set all Eigen references the version in the repository
 set(GMMXX_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-4.2/include)
 message(STATUS "GMMXX_INCLUDE_DIR is ${GMMXX_INCLUDE_DIR}")
-
-# Set all CUDD references to the version in the repository
-set(CUDD_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/include ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/obj ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/cudd ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/mtr ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/epd)
-set(CUDD_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/cudd ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/mtr ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/util ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/st ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/epd ${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/obj)
-message(STATUS "CUDD_INCLUDE_DIRS is ${CUDD_INCLUDE_DIRS}")
-message(STATUS "CUDD_LIBRARY_DIRS is ${CUDD_LIBRARY_DIRS}")
-
-# Set all ltl2dstar references to the version in the repository
-set(LTL2DSTAR_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
-if (MSVC)
-	set(LTL2DSTAR_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/win32/Ltl2dStar/x64/Release)
-else()
-	set(LTL2DSTAR_LIBRARY_DIRS ${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src)
-endif()
-
-message(STATUS "LTL2DSTAR_INCLUDE_DIRS is ${LTL2DSTAR_INCLUDE_DIRS}")
-message(STATUS "LTL2DSTAR_LIBRARY_DIRS is ${LTL2DSTAR_LIBRARY_DIRS}")
 
 # Now define all available custom options
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
@@ -99,7 +52,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
     message(STATUS "Using GCC")
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
-    set (CMAKE_CXX_FLAGS "-std=c++0x -Wall -pedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -pedantic")
     # -Werror is atm removed as this gave some problems with existing code
     # May be re-set later
     # (Thomas Heinemann, 2012-12-21)
@@ -114,9 +67,11 @@ if(CMAKE_COMPILER_IS_GNUCC)
 elseif(MSVC)
     message(STATUS "Using MSVC")
 	# required for GMM to compile, ugly error directive in their code
-	add_definitions(/D_SCL_SECURE_NO_DEPRECATE)
+	add_definitions(/D_SCL_SECURE_NO_DEPRECATE /D_CRT_SECURE_NO_WARNINGS)
 	# required as the PRCTL Parser bloats object files (COFF) beyond their maximum size (see http://msdn.microsoft.com/en-us/library/8578y171(v=vs.110).aspx)
 	add_definitions(/bigobj)
+	# required by GTest and PrismGrammar::createIntegerVariable
+	add_definitions(/D_VARIADIC_MAX=10)
 	
 	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
@@ -126,14 +81,23 @@ else(CLANG)
     # Set standard flags for clang
     set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O3")
     if(UNIX AND NOT APPLE)
-      set(CLANG_STDLIB libstdc++)
+		set(CLANG_STDLIB libstdc++)
     else()
-      set(CLANG_STDLIB libc++)
+		set(CLANG_STDLIB libc++)
+		# Disable Cotire
+		set(STORM_USE_COTIRE OFF)
+		# Set up some Xcode specific settings
+		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
+		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
     endif()
     
+<<<<<<< HEAD
     set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE -ftemplate-depth=1024")
+=======
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE -ftemplate-depth=1024")
+>>>>>>> master
     
-    set (CMAKE_CXX_FLAGS_DEBUG "-g")
+    set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
     
     # Turn on popcnt instruction if desired (yes by default)
     if (USE_POPCNT)
@@ -274,6 +238,7 @@ if (ADDITIONAL_LINK_DIRS)
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
+<<<<<<< HEAD
 if (CUDD_INCLUDE_DIRS)
     include_directories(${CUDD_INCLUDE_DIRS})
 endif(CUDD_INCLUDE_DIRS)
@@ -294,6 +259,8 @@ if (ENABLE_GUROBI)
     message (STATUS "Adding ${GUROBI_ROOT}/include and ${GUROBI_ROOT}/lib to include/linking directories.")
 endif(ENABLE_GUROBI)
 
+=======
+>>>>>>> master
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
 add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
@@ -304,6 +271,70 @@ add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_FILES} ${STORM_S
 target_link_libraries(storm ${Boost_LIBRARIES})   
 target_link_libraries(storm-functional-tests ${Boost_LIBRARIES})
 target_link_libraries(storm-performance-tests ${Boost_LIBRARIES})
+
+#############################################################
+##
+##	CUDD
+##
+#############################################################
+add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/cudd")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/epd")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/mtr")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/nanotrav")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/obj")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/st")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/util")
+target_link_libraries(storm cudd)
+target_link_libraries(storm-functional-tests cudd)
+target_link_libraries(storm-performance-tests cudd)
+
+#############################################################
+##
+##	LTL2DSTAR
+##
+#############################################################
+add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src")
+target_link_libraries(storm ltl2dstar)
+target_link_libraries(storm-functional-tests ltl2dstar)
+target_link_libraries(storm-performance-tests ltl2dstar)
+
+#############################################################
+##
+##	Google Test gtest
+##
+#############################################################
+set(gtest_force_shared_crt ON)
+add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.7.0")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.7.0/include")
+enable_testing()
+target_link_libraries(storm-functional-tests gtest)
+target_link_libraries(storm-performance-tests gtest)
+add_test(NAME storm-functional-tests COMMAND storm-functional-tests)
+add_test(NAME storm-performance-tests COMMAND storm-performance-tests)
+
+#############################################################
+##
+##	Log4CPlus
+##
+#############################################################
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+set(LOG4CPLUS_BUILD_TESTING NO)
+set(LOG4CPLUS_USE_UNICODE OFF)
+add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2/include")
+target_link_libraries(storm log4cplusS)
+target_link_libraries(storm-functional-tests log4cplusS)
+target_link_libraries(storm-performance-tests log4cplusS)
+if (UNIX AND NOT APPLE)
+	target_link_libraries(storm rt)
+	if (STORM_USE_COTIRE)
+		target_link_libraries(storm_unity rt)
+	endif(STORM_USE_COTIRE)
+	target_link_libraries(storm-functional-tests rt)
+	target_link_libraries(storm-performance-tests rt)
+endif(UNIX AND NOT APPLE)
 
 if (MSVC)
 	# Add the DebugHelper DLL
@@ -318,14 +349,6 @@ if (USE_INTELTBB)
 	target_link_libraries(storm-functional-tests tbb tbbmalloc)
 	target_link_libraries(storm-performance-tests tbb tbbmalloc)
 endif(USE_INTELTBB)
-
-if (APPLE)
-	set(STORM_USE_COTIRE OFF)
-	
-    # Set up some Xcode specific settings
-	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
-	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-endif(APPLE)
 
 # Print Cotire Usage Status
 message (STATUS "Using Cotire: ${STORM_USE_COTIRE}")
@@ -366,67 +389,6 @@ if(DOXYGEN_FOUND)
 
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile COMMENT "Generating API documentation with Doxygen" VERBATIM)
 endif(DOXYGEN_FOUND)
-
-if (GTEST_INCLUDE_DIR)
-	# For make-based builds, defines make target named test.
-	# For Visual Studio builds, defines Visual Studio project named RUN_TESTS.
-	enable_testing()
-
-	include_directories(${GTEST_INCLUDE_DIR})
-	target_link_libraries(storm-functional-tests ${GTEST_LIBRARIES})
-	target_link_libraries(storm-performance-tests ${GTEST_LIBRARIES})
-
-	add_test(NAME storm-functional-tests COMMAND storm-functional-tests)
-	add_test(NAME storm-performance-tests COMMAND storm-performance-tests)
-	if(MSVC) # VS2012 doesn't support correctly the tuples yet
-		add_definitions( /D _VARIADIC_MAX=10 )
-	endif()
-endif(GTEST_INCLUDE_DIR)
-
-if (LOG4CPLUS_INCLUDE_DIR)
-    include_directories(${LOG4CPLUS_INCLUDE_DIR})
-    target_link_libraries(storm ${LOG4CPLUS_LIBRARIES}) 
-	if (STORM_USE_COTIRE)
-		target_link_libraries(storm_unity ${LOG4CPLUS_LIBRARIES})
-	endif(STORM_USE_COTIRE)
-    target_link_libraries(storm-functional-tests ${LOG4CPLUS_LIBRARIES})
-    target_link_libraries(storm-performance-tests ${LOG4CPLUS_LIBRARIES})
-    # On Linux, we have to link against librt
-    if (UNIX AND NOT APPLE)
-		target_link_libraries(storm rt)
-		if (STORM_USE_COTIRE)
-			target_link_libraries(storm_unity rt)
-		endif(STORM_USE_COTIRE)
-		target_link_libraries(storm-functional-tests rt)
-		target_link_libraries(storm-performance-tests rt)
-    endif(UNIX AND NOT APPLE)
-endif(LOG4CPLUS_INCLUDE_DIR)
-
-if (CUDD_LIBRARY_DIRS)
-    if (MSVC)
-		set(cuddMsvcLibs "optimized" "${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/CUDD_Win32/x64/Release/CUDD_Win32.lib" "debug" "${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/CUDD_Win32/x64/Debug/CUDD_Win32.lib")
-		target_link_libraries(storm ${cuddMsvcLibs})
-		target_link_libraries(storm-functional-tests ${cuddMsvcLibs})
-		target_link_libraries(storm-performance-tests ${cuddMsvcLibs})
-	else ()
-		target_link_libraries(storm "-lobj -lcudd -lmtr -lst -lutil -lepd")
-		target_link_libraries(storm-functional-tests "-lobj -lcudd -lmtr -lst -lutil -lepd")
-		target_link_libraries(storm-performance-tests "-lobj -lcudd -lmtr -lst -lutil -lepd")
-	endif ()
-endif(CUDD_LIBRARY_DIRS)
-
-if (LTL2DSTAR_LIBRARY_DIRS)
-  if (MSVC)
-	  set(ltl2dstarMsvcLibs "optimized" "${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/win32/Ltl2dStar/x64/Release/Ltl2dStar.lib" "debug" "${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/win32/Ltl2dStar/x64/Debug/Ltl2dStar.lib")
-	  target_link_libraries(storm ${ltl2dstarMsvcLibs})
-	  target_link_libraries(storm-functional-tests ${ltl2dstarMsvcLibs})
-	  target_link_libraries(storm-performance-tests ${ltl2dstarMsvcLibs})
-  else ()
-      target_link_libraries(storm "-lltl2dstar")
-      target_link_libraries(storm-functional-tests "-lltl2dstar")
-      target_link_libraries(storm-performance-tests "-lltl2dstar")
-  endif ()
-endif (LTL2DSTAR_LIBRARY_DIRS)
 
 if (THREADS_FOUND)
 	include_directories(${THREADS_INCLUDE_DIRS})

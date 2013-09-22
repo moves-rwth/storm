@@ -26,8 +26,15 @@
  */
 
 #if (__WIN32__ || _WIN32)
- #include <windows.h>
- #include <io.h>
+#	include <windows.h>
+#	include <io.h>
+ 
+ // Replace all deprecated POSIX Calls with the correct ISO C++ calls
+#	define write _write
+#	define read _read
+#	define lseek _lseek
+#	define dup _dup
+#	define fdopen _fdopen
 #endif
 
 #include <sys/types.h>
