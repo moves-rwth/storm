@@ -79,13 +79,11 @@ namespace storm {
 #define PPCAT(A, B) PPCAT_NX(A, B)
 #define MACROaddValidationFunction(funcName, funcType) 	ArgumentBuilder& PPCAT(addValidationFunction, funcName) (storm::settings::Argument< funcType >::userValidationFunction_t userValidationFunction) { \
 				if (this->argumentType != ArgumentType::funcName) { \
-					LOG4CPLUS_ERROR(logger, "ArgumentBuilder::addValidationFunction: Tried adding a Validation-Function for a \"" << ArgumentTypeHelper::toString(ArgumentType::funcName) << "\" Argument, but this Argument is configured to be of Type \"" << ArgumentTypeHelper::toString(this->argumentType) << "\"."); \
 					throw storm::exceptions::IllegalFunctionCallException() << "Tried adding a Validation-Function for a \"" << ArgumentTypeHelper::toString(ArgumentType::funcName) << "\" Argument, but this Argument is configured to be of Type \"" << ArgumentTypeHelper::toString(this->argumentType) << "\"."; \
 				} \
 				( PPCAT(this->userValidationFunction_, funcName) ).push_back(userValidationFunction); \
 				std::string errorMessageTarget = ""; \
 				if (this->hasDefaultValue && !this->validateDefaultForEach(errorMessageTarget)) { \
-					LOG4CPLUS_ERROR(logger, "ArgumentBuilder::addValidationFunction: Tried adding a Validation-Function for an Argument which has a Default Value set which is rejected by this Validation-Function:\r\n" << errorMessageTarget); \
 					throw storm::exceptions::IllegalArgumentValueException() << "Tried adding a Validation-Function for an Argument which has a Default Value set which is rejected by this Validation-Function:\r\n" << errorMessageTarget; \
 				} \
 				return *this; \
@@ -100,13 +98,11 @@ namespace storm {
 
 #define MACROsetDefaultValue(funcName, funcType) ArgumentBuilder& PPCAT(setDefaultValue, funcName) (funcType const& defaultValue) { \
 				if (this->argumentType != ArgumentType::funcName) { \
-					LOG4CPLUS_ERROR(logger, "ArgumentBuilder::addValidationFunction: Tried adding a default Value for a \"" << ArgumentTypeHelper::toString(ArgumentType::String) << "\" Argument, but the Argument \"" << this->argumentName << "\" is configured to be of Type \"" << ArgumentTypeHelper::toString(this->argumentType) << "\"."); \
 					throw storm::exceptions::IllegalFunctionCallException() << "Tried adding a default Value for a \"" << ArgumentTypeHelper::toString(ArgumentType::String) << "\" Argument, but the Argument \"" << this->argumentName << "\" is configured to be of Type \"" << ArgumentTypeHelper::toString(this->argumentType) << "\"."; \
 				} \
 				PPCAT(this->defaultValue_, funcName) = defaultValue; \
 				std::string errorMessageTarget = ""; \
 				if (!this->validateDefaultForEach(errorMessageTarget)) { \
-					LOG4CPLUS_ERROR(logger, "ArgumentBuilder::setDefaultValue: Tried adding a default Value for the Argument \"" << this->argumentName << "\", but a Validation Function rejected it:\r\n" << errorMessageTarget); \
 					throw storm::exceptions::IllegalArgumentValueException() << "Tried adding a default Value for the Argument \"" << this->argumentName << "\", but a Validation Function rejected it:\r\n" << errorMessageTarget; \
 				} \
 				this->hasDefaultValue = true; \
@@ -121,7 +117,6 @@ namespace storm {
 
 			ArgumentBase* build() {
 				if (this->hasBeenBuild) {
-					LOG4CPLUS_ERROR(logger, "ArgumentBuilder::build: Called build() on an instance of ArgumentBuilder which has already build an Instance.");
 					throw storm::exceptions::IllegalFunctionCallException() << "Called build() on an instance of ArgumentBuilder which has already build an Instance.";
 				}	
 				this->hasBeenBuild = true;
@@ -163,7 +158,6 @@ namespace storm {
 						}
 						break;
 					default: {
-						LOG4CPLUS_ERROR(logger, "ArgumentBuilder::build: Missing Case in ArgumentBuilder's switch/case Code.");
 						throw storm::exceptions::InternalTypeErrorException() << "Missing Case in ArgumentBuilder's switch/case Code.";
 					}
 				}
@@ -252,7 +246,6 @@ namespace storm {
 						}
 						break;
 					default: {
-						LOG4CPLUS_ERROR(logger, "ArgumentBuilder::build: Missing Case in ArgumentBuilder's switch/case Code.");
 						throw storm::exceptions::InternalTypeErrorException() << "Error: Missing Case in ArgumentBuilder's switch/case Code.";
 					}
 				}
