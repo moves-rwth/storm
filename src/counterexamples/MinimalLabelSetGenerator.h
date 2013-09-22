@@ -30,6 +30,7 @@ namespace storm {
          */
         template <class T>
         class MinimalLabelSetGenerator {
+#ifdef HAVE_GUROBI
         private:
             /*!
              * A helper class that provides the functionality to compute a hash value for pairs of state indices.
@@ -1046,7 +1047,8 @@ namespace storm {
                 LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from unoptimized model.");
                 throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model.";
             }
-            
+#endif
+
         public:
             
             static std::unordered_set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, T probabilityThreshold, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {

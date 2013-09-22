@@ -54,11 +54,9 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @param other The Source Abstract Model
 		 */
 		AbstractModel(AbstractModel<T>&& other)
-			: transitionMatrix(std::move(other.transitionMatrix)),
-			stateLabeling(std::move(other.stateLabeling)),		
-			stateRewardVector(std::move(other.stateRewardVector)),
-			transitionRewardMatrix(std::move(other.transitionRewardMatrix)),
-            choiceLabeling(std::move(other.choiceLabeling)) {
+			: transitionMatrix(std::move(other.transitionMatrix)), choiceLabeling(std::move(other.choiceLabeling)),
+			stateLabeling(std::move(other.stateLabeling)), stateRewardVector(std::move(other.stateRewardVector)),
+			transitionRewardMatrix(std::move(other.transitionRewardMatrix)) {
 			// Intentionally left empty.
 		}
 
@@ -98,9 +96,11 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		AbstractModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
 				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
                 boost::optional<std::vector<std::list<uint_fast64_t>>>&& optionalChoiceLabeling) :
-				transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)), 
-				stateRewardVector(std::move(optionalStateRewardVector)), transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)),
-                choiceLabeling(std::move(optionalChoiceLabeling)) { }
+				transitionMatrix(std::move(transitionMatrix)), choiceLabeling(std::move(optionalChoiceLabeling)),
+                stateLabeling(std::move(stateLabeling)), stateRewardVector(std::move(optionalStateRewardVector)),
+                transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)) {
+            // Intentionally left empty.
+        }
 
 		/*!
 		 * Destructor.
