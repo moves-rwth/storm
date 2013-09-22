@@ -91,11 +91,7 @@ else(CLANG)
 		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
     endif()
     
-<<<<<<< HEAD
-    set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE -ftemplate-depth=1024")
-=======
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE -ftemplate-depth=1024")
->>>>>>> master
     
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
     
@@ -238,29 +234,6 @@ if (ADDITIONAL_LINK_DIRS)
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
-<<<<<<< HEAD
-if (CUDD_INCLUDE_DIRS)
-    include_directories(${CUDD_INCLUDE_DIRS})
-endif(CUDD_INCLUDE_DIRS)
-if (CUDD_LIBRARY_DIRS)
-    link_directories(${CUDD_LIBRARY_DIRS})
-endif(CUDD_LIBRARY_DIRS)
-
-if (LTL2DSTAR_INCLUDE_DIRS)
-    include_directories(${LTL2DSTAR_INCLUDE_DIRS})
-endif(LTL2DSTAR_INCLUDE_DIRS)
-if (LTL2DSTAR_LIBRARY_DIRS)
-    link_directories(${LTL2DSTAR_LIBRARY_DIRS})
-endif(LTL2DSTAR_LIBRARY_DIRS)
-
-if (ENABLE_GUROBI)
-    include_directories(${GUROBI_ROOT}/include)
-    link_directories(${GUROBI_ROOT}/lib)
-    message (STATUS "Adding ${GUROBI_ROOT}/include and ${GUROBI_ROOT}/lib to include/linking directories.")
-endif(ENABLE_GUROBI)
-
-=======
->>>>>>> master
 # Add the executables
 # Must be created *after* Boost was added because of LINK_DIRECTORIES
 add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
