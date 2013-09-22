@@ -48,55 +48,57 @@ namespace storm {
         }
         
         void ExplicitModelAdapter::defineUndefinedConstants(std::string const& constantDefinitionString) {
-            // Parse the string that defines the undefined constants of the model and make sure that it contains exactly
-            // one value for each undefined constant of the model.
-            std::vector<std::string> definitions;
-            boost::split(definitions, constantDefinitionString, boost::is_any_of(","));
-            for (auto& definition : definitions) {
-                boost::trim(definition);
-                
-                // Check whether the token could be a legal constant definition.
-                uint_fast64_t positionOfAssignmentOperator = definition.find('=');
-                if (positionOfAssignmentOperator == std::string::npos) {
-                    throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: syntax error.";
-                }
-                
-                // Now extract the variable name and the value from the string.
-                std::string constantName = definition.substr(0, positionOfAssignmentOperator);
-                boost::trim(constantName);
-                std::string value = definition.substr(positionOfAssignmentOperator + 1);
-                boost::trim(value);
-                
-                // Check whether the constant is a legal undefined constant of the program and if so, of what type it is.
-                if (program.hasUndefinedBooleanConstant(constantName)) {
-                    if (value == "true") {
-                        program.getUndefinedBooleanConstantExpression(constantName)->define(true);
-                    } else if (value == "false") {
-                        program.getUndefinedBooleanConstantExpression(constantName)->define(false);
-                    } else {
-                        throw storm::exceptions::InvalidArgumentException() << "Illegal value for boolean constant: " << value << ".";
-                    }
-                } else if (program.hasUndefinedIntegerConstant(constantName)) {
-                    try {
-                        int_fast64_t integerValue = std::stoi(value);
-                        program.getUndefinedIntegerConstantExpression(constantName)->define(integerValue);
-                    } catch (std::invalid_argument const&) {
-                        throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << ".";
-                    } catch (std::out_of_range const&) {
-                        throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << " (value too big).";
-                    }
-                } else if (program.hasUndefinedDoubleConstant(constantName)) {
-                    try {
-                        double doubleValue = std::stod(value);
-                        program.getUndefinedDoubleConstantExpression(constantName)->define(doubleValue);
-                    } catch (std::invalid_argument const&) {
-                        throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << ".";
-                    } catch (std::out_of_range const&) {
-                        throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << " (value too big).";
+            if (!constantDefinitionString.empty()) {
+                // Parse the string that defines the undefined constants of the model and make sure that it contains exactly
+                // one value for each undefined constant of the model.
+                std::vector<std::string> definitions;
+                boost::split(definitions, constantDefinitionString, boost::is_any_of(","));
+                for (auto& definition : definitions) {
+                    boost::trim(definition);
+                    
+                    // Check whether the token could be a legal constant definition.
+                    uint_fast64_t positionOfAssignmentOperator = definition.find('=');
+                    if (positionOfAssignmentOperator == std::string::npos) {
+                        throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: syntax error.";
                     }
                     
-                } else {
-                    throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: unknown undefined constant " << constantName << ".";
+                    // Now extract the variable name and the value from the string.
+                    std::string constantName = definition.substr(0, positionOfAssignmentOperator);
+                    boost::trim(constantName);
+                    std::string value = definition.substr(positionOfAssignmentOperator + 1);
+                    boost::trim(value);
+                    
+                    // Check whether the constant is a legal undefined constant of the program and if so, of what type it is.
+                    if (program.hasUndefinedBooleanConstant(constantName)) {
+                        if (value == "true") {
+                            program.getUndefinedBooleanConstantExpression(constantName)->define(true);
+                        } else if (value == "false") {
+                            program.getUndefinedBooleanConstantExpression(constantName)->define(false);
+                        } else {
+                            throw storm::exceptions::InvalidArgumentException() << "Illegal value for boolean constant: " << value << ".";
+                        }
+                    } else if (program.hasUndefinedIntegerConstant(constantName)) {
+                        try {
+                            int_fast64_t integerValue = std::stoi(value);
+                            program.getUndefinedIntegerConstantExpression(constantName)->define(integerValue);
+                        } catch (std::invalid_argument const&) {
+                            throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << ".";
+                        } catch (std::out_of_range const&) {
+                            throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << " (value too big).";
+                        }
+                    } else if (program.hasUndefinedDoubleConstant(constantName)) {
+                        try {
+                            double doubleValue = std::stod(value);
+                            program.getUndefinedDoubleConstantExpression(constantName)->define(doubleValue);
+                        } catch (std::invalid_argument const&) {
+                            throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << ".";
+                        } catch (std::out_of_range const&) {
+                            throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << " (value too big).";
+                        }
+                        
+                    } else {
+                        throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: unknown undefined constant " << constantName << ".";
+                    }
                 }
             }
         }
