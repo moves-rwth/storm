@@ -57,7 +57,6 @@ namespace storm {
 
 			static std::function<bool (std::string const, std::string&)> stringInListValidator(std::vector<std::string> list) {
 				return [list] (std::string const inputString, std::string& errorMessageTarget) -> bool {
-					bool containsElement = false;
 					std::string const lowerInputString = storm::utility::StringHelper::stringToLower(inputString);
 					for (auto it = list.cbegin(); it != list.cend(); ++it) {
 						if (storm::utility::StringHelper::stringToLower(*it).compare(lowerInputString) == 0) {

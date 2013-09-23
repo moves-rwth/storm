@@ -439,7 +439,7 @@ namespace storm {
                     std::vector<std::list<storm::ir::Command>::const_iterator> iteratorList(activeCommandList.size());
                     
                     // Initialize the list of iterators.
-                    for (int i = 0; i < activeCommandList.size(); ++i) {
+                    for (size_t i = 0; i < activeCommandList.size(); ++i) {
                         iteratorList[i] = activeCommandList[i].cbegin();
                     }
                     

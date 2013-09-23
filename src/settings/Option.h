@@ -61,7 +61,7 @@ namespace storm {
 			Option(Option const& other): longName(other.longName), shortName(other.shortName), description(other.description), moduleName(other.moduleName), isRequired(other.isRequired), hasBeenSet(other.hasBeenSet) {
 				// Copy all Arguments
 				this->arguments.reserve(other.arguments.size());
-				for (auto i = 0; i < other.arguments.size(); ++i) {
+				for (size_t i = 0; i < other.arguments.size(); ++i) {
 					// Clone gives a deep copy
 					this->arguments.push_back(std::shared_ptr<ArgumentBase>(other.arguments.at(i).get()->clone()));
 				}
@@ -96,7 +96,7 @@ namespace storm {
 					LOG4CPLUS_ERROR(logger, "Option::unify: Could not unify Option \"" << getLongName() << "\" because the Argument Counts are different!");
 					throw storm::exceptions::OptionUnificationException() << "Could not unify Option \"" << getLongName() << "\" because the Argument Counts are different!";
 				}
-				for(auto i = 0; i != this->arguments.size(); i++) {
+				for(size_t i = 0; i != this->arguments.size(); i++) {
 					ArgumentBase* A = this->arguments.at(i).get();
 					ArgumentBase* B = other.arguments.at(i).get();
 

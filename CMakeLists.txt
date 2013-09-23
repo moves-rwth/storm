@@ -339,6 +339,8 @@ endif()
 
 if (ENABLE_GUROBI)
     message (STATUS "Linking in Gurobi.")
+	include_directories(${GUROBI_ROOT}/include)
+	link_directories(${GUROBI_ROOT}/lib)
     target_link_libraries(storm "gurobi55")
     target_link_libraries(storm-functional-tests "gurobi55")
     target_link_libraries(storm-performance-tests "gurobi55")
