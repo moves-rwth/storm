@@ -9,7 +9,10 @@
 #include <set>
 #include <cstdint>
 
-#ifdef STORM_USE_TBB
+// To detect whether the usage of TBB is possible, this include is neccessary
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_INTELTBB
 #	include <new> // This fixes a potential dependency ordering problem between GMM and TBB
 #	include "tbb/tbb.h"
 #	include <iterator>
@@ -43,6 +46,12 @@ namespace storm {
 namespace storm {
 namespace storage {
 
+#ifdef STORM_HAVE_INTELTBB
+// Forward declaration of the TBB Helper class
+template <typename M, typename V, typename T>
+class tbbHelper_MatrixRowVectorScalarProduct;
+#endif
+
 /*!
  * A sparse matrix class with a constant number of non-zero entries.
  * NOTE: Addressing *is* zero-based, so the valid range for getValue and addNextValue is 0..(rows - 1) where rows is the
@@ -62,6 +71,14 @@ public:
 	friend class storm::adapters::GmmxxAdapter;
 	friend class storm::adapters::EigenAdapter;
 	friend class storm::adapters::StormAdapter;
+
+#ifdef STORM_HAVE_INTELTBB
+	/*!
+	 * Declare the helper class for TBB as friend
+	 */
+	template <typename M, typename V, typename TPrime>
+	friend class tbbHelper_MatrixRowVectorScalarProduct;
+#endif
 
 	/*!
 	 * If we only want to iterate over the columns or values of the non-zero entries of
@@ -1136,7 +1153,7 @@ public:
 	 * vector.
 	 */
 	void multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const {
-#ifdef STORM_USE_TBB
+#ifdef STORM_HAVE_INTELTBB
 		tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size()), tbbHelper_MatrixRowVectorScalarProduct<storm::storage::SparseMatrix<T>, std::vector<T>, T>(this, &vector, &result));
 #else
         ConstRowIterator rowIt = this->begin();
@@ -1512,7 +1529,7 @@ private:
 	}
 };
 
-#ifdef STORM_USE_TBB
+#ifdef STORM_HAVE_INTELTBB
 	/*!
 	 *	This function is a helper for Parallel Execution of the multipliyWithVector functionality.
 	 *  It uses Intels TBB parallel_for paradigm to split up the row/vector multiplication and summation
@@ -1528,24 +1545,19 @@ private:
 		tbbHelper_MatrixRowVectorScalarProduct(M const* matrixA, V const* vectorX, V * resultVector) : matrixA(matrixA), vectorX(vectorX), resultVector(resultVector) {}
 
 		void operator() (const tbb::blocked_range<uint_fast64_t>& r) const {
-			// Initialize two iterators that 
-			M::ConstRowsIterator matrixElementIt(*matrixA, r.begin());
-			M::ConstRowsIterator matrixElementIte(*matrixA, r.begin());
-		
-			for (uint_fast64_t rowNumber = r.begin(); rowNumber != r.end(); ++rowNumber) {
-				// Put the past-the-end iterator to the correct position.
-				matrixElementIte.moveToNextRow();
-
+			for (uint_fast64_t row = r.begin(); row <= r.end(); ++row) {
+				uint_fast64_t index = matrixA->rowIndications.at(row);
+				uint_fast64_t indexEnd = matrixA->rowIndications.at(row + 1);
+				
 				// Initialize the result to be 0.
 				T element = storm::utility::constGetZero<T>();
-			
-				// Perform the scalar product.
-				for (; matrixElementIt != matrixElementIte; ++matrixElementIt) {
-					element += matrixElementIt.value() * vectorX->at(matrixElementIt.column());
-				}
 				
+				for (; index != indexEnd; ++index) {
+					element += matrixA->valueStorage.at(index) * vectorX->at(matrixA->columnIndications.at(index));
+				}
+
 				// Write back to the result Vector
-				resultVector->at(rowNumber) = element;
+				resultVector->at(row) = element;
 			}
 		}
 	

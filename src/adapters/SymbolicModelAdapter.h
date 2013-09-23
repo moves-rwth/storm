@@ -206,7 +206,7 @@ private:
 
 		*systemAdd *= *reachableStates;
 		std::cout << "got " << systemAdd->nodeCount() << " nodes" << std::endl;
-		std::cout << "and " << systemAdd->CountMinterm(allRowDecisionDiagramVariables.size() + allColumnDecisionDiagramVariables.size()) << std::endl;
+		std::cout << "and " << systemAdd->CountMinterm(static_cast<int>(allRowDecisionDiagramVariables.size() + allColumnDecisionDiagramVariables.size())) << std::endl;
 	}
 
 	void createIdentityDecisionDiagrams(storm::ir::Program const& program) {

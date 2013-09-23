@@ -7,15 +7,24 @@ project (storm CXX C)
 set (STORM_CPP_VERSION_MAJOR 1)
 set (STORM_CPP_VERSION_MINOR 0)
 
-# Set all Eigen references the version in the repository
-set(EIGEN3_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen)
-message(STATUS "EIGEN3_INCLUDE_DIR is ${EIGEN3_INCLUDE_DIR}")
+# Add base folder for better inclusion paths
+include_directories("${PROJECT_SOURCE_DIR}")
+include_directories("${PROJECT_SOURCE_DIR}/src")
 
-# Set all Eigen references the version in the repository
-set(GMMXX_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-4.2/include)
-message(STATUS "GMMXX_INCLUDE_DIR is ${GMMXX_INCLUDE_DIR}")
+# Add the version of Eigen3 in the repository to the include pathes
+set(EIGEN3_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen")
+include_directories(${EIGEN3_INCLUDE_DIR})
 
-# Now define all available custom options
+# Add the version of GMM in the repository to the include pathes
+set(GMMXX_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-4.2/include")
+include_directories(${GMMXX_INCLUDE_DIR})
+
+
+#############################################################
+##
+##	CMake options of StoRM
+##
+#############################################################
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
@@ -27,14 +36,47 @@ set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory.")
 
+#############################################################
+##
+##	Inclusion of required libraries
+##
+#############################################################
+
+set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb41_20130314_merged-win-lin-mac/")
+if(MSVC)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/vc11")
+elseif(CMAKE_COMPILER_IS_GNUCC)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/gcc4.4")
+else(CLANG)
+	set(ENV{TBB_ARCH_PLATFORM} "intel64/clang3.2")
+endif()
+
+# Add the resources/cmake folder to Module Search Path for FindTBB.cmake
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
+
+# Boost Option variables
+set(Boost_USE_STATIC_LIBS        ON)
+set(Boost_USE_MULTITHREADED      ON)
+set(Boost_USE_STATIC_RUNTIME    OFF)
+
+# If a custom boost root directory was specified, we set the corresponding hint for the script to find it.
+if(CUSTOM_BOOST_ROOT)
+	message(STATUS "StoRM - Using Boost from CUSTOM_BOOST_ROOT located at ${CUSTOM_BOOST_ROOT}")
+	set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
+endif(CUSTOM_BOOST_ROOT)
+
+find_package(Boost REQUIRED)
+find_package(Doxygen REQUIRED)
+find_package(TBB)
+find_package(Threads REQUIRED)
+
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (DEBUG)
     set (CMAKE_BUILD_TYPE "DEBUG")
-    message(STATUS "Building DEBUG version.")
 else()
     set (CMAKE_BUILD_TYPE "RELEASE")
-    message(STATUS "Building RELEASE version.")
 endif()
+message(STATUS "StoRM - Building ${CMAKE_BUILD_TYPE} version.")
 
 if ("${GUROBI_ROOT}" STREQUAL "")
     set(ENABLE_GUROBI OFF)
@@ -42,14 +84,21 @@ else()
     set(ENABLE_GUROBI ON)
 endif()
 
-message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
-message(STATUS "CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
+message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
+
+
+#############################################################
+##
+##	Compiler specific settings and definitions
+##
+#############################################################
 
 # Path to the no-strict-aliasing target
 set(CONVERSIONHELPER_TARGET "${PROJECT_SOURCE_DIR}/src/utility/ConversionHelper.cpp")
 
 if(CMAKE_COMPILER_IS_GNUCC)
-    message(STATUS "Using GCC")
+    message(STATUS "StoRM - Using Compiler Configuration: GCC")
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -pedantic")
@@ -65,7 +114,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 	# Set the no-strict-aliasing target for GCC
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
 elseif(MSVC)
-    message(STATUS "Using MSVC")
+    message(STATUS "StoRM - Using Compiler Configuration: MSVC")
 	# required for GMM to compile, ugly error directive in their code
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE /D_CRT_SECURE_NO_WARNINGS)
 	# required as the PRCTL Parser bloats object files (COFF) beyond their maximum size (see http://msdn.microsoft.com/en-us/library/8578y171(v=vs.110).aspx)
@@ -75,15 +124,17 @@ elseif(MSVC)
 	
 	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
-    message(STATUS "Using CLANG")
+    message(STATUS "StoRM - Using Compiler Configuration: Clang (LLVM)")
 	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
 	set (CLANG ON)
     # Set standard flags for clang
     set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O3")
     if(UNIX AND NOT APPLE)
 		set(CLANG_STDLIB libstdc++)
+		message(STATUS "StoRM - Linking against libstdc++")
     else()
 		set(CLANG_STDLIB libc++)
+		message(STATUS "StoRM - Linking against libc++")
 		# Disable Cotire
 		set(STORM_USE_COTIRE OFF)
 		# Set up some Xcode specific settings
@@ -104,14 +155,40 @@ else(CLANG)
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
 endif()
 
-# Add the binary folder to the search path for include files so that we will find storm-config.h
-include_directories("${PROJECT_BINARY_DIR}")
-
+#############################################################
+##
+##	CMake-generated Config File for StoRM
+##
+#############################################################
 # Base path for test files
-set(STORM_CPP_TESTS_BASE_PATH ${PROJECT_SOURCE_DIR}/test)
-message(STATUS "STORM_CPP_TESTS_BASE_PATH is ${STORM_CPP_TESTS_BASE_PATH}")
+set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
+# Gurobi Defines
+if (ENABLE_GUROBI)
+	set(STORM_CPP_GUROBI_DEF "define")
+else()
+	set(STORM_CPP_GUROBI_DEF "undef")
+endif()
 
-# Main Sources
+# Intel TBB Defines
+if (TBB_FOUND AND USE_INTELTBB)
+	set(STORM_CPP_INTELTBB_DEF "define")
+else()
+	set(STORM_CPP_INTELTBB_DEF "undef")
+endif()
+
+# Configure a header file to pass some of the CMake settings to the source code
+configure_file (
+	"${PROJECT_SOURCE_DIR}/storm-config.h.in"
+	"${PROJECT_BINARY_DIR}/include/storm-config.h"
+)
+# Add the binary dir include directory for storm-config.h
+include_directories("${PROJECT_BINARY_DIR}/include")
+
+#############################################################
+##
+##	Source file aggregation and clustering
+##
+#############################################################
 file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
@@ -140,6 +217,9 @@ file(GLOB_RECURSE STORM_IR_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/ir/expres
 file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/functional/*.h ${STORM_CPP_TESTS_BASE_PATH}/functional/*.cpp)
 file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/performance/*.h ${STORM_CPP_TESTS_BASE_PATH}/performance/*.cpp)
 
+# Additional include files like the storm-config.h
+file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
+
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
@@ -149,6 +229,9 @@ source_group(formula\\abstract FILES ${STORM_FORMULA_ABSTRACT_FILES})
 source_group(formula\\csl FILES ${STORM_FORMULA_CSL_FILES})
 source_group(formula\\ltl FILES ${STORM_FORMULA_LTL_FILES})
 source_group(formula\\prctl FILES ${STORM_FORMULA_PRCTL_FILES})
+source_group(generated FILES ${STORM_BUILD_HEADERS})
+source_group(ir FILES ${STORM_IR_FILES})
+source_group(ir\\expressions FILES ${STORM_IR_EXPRESSIONS_FILES})
 source_group(modelchecker FILES ${STORM_MODELCHECKER_FILES})
 source_group(counterexamples FILES ${STORM_COUNTEREXAMPLES_FILES})
 source_group(models FILES ${STORM_MODELS_FILES})
@@ -158,92 +241,57 @@ source_group(settings FILES ${STORM_SETTINGS_FILES})
 source_group(solver FILES ${STORM_SOLVER_FILES})
 source_group(storage FILES ${STORM_STORAGE_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
-source_group(ir FILES ${STORM_IR_FILES})
-source_group(ir\\expressions FILES ${STORM_IR_EXPRESSIONS_FILES})
 source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
 source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES})
 
-# Add base folder for better inclusion paths
-include_directories("${PROJECT_SOURCE_DIR}")
-include_directories("${PROJECT_SOURCE_DIR}/src")
-
-# Preset pathes for Intel TBB to internal copy in /resources/3rdParty/tbb41_20130314_mergedWindowsLinuxMacOSX
-set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb41_20130314_merged-win-lin-mac/")
-if(MSVC)
-	set(ENV{TBB_ARCH_PLATFORM} "intel64/vc11")
-elseif(CMAKE_COMPILER_IS_GNUCC)
-	set(ENV{TBB_ARCH_PLATFORM} "intel64/gcc4.4")
-else(CLANG)
-	set(ENV{TBB_ARCH_PLATFORM} "intel64/clang3.2")
-endif()
-
-# Add the resources/cmake folder to Module Search Path for FindTBB.cmake
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
-
-# Set required external packages
-find_package(Threads REQUIRED)
-find_package(Doxygen REQUIRED)
-set(Boost_USE_STATIC_LIBS        ON)
-set(Boost_USE_MULTITHREADED      ON)
-set(Boost_USE_STATIC_RUNTIME    OFF)
-
-# If a custom boost root directory was specified, we set the corresponding hint for the script to find it.
-if(CUSTOM_BOOST_ROOT)
-	set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
-endif(CUSTOM_BOOST_ROOT)
-find_package(Boost REQUIRED COMPONENTS program_options)
-find_package(TBB)
-
-if(Boost_FOUND)
-    if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
-        set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
-    endif ()
-	
-    message(STATUS "BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
-    message(STATUS "BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
-	
-    include_directories(${Boost_INCLUDE_DIRS})
-	link_directories(${Boost_LIBRARY_DIRS})
-endif(Boost_FOUND)
-
-# Intels Thread Building Blocks
-if (TBB_FOUND)
-	message(STATUS "Found TBB with Interface Version ${TBB_INTERFACE_VERSION}")
-	
-	if(USE_INTELTBB)
-		add_definitions(-DGMM_USE_TBB)
-	endif()
-	
-	include_directories(${TBB_INCLUDE_DIRS})
-	link_directories(${TBB_LIBRARY_DIRS})
-endif(TBB_FOUND)
-
-# Add Eigen to the included directories
-include_directories(${EIGEN3_INCLUDE_DIR})
-
-# Add GMMXX to the included directories
-include_directories(${GMMXX_INCLUDE_DIR})
-
 # Add custom additional include or link directories
 if (ADDITIONAL_INCLUDE_DIRS)
-	message(STATUS "Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")
+	message(STATUS "StoRM - Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")
 	include_directories(${ADDITIONAL_INCLUDE_DIRS})
 endif(ADDITIONAL_INCLUDE_DIRS)
 if (ADDITIONAL_LINK_DIRS)
-	message(STATUS "Using additional link directories ${ADDITIONAL_LINK_DIRS}")
+	message(STATUS "StoRM - Using additional link directories ${ADDITIONAL_LINK_DIRS}")
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
-# Add the executables
-# Must be created *after* Boost was added because of LINK_DIRECTORIES
-add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS})
-add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
-add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
+#############################################################
+##
+##	Pre executable-creation link_directories setup
+##
+#############################################################
+if (ENABLE_GUROBI)
+	link_directories("${GUROBI_ROOT}/lib")
+endif()
+if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
+	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
+endif ()
+link_directories(${Boost_LIBRARY_DIRS})
+if (TBB_FOUND AND USE_INTELTBB)
+	link_directories(${TBB_LIBRARY_DIRS})
+endif()
 
-# Add target link deps for Boost program options
+###############################################################################
+##                                                                            #
+##	Executable Creation                                                       #
+##                                                                            #
+##  All link_directories() calls MUST be made before this point               #
+##                                                                            #
+###############################################################################
+add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS} ${STORM_BUILD_HEADERS})
+add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS} ${STORM_BUILD_HEADERS})
+add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS} ${STORM_BUILD_HEADERS})
+
+#############################################################
+##
+##	Boost
+##
+#############################################################
+include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(storm ${Boost_LIBRARIES})   
 target_link_libraries(storm-functional-tests ${Boost_LIBRARIES})
 target_link_libraries(storm-performance-tests ${Boost_LIBRARIES})
+#message(STATUS "BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
+#message(STATUS "BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
 
 #############################################################
 ##
@@ -272,6 +320,19 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/sr
 target_link_libraries(storm ltl2dstar)
 target_link_libraries(storm-functional-tests ltl2dstar)
 target_link_libraries(storm-performance-tests ltl2dstar)
+
+#############################################################
+##
+##	Gurobi (optional)
+##
+#############################################################
+if (ENABLE_GUROBI)
+    message (STATUS "StoRM - Linking with Gurobi")
+	include_directories("${GUROBI_ROOT}/include")
+    target_link_libraries(storm "gurobi55")
+    target_link_libraries(storm-functional-tests "gurobi55")
+    target_link_libraries(storm-performance-tests "gurobi55")
+endif(ENABLE_GUROBI)
 
 #############################################################
 ##
@@ -310,6 +371,35 @@ if (UNIX AND NOT APPLE)
 	target_link_libraries(storm-performance-tests rt)
 endif(UNIX AND NOT APPLE)
 
+#############################################################
+##
+##	Intel Threading Building Blocks (optional)
+##
+#############################################################
+if (TBB_FOUND)
+	message(STATUS "StoRM - Found Intel TBB with Interface Version ${TBB_INTERFACE_VERSION}")
+	if (USE_INTELTBB)
+		message(STATUS "StoRM - Linking with Intel TBB for activated Matrix/Vector MT")
+		include_directories(${TBB_INCLUDE_DIRS})
+		target_link_libraries(storm tbb tbbmalloc)
+		target_link_libraries(storm-functional-tests tbb tbbmalloc)
+		target_link_libraries(storm-performance-tests tbb tbbmalloc)
+	endif(USE_INTELTBB)
+endif(TBB_FOUND)
+
+#############################################################
+##
+##	Threads
+##
+#############################################################
+include_directories(${THREADS_INCLUDE_DIRS})
+target_link_libraries(storm ${CMAKE_THREAD_LIBS_INIT})
+if (STORM_USE_COTIRE)
+	target_link_libraries(storm_unity ${CMAKE_THREAD_LIBS_INIT})
+endif(STORM_USE_COTIRE)
+target_link_libraries(storm-functional-tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(storm-performance-tests ${CMAKE_THREAD_LIBS_INIT})
+
 if (MSVC)
 	# Add the DebugHelper DLL
 	set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} Dbghelp.lib")
@@ -318,14 +408,8 @@ if (MSVC)
 	target_link_libraries(storm-performance-tests "Dbghelp.lib")
 endif(MSVC)
 
-if (USE_INTELTBB)
-	target_link_libraries(storm tbb tbbmalloc)
-	target_link_libraries(storm-functional-tests tbb tbbmalloc)
-	target_link_libraries(storm-performance-tests tbb tbbmalloc)
-endif(USE_INTELTBB)
-
 # Print Cotire Usage Status
-message (STATUS "Using Cotire: ${STORM_USE_COTIRE}")
+message (STATUS "StoRM - Using Cotire: ${STORM_USE_COTIRE}")
 
 if (STORM_USE_COTIRE)
 	# Include Cotire for PCH Generation
@@ -338,19 +422,9 @@ if (STORM_USE_COTIRE)
 	#cotire(storm-performance-tests)
 endif()
 
-if (ENABLE_GUROBI)
-    message (STATUS "Linking in Gurobi.")
-	include_directories(${GUROBI_ROOT}/include)
-	link_directories(${GUROBI_ROOT}/lib)
-    target_link_libraries(storm "gurobi55")
-    target_link_libraries(storm-functional-tests "gurobi55")
-    target_link_libraries(storm-performance-tests "gurobi55")
-    add_definitions(-DHAVE_GUROBI)
-endif(ENABLE_GUROBI)
-
 # Link against libc++abi if requested. May be needed to build on Linux systems using clang.
 if (LINK_LIBCXXABI)
-	message (STATUS "Linking against libc++abi.")
+	message (STATUS "StoRM - Linking against libc++abi.")
 	target_link_libraries(storm "c++abi")
 	target_link_libraries(storm-functional-tests "c++abi")
 	target_link_libraries(storm-performance-tests "c++abi")
@@ -361,26 +435,10 @@ if(DOXYGEN_FOUND)
     set(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
     string(REGEX REPLACE ";" " " CMAKE_DOXYGEN_INPUT_LIST "${PROJECT_SOURCE_DIR}/src")
 
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" @ONLY)
 
-    add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile COMMENT "Generating API documentation with Doxygen" VERBATIM)
+    add_custom_target(doc ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" COMMENT "Generating API documentation with Doxygen" VERBATIM)
 endif(DOXYGEN_FOUND)
-
-if (THREADS_FOUND)
-	include_directories(${THREADS_INCLUDE_DIRS})
-	target_link_libraries(storm ${CMAKE_THREAD_LIBS_INIT})
-	if (STORM_USE_COTIRE)
-		target_link_libraries(storm_unity ${CMAKE_THREAD_LIBS_INIT})
-	endif(STORM_USE_COTIRE)
-	target_link_libraries(storm-functional-tests ${CMAKE_THREAD_LIBS_INIT})
-	target_link_libraries(storm-performance-tests ${CMAKE_THREAD_LIBS_INIT})
-endif(THREADS_FOUND)
-
-# Configure a header file to pass some of the CMake settings to the source code
-configure_file (
-	"${PROJECT_SOURCE_DIR}/storm-config.h.in"
-	"${PROJECT_BINARY_DIR}/storm-config.h"
-)
 
 add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm -v --fix-deadlocks ${PROJECT_SOURCE_DIR}/examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab DEPENDS storm)
 add_custom_target(memcheck-functional-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-functional-tests -v --fix-deadlocks	DEPENDS storm-functional-tests)

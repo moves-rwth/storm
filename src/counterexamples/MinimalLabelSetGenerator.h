@@ -8,7 +8,10 @@
 #ifndef STORM_COUNTEREXAMPLES_MINIMALCOMMANDSETGENERATOR_MDP_H_
 #define STORM_COUNTEREXAMPLES_MINIMALCOMMANDSETGENERATOR_MDP_H_
 
-#ifdef HAVE_GUROBI
+// To detect whether the usage of Gurobi is possible, this include is neccessary
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_GUROBI
 extern "C" {
 #include "gurobi_c.h"
     
@@ -30,7 +33,7 @@ namespace storm {
          */
         template <class T>
         class MinimalLabelSetGenerator {
-#ifdef HAVE_GUROBI
+#ifdef STORM_HAVE_GUROBI
         private:
             /*!
              * A helper class that provides the functionality to compute a hash value for pairs of state indices.
@@ -1052,7 +1055,7 @@ namespace storm {
         public:
             
             static std::unordered_set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, T probabilityThreshold, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
-#ifdef HAVE_GUROBI
+#ifdef STORM_HAVE_GUROBI
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabels()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal label set generation is impossible for unlabeled model.";
@@ -1099,7 +1102,7 @@ namespace storm {
                 // (5) Return result.
                 return usedLabelSet;
 #else
-                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable if StoRM is compiled without support for Gurobi.";
+                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Gurobi.";
 #endif
             }
             
