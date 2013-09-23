@@ -69,7 +69,9 @@ namespace storm {
             struct VariableInformation {
                 std::unordered_map<uint_fast64_t, uint_fast64_t> labelToVariableIndexMap;
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> stateToChoiceVariablesIndexMap;
+                std::unordered_map<uint_fast64_t, uint_fast64_t> initialStateToChoiceVariableIndexMap;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> stateToProbabilityVariableIndexMap;
+                uint_fast64_t virtualInitialStateVariableIndex;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> problematicStateToVariableIndexMap;
                 std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, uint_fast64_t, PairHash> problematicTransitionToVariableIndexMap;
                 uint_fast64_t nextFreeVariableIndex;
@@ -316,11 +318,44 @@ namespace storm {
             }
             
             /*!
-             * Creates the variables for the probabilities in the model.
+             * Creates the variables needed for encoding the nondeterministic selection of one of the initial states
+             * in the model.
              *
              * @param env The Gurobi environment.
              * @param model The Gurobi model.
              * @param labeledMdp The labeled MDP.
+             * @param stateInformation The information about the states of the model.
+             * @param nextFreeVariableIndex A reference to the next free variable index. Note: when creating new
+             * variables, this value is increased.
+             * @return A mapping from initial states to choice variable indices.
+             */
+            static std::unordered_map<uint_fast64_t, uint_fast64_t> createInitialChoiceVariables(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, uint_fast64_t& nextFreeVariableIndex) {
+                int error = 0;
+                std::stringstream variableNameBuffer;
+                std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
+                for (auto initialState : labeledMdp.getLabeledStates("init")) {
+                    // Only consider this initial state if it is relevant.
+                    if (stateInformation.relevantStates.get(initialState)) {
+                        variableNameBuffer.str("");
+                        variableNameBuffer.clear();
+                        variableNameBuffer << "init" << initialState;
+                        error = GRBaddvar(model, 0, nullptr, nullptr, 0.0, 0.0, 1.0, GRB_BINARY, variableNameBuffer.str().c_str());
+                        if (error) {
+                            LOG4CPLUS_ERROR(logger, "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").");
+                            throw storm::exceptions::InvalidStateException() << "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").";
+                        }
+                        resultingMap[initialState] = nextFreeVariableIndex;
+                        ++nextFreeVariableIndex;
+                    }
+                }
+                return resultingMap;
+            }
+            
+            /*!
+             * Creates the variables for the probabilities in the model.
+             *
+             * @param env The Gurobi environment.
+             * @param model The Gurobi model.
              * @param stateInformation The information about the states in the model.
              * @param nextFreeVariableIndex A reference to the next free variable index. Note: when creating new
              * variables, this value is increased.
@@ -328,7 +363,7 @@ namespace storm {
              * label-minimal subsystem of maximal probability is computed. 
              * @return A mapping from states to the index of the corresponding probability variables.
              */
-            static std::unordered_map<uint_fast64_t, uint_fast64_t> createProbabilityVariables(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, uint_fast64_t& nextFreeVariableIndex, bool maximizeProbability = false) {
+            static std::unordered_map<uint_fast64_t, uint_fast64_t> createProbabilityVariables(GRBenv* env, GRBmodel* model, StateInformation const& stateInformation, uint_fast64_t& nextFreeVariableIndex) {
                 int error = 0;
                 std::stringstream variableNameBuffer;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
@@ -336,7 +371,7 @@ namespace storm {
                     variableNameBuffer.str("");
                     variableNameBuffer.clear();
                     variableNameBuffer << "p" << state;
-                    error = GRBaddvar(model, 0, nullptr, nullptr, maximizeProbability ? (labeledMdp.getLabeledStates("init").get(state) ? -0.5 : 0) : 0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
+                    error = GRBaddvar(model, 0, nullptr, nullptr, 0.0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
                     if (error) {
                         LOG4CPLUS_ERROR(logger, "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").");
                         throw storm::exceptions::InvalidStateException() << "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").";
@@ -345,6 +380,33 @@ namespace storm {
                     ++nextFreeVariableIndex;
                 }
                 return resultingMap;
+            }
+            
+            /*!
+             * Creates the variables for the probabilities in the model.
+             *
+             * @param env The Gurobi environment.
+             * @param model The Gurobi model.
+             * @param nextFreeVariableIndex A reference to the next free variable index. Note: when creating new
+             * variables, this value is increased.
+             * @param maximizeProbability If set to true, the objective function is constructed in a way that a
+             * label-minimal subsystem of maximal probability is computed.
+             * @return The index of the variable for the probability of the virtual initial state.
+             */
+            static uint_fast64_t createVirtualInitialStateVariable(GRBenv* env, GRBmodel* model, uint_fast64_t& nextFreeVariableIndex, bool maximizeProbability = false) {
+                int error = 0;
+                std::stringstream variableNameBuffer;
+                variableNameBuffer << "pinit";
+                
+                error = GRBaddvar(model, 0, nullptr, nullptr, maximizeProbability ? -0.5 : 0.0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
+                if (error) {
+                    LOG4CPLUS_ERROR(logger, "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").";
+                }
+                
+                uint_fast64_t variableIndex = nextFreeVariableIndex;
+                ++nextFreeVariableIndex;
+                return variableIndex;
             }
             
             /*!
@@ -456,19 +518,32 @@ namespace storm {
                 
                 // Create variables for involved labels.
                 result.labelToVariableIndexMap = createLabelVariables(env, model, choiceInformation.allRelevantLabels, result.nextFreeVariableIndex);
+                LOG4CPLUS_DEBUG(logger, "Created variables for labels.");
                 
                 // Create scheduler variables for relevant states and their actions.
                 result.stateToChoiceVariablesIndexMap = createSchedulerVariables(env, model, stateInformation, choiceInformation, result.nextFreeVariableIndex);
+                LOG4CPLUS_DEBUG(logger, "Created variables for nondeterministic choices.");
+
+                // Create scheduler variables for nondeterministically choosing an initial state.
+                result.initialStateToChoiceVariableIndexMap = createInitialChoiceVariables(env, model, labeledMdp, stateInformation, result.nextFreeVariableIndex);
+                LOG4CPLUS_DEBUG(logger, "Created variables for the nondeterministic choice of the initial state.");
                 
                 // Create variables for probabilities for all relevant states.
-                result.stateToProbabilityVariableIndexMap = createProbabilityVariables(env, model, labeledMdp, stateInformation, result.nextFreeVariableIndex);
-                                
+                result.stateToProbabilityVariableIndexMap = createProbabilityVariables(env, model, stateInformation, result.nextFreeVariableIndex);
+                LOG4CPLUS_DEBUG(logger, "Created variables for the reachability probabilities.");
+
+                // Create a probability variable for a virtual initial state that nondeterministically chooses one of the system's real initial states as its target state.
+                result.virtualInitialStateVariableIndex = createVirtualInitialStateVariable(env, model, result.nextFreeVariableIndex);
+                LOG4CPLUS_DEBUG(logger, "Created variables for the virtual initial state.");
+
                 // Create variables for problematic states.
                 result.problematicStateToVariableIndexMap = createProblematicStateVariables(env, model, labeledMdp, stateInformation, choiceInformation, result.nextFreeVariableIndex);
-                
+                LOG4CPLUS_DEBUG(logger, "Created variables for the problematic states.");
+
                 // Create variables for problematic choices.
                 result.problematicTransitionToVariableIndexMap = createProblematicChoiceVariables(env, model, labeledMdp, stateInformation, choiceInformation, result.nextFreeVariableIndex);
-                
+                LOG4CPLUS_DEBUG(logger, "Created variables for the problematic choices.");
+
                 LOG4CPLUS_INFO(logger, "Successfully created " << result.nextFreeVariableIndex << " Gurobi variables.");
                 
                 // Finally, return variable information struct.
@@ -489,21 +564,14 @@ namespace storm {
             static uint_fast64_t assertProbabilityGreaterThanThreshold(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, T probabilityThreshold) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 int error = 0;
-                storm::storage::BitVector const& initialStates = labeledMdp.getLabeledStates("init");
-                if (initialStates.getNumberOfSetBits() != 1) {
-                    LOG4CPLUS_ERROR(logger, "Must have exactly one initial state, but got " << initialStates.getNumberOfSetBits() << "instead.");
-                    throw storm::exceptions::InvalidStateException() << "Must have exactly one initial state, but got " << initialStates.getNumberOfSetBits() << "instead.";
+                int variableIndex = static_cast<int>(variableInformation.virtualInitialStateVariableIndex);
+                double coefficient = 1.0;
+                error = GRBaddconstr(model, 1, &variableIndex, &coefficient, GRB_GREATER_EQUAL, probabilityThreshold + 1e-6, nullptr);
+                if (error) {
+                    LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
                 }
-                for (auto initialState : initialStates) {
-                    int variableIndex = static_cast<int>(variableInformation.stateToProbabilityVariableIndexMap.at(initialState));
-                    double coefficient = 1.0;
-                    error = GRBaddconstr(model, 1, &variableIndex, &coefficient, GRB_GREATER_EQUAL, probabilityThreshold + 1e-6, nullptr);
-                    if (error) {
-                        LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
-                        throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
-                    }
-                    ++numberOfConstraintsCreated;
-                }
+                ++numberOfConstraintsCreated;
                 return numberOfConstraintsCreated;
             }
             
@@ -517,6 +585,7 @@ namespace storm {
              * @return The total number of constraints that were created.
              */
             static uint_fast64_t assertValidPolicy(GRBenv* env, GRBmodel* model, StateInformation const& stateInformation, VariableInformation const& variableInformation) {
+                // Assert that the policy chooses at most one action in each state of the system.
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 int error = 0;
                 for (auto state : stateInformation.relevantStates) {
@@ -527,13 +596,30 @@ namespace storm {
                     for (auto choiceVariableIndex : choiceVariableIndices) {
                         variables.push_back(static_cast<int>(choiceVariableIndex));
                     }
-                    error = GRBaddconstr(model, choiceVariableIndices.size(), &variables[0], &coefficients[0], GRB_LESS_EQUAL, 1, nullptr);
+                    error = GRBaddconstr(model, variables.size(), &variables[0], &coefficients[0], GRB_LESS_EQUAL, 1, nullptr);
                     if (error) {
                         LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
                         throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
                     }
                     ++numberOfConstraintsCreated;
                 }
+                
+                // Now assert that the virtual initial state picks exactly one initial state from the system as its
+                // successor state.
+                std::vector<int> variables;
+                variables.reserve(variableInformation.initialStateToChoiceVariableIndexMap.size());
+                std::vector<double> coefficients(variableInformation.initialStateToChoiceVariableIndexMap.size(), 1);
+                for (auto initialStateVariableIndexPair : variableInformation.initialStateToChoiceVariableIndexMap) {
+                    variables.push_back(static_cast<int>(initialStateVariableIndexPair.second));
+                }
+                
+                error = GRBaddconstr(model, variables.size(), &variables[0], &coefficients[0], GRB_EQUAL, 1, nullptr);
+                if (error) {
+                    LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
+                }
+                ++numberOfConstraintsCreated;
+                
                 return numberOfConstraintsCreated;
             }
             
@@ -657,6 +743,27 @@ namespace storm {
                         ++choiceVariableIndicesIterator;
                     }
                 }
+                
+                // Make sure that the virtual initial state is being assigned the probability from the initial state
+                // that it selected as a successor state.
+                std::vector<double> coefficients(3);
+                coefficients[0] = 1;
+                coefficients[1] = -1;
+                coefficients[2] = 1;
+                std::vector<int> variables(3);
+                variables[0] = static_cast<int>(variableInformation.virtualInitialStateVariableIndex);
+                
+                for (auto initialStateVariableIndexPair : variableInformation.initialStateToChoiceVariableIndexMap) {
+                    variables[1] = static_cast<int>(variableInformation.stateToProbabilityVariableIndexMap.at(initialStateVariableIndexPair.first));
+                    variables[2] = static_cast<int>(initialStateVariableIndexPair.second);
+                }
+                
+                error = GRBaddconstr(model, variables.size(), &variables[0], &coefficients[0], GRB_LESS_EQUAL, 1, nullptr);
+                if (error) {
+                    LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
+                }
+                
                 return numberOfConstraintsCreated;
             }
             
@@ -745,6 +852,8 @@ namespace storm {
                 storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 int error = 0;
+                std::vector<int> variables;
+                std::vector<double> coefficients;
                 
                 for (auto state : stateInformation.relevantStates) {
                     // Assert that all states, that select an action, this action either has a non-zero probability to
@@ -759,8 +868,8 @@ namespace storm {
                         }
                         
                         if (!psiStateReachableInOneStep) {
-                            std::vector<int> variables;
-                            std::vector<double> coefficients;
+                            variables.clear();
+                            coefficients.clear();
                             
                             variables.push_back(static_cast<int>(*choiceVariableIndicesIterator));
                             coefficients.push_back(1);
@@ -787,75 +896,80 @@ namespace storm {
                         ++choiceVariableIndicesIterator;
                     }
                     
-                    // For all states except for the initial state, assert that there is a selected incoming transition
-                    // in the subsystem if there is one selected action in the current state.
-                    if (!labeledMdp.getLabeledStates("init").get(state)) {
-                        std::vector<int> variables;
-                        std::vector<double> coefficients;
-                        
-                        for (auto choiceVariableIndex : variableInformation.stateToChoiceVariablesIndexMap.at(state)) {
-                            variables.push_back(static_cast<int>(choiceVariableIndex));
-                            coefficients.push_back(1);
-                        }
-                        
-                        // Compute the set of predecessors.
-                        std::unordered_set<uint_fast64_t> predecessors;
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(state); predecessorIt != backwardTransitions.constColumnIteratorEnd(state); ++predecessorIt) {
-                            if (state != *predecessorIt) {
-                                predecessors.insert(*predecessorIt);
-                            }
-                        }
-                        
-                        for (auto predecessor : predecessors) {
-                            std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(predecessor).begin();
-                            for (auto relevantChoice : choiceInformation.relevantChoicesForRelevantStates.at(predecessor)) {
-                                bool choiceTargetsCurrentState = false;
-                                
-                                // Check if the current choice targets the current state.
-                                for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(relevantChoice); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(relevantChoice); ++successorIt) {
-                                    if (state == *successorIt) {
-                                        choiceTargetsCurrentState = true;
-                                        break;
-                                    }
-                                }
-                                
-                                // If it does, we can add the choice to the sum.
-                                if (choiceTargetsCurrentState) {
-                                    variables.push_back(static_cast<int>(*choiceVariableIndicesIterator));
-                                    coefficients.push_back(-1);
-                                }
-                                ++choiceVariableIndicesIterator;
-                            }
-                        }
-                        
-                        error = GRBaddconstr(model, variables.size(), &variables[0], &coefficients[0], GRB_LESS_EQUAL, 0, nullptr);
-                        if (error) {
-                            LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
-                            throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
-                        }
-                        ++numberOfConstraintsCreated;
-                    } else {
-                        // Assert that the initial state selects an action.
-                        std::vector<int> variables;
-                        std::vector<double> coefficients;
-                        
-                        for (auto choiceVariableIndex : variableInformation.stateToChoiceVariablesIndexMap.at(state)) {
-                            variables.push_back(static_cast<int>(choiceVariableIndex));
-                            coefficients.push_back(1);
-                        }
-                        
-                        error = GRBaddconstr(model, variables.size(), &variables[0], &coefficients[0], GRB_GREATER_EQUAL, 1, nullptr);
-                        if (error) {
-                            LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
-                            throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
-                        }
-                        ++numberOfConstraintsCreated;
+                    // For all states assert that there is either a selected incoming transition in the subsystem or the
+                    // state is the chosen initial state if there is one selected action in the current state.
+                    variables.clear();
+                    coefficients.clear();
+                    
+                    for (auto choiceVariableIndex : variableInformation.stateToChoiceVariablesIndexMap.at(state)) {
+                        variables.push_back(static_cast<int>(choiceVariableIndex));
+                        coefficients.push_back(1);
                     }
+                    
+                    // Compute the set of predecessors.
+                    std::unordered_set<uint_fast64_t> predecessors;
+                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(state); predecessorIt != backwardTransitions.constColumnIteratorEnd(state); ++predecessorIt) {
+                        if (state != *predecessorIt) {
+                            predecessors.insert(*predecessorIt);
+                        }
+                    }
+                    
+                    for (auto predecessor : predecessors) {
+                        std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(predecessor).begin();
+                        for (auto relevantChoice : choiceInformation.relevantChoicesForRelevantStates.at(predecessor)) {
+                            bool choiceTargetsCurrentState = false;
+                            
+                            // Check if the current choice targets the current state.
+                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(relevantChoice); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(relevantChoice); ++successorIt) {
+                                if (state == *successorIt) {
+                                    choiceTargetsCurrentState = true;
+                                    break;
+                                }
+                            }
+                            
+                            // If it does, we can add the choice to the sum.
+                            if (choiceTargetsCurrentState) {
+                                variables.push_back(static_cast<int>(*choiceVariableIndicesIterator));
+                                coefficients.push_back(-1);
+                            }
+                            ++choiceVariableIndicesIterator;
+                        }
+                    }
+                    
+                    // If the current state is an initial state and is selected as a successor state by the virtual
+                    // initial state, then this also justifies making a choice in the current state.
+                    if (labeledMdp.getLabeledStates("init").get(state)) {
+                        variables.push_back(static_cast<int>(variableInformation.initialStateToChoiceVariableIndexMap.at(state)));
+                        coefficients.push_back(-1);
+                    }
+                    
+                    error = GRBaddconstr(model, variables.size(), &variables[0], &coefficients[0], GRB_LESS_EQUAL, 0, nullptr);
+                    if (error) {
+                        LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
+                        throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
+                    }
+                    ++numberOfConstraintsCreated;
                 }
                 
+                // Assert that at least one initial state selects at least one action.
+                variables.clear();
+                coefficients.clear();
+                for (auto initialState : labeledMdp.getLabeledStates("init")) {
+                    for (auto choiceVariableIndex : variableInformation.stateToChoiceVariablesIndexMap.at(initialState)) {
+                        variables.push_back(static_cast<int>(choiceVariableIndex));
+                        coefficients.push_back(1);
+                    }
+                }
+                error = GRBaddconstr(model, variables.size(), &variables[0], &coefficients[0], GRB_GREATER_EQUAL, 1, nullptr);
+                if (error) {
+                    LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
+                }
+                ++numberOfConstraintsCreated;
+                
                 // Add constraints that ensure at least one choice is selected that targets a psi state.
-                std::vector<int> variables;
-                std::vector<double> coefficients;
+                variables.clear();
+                coefficients.clear();
                 std::unordered_set<uint_fast64_t> predecessors;
                 for (auto psiState : psiStates) {
                     // Compute the set of predecessors.
@@ -916,26 +1030,33 @@ namespace storm {
             static void buildConstraintSystem(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, T probabilityThreshold, bool includeSchedulerCuts = false) {
                 // Assert that the reachability probability in the subsystem exceeds the given threshold.
                 uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(env, model, labeledMdp, variableInformation, probabilityThreshold);
-                
+                LOG4CPLUS_DEBUG(logger, "Asserted that reachability probability exceeds threshold.");
+
                 // Add constraints that assert the policy takes at most one action in each state.
                 numberOfConstraints += assertValidPolicy(env, model, stateInformation, variableInformation);
-                
+                LOG4CPLUS_DEBUG(logger, "Asserted that policy is valid.");
+
                 // Add constraints that assert the labels that belong to some taken choices are taken as well.
                 numberOfConstraints += assertChoicesImplyLabels(env, model, labeledMdp, stateInformation, choiceInformation, variableInformation);
-                
+                LOG4CPLUS_DEBUG(logger, "Asserted that labels implied by choices are taken.");
+
                 // Add constraints that encode that the reachability probability from states which do not pick any action
                 // is zero.
                 numberOfConstraints += assertZeroProbabilityWithoutChoice(env, model, stateInformation, choiceInformation, variableInformation);
-                
+                LOG4CPLUS_DEBUG(logger, "Asserted that reachability probability is zero if no choice is taken.");
+
                 // Add constraints that encode the reachability probabilities for states.
                 numberOfConstraints += assertReachabilityProbabilities(env, model, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation);
-                
+                LOG4CPLUS_DEBUG(logger, "Asserted constraints for reachability probabilities.");
+
                 // Add constraints that ensure the reachability of an unproblematic state from each problematic state.
                 numberOfConstraints += assertUnproblematicStateReachable(env, model, labeledMdp, stateInformation, choiceInformation, variableInformation);
-                
+                LOG4CPLUS_DEBUG(logger, "Asserted that unproblematic state reachable from problematic states.");
+
                 // If required, assert additional constraints that reduce the number of possible policies.
                 if (includeSchedulerCuts) {
                     numberOfConstraints += assertSchedulerCuts(env, model, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation);
+                    LOG4CPLUS_DEBUG(logger, "Asserted scheduler cuts.");
                 }
                 
                 LOG4CPLUS_INFO(logger, "Successfully created " << numberOfConstraints << " Gurobi constraints.");
@@ -963,9 +1084,9 @@ namespace storm {
                             throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
                         }
                         
-                        if (value == 1) {
+                        if (std::abs(value - 1) <= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
                             result.insert(labelVariablePair.first);
-                        } else if (value != 0) {
+                        } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
                             LOG4CPLUS_ERROR(logger, "Illegal value for binary variable in Gurobi solution (" << value << ").");
                             throw storm::exceptions::InvalidStateException() << "Illegal value for binary variable in Gurobi solution (" << value << ").";
                         }
@@ -1004,9 +1125,9 @@ namespace storm {
                             }
                             ++choiceVariableIndicesIterator;
                             
-                            if (value == 1) {
+                            if (std::abs(value - 1) <= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
                                 result.emplace_hint(result.end(), state, choice);
-                            } else if (value != 0) {
+                            } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
                                 LOG4CPLUS_ERROR(logger, "Illegal value for binary variable in Gurobi solution (" << value << ").");
                                 throw storm::exceptions::InvalidStateException() << "Illegal value for binary variable in Gurobi solution (" << value << ").";
                             }
@@ -1020,28 +1141,42 @@ namespace storm {
             }
             
             /*!
-             * Computes the reachability probability of the first initial state in the given optimized Gurobi model.
+             * Computes the reachability probability and the selected initial state in the given optimized Gurobi model.
              *
              * @param env The Gurobi environment.
              * @param model The Gurobi model.
              * @param labeledMdp The labeled MDP.
              * @param variableInformation A struct with information about the variables of the model.
              */
-            static double getReachabilityProbability(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation) {
+            static std::pair<uint_fast64_t, double> getReachabilityProbability(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation) {
                 int error = 0;
                 // Check whether the model was optimized, so we can read off the solution.
                 if (checkGurobiModelIsOptimized(env, model)) {
-                    double reachabilityProbability = 0;
-                    storm::storage::BitVector const& initialStates = labeledMdp.getLabeledStates("init");
-                    for (auto initialState : initialStates) {
-                        error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableInformation.stateToProbabilityVariableIndexMap.at(initialState), &reachabilityProbability);
+                    uint_fast64_t selectedInitialState = 0;
+                    double value = 0;
+                    for (auto initialStateVariableIndexPair : variableInformation.initialStateToChoiceVariableIndexMap) {
+                        error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, initialStateVariableIndexPair.second, &value);
                         if (error) {
                             LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").");
                             throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
                         }
-                        break;
+                        
+                        if (std::abs(value - 1) <= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
+                            selectedInitialState = initialStateVariableIndexPair.first;
+                            break;
+                        } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
+                            LOG4CPLUS_ERROR(logger, "Illegal value for binary variable in Gurobi solution (" << value << ").");
+                            throw storm::exceptions::InvalidStateException() << "Illegal value for binary variable in Gurobi solution (" << value << ").";
+                        }
                     }
-                    return reachabilityProbability;
+                    
+                    double reachabilityProbability = 0;
+                    error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableInformation.virtualInitialStateVariableIndex, &reachabilityProbability);
+                    if (error) {
+                        LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").");
+                        throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
+                    }
+                    return std::make_pair(selectedInitialState, reachabilityProbability);
                 }
                 
                 LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from unoptimized model.");
@@ -1082,7 +1217,7 @@ namespace storm {
                 // Update model.
                 updateModel(environmentModelPair.first, environmentModelPair.second);
 
-                // writeModelToFile(environmentModelPair.first, environmentModelPair.second, "storm.lp");
+                writeModelToFile(environmentModelPair.first, environmentModelPair.second, "storm.lp");
                 
                 // (4.4) Optimize the model.
                 optimizeModel(environmentModelPair.first, environmentModelPair.second);
@@ -1091,7 +1226,8 @@ namespace storm {
                 std::unordered_set<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(environmentModelPair.first, environmentModelPair.second, variableInformation);
                 
                 // Display achieved probability.
-                std::cout << "Achieved probability " << getReachabilityProbability(environmentModelPair.first, environmentModelPair.second, labeledMdp, variableInformation);
+                std::pair<uint_fast64_t, double> initialStateProbabilityPair = getReachabilityProbability(environmentModelPair.first, environmentModelPair.second, labeledMdp, variableInformation);
+                LOG4CPLUS_DEBUG(logger, "Achieved probability " << initialStateProbabilityPair.second << " in initial state " << initialStateProbabilityPair.first << ".");
                 
                 // (4.6) Shutdown Gurobi.
                 destroyGurobiModelAndEnvironment(environmentModelPair.first, environmentModelPair.second);
