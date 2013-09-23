@@ -1,6 +1,16 @@
 #ifndef STORM_STORAGE_SPARSEMATRIX_H_
 #define STORM_STORAGE_SPARSEMATRIX_H_
 
+// To detect whether the usage of TBB is possible, this include is neccessary
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_INTELTBB
+#	include "utility/OsDetection.h" // This fixes a potential dependency ordering problem between GMM and TBB
+#	include <new>
+#	include "tbb/tbb.h"
+#	include <iterator>
+#endif
+
 #include <exception>
 #include <new>
 #include <algorithm>
@@ -8,15 +18,6 @@
 #include <iterator>
 #include <set>
 #include <cstdint>
-
-// To detect whether the usage of TBB is possible, this include is neccessary
-#include "storm-config.h"
-
-#ifdef STORM_HAVE_INTELTBB
-#	include <new> // This fixes a potential dependency ordering problem between GMM and TBB
-#	include "tbb/tbb.h"
-#	include <iterator>
-#endif
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -1545,7 +1546,7 @@ private:
 		tbbHelper_MatrixRowVectorScalarProduct(M const* matrixA, V const* vectorX, V * resultVector) : matrixA(matrixA), vectorX(vectorX), resultVector(resultVector) {}
 
 		void operator() (const tbb::blocked_range<uint_fast64_t>& r) const {
-			for (uint_fast64_t row = r.begin(); row <= r.end(); ++row) {
+			for (uint_fast64_t row = r.begin(); row < r.end(); ++row) {
 				uint_fast64_t index = matrixA->rowIndications.at(row);
 				uint_fast64_t indexEnd = matrixA->rowIndications.at(row + 1);
 				

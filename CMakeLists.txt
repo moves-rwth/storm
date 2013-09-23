@@ -121,6 +121,8 @@ elseif(MSVC)
 	add_definitions(/bigobj)
 	# required by GTest and PrismGrammar::createIntegerVariable
 	add_definitions(/D_VARIADIC_MAX=10)
+	# Windows.h breaks GMM in gmm_except.h because of its macro definition for min and max
+	add_definitions(/DNOMINMAX)
 	
 	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
