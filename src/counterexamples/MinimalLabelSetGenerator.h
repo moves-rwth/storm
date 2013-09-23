@@ -1217,7 +1217,7 @@ namespace storm {
                 // Update model.
                 updateModel(environmentModelPair.first, environmentModelPair.second);
 
-                writeModelToFile(environmentModelPair.first, environmentModelPair.second, "storm.lp");
+                // writeModelToFile(environmentModelPair.first, environmentModelPair.second, "storm.lp");
                 
                 // (4.4) Optimize the model.
                 optimizeModel(environmentModelPair.first, environmentModelPair.second);
