@@ -160,6 +160,15 @@ namespace storm {
             }
             
             /*!
+             * Sets the desired properties for the given Gurobi environment.
+             *
+             * @param env The Gurobi environment to modify.
+             */
+            static void setGurobiEnvironmentProperties(GRBenv* env) {
+                int error = error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->getOptionByLongName("debug").getHasOptionBeenSet() ? 1 : 0);
+            }
+            
+            /*!
              * Creates a Gurobi environment and model and returns pointers to them.
              *
              * @return A pair of two pointers to a Gurobi environment and model, respectively.
@@ -171,6 +180,9 @@ namespace storm {
                     LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi (" << GRBgeterrormsg(env) << ").");
                     throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi (" << GRBgeterrormsg(env) << ").";
                 }
+                
+                setGurobiEnvironmentProperties(env);
+                
                 GRBmodel* model = nullptr;
                 error = GRBnewmodel(env, &model, "minimal_label_milp", 0, nullptr, nullptr, nullptr, nullptr, nullptr);
                 if (error) {
