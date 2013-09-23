@@ -297,6 +297,7 @@ set(LOG4CPLUS_BUILD_TESTING NO)
 set(LOG4CPLUS_USE_UNICODE OFF)
 add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2/include")
+include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2/include") # This adds the defines.hxx file
 target_link_libraries(storm log4cplusS)
 target_link_libraries(storm-functional-tests log4cplusS)
 target_link_libraries(storm-performance-tests log4cplusS)
