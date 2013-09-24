@@ -165,7 +165,7 @@ namespace storm {
              * @param env The Gurobi environment to modify.
              */
             static void setGurobiEnvironmentProperties(GRBenv* env) {
-                int error = error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->getOptionByLongName("debug").getHasOptionBeenSet() ? 1 : 0);
+                int error = error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->isSet("debug") ? 1 : 0);
             }
             
             /*!
