@@ -314,7 +314,7 @@ namespace storm {
                         std::vector<Type> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, submatrix.getRowCount());
                         
                         // Create vector for results for maybe states.
-                        std::vector<Type> x = this->getInitialValueIterationValues(minimize, submatrix, subNondeterministicChoiceIndices, b, statesWithProbability1, maybeStates);
+                        std::vector<Type> x(maybeStates.getNumberOfSetBits());
                                                 
                         // Solve the corresponding system of equations.
                         if (linearEquationSolver != nullptr) {
@@ -523,7 +523,7 @@ namespace storm {
                         }
                         
                         // Create vector for results for maybe states.
-                        std::vector<Type> x = this->getInitialValueIterationValues(minimize, submatrix, subNondeterministicChoiceIndices, b, *targetStates, maybeStates);
+                        std::vector<Type> x(maybeStates.getNumberOfSetBits());
                         
                         // Solve the corresponding system of equations.
                         if (linearEquationSolver != nullptr) {
@@ -625,121 +625,7 @@ namespace storm {
                     
                     return subNondeterministicChoiceIndices;
                 }
-                
-                /*!
-                 * Retrieves the values to be used as the initial values for the value iteration techniques.
-                 *
-                 * @param submatrix The matrix that will be used for value iteration later.
-                 * @param subNondeterministicChoiceIndices A vector indicating which rows represent the nondeterministic choices
-                 * of which state in the system that will be used for value iteration.
-                 * @param rightHandSide The right-hand-side of the equation system used for value iteration.
-                 * @param targetStates A set of target states that is to be reached.
-                 * @param maybeStates A set of states that was selected as the system on which to perform value iteration.
-                 * @param guessedScheduler If not the nullptr, this vector will be filled with the scheduler that was
-                 * derived as a preliminary guess.
-                 * @param distancePairs If not the nullptr, this pair of vectors contains the minimal path distances from
-                 * each state to a target state and a non-target state, respectively.
-                 * @return The initial values to be used for the value iteration for the given system.
-                 */
-                std::vector<Type> getInitialValueIterationValues(bool minimize, storm::storage::SparseMatrix<Type> const& submatrix,
-                                                                 std::vector<uint_fast64_t> const& subNondeterministicChoiceIndices,
-                                                                 std::vector<Type> const& rightHandSide,
-                                                                 storm::storage::BitVector const& targetStates,
-                                                                 storm::storage::BitVector const& maybeStates,
-                                                                 std::vector<uint_fast64_t>* guessedScheduler = nullptr,
-                                                                 std::pair<std::vector<Type>, std::vector<Type>>* distancePairs = nullptr) const {
-					storm::settings::Settings* s = storm::settings::Settings::getInstance();
-                    double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-					if (s->isSet("useHeuristicPresolve")) {
-                        // Compute both the most probable paths to target states as well as the most probable path to non-target states.
-                        // Note that here target state means a state does not *not* satisfy the property that is to be reached
-                        // if we want to minimize the reachability probability.
-                        std::pair<std::vector<Type>, std::vector<uint_fast64_t>> maxDistancesAndPredecessorsPairToTarget = storm::utility::graph::performDijkstra(this->getModel(),
-                                                                                                                                                                  this->getModel().template getBackwardTransitions<Type>([](Type const& value) -> Type { return value; }),
-                                                                                                                                                                  minimize ? ~(maybeStates | targetStates) : targetStates, &maybeStates);
-                        
-                        std::pair<std::vector<Type>, std::vector<uint_fast64_t>> maxDistancesAndPredecessorsPairToNonTarget = storm::utility::graph::performDijkstra(this->getModel(),
-                                                                                                                                                                     this->getModel().template getBackwardTransitions<Type>([](Type const& value) -> Type { return value; }),
-                                                                                                                                                                     minimize ? targetStates : ~(maybeStates | targetStates), &maybeStates);
-                        
-                        // Now guess the scheduler that could possibly maximize the probability of reaching the target states.
-                        std::vector<uint_fast64_t> scheduler = this->getSchedulerGuess(maybeStates, maxDistancesAndPredecessorsPairToTarget.first, maxDistancesAndPredecessorsPairToNonTarget.first);
-                        
-                        // Now that we have a guessed scheduler, we can compute the reachability probability of the system
-                        // under the given scheduler and take these values as the starting point for value iteration.
-                        std::vector<Type> result(scheduler.size(), Type(0.5));
-                        std::vector<Type> b(scheduler.size());
-                        storm::utility::vector::selectVectorValues(b, scheduler, subNondeterministicChoiceIndices, rightHandSide);
-                        storm::storage::SparseMatrix<Type> A(submatrix.getSubmatrix(scheduler, subNondeterministicChoiceIndices));
-                        A.convertToEquationSystem();
-                        storm::solver::GmmxxLinearEquationSolver<Type> solver;
-                        solver.solveEquationSystem(A, result, b);
-                        
-                        // As there are sometimes some very small values in the vector due to numerical solving, we set
-                        // them to zero, because they otherwise require a certain number of value iterations.
-                        for (auto& value : result) {
-                            if (value < precision) {
-                                value = 0;
-                            }
-                        }
-                        
-                        // If some of the parameters were given, we fill them with the information that they are supposed
-                        // to contain.
-                        if (guessedScheduler != nullptr) {
-                            *guessedScheduler = std::move(scheduler);
-                        }
-                        if (distancePairs != nullptr) {
-                            distancePairs->first = std::move(maxDistancesAndPredecessorsPairToTarget.first);
-                            distancePairs->second = std::move(maxDistancesAndPredecessorsPairToNonTarget.first);
-                        }
-                        
-                        return result;
-                    } else {
-                        // If guessing a scheduler was not requested, we just return the constant zero vector as the
-                        // starting point for value iteration.
-                        return std::vector<Type>(submatrix.getColumnCount());
-                    }
-                }
-                
-                /*!
-                 * Guesses a scheduler that possibly maximizes the probabiliy of reaching the target states.
-                 * 
-                 * @param maybeStates The states for which the scheduler needs to resolve the nondeterminism.
-                 * @param distancesToTarget Contains the minimal distance of reaching a target state for each state.
-                 * @param distancesToNonTarget Contains the minimal distance of reaching a non-target state for each state.
-                 * @return The scheduler that was guessed based on the given distance information. 
-                 */
-                std::vector<uint_fast64_t> getSchedulerGuess(storm::storage::BitVector const& maybeStates, std::vector<Type> const& distancesToTarget, std::vector<Type> const& distancesToNonTarget) const {
-                    std::vector<uint_fast64_t> scheduler(maybeStates.getNumberOfSetBits());
-
-                    // For each of the states we need to resolve the nondeterministic choice based on the information we are given.
-                    Type maxProbability = -storm::utility::constGetInfinity<Type>();
-                    Type currentProbability = 0;
-                    uint_fast64_t currentStateIndex = 0;
-                    for (auto state : maybeStates) {
-                        maxProbability = -storm::utility::constGetInfinity<Type>();
-                        
-                        for (uint_fast64_t row = 0, rowEnd = this->getModel().getNondeterministicChoiceIndices()[state + 1] - this->getModel().getNondeterministicChoiceIndices()[state]; row < rowEnd; ++row) {
-                            typename storm::storage::SparseMatrix<Type>::Rows currentRow = this->getModel().getTransitionMatrix().getRow(this->getModel().getNondeterministicChoiceIndices()[state] + row);
-                            currentProbability = 0;
-                            
-                            for (auto& transition : currentRow) {
-                                currentProbability += transition.value() * distancesToTarget[transition.column()];
-                                // currentProbability -= transition.value() * (1 - distancesToNonTarget[transition.column()]);
-                            }
-                            
-                            if (currentProbability > maxProbability) {
-                                maxProbability = currentProbability;
-                                scheduler[currentStateIndex] = row;
-                            }
-                        }
-                        
-                        ++currentStateIndex;
-                    }
-                    
-                    return scheduler;
-                }
-                
+                                
                 // An object that is used for solving linear equations and performing matrix-vector multiplication.
                 std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> linearEquationSolver;
                 
