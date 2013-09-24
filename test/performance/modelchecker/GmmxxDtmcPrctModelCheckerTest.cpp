@@ -1,21 +1,23 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/settings/Settings.h"
+#include "src/settings/InternalOptionMemento.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/parser/AutoParser.h"
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	s->set("fixDeadlocks");
+	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
+	ASSERT_TRUE(s->isSet("fixDeadlocks"));
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
 
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 2036647u);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 8973900u);
+	ASSERT_EQ(dtmc->getNumberOfStates(), 2036647ull);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 8973900ull);
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
@@ -68,15 +70,16 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	s->set("fixDeadlocks");
+	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
+	ASSERT_TRUE(s->isSet("fixDeadlocks"));
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.pick.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
 
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 1312334u);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 2886810u);
+	ASSERT_EQ(dtmc->getNumberOfStates(), 1312334ull);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 2886810ull);
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
@@ -90,7 +93,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;

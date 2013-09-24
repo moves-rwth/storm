@@ -14,8 +14,8 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 
-	ASSERT_EQ(mdp->getNumberOfStates(), 169u);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 436u);
+	ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
 
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<double>());
 
@@ -153,7 +153,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333294987678527832)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - (2.0 * 7.3333294987678527832)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;
@@ -164,7 +164,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs((*result)[0] - (2 * 7.3333294987678527832)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - (2.0 * 7.3333294987678527832)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
 	delete rewardFormula;
 	delete result;
@@ -178,8 +178,8 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 
-	ASSERT_EQ(mdp->getNumberOfStates(), 3172u);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144u);
+	ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);
 
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<double>());
 
@@ -191,7 +191,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -204,7 +204,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;

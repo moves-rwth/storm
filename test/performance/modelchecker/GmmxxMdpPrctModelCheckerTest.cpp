@@ -14,8 +14,8 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 
-	ASSERT_EQ(mdp->getNumberOfStates(), 2095783u);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 7714385u);
+	ASSERT_EQ(mdp->getNumberOfStates(), 2095783ull);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 7714385ull);
 
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<double>());
 
@@ -29,7 +29,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -44,13 +44,13 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::BoundedEventually<double>* boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 25);
+	storm::property::prctl::BoundedEventually<double>* boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 25ull);
 	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
 
     LOG4CPLUS_WARN(logger, "Model Checking Pmin=? [F<=25 elected] on asynchronous_leader/leader7...");
@@ -59,13 +59,13 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
-	boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 25);
+	boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 25ull);
 	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
 
     LOG4CPLUS_WARN(logger, "Model Checking Pmax=? [F<=25 elected] on asynchronous_leader/leader7...");
@@ -74,7 +74,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -117,8 +117,8 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
     
-	ASSERT_EQ(mdp->getNumberOfStates(), 63616u);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 213472u);
+	ASSERT_EQ(mdp->getNumberOfStates(), 63616ull);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 213472ull);
     
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<double>());
     
@@ -132,7 +132,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     
 	ASSERT_NE(nullptr, result);
     
-	ASSERT_LT(std::abs((*result)[31168] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[31168] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     delete probFormula;
     delete result;
@@ -188,7 +188,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     delete result;
     
     apFormula = new storm::property::prctl::Ap<double>("finished");
-	storm::property::prctl::BoundedEventually<double>* boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 50);
+	storm::property::prctl::BoundedEventually<double>* boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 50ull);
 	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
     
     LOG4CPLUS_WARN(logger, "Model Checking Pmin=? [F<=50 finished] on consensus/coin4_6...");
@@ -196,13 +196,13 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[31168] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     delete probFormula;
     delete result;
     
     apFormula = new storm::property::prctl::Ap<double>("finished");
-	boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 50);
+	boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 50ull);
 	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
     
     LOG4CPLUS_WARN(logger, "Model Checking Pmax=? [F<=50 finished] on consensus/coin4_6...");
@@ -210,7 +210,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Consensus) {
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_NE(nullptr, result);
-	ASSERT_LT(std::abs((*result)[31168] - 0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[31168] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     delete probFormula;
     delete result;

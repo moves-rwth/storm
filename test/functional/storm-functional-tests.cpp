@@ -51,6 +51,17 @@ int main(int argc, char* argv[]) {
 	
 	testing::InitGoogleTest(&argc, argv);
     
+	// now all Google Test Options have been removed
+	storm::settings::Settings* instance = storm::settings::Settings::getInstance();
+
+	try {
+		storm::settings::Settings::parse(argc, argv);
+	} catch (storm::exceptions::OptionParserException& e) {
+		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
+		std::cout << std::endl << instance->getHelpText();
+		return false;
+	}
+
     int result = RUN_ALL_TESTS();
     
     logger.closeNestedAppenders();

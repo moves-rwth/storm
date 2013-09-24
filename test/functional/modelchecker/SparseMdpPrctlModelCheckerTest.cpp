@@ -13,8 +13,8 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
     
-	ASSERT_EQ(mdp->getNumberOfStates(), 169u);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 436u);
+	ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
     
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
     
@@ -176,8 +176,8 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
 
-	ASSERT_EQ(mdp->getNumberOfStates(), 3172u);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144u);
+	ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);
 
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
 

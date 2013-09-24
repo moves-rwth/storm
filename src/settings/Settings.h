@@ -47,6 +47,7 @@ namespace settings {
 	typedef std::pair<bool, std::string> fromStringAssignmentResult_t;
 
 	class Destroyer;
+	class InternalOptionMemento;
 
 	/*!
 	 *	@brief	Settings class with command line parser and type validation
@@ -128,16 +129,6 @@ namespace settings {
 			}
 
 			/*!
-			 * Sets the Option with the specified longName
-			 * This function requires the Option to have no arguments
-			 * This is for TESTING only and should not be used outside of the testing code!
-			 * @throws InvalidArgumentException
-			 */
-			void set(std::string const& longName) const {
-				return this->getByLongName(longName).setHasOptionBeenSet();
-			}
-
-			/*!
 			 * This generated a list of all registered options and their arguments together with descriptions and defaults.
 			 * @return A std::string containing the help text, delimited by \n
 			 */
@@ -149,6 +140,7 @@ namespace settings {
 			 */
 			static Settings* getInstance();
 			friend class Destroyer;
+			friend class InternalOptionMemento;
 		private:
 			/*!
 			 *	@brief	Private constructor.
@@ -276,6 +268,26 @@ namespace settings {
 					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option with ShortName \"" << shortName << "\"!";
 				}
 				return this->options.find(shortNameIterator->second)->second.get();
+			}
+
+			/*!
+			 * Sets the Option with the specified longName
+			 * This function requires the Option to have no arguments
+			 * This is for TESTING only and should not be used outside of the testing code!
+			 * @throws InvalidArgumentException
+			 */
+			void set(std::string const& longName) const {
+				return this->getByLongName(longName).setHasOptionBeenSet();
+			}
+
+			/*!
+			 * Unsets the Option with the specified longName
+			 * This function requires the Option to have no arguments
+			 * This is for TESTING only and should not be used outside of the testing code!
+			 * @throws InvalidArgumentException
+			 */
+			void unset(std::string const& longName) const {
+				return this->getByLongName(longName).setHasOptionBeenSet(false);
 			}
 	};
 
