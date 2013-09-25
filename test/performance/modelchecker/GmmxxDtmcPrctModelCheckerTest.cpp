@@ -31,7 +31,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.2296803699), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 0.2296800237), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -46,7 +46,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
     
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.05072232915), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 0.05073232193), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -61,7 +61,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.2274230551), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 0.22742171078), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -108,7 +108,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 0.999394979327824395376467), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 0.9993949793), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
 	delete result;
@@ -123,7 +123,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_NE(nullptr, result);
 
-	ASSERT_LT(std::abs((*result)[0] - 1.02521744572240791626427), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs((*result)[0] - 1.025106273), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete rewardFormula;
 	delete result;

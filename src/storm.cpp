@@ -336,7 +336,7 @@ int main(const int argc, const char* argv[]) {
 			std::shared_ptr<storm::models::AbstractModel<double>> model = adapter.getModel(constants);
 			model->printModelInformationToStream(std::cout);
 
-//            Enable the following lines to test the MinimalLabelSetGenerator.
+            // Enable the following lines to test the MinimalLabelSetGenerator.
 //            if (model->getType() == storm::models::MDP) {
 //                std::shared_ptr<storm::models::Mdp<double>> labeledMdp = model->as<storm::models::Mdp<double>>();
 //                storm::storage::BitVector const& finishedStates = labeledMdp->getLabeledStates("finished");
