@@ -153,22 +153,18 @@ public:
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << stateFormula.toString());
 		std::cout << "Model checking formula:\t" << stateFormula.toString() << std::endl;
-		storm::storage::BitVector* result = nullptr;
+		storm::storage::BitVector result;
 		try {
 			result = stateFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
 			for (auto initialState : this->getInitialStates()) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << result->get(initialState) << std::endl;
+				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
+				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
 			}
-			delete result;
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-			if (result != nullptr) {
-				delete result;
-			}
 		}
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
@@ -183,21 +179,18 @@ public:
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << noBoundFormula.toString());
 		std::cout << "Model checking formula:\t" << noBoundFormula.toString() << std::endl;
-		std::vector<Type>* result = nullptr;
+		std::vector<Type> result;
 		try {
 			result = this->checkNoBoundOperator(noBoundFormula);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
 			for (auto initialState : this->getInitialStates()) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
-				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result[initialState]);
+				std::cout << "\t" << initialState << ": " << result[initialState] << std::endl;
 			}
-			delete result;
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << " Skipping property." << std::endl;
-			if (result != nullptr) {
-				delete result;
-			}
+            LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
 		}
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}

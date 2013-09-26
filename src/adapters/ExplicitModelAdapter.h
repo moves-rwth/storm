@@ -85,9 +85,18 @@ namespace storm {
             std::shared_ptr<storm::models::AbstractModel<double>> getModel(std::string const& constantDefinitionString = "", std::string const& rewardModelName = "");
             
         private:
-            // Copying/Moving is disabled for this class
-            ExplicitModelAdapter(ExplicitModelAdapter const& other) { }
-            ExplicitModelAdapter(ExplicitModelAdapter && other) { }
+            /*!
+             * Private copy constructor to disable copy-construction (and move-construction) of this class.
+             *
+             * @param other The object to copy-construct from.
+             */
+            ExplicitModelAdapter(ExplicitModelAdapter const& other);
+            /*!
+             * Private copy-assignment to disable copy-assignment (and move-assignment) of this class.
+             *
+             * @param other The object to copy-assign from.
+             */
+            ExplicitModelAdapter operator=(ExplicitModelAdapter const& other);
             
             /*!
              * The precision that is to be used for sanity checks internally.
