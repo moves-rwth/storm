@@ -28,7 +28,7 @@ template <class T> class ProbabilisticBoundOperator;
 template <class T>
 class IProbabilisticBoundOperatorModelChecker {
     public:
-        virtual storm::storage::BitVector* checkProbabilisticBoundOperator(const ProbabilisticBoundOperator<T>& obj) const = 0;
+        virtual storm::storage::BitVector checkProbabilisticBoundOperator(const ProbabilisticBoundOperator<T>& obj) const = 0;
 };
 
 /*!
@@ -109,7 +109,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual storm::storage::BitVector check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IProbabilisticBoundOperatorModelChecker>()->checkProbabilisticBoundOperator(*this);
 	}
 };

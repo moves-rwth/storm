@@ -34,7 +34,7 @@ class IEventuallyModelChecker {
          *  @param obj Formula object with subformulas.
          *  @return Result of the formula for every node.
          */
-        virtual std::vector<T>* checkEventually(const Eventually<T>& obj, bool qualitative) const = 0;
+        virtual std::vector<T> checkEventually(const Eventually<T>& obj, bool qualitative) const = 0;
 };
 
 /*!
@@ -108,7 +108,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
+	virtual std::vector<T> check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<IEventuallyModelChecker>()->checkEventually(*this, qualitative);
 	}
 };

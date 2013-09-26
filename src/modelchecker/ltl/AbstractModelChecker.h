@@ -140,19 +140,15 @@ public:
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type>* checkAp(storm::property::ltl::Ap<Type> const& formula) const {
-		return nullptr;
-	}
-
+    virtual std::vector<Type> checkAp(storm::property::ltl::Ap<Type> const& formula) const = 0;
+        
 	/*!
 	 * Checks the given formula that is a logical "and" of two formulae.
 	 *
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type>* checkAnd(storm::property::ltl::And<Type> const& formula) const {
-		return nullptr;
-	}
+    virtual std::vector<Type> checkAnd(storm::property::ltl::And<Type> const& formula) const = 0;
 
 	/*!
 	 * Checks the given formula that is a logical "or" of two formulae.
@@ -160,20 +156,16 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type>* checkOr(storm::property::ltl::Or<Type> const& formula) const {
-		return nullptr;
-	}
-
+    virtual std::vector<Type> checkOr(storm::property::ltl::Or<Type> const& formula) const = 0;
+    
 	/*!
 	 * Checks the given formula that is a logical "not" of a sub-formula.
 	 *
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type>* checkNot(const storm::property::ltl::Not<Type>& formula) const {
-		return nullptr;
-	}
-
+    virtual std::vector<Type> checkNot(const storm::property::ltl::Not<Type>& formula) const = 0;
+        
 private:
 
 	/*!

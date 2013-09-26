@@ -28,7 +28,7 @@ template <class T> class RewardBoundOperator;
 template <class T>
 class IRewardBoundOperatorModelChecker {
     public:
-        virtual storm::storage::BitVector* checkRewardBoundOperator(const RewardBoundOperator<T>& obj) const = 0;
+        virtual storm::storage::BitVector checkRewardBoundOperator(const RewardBoundOperator<T>& obj) const = 0;
 };
 
 /*!
@@ -120,7 +120,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual storm::storage::BitVector check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IRewardBoundOperatorModelChecker>()->checkRewardBoundOperator(*this);
 	}
 };

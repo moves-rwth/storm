@@ -63,14 +63,14 @@ namespace storm {
                  * @param formula The formula to check.
                  * @returns The set of states satisfying the formula represented by a bit vector.
                  */
-                virtual std::vector<Type>* checkNoBoundOperator(const storm::property::prctl::AbstractNoBoundOperator<Type>& formula) const {
+                virtual std::vector<Type> checkNoBoundOperator(const storm::property::prctl::AbstractNoBoundOperator<Type>& formula) const {
                     // Check if the operator was an non-optimality operator and report an error in that case.
                     if (!formula.isOptimalityOperator()) {
                         LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
                         throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
                     }
                     minimumOperatorStack.push(formula.isMinimumOperator());
-                    std::vector<Type>* result = formula.check(*this, false);
+                    std::vector<Type> result = formula.check(*this, false);
                     minimumOperatorStack.pop();
                     return result;
                 }
@@ -86,18 +86,18 @@ namespace storm {
                  * @returns The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type>* checkBoundedUntil(const storm::property::prctl::BoundedUntil<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkBoundedUntil(const storm::property::prctl::BoundedUntil<Type>& formula, bool qualitative) const {
                     // First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-                    storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
-                    storm::storage::BitVector* rightStates = formula.getRight().check(*this);
-                    std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+                    storm::storage::BitVector leftStates = formula.getLeft().check(*this);
+                    storm::storage::BitVector rightStates = formula.getRight().check(*this);
+                    std::vector<Type> result(this->getModel().getNumberOfStates());
                     
                     // Determine the states that have 0 probability of reaching the target states.
                     storm::storage::BitVector statesWithProbabilityGreater0;
                     if (this->minimumOperatorStack.top()) {
-                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), *leftStates, *rightStates, true, formula.getBound());
+                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), leftStates, rightStates, true, formula.getBound());
                     } else {
-                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), *leftStates, *rightStates, true, formula.getBound());
+                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), leftStates, rightStates, true, formula.getBound());
                     }
                     
                     // Check if we already know the result (i.e. probability 0) for all initial states and
@@ -107,7 +107,7 @@ namespace storm {
                                        << " No exact probabilities were computed.");
                         // Set the values for all maybe-states to 0.5 to indicate that their probability values are not 0 (and
                         // not necessarily 1).
-                        storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, Type(0.5));
+                        storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, Type(0.5));
                     } else {
                         // In this case we have have to compute the probabilities.
                         
@@ -118,7 +118,7 @@ namespace storm {
                         std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(statesWithProbabilityGreater0);
                         
                         // Compute the new set of target states in the reduced system.
-                        storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % *rightStates;
+                        storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % rightStates;
                         
                         // Make all rows absorbing that satisfy the second sub-formula.
                         submatrix.makeRowsAbsorbing(rightStatesInReducedSystem, subNondeterministicChoiceIndices);
@@ -134,13 +134,10 @@ namespace storm {
                         }
                         
                         // Set the values of the resulting vector accordingly.
-                        storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, subresult);
-                        storm::utility::vector::setVectorValues(*result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
+                        storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
+                        storm::utility::vector::setVectorValues(result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
                     }
                     
-                    // Delete intermediate results and return result.
-                    delete leftStates;
-                    delete rightStates;
                     return result;
                 }
                 
@@ -155,24 +152,20 @@ namespace storm {
                  * @returns The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type>* checkNext(const storm::property::prctl::Next<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkNext(const storm::property::prctl::Next<Type>& formula, bool qualitative) const {
                     // First, we need to compute the states that satisfy the sub-formula of the next-formula.
-                    storm::storage::BitVector* nextStates = formula.getChild().check(*this);
+                    storm::storage::BitVector nextStates = formula.getChild().check(*this);
                     
                     // Create the vector with which to multiply and initialize it correctly.
-                    std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-                    storm::utility::vector::setVectorValues(*result, *nextStates, storm::utility::constGetOne<Type>());
-                    
-                    // Delete obsolete sub-result.
-                    delete nextStates;
+                    std::vector<Type> result(this->getModel().getNumberOfStates());
+                    storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constGetOne<Type>());
                     
                     if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), *result, this->getModel().getNondeterministicChoiceIndices());
+                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices());
                     } else {
                         throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
                     }
                     
-                    // Return result.
                     return result;
                 }
                 
@@ -187,7 +180,7 @@ namespace storm {
                  * @returns The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type>* checkBoundedEventually(const storm::property::prctl::BoundedEventually<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkBoundedEventually(const storm::property::prctl::BoundedEventually<Type>& formula, bool qualitative) const {
                     // Create equivalent temporary bounded until formula and check it.
                     storm::property::prctl::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
                     return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
@@ -204,7 +197,7 @@ namespace storm {
                  * @returns The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type>* checkEventually(const storm::property::prctl::Eventually<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkEventually(const storm::property::prctl::Eventually<Type>& formula, bool qualitative) const {
                     // Create equivalent temporary until formula and check it.
                     storm::property::prctl::Until<Type> temporaryUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone());
                     return this->checkUntil(temporaryUntilFormula, qualitative);
@@ -221,13 +214,13 @@ namespace storm {
                  * @returns The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type>* checkGlobally(const storm::property::prctl::Globally<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkGlobally(const storm::property::prctl::Globally<Type>& formula, bool qualitative) const {
                     // Create "equivalent" temporary eventually formula and check it.
                     storm::property::prctl::Eventually<Type> temporaryEventuallyFormula(new storm::property::prctl::Not<Type>(formula.getChild().clone()));
-                    std::vector<Type>* result = this->checkEventually(temporaryEventuallyFormula, qualitative);
+                    std::vector<Type> result = this->checkEventually(temporaryEventuallyFormula, qualitative);
                     
                     // Now subtract the resulting vector from the constant one vector to obtain final result.
-                    storm::utility::vector::subtractFromConstantOneVector(*result);
+                    storm::utility::vector::subtractFromConstantOneVector(result);
                     return result;
                 }
                 
@@ -245,7 +238,7 @@ namespace storm {
                  * @return The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type>* checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative) const {
                     return this->checkUntil(this->minimumOperatorStack.top(), formula, qualitative, nullptr);
                 }
                 
@@ -264,18 +257,18 @@ namespace storm {
                  * @return The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type>* checkUntil(bool minimize, const storm::property::prctl::Until<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+                virtual std::vector<Type> checkUntil(bool minimize, const storm::property::prctl::Until<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
                     // First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-                    storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
-                    storm::storage::BitVector* rightStates = formula.getRight().check(*this);
+                    storm::storage::BitVector leftStates = formula.getLeft().check(*this);
+                    storm::storage::BitVector rightStates = formula.getRight().check(*this);
                     
                     // Then, we need to identify the states which have to be taken out of the matrix, i.e.
                     // all states that have probability 0 and 1 of satisfying the until-formula.
                     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
                     if (minimize) {
-                        statesWithProbability01 = storm::utility::graph::performProb01Min(this->getModel(), *leftStates, *rightStates);
+                        statesWithProbability01 = storm::utility::graph::performProb01Min(this->getModel(), leftStates, rightStates);
                     } else {
-                        statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel(), *leftStates, *rightStates);
+                        statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel(), leftStates, rightStates);
                     }
                     storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
                     storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
@@ -286,7 +279,7 @@ namespace storm {
                     LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                     
                     // Create resulting vector.
-                    std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+                    std::vector<Type> result(this->getModel().getNumberOfStates());
                     
                     // Check whether we need to compute exact probabilities for some states.
                     if (this->getInitialStates().isDisjointFrom(maybeStates) || qualitative) {
@@ -298,7 +291,7 @@ namespace storm {
                         }
                         // Set the values for all maybe-states to 0.5 to indicate that their probability values
                         // are neither 0 nor 1.
-                        storm::utility::vector::setVectorValues<Type>(*result, maybeStates, Type(0.5));
+                        storm::utility::vector::setVectorValues<Type>(result, maybeStates, Type(0.5));
                     } else {
                         // In this case we have have to compute the probabilities.
                         
@@ -324,21 +317,18 @@ namespace storm {
                         }
                         
                         // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
+                        storm::utility::vector::setVectorValues<Type>(result, maybeStates, x);
                     }
                     
                     // Set values of resulting vector that are known exactly.
-                    storm::utility::vector::setVectorValues<Type>(*result, statesWithProbability0, storm::utility::constGetZero<Type>());
-                    storm::utility::vector::setVectorValues<Type>(*result, statesWithProbability1, storm::utility::constGetOne<Type>());
+                    storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
+                    storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
                                         
                     // If we were required to generate a scheduler, do so now.
                     if (scheduler != nullptr) {
-                        this->computeTakenChoices(this->minimumOperatorStack.top(), false, *result, *scheduler, this->getModel().getNondeterministicChoiceIndices());
+                        this->computeTakenChoices(this->minimumOperatorStack.top(), false, result, *scheduler, this->getModel().getNondeterministicChoiceIndices());
                     }
                     
-                    // Delete sub-results that are obsolete now.
-                    delete leftStates;
-                    delete rightStates;
                     return result;
                 }
                 
@@ -353,7 +343,7 @@ namespace storm {
                  * @returns The reward values for the given formula for every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
-                virtual std::vector<Type>* checkInstantaneousReward(const storm::property::prctl::InstantaneousReward<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkInstantaneousReward(const storm::property::prctl::InstantaneousReward<Type>& formula, bool qualitative) const {
                     // Only compute the result if the model has a state-based reward model.
                     if (!this->getModel().hasStateRewards()) {
                         LOG4CPLUS_ERROR(logger, "Missing (state-based) reward model for formula.");
@@ -361,15 +351,14 @@ namespace storm {
                     }
                     
                     // Initialize result to state rewards of the model.
-                    std::vector<Type>* result = new std::vector<Type>(this->getModel().getStateRewardVector());
+                    std::vector<Type> result(this->getModel().getStateRewardVector());
                     
                     if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), *result, this->getModel().getNondeterministicChoiceIndices(), nullptr, formula.getBound());
+                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), nullptr, formula.getBound());
                     } else {
                         throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
                     }
                     
-                    // Return result.
                     return result;
                 }
                 
@@ -384,7 +373,7 @@ namespace storm {
                  * @returns The reward values for the given formula for every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
-                virtual std::vector<Type>* checkCumulativeReward(const storm::property::prctl::CumulativeReward<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkCumulativeReward(const storm::property::prctl::CumulativeReward<Type>& formula, bool qualitative) const {
                     // Only compute the result if the model has at least one reward model.
                     if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
                         LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
@@ -403,20 +392,19 @@ namespace storm {
                     }
                     
                     // Initialize result to either the state rewards of the model or the null vector.
-                    std::vector<Type>* result = nullptr;
+                    std::vector<Type> result;
                     if (this->getModel().hasStateRewards()) {
-                        result = new std::vector<Type>(this->getModel().getStateRewardVector());
+                        result = std::vector<Type>(this->getModel().getStateRewardVector());
                     } else {
-                        result = new std::vector<Type>(this->getModel().getNumberOfStates());
+                        result.resize(this->getModel().getNumberOfStates());
                     }
                     
                     if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), *result, this->getModel().getNondeterministicChoiceIndices(), &totalRewardVector, formula.getBound());
+                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), &totalRewardVector, formula.getBound());
                     } else {
                         throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
                     }
                     
-                    // Delete temporary variables and return result.
                     return result;
                 }
                 
@@ -431,7 +419,7 @@ namespace storm {
                  * @return The reward values for the given formula for every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
-                virtual std::vector<Type>* checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
                     return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula, qualitative, nullptr);
                 }
                 
@@ -450,7 +438,7 @@ namespace storm {
                  * @return The reward values for the given formula for every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
-                virtual std::vector<Type>* checkReachabilityReward(bool minimize, const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+                virtual std::vector<Type> checkReachabilityReward(bool minimize, const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
                     // Only compute the result if the model has at least one reward model.
                     if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
                         LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
@@ -458,24 +446,24 @@ namespace storm {
                     }
                     
                     // Determine the states for which the target predicate holds.
-                    storm::storage::BitVector* targetStates = formula.getChild().check(*this);
+                    storm::storage::BitVector targetStates = formula.getChild().check(*this);
                     
                     // Determine which states have a reward of infinity by definition.
                     storm::storage::BitVector infinityStates;
                     storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
                     if (minimize) {
-                        infinityStates = std::move(storm::utility::graph::performProb1A(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates));
+                        infinityStates = std::move(storm::utility::graph::performProb1A(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, targetStates));
                     } else {
-                        infinityStates = std::move(storm::utility::graph::performProb1E(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, *targetStates));
+                        infinityStates = std::move(storm::utility::graph::performProb1E(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, targetStates));
                     }
                     infinityStates.complement();
-                    storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
+                    storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
                     LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
-                    LOG4CPLUS_INFO(logger, "Found " << targetStates->getNumberOfSetBits() << " 'target' states.");
+                    LOG4CPLUS_INFO(logger, "Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
                     LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                     
                     // Create resulting vector.
-                    std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+                    std::vector<Type> result(this->getModel().getNumberOfStates());
                     
                     // Check whether we need to compute exact rewards for some states.
                     if (this->getInitialStates().isDisjointFrom(maybeStates)) {
@@ -483,7 +471,7 @@ namespace storm {
                                        << " No exact rewards were computed.");
                         // Set the values for all maybe-states to 1 to indicate that their reward values
                         // are neither 0 nor infinity.
-                        storm::utility::vector::setVectorValues<Type>(*result, maybeStates, storm::utility::constGetOne<Type>());
+                        storm::utility::vector::setVectorValues<Type>(result, maybeStates, storm::utility::constGetOne<Type>());
                     } else {
                         // In this case we have to compute the reward values for the remaining states.
                         
@@ -533,20 +521,18 @@ namespace storm {
                         }
                         
                         // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
+                        storm::utility::vector::setVectorValues<Type>(result, maybeStates, x);
                     }
                     
                     // Set values of resulting vector that are known exactly.
-                    storm::utility::vector::setVectorValues(*result, *targetStates, storm::utility::constGetZero<Type>());
-                    storm::utility::vector::setVectorValues(*result, infinityStates, storm::utility::constGetInfinity<Type>());
+                    storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constGetZero<Type>());
+                    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<Type>());
                     
                     // If we were required to generate a scheduler, do so now.
                     if (scheduler != nullptr) {
-                        this->computeTakenChoices(this->minimumOperatorStack.top(), true, *result, *scheduler, this->getModel().getNondeterministicChoiceIndices());
+                        this->computeTakenChoices(this->minimumOperatorStack.top(), true, result, *scheduler, this->getModel().getNondeterministicChoiceIndices());
                     }
                     
-                    // Delete temporary storages and return result.
-                    delete targetStates;
                     return result;
                 }
                 

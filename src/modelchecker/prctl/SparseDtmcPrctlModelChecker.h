@@ -66,7 +66,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	std::vector<Type>* checkNoBoundOperator(storm::property::prctl::AbstractNoBoundOperator<Type> const& formula) const {
+	std::vector<Type> checkNoBoundOperator(storm::property::prctl::AbstractNoBoundOperator<Type> const& formula) const {
 		// Check if the operator was an optimality operator and report a warning in that case.
 		if (formula.isOptimalityOperator()) {
 			LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
@@ -85,15 +85,15 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkBoundedUntil(storm::property::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkBoundedUntil(storm::property::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the bounded until-formula.
-		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
-		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
-        std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		storm::storage::BitVector leftStates = formula.getLeft().check(*this);
+		storm::storage::BitVector rightStates = formula.getRight().check(*this);
+        std::vector<Type> result(this->getModel().getNumberOfStates());
         
         // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the
         // further analysis.
-        storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel(), *leftStates, *rightStates, true, formula.getBound());
+        storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel(), leftStates, rightStates, true, formula.getBound());
         LOG4CPLUS_INFO(logger, "Found " << statesWithProbabilityGreater0.getNumberOfSetBits() << " 'maybe' states.");
         
         // Check if we already know the result (i.e. probability 0) for all initial states and
@@ -103,7 +103,7 @@ public:
                            << " No exact probabilities were computed.");
             // Set the values for all maybe-states to 0.5 to indicate that their probability values are not 0 (and
             // not necessarily 1).
-            storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, Type(0.5));
+            storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, Type(0.5));
         } else {
             // In this case we have have to compute the probabilities.
             
@@ -111,7 +111,7 @@ public:
             storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0);
             
             // Compute the new set of target states in the reduced system.
-            storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % *rightStates;
+            storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % rightStates;
             
             // Make all rows absorbing that satisfy the second sub-formula.
             submatrix.makeRowsAbsorbing(rightStatesInReducedSystem);
@@ -128,13 +128,10 @@ public:
             }
             
             // Set the values of the resulting vector accordingly.
-            storm::utility::vector::setVectorValues(*result, statesWithProbabilityGreater0, subresult);
-            storm::utility::vector::setVectorValues<Type>(*result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
+            storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
+            storm::utility::vector::setVectorValues<Type>(result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
         }
         
-		// Delete obsolete intermediates and return result.
-		delete leftStates;
-		delete rightStates;
 		return result;
 	}
 
@@ -149,25 +146,21 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkNext(storm::property::prctl::Next<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkNext(storm::property::prctl::Next<Type> const& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the child formula of the next-formula.
-		storm::storage::BitVector* nextStates = formula.getChild().check(*this);
+		storm::storage::BitVector nextStates = formula.getChild().check(*this);
 
 		// Create the vector with which to multiply and initialize it correctly.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
-		storm::utility::vector::setVectorValues(*result, *nextStates, storm::utility::constGetOne<Type>());
-
-		// Delete obsolete intermediate.
-		delete nextStates;
+		std::vector<Type> result(this->getModel().getNumberOfStates());
+		storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constGetOne<Type>());
 
 		// Perform one single matrix-vector multiplication.
         if (linearEquationSolver != nullptr) {
-            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result);
+            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), result);
         } else {
             throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
         }
         
-		// Return result.
 		return result;
 	}
 
@@ -182,7 +175,7 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkBoundedEventually(storm::property::prctl::BoundedEventually<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkBoundedEventually(storm::property::prctl::BoundedEventually<Type> const& formula, bool qualitative) const {
 		// Create equivalent temporary bounded until formula and check it.
 		storm::property::prctl::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
 		return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
@@ -199,7 +192,7 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkEventually(storm::property::prctl::Eventually<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkEventually(storm::property::prctl::Eventually<Type> const& formula, bool qualitative) const {
 		// Create equivalent temporary until formula and check it.
 		storm::property::prctl::Until<Type> temporaryUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone());
 		return this->checkUntil(temporaryUntilFormula, qualitative);
@@ -216,13 +209,13 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkGlobally(storm::property::prctl::Globally<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkGlobally(storm::property::prctl::Globally<Type> const& formula, bool qualitative) const {
 		// Create "equivalent" (equivalent up to negation) temporary eventually formula and check it.
 		storm::property::prctl::Eventually<Type> temporaryEventuallyFormula(new storm::property::prctl::Not<Type>(formula.getChild().clone()));
-		std::vector<Type>* result = this->checkEventually(temporaryEventuallyFormula, qualitative);
+		std::vector<Type> result = this->checkEventually(temporaryEventuallyFormula, qualitative);
 
 		// Now subtract the resulting vector from the constant one vector to obtain final result.
-		storm::utility::vector::subtractFromConstantOneVector(*result);
+		storm::utility::vector::subtractFromConstantOneVector(result);
 		return result;
 	}
 
@@ -237,20 +230,16 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type>* checkUntil(storm::property::prctl::Until<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkUntil(storm::property::prctl::Until<Type> const& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-		storm::storage::BitVector* leftStates = formula.getLeft().check(*this);
-		storm::storage::BitVector* rightStates = formula.getRight().check(*this);
+		storm::storage::BitVector leftStates = formula.getLeft().check(*this);
+		storm::storage::BitVector rightStates = formula.getRight().check(*this);
 
 		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-        std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), *leftStates, *rightStates);
+        std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), leftStates, rightStates);
 		storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
 		storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
-        
-		// Delete intermediate results that are obsolete now.
-		delete leftStates;
-		delete rightStates;
 
 		// Perform some logging.
         storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
@@ -259,7 +248,7 @@ public:
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		std::vector<Type> result(this->getModel().getNumberOfStates());
 
         // Check whether we need to compute exact probabilities for some states.
         if (this->getInitialStates().isDisjointFrom(maybeStates) || qualitative) {
@@ -271,7 +260,7 @@ public:
             }
             // Set the values for all maybe-states to 0.5 to indicate that their probability values
             // are neither 0 nor 1.
-            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, Type(0.5));
+            storm::utility::vector::setVectorValues<Type>(result, maybeStates, Type(0.5));
         } else {
             // In this case we have have to compute the probabilities.
             
@@ -298,12 +287,12 @@ public:
             }
             
             // Set values of resulting vector according to result.
-            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
+            storm::utility::vector::setVectorValues<Type>(result, maybeStates, x);
         }
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::vector::setVectorValues<Type>(*result, statesWithProbability0, storm::utility::constGetZero<Type>());
-		storm::utility::vector::setVectorValues<Type>(*result, statesWithProbability1, storm::utility::constGetOne<Type>());
+		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
+		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
 
 		return result;
 	}
@@ -319,7 +308,7 @@ public:
 	 * @returns The reward values for the given formula for every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type>* checkInstantaneousReward(storm::property::prctl::InstantaneousReward<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkInstantaneousReward(storm::property::prctl::InstantaneousReward<Type> const& formula, bool qualitative) const {
 		// Only compute the result if the model has a state-based reward model.
 		if (!this->getModel().hasStateRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing (state-based) reward model for formula.");
@@ -327,16 +316,15 @@ public:
 		}
 
 		// Initialize result to state rewards of the model.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getStateRewardVector());
+		std::vector<Type> result(this->getModel().getStateRewardVector());
 
 		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
         if (linearEquationSolver != nullptr) {
-            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result, nullptr, formula.getBound());
+            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), result, nullptr, formula.getBound());
         } else {
             throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
         }
 
-		// Return result.
 		return result;
 	}
 
@@ -351,7 +339,7 @@ public:
 	 * @returns The reward values for the given formula for every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type>* checkCumulativeReward(storm::property::prctl::CumulativeReward<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkCumulativeReward(storm::property::prctl::CumulativeReward<Type> const& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
@@ -370,21 +358,20 @@ public:
 		}
 
 		// Initialize result to either the state rewards of the model or the null vector.
-		std::vector<Type>* result = nullptr;
+		std::vector<Type> result;
 		if (this->getModel().hasStateRewards()) {
-			result = new std::vector<Type>(this->getModel().getStateRewardVector());
+			result = std::vector<Type>(this->getModel().getStateRewardVector());
 		} else {
-			result = new std::vector<Type>(this->getModel().getNumberOfStates());
+			result.resize(this->getModel().getNumberOfStates());
 		}
 
 		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
         if (linearEquationSolver != nullptr) {
-            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), *result, &totalRewardVector, formula.getBound());
+            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), result, &totalRewardVector, formula.getBound());
         } else {
             throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
         }
 
-		// Return result.
 		return result;
 	}
 
@@ -399,7 +386,7 @@ public:
 	 * @returns The reward values for the given formula for every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type>* checkReachabilityReward(storm::property::prctl::ReachabilityReward<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkReachabilityReward(storm::property::prctl::ReachabilityReward<Type> const& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
@@ -407,19 +394,19 @@ public:
 		}
 
 		// Determine the states for which the target predicate holds.
-		storm::storage::BitVector* targetStates = formula.getChild().check(*this);
+		storm::storage::BitVector targetStates = formula.getChild().check(*this);
 
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel(), trueStates, *targetStates);
+		storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel(), trueStates, targetStates);
 		infinityStates.complement();
-		storm::storage::BitVector maybeStates = ~(*targetStates) & ~infinityStates;
+		storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
 		LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
-		LOG4CPLUS_INFO(logger, "Found " << targetStates->getNumberOfSetBits() << " 'target' states.");
+		LOG4CPLUS_INFO(logger, "Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
 		LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
 
 		// Create resulting vector.
-		std::vector<Type>* result = new std::vector<Type>(this->getModel().getNumberOfStates());
+		std::vector<Type> result(this->getModel().getNumberOfStates());
 
         // Check whether we need to compute exact rewards for some states.
         if (this->getInitialStates().isDisjointFrom(maybeStates)) {
@@ -427,7 +414,7 @@ public:
                             << " No exact rewards were computed.");
             // Set the values for all maybe-states to 1 to indicate that their reward values
             // are neither 0 nor infinity.
-            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, storm::utility::constGetOne<Type>());
+            storm::utility::vector::setVectorValues<Type>(result, maybeStates, storm::utility::constGetOne<Type>());
         } else {
             // In this case we have to compute the reward values for the remaining states.
             // We can eliminate the rows and columns from the original transition probability matrix.
@@ -474,15 +461,13 @@ public:
             }
             
             // Set values of resulting vector according to result.
-            storm::utility::vector::setVectorValues<Type>(*result, maybeStates, x);
+            storm::utility::vector::setVectorValues<Type>(result, maybeStates, x);
         }
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::vector::setVectorValues(*result, *targetStates, storm::utility::constGetZero<Type>());
-		storm::utility::vector::setVectorValues(*result, infinityStates, storm::utility::constGetInfinity<Type>());
+		storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constGetZero<Type>());
+		storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<Type>());
 
-		// Delete temporary storages and return result.
-		delete targetStates;
 		return result;
 	}
 

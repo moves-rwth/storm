@@ -173,9 +173,8 @@ public:
      * Move constructor. Move constructs the bit vector from the given bit vector.
      *
      */
-    BitVector(BitVector&& bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
+    BitVector(BitVector&& bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), bucketArray(bv.bucketArray), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
         LOG4CPLUS_DEBUG(logger, "Invoking move constructor.");
-        this->bucketArray = bv.bucketArray;
         bv.bucketArray = nullptr;
     }
 

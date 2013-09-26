@@ -185,11 +185,11 @@ public:
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkAp(storm::property::csl::Ap<Type> const& formula) const {
+	storm::storage::BitVector checkAp(storm::property::csl::Ap<Type> const& formula) const {
 		if (formula.getAp() == "true") {
-			return new storm::storage::BitVector(model.getNumberOfStates(), true);
+			return storm::storage::BitVector(model.getNumberOfStates(), true);
 		} else if (formula.getAp() == "false") {
-			return new storm::storage::BitVector(model.getNumberOfStates());
+			return storm::storage::BitVector(model.getNumberOfStates());
 		}
 
 		if (!model.hasAtomicProposition(formula.getAp())) {
@@ -197,7 +197,7 @@ public:
 			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
 		}
 
-		return new storm::storage::BitVector(model.getLabeledStates(formula.getAp()));
+		return storm::storage::BitVector(model.getLabeledStates(formula.getAp()));
 	}
 
 	/*!
@@ -206,11 +206,10 @@ public:
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkAnd(storm::property::csl::And<Type> const& formula) const {
-		storm::storage::BitVector* result = formula.getLeft().check(*this);
-		storm::storage::BitVector* right = formula.getRight().check(*this);
-		(*result) &= (*right);
-		delete right;
+	storm::storage::BitVector checkAnd(storm::property::csl::And<Type> const& formula) const {
+		storm::storage::BitVector result = formula.getLeft().check(*this);
+		storm::storage::BitVector right = formula.getRight().check(*this);
+		result &= right;
 		return result;
 	}
 
@@ -220,11 +219,10 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector* checkOr(storm::property::csl::Or<Type> const& formula) const {
-		storm::storage::BitVector* result = formula.getLeft().check(*this);
-		storm::storage::BitVector* right = formula.getRight().check(*this);
-		(*result) |= (*right);
-		delete right;
+	virtual storm::storage::BitVector checkOr(storm::property::csl::Or<Type> const& formula) const {
+		storm::storage::BitVector result = formula.getLeft().check(*this);
+		storm::storage::BitVector right = formula.getRight().check(*this);
+		result |= right;
 		return result;
 	}
 
@@ -234,9 +232,9 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkNot(const storm::property::csl::Not<Type>& formula) const {
-		storm::storage::BitVector* result = formula.getChild().check(*this);
-		result->complement();
+	storm::storage::BitVector checkNot(const storm::property::csl::Not<Type>& formula) const {
+		storm::storage::BitVector result = formula.getChild().check(*this);
+		result.complement();
 		return result;
 	}
 
@@ -247,23 +245,21 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkProbabilisticBoundOperator(storm::property::csl::ProbabilisticBoundOperator<Type> const& formula) const {
+	storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::csl::ProbabilisticBoundOperator<Type> const& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<Type>* quantitativeResult = formula.getPathFormula().check(*this, false);
+		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
 
 		// Create resulting bit vector that will hold the yes/no-answer for every state.
-		storm::storage::BitVector* result = new storm::storage::BitVector(quantitativeResult->size());
+		storm::storage::BitVector result(quantitativeResult.size());
 
 		// Now, we can compute which states meet the bound specified in this operator and set the
 		// corresponding bits to true in the resulting vector.
-		for (uint_fast64_t i = 0; i < quantitativeResult->size(); ++i) {
-			if (formula.meetsBound((*quantitativeResult)[i])) {
-				result->set(i, true);
+		for (uint_fast64_t i = 0; i < quantitativeResult.size(); ++i) {
+			if (formula.meetsBound(quantitativeResult[i])) {
+				result.set(i, true);
 			}
 		}
 
-		// Delete the probabilities computed for the states and return result.
-		delete quantitativeResult;
 		return result;
 	}
 

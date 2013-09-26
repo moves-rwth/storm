@@ -26,15 +26,12 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F observe0Greater1] on crowds/crowds20_5...");
-	std::vector<double>* result = probFormula->check(mc);
+	std::vector<double> result = probFormula->check(mc);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_NE(nullptr, result);
-
-	ASSERT_LT(std::abs((*result)[0] - 0.2296800237), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 0.2296800237), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
-	delete result;
 
 	apFormula = new storm::property::prctl::Ap<double>("observeIGreater1");
 	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -44,12 +41,9 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	result = probFormula->check(mc);
     LOG4CPLUS_WARN(logger, "Done.");
     
-	ASSERT_NE(nullptr, result);
-
-	ASSERT_LT(std::abs((*result)[0] - 0.05073232193), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 0.05073232193), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
-	delete result;
 
 	apFormula = new storm::property::prctl::Ap<double>("observeOnlyTrueSender");
 	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -59,12 +53,9 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	result = probFormula->check(mc);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_NE(nullptr, result);
-
-	ASSERT_LT(std::abs((*result)[0] - 0.22742171078), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 0.22742171078), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
-	delete result;
 }
 
 
@@ -88,15 +79,12 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F elected] on synchronous_leader/leader6_8...");
-	std::vector<double>* result = probFormula->check(mc);
+	std::vector<double> result = probFormula->check(mc);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_NE(nullptr, result);
-
-	ASSERT_LT(std::abs((*result)[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
-	delete result;
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::BoundedUntil<double>* boundedUntilFormula = new storm::property::prctl::BoundedUntil<double>(new storm::property::prctl::Ap<double>("true"), apFormula, 20);
@@ -106,12 +94,9 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	result = probFormula->check(mc);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_NE(nullptr, result);
-
-	ASSERT_LT(std::abs((*result)[0] - 0.9993949793), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 0.9993949793), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete probFormula;
-	delete result;
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
@@ -121,10 +106,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	result = rewardFormula->check(mc);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_NE(nullptr, result);
-
-	ASSERT_LT(std::abs((*result)[0] - 1.025106273), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 1.025106273), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
 	delete rewardFormula;
-	delete result;
 }
