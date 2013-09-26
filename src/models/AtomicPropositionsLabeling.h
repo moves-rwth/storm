@@ -32,15 +32,14 @@ namespace models {
  */
 class AtomicPropositionsLabeling {
 
-public:
-
+public:   
 	/*!
 	 * Constructs an empty atomic propositions labeling for the given number of states and amount of atomic propositions.
      *
 	 * @param stateCount The number of states of the model.
 	 * @param apCountMax The number of atomic propositions.
 	 */
-	AtomicPropositionsLabeling(const uint_fast64_t stateCount, uint_fast64_t const apCountMax)
+	AtomicPropositionsLabeling(const uint_fast64_t stateCount = 0, uint_fast64_t const apCountMax = 0)
 			: stateCount(stateCount), apCountMax(apCountMax), apsCurrent(0), singleLabelings() {
         singleLabelings.reserve(apCountMax);
 	}

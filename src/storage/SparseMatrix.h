@@ -351,7 +351,7 @@ public:
 	 *
 	 * @param other The Matrix from which to copy the content
 	 */
-	storm::storage::SparseMatrix<T>& operator=(const SparseMatrix<T> & other) {
+	storm::storage::SparseMatrix<T>& operator=(SparseMatrix<T> const& other) {
 		this->rowCount = other.rowCount;
 		this->colCount = other.colCount;
 		this->nonZeroEntryCount = other.nonZeroEntryCount;

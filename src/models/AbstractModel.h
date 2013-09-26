@@ -300,6 +300,15 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 			return this->getTransitionMatrix().getNonZeroEntryCount();
 		}
 
+        /*!
+         * Retrieves the initial states of the model.
+         *
+         * @return The initial states of the model represented by a bit vector.
+         */
+        storm::storage::BitVector const& getInitialStates() const {
+            return this->getLabeledStates("init");
+        }
+    
 		/*!
 		 * Returns a bit vector in which exactly those bits are set to true that
 		 * correspond to a state labeled with the given atomic proposition.

@@ -59,22 +59,31 @@ namespace storm {
         
         class ExplicitModelAdapter {
         public:
-            /*!
-             * Initializes the adapter with the given program.
-             *
-             * @param program The program from which to build the explicit model.
-             */
-            ExplicitModelAdapter(storm::ir::Program program);
+            // A structure holding information about the reachable state space.
+            struct StateInformation {
+                std::vector<StateType*> reachableStates;
+                std::unordered_map<StateType, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
+            };
             
-            /*!
-             * Destroys the adapter.
-             */
-            ~ExplicitModelAdapter();
+            // A structure holding the individual components of a model.
+            struct ModelComponents {
+                ModelComponents() : transitionMatrix(), stateLabeling(), nondeterministicChoiceIndices(), stateRewards(), transitionRewardMatrix(), choiceLabeling() {
+                    // Intentionally left empty.
+                }
+                
+                storm::storage::SparseMatrix<double> transitionMatrix;
+                storm::models::AtomicPropositionsLabeling stateLabeling;
+                std::vector<uint_fast64_t> nondeterministicChoiceIndices;
+                std::vector<double> stateRewards;
+                storm::storage::SparseMatrix<double> transitionRewardMatrix;
+                std::vector<std::list<uint_fast64_t>> choiceLabeling;
+            };
             
             /*!
              * Convert the program given at construction time to an abstract model. The type of the model is the one
              * specified in the program. The given reward model name selects the rewards that the model will contain.
              *
+             * @param program The program to translate.
              * @param constantDefinitionString A string that contains a comma-separated definition of all undefined
              * constants in the model.
              * @param rewardModelName The name of reward model to be added to the model. This must be either a reward
@@ -82,27 +91,9 @@ namespace storm {
              * rewards.
              * @return The explicit model that was given by the probabilistic program.
              */
-            std::shared_ptr<storm::models::AbstractModel<double>> getModel(std::string const& constantDefinitionString = "", std::string const& rewardModelName = "");
+            static std::shared_ptr<storm::models::AbstractModel<double>> translateProgram(storm::ir::Program program, std::string const& constantDefinitionString = "", std::string const& rewardModelName = "");
             
         private:
-            /*!
-             * Private copy constructor to disable copy-construction (and move-construction) of this class.
-             *
-             * @param other The object to copy-construct from.
-             */
-            ExplicitModelAdapter(ExplicitModelAdapter const& other);
-            /*!
-             * Private copy-assignment to disable copy-assignment (and move-assignment) of this class.
-             *
-             * @param other The object to copy-assign from.
-             */
-            ExplicitModelAdapter operator=(ExplicitModelAdapter const& other);
-            
-            /*!
-             * The precision that is to be used for sanity checks internally.
-             */
-            double precision;
-            
             /*!
              * Sets some boolean variable in the given state object.
              *
@@ -133,29 +124,50 @@ namespace storm {
              * Applies an update to the given state and returns the resulting new state object. This methods does not
              * modify the given state but returns a new one.
              *
+             * @param program The program in which the variables of the update are declared.
              * @params state The state to which to apply the update.
              * @params update The update to apply.
              * @return The resulting state.
              */
-            StateType* applyUpdate(StateType const* state, storm::ir::Update const& update) const;
+            static StateType* applyUpdate(storm::ir::Program const& program, StateType const* state, storm::ir::Update const& update);
             
             /*!
              * Applies an update to the given state and returns the resulting new state object. The update is evaluated
              * over the variable values of the given base state. This methods does not modify the given state but
              * returns a new one.
              *
-             * @params state The state to which to apply the update.
-             * @params baseState The state used for evaluating the update.
-             * @params update The update to apply.
+             * @param program The program in which the variables of the update are declared.
+             * @param state The state to which to apply the update.
+             * @param baseState The state used for evaluating the update.
+             * @param update The update to apply.
              * @return The resulting state.
              */
-            StateType* applyUpdate(StateType const* state, StateType const* baseState, storm::ir::Update const& update) const;
+            static StateType* applyUpdate(storm::ir::Program const& program, StateType const* state, StateType const* baseState, storm::ir::Update const& update);
             
             /*!
-             * Prepares internal data structures associated with the variables in the program that are used during the
-             * translation.
+             * Defines the undefined constants of the given program using the given string.
+             *
+             * @param program The program in which to define the constants.
+             * @param constantDefinitionString A comma-separated list of constant definitions.
              */
-            void initializeVariables();
+            static void defineUndefinedConstants(storm::ir::Program& program, std::string const& constantDefinitionString);
+            
+            /*!
+             * Undefines all previously defined constants in the given program.
+             *
+             * @param program The program in which to undefine the constants.
+             */
+            static void undefineUndefinedConstants(storm::ir::Program& program);
+            
+            /*!
+             * Explores the state space of the given program and returns the components of the model as a result.
+             *
+             * @param program The program whose state space to explore.
+             * @param rewardModelName The name of the reward model that is to be considered. If empty, no reward model
+             * is considered.
+             * @return A structure containing the components of the resulting model.
+             */
+            static ModelComponents buildModelComponents(storm::ir::Program const& program, std::string const& rewardModelName);
             
             /*!
              * Retrieves the state rewards for every reachable state based on the given state rewards.
@@ -163,7 +175,7 @@ namespace storm {
              * @param rewards The rewards to use.
              * @return The reward values for every (reachable) state.
              */
-            std::vector<double> getStateRewards(std::vector<storm::ir::StateReward> const& rewards);
+//            static std::vector<double> getStateRewards(std::vector<storm::ir::StateReward> const& rewards);
             
             /*!
              * Computes the labels for every reachable state based on a list of available labels.
@@ -171,7 +183,7 @@ namespace storm {
              * @param labels A mapping from label names to boolean expressions to use for the labeling.
              * @return The resulting labeling.
              */
-            storm::models::AtomicPropositionsLabeling getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
+//            static storm::models::AtomicPropositionsLabeling getStateLabeling(std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels);
             
             /*!
              * Retrieves all commands that are labeled with the given label and enabled in the given state, grouped by
@@ -188,14 +200,14 @@ namespace storm {
              * @param action The action label to select.
              * @return A list of lists of active commands or nothing.
              */
-            boost::optional<std::vector<std::list<storm::ir::Command>>> getActiveCommandsByAction(StateType const* state, std::string const& action);
+//            static boost::optional<std::vector<std::list<storm::ir::Command>>> getActiveCommandsByAction(StateType const* state, std::string const& action);
             
             /*!
              * Generates the initial state.
              *
              * @return The initial state.
              */
-            StateType* getInitialState();
+//            static StateType* getInitialState();
             
             /*!
              * Retrieves the state id of the given state. If the state has not been encountered yet, it will be added to
@@ -206,7 +218,7 @@ namespace storm {
              * @param state A pointer to a state for which to retrieve the index. This must not be used after the call.
              * @return The state id of the given state.
              */
-            uint_fast64_t getOrAddStateIndex(StateType* state);
+//            static uint_fast64_t getOrAddStateIndex(StateType* state);
             
             /*!
              * Expands all unlabeled (i.e. independent) transitions of the given state and adds them to the transition list.
@@ -214,7 +226,7 @@ namespace storm {
              * @param stateIndex The state to expand.
              * @params transitionList The current list of transitions for this state.
              */
-            void addUnlabeledTransitions(uint_fast64_t stateIndex, std::list<std::pair<std::pair<std::string, std::list<uint_fast64_t>>, std::map<uint_fast64_t, double>>>& transitionList);
+//            static void addUnlabeledTransitions(uint_fast64_t stateIndex, std::list<std::pair<std::pair<std::string, std::list<uint_fast64_t>>, std::map<uint_fast64_t, double>>>& transitionList);
             
             /*!
              * Expands all labeled (i.e. synchronizing) transitions of the given state and adds them to the transition list.
@@ -222,46 +234,26 @@ namespace storm {
              * @param stateIndex The index of the state to expand.
              * @param transitionList The current list of transitions for this state.
              */
-            void addLabeledTransitions(uint_fast64_t stateIndex, std::list<std::pair<std::pair<std::string, std::list<uint_fast64_t>>, std::map<uint_fast64_t, double>>>& transitionList);
+//            static void addLabeledTransitions(uint_fast64_t stateIndex, std::list<std::pair<std::pair<std::string, std::list<uint_fast64_t>>, std::map<uint_fast64_t, double>>>& transitionList);
             
             /*!
              * Builds the transition matrix of a deterministic model from the current list of transitions.
              *
              * @return The transition matrix.
              */
-            storm::storage::SparseMatrix<double> buildDeterministicMatrix();
+//            static storm::storage::SparseMatrix<double> buildDeterministicMatrix();
             
             /*!
              * Builds the transition matrix of a nondeterministic model from the current list of transitions.
              *
              * @return result The transition matrix.
              */
-            storm::storage::SparseMatrix<double> buildNondeterministicMatrix();
+//            static storm::storage::SparseMatrix<double> buildNondeterministicMatrix();
             
             /*!
              * Generate the (internal) list of all transitions of the model.
              */
-            void buildTransitionMap();
-            
-            /*!
-             * Clear all members that are initialized during the computation.
-             */
-            void clearInternalState();
-            
-            /*!
-             * Defines the undefined constants of the program using the given string.
-             *
-             * @param constantDefinitionString A comma-separated list of constant definitions.
-             */
-            void defineUndefinedConstants(std::string const& constantDefinitionString);
-            
-            /*!
-             * Sets all values of program constants to undefined again.
-             */
-            void undefineUndefinedConstants();
-            
-            // Program that is to be converted.
-            storm::ir::Program program;
+//            void buildTransitionMap();
             
             // List of all boolean variables.
             std::vector<storm::ir::BooleanVariable> booleanVariables;
