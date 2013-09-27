@@ -22,10 +22,6 @@
 #include <sstream>
 #include <ostream>
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
 bool ExplicitModelAdapterOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
 	instance->addOption(storm::settings::OptionBuilder("ExplicitModelAdapter", "constants", "", "Specifies the constant replacements to use in Explicit Models").addArgument(storm::settings::ArgumentBuilder::createStringArgument("constantString", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3").setDefaultValueString("").build()).build());
 	return true;
@@ -33,160 +29,9 @@ bool ExplicitModelAdapterOptionsRegistered = storm::settings::Settings::register
 
 namespace storm {
     namespace adapters {
-        
-        void ExplicitModelAdapter::defineUndefinedConstants(storm::ir::Program& program, std::string const& constantDefinitionString) {
-            if (!constantDefinitionString.empty()) {
-                // Parse the string that defines the undefined constants of the model and make sure that it contains exactly
-                // one value for each undefined constant of the model.
-                std::vector<std::string> definitions;
-                boost::split(definitions, constantDefinitionString, boost::is_any_of(","));
-                for (auto& definition : definitions) {
-                    boost::trim(definition);
-                    
-                    // Check whether the token could be a legal constant definition.
-                    uint_fast64_t positionOfAssignmentOperator = definition.find('=');
-                    if (positionOfAssignmentOperator == std::string::npos) {
-                        throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: syntax error.";
-                    }
-                    
-                    // Now extract the variable name and the value from the string.
-                    std::string constantName = definition.substr(0, positionOfAssignmentOperator);
-                    boost::trim(constantName);
-                    std::string value = definition.substr(positionOfAssignmentOperator + 1);
-                    boost::trim(value);
-                    
-                    // Check whether the constant is a legal undefined constant of the program and if so, of what type it is.
-                    if (program.hasUndefinedBooleanConstant(constantName)) {
-                        if (value == "true") {
-                            program.getUndefinedBooleanConstantExpression(constantName)->define(true);
-                        } else if (value == "false") {
-                            program.getUndefinedBooleanConstantExpression(constantName)->define(false);
-                        } else {
-                            throw storm::exceptions::InvalidArgumentException() << "Illegal value for boolean constant: " << value << ".";
-                        }
-                    } else if (program.hasUndefinedIntegerConstant(constantName)) {
-                        try {
-                            int_fast64_t integerValue = std::stoi(value);
-                            program.getUndefinedIntegerConstantExpression(constantName)->define(integerValue);
-                        } catch (std::invalid_argument const&) {
-                            throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << ".";
-                        } catch (std::out_of_range const&) {
-                            throw storm::exceptions::InvalidArgumentException() << "Illegal value of integer constant: " << value << " (value too big).";
-                        }
-                    } else if (program.hasUndefinedDoubleConstant(constantName)) {
-                        try {
-                            double doubleValue = std::stod(value);
-                            program.getUndefinedDoubleConstantExpression(constantName)->define(doubleValue);
-                        } catch (std::invalid_argument const&) {
-                            throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << ".";
-                        } catch (std::out_of_range const&) {
-                            throw storm::exceptions::InvalidArgumentException() << "Illegal value of double constant: " << value << " (value too big).";
-                        }
-                        
-                    } else {
-                        throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: unknown undefined constant " << constantName << ".";
-                    }
-                }
-            }
-        }
-        
-        void ExplicitModelAdapter::undefineUndefinedConstants(storm::ir::Program& program) {
-            for (auto nameExpressionPair : program.getBooleanUndefinedConstantExpressionsMap()) {
-                nameExpressionPair.second->undefine();
-            }
-            for (auto nameExpressionPair : program.getIntegerUndefinedConstantExpressionsMap()) {
-                nameExpressionPair.second->undefine();
-            }
-            for (auto nameExpressionPair : program.getDoubleUndefinedConstantExpressionsMap()) {
-                nameExpressionPair.second->undefine();
-            }
-        }
-        
-        ExplicitModelAdapter::StateInformation ExplicitModelAdapter::exploreReachableStateSpace(storm::ir::Program const& program) {
-            StateInformation stateInformation;
-            
-            // Initialize a queue, insert the starting state and explore the current state until there is no more reachable state.
-            
-            return stateInformation;
-        }
-        
-        ExplicitModelAdapter::ModelComponents ExplicitModelAdapter::buildModelComponents(storm::ir::Program const& program, std::string const& rewardModelName) {
-            ModelComponents modelComponents;
-            
-            // Start by exploring the state space.
-            StateInformation stateInformation = exploreReachableStateSpace(program);
-            
-            // Then build the transition matrix for the reachable states.
-            
-            // Now build the state labeling.
-            
-            // Finally, construct the state rewards.
-            
-            return modelComponents;
-        }
-        
-        std::shared_ptr<storm::models::AbstractModel<double>> ExplicitModelAdapter::translateProgram(storm::ir::Program program, std::string const& constantDefinitionString, std::string const& rewardModelName) {
-            // Start by defining the undefined constants in the model.
-            defineUndefinedConstants(program, constantDefinitionString);
-            
-            ModelComponents modelComponents = buildModelComponents(program, rewardModelName);
-            
-            std::shared_ptr<storm::models::AbstractModel<double>> result;
-            switch (program.getModelType()) {
-                case storm::ir::Program::DTMC:
-                    result = std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Dtmc<double>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.stateRewards), std::move(modelComponents.transitionRewardMatrix), std::move(modelComponents.choiceLabeling)));
-                    break;
-                case storm::ir::Program::CTMC:
-                    result = std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmc<double>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.stateRewards), std::move(modelComponents.transitionRewardMatrix), std::move(modelComponents.choiceLabeling)));
-                    break;
-                    break;
-                case storm::ir::Program::MDP:
-                    result = std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Mdp<double>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.nondeterministicChoiceIndices), std::move(modelComponents.stateRewards), std::move(modelComponents.transitionRewardMatrix), std::move(modelComponents.choiceLabeling)));
-                    break;
-                case storm::ir::Program::CTMDP:
-                    result = std::shared_ptr<storm::models::AbstractModel<double>>(new storm::models::Ctmdp<double>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.nondeterministicChoiceIndices), std::move(modelComponents.stateRewards), std::move(modelComponents.transitionRewardMatrix), std::move(modelComponents.choiceLabeling)));
-                    break;
-                default:
-                    LOG4CPLUS_ERROR(logger, "Error while creating model from probabilistic program: cannot handle this model type.");
-                    throw storm::exceptions::WrongFormatException() << "Error while creating model from probabilistic program: cannot handle this model type.";
-                    break;
-            }
+    
 
-            // Undefine the constants so that the program can be used again somewhere else.
-            undefineUndefinedConstants(program);
-            
-            return result;
-        }
         
-        void ExplicitModelAdapter::setValue(StateType* state, uint_fast64_t index, bool value) {
-            std::get<0>(*state)[index] = value;
-        }
-        
-        void ExplicitModelAdapter::setValue(StateType* state, uint_fast64_t index, int_fast64_t value) {
-            std::get<1>(*state)[index] = value;
-        }
-        
-        std::string ExplicitModelAdapter::toString(StateType const* state) {
-            std::stringstream ss;
-            for (unsigned int i = 0; i < state->first.size(); i++) ss << state->first[i] << "\t";
-            for (unsigned int i = 0; i < state->second.size(); i++) ss << state->second[i] << "\t";
-            return ss.str();
-        }
-        
-        StateType* ExplicitModelAdapter::applyUpdate(storm::ir::Program const& program, StateType const* state, storm::ir::Update const& update) {
-            return applyUpdate(program, state, state, update);
-        }
-        
-        StateType* ExplicitModelAdapter::applyUpdate(storm::ir::Program const& program, StateType const* state, StateType const* baseState, storm::ir::Update const& update) {
-            StateType* newState = new StateType(*state);
-            for (auto variableAssignmentPair : update.getBooleanAssignments()) {
-                setValue(newState, program.getGlobalIndexOfBooleanVariable(variableAssignmentPair.first), variableAssignmentPair.second.getExpression()->getValueAsBool(baseState));
-            }
-            for (auto variableAssignmentPair : update.getIntegerAssignments()) {
-                setValue(newState, program.getGlobalIndexOfIntegerVariable(variableAssignmentPair.first), variableAssignmentPair.second.getExpression()->getValueAsInt(baseState));
-            }
-            return newState;
-        }
         
 //        std::vector<double> ExplicitModelAdapter::getStateRewards(std::vector<storm::ir::StateReward> const& rewards) {
 //            std::vector<double> result(this->allStates.size());
@@ -227,48 +72,6 @@ namespace storm {
 //            return results;
 //        }
         
-//        void ExplicitModelAdapter::initializeVariables() {
-//            uint_fast64_t numberOfIntegerVariables = 0;
-//            uint_fast64_t numberOfBooleanVariables = 0;
-//            
-//            // Count number of variables.
-//            numberOfBooleanVariables += program.getNumberOfGlobalBooleanVariables();
-//            numberOfIntegerVariables += program.getNumberOfGlobalIntegerVariables();
-//            for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
-//                numberOfBooleanVariables += program.getModule(i).getNumberOfBooleanVariables();
-//                numberOfIntegerVariables += program.getModule(i).getNumberOfIntegerVariables();
-//            }
-//            
-//            this->booleanVariables.resize(numberOfBooleanVariables);
-//            this->integerVariables.resize(numberOfIntegerVariables);
-//            
-//            // Create variables.
-//            for (uint_fast64_t i = 0; i < program.getNumberOfGlobalBooleanVariables(); ++i) {
-//                storm::ir::BooleanVariable var = program.getGlobalBooleanVariable(i);
-//                this->booleanVariables[var.getGlobalIndex()] = var;
-//                this->booleanVariableToIndexMap[var.getName()] = var.getGlobalIndex();
-//            }
-//            for (uint_fast64_t i = 0; i < program.getNumberOfGlobalIntegerVariables(); ++i) {
-//                storm::ir::IntegerVariable var = program.getGlobalIntegerVariable(i);
-//                this->integerVariables[var.getGlobalIndex()] = var;
-//                this->integerVariableToIndexMap[var.getName()] = var.getGlobalIndex();
-//            }
-//            for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
-//                storm::ir::Module const& module = program.getModule(i);
-//                
-//                for (uint_fast64_t j = 0; j < module.getNumberOfBooleanVariables(); ++j) {
-//                    storm::ir::BooleanVariable var = module.getBooleanVariable(j);
-//                    this->booleanVariables[var.getGlobalIndex()] = var;
-//                    this->booleanVariableToIndexMap[var.getName()] = var.getGlobalIndex();
-//                }
-//                for (uint_fast64_t j = 0; j < module.getNumberOfIntegerVariables(); ++j) {
-//                    storm::ir::IntegerVariable var = module.getIntegerVariable(j);
-//                    this->integerVariables[var.getGlobalIndex()] = var;
-//                    this->integerVariableToIndexMap[var.getName()] = var.getGlobalIndex();
-//                }
-//            }
-//        }
-        
 //        boost::optional<std::vector<std::list<storm::ir::Command>>> ExplicitModelAdapter::getActiveCommandsByAction(StateType const* state, std::string const& action) {
 //            boost::optional<std::vector<std::list<storm::ir::Command>>> result((std::vector<std::list<storm::ir::Command>>()));
 //            
@@ -301,57 +104,6 @@ namespace storm {
 //                result.get().push_back(std::move(commands));
 //            }
 //            return result;
-//        }
-        
-//        static StateType* ExplicitModelAdapter::getInitialState() {
-//            StateType* initialState = new StateType();
-//            initialState->first.resize(this->booleanVariables.size());
-//            initialState->second.resize(this->integerVariables.size());
-//            
-//            // Start with boolean variables.
-//            for (uint_fast64_t i = 0; i < this->booleanVariables.size(); ++i) {
-//                // Check if an initial value is given
-//                if (this->booleanVariables[i].getInitialValue().get() == nullptr) {
-//                    // If no initial value was given, we assume that the variable is initially false.
-//                    std::get<0>(*initialState)[i] = false;
-//                } else {
-//                    // Initial value was given.
-//                    bool initialValue = this->booleanVariables[i].getInitialValue()->getValueAsBool(nullptr);
-//                    std::get<0>(*initialState)[i] = initialValue;
-//                }
-//            }
-//            
-//            // Now process integer variables.
-//            for (uint_fast64_t i = 0; i < this->integerVariables.size(); ++i) {
-//                // Check if an initial value was given.
-//                if (this->integerVariables[i].getInitialValue().get() == nullptr) {
-//                    // No initial value was given, so we assume that the variable initially has the least value it can take.
-//                    std::get<1>(*initialState)[i] = this->integerVariables[i].getLowerBound()->getValueAsInt(nullptr);
-//                } else {
-//                    // Initial value was given.
-//                    int_fast64_t initialValue = this->integerVariables[i].getInitialValue()->getValueAsInt(nullptr);
-//                    std::get<1>(*initialState)[i] = initialValue;
-//                }
-//            }
-//            
-//            LOG4CPLUS_DEBUG(logger, "Generated initial state.");
-//            return initialState;
-//        }
-        
-//        static uint_fast64_t ExplicitModelAdapter::getOrAddStateIndex(StateType* state) {
-//            // Check, if the state was already registered.
-//            auto indexIt = this->stateToIndexMap.find(state);
-//            
-//            if (indexIt == this->stateToIndexMap.end()) {
-//                // The state has not been seen, yet, so add it to the list of all reachable states.
-//                allStates.push_back(state);
-//                stateToIndexMap[state] = allStates.size() - 1;
-//                return allStates.size() - 1;
-//            } else {
-//                // The state was already encountered. Delete the copy of the old state and return its index.
-//                delete state;
-//                return indexIt->second;
-//            }
 //        }
         
 //        void ExplicitModelAdapter::addUnlabeledTransitions(uint_fast64_t stateIndex, std::list<std::pair<std::pair<std::string, std::list<uint_fast64_t>>, std::map<uint_fast64_t, double>>>& transitionList) {
@@ -468,7 +220,7 @@ namespace storm {
 //                        // contains all target states and their respective probabilities. That means we are now ready to
 //                        // add the choice to the list of transitions.
 //                        transitionList.emplace_back(std::make_pair(std::make_pair(action, std::list<uint_fast64_t>()), std::map<uint_fast64_t, double>()));
-//                        
+//
 //                        // Add the commands that were involved in creating this distribution to the labeling.
 //                        for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
 //                            transitionList.back().first.second.push_back(iteratorList[i]->getGlobalIndex());

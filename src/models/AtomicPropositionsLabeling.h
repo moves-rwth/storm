@@ -88,6 +88,38 @@ public:
               singleLabelings(std::move(atomicPropositionsLabeling.singleLabelings)) {
         // Intentionally left empty.
     }
+    
+    /*!
+     * Assignment operator that copies the contents of the right-hand-side to the current labeling.
+     *
+     * @param other The atomic propositions labeling to copy.
+     */
+    AtomicPropositionsLabeling& operator=(AtomicPropositionsLabeling const& other) {
+        if (this != &other) {
+            this->stateCount = other.stateCount;
+            this->apCountMax = other.apCountMax;
+            this->apsCurrent = other.apsCurrent;
+            this->nameToLabelingMap = other.nameToLabelingMap;
+            this->singleLabelings = other.singleLabelings;
+        }
+        return *this;
+    }
+    
+    /*!
+     * Assignment operator that moves the contents of the right-hand-side to the current labeling.
+     *
+     * @param other The atomic propositions labeling to move.
+     */
+    AtomicPropositionsLabeling& operator=(AtomicPropositionsLabeling&& other) {
+        if (this != &other) {
+            this->stateCount = other.stateCount;
+            this->apCountMax = other.apCountMax;
+            this->apsCurrent = other.apsCurrent;
+            this->nameToLabelingMap = std::move(other.nameToLabelingMap);
+            this->singleLabelings = std::move(other.singleLabelings);
+        }
+        return *this;
+    }
 
 	/*!
 	 * (Empty) destructor.
