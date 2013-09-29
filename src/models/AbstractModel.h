@@ -71,7 +71,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
 				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<std::list<uint_fast64_t>>> const& optionalChoiceLabeling)
+                boost::optional<std::vector<std::set<uint_fast64_t>>> const& optionalChoiceLabeling)
 				: transitionMatrix(transitionMatrix), stateLabeling(stateLabeling) {
 					
 			if (optionalStateRewardVector) {
@@ -95,7 +95,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
 				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<std::list<uint_fast64_t>>>&& optionalChoiceLabeling) :
+                boost::optional<std::vector<std::set<uint_fast64_t>>>&& optionalChoiceLabeling) :
 				transitionMatrix(std::move(transitionMatrix)), choiceLabeling(std::move(optionalChoiceLabeling)),
                 stateLabeling(std::move(stateLabeling)), stateRewardVector(std::move(optionalStateRewardVector)),
                 transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)) {
@@ -359,7 +359,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * Returns the labels for the choices of the model, if there are any.
          * @return The labels for the choices of the model.
          */
-        std::vector<std::list<uint_fast64_t>> const& getChoiceLabeling() const {
+        std::vector<std::set<uint_fast64_t>> const& getChoiceLabeling() const {
             return choiceLabeling.get();
         }
 
@@ -538,7 +538,7 @@ protected:
 		storm::storage::SparseMatrix<T> transitionMatrix;
 
 		/*! The labeling that is associated with the choices for each state. */
-        boost::optional<std::vector<std::list<uint_fast64_t>>> choiceLabeling;
+        boost::optional<std::vector<std::set<uint_fast64_t>>> choiceLabeling;
 private:
 		/*! The labeling of the states of the model. */
 		storm::models::AtomicPropositionsLabeling stateLabeling;

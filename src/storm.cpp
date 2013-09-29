@@ -332,8 +332,8 @@ int main(const int argc, const char* argv[]) {
 		} else if (s->isSet("symbolic")) {
 			std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
 			std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
-			std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(storm::parser::PrismParserFromFile(programFile), constants);
-			// model->printModelInformationToStream(std::cout);
+			std::shared_ptr<storm::models::AbstractModel<storm::storage::LabeledValues<double>>> model = storm::adapters::ExplicitModelAdapter<storm::storage::LabeledValues<double>>::translateProgram(storm::parser::PrismParserFromFile(programFile), constants);
+			model->printModelInformationToStream(std::cout);
 
             // Enable the following lines to test the MinimalLabelSetGenerator.
 //            if (model->getType() == storm::models::MDP) {

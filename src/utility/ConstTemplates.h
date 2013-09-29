@@ -20,6 +20,7 @@
 
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/storage/BitVector.h"
+#include "src/storage/LabeledValues.h"
 
 namespace storm {
 
@@ -46,7 +47,7 @@ static inline _Scalar constGetZero() {
  */
 
 /*!
- * Template specification for int_fast32_t
+ * Template specialization for int_fast32_t
  * @return Value 0, fit to the type int_fast32_t
  */
 template <>
@@ -55,7 +56,7 @@ inline int_fast32_t constGetZero() {
 }
 
 /*!
- * Template specification for uint_fast64_t
+ * Template specialization for uint_fast64_t
  * @return Value 0, fit to the type uint_fast64_t
  */
 template <>
@@ -64,12 +65,21 @@ inline uint_fast64_t constGetZero() {
 }
 
 /*!
- * Template specification for double
+ * Template specialization for double
  * @return Value 0.0, fit to the type double
  */
 template <>
 inline double constGetZero() {
    return 0.0;
+}
+    
+/*!
+ * Template specialization for LabeledValues.
+ * @return A LabeledValues object that represents a value of 0.
+ */
+template<>
+inline storm::storage::LabeledValues<double> constGetZero() {
+    return storm::storage::LabeledValues<double>(0.0);
 }
 
 /*! @endcond */
@@ -91,11 +101,11 @@ static inline _Scalar constGetOne() {
 }
 
 /*! @cond TEMPLATE_SPECIALIZATION
- * (By default, the template specifications are not included in the documentation)
+ * (By default, the template specializations are not included in the documentation)
  */
 
 /*!
- * Template specification for int_fast32_t
+ * Template specialization for int_fast32_t
  * @return Value 1, fit to the type int_fast32_t
  */
 template<>
@@ -104,7 +114,7 @@ inline int_fast32_t constGetOne() {
 }
 
 /*!
- * Template specification for uint_fast64_t
+ * Template specialization for uint_fast64_t
  * @return Value 1, fit to the type uint_fast61_t
  */
 template<>
@@ -113,7 +123,7 @@ inline uint_fast64_t constGetOne() {
 }
 
 /*!
- * Template specification for double
+ * Template specialization for double
  * @return Value 1.0, fit to the type double
  */
 template<>
@@ -121,6 +131,15 @@ inline double constGetOne() {
    return 1.0;
 }
 
+/*!
+ * Template specialization for LabeledValues.
+ * @return A LabeledValues object that represents a value of 1.
+ */
+template<>
+inline storm::storage::LabeledValues<double> constGetOne() {
+    return storm::storage::LabeledValues<double>(1.0);
+}
+    
 /*! @endcond */
 
 /*!
@@ -140,11 +159,11 @@ static inline _Scalar constGetInfinity() {
 }
 
 /*! @cond TEMPLATE_SPECIALIZATION
- * (By default, the template specifications are not included in the documentation)
+ * (By default, the template specializations are not included in the documentation)
  */
 
 /*!
- * Template specification for int_fast32_t
+ * Template specialization for int_fast32_t
  * @return Value Infinity, fit to the type uint_fast32_t
  */
 template<>
@@ -154,7 +173,7 @@ inline int_fast32_t constGetInfinity() {
 }
 
 /*!
- * Template specification for uint_fast64_t
+ * Template specialization for uint_fast64_t
  * @return Value Infinity, fit to the type uint_fast64_t
  */
 template<>
@@ -164,7 +183,7 @@ inline uint_fast64_t constGetInfinity() {
 }
 
 /*!
- * Template specification for double
+ * Template specialization for double
  * @return Value Infinity, fit to the type double
  */
 template<>
@@ -172,11 +191,19 @@ inline double constGetInfinity() {
    return std::numeric_limits<double>::infinity();
 }
 
+/*!
+ * Template specialization for LabeledValues.
+ * @return Value Infinity, fit to the type LabeledValues.
+ */
+template<>
+inline storm::storage::LabeledValues<double> constGetInfinity() {
+    return storm::storage::LabeledValues<double>(std::numeric_limits<double>::infinity());
+}
+    
 /*! @endcond */
 
 } //namespace utility
 
 } //namespace storm
-
 
 #endif /* STORM_UTILITY_CONSTTEMPLATES_H_ */

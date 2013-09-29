@@ -343,7 +343,7 @@ public:
 	 * @return A reference to the current bit vector corresponding to the logical "and"
 	 * of the two bit vectors.
 	 */
-	BitVector operator&=(BitVector const& bv) {
+	BitVector& operator&=(BitVector const& bv) {
 		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		for (uint_fast64_t i = 0; i < minSize; ++i) {

@@ -40,7 +40,7 @@ public:
 	 * @param apCountMax The number of atomic propositions.
 	 */
 	AtomicPropositionsLabeling(const uint_fast64_t stateCount = 0, uint_fast64_t const apCountMax = 0)
-			: stateCount(stateCount), apCountMax(apCountMax), apsCurrent(0), singleLabelings() {
+			: stateCount(stateCount), apCountMax(apCountMax), apsCurrent(0), nameToLabelingMap(), singleLabelings() {
         singleLabelings.reserve(apCountMax);
 	}
 
@@ -159,7 +159,7 @@ public:
 	 * @return True if the proposition is registered within the labeling, false otherwise.
 	 */
 	bool containsAtomicProposition(std::string const& ap) const {
-		return (nameToLabelingMap.count(ap) != 0);
+		return nameToLabelingMap.find(ap) != nameToLabelingMap.end();
 	}
 
 	/*!
@@ -279,8 +279,7 @@ public:
 		}
 	}
 
-	std::unordered_map<std::string, uint_fast64_t> const& getNameToLabelingMap() const
-			{
+	std::unordered_map<std::string, uint_fast64_t> const& getNameToLabelingMap() const {
 		return this->nameToLabelingMap;
 	}
 
