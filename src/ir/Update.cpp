@@ -23,7 +23,7 @@ namespace storm {
             // Nothing to do here.
         }
         
-        Update::Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) : globalIndex(newGlobalIndex) {
+        Update::Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState) : globalIndex(newGlobalIndex) {
             for (auto const& variableAssignmentPair : update.booleanAssignments) {
                 if (renaming.count(variableAssignmentPair.first) > 0) {
                     this->booleanAssignments[renaming.at(variableAssignmentPair.first)] = Assignment(variableAssignmentPair.second, renaming, variableState);

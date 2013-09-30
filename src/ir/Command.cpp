@@ -23,7 +23,7 @@ namespace storm {
             // Nothing to do here.
         }
         
-        Command::Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState)
+        Command::Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState)
         : actionName(oldCommand.getActionName()), guardExpression(oldCommand.guardExpression->clone(renaming, variableState)), globalIndex(newGlobalIndex) {
             auto renamingPair = renaming.find(this->actionName);
             if (renamingPair != renaming.end()) {
@@ -32,6 +32,7 @@ namespace storm {
             this->updates.reserve(oldCommand.getNumberOfUpdates());
             for (Update const& update : oldCommand.updates) {
                 this->updates.emplace_back(update, variableState.getNextGlobalUpdateIndex(), renaming, variableState);
+                variableState.nextGlobalUpdateIndex++;
             }
         }
         

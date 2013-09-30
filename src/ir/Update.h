@@ -53,7 +53,7 @@ namespace storm {
              * replaced with.
              * @param variableState An object knowing about the variables in the system.
              */
-            Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
+            Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState);
             
             /*!
              * Retrieves the expression for the likelihood of this update.

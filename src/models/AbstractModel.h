@@ -212,7 +212,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             
             std::vector<uint_fast64_t> rowIndications(numberOfStates + 1);
             std::vector<uint_fast64_t> columnIndications(numberOfTransitions);
-            std::vector<TransitionType> values(numberOfTransitions, selectionFunction(0));
+            std::vector<TransitionType> values(numberOfTransitions, TransitionType());
             
             // First, we need to count how many backward transitions each state has.
             for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
