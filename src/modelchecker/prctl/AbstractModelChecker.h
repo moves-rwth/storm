@@ -120,15 +120,6 @@ public:
 		}
 	}
         
-    /*!
-     * Retrieves the initial states of the model.
-     *
-     * @return A bit vector that represents the initial states of the model.
-     */
-    storm::storage::BitVector const& getInitialStates() const {
-        return model.getLabeledStates("init");
-    }
-
 	/*!
 	 * Checks the given abstract prctl formula on the model and prints the result (depending on the actual type of the formula)
 	 * for all initial states, i.e. states that carry the atomic proposition "init".
@@ -158,7 +149,7 @@ public:
 			result = stateFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : this->getInitialStates()) {
+			for (auto initialState : model.getInitialStates()) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
 				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
 			}
@@ -184,7 +175,7 @@ public:
 			result = this->checkNoBoundOperator(noBoundFormula);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : this->getInitialStates()) {
+			for (auto initialState : model.getInitialStates()) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result[initialState]);
 				std::cout << "\t" << initialState << ": " << result[initialState] << std::endl;
 			}

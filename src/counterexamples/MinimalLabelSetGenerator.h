@@ -339,7 +339,7 @@ namespace storm {
                     variableNameBuffer.str("");
                     variableNameBuffer.clear();
                     variableNameBuffer << "p" << state;
-                    error = GRBaddvar(model, 0, nullptr, nullptr, maximizeProbability ? (labeledMdp.getLabeledStates("init").get(state) ? -0.5 : 0) : 0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
+                    error = GRBaddvar(model, 0, nullptr, nullptr, maximizeProbability ? (labeledMdp.getInitialStates().get(state) ? -0.5 : 0) : 0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
                     if (error) {
                         LOG4CPLUS_ERROR(logger, "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").");
                         throw storm::exceptions::InvalidStateException() << "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").";
@@ -492,7 +492,7 @@ namespace storm {
             static uint_fast64_t assertProbabilityGreaterThanThreshold(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, T probabilityThreshold) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 int error = 0;
-                storm::storage::BitVector const& initialStates = labeledMdp.getLabeledStates("init");
+                storm::storage::BitVector const& initialStates = labeledMdp.getInitialStates();
                 if (initialStates.getNumberOfSetBits() != 1) {
                     LOG4CPLUS_ERROR(logger, "Must have exactly one initial state, but got " << initialStates.getNumberOfSetBits() << "instead.");
                     throw storm::exceptions::InvalidStateException() << "Must have exactly one initial state, but got " << initialStates.getNumberOfSetBits() << "instead.";
@@ -792,7 +792,7 @@ namespace storm {
                     
                     // For all states except for the initial state, assert that there is a selected incoming transition
                     // in the subsystem if there is one selected action in the current state.
-                    if (!labeledMdp.getLabeledStates("init").get(state)) {
+                    if (!labeledMdp.getInitialStates().get(state)) {
                         std::vector<int> variables;
                         std::vector<double> coefficients;
                         
@@ -1035,7 +1035,7 @@ namespace storm {
                 // Check whether the model was optimized, so we can read off the solution.
                 if (checkGurobiModelIsOptimized(env, model)) {
                     double reachabilityProbability = 0;
-                    storm::storage::BitVector const& initialStates = labeledMdp.getLabeledStates("init");
+                    storm::storage::BitVector const& initialStates = labeledMdp.getInitialStates();
                     for (auto initialState : initialStates) {
                         error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableInformation.stateToProbabilityVariableIndexMap.at(initialState), &reachabilityProbability);
                         if (error) {

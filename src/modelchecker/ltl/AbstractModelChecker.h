@@ -114,22 +114,18 @@ public:
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << ltlFormula.toString());
 		std::cout << "Model checking formula:\t" << ltlFormula.toString() << std::endl;
-		storm::storage::BitVector* result = nullptr;
+		storm::storage::BitVector result;
 		try {
 			result = ltlFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getLabeledStates("init")) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << result->get(initialState) << std::endl;
+			for (auto initialState : model.getInitialStates()) {
+				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
+				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
 			}
-			delete result;
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-			if (result != nullptr) {
-				delete result;
-			}
 		}
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}

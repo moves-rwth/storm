@@ -98,7 +98,7 @@ public:
         
         // Check if we already know the result (i.e. probability 0) for all initial states and
         // don't compute anything in this case.
-        if (this->getInitialStates().isDisjointFrom(statesWithProbabilityGreater0)) {
+        if (this->getModel().getInitialStates().isDisjointFrom(statesWithProbabilityGreater0)) {
             LOG4CPLUS_INFO(logger, "The probabilities for the initial states were determined in a preprocessing step."
                            << " No exact probabilities were computed.");
             // Set the values for all maybe-states to 0.5 to indicate that their probability values are not 0 (and
@@ -251,7 +251,7 @@ public:
 		std::vector<Type> result(this->getModel().getNumberOfStates());
 
         // Check whether we need to compute exact probabilities for some states.
-        if (this->getInitialStates().isDisjointFrom(maybeStates) || qualitative) {
+        if (this->getModel().getInitialStates().isDisjointFrom(maybeStates) || qualitative) {
             if (qualitative) {
                 LOG4CPLUS_INFO(logger, "The formula was checked qualitatively. No exact probabilities were computed.");
             } else {
@@ -409,7 +409,7 @@ public:
 		std::vector<Type> result(this->getModel().getNumberOfStates());
 
         // Check whether we need to compute exact rewards for some states.
-        if (this->getInitialStates().isDisjointFrom(maybeStates)) {
+        if (this->getModel().getInitialStates().isDisjointFrom(maybeStates)) {
             LOG4CPLUS_INFO(logger, "The rewards for the initial states were determined in a preprocessing step."
                             << " No exact rewards were computed.");
             // Set the values for all maybe-states to 1 to indicate that their reward values
