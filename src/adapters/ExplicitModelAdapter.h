@@ -75,8 +75,18 @@ namespace storm {
         // A structure holding information about a particular choice.
         template<typename ValueType>
         struct Choice {
+        public:
             Choice(std::string const& actionLabel) : distribution(), actionLabel(actionLabel), choiceLabels() {
                 // Intentionally left empty.
+            }
+            
+            /*!
+             * Returns an iterator to the first element of this choice.
+             *
+             * @return An iterator to the first element of this choice.
+             */
+            typename std::map<uint_fast64_t, ValueType>::iterator begin() {
+                return distribution.begin();
             }
             
             /*!
@@ -93,8 +103,42 @@ namespace storm {
              *
              * @return An iterator that points past the elements of this choice.
              */
+            typename std::map<uint_fast64_t, ValueType>::iterator end() {
+                return distribution.end();
+            }
+            
+            /*!
+             * Returns an iterator that points past the elements of this choice.
+             *
+             * @return An iterator that points past the elements of this choice.
+             */
             typename std::map<uint_fast64_t, ValueType>::const_iterator end() const {
                 return distribution.cend();
+            }
+            
+            /*!
+             * Returns an iterator to the element with the given key, if there is one. Otherwise, the iterator points to
+             * distribution.end().
+             *
+             * @param value The value to find.
+             * @return An iterator to the element with the given key, if there is one.
+             */
+            typename std::map<uint_fast64_t, ValueType>::iterator find(uint_fast64_t value) {
+                return distribution.find(value);
+            }
+            
+            /*!
+             * Inserts the contents of this object to the given output stream.
+             *
+             * @param out The stream in which to insert the contents.
+             */
+            friend std::ostream& operator<<(std::ostream& out, Choice<ValueType> const& choice) {
+                out << "<";
+                for (auto const& stateProbabilityPair : choice.distribution) {
+                    out << stateProbabilityPair.first << " : " << stateProbabilityPair.second << ", ";
+                }
+                out << ">";
+                return out;
             }
             
             /*!
@@ -106,6 +150,68 @@ namespace storm {
                 choiceLabels.insert(label);
             }
             
+            /*!
+             * Adds the given label set to the labels associated with this choice.
+             *
+             * @param labelSet The label set to associate with this choice.
+             */
+            void addChoiceLabels(std::set<uint_fast64_t> const& labelSet) {
+                for (uint_fast64_t label : labelSet) {
+                    addChoiceLabel(label);
+                }
+            }
+            
+            /*!
+             * Retrieves the set of labels associated with this choice.
+             *
+             * @return The set of labels associated with this choice.
+             */
+            std::set<uint_fast64_t> const& getChoiceLabels() const {
+                return choiceLabels;
+            }
+            
+            /*!
+             * Retrieves the action label of this choice.
+             *
+             * @return The action label of this choice.
+             */
+            std::string const& getActionLabel() const {
+                return actionLabel;
+            }
+            
+            /*!
+             * Retrieves the entry in the choice that is associated with the given state and creates one if none exists,
+             * yet.
+             *
+             * @param state The state for which to add the entry.
+             * @return A reference to the entry that is associated with the given state.
+             */
+            ValueType& getOrAddEntry(uint_fast64_t state) {
+                auto stateProbabilityPair = distribution.find(state);
+                
+                if (stateProbabilityPair == distribution.end()) {
+                    distribution[state] = ValueType();
+                }
+                return distribution.at(state);
+            }
+            
+            /*!
+             * Retrieves the entry in the choice that is associated with the given state and creates one if none exists,
+             * yet.
+             *
+             * @param state The state for which to add the entry.
+             * @return A reference to the entry that is associated with the given state.
+             */
+            ValueType const& getOrAddEntry(uint_fast64_t state) const {
+                auto stateProbabilityPair = distribution.find(state);
+                
+                if (stateProbabilityPair == distribution.end()) {
+                    distribution[state] = ValueType();
+                }
+                return distribution.at(state);
+            }
+            
+        private:
             // The distribution that is associated with the choice.
             std::map<uint_fast64_t, ValueType> distribution;
             
@@ -116,25 +222,34 @@ namespace storm {
             std::set<uint_fast64_t> choiceLabels;
         };
         
+        /*!
+         * Adds the target state and probability to the given choice and ignores the labels. This function overloads with
+         * other functions to ensure the proper treatment of labels.
+         *
+         * @param choice The choice to which to add the target state and probability.
+         * @param state The target state of the probability.
+         * @param probability The probability to reach the target state in one step.
+         * @param labels A set of labels that is supposed to be associated with this state and probability. NOTE: this
+         * is ignored by this particular function but not by the overloaded functions.
+         */
         template<typename ValueType>
         void addProbabilityToChoice(Choice<ValueType>& choice, uint_fast64_t state, ValueType probability, std::set<uint_fast64_t> const& labels) {
-            auto stateProbabilityPair = choice.distribution.find(state);
-            
-            if (stateProbabilityPair == choice.distribution.end()) {
-                choice.distribution[state] = probability;
-            } else {
-                choice.distribution[state] += probability;
-            }            
+            choice.getOrAddEntry(state) += probability;
         }
         
+        /*!
+         * Adds the target state and probability to the given choice and labels it accordingly. This function overloads
+         * with other functions to ensure the proper treatment of labels.
+         *
+         * @param choice The choice to which to add the target state and probability.
+         * @param state The target state of the probability.
+         * @param probability The probability to reach the target state in one step.
+         * @param labels A set of labels that is supposed to be associated with this state and probability.
+         */
         template<typename ValueType>
         void addProbabilityToChoice(Choice<storm::storage::LabeledValues<ValueType>>& choice, uint_fast64_t state, ValueType probability, std::set<uint_fast64_t> const& labels) {
-            auto stateProbabilityPair = choice.distribution.find(state);
-            
-            if (stateProbabilityPair == choice.distribution.end()) {
-                choice.distribution[state] = storm::storage::LabeledValues<ValueType>();
-            }
-            choice.distribution[state].addValue(probability);                
+            auto& labeledEntry = choice.getOrAddEntry(state);
+            labeledEntry.addValue(probability, labels);
         }
         
         template<typename ValueType>
@@ -794,13 +909,10 @@ namespace storm {
                             // Obtain target state index.
                             uint_fast64_t targetStateIndex = stateInformation.stateToIndexMap.at(applyUpdate(variableInformation, currentState, update));
                             
-                            // Check, if we already saw this state in another update and, if so, add up probabilities.
+                            // Update the choice by adding the probability/target state to it.
                             double probabilityToAdd = update.getLikelihoodExpression()->getValueAsDouble(currentState);
                             probabilitySum += probabilityToAdd;
-                            std::set<uint_fast64_t> labels;
-                            // FIXME: We have to retrieve the index of the update here, which is currently not possible.
-                            // labels.insert(update.getGlobalIndex());
-                            addProbabilityToChoice(choice, targetStateIndex, probabilityToAdd, labels);
+                            addProbabilityToChoice(choice, targetStateIndex, probabilityToAdd, {update.getGlobalIndex()});
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
@@ -952,38 +1064,29 @@ namespace storm {
                         // Then, based on whether the model is deterministic or not, either add the choices individually
                         // or compose them to one choice.
                         if (deterministicModel) {
-                            std::map<uint_fast64_t, ValueType> globalDistribution;
+                            Choice<ValueType> globalChoice("");
                             std::set<uint_fast64_t> allChoiceLabels;
                             
                             // Combine all the choices and scale them with the total number of choices of the current state.
                             for (auto const& choice : allUnlabeledChoices) {
-                                allChoiceLabels.insert(choice.choiceLabels.begin(), choice.choiceLabels.end());
+                                globalChoice.addChoiceLabels(choice.getChoiceLabels());
                                 for (auto const& stateProbabilityPair : choice) {
-                                    auto existingStateProbabilityPair = globalDistribution.find(stateProbabilityPair.first);
-                                    if (existingStateProbabilityPair == globalDistribution.end()) {
-                                        globalDistribution[stateProbabilityPair.first] += stateProbabilityPair.second / totalNumberOfChoices;
-                                    } else {
-                                        globalDistribution[stateProbabilityPair.first] = stateProbabilityPair.second / totalNumberOfChoices;
-                                    }
+                                    globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
                                 }
                             }
                             for (auto const& choice : allLabeledChoices) {
+                                globalChoice.addChoiceLabels(choice.getChoiceLabels());
                                 for (auto const& stateProbabilityPair : choice) {
-                                    auto existingStateProbabilityPair = globalDistribution.find(stateProbabilityPair.first);
-                                    if (existingStateProbabilityPair == globalDistribution.end()) {
-                                        globalDistribution[stateProbabilityPair.first] += stateProbabilityPair.second / totalNumberOfChoices;
-                                    } else {
-                                        globalDistribution[stateProbabilityPair.first] = stateProbabilityPair.second / totalNumberOfChoices;
-                                    }
+                                    globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
                                 }
                             }
 
                             
                             // Now add the resulting distribution as the only choice of the current state.
                             nondeterministicChoiceIndices[currentState] = currentRow;
-                            choiceLabels.push_back(allChoiceLabels);
+                            choiceLabels.push_back(globalChoice.getChoiceLabels());
                             
-                            for (auto const& stateProbabilityPair : globalDistribution) {
+                            for (auto const& stateProbabilityPair : globalChoice) {
                                 transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                             }
                             
@@ -995,7 +1098,7 @@ namespace storm {
                             // First, process all unlabeled choices.
                             for (auto const& choice : allUnlabeledChoices) {
                                 std::map<uint_fast64_t, ValueType> stateToRewardMap;
-                                choiceLabels.emplace_back(std::move(choice.choiceLabels));
+                                choiceLabels.emplace_back(std::move(choice.getChoiceLabels()));
                                 
                                 for (auto const& stateProbabilityPair : choice) {
                                     transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
@@ -1003,7 +1106,7 @@ namespace storm {
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
                                         if (transitionReward.getActionName() == "" && transitionReward.getStatePredicate()->getValueAsBool(stateInformation.reachableStates.at(currentState))) {
-                                            stateToRewardMap[stateProbabilityPair.first] += transitionReward.getRewardValue()->getValueAsDouble(stateInformation.reachableStates.at(currentState));
+                                            stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValue()->getValueAsDouble(stateInformation.reachableStates.at(currentState)));
                                         }
                                     }
 
@@ -1020,7 +1123,7 @@ namespace storm {
                             // Then, process all labeled choices.
                             for (auto const& choice : allLabeledChoices) {
                                 std::map<uint_fast64_t, ValueType> stateToRewardMap;
-                                choiceLabels.emplace_back(std::move(choice.choiceLabels));
+                                choiceLabels.emplace_back(std::move(choice.getChoiceLabels()));
 
                                 for (auto const& stateProbabilityPair : choice) {
                                     transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
@@ -1028,7 +1131,7 @@ namespace storm {
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
                                         if (transitionReward.getActionName() == "" && transitionReward.getStatePredicate()->getValueAsBool(stateInformation.reachableStates.at(currentState))) {
-                                            stateToRewardMap[stateProbabilityPair.first] += transitionReward.getRewardValue()->getValueAsDouble(stateInformation.reachableStates.at(currentState));
+                                            stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValue()->getValueAsDouble(stateInformation.reachableStates.at(currentState)));
                                         }
                                     }
 
@@ -1141,11 +1244,11 @@ namespace storm {
             static std::vector<ValueType> buildStateRewards(std::vector<storm::ir::StateReward> const& rewards, StateInformation const& stateInformation) {
                 std::vector<ValueType> result(stateInformation.reachableStates.size());
                 for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
-                    result[index] = 0;
+                    result[index] = ValueType(0);
                     for (auto const& reward : rewards) {
                         // Add this reward to the state if the state is included in the state reward.
                         if (reward.getStatePredicate()->getValueAsBool(stateInformation.reachableStates[index])) {
-                            result[index] += reward.getRewardValue()->getValueAsDouble(stateInformation.reachableStates[index]);
+                            result[index] += ValueType(reward.getRewardValue()->getValueAsDouble(stateInformation.reachableStates[index]));
                         }
                     }
                 }

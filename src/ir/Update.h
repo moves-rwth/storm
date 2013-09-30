@@ -38,20 +38,22 @@ namespace storm {
              * Creates an update with the given expression specifying the likelihood and the mapping of
              * variable to their assignments.
              *
+             * @param globalIndex The global index of the update.
              * @param likelihoodExpression An expression specifying the likelihood of this update.
              * @param assignments A map of variable names to their assignments.
              */
-            Update(std::shared_ptr<storm::ir::expressions::BaseExpression> const& likelihoodExpression, std::map<std::string, storm::ir::Assignment> const& booleanAssignments, std::map<std::string, storm::ir::Assignment> const& integerAssignments);
+            Update(uint_fast64_t globalIndex, std::shared_ptr<storm::ir::expressions::BaseExpression> const& likelihoodExpression, std::map<std::string, storm::ir::Assignment> const& booleanAssignments, std::map<std::string, storm::ir::Assignment> const& integerAssignments);
             
             /*!
              * Creates a copy of the given update and performs the provided renaming.
              *
-             * update The update that is to be copied.
-             * renaming A mapping from names that are to be renamed to the names they are to be
+             * @param update The update that is to be copied.
+             * @param newGlobalIndex The global index of the resulting update.
+             * @param renaming A mapping from names that are to be renamed to the names they are to be
              * replaced with.
              * @param variableState An object knowing about the variables in the system.
              */
-            Update(Update const& update, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
+            Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
             
             /*!
              * Retrieves the expression for the likelihood of this update.
@@ -103,6 +105,13 @@ namespace storm {
             storm::ir::Assignment const& getIntegerAssignment(std::string const& variableName) const;
             
             /*!
+             * Retrieves the global index of the update, that is, a unique index over all modules.
+             *
+             * @return The global index of the update.
+             */
+            uint_fast64_t getGlobalIndex() const;
+            
+            /*!
              * Retrieves a string representation of this update.
              *
              * @return A string representation of this update.
@@ -118,6 +127,9 @@ namespace storm {
             
             // A mapping of integer variable names to their assignments in this update.
             std::map<std::string, storm::ir::Assignment> integerAssignments;
+            
+            // The global index of the update.
+            uint_fast64_t globalIndex;
         };
         
     } // namespace ir

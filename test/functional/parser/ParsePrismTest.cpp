@@ -14,10 +14,8 @@ TEST(ParsePrismTest, parseCrowds5_5) {
 	ASSERT_TRUE(storm::settings::Settings::getInstance()->isSet("fixDeadlocks"));
 	storm::ir::Program program;
 	ASSERT_NO_THROW(program = storm::parser::PrismParserFromFile(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.pm"));
-	storm::adapters::ExplicitModelAdapter adapter(program);
-
-	std::shared_ptr<storm::models::Dtmc<double>> model = adapter.getModel()->as<storm::models::Dtmc<double>>();
-
+	std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program);
+    
 	ASSERT_EQ(model->getNumberOfStates(), 8607ull);
 	ASSERT_EQ(model->getNumberOfTransitions(), 15113ull);
 }
@@ -25,11 +23,10 @@ TEST(ParsePrismTest, parseCrowds5_5) {
 TEST(ParsePrismTest, parseTwoDice) {
 	storm::ir::Program program;
 	ASSERT_NO_THROW(program = storm::parser::PrismParserFromFile(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.nm"));
-	storm::adapters::ExplicitModelAdapter adapter(program);
 
-	std::shared_ptr<storm::models::Mdp<double>> model = adapter.getModel()->as<storm::models::Mdp<double>>();
+	std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program);
 	
 	ASSERT_EQ(model->getNumberOfStates(), 169ull);
-	ASSERT_EQ(model->getNumberOfChoices(), 254ull);
+	ASSERT_EQ(model->as<storm::models::AbstractNondeterministicModel<double>>()->getNumberOfChoices(), 254ull);
 	ASSERT_EQ(model->getNumberOfTransitions(), 436ull);
 }

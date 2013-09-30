@@ -25,7 +25,7 @@ namespace storm {
             /*!
              * Default-constructs an empty object.
              */
-            LabeledValues() : valueLabelList() {
+            explicit LabeledValues() : valueLabelList() {
                 // Intentionally left empty.
             }
             
@@ -34,7 +34,7 @@ namespace storm {
              *
              * @param value The probability to sto
              */
-            LabeledValues(ValueType value) : valueLabelList() {
+            explicit LabeledValues(ValueType value) : valueLabelList() {
                 addValue(value);
             }
             
@@ -105,26 +105,56 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& out, LabeledValues const& labeledValues) {
                 out << "[";
                 for (auto const& element : labeledValues) {
-                    out << element.first << "(";
+                    out << element.first << " (";
                     for (auto const& label : element.second) {
                         out << label << ", ";
                     }
-                    out << ")";
+                    out << ") ";
                 }
                 out << "]";
                 return out;
             }
             
             /*!
-             * Adds all labeled probabilities of the given object to the current one.
+             * Adds all labeled values of the given object to the current one.
              *
-             * @param labeledProbabilities The labeled probabilities to add to the object.
+             * @param labeledValues The labeled values to add to the object.
              */
             LabeledValues<ValueType>& operator+=(LabeledValues<ValueType> const& labeledValues) {
                 for (auto const& valueLabelListPair : labeledValues) {
                     this->valueLabelList.push_back(valueLabelListPair);
                 }
                 return *this;
+            }
+            
+            /*!
+             * Divides the values by the given value.
+             *
+             * @param value The value by which to divide.
+             * @return A collection of labeled values that have the same labels as the current object, but whose values
+             * are divided by the given one.
+             */
+            LabeledValues<ValueType> operator/(ValueType value) const {
+                LabeledValues<ValueType> result;
+                for (auto const& valueLabelListPair : valueLabelList) {
+                    result.addValue(valueLabelListPair.first / value, valueLabelListPair.second);
+                }
+                return result;
+            }
+            
+            /*!
+             * Divides the values by the given unsigned integer value.
+             *
+             * @param value The unsigned integer value by which to divide.
+             * @return A collection of labeled values that have the same labels as the current object, but whose values
+             * are divided by the given one.
+             */
+            LabeledValues<ValueType> operator/(uint_fast64_t value) const {
+                LabeledValues<ValueType> result;
+                for (auto const& valueLabelListPair : valueLabelList) {
+                    result.addValue(valueLabelListPair.first / value, valueLabelListPair.second);
+                }
+                return result;
             }
             
             /*!

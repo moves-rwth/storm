@@ -31,7 +31,7 @@ namespace storm {
             }
             this->updates.reserve(oldCommand.getNumberOfUpdates());
             for (Update const& update : oldCommand.updates) {
-                this->updates.emplace_back(update, renaming, variableState);
+                this->updates.emplace_back(update, variableState.getNextGlobalUpdateIndex(), renaming, variableState);
             }
         }
         
