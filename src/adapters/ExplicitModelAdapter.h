@@ -63,7 +63,7 @@ namespace storm {
         };
         
         /*!
-         * A helper class that provides the functionality to compare states of the model.
+         * A helper class that provides the functionality to compare states of the model wrt. equality.
          */
         class StateCompare {
         public:
@@ -72,8 +72,30 @@ namespace storm {
             }
         };
         
+        /*!
+         * A helper class that provides the functionality to compare states of the model wrt. the relation "<".
+         */
+        class StateLess {
+        public:
+            bool operator()(StateType* state1, StateType* state2) const {
+                // Compare boolean variables.
+                for (uint_fast64_t i = 0; i < state1->first.size(); ++i) {
+                    if (!state1->first.at(i) && state2->first.at(i)) {
+                        return true;
+                    }
+                }
+                // Then compare integer variables.
+                for (uint_fast64_t i = 0; i < state1->second.size(); ++i) {
+                    if (!state1->second.at(i) && state2->second.at(i)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+        
         // A structure holding information about a particular choice.
-        template<typename ValueType>
+        template<typename ValueType, typename KeyType=uint_fast64_t, typename Compare=std::less<uint_fast64_t>>
         struct Choice {
         public:
             Choice(std::string const& actionLabel) : distribution(), actionLabel(actionLabel), choiceLabels() {
@@ -85,7 +107,7 @@ namespace storm {
              *
              * @return An iterator to the first element of this choice.
              */
-            typename std::map<uint_fast64_t, ValueType>::iterator begin() {
+            typename std::map<KeyType, ValueType>::iterator begin() {
                 return distribution.begin();
             }
             
@@ -94,7 +116,7 @@ namespace storm {
              *
              * @return An iterator to the first element of this choice.
              */
-            typename std::map<uint_fast64_t, ValueType>::const_iterator begin() const {
+            typename std::map<KeyType, ValueType>::const_iterator begin() const {
                 return distribution.cbegin();
             }
             
@@ -103,7 +125,7 @@ namespace storm {
              *
              * @return An iterator that points past the elements of this choice.
              */
-            typename std::map<uint_fast64_t, ValueType>::iterator end() {
+            typename std::map<KeyType, ValueType>::iterator end() {
                 return distribution.end();
             }
             
@@ -112,7 +134,7 @@ namespace storm {
              *
              * @return An iterator that points past the elements of this choice.
              */
-            typename std::map<uint_fast64_t, ValueType>::const_iterator end() const {
+            typename std::map<KeyType, ValueType>::const_iterator end() const {
                 return distribution.cend();
             }
             
@@ -123,7 +145,7 @@ namespace storm {
              * @param value The value to find.
              * @return An iterator to the element with the given key, if there is one.
              */
-            typename std::map<uint_fast64_t, ValueType>::iterator find(uint_fast64_t value) {
+            typename std::map<KeyType, ValueType>::iterator find(uint_fast64_t value) {
                 return distribution.find(value);
             }
             
@@ -213,7 +235,7 @@ namespace storm {
             
         private:
             // The distribution that is associated with the choice.
-            std::map<uint_fast64_t, ValueType> distribution;
+            std::map<KeyType, ValueType, Compare> distribution;
             
             // The label of the choice.
             std::string actionLabel;
@@ -749,9 +771,9 @@ namespace storm {
                         // As long as there is one feasible combination of commands, keep on expanding it.
                         bool done = false;
                         while (!done) {
-                            std::unordered_map<StateType*, double, StateHash, StateCompare>* currentTargetStates = new std::unordered_map<StateType*, double, StateHash, StateCompare>();
-                            std::unordered_map<StateType*, double, StateHash, StateCompare>* newTargetStates = new std::unordered_map<StateType*, double, StateHash, StateCompare>();
-                            (*currentTargetStates)[new StateType(*currentState)] = 1.0;
+                            std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>* currentTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>();
+                            std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>* newTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>();
+                            (*currentTargetStates)[new StateType(*currentState)] = storm::storage::LabeledValues<double>(1.0);
                             
                             // FIXME: This does not check whether a global variable is written multiple times. While the
                             // behaviour for this is undefined anyway, a warning should be issued in that case.
@@ -763,12 +785,24 @@ namespace storm {
                                     
                                     for (auto const& stateProbabilityPair : *currentTargetStates) {
                                         StateType* newTargetState = applyUpdate(variableInformation, stateProbabilityPair.first, currentState, update);
+
+                                        storm::storage::LabeledValues<double> newProbability;
+                                        
+                                        double updateProbability = update.getLikelihoodExpression()->getValueAsDouble(currentState);
+                                        for (auto const& valueLabelSetPair : stateProbabilityPair.second) {
+                                            // Copy the label set, so we can modify it.
+                                            std::set<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
+                                            newLabelSet.insert(update.getGlobalIndex());
+                                            
+                                            newProbability.addValue(valueLabelSetPair.first * updateProbability, newLabelSet);
+                                        }
                                         
                                         auto existingStateProbabilityPair = newTargetStates->find(newTargetState);
                                         if (existingStateProbabilityPair == newTargetStates->end()) {
-                                            (*newTargetStates)[newTargetState] = stateProbabilityPair.second * update.getLikelihoodExpression()->getValueAsDouble(currentState);
-                                        } else {
-                                            existingStateProbabilityPair->second += stateProbabilityPair.second * update.getLikelihoodExpression()->getValueAsDouble(currentState);
+                                            (*newTargetStates)[newTargetState] = newProbability;
+                                        } else {                                            
+                                            existingStateProbabilityPair->second += newProbability;
+                                            
                                             // If the state was already seen in one of the other updates, we need to delete this copy.
                                             delete newTargetState;
                                         }
@@ -780,9 +814,10 @@ namespace storm {
                                     for (auto const& stateProbabilityPair : *currentTargetStates) {
                                         delete stateProbabilityPair.first;
                                     }
+                                    
                                     delete currentTargetStates;
                                     currentTargetStates = newTargetStates;
-                                    newTargetStates = new std::unordered_map<StateType*, double, StateHash, StateCompare>();
+                                    newTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>();
                                 }
                             }
                             
@@ -808,8 +843,10 @@ namespace storm {
                                     stateQueue.push(flagTargetStateIndexPair.second);
                                 }
                                 
-                                addProbabilityToChoice(choice, flagTargetStateIndexPair.second, stateProbabilityPair.second, std::set<uint_fast64_t>());
-                                probabilitySum += stateProbabilityPair.second;
+                                for (auto const& probabilityLabelPair : stateProbabilityPair.second) {
+                                    addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityLabelPair.first, probabilityLabelPair.second);
+                                    probabilitySum += probabilityLabelPair.first;
+                                }
                             }
                             
                             // Check that the resulting distribution is in fact a distribution.
@@ -986,7 +1023,7 @@ namespace storm {
                                 choiceLabels.emplace_back(std::move(choice.getChoiceLabels()));
 
                                 for (auto const& stateProbabilityPair : choice) {
-                                    transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
+                                    transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second, true);
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
