@@ -54,6 +54,12 @@ public:
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
 		}
+        if (this->hasTransitionRewards()) {
+            if (!this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix())) {
+                LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+                throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
+            }
+        }
 	}
 
 	/*!
@@ -78,6 +84,12 @@ public:
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
 		}
+        if (this->hasTransitionRewards()) {
+            if (!this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix())) {
+                LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+                throw storm::exceptions::InvalidArgumentException() << "There are transition rewards for nonexistent transitions.";
+            }
+        }
 	}
 
 	/*!
@@ -113,6 +125,26 @@ public:
 		return MDP;
 	}
 
+//    /*!
+//     * Constructs an MDP by copying the given MDP and restricting the choices of each state to the ones whose label set
+//     * is contained in the given label set.
+//     *
+//     * @param originalModel The model to restrict.
+//     * @param enabledChoiceLabels A set of labels that determines which choices of the original model can be taken
+//     * and which ones need to be ignored.
+//     */
+//    Mdp<T> restrictChoiceLabels(Mdp<T> const& originalModel, std::set<uint_fast64_t> const& enabledChoiceLabels) {
+//        // Only perform this operation if the given model has choice labels.
+//        if (!originalModel.hasChoiceLabels()) {
+//            throw storm::exceptions::InvalidArgumentException() << "Restriction to label set is impossible for unlabeled model.";
+//        }
+//        
+//        storm::storage::SparseMatrix<T> transitionMatrix();
+//        
+//        Mdp<T> result;
+//        return result;
+//    }
+    
 	/*!
 	 * Calculates a hash over all values contained in this Model.
 	 * @return size_t A Hash Value
@@ -120,6 +152,7 @@ public:
 	virtual std::size_t getHash() const override {
 		return AbstractNondeterministicModel<T>::getHash();
 	}
+    
 private:
 
 	/*!

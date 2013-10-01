@@ -32,6 +32,7 @@ option(USE_INTELTBB "Sets whether the Intel TBB Extensions should be used." OFF)
 option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
+set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory.")
@@ -82,6 +83,12 @@ if ("${GUROBI_ROOT}" STREQUAL "")
     set(ENABLE_GUROBI OFF)
 else()
     set(ENABLE_GUROBI ON)
+endif()
+
+if ("${Z3_ROOT}" STREQUAL "")
+    set(ENABLE_Z3 OFF)
+else()
+    set(ENABLE_Z3 ON)
 endif()
 
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -169,6 +176,13 @@ if (ENABLE_GUROBI)
 	set(STORM_CPP_GUROBI_DEF "define")
 else()
 	set(STORM_CPP_GUROBI_DEF "undef")
+endif()
+
+# Z3 Defines
+if (ENABLE_Z3)
+	set(STORM_CPP_Z3_DEF "define")
+else()
+	set(STORM_CPP_Z3_DEF "undef")
 endif()
 
 # Intel TBB Defines
@@ -264,6 +278,9 @@ endif(ADDITIONAL_LINK_DIRS)
 if (ENABLE_GUROBI)
 	link_directories("${GUROBI_ROOT}/lib")
 endif()
+if (ENABLE_Z3)
+    link_directories("${Z3_ROOT}/build")
+endif()
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
 	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
@@ -335,6 +352,19 @@ if (ENABLE_GUROBI)
     target_link_libraries(storm-functional-tests "gurobi55")
     target_link_libraries(storm-performance-tests "gurobi55")
 endif(ENABLE_GUROBI)
+
+#############################################################
+##
+##	Z3 (optional)
+##
+#############################################################
+if (ENABLE_Z3)
+    message (STATUS "StoRM - Linking with Z3")
+	include_directories("${Z3_ROOT}/src/c++")
+    target_link_libraries(storm "z3")
+    target_link_libraries(storm-functional-tests "z3")
+    target_link_libraries(storm-performance-tests "z3")
+endif(ENABLE_Z3)
 
 #############################################################
 ##

@@ -1,14 +1,14 @@
 /*
- * MinimalLabelSetGenerator.h
+ * MILPMinimalLabelSetGenerator.h
  *
  *  Created on: 15.09.2013
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_COUNTEREXAMPLES_MINIMALCOMMANDSETGENERATOR_MDP_H_
-#define STORM_COUNTEREXAMPLES_MINIMALCOMMANDSETGENERATOR_MDP_H_
+#ifndef STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
+#define STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
 
-// To detect whether the usage of Gurobi is possible, this include is neccessary
+// To detect whether the usage of Gurobi is possible, this include is neccessary.
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_GUROBI
@@ -1258,7 +1258,7 @@ namespace storm {
             
         };
         
-    }
-}
+    } // namespace counterexamples
+} // namespace storm
 
-#endif /* STORM_COUNTEREXAMPLES_MINIMALLABELSETGENERATOR_MDP_H_ */
+#endif /* STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_ */

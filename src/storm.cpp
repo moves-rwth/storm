@@ -26,7 +26,7 @@
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
-#include "src/counterexamples/MinimalLabelSetGenerator.h"
+#include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/utility/ErrorHandling.h"
