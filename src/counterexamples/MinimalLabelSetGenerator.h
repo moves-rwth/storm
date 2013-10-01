@@ -386,7 +386,7 @@ namespace storm {
                     variableNameBuffer.str("");
                     variableNameBuffer.clear();
                     variableNameBuffer << "p" << state;
-                    error = GRBaddvar(model, 0, nullptr, nullptr, maximizeProbability ? (labeledMdp.getInitialStates().get(state) ? -0.5 : 0) : 0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
+                    error = GRBaddvar(model, 0, nullptr, nullptr, 0.0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
                     if (error) {
                         LOG4CPLUS_ERROR(logger, "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").");
                         throw storm::exceptions::InvalidStateException() << "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").";
