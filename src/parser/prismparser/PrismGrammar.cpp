@@ -111,8 +111,9 @@ TransitionReward createTransitionReward(std::string const& label, std::shared_pt
 void createRewardModel(std::string const& name, std::vector<StateReward>& stateRewards, std::vector<TransitionReward>& transitionRewards, std::map<std::string, RewardModel>& mapping) {
 	mapping[name] = RewardModel(name, stateRewards, transitionRewards);
 }
-Update createUpdate(std::shared_ptr<BaseExpression> likelihood, std::map<std::string, Assignment> const& bools, std::map<std::string, Assignment> const& ints) {
-	return Update(likelihood, bools, ints);
+Update PrismGrammar::createUpdate(std::shared_ptr<BaseExpression> likelihood, std::map<std::string, Assignment> const& bools, std::map<std::string, Assignment> const& ints) {
+    this->state->nextGlobalUpdateIndex++;
+	return Update(this->state->getNextGlobalUpdateIndex() - 1, likelihood, bools, ints);
 }
 Command PrismGrammar::createCommand(std::string const& label, std::shared_ptr<BaseExpression> guard, std::vector<Update> const& updates) {
     this->state->nextGlobalCommandIndex++;
@@ -166,8 +167,7 @@ PrismGrammar::PrismGrammar() : PrismGrammar::base_type(start), state(new Variabl
 	assignmentDefinition.name("assignment");
 	assignmentDefinitionList = assignmentDefinition(qi::_r1, qi::_r2) % "&";
 	assignmentDefinitionList.name("assignment list");
-	updateDefinition = (
-			ConstDoubleExpressionGrammar::instance(this->state) > qi::lit(":")[phoenix::clear(phoenix::ref(this->state->assignedBooleanVariables_)), phoenix::clear(phoenix::ref(this->state->assignedIntegerVariables_))] > assignmentDefinitionList(qi::_a, qi::_b))[qi::_val = phoenix::bind(&createUpdate, qi::_1, qi::_a, qi::_b)];
+	updateDefinition = (ConstDoubleExpressionGrammar::instance(this->state) > qi::lit(":")[phoenix::clear(phoenix::ref(this->state->assignedBooleanVariables_)), phoenix::clear(phoenix::ref(this->state->assignedIntegerVariables_))] > assignmentDefinitionList(qi::_a, qi::_b))[qi::_val = phoenix::bind(&PrismGrammar::createUpdate, this, qi::_1, qi::_a, qi::_b)];
 	updateDefinition.name("update");
 	updateListDefinition = +updateDefinition % "+";
 	updateListDefinition.name("update list");

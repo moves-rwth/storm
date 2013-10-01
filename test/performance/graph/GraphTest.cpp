@@ -13,18 +13,18 @@ TEST(GraphTest, PerformProb01) {
     LOG4CPLUS_WARN(logger, "Computing prob01 (3 times) for crowds/crowds20_5...");
     std::pair<storm::storage::BitVector, storm::storage::BitVector> prob01(storm::utility::graph::performProb01(*dtmc, trueStates, storm::storage::BitVector(dtmc->getLabeledStates("observe0Greater1"))));
     
-    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 1724414u);
-    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 46046u);
+    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 1724414ull);
+    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 46046ull);
     
     prob01 = storm::utility::graph::performProb01(*dtmc, trueStates, storm::storage::BitVector(dtmc->getLabeledStates("observeIGreater1")));
 
-    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 574016u);
-    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 825797u);
+    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 574016ull);
+    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 825797ull);
     
     prob01 = storm::utility::graph::performProb01(*dtmc, trueStates, storm::storage::BitVector(dtmc->getLabeledStates("observeOnlyTrueSender")));
 
-    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 1785309u);
-    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 40992u);
+    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 1785309ull);
+    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 40992ull);
     LOG4CPLUS_WARN(logger, "Done.");
     
     dtmc = nullptr;
@@ -38,8 +38,8 @@ TEST(GraphTest, PerformProb01) {
     prob01 = storm::utility::graph::performProb01(*dtmc2, trueStates, storm::storage::BitVector(dtmc2->getLabeledStates("elected")));
     LOG4CPLUS_WARN(logger, "Done.");
 
-    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0u);
-    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 1312334u);
+    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0ull);
+    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 1312334ull);
     
     dtmc2 = nullptr;
 }
@@ -53,15 +53,15 @@ TEST(GraphTest, PerformProb01MinMax) {
     std::pair<storm::storage::BitVector, storm::storage::BitVector> prob01(storm::utility::graph::performProb01Min(*mdp, trueStates, mdp->getLabeledStates("elected")));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0u);
-    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 2095783u);
+    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0ull);
+    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 2095783ull);
     
     LOG4CPLUS_WARN(logger, "Computing prob01max for asynchronous_leader/leader7...");
     prob01 = storm::utility::graph::performProb01Max(*mdp, trueStates, mdp->getLabeledStates("elected"));
     LOG4CPLUS_WARN(logger, "Done.");
 
-    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0u);
-    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 2095783u);
+    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0ull);
+    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 2095783ull);
     
     mdp = nullptr;
 
@@ -73,15 +73,15 @@ TEST(GraphTest, PerformProb01MinMax) {
 	prob01 = storm::utility::graph::performProb01Min(*mdp2, trueStates, mdp2->getLabeledStates("finished"));
     LOG4CPLUS_WARN(logger, "Done.");
 
-    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0u);
-    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 63616u);
+    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0ull);
+    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 63616ull);
 
     LOG4CPLUS_WARN(logger, "Computing prob01max for consensus/coin4_6...");
     prob01 = storm::utility::graph::performProb01Max(*mdp2, trueStates, mdp2->getLabeledStates("finished"));
     LOG4CPLUS_WARN(logger, "Done.");
 
-    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0u);
-    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 63616u);
+    ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0ull);
+    ASSERT_EQ(prob01.second.getNumberOfSetBits(), 63616ull);
     
     mdp2 = nullptr;
 }
@@ -94,13 +94,13 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     std::vector<std::vector<uint_fast64_t>> sccDecomposition(std::move(storm::utility::graph::performSccDecomposition(*dtmc)));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(sccDecomposition.size(), 1290297u);
+    ASSERT_EQ(sccDecomposition.size(), 1290297ull);
     
     LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of crowds/crowds20_5...");
     storm::storage::SparseMatrix<bool> sccDependencyGraph(std::move(dtmc->extractPartitionDependencyGraph(sccDecomposition)));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1371253u);
+    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1371253ull);
     
     dtmc = nullptr;
     
@@ -111,13 +111,13 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     sccDecomposition = std::move(storm::utility::graph::performSccDecomposition(*dtmc2));
     LOG4CPLUS_WARN(logger, "Done.");
 
-    ASSERT_EQ(sccDecomposition.size(), 1279673u);
+    ASSERT_EQ(sccDecomposition.size(), 1279673ull);
     
     LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of synchronous_leader/leader6_8...");
     sccDependencyGraph = std::move(dtmc2->extractPartitionDependencyGraph(sccDecomposition));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1535367u);
+    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1535367ull);
     
     dtmc2 = nullptr;
     
@@ -128,13 +128,13 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     sccDecomposition = std::move(storm::utility::graph::performSccDecomposition(*mdp));
     LOG4CPLUS_WARN(logger, "Done.");
 
-    ASSERT_EQ(sccDecomposition.size(), 214675);
+    ASSERT_EQ(sccDecomposition.size(), 214675ull);
     
     LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of asynchronous_leader/leader6...");
     sccDependencyGraph = std::move(mdp->extractPartitionDependencyGraph(sccDecomposition));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 684093u);
+    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 684093ull);
     
     mdp = nullptr;
     
@@ -145,13 +145,13 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     sccDecomposition = std::move(storm::utility::graph::performSccDecomposition(*mdp2));
     LOG4CPLUS_WARN(logger, "Done.");
 
-    ASSERT_EQ(sccDecomposition.size(), 63611u);
+    ASSERT_EQ(sccDecomposition.size(), 63611ull);
     
     LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of consensus/coin4_6...");
     sccDependencyGraph = std::move(mdp2->extractPartitionDependencyGraph(sccDecomposition));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 213400u);
+    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 213400ull);
 
     mdp2 = nullptr;
 }

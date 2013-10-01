@@ -58,7 +58,7 @@ NondeterministicModelParserResultContainer<double> parseNondeterministicModel(st
 storm::models::Mdp<double> NondeterministicModelParserAsMdp(std::string const & transitionSystemFile, std::string const & labelingFile,
 														 std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	NondeterministicModelParserResultContainer<double> parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-	return storm::models::Mdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<std::list<uint_fast64_t>>>());
+	return storm::models::Mdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<std::set<uint_fast64_t>>>());
 }
 
 /*!
@@ -69,7 +69,7 @@ storm::models::Mdp<double> NondeterministicModelParserAsMdp(std::string const & 
 storm::models::Ctmdp<double> NondeterministicModelParserAsCtmdp(std::string const & transitionSystemFile, std::string const & labelingFile,
 															 std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	NondeterministicModelParserResultContainer<double> parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-	return storm::models::Ctmdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<std::list<uint_fast64_t>>>());
+	return storm::models::Ctmdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<std::set<uint_fast64_t>>>());
 }
 
 } /* namespace parser */

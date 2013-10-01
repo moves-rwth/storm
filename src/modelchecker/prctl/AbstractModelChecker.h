@@ -120,15 +120,6 @@ public:
 		}
 	}
         
-    /*!
-     * Retrieves the initial states of the model.
-     *
-     * @return A bit vector that represents the initial states of the model.
-     */
-    storm::storage::BitVector const& getInitialStates() const {
-        return model.getLabeledStates("init");
-    }
-
 	/*!
 	 * Checks the given abstract prctl formula on the model and prints the result (depending on the actual type of the formula)
 	 * for all initial states, i.e. states that carry the atomic proposition "init".
@@ -153,22 +144,18 @@ public:
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << stateFormula.toString());
 		std::cout << "Model checking formula:\t" << stateFormula.toString() << std::endl;
-		storm::storage::BitVector* result = nullptr;
+		storm::storage::BitVector result;
 		try {
 			result = stateFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : this->getInitialStates()) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << result->get(initialState) << std::endl;
+			for (auto initialState : model.getInitialStates()) {
+				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
+				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
 			}
-			delete result;
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-			if (result != nullptr) {
-				delete result;
-			}
 		}
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
@@ -183,21 +170,18 @@ public:
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << noBoundFormula.toString());
 		std::cout << "Model checking formula:\t" << noBoundFormula.toString() << std::endl;
-		std::vector<Type>* result = nullptr;
+		std::vector<Type> result;
 		try {
 			result = this->checkNoBoundOperator(noBoundFormula);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : this->getInitialStates()) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
-				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
+			for (auto initialState : model.getInitialStates()) {
+				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result[initialState]);
+				std::cout << "\t" << initialState << ": " << result[initialState] << std::endl;
 			}
-			delete result;
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << " Skipping property." << std::endl;
-			if (result != nullptr) {
-				delete result;
-			}
+            LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
 		}
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
@@ -208,11 +192,11 @@ public:
 	 * @param formula The formula to be checked.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkAp(storm::property::prctl::Ap<Type> const& formula) const {
+	storm::storage::BitVector checkAp(storm::property::prctl::Ap<Type> const& formula) const {
 		if (formula.getAp() == "true") {
-			return new storm::storage::BitVector(model.getNumberOfStates(), true);
+			return storm::storage::BitVector(model.getNumberOfStates(), true);
 		} else if (formula.getAp() == "false") {
-			return new storm::storage::BitVector(model.getNumberOfStates());
+			return storm::storage::BitVector(model.getNumberOfStates());
 		}
 
 		if (!model.hasAtomicProposition(formula.getAp())) {
@@ -220,7 +204,7 @@ public:
 			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
 		}
 
-		return new storm::storage::BitVector(model.getLabeledStates(formula.getAp()));
+		return storm::storage::BitVector(model.getLabeledStates(formula.getAp()));
 	}
 
 	/*!
@@ -229,11 +213,10 @@ public:
 	 * @param formula The formula to be checked.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkAnd(storm::property::prctl::And<Type> const& formula) const {
-		storm::storage::BitVector* result = formula.getLeft().check(*this);
-		storm::storage::BitVector* right = formula.getRight().check(*this);
-		(*result) &= (*right);
-		delete right;
+	storm::storage::BitVector checkAnd(storm::property::prctl::And<Type> const& formula) const {
+		storm::storage::BitVector result = formula.getLeft().check(*this);
+		storm::storage::BitVector right = formula.getRight().check(*this);
+		result &= right;
 		return result;
 	}
 
@@ -243,11 +226,10 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector* checkOr(storm::property::prctl::Or<Type> const& formula) const {
-		storm::storage::BitVector* result = formula.getLeft().check(*this);
-		storm::storage::BitVector* right = formula.getRight().check(*this);
-		(*result) |= (*right);
-		delete right;
+	virtual storm::storage::BitVector checkOr(storm::property::prctl::Or<Type> const& formula) const {
+		storm::storage::BitVector result = formula.getLeft().check(*this);
+		storm::storage::BitVector right = formula.getRight().check(*this);
+		result |= right;
 		return result;
 	}
 
@@ -257,9 +239,9 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkNot(const storm::property::prctl::Not<Type>& formula) const {
-		storm::storage::BitVector* result = formula.getChild().check(*this);
-		result->complement();
+	storm::storage::BitVector checkNot(const storm::property::prctl::Not<Type>& formula) const {
+		storm::storage::BitVector result = formula.getChild().check(*this);
+		result.complement();
 		return result;
 	}
 
@@ -270,23 +252,21 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkProbabilisticBoundOperator(storm::property::prctl::ProbabilisticBoundOperator<Type> const& formula) const {
+	storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::prctl::ProbabilisticBoundOperator<Type> const& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<Type>* quantitativeResult = formula.getPathFormula().check(*this, false);
+		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
 
 		// Create resulting bit vector that will hold the yes/no-answer for every state.
-		storm::storage::BitVector* result = new storm::storage::BitVector(quantitativeResult->size());
+		storm::storage::BitVector result(quantitativeResult.size());
 
 		// Now, we can compute which states meet the bound specified in this operator and set the
 		// corresponding bits to true in the resulting vector.
-		for (uint_fast64_t i = 0; i < quantitativeResult->size(); ++i) {
-			if (formula.meetsBound((*quantitativeResult)[i])) {
-				result->set(i, true);
+		for (uint_fast64_t i = 0; i < quantitativeResult.size(); ++i) {
+			if (formula.meetsBound(quantitativeResult[i])) {
+				result.set(i, true);
 			}
 		}
 
-		// Delete the probabilities computed for the states and return result.
-		delete quantitativeResult;
 		return result;
 	}
 
@@ -296,23 +276,21 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector* checkRewardBoundOperator(const storm::property::prctl::RewardBoundOperator<Type>& formula) const {
+	storm::storage::BitVector checkRewardBoundOperator(const storm::property::prctl::RewardBoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<Type>* quantitativeResult = formula.getPathFormula().check(*this, false);
+		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
 
 		// Create resulting bit vector that will hold the yes/no-answer for every state.
-		storm::storage::BitVector* result = new storm::storage::BitVector(quantitativeResult->size());
+		storm::storage::BitVector result(quantitativeResult.size());
 
 		// Now, we can compute which states meet the bound specified in this operator and set the
 		// corresponding bits to true in the resulting vector.
-		for (uint_fast64_t i = 0; i < quantitativeResult->size(); ++i) {
-			if (formula.meetsBound((*quantitativeResult)[i])) {
-				result->set(i, true);
+		for (uint_fast64_t i = 0; i < quantitativeResult.size(); ++i) {
+			if (formula.meetsBound(quantitativeResult[i])) {
+				result.set(i, true);
 			}
 		}
 
-		// Delete the probabilities computed for the states and return result.
-		delete quantitativeResult;
 		return result;
 	}
 

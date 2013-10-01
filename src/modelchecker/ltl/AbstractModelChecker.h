@@ -114,22 +114,18 @@ public:
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << ltlFormula.toString());
 		std::cout << "Model checking formula:\t" << ltlFormula.toString() << std::endl;
-		storm::storage::BitVector* result = nullptr;
+		storm::storage::BitVector result;
 		try {
 			result = ltlFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getLabeledStates("init")) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result->get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << result->get(initialState) << std::endl;
+			for (auto initialState : model.getInitialStates()) {
+				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
+				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
 			}
-			delete result;
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-			if (result != nullptr) {
-				delete result;
-			}
 		}
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
@@ -140,19 +136,15 @@ public:
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type>* checkAp(storm::property::ltl::Ap<Type> const& formula) const {
-		return nullptr;
-	}
-
+    virtual std::vector<Type> checkAp(storm::property::ltl::Ap<Type> const& formula) const = 0;
+        
 	/*!
 	 * Checks the given formula that is a logical "and" of two formulae.
 	 *
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type>* checkAnd(storm::property::ltl::And<Type> const& formula) const {
-		return nullptr;
-	}
+    virtual std::vector<Type> checkAnd(storm::property::ltl::And<Type> const& formula) const = 0;
 
 	/*!
 	 * Checks the given formula that is a logical "or" of two formulae.
@@ -160,20 +152,16 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type>* checkOr(storm::property::ltl::Or<Type> const& formula) const {
-		return nullptr;
-	}
-
+    virtual std::vector<Type> checkOr(storm::property::ltl::Or<Type> const& formula) const = 0;
+    
 	/*!
 	 * Checks the given formula that is a logical "not" of a sub-formula.
 	 *
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type>* checkNot(const storm::property::ltl::Not<Type>& formula) const {
-		return nullptr;
-	}
-
+    virtual std::vector<Type> checkNot(const storm::property::ltl::Not<Type>& formula) const = 0;
+        
 private:
 
 	/*!

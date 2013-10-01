@@ -35,7 +35,7 @@ class IAndModelChecker {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual storm::storage::BitVector* checkAnd(const And<T>& obj) const = 0;
+		virtual storm::storage::BitVector checkAnd(const And<T>& obj) const = 0;
 };
 
 /*!
@@ -114,7 +114,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector* check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual storm::storage::BitVector check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
 	}
 

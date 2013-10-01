@@ -19,7 +19,11 @@
 #	include <sys/resource.h> // Required by storm.cpp, Memory Usage
 #elif defined _WIN32 || defined _WIN64
 #	define WINDOWS
-#	define NOMINMAX
+#	ifndef NOMINMAX
+#		define NOMINMAX
+#		undef min
+#		undef max
+#	endif
 #	include <Windows.h>
 #	include <winnt.h>
 #	include <DbgHelp.h>

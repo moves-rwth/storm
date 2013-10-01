@@ -51,7 +51,7 @@ ADD* CuddUtility::getConstantEncoding(uint_fast64_t constant, std::vector<ADD*> 
 
 	// Determine whether the new ADD will be rooted by the first variable or its complement.
 	ADD initialNode;
-	if ((constant & (1 << (variables.size() - 1))) != 0) {
+	if ((constant & (1ull << (variables.size() - 1))) != 0) {
 		initialNode = *variables[0];
 	} else {
 		initialNode = ~(*variables[0]);
@@ -60,7 +60,7 @@ ADD* CuddUtility::getConstantEncoding(uint_fast64_t constant, std::vector<ADD*> 
 
 	// Add (i.e. multiply) the other variables as well according to whether their bit is set or not.
 	for (uint_fast64_t i = 1; i < variables.size(); ++i) {
-		if ((constant & (1 << (variables.size() - i - 1))) != 0) {
+		if ((constant & (1ull << (variables.size() - i - 1))) != 0) {
 			*result *= *variables[i];
 		} else {
 			*result *= ~(*variables[i]);
@@ -81,7 +81,7 @@ void CuddUtility::setValueAtIndex(ADD* add, uint_fast64_t index, std::vector<ADD
 
 	// Determine whether the new ADD will be rooted by the first variable or its complement.
 	ADD initialNode;
-	if ((index & (1 << (variables.size() - 1))) != 0) {
+	if ((index & (1ull << (variables.size() - 1))) != 0) {
 		initialNode = *variables[0];
 	} else {
 		initialNode = ~(*variables[0]);
@@ -90,7 +90,7 @@ void CuddUtility::setValueAtIndex(ADD* add, uint_fast64_t index, std::vector<ADD
 
 	// Add (i.e. multiply) the other variables as well according to whether their bit is set or not.
 	for (uint_fast64_t i = 1; i < variables.size(); ++i) {
-		if ((index & (1 << (variables.size() - i - 1))) != 0) {
+		if ((index & (1ull << (variables.size() - i - 1))) != 0) {
 			*encoding *= *variables[i];
 		} else {
 			*encoding *= ~(*variables[i]);
@@ -122,25 +122,25 @@ void CuddUtility::setValueAtIndices(ADD* add, uint_fast64_t rowIndex, uint_fast6
 	}
 
 	ADD initialNode;
-	if ((rowIndex & (1 << (rowVariables.size() - 1))) != 0) {
+	if ((rowIndex & (1ull << (rowVariables.size() - 1))) != 0) {
 		initialNode = *rowVariables[0];
 	} else {
 		initialNode = ~(*rowVariables[0]);
 	}
 	ADD* encoding = new ADD(initialNode);
-	if ((columnIndex & (1 << (rowVariables.size() - 1))) != 0) {
+	if ((columnIndex & (1ull << (rowVariables.size() - 1))) != 0) {
 		*encoding *= *columnVariables[0];
 	} else {
 		*encoding *= ~(*columnVariables[0]);
 	}
 
 	for (uint_fast64_t i = 1; i < rowVariables.size(); ++i) {
-		if ((rowIndex & (1 << (rowVariables.size() - i - 1))) != 0) {
+		if ((rowIndex & (1ull << (rowVariables.size() - i - 1))) != 0) {
 			*encoding *= *rowVariables[i];
 		} else {
 			*encoding *= ~(*rowVariables[i]);
 		}
-		if ((columnIndex & (1 << (columnVariables.size() - i - 1))) != 0) {
+		if ((columnIndex & (1ull << (columnVariables.size() - i - 1))) != 0) {
 			*encoding *= *columnVariables[i];
 		} else {
 			*encoding *= ~(*columnVariables[i]);
@@ -159,7 +159,7 @@ ADD* CuddUtility::permuteVariables(ADD* add, std::vector<ADD*> fromVariables, st
 	std::vector<int> permutation;
 	permutation.resize(totalNumberOfVariables);
 	for (uint_fast64_t i = 0; i < totalNumberOfVariables; ++i) {
-		permutation[i] = i;
+		permutation[i] = static_cast<int>(i);
 	}
 	for (uint_fast64_t i = 0; i < fromVariables.size(); ++i) {
 		permutation[fromVariables[i]->NodeReadIndex()] = toVariables[i]->NodeReadIndex();

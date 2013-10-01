@@ -793,7 +793,7 @@ namespace storm {
                 
                 LOG4CPLUS_INFO(logger, "Performing Dijkstra search.");
                 
-                const uint_fast64_t noPredecessorValue = storm::utility::constGetZero<T>();
+				const uint_fast64_t noPredecessorValue = storm::utility::constGetZero<uint_fast64_t>();
                 std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::constGetZero<T>());
                 std::vector<uint_fast64_t> predecessors(model.getNumberOfStates(), noPredecessorValue);
                 

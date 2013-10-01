@@ -215,5 +215,13 @@ namespace storm {
             return this->doubleUndefinedConstantExpressions;
         }
         
+        uint_fast64_t Program::getGlobalIndexOfBooleanVariable(std::string const& variableName) const {
+            return this->globalBooleanVariableToIndexMap.at(variableName);
+        }
+
+        uint_fast64_t Program::getGlobalIndexOfIntegerVariable(std::string const& variableName) const {
+            return this->globalIntegerVariableToIndexMap.at(variableName);
+        }
+        
     } // namespace ir
 } // namepsace storm

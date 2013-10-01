@@ -54,7 +54,7 @@ namespace storm {
              * replaced with.
              * @param variableState An object knowing about the variables in the system.
              */
-            Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
+            Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState);
             
             /*!
              * Retrieves the action name of this command.

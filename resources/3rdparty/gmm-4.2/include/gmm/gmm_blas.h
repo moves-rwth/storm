@@ -38,7 +38,11 @@
 #ifndef GMM_BLAS_H__
 #define GMM_BLAS_H__
 
-#ifdef STORM_USE_TBB
+// This Version of GMM was modified for StoRM
+// To detect whether the usage of TBB is possible, this include is neccessary
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_INTELTBB
 #	include <new> // This fixes a potential dependency ordering problem between GMM and TBB
 #	include "tbb/tbb.h"
 #	include <iterator>
@@ -401,7 +405,7 @@ namespace gmm {
     return res;
   }
   
-#ifdef STORM_USE_TBB
+#ifdef STORM_HAVE_INTELTBB
 	/* Official Intel Hint on blocked_range vs. linear iterators: http://software.intel.com/en-us/forums/topic/289505
 
 	 */
@@ -465,7 +469,8 @@ public:
     vect_sp_sparse_(IT1 it, IT1 ite, const V &v) {
       typename strongest_numeric_type<typename std::iterator_traits<IT1>::value_type,
 	typename linalg_traits<V>::value_type>::T res(0);
-#if defined(STORM_USE_TBB) && defined(STORM_USE_TBB_FOR_INNER)
+#if defined(STORM_HAVE_INTELTBB) && defined(STORM_USE_TBB_FOR_INNER)
+	  // This is almost never an efficent way, only if there are _many_ states
 	  tbbHelper_vect_sp_sparse<IT1, V> tbbHelper(&v);
 	  tbb::parallel_reduce(forward_range<IT1>(it, ite), tbbHelper);
 	  res = tbbHelper.my_sum;
@@ -1749,7 +1754,7 @@ public:
     }
   }
 
-#ifdef STORM_USE_TBB
+#ifdef STORM_HAVE_INTELTBB
   /* Official Intel Hint on blocked_range vs. linear iterators: http://software.intel.com/en-us/forums/topic/289505
 
 	 */
@@ -1820,7 +1825,7 @@ public:
     typename linalg_traits<L3>::iterator it=vect_begin(l3), ite=vect_end(l3);
     typename linalg_traits<L1>::const_row_iterator
       itr = mat_row_const_begin(l1); 
-#ifdef STORM_USE_TBB
+#ifdef STORM_HAVE_INTELTBB
     tbb::parallel_for(forward_range_mult<typename linalg_traits<L3>::iterator, typename linalg_traits<L1>::const_row_iterator>(it, ite, itr), tbbHelper_mult_by_row<L1, L2, L3>(&l2));
 #else
 	for (; it != ite; ++it, ++itr)

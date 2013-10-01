@@ -32,16 +32,15 @@ namespace models {
  */
 class AtomicPropositionsLabeling {
 
-public:
-
+public:   
 	/*!
 	 * Constructs an empty atomic propositions labeling for the given number of states and amount of atomic propositions.
      *
 	 * @param stateCount The number of states of the model.
 	 * @param apCountMax The number of atomic propositions.
 	 */
-	AtomicPropositionsLabeling(const uint_fast64_t stateCount, uint_fast64_t const apCountMax)
-			: stateCount(stateCount), apCountMax(apCountMax), apsCurrent(0), singleLabelings() {
+	AtomicPropositionsLabeling(const uint_fast64_t stateCount = 0, uint_fast64_t const apCountMax = 0)
+			: stateCount(stateCount), apCountMax(apCountMax), apsCurrent(0), nameToLabelingMap(), singleLabelings() {
         singleLabelings.reserve(apCountMax);
 	}
 
@@ -89,6 +88,38 @@ public:
               singleLabelings(std::move(atomicPropositionsLabeling.singleLabelings)) {
         // Intentionally left empty.
     }
+    
+    /*!
+     * Assignment operator that copies the contents of the right-hand-side to the current labeling.
+     *
+     * @param other The atomic propositions labeling to copy.
+     */
+    AtomicPropositionsLabeling& operator=(AtomicPropositionsLabeling const& other) {
+        if (this != &other) {
+            this->stateCount = other.stateCount;
+            this->apCountMax = other.apCountMax;
+            this->apsCurrent = other.apsCurrent;
+            this->nameToLabelingMap = other.nameToLabelingMap;
+            this->singleLabelings = other.singleLabelings;
+        }
+        return *this;
+    }
+    
+    /*!
+     * Assignment operator that moves the contents of the right-hand-side to the current labeling.
+     *
+     * @param other The atomic propositions labeling to move.
+     */
+    AtomicPropositionsLabeling& operator=(AtomicPropositionsLabeling&& other) {
+        if (this != &other) {
+            this->stateCount = other.stateCount;
+            this->apCountMax = other.apCountMax;
+            this->apsCurrent = other.apsCurrent;
+            this->nameToLabelingMap = std::move(other.nameToLabelingMap);
+            this->singleLabelings = std::move(other.singleLabelings);
+        }
+        return *this;
+    }
 
 	/*!
 	 * (Empty) destructor.
@@ -128,7 +159,7 @@ public:
 	 * @return True if the proposition is registered within the labeling, false otherwise.
 	 */
 	bool containsAtomicProposition(std::string const& ap) const {
-		return (nameToLabelingMap.count(ap) != 0);
+		return nameToLabelingMap.find(ap) != nameToLabelingMap.end();
 	}
 
 	/*!
@@ -248,8 +279,7 @@ public:
 		}
 	}
 
-	std::unordered_map<std::string, uint_fast64_t> const& getNameToLabelingMap() const
-			{
+	std::unordered_map<std::string, uint_fast64_t> const& getNameToLabelingMap() const {
 		return this->nameToLabelingMap;
 	}
 

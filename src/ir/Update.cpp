@@ -14,16 +14,16 @@
 namespace storm {
     namespace ir {
         
-        Update::Update() : likelihoodExpression(), booleanAssignments(), integerAssignments() {
+        Update::Update() : likelihoodExpression(), booleanAssignments(), integerAssignments(), globalIndex() {
             // Nothing to do here.
         }
         
-        Update::Update(std::shared_ptr<storm::ir::expressions::BaseExpression> const& likelihoodExpression, std::map<std::string, storm::ir::Assignment> const& booleanAssignments, std::map<std::string, storm::ir::Assignment> const& integerAssignments)
-        : likelihoodExpression(likelihoodExpression), booleanAssignments(booleanAssignments), integerAssignments(integerAssignments) {
+        Update::Update(uint_fast64_t globalIndex, std::shared_ptr<storm::ir::expressions::BaseExpression> const& likelihoodExpression, std::map<std::string, storm::ir::Assignment> const& booleanAssignments, std::map<std::string, storm::ir::Assignment> const& integerAssignments)
+        : likelihoodExpression(likelihoodExpression), booleanAssignments(booleanAssignments), integerAssignments(integerAssignments), globalIndex(globalIndex) {
             // Nothing to do here.
         }
         
-        Update::Update(Update const& update, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) {
+        Update::Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState) : globalIndex(newGlobalIndex) {
             for (auto const& variableAssignmentPair : update.booleanAssignments) {
                 if (renaming.count(variableAssignmentPair.first) > 0) {
                     this->booleanAssignments[renaming.at(variableAssignmentPair.first)] = Assignment(variableAssignmentPair.second, renaming, variableState);
@@ -79,6 +79,10 @@ namespace storm {
             }
             
             return variableAssignmentPair->second;
+        }
+        
+        uint_fast64_t Update::getGlobalIndex() const {
+            return this->globalIndex;
         }
         
         std::string Update::toString() const {

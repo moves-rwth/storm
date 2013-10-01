@@ -173,9 +173,8 @@ public:
      * Move constructor. Move constructs the bit vector from the given bit vector.
      *
      */
-    BitVector(BitVector&& bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
+    BitVector(BitVector&& bv) : bucketCount(bv.bucketCount), bitCount(bv.bitCount), bucketArray(bv.bucketArray), endIterator(*this, bitCount, bitCount, false), truncateMask((1ll << (bitCount & mod64mask)) - 1ll) {
         LOG4CPLUS_DEBUG(logger, "Invoking move constructor.");
-        this->bucketArray = bv.bucketArray;
         bv.bucketArray = nullptr;
     }
 
@@ -344,7 +343,7 @@ public:
 	 * @return A reference to the current bit vector corresponding to the logical "and"
 	 * of the two bit vectors.
 	 */
-	BitVector operator&=(BitVector const& bv) {
+	BitVector& operator&=(BitVector const& bv) {
 		uint_fast64_t minSize =	(bv.bucketCount < this->bucketCount) ? bv.bucketCount : this->bucketCount;
 
 		for (uint_fast64_t i = 0; i < minSize; ++i) {

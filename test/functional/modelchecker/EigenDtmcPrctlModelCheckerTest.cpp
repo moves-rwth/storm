@@ -8,7 +8,8 @@
 
 TEST(EigenDtmcPrctlModelCheckerTest, Die) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	s->set("fixDeadlocks");
+	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
+	ASSERT_TRUE(s->isSet("fixDeadlocks"));
 	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/die/die.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/die/die.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/die/die.coin_flips.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
@@ -68,7 +69,8 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die) {
 
 TEST(EigenDtmcPrctlModelCheckerTest, Crowds) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	s->set("fixDeadlocks");
+	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
+	ASSERT_TRUE(s->isSet("fixDeadlocks"));
 	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/crowds/crowds5_5.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/crowds/crowds5_5.lab", "", "");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
@@ -116,7 +118,8 @@ TEST(EigenDtmcPrctlModelCheckerTest, Crowds) {
 
 TEST(EigenDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	s->set("fixDeadlocks");
+	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
+	ASSERT_TRUE(s->isSet("fixDeadlocks"));
 	storm::parser::AutoParser<double> parser(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/synchronous_leader/leader4_8.tra", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/synchronous_leader/leader4_8.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/synchronous_leader/leader4_8.pick.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);

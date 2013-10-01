@@ -19,7 +19,6 @@ bool storm::utility::StormOptions::optionsRegistered = storm::settings::Settings
 	matrixLibrarys.push_back("gmm++");
 	matrixLibrarys.push_back("native");
 	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "matrixLibrary", "m", "Which matrix library is to be used in numerical solving").addArgument(storm::settings::ArgumentBuilder::createStringArgument("matrixLibraryName", "Name of a buildin Library").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(matrixLibrarys)).setDefaultValueString("gmm++").build()).build());
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "useHeuristicPresolve", "", "Sets whether heuristic methods should be applied to get better initial values for value iteration").build());
 
 	return true;
 });

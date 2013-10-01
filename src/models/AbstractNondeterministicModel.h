@@ -34,7 +34,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>> const& optionalStateRewardVector, 
 			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
-            boost::optional<std::vector<std::list<uint_fast64_t>>> const& optionalChoiceLabeling)
+            boost::optional<std::vector<std::set<uint_fast64_t>>> const& optionalChoiceLabeling)
 			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 				this->nondeterministicChoiceIndices = nondeterministicChoiceIndices;
 		}
@@ -54,7 +54,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
 			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
 			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
-            boost::optional<std::vector<std::list<uint_fast64_t>>>&& optionalChoiceLabeling)
+            boost::optional<std::vector<std::set<uint_fast64_t>>>&& optionalChoiceLabeling)
 			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
 			: AbstractModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
                                std::move(optionalChoiceLabeling)), nondeterministicChoiceIndices(std::move(nondeterministicChoiceIndices)) {
@@ -225,7 +225,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 		 * @return void
 		 */
 		virtual void setStateIdBasedChoiceLabeling() override {
-			std::vector<std::list<uint_fast64_t>> newChoiceLabeling;
+			std::vector<std::set<uint_fast64_t>> newChoiceLabeling;
 
 			size_t stateCount = this->getNumberOfStates();
 			size_t choiceCount = this->getNumberOfChoices();
@@ -233,7 +233,7 @@ class AbstractNondeterministicModel: public AbstractModel<T> {
 
 			for (size_t state = 0; state < stateCount; ++state) {
 				for (size_t choice = this->nondeterministicChoiceIndices.at(state); choice < this->nondeterministicChoiceIndices.at(state + 1); ++choice) {
-					newChoiceLabeling.at(choice).push_back(state);
+					newChoiceLabeling.at(choice).insert(state);
 				}
 			}
 

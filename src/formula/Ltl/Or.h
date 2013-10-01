@@ -32,7 +32,7 @@ class IOrModelChecker {
 		 *	@param obj Formula object with subformulas.
 		 *	@return Result of the formula for every node.
 		 */
-		virtual std::vector<T>* checkOr(const Or<T>& obj) const = 0;
+		virtual std::vector<T> checkOr(const Or<T>& obj) const = 0;
 };
 
 /*!
@@ -125,7 +125,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual std::vector<T>* check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual std::vector<T> check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
 

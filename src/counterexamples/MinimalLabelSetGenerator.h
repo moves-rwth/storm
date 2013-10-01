@@ -8,7 +8,10 @@
 #ifndef STORM_COUNTEREXAMPLES_MINIMALCOMMANDSETGENERATOR_MDP_H_
 #define STORM_COUNTEREXAMPLES_MINIMALCOMMANDSETGENERATOR_MDP_H_
 
-#ifdef HAVE_GUROBI
+// To detect whether the usage of Gurobi is possible, this include is neccessary
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_GUROBI
 extern "C" {
 #include "gurobi_c.h"
     
@@ -30,7 +33,7 @@ namespace storm {
          */
         template <class T>
         class MinimalLabelSetGenerator {
-#ifdef HAVE_GUROBI
+#ifdef STORM_HAVE_GUROBI
         private:
             /*!
              * A helper class that provides the functionality to compute a hash value for pairs of state indices.
@@ -119,7 +122,7 @@ namespace storm {
                 ChoiceInformation result;
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
-                std::vector<std::list<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                std::vector<std::set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 
                 // Now traverse all choices of all relevant states and check whether there is a relevant target state.
                 // If so, the associated labels become relevant. Also, if a choice of relevant state has at least one
@@ -383,7 +386,7 @@ namespace storm {
                     variableNameBuffer.str("");
                     variableNameBuffer.clear();
                     variableNameBuffer << "p" << state;
-                    error = GRBaddvar(model, 0, nullptr, nullptr, 0.0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
+                    error = GRBaddvar(model, 0, nullptr, nullptr, maximizeProbability ? (labeledMdp.getInitialStates().get(state) ? -0.5 : 0) : 0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
                     if (error) {
                         LOG4CPLUS_ERROR(logger, "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").");
                         throw storm::exceptions::InvalidStateException() << "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").";
@@ -573,7 +576,7 @@ namespace storm {
              * @param probabilityThreshold The probability that the subsystem must exceed.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertProbabilityGreaterThanThreshold(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, T probabilityThreshold) {
+            static uint_fast64_t assertProbabilityGreaterThanThreshold(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, double probabilityThreshold) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 int error = 0;
                 int variableIndex = static_cast<int>(variableInformation.virtualInitialStateVariableIndex);
@@ -650,7 +653,7 @@ namespace storm {
             static uint_fast64_t assertChoicesImplyLabels(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 int error = 0;
-                std::vector<std::list<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                std::vector<std::set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 for (auto state : stateInformation.relevantStates) {
                     std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(state).begin();
                     for (auto choice : choiceInformation.relevantChoicesForRelevantStates.at(state)) {
@@ -923,6 +926,7 @@ namespace storm {
                     for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(state); predecessorIt != backwardTransitions.constColumnIteratorEnd(state); ++predecessorIt) {
                         if (state != *predecessorIt) {
                             predecessors.insert(*predecessorIt);
+
                         }
                     }
                     
@@ -1039,7 +1043,7 @@ namespace storm {
              * @param includeSchedulerCuts If set to true, additional constraints are asserted that reduce the set of
              * possible choices.
              */
-            static void buildConstraintSystem(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, T probabilityThreshold, bool includeSchedulerCuts = false) {
+            static void buildConstraintSystem(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool includeSchedulerCuts = false) {
                 // Assert that the reachability probability in the subsystem exceeds the given threshold.
                 uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(env, model, labeledMdp, variableInformation, probabilityThreshold);
                 LOG4CPLUS_DEBUG(logger, "Asserted that reachability probability exceeds threshold.");
@@ -1168,6 +1172,7 @@ namespace storm {
                     double value = 0;
                     for (auto initialStateVariableIndexPair : variableInformation.initialStateToChoiceVariableIndexMap) {
                         error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, initialStateVariableIndexPair.second, &value);
+
                         if (error) {
                             LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").");
                             throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
@@ -1198,8 +1203,8 @@ namespace storm {
 
         public:
             
-            static std::unordered_set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, T probabilityThreshold, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
-#ifdef HAVE_GUROBI
+            static std::unordered_set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+#ifdef STORM_HAVE_GUROBI
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabels()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal label set generation is impossible for unlabeled model.";
@@ -1247,7 +1252,7 @@ namespace storm {
                 // (5) Return result.
                 return usedLabelSet;
 #else
-                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable if StoRM is compiled without support for Gurobi.";
+                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Gurobi.";
 #endif
             }
             

@@ -183,8 +183,8 @@ namespace storm {
 				return this->hasBeenSet;
 			}
 
-			void setHasOptionBeenSet() {
-				this->hasBeenSet = true;
+			void setHasOptionBeenSet(bool newValue = true) {
+				this->hasBeenSet = newValue;
 			}
 		private:
 			std::string longName;

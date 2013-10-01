@@ -233,6 +233,20 @@ namespace storm {
              */
             std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> const& getDoubleUndefinedConstantExpressionsMap() const;
             
+            /*!
+             * Retrieves the global index of the given boolean variable.
+             *
+             * @param variableName The name of the boolean variable whose index to retrieve.
+             */
+            uint_fast64_t getGlobalIndexOfBooleanVariable(std::string const& variableName) const;
+            
+            /*!
+             * Retrieves the global index of the integer boolean variable.
+             *
+             * @param variableName The name of the integer variable whose index to retrieve.
+             */
+            uint_fast64_t getGlobalIndexOfIntegerVariable(std::string const& variableName) const;
+            
         private:
             // The type of the model.
             ModelType modelType;
