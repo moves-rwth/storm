@@ -401,10 +401,6 @@ public:
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize matrix that is not uninitialized.");
 			throw storm::exceptions::InvalidStateException("Trying to initialize matrix that is not uninitialized.");
-		} else if ((rowCount == 0) || (colCount == 0)) {
-			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to create initialize a matrix with 0 rows or 0 columns.");
-			throw storm::exceptions::InvalidArgumentException("Trying to create initialize a matrix with 0 rows or 0 columns.");
 		} else if ((rowCount * colCount) < nonZeroEntries) {
 			triggerErrorState();
 			LOG4CPLUS_ERROR(logger, "Trying to initialize a matrix with more non-zero entries than there can be.");
@@ -426,7 +422,7 @@ public:
     
 	/*!
 	 * Sets the matrix element at the given row and column to the given value. After all elements have been added,
-     * a call to finalize() is mandatory.
+     * a call to finalize(false) is mandatory.
 	 * NOTE: This is a linear setter. It must be called consecutively for each element,
 	 * row by row *and* column by column.
      * NOTE: This method is different from insertNextValue(...) in that the number of nonzero elements must be known
@@ -464,7 +460,7 @@ public:
     
     /*!
      * Inserts a value at the given row and column with the given value. After all elements have been inserted,
-     * a call to finalize() is mandatory.
+     * a call to finalize(true) is mandatory.
      * NOTE: This is a linear inserter. It must be called consecutively for each element, row by row *and* column by
      * column.
      * NOTE: This method is different from addNextValue(...) in that the number of nonzero elements need not be known
@@ -473,22 +469,29 @@ public:
 	 * @param row The row in which the matrix element is to be set.
 	 * @param col The column in which the matrix element is to be set.
 	 * @param value The value that is to be set.
+     * @param pushRowIndication If set to true, the next row indication value is pushed, otherwise it is added. If the
+     * number of rows was not set in the beginning, then this needs to be true and false otherwise.
      */
-    void insertNextValue(const uint_fast64_t row, const uint_fast64_t col,	T const& value) {
+    void insertNextValue(const uint_fast64_t row, const uint_fast64_t col,	T const& value, bool pushRowIndication = false) {
 		// Check whether the given row and column positions are valid and throw
 		// error otherwise.
-		if ((row > rowCount) || (col > colCount)) {
+		if (row < lastRow) {
 			triggerErrorState();
-			LOG4CPLUS_ERROR(logger, "Trying to insert a value at illegal position (" << row << ", " << col << ") in matrix of size (" << rowCount << ", " << colCount << ").");
-			throw storm::exceptions::OutOfRangeException() << "Trying to insert a value at illegal position (" << row << ", " << col << ") in matrix of size (" << rowCount << ", " << colCount << ").";
+			LOG4CPLUS_ERROR(logger, "Trying to insert a value at illegal position (" << row << ", " << col << ").");
+			throw storm::exceptions::OutOfRangeException() << "Trying to insert a value at illegal position (" << row << ", " << col << ").";
 		}
         
 		// If we switched to another row, we have to adjust the missing entries in the rowIndications array.
 		if (row != lastRow) {
 			for (uint_fast64_t i = lastRow + 1; i <= row; ++i) {
-				rowIndications[i] = currentSize;
+                if (pushRowIndication) {
+                    rowIndications.push_back(currentSize);
+                } else {
+                    rowIndications[i] = currentSize;
+                }
 			}
-			lastRow = row;
+            rowCount = row + 1;
+            lastRow = row;
 		}
         
 		// Finally, set the element and increase the current size.
@@ -496,14 +499,33 @@ public:
 		columnIndications.push_back(col);
         ++nonZeroEntryCount;
 		++currentSize;
+        
+        // Check that we also have the correct number of columns.
+        colCount = std::max(colCount, col + 1);
 	}
-
-
+    
+    /*!
+     * Inserts an empty row in the matrix.
+     *
+     * @param pushRowIndication If set to true, the next row indication value is pushed, otherwise it is added. If the
+     * number of rows was not set in the beginning, then this needs to be true and false otherwise.
+     */
+    void insertEmptyRow(bool pushRowIndication = false) {
+        if (pushRowIndication) {
+            rowIndications.push_back(currentSize);
+        } else {
+            rowIndications[lastRow + 1] = currentSize;
+        }
+        
+        ++rowCount;
+        ++lastRow;
+    }
+    
 	/*
 	 * Finalizes the sparse matrix to indicate that initialization has been completed and the matrix may now be used.
      *
      * @param pushSentinelElement A boolean flag that indicates whether the sentinel element is to be pushed or inserted
-     * at a fixed location. If the elements have been added to the matrix via insertNextElement, this needs to be true
+     * at a fixed location. If the elements have been added to the matrix via insertNextValue, this needs to be true
      * and false otherwise.
 	 */
 	void finalize(bool pushSentinelElement = false) {
@@ -519,10 +541,8 @@ public:
 		} else {
 			// Fill in the missing entries in the row_indications array.
 			// (Can happen because of empty rows at the end.)
-			if (lastRow != rowCount) {
-				for (uint_fast64_t i = lastRow + 1; i < rowCount; ++i) {
-					rowIndications[i] = currentSize;
-				}
+			for (uint_fast64_t i = lastRow + 1; i < rowCount; ++i) {
+				rowIndications[i] = currentSize;
 			}
 
 			// Set a sentinel element at the last position of the row_indications array. This eases iteration work, as
@@ -1308,18 +1328,18 @@ public:
 	}
 
 	/*!
-	 * Checks if the given matrix is a submatrix of the current matrix, where A matrix A is called a
+	 * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a
 	 * submatrix of B if a value in A is only nonzero, if the value in B at the same position is
-	 * also nonzero. Furthermore, A and B have to have the same size.
+	 * also nonzero. Additionally, the matrices must be of equal size.
 	 *
-	 * @param matrix The matrix that is possibly a submatrix of the current matrix.
-	 * @returns True iff the given matrix is a submatrix of the current matrix.
+	 * @param matrix The matrix that possibly is a "supermatrix" of the current matrix.
+	 * @returns True iff the current matrix is a submatrix of the given matrix.
 	 */
-	bool containsAllPositionsOf(SparseMatrix<T> const& matrix) const {
-		// Check for mismatching sizes.
-		if (this->getRowCount() != matrix.getRowCount()) return false;
-		if (this->getColumnCount() != matrix.getColumnCount()) return false;
-
+	bool isSubmatrixOf(SparseMatrix<T> const& matrix) const {
+        // Check for matching sizes.
+        if (this->getRowCount() != matrix.getRowCount()) return false;
+        if (this->getColumnCount() != matrix.getColumnCount()) return false;
+        
 		// Check the subset property for all rows individually.
 		for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
 			for (uint_fast64_t elem = rowIndications[row], elem2 = matrix.rowIndications[row]; elem < rowIndications[row + 1] && elem < matrix.rowIndications[row + 1]; ++elem) {
@@ -1328,7 +1348,9 @@ public:
 				while (elem2 < matrix.rowIndications[row + 1] && matrix.columnIndications[elem2] < columnIndications[elem]) {
 					++elem2;
 				}
-				if (!(elem2 < matrix.rowIndications[row + 1]) || columnIndications[elem] != matrix.columnIndications[elem2]) return false;
+				if (!(elem2 < matrix.rowIndications[row + 1]) || columnIndications[elem] != matrix.columnIndications[elem2]) {
+                    return false;
+                }
 			}
 		}
 		return true;
@@ -1501,8 +1523,9 @@ private:
 	}
 
 	/*!
-	 * Prepares the internal storage. For this, it requires the number of non-zero entries and the
-	 * amount of rows to be set correctly.
+	 * Prepares the internal storage. It relies on the number of non-zero entries and the
+	 * amount of rows to be set correctly. They may, however, be zero, but then insertNextValue needs to be used rather
+     * than addNextElement for filling the matrix.
 	 *
 	 * @param initializeElements If set to true, all entries are initialized.
 	 * @return True on success, false otherwise (allocation failed).

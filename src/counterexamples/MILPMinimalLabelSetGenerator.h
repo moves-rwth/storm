@@ -1,14 +1,14 @@
 /*
- * MinimalLabelSetGenerator.h
+ * MILPMinimalLabelSetGenerator.h
  *
  *  Created on: 15.09.2013
  *      Author: Christian Dehnert
  */
 
-#ifndef STORM_COUNTEREXAMPLES_MINIMALCOMMANDSETGENERATOR_MDP_H_
-#define STORM_COUNTEREXAMPLES_MINIMALCOMMANDSETGENERATOR_MDP_H_
+#ifndef STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
+#define STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
 
-// To detect whether the usage of Gurobi is possible, this include is neccessary
+// To detect whether the usage of Gurobi is possible, this include is neccessary.
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_GUROBI
@@ -386,7 +386,7 @@ namespace storm {
                     variableNameBuffer.str("");
                     variableNameBuffer.clear();
                     variableNameBuffer << "p" << state;
-                    error = GRBaddvar(model, 0, nullptr, nullptr, maximizeProbability ? (labeledMdp.getInitialStates().get(state) ? -0.5 : 0) : 0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
+                    error = GRBaddvar(model, 0, nullptr, nullptr, 0.0, 0.0, 1.0, GRB_CONTINUOUS, variableNameBuffer.str().c_str());
                     if (error) {
                         LOG4CPLUS_ERROR(logger, "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").");
                         throw storm::exceptions::InvalidStateException() << "Could not create Gurobi variable (" << GRBgeterrormsg(env) << ").";
@@ -1258,7 +1258,7 @@ namespace storm {
             
         };
         
-    }
-}
+    } // namespace counterexamples
+} // namespace storm
 
-#endif /* STORM_COUNTEREXAMPLES_MINIMALLABELSETGENERATOR_MDP_H_ */
+#endif /* STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_ */

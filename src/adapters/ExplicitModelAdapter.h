@@ -63,7 +63,7 @@ namespace storm {
         };
         
         /*!
-         * A helper class that provides the functionality to compare states of the model.
+         * A helper class that provides the functionality to compare states of the model wrt. equality.
          */
         class StateCompare {
         public:
@@ -72,8 +72,30 @@ namespace storm {
             }
         };
         
+        /*!
+         * A helper class that provides the functionality to compare states of the model wrt. the relation "<".
+         */
+        class StateLess {
+        public:
+            bool operator()(StateType* state1, StateType* state2) const {
+                // Compare boolean variables.
+                for (uint_fast64_t i = 0; i < state1->first.size(); ++i) {
+                    if (!state1->first.at(i) && state2->first.at(i)) {
+                        return true;
+                    }
+                }
+                // Then compare integer variables.
+                for (uint_fast64_t i = 0; i < state1->second.size(); ++i) {
+                    if (!state1->second.at(i) && state2->second.at(i)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+        
         // A structure holding information about a particular choice.
-        template<typename ValueType>
+        template<typename ValueType, typename KeyType=uint_fast64_t, typename Compare=std::less<uint_fast64_t>>
         struct Choice {
         public:
             Choice(std::string const& actionLabel) : distribution(), actionLabel(actionLabel), choiceLabels() {
@@ -85,7 +107,7 @@ namespace storm {
              *
              * @return An iterator to the first element of this choice.
              */
-            typename std::map<uint_fast64_t, ValueType>::iterator begin() {
+            typename std::map<KeyType, ValueType>::iterator begin() {
                 return distribution.begin();
             }
             
@@ -94,7 +116,7 @@ namespace storm {
              *
              * @return An iterator to the first element of this choice.
              */
-            typename std::map<uint_fast64_t, ValueType>::const_iterator begin() const {
+            typename std::map<KeyType, ValueType>::const_iterator begin() const {
                 return distribution.cbegin();
             }
             
@@ -103,7 +125,7 @@ namespace storm {
              *
              * @return An iterator that points past the elements of this choice.
              */
-            typename std::map<uint_fast64_t, ValueType>::iterator end() {
+            typename std::map<KeyType, ValueType>::iterator end() {
                 return distribution.end();
             }
             
@@ -112,7 +134,7 @@ namespace storm {
              *
              * @return An iterator that points past the elements of this choice.
              */
-            typename std::map<uint_fast64_t, ValueType>::const_iterator end() const {
+            typename std::map<KeyType, ValueType>::const_iterator end() const {
                 return distribution.cend();
             }
             
@@ -123,7 +145,7 @@ namespace storm {
              * @param value The value to find.
              * @return An iterator to the element with the given key, if there is one.
              */
-            typename std::map<uint_fast64_t, ValueType>::iterator find(uint_fast64_t value) {
+            typename std::map<KeyType, ValueType>::iterator find(uint_fast64_t value) {
                 return distribution.find(value);
             }
             
@@ -213,7 +235,7 @@ namespace storm {
             
         private:
             // The distribution that is associated with the choice.
-            std::map<uint_fast64_t, ValueType> distribution;
+            std::map<KeyType, ValueType, Compare> distribution;
             
             // The label of the choice.
             std::string actionLabel;
@@ -257,7 +279,7 @@ namespace storm {
         public:
             // A structure holding information about the reachable state space.
             struct StateInformation {
-                StateInformation() : reachableStates(), stateToIndexMap(), numberOfChoices(), numberOfTransitions(0) {
+                StateInformation() : reachableStates(), stateToIndexMap() {
                     // Intentionally left empty.
                 }
                 
@@ -266,12 +288,6 @@ namespace storm {
                 
                 // A mapping from states to indices in the list of reachable states.
                 std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
-                
-                // A vector storing the number of choices for each state.
-                std::vector<uint_fast64_t> numberOfChoices;
-                
-                // The total number of transitions discovered.
-                uint_fast64_t numberOfTransitions;
             };
             
             // A structure holding the individual components of a model.
@@ -339,16 +355,16 @@ namespace storm {
                 std::shared_ptr<storm::models::AbstractModel<ValueType>> result;
                 switch (program.getModelType()) {
                     case storm::ir::Program::DTMC:
-                        result = std::shared_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.stateRewards), std::move(modelComponents.transitionRewardMatrix), std::move(modelComponents.choiceLabeling)));
+                        result = std::shared_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     case storm::ir::Program::CTMC:
-                        result = std::shared_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.stateRewards), std::move(modelComponents.transitionRewardMatrix), std::move(modelComponents.choiceLabeling)));
+                        result = std::shared_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     case storm::ir::Program::MDP:
-                        result = std::shared_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.nondeterministicChoiceIndices), std::move(modelComponents.stateRewards), std::move(modelComponents.transitionRewardMatrix), std::move(modelComponents.choiceLabeling)));
+                        result = std::shared_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.nondeterministicChoiceIndices), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     case storm::ir::Program::CTMDP:
-                        result = std::shared_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.nondeterministicChoiceIndices), std::move(modelComponents.stateRewards), std::move(modelComponents.transitionRewardMatrix), std::move(modelComponents.choiceLabeling)));
+                        result = std::shared_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.nondeterministicChoiceIndices), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     default:
                         LOG4CPLUS_ERROR(logger, "Error while creating model from probabilistic program: cannot handle this model type.");
@@ -572,7 +588,6 @@ namespace storm {
                 if (indexIt == stateInformation.stateToIndexMap.end()) {
                     // The state has not been seen, yet, so add it to the list of all reachable states.
                     stateInformation.stateToIndexMap[state] = stateInformation.reachableStates.size();
-                    stateInformation.numberOfChoices.push_back(0);
                     stateInformation.reachableStates.push_back(state);
                     return std::make_pair(false, stateInformation.stateToIndexMap[state]);
                 } else {
@@ -581,59 +596,7 @@ namespace storm {
                     return std::make_pair(true, indexIt->second);
                 }
             }
-            
-            /*!
-             * Expands all unlabeled (i.e. independent) transitions of the given state and adds newly discovered states
-             * to the given queue.
-             *
-             * @param program The program that defines the transitions.
-             * @param stateInformation Provides information about the discovered state space.
-             * @param variableInformation A structure with information about the variables in the program.
-             * @param stateIndex The index of the state to expand.
-             * @param stateQueue The queue of states into which newly discovered states are inserted.
-             */
-            static void exploreUnlabeledTransitions(storm::ir::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
-                StateType const* currentState = stateInformation.reachableStates[stateIndex];
-                
-                // Iterate over all modules.
-                for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
-                    storm::ir::Module const& module = program.getModule(i);
-
-                    // Iterate over all commands.
-                    for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
-                        storm::ir::Command const& command = module.getCommand(j);
-                        
-                        // Only consider unlabeled commands.
-                        if (command.getActionName() != "") continue;
-                        // Skip the command, if it is not enabled.
-                        if (!command.getGuard()->getValueAsBool(currentState)) continue;
-                        
-                        ++stateInformation.numberOfChoices[stateIndex];
-                        
-                        std::set<uint_fast64_t> targetStates;
-                        
-                        // Iterate over all updates of the current command.
-                        for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
-                            storm::ir::Update const& update = command.getUpdate(k);
-                            
-                            // Obtain target state index.
-                            std::pair<bool, uint_fast64_t> flagAndTargetStateIndexPair = getOrAddStateIndex(applyUpdate(variableInformation, currentState, update), stateInformation);
-                            
-                            // If the state has not yet been discovered, add it to the queue.
-                            if (!flagAndTargetStateIndexPair.first) {
-                                stateQueue.push(flagAndTargetStateIndexPair.second);
-                            }
-                            
-                            // In any case, record that there is a transition to the newly found state to count the number
-                            // of transitions correctly.
-                            targetStates.insert(flagAndTargetStateIndexPair.second);
-                        }
-                        
-                        stateInformation.numberOfTransitions += targetStates.size();
-                    }
-                }
-            }
-
+    
             /*!
              * Retrieves all commands that are labeled with the given label and enabled in the given state, grouped by
              * modules.
@@ -682,149 +645,6 @@ namespace storm {
                     result.get().push_back(std::move(commands));
                 }
                 return result;
-            }
-            
-            /*!
-             * Expands all labeled (i.e. synchronizing) transitions of the given state and adds newly discovered states
-             * to the given queue.
-             *
-             * @param program The program that defines the transitions.
-             * @param stateInformation Provides information about the discovered state space.
-             * @param variableInformation A structure with information about the variables in the program.
-             * @param stateIndex The index of the state to expand.
-             * @param stateQueue The queue of states into which newly discovered states are inserted.
-             */
-            static void exploreLabeledTransitions(storm::ir::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
-                for (std::string const& action : program.getActions()) {
-                    StateType const* currentState = stateInformation.reachableStates[stateIndex];
-                    boost::optional<std::vector<std::list<storm::ir::Command>>> optionalActiveCommandLists = getActiveCommandsByAction(program, currentState, action);
-                    
-                    // Only process this action label, if there is at least one feasible solution.
-                    if (optionalActiveCommandLists) {
-                        std::vector<std::list<storm::ir::Command>> const& activeCommandList = optionalActiveCommandLists.get();
-                        std::vector<std::list<storm::ir::Command>::const_iterator> iteratorList(activeCommandList.size());
-                        
-                        // Initialize the list of iterators.
-                        for (size_t i = 0; i < activeCommandList.size(); ++i) {
-                            iteratorList[i] = activeCommandList[i].cbegin();
-                        }
-                        
-                        // As long as there is one feasible combination of commands, keep on expanding it.
-                        bool done = false;
-                        while (!done) {
-                            ++stateInformation.numberOfChoices[stateIndex];
-                            
-                            std::unordered_set<StateType*, StateHash, StateCompare>* currentTargetStates = new std::unordered_set<StateType*, StateHash, StateCompare>();
-                            std::unordered_set<StateType*, StateHash, StateCompare>* newTargetStates = new std::unordered_set<StateType*, StateHash, StateCompare>();
-                            currentTargetStates->insert(new StateType(*currentState));
-                            
-                            // FIXME: This does not check whether a global variable is written multiple times. While the
-                            // behaviour for this is undefined anyway, a warning should be issued in that case.
-                            for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                                storm::ir::Command const& command = *iteratorList[i];
-                                
-                                for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
-                                    storm::ir::Update const& update = command.getUpdate(j);
-                                    
-                                    for (auto const& targetState : *currentTargetStates) {
-                                        StateType* newTargetState = applyUpdate(variableInformation, targetState, currentState, update);
-                                        
-                                        auto existingState = newTargetStates->find(newTargetState);
-                                        if (existingState == newTargetStates->end()) {
-                                            newTargetStates->insert(newTargetState);
-                                        } else {
-                                            // If the state was already seen in one of the other updates, we need to delete this copy.
-                                            delete newTargetState;
-                                        }
-                                    }
-                                }
-                                
-                                // If there is one more command to come, shift the target states one time step back.
-                                if (i < iteratorList.size() - 1) {
-                                    for (auto const& state : *currentTargetStates) {
-                                        delete state;
-                                    }
-                                    delete currentTargetStates;
-                                    currentTargetStates = newTargetStates;
-                                    newTargetStates = new std::unordered_set<StateType*, StateHash, StateCompare>();
-                                }
-                            }
-                            
-                            // If there are states that have not yet been discovered, add them to the queue.
-                            for (auto const& state : *newTargetStates) {
-                                std::pair<bool, uint_fast64_t> flagAndNewStateIndexPair = getOrAddStateIndex(state, stateInformation);
-                                
-                                if (!flagAndNewStateIndexPair.first) {
-                                    stateQueue.push(flagAndNewStateIndexPair.second);
-                                }
-                            }
-                            
-                            stateInformation.numberOfTransitions += newTargetStates->size();
-                            
-                            // Dispose of the temporary maps.
-                            delete currentTargetStates;
-                            delete newTargetStates;
-                            
-                            // Now, check whether there is one more command combination to consider.
-                            bool movedIterator = false;
-                            for (int_fast64_t j = iteratorList.size() - 1; j >= 0; --j) {
-                                ++iteratorList[j];
-                                if (iteratorList[j] != activeCommandList[j].end()) {
-                                    movedIterator = true;
-                                } else {
-                                    // Reset the iterator to the beginning of the list.
-                                    iteratorList[j] = activeCommandList[j].begin();
-                                }
-                            }
-                            
-                            done = !movedIterator;
-                        }
-                    }
-                }
-            }
-            
-            /*!
-             * Explores the reachable state space given by the program and returns a list of all states as well as a
-             * mapping from states to their indices.
-             *
-             * @param program The program whose state space to explore.
-             * @param variableInformation A structure with information about the variables in the program.
-             * @return A structure containing all reachable states and a mapping from states to their indices.
-             */
-            static StateInformation exploreReachableStateSpace(storm::ir::Program const& program, VariableInformation const& variableInformation) {
-                StateInformation stateInformation;
-                
-                // Initialize a queue and insert the initial state.
-                std::queue<uint_fast64_t> stateQueue;
-                StateType* initialState = getInitialState(program, variableInformation);
-                getOrAddStateIndex(initialState, stateInformation);
-                stateQueue.push(stateInformation.stateToIndexMap[initialState]);
-                
-                // Now explore the current state until there is no more reachable state.
-                while (!stateQueue.empty()) {
-                    uint_fast64_t currentStateIndex = stateQueue.front();
-                    
-                    exploreUnlabeledTransitions(program, stateInformation, variableInformation, currentStateIndex, stateQueue);
-                    exploreLabeledTransitions(program, stateInformation, variableInformation, currentStateIndex, stateQueue);
-                    
-                    // If the state does not have any outgoing transitions, we fix this by adding a self-loop if the
-                    // option was set.
-                    if (stateInformation.numberOfChoices[currentStateIndex] == 0) {
-                        if (storm::settings::Settings::getInstance()->isSet("fixDeadlocks")) {
-                            ++stateInformation.numberOfTransitions;
-                            ++stateInformation.numberOfChoices[currentStateIndex] = 1;
-                        } else {
-                            LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
-                            throw storm::exceptions::WrongFormatException() << "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.";
-                        }
-                    }
-
-                    
-                    // After exploring a state, remove it from the queue.
-                    stateQueue.pop();
-                }
-                
-                return stateInformation;
             }
             
             /*!
@@ -879,7 +699,7 @@ namespace storm {
                 return result;
             }
             
-            static std::list<Choice<ValueType>> getUnlabeledTransitions(storm::ir::Program const& program, StateInformation const& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex) {
+            static std::list<Choice<ValueType>> getUnlabeledTransitions(storm::ir::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
                 std::list<Choice<ValueType>> result;
                 
                 StateType const* currentState = stateInformation.reachableStates[stateIndex];
@@ -907,12 +727,17 @@ namespace storm {
                             storm::ir::Update const& update = command.getUpdate(k);
                             
                             // Obtain target state index.
-                            uint_fast64_t targetStateIndex = stateInformation.stateToIndexMap.at(applyUpdate(variableInformation, currentState, update));
+                            std::pair<bool, uint_fast64_t> flagTargetStateIndexPair = getOrAddStateIndex(applyUpdate(variableInformation, currentState, update), stateInformation);
+                            
+                            // If the state has not been discovered yet, add it to the queue of states to be explored.
+                            if (!flagTargetStateIndexPair.first) {
+                                stateQueue.push(flagTargetStateIndexPair.second);
+                            }
                             
                             // Update the choice by adding the probability/target state to it.
                             double probabilityToAdd = update.getLikelihoodExpression()->getValueAsDouble(currentState);
                             probabilitySum += probabilityToAdd;
-                            addProbabilityToChoice(choice, targetStateIndex, probabilityToAdd, {update.getGlobalIndex()});
+                            addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, {update.getGlobalIndex()});
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
@@ -926,7 +751,7 @@ namespace storm {
                 return result;
             }
             
-            static std::list<Choice<ValueType>> getLabeledTransitions(storm::ir::Program const& program, StateInformation const& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex) {
+            static std::list<Choice<ValueType>> getLabeledTransitions(storm::ir::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
                 std::list<Choice<ValueType>> result;
                 
                 for (std::string const& action : program.getActions()) {
@@ -946,9 +771,9 @@ namespace storm {
                         // As long as there is one feasible combination of commands, keep on expanding it.
                         bool done = false;
                         while (!done) {
-                            std::unordered_map<StateType*, double, StateHash, StateCompare>* currentTargetStates = new std::unordered_map<StateType*, double, StateHash, StateCompare>();
-                            std::unordered_map<StateType*, double, StateHash, StateCompare>* newTargetStates = new std::unordered_map<StateType*, double, StateHash, StateCompare>();
-                            (*currentTargetStates)[new StateType(*currentState)] = 1.0;
+                            std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>* currentTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>();
+                            std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>* newTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>();
+                            (*currentTargetStates)[new StateType(*currentState)] = storm::storage::LabeledValues<double>(1.0);
                             
                             // FIXME: This does not check whether a global variable is written multiple times. While the
                             // behaviour for this is undefined anyway, a warning should be issued in that case.
@@ -960,12 +785,24 @@ namespace storm {
                                     
                                     for (auto const& stateProbabilityPair : *currentTargetStates) {
                                         StateType* newTargetState = applyUpdate(variableInformation, stateProbabilityPair.first, currentState, update);
+
+                                        storm::storage::LabeledValues<double> newProbability;
+                                        
+                                        double updateProbability = update.getLikelihoodExpression()->getValueAsDouble(currentState);
+                                        for (auto const& valueLabelSetPair : stateProbabilityPair.second) {
+                                            // Copy the label set, so we can modify it.
+                                            std::set<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
+                                            newLabelSet.insert(update.getGlobalIndex());
+                                            
+                                            newProbability.addValue(valueLabelSetPair.first * updateProbability, newLabelSet);
+                                        }
                                         
                                         auto existingStateProbabilityPair = newTargetStates->find(newTargetState);
                                         if (existingStateProbabilityPair == newTargetStates->end()) {
-                                            (*newTargetStates)[newTargetState] = stateProbabilityPair.second * update.getLikelihoodExpression()->getValueAsDouble(currentState);
-                                        } else {
-                                            existingStateProbabilityPair->second += stateProbabilityPair.second * update.getLikelihoodExpression()->getValueAsDouble(currentState);
+                                            (*newTargetStates)[newTargetState] = newProbability;
+                                        } else {                                            
+                                            existingStateProbabilityPair->second += newProbability;
+                                            
                                             // If the state was already seen in one of the other updates, we need to delete this copy.
                                             delete newTargetState;
                                         }
@@ -977,9 +814,10 @@ namespace storm {
                                     for (auto const& stateProbabilityPair : *currentTargetStates) {
                                         delete stateProbabilityPair.first;
                                     }
+                                    
                                     delete currentTargetStates;
                                     currentTargetStates = newTargetStates;
-                                    newTargetStates = new std::unordered_map<StateType*, double, StateHash, StateCompare>();
+                                    newTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>();
                                 }
                             }
                             
@@ -997,11 +835,18 @@ namespace storm {
                             }
                             
                             double probabilitySum = 0;
-                            std::set<uint_fast64_t> labels;
                             for (auto const& stateProbabilityPair : *newTargetStates) {
-                                uint_fast64_t newStateIndex = stateInformation.stateToIndexMap.at(stateProbabilityPair.first);
-                                addProbabilityToChoice(choice, newStateIndex, stateProbabilityPair.second, labels);
-                                probabilitySum += stateProbabilityPair.second;
+                                std::pair<bool, uint_fast64_t> flagTargetStateIndexPair = getOrAddStateIndex(stateProbabilityPair.first, stateInformation);
+
+                                // If the state has not been discovered yet, add it to the queue of states to be explored.
+                                if (!flagTargetStateIndexPair.first) {
+                                    stateQueue.push(flagTargetStateIndexPair.second);
+                                }
+                                
+                                for (auto const& probabilityLabelPair : stateProbabilityPair.second) {
+                                    addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityLabelPair.first, probabilityLabelPair.second);
+                                    probabilitySum += probabilityLabelPair.first;
+                                }
                             }
                             
                             // Check that the resulting distribution is in fact a distribution.
@@ -1035,18 +880,39 @@ namespace storm {
             }
             
             /*!
+             * Builds the transition matrix and the transition reward matrix based for the given program.
              *
+             * @param program The program for which to build the matrices.
+             * @param variableInformation A structure containing information about the variables in the program.
+             * @param transitionRewards A list of transition rewards that are to be considered in the transition reward
+             * matrix.
+             * @param stateInformation A structure containing information about the states of the program.
+             * @param deterministicModel A flag indicating whether the model is supposed to be deterministic or not.
+             * @param transitionMatrix A reference to an initialized matrix which is filled with all transitions by this
+             * function.
+             * @param transitionRewardMatrix A reference to an initialized matrix which is filled with all transition
+             * rewards by this function.
+             * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
+             * and a vector containing the labels associated with each choice.
              */
-            static std::pair<std::vector<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation const& stateInformation, bool deterministicModel, storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::SparseMatrix<ValueType>& transitionRewardMatrix) {
-                std::vector<uint_fast64_t> nondeterministicChoiceIndices(stateInformation.reachableStates.size() + 1);
+            static std::pair<std::vector<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::SparseMatrix<ValueType>& transitionRewardMatrix) {
+                std::vector<uint_fast64_t> nondeterministicChoiceIndices;
                 std::vector<std::set<uint_fast64_t>> choiceLabels;
                 
-                // Add transitions and rewards for all states.
+                // Initialize a queue and insert the initial state.
+                std::queue<uint_fast64_t> stateQueue;
+                StateType* initialState = getInitialState(program, variableInformation);
+                getOrAddStateIndex(initialState, stateInformation);
+                stateQueue.push(stateInformation.stateToIndexMap[initialState]);
+                
+                // Now explore the current state until there is no more reachable state.
                 uint_fast64_t currentRow = 0;
-                for (uint_fast64_t currentState = 0; currentState < stateInformation.reachableStates.size(); ++currentState) {
+                while (!stateQueue.empty()) {
+                    uint_fast64_t currentState = stateQueue.front();
+            
                     // Retrieve all choices for the current state.
-                    std::list<Choice<ValueType>> allUnlabeledChoices = getUnlabeledTransitions(program, stateInformation, variableInformation, currentState);
-                    std::list<Choice<ValueType>> allLabeledChoices = getLabeledTransitions(program, stateInformation, variableInformation, currentState);
+                    std::list<Choice<ValueType>> allUnlabeledChoices = getUnlabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue);
+                    std::list<Choice<ValueType>> allLabeledChoices = getLabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue);
                     
                     uint_fast64_t totalNumberOfChoices = allUnlabeledChoices.size() + allLabeledChoices.size();
                     
@@ -1054,7 +920,10 @@ namespace storm {
                     // requested and issue an error otherwise.
                     if (totalNumberOfChoices == 0) {
                         if (storm::settings::Settings::getInstance()->isSet("fixDeadlocks")) {
-                            transitionMatrix.insertNextValue(currentRow, currentState, storm::utility::constGetOne<ValueType>());
+                            transitionMatrix.insertNextValue(currentRow, currentState, storm::utility::constGetOne<ValueType>(), true);
+                            if (transitionRewards.size() > 0) {
+                                transitionRewardMatrix.insertEmptyRow(true);
+                            }
                             ++currentRow;
                         } else {
                             LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
@@ -1065,6 +934,7 @@ namespace storm {
                         // or compose them to one choice.
                         if (deterministicModel) {
                             Choice<ValueType> globalChoice("");
+                            std::map<uint_fast64_t, ValueType> stateToRewardMap;
                             std::set<uint_fast64_t> allChoiceLabels;
                             
                             // Combine all the choices and scale them with the total number of choices of the current state.
@@ -1072,28 +942,51 @@ namespace storm {
                                 globalChoice.addChoiceLabels(choice.getChoiceLabels());
                                 for (auto const& stateProbabilityPair : choice) {
                                     globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
+                                    
+                                    // Now add all rewards that match this choice.
+                                    for (auto const& transitionReward : transitionRewards) {
+                                        if (transitionReward.getActionName() == "" && transitionReward.getStatePredicate()->getValueAsBool(stateInformation.reachableStates.at(currentState))) {
+                                            stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValue()->getValueAsDouble(stateInformation.reachableStates.at(currentState)));
+                                        }
+                                    }
                                 }
                             }
                             for (auto const& choice : allLabeledChoices) {
                                 globalChoice.addChoiceLabels(choice.getChoiceLabels());
                                 for (auto const& stateProbabilityPair : choice) {
                                     globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
+                                
+                                    // Now add all rewards that match this choice.
+                                    for (auto const& transitionReward : transitionRewards) {
+                                        if (transitionReward.getActionName() == choice.getActionLabel() && transitionReward.getStatePredicate()->getValueAsBool(stateInformation.reachableStates.at(currentState))) {
+                                            stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValue()->getValueAsDouble(stateInformation.reachableStates.at(currentState)));
+                                        }
+                                    }
                                 }
                             }
 
                             
                             // Now add the resulting distribution as the only choice of the current state.
-                            nondeterministicChoiceIndices[currentState] = currentRow;
+                            nondeterministicChoiceIndices.push_back(currentRow);
                             choiceLabels.push_back(globalChoice.getChoiceLabels());
                             
                             for (auto const& stateProbabilityPair : globalChoice) {
-                                transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
+                                transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second, true);
+                            }
+                            
+                            // Add all transition rewards to the matrix and add dummy entry if there is none.
+                            if (stateToRewardMap.size() > 0) {
+                                for (auto const& stateRewardPair : stateToRewardMap) {
+                                    transitionRewardMatrix.insertNextValue(currentRow, stateRewardPair.first, stateRewardPair.second, true);
+                                }
+                            } else if (transitionRewards.size() > 0) {
+                                transitionRewardMatrix.insertEmptyRow(true);
                             }
                             
                             ++currentRow;
                         } else {
                             // If the model is nondeterministic, we add all choices individually.
-                            nondeterministicChoiceIndices[currentState] = currentRow;
+                            nondeterministicChoiceIndices.push_back(currentRow);
                             
                             // First, process all unlabeled choices.
                             for (auto const& choice : allUnlabeledChoices) {
@@ -1101,7 +994,7 @@ namespace storm {
                                 choiceLabels.emplace_back(std::move(choice.getChoiceLabels()));
                                 
                                 for (auto const& stateProbabilityPair : choice) {
-                                    transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
+                                    transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second, true);
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
@@ -1112,9 +1005,13 @@ namespace storm {
 
                                 }
                                 
-                                // Add all transition rewards to the matrix.
-                                for (auto const& stateRewardPair : stateToRewardMap) {
-                                    transitionRewardMatrix.insertNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
+                                // Add all transition rewards to the matrix and add dummy entry if there is none.
+                                if (stateToRewardMap.size() > 0) {
+                                    for (auto const& stateRewardPair : stateToRewardMap) {
+                                        transitionRewardMatrix.insertNextValue(currentRow, stateRewardPair.first, stateRewardPair.second, true);
+                                    }
+                                } else if (transitionRewards.size() > 0) {
+                                    transitionRewardMatrix.insertEmptyRow(true);
                                 }
                                 
                                 ++currentRow;
@@ -1126,29 +1023,35 @@ namespace storm {
                                 choiceLabels.emplace_back(std::move(choice.getChoiceLabels()));
 
                                 for (auto const& stateProbabilityPair : choice) {
-                                    transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
+                                    transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second, true);
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
-                                        if (transitionReward.getActionName() == "" && transitionReward.getStatePredicate()->getValueAsBool(stateInformation.reachableStates.at(currentState))) {
+                                        if (transitionReward.getActionName() == choice.getActionLabel() && transitionReward.getStatePredicate()->getValueAsBool(stateInformation.reachableStates.at(currentState))) {
                                             stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValue()->getValueAsDouble(stateInformation.reachableStates.at(currentState)));
                                         }
                                     }
 
                                 }
                                 
-                                // Add all transition rewards to the matrix.
-                                for (auto const& stateRewardPair : stateToRewardMap) {
-                                    transitionRewardMatrix.insertNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
+                                // Add all transition rewards to the matrix and add dummy entry if there is none.
+                                if (stateToRewardMap.size() > 0) {
+                                    for (auto const& stateRewardPair : stateToRewardMap) {
+                                        transitionRewardMatrix.insertNextValue(currentRow, stateRewardPair.first, stateRewardPair.second, true);
+                                    }
+                                } else if (transitionRewards.size() > 0) {
+                                    transitionRewardMatrix.insertEmptyRow(true);
                                 }
 
                                 ++currentRow;
                             }
                         }
                     }
+                    
+                    stateQueue.pop();
                 }
                 
-                nondeterministicChoiceIndices[stateInformation.reachableStates.size()] = currentRow;
+                nondeterministicChoiceIndices.push_back(currentRow);
                 
                 return std::make_pair(nondeterministicChoiceIndices, choiceLabels);
             }
@@ -1166,38 +1069,28 @@ namespace storm {
                 
                 VariableInformation variableInformation = createVariableInformation(program);
                 
-                // Start by exploring the state space.
-                StateInformation stateInformation = exploreReachableStateSpace(program, variableInformation);
+                // Initialize the matrices.
+                modelComponents.transitionMatrix.initialize();
+                modelComponents.transitionRewardMatrix.initialize();
                 
-                // Then build the transition and reward matrices for the reachable states.
-                bool deterministicModel = program.getModelType() == storm::ir::Program::DTMC || program.getModelType() == storm::ir::Program::CTMC;
-                if (deterministicModel) {
-                    modelComponents.transitionMatrix = storm::storage::SparseMatrix<ValueType>(stateInformation.reachableStates.size());
-                    modelComponents.transitionMatrix.initialize();
-                    modelComponents.transitionRewardMatrix = storm::storage::SparseMatrix<ValueType>(stateInformation.reachableStates.size());
-                    modelComponents.transitionRewardMatrix.initialize();
-                } else {
-                    uint_fast64_t totalNumberOfChoices = 0;
-                    for (auto numberOfChoices : stateInformation.numberOfChoices) {
-                        totalNumberOfChoices += numberOfChoices;
-                    }
-                    modelComponents.transitionMatrix = storm::storage::SparseMatrix<ValueType>(totalNumberOfChoices, stateInformation.reachableStates.size());
-                    modelComponents.transitionMatrix.initialize();
-                    modelComponents.transitionRewardMatrix = storm::storage::SparseMatrix<ValueType>(totalNumberOfChoices);
-                    modelComponents.transitionRewardMatrix.initialize();
-                }
+                // Create the structure for storing the reachable state space.
+                StateInformation stateInformation;
                 
                 // Get the selected reward model or create an empty one if none is selected.
                 storm::ir::RewardModel const& rewardModel = rewardModelName != "" ? program.getRewardModel(rewardModelName) : storm::ir::RewardModel();
                 
+                // Determine whether we have to combine different choices to one or whether this model can have more than
+                // one choice per state.
+                bool deterministicModel = program.getModelType() == storm::ir::Program::DTMC || program.getModelType() == storm::ir::Program::CTMC;
+
                 // Build the transition and reward matrices.
                 std::pair<std::vector<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, modelComponents.transitionMatrix, modelComponents.transitionRewardMatrix);
                 modelComponents.nondeterministicChoiceIndices = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.first);
                 modelComponents.choiceLabeling = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.second);
                 
                 // Finalize the resulting matrices.
-                modelComponents.transitionMatrix.finalize();
-                modelComponents.transitionRewardMatrix.finalize();
+                modelComponents.transitionMatrix.finalize(true);
+                modelComponents.transitionRewardMatrix.finalize(true);
                 
                 // Now build the state labeling.
                 modelComponents.stateLabeling = buildStateLabeling(program, variableInformation, stateInformation);
@@ -1213,6 +1106,14 @@ namespace storm {
                 return modelComponents;
             }
             
+            /*!
+             * Builds the state labeling for the given program.
+             *
+             * @param program The program for which to build the state labeling.
+             * @param variableInformation Information about the variables in the program.
+             * @param stateInformation Information about the state space of the program.
+             * @return The state labeling of the given program.
+             */
             static storm::models::AtomicPropositionsLabeling buildStateLabeling(storm::ir::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation) {
                 std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> const& labels = program.getLabels();
                 
@@ -1241,6 +1142,13 @@ namespace storm {
                 return result;
             }
 
+            /*!
+             * Builds the state rewards for the given state space.
+             *
+             * @param rewards A vector of state rewards to consider.
+             * @param stateInformation Information about the state space.
+             * @return A vector containing the state rewards for the state space.
+             */
             static std::vector<ValueType> buildStateRewards(std::vector<storm::ir::StateReward> const& rewards, StateInformation const& stateInformation) {
                 std::vector<ValueType> result(stateInformation.reachableStates.size());
                 for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
