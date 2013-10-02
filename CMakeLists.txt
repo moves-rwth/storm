@@ -264,6 +264,9 @@ endif(ADDITIONAL_LINK_DIRS)
 if (ENABLE_GUROBI)
 	link_directories("${GUROBI_ROOT}/lib")
 endif()
+if (ENABLE_Z3)
+    link_directories("${Z3_ROOT}/bin")
+endif()
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
 	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
@@ -335,6 +338,19 @@ if (ENABLE_GUROBI)
     target_link_libraries(storm-functional-tests "gurobi55")
     target_link_libraries(storm-performance-tests "gurobi55")
 endif(ENABLE_GUROBI)
+
+#############################################################
+##
+##	Z3 (optional)
+##
+#############################################################
+if (ENABLE_Z3)
+    message (STATUS "StoRM - Linking with Z3")
+	include_directories("${Z3_ROOT}/include")
+    target_link_libraries(storm "z3")
+    target_link_libraries(storm-functional-tests "z3")
+    target_link_libraries(storm-performance-tests "z3")
+endif(ENABLE_Z3)
 
 #############################################################
 ##
