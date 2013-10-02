@@ -17,6 +17,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/Settings.h"
 #include "src/models/AbstractNondeterministicModel.h"
+#include "src/utility/set.h"
 
 namespace storm {
 
@@ -125,25 +126,46 @@ public:
 		return MDP;
 	}
 
-//    /*!
-//     * Constructs an MDP by copying the given MDP and restricting the choices of each state to the ones whose label set
-//     * is contained in the given label set.
-//     *
-//     * @param originalModel The model to restrict.
-//     * @param enabledChoiceLabels A set of labels that determines which choices of the original model can be taken
-//     * and which ones need to be ignored.
-//     */
-//    Mdp<T> restrictChoiceLabels(Mdp<T> const& originalModel, std::set<uint_fast64_t> const& enabledChoiceLabels) {
-//        // Only perform this operation if the given model has choice labels.
-//        if (!originalModel.hasChoiceLabels()) {
-//            throw storm::exceptions::InvalidArgumentException() << "Restriction to label set is impossible for unlabeled model.";
-//        }
-//        
-//        storm::storage::SparseMatrix<T> transitionMatrix();
-//        
-//        Mdp<T> result;
-//        return result;
-//    }
+    /*!
+     * Constructs an MDP by copying the given MDP and restricting the choices of each state to the ones whose label set
+     * is contained in the given label set.
+     *
+     * @param originalModel The model to restrict.
+     * @param enabledChoiceLabels A set of labels that determines which choices of the original model can be taken
+     * and which ones need to be ignored.
+     */
+    Mdp<T> restrictChoiceLabels(Mdp<T> const& originalModel, std::set<uint_fast64_t> const& enabledChoiceLabels) {
+        // Only perform this operation if the given model has choice labels.
+        if (!originalModel.hasChoiceLabels()) {
+            throw storm::exceptions::InvalidArgumentException() << "Restriction to label set is impossible for unlabeled model.";
+        }
+        
+        std::vector<std::set<uint_fast64_t>> const& choiceLabeling = this->getChoiceLabeling();
+        
+        storm::storage::SparseMatrix<T> transitionMatrix;
+        transitionMatrix.initialize();
+        
+        // Check for each choice of each state, whether the choice labels are fully contained in the given label set.
+        for(uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+            for (uint_fast64_t choice = this->getNondeterministicChoiceIndices()[state]; choice < this->getNondeterministicChoiceIndices()[state + 1]; ++choice) {
+                bool choiceValid = storm::utility::set::isSubsetOf(choiceLabeling[state], enabledChoiceLabels);
+                
+                // If the choice is valid, copy over all its elements.
+                if (choiceValid) {
+                    typename storm::storage::SparseMatrix<T>::Rows row = this->getTransitionMatrix().getRows(choice, choice);
+                    for (typename storm::storage::SparseMatrix<T>::ConstIterator rowIt = row.begin(), rowIte = row.end(); rowIt != rowIte; ++rowIt) {
+                        transitionMatrix.insertNextValue(choice, rowIt.column(), rowIt.value(), true);
+                    }
+                } else {
+                    // If the choice may not be taken, we insert a self-loop to the state instead.
+                    transitionMatrix.insertNextValue(choice, state, storm::utility::constGetOne<T>(), true);
+                }
+            }
+        }
+        
+        Mdp<T> restrictedMdp(std::move(transitionMatrix), storm::models::AtomicPropositionsLabeling(this->getStateLabeling()), std::vector<uint_fast64_t>(this->getNondeterministicChoiceIndices()), this->hasStateRewards() ? boost::optional<std::vector<T>>(this->getStateRewardVector()) : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<T>>(this->getTransitionRewardMatrix()) : boost::optional<storm::storage::SparseMatrix<T>>(), boost::optional<std::vector<std::set<uint_fast64_t>>>(this->getChoiceLabeling()));
+        return restrictedMdp;
+    }
     
 	/*!
 	 * Calculates a hash over all values contained in this Model.
