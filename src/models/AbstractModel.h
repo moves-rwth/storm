@@ -217,7 +217,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             // First, we need to count how many backward transitions each state has.
             for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                 typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(i);
-                for (auto& transition : rows) {
+                for (auto const& transition : rows) {
                     if (transition.value() > 0) {
                         ++rowIndications[transition.column() + 1];
                     }

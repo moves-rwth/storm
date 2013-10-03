@@ -19,6 +19,9 @@
 // Whether Gurobi is available and to be used (define/undef)
 #@STORM_CPP_GUROBI_DEF@ STORM_HAVE_GUROBI
 
+// Whether Z3 is available and to be used (define/undef)
+#@STORM_CPP_Z3_DEF@ STORM_HAVE_Z3
+
 // Whether Intel Threading Building Blocks are available and to be used (define/undef)
 #@STORM_CPP_INTELTBB_DEF@ STORM_HAVE_INTELTBB
 

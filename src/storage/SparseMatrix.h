@@ -159,7 +159,7 @@ public:
 		 *
 		 * @return The value of the current non-zero element to which this iterator points.
          */
-		T const& value() {
+		T const& value() const {
 			return *valuePtr;
 		}
         

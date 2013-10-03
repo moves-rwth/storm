@@ -27,6 +27,7 @@
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
+#include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/utility/ErrorHandling.h"
@@ -332,17 +333,27 @@ int main(const int argc, const char* argv[]) {
 		} else if (s->isSet("symbolic")) {
 			std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
 			std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
-			std::shared_ptr<storm::models::AbstractModel<storm::storage::LabeledValues<double>>> model = storm::adapters::ExplicitModelAdapter<storm::storage::LabeledValues<double>>::translateProgram(storm::parser::PrismParserFromFile(programFile), constants);
+            storm::ir::Program program = storm::parser::PrismParserFromFile(programFile);
+			std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
 			model->printModelInformationToStream(std::cout);
 
             // Enable the following lines to test the MinimalLabelSetGenerator.
-//            if (model->getType() == storm::models::MDP) {
-//                std::shared_ptr<storm::models::Mdp<storm::storage::LabeledValues<double>>> labeledMdp = model->as<storm::models::Mdp<storm::storage::LabeledValues<double>>>();
-//                storm::storage::BitVector const& finishedStates = labeledMdp->getLabeledStates("finished");
-//                storm::storage::BitVector const& allCoinsEqual1States = labeledMdp->getLabeledStates("all_coins_equal_1");
-//                storm::storage::BitVector targetStates = finishedStates & allCoinsEqual1States;
-//                storm::counterexamples::MinimalLabelSetGenerator<storm::storage::LabeledValues<double>>::getMinimalLabelSet(*labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), targetStates, 0.3, true, true);
-//            }
+            if (model->getType() == storm::models::MDP) {
+                std::shared_ptr<storm::models::Mdp<double>> labeledMdp = model->as<storm::models::Mdp<double>>();
+                storm::storage::BitVector const& finishedStates = labeledMdp->getLabeledStates("finished");
+                storm::storage::BitVector const& allCoinsEqual1States = labeledMdp->getLabeledStates("all_coins_equal_1");
+                storm::storage::BitVector targetStates = finishedStates & allCoinsEqual1States;
+                storm::counterexamples::MILPMinimalLabelSetGenerator<double>::getMinimalLabelSet(*labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), targetStates, 0.3, true, true);
+            }
+            
+            // Enable the following lines to test the SMTMinimalCommandSetGenerator.
+            if (model->getType() == storm::models::MDP) {
+                std::shared_ptr<storm::models::Mdp<double>> labeledMdp = model->as<storm::models::Mdp<double>>();
+                storm::storage::BitVector const& finishedStates = labeledMdp->getLabeledStates("finished");
+                storm::storage::BitVector const& allCoinsEqual1States = labeledMdp->getLabeledStates("all_coins_equal_1");
+                storm::storage::BitVector targetStates = finishedStates & allCoinsEqual1States;
+                storm::counterexamples::SMTMinimalCommandSetGenerator<double>::getMinimalCommandSet(program, *labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), targetStates, 0.3, true);
+            }
 		}
 
         // Perform clean-up and terminate.

@@ -76,28 +76,27 @@ namespace storm {
                 }
                 
                 /*!
-                 * Checks the given formula that is a bounded-until formula.
+                 * Computes the probability to satisfy phi until psi within a limited number of steps for each state.
                  *
-                 * @param formula The formula to check.
-                 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+                 * @param phiStates A bit vector indicating which states satisfy phi.
+                 * @param psiStates A bit vector indicating which states satisfy psi.
+                 * @param stepBound The upper bound for the number of steps.
+                 * @param qualitative A flag indicating whether the check only needs to be done qualitatively, i.e. if the
                  * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
                  * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
                  * bounds 0 and 1.
-                 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
-                 * checker. If the qualitative flag is set, exact probabilities might not be computed.
+                 * @return The probabilities for satisfying phi until psi within a limited number of steps for each state.
+                 * If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type> checkBoundedUntil(const storm::property::prctl::BoundedUntil<Type>& formula, bool qualitative) const {
-                    // First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-                    storm::storage::BitVector leftStates = formula.getLeft().check(*this);
-                    storm::storage::BitVector rightStates = formula.getRight().check(*this);
+                std::vector<Type> checkBoundedUntil(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, bool qualitative) const {
                     std::vector<Type> result(this->getModel().getNumberOfStates());
-                    
+
                     // Determine the states that have 0 probability of reaching the target states.
                     storm::storage::BitVector statesWithProbabilityGreater0;
                     if (this->minimumOperatorStack.top()) {
-                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), leftStates, rightStates, true, formula.getBound());
+                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
                     } else {
-                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), leftStates, rightStates, true, formula.getBound());
+                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
                     }
                     
                     // Check if we already know the result (i.e. probability 0) for all initial states and
@@ -118,7 +117,7 @@ namespace storm {
                         std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(statesWithProbabilityGreater0);
                         
                         // Compute the new set of target states in the reduced system.
-                        storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % rightStates;
+                        storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % psiStates;
                         
                         // Make all rows absorbing that satisfy the second sub-formula.
                         submatrix.makeRowsAbsorbing(rightStatesInReducedSystem, subNondeterministicChoiceIndices);
@@ -128,7 +127,7 @@ namespace storm {
                         storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
                         
                         if (linearEquationSolver != nullptr) {
-                            this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), submatrix, subresult, subNondeterministicChoiceIndices, nullptr, formula.getBound());
+                            this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), submatrix, subresult, subNondeterministicChoiceIndices, nullptr, stepBound);
                         } else {
                             throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
                         }
@@ -142,20 +141,32 @@ namespace storm {
                 }
                 
                 /*!
-                 * Checks the given formula that is a next formula.
+                 * Checks the given formula that is a bounded-until formula.
                  *
                  * @param formula The formula to check.
                  * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
                  * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
                  * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
                  * bounds 0 and 1.
-                 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+                 * @return The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type> checkNext(const storm::property::prctl::Next<Type>& formula, bool qualitative) const {
-                    // First, we need to compute the states that satisfy the sub-formula of the next-formula.
-                    storm::storage::BitVector nextStates = formula.getChild().check(*this);
-                    
+                virtual std::vector<Type> checkBoundedUntil(storm::property::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
+                    return checkBoundedUntil(formula.getLeft().check(*this), formula.getRight().check(*this), formula.getBound(), qualitative);
+                }
+                
+                /*!
+                 * Computes the probability to reach the given set of states in the next step for each state.
+                 *
+                 * @param nextStates A bit vector defining the states to reach in the next state.
+                 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+                 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+                 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+                 * bounds 0 and 1.
+                 * @return The probabilities to reach the gien set of states in the next step for each state. If the
+                 * qualitative flag is set, exact probabilities might not be computed.
+                 */
+                virtual std::vector<Type> checkNext(storm::storage::BitVector const& nextStates, bool qualitative) const {
                     // Create the vector with which to multiply and initialize it correctly.
                     std::vector<Type> result(this->getModel().getNumberOfStates());
                     storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constGetOne<Type>());
@@ -167,6 +178,21 @@ namespace storm {
                     }
                     
                     return result;
+                }
+                
+                /*!
+                 * Checks the given formula that is a next formula.
+                 *
+                 * @param formula The formula to check.
+                 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+                 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+                 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+                 * bounds 0 and 1.
+                 * @return The probabilities for the given formula to hold on every state of the model associated with this model
+                 * checker. If the qualitative flag is set, exact probabilities might not be computed.
+                 */
+                virtual std::vector<Type> checkNext(const storm::property::prctl::Next<Type>& formula, bool qualitative) const {
+                    return checkNext(formula.getChild().check(*this), qualitative);
                 }
                 
                 /*!
@@ -239,14 +265,15 @@ namespace storm {
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
                 virtual std::vector<Type> checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative) const {
-                    return this->checkUntil(this->minimumOperatorStack.top(), formula, qualitative, nullptr);
+                    return this->checkUntil(this->minimumOperatorStack.top(), formula.getLeft().check(*this), formula.getRight().check(*this), qualitative, nullptr);
                 }
                 
                 /*!
-                 * Check the given formula that is an until formula.
+                 * Computes the extremal probability to satisfy phi until psi for each state in the model.
                  *
                  * @param minimize If set, the probability is minimized and maximized otherwise.
-                 * @param formula The formula to check.
+                 * @param phiStates A bit vector indicating which states satisfy phi.
+                 * @param psiStates A bit vector indicating which states satisfy psi.
                  * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
                  * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
                  * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
@@ -254,21 +281,17 @@ namespace storm {
                  * @param scheduler If <code>qualitative</code> is false and this vector is non-null and has as many elements as
                  * there are states in the MDP, this vector will represent a scheduler for the model that achieves the probability
                  * returned by model checking. To this end, the vector will hold the nondeterministic choice made for each state.
-                 * @return The probabilities for the given formula to hold on every state of the model associated with this model
-                 * checker. If the qualitative flag is set, exact probabilities might not be computed.
+                 * @return The probabilities for the satisfying phi until psi for each state of the model. If the
+                 * qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type> checkUntil(bool minimize, const storm::property::prctl::Until<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
-                    // First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-                    storm::storage::BitVector leftStates = formula.getLeft().check(*this);
-                    storm::storage::BitVector rightStates = formula.getRight().check(*this);
-                    
-                    // Then, we need to identify the states which have to be taken out of the matrix, i.e.
+                std::vector<Type> checkUntil(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+                    // We need to identify the states which have to be taken out of the matrix, i.e.
                     // all states that have probability 0 and 1 of satisfying the until-formula.
                     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
                     if (minimize) {
-                        statesWithProbability01 = storm::utility::graph::performProb01Min(this->getModel(), leftStates, rightStates);
+                        statesWithProbability01 = storm::utility::graph::performProb01Min(this->getModel(), phiStates, psiStates);
                     } else {
-                        statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel(), leftStates, rightStates);
+                        statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel(), phiStates, psiStates);
                     }
                     storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
                     storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
@@ -340,7 +363,7 @@ namespace storm {
                  * results are only compared against the bound 0. If set to true, this will most likely results that are only
                  * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
                  * bound 0.
-                 * @returns The reward values for the given formula for every state of the model associated with this model
+                 * @return The reward values for the given formula for every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
                 virtual std::vector<Type> checkInstantaneousReward(const storm::property::prctl::InstantaneousReward<Type>& formula, bool qualitative) const {
@@ -370,7 +393,7 @@ namespace storm {
                  * results are only compared against the bound 0. If set to true, this will most likely results that are only
                  * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
                  * bound 0.
-                 * @returns The reward values for the given formula for every state of the model associated with this model
+                 * @return The reward values for the given formula for every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
                 virtual std::vector<Type> checkCumulativeReward(const storm::property::prctl::CumulativeReward<Type>& formula, bool qualitative) const {
@@ -420,14 +443,14 @@ namespace storm {
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
                 virtual std::vector<Type> checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
-                    return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula, qualitative, nullptr);
+                    return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula.getChild().check(*this), qualitative, nullptr);
                 }
                 
                 /*!
-                 * Checks the given formula that is a reachability reward formula.
+                 * Computes the expected reachability reward that is gained before a target state is reached for each state.
                  *
                  * @param minimize If set, the reward is to be minimized and maximized otherwise.
-                 * @param formula The formula to check.
+                 * @param targetStates The target states before which rewards can be gained.
                  * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
                  * results are only compared against the bound 0. If set to true, this will most likely results that are only
                  * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
@@ -435,18 +458,15 @@ namespace storm {
                  * @param scheduler If <code>qualitative</code> is false and this vector is non-null and has as many elements as
                  * there are states in the MDP, this vector will represent a scheduler for the model that achieves the probability
                  * returned by model checking. To this end, the vector will hold the nondeterministic choice made for each state.
-                 * @return The reward values for the given formula for every state of the model associated with this model
-                 * checker. If the qualitative flag is set, exact values might not be computed.
+                 * @return The expected reward values gained before a target state is reached for each state. If the
+                 * qualitative flag is set, exact values might not be computed.
                  */
-                virtual std::vector<Type> checkReachabilityReward(bool minimize, const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+                virtual std::vector<Type> checkReachabilityReward(bool minimize, storm::storage::BitVector const& targetStates, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
                     // Only compute the result if the model has at least one reward model.
-                    if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
-                        LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
+                    if (!(this->getModel().hasStateRewards() || this->getModel().hasTransitionRewards())) {
+                        LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
                         throw storm::exceptions::InvalidPropertyException() << "Missing reward model for formula.";
                     }
-                    
-                    // Determine the states for which the target predicate holds.
-                    storm::storage::BitVector targetStates = formula.getChild().check(*this);
                     
                     // Determine which states have a reward of infinity by definition.
                     storm::storage::BitVector infinityStates;

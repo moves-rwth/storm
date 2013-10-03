@@ -127,16 +127,16 @@ public:
 	}
 
     /*!
-     * Constructs an MDP by copying the given MDP and restricting the choices of each state to the ones whose label set
+     * Constructs an MDP by copying the current MDP and restricting the choices of each state to the ones whose label set
      * is contained in the given label set.
      *
-     * @param originalModel The model to restrict.
      * @param enabledChoiceLabels A set of labels that determines which choices of the original model can be taken
      * and which ones need to be ignored.
+     * @return A restricted version of the current MDP that only uses choice labels from the given set.
      */
-    Mdp<T> restrictChoiceLabels(Mdp<T> const& originalModel, std::set<uint_fast64_t> const& enabledChoiceLabels) {
+    Mdp<T> restrictChoiceLabels(std::set<uint_fast64_t> const& enabledChoiceLabels) const {
         // Only perform this operation if the given model has choice labels.
-        if (!originalModel.hasChoiceLabels()) {
+        if (!this->hasChoiceLabels()) {
             throw storm::exceptions::InvalidArgumentException() << "Restriction to label set is impossible for unlabeled model.";
         }
         
@@ -144,26 +144,40 @@ public:
         
         storm::storage::SparseMatrix<T> transitionMatrix;
         transitionMatrix.initialize();
+        std::vector<uint_fast64_t> nondeterministicChoiceIndices;
         
         // Check for each choice of each state, whether the choice labels are fully contained in the given label set.
+        uint_fast64_t currentRow = 0;
         for(uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+            bool stateHasValidChoice = false;
             for (uint_fast64_t choice = this->getNondeterministicChoiceIndices()[state]; choice < this->getNondeterministicChoiceIndices()[state + 1]; ++choice) {
                 bool choiceValid = storm::utility::set::isSubsetOf(choiceLabeling[state], enabledChoiceLabels);
                 
                 // If the choice is valid, copy over all its elements.
                 if (choiceValid) {
+                    if (!stateHasValidChoice) {
+                        nondeterministicChoiceIndices.push_back(currentRow);
+                    }
+                    stateHasValidChoice = true;
                     typename storm::storage::SparseMatrix<T>::Rows row = this->getTransitionMatrix().getRows(choice, choice);
                     for (typename storm::storage::SparseMatrix<T>::ConstIterator rowIt = row.begin(), rowIte = row.end(); rowIt != rowIte; ++rowIt) {
-                        transitionMatrix.insertNextValue(choice, rowIt.column(), rowIt.value(), true);
+                        transitionMatrix.insertNextValue(currentRow, rowIt.column(), rowIt.value(), true);
                     }
-                } else {
-                    // If the choice may not be taken, we insert a self-loop to the state instead.
-                    transitionMatrix.insertNextValue(choice, state, storm::utility::constGetOne<T>(), true);
-                }
+                    ++currentRow;
+                } 
+            }
+            
+            // If no choice of the current state may be taken, we insert a self-loop to the state instead.
+            if (!stateHasValidChoice) {
+                nondeterministicChoiceIndices.push_back(currentRow);
+                transitionMatrix.insertNextValue(currentRow, state, storm::utility::constGetOne<T>(), true);
+                ++currentRow;
             }
         }
-        
-        Mdp<T> restrictedMdp(std::move(transitionMatrix), storm::models::AtomicPropositionsLabeling(this->getStateLabeling()), std::vector<uint_fast64_t>(this->getNondeterministicChoiceIndices()), this->hasStateRewards() ? boost::optional<std::vector<T>>(this->getStateRewardVector()) : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<T>>(this->getTransitionRewardMatrix()) : boost::optional<storm::storage::SparseMatrix<T>>(), boost::optional<std::vector<std::set<uint_fast64_t>>>(this->getChoiceLabeling()));
+        transitionMatrix.finalize(true);
+        nondeterministicChoiceIndices.push_back(currentRow);
+                
+        Mdp<T> restrictedMdp(std::move(transitionMatrix), storm::models::AtomicPropositionsLabeling(this->getStateLabeling()), std::move(nondeterministicChoiceIndices), this->hasStateRewards() ? boost::optional<std::vector<T>>(this->getStateRewardVector()) : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<T>>(this->getTransitionRewardMatrix()) : boost::optional<storm::storage::SparseMatrix<T>>(), boost::optional<std::vector<std::set<uint_fast64_t>>>(this->getChoiceLabeling()));
         return restrictedMdp;
     }
     

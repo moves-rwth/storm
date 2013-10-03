@@ -32,7 +32,7 @@ namespace storm {
          * property in terms of used labels.
          */
         template <class T>
-        class MinimalLabelSetGenerator {
+        class MILPMinimalLabelSetGenerator {
 #ifdef STORM_HAVE_GUROBI
         private:
             /*!

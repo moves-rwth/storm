@@ -43,6 +43,7 @@ namespace storm {
                         
                     // Otherwise, we have found an equivalent element and can continue with the next one.
                 }
+                return true;
             }
             
         } // namespace set
