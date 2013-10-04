@@ -137,6 +137,22 @@ namespace storm {
             }
 
             /*!
+             * Asserts that at most one of the blocking variables may be true at any time.
+             *
+             * @param context The Z3 context in which to build the expressions.
+             * @param solver The solver to use for the satisfiability evaluation.
+             * @param blockingVariables A vector of variables out of which only one may be true.
+             */
+            static void assertAtMostOne(z3::context& context, z3::solver& solver, std::vector<z3::expr> const& blockingVariables) {
+                for (uint_fast64_t i = 0; i < blockingVariables.size(); ++i) {
+                    for (uint_fast64_t j = i + 1; j < blockingVariables.size(); ++j) {
+                        solver.add(!blockingVariables[i] || !blockingVariables[j]);
+                    }
+                }
+            }
+
+            
+            /*!
              * Performs one Fu-Malik-Maxsat step.
              *
              * @param context The Z3 context in which to build the expressions.
@@ -144,14 +160,12 @@ namespace storm {
              * @param variableInformation A structure with information about the variables for the labels.
              * @return True iff the constraint system was satisfiable.
              */
-            static bool fuMalikMaxsatStep(z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, uint_fast64_t& nextFreeVariableIndex) {
+            static bool fuMalikMaxsatStep(z3::context& context, z3::solver& solver, VariableInformation& variableInformation, std::vector<z3::expr>& softConstraints, uint_fast64_t& nextFreeVariableIndex) {
                 z3::expr_vector assumptions(context);
                 for (auto const& auxVariable : variableInformation.auxiliaryVariables) {
                     assumptions.push_back(!auxVariable);
                 }
-                
-                std::cout << solver << std::endl;
-                
+                                
                 // Check whether the assumptions are satisfiable.
                 z3::check_result result = solver.check(assumptions);
                 
@@ -166,18 +180,67 @@ namespace storm {
                     // Create stringstream to build expression names.
                     std::stringstream variableName;
                     
-                    // Create fresh blocking variables.
-                    for (uint_fast64_t i = 0; i < unsatCore.size(); ++i) {
-                        variableName.clear();
-                        variableName.str("");
-                        variableName << "b" << nextFreeVariableIndex;
-                        blockingVariables.push_back(context.bool_const(variableName.str().c_str()));
-                        ++nextFreeVariableIndex;
+                    for (uint_fast64_t softConstraintIndex = 0; softConstraintIndex < softConstraints.size(); ++softConstraintIndex) {
+                        for (uint_fast64_t coreIndex = 0; coreIndex < unsatCore.size(); ++coreIndex) {
+                            bool isContainedInCore = false;
+                            if (softConstraints[softConstraintIndex] == unsatCore[coreIndex]) {
+                                isContainedInCore = true;
+                            }
+                            
+                            if (isContainedInCore) {
+                                variableName.clear();
+                                variableName.str("");
+                                variableName << "b" << nextFreeVariableIndex;
+                                blockingVariables.push_back(context.bool_const(variableName.str().c_str()));
+                                
+                                variableName.clear();
+                                variableName.str("");
+                                variableName << "a" << nextFreeVariableIndex;
+                                ++nextFreeVariableIndex;
+                                variableInformation.auxiliaryVariables[softConstraintIndex] = context.bool_const(variableName.str().c_str());
+                                
+                                softConstraints[softConstraintIndex] = softConstraints[softConstraintIndex] || blockingVariables.back();
+                                
+                                solver.add(softConstraints[softConstraintIndex] || variableInformation.auxiliaryVariables[softConstraintIndex]);
+                            }
+                        }
                     }
+                    
+                    assertAtMostOne(context, solver, blockingVariables);
                 }
                 
                 return false;
             }
+            
+            /*!
+             * Rules out the given command set for the given solver.
+             *
+             * @param context The Z3 context in which to build the expressions.
+             * @param solver The solver to use for the satisfiability evaluation.
+             * @param commandSet The command set to rule out as a solution.
+             * @param variableInformation A structure with information about the variables for the labels.
+             */
+            static void ruleOutSolution(z3::context& context, z3::solver& solver, std::set<uint_fast64_t> const& commandSet, VariableInformation const& variableInformation) {
+                std::map<uint_fast64_t, uint_fast64_t>::const_iterator labelIndexIterator = variableInformation.labelToIndexMap.begin();
+                z3::expr blockSolutionExpression(context);
+                if (commandSet.find(labelIndexIterator->first) != commandSet.end()) {
+                    blockSolutionExpression = !variableInformation.labelVariables[labelIndexIterator->second];
+                } else {
+                    blockSolutionExpression = variableInformation.labelVariables[labelIndexIterator->second];
+                }
+                ++labelIndexIterator;
+
+                for (; labelIndexIterator != variableInformation.labelToIndexMap.end(); ++labelIndexIterator) {
+                    if (commandSet.find(labelIndexIterator->first) != commandSet.end()) {
+                        blockSolutionExpression = blockSolutionExpression || !variableInformation.labelVariables[labelIndexIterator->second];
+                    } else {
+                        blockSolutionExpression = blockSolutionExpression || variableInformation.labelVariables[labelIndexIterator->second];
+                    }
+                }
+                
+                solver.add(blockSolutionExpression);
+            }
+
             
             /*!
              * Finds the smallest set of labels such that the constraint system of the solver is still satisfiable.
@@ -187,18 +250,28 @@ namespace storm {
              * @param variableInformation A structure with information about the variables for the labels.
              * @return The smallest set of labels such that the constraint system of the solver is still satisfiable.
              */
-            static std::set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, uint_fast64_t& nextFreeVariableIndex) {
-                for (uint_fast64_t i = 0;; ++i) {
-                    if (fuMalikMaxsatStep(context, solver, variableInformation)) {
+            static std::set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation& variableInformation, std::vector<z3::expr>& softConstraints, uint_fast64_t& nextFreeVariableIndex) {
+                for (uint_fast64_t i = 0; ; ++i) {
+                    if (fuMalikMaxsatStep(context, solver, variableInformation, softConstraints, nextFreeVariableIndex)) {
                         break;
                     }
                 }
                 
                 // Now we are ready to construct the label set from the model of the solver.
                 std::set<uint_fast64_t> result;
-                
+                z3::model model = solver.get_model();
                 for (auto const& labelIndexPair : variableInformation.labelToIndexMap) {
-                    result.insert(labelIndexPair.first);
+                    z3::expr value = model.eval(variableInformation.labelVariables[labelIndexPair.second]);
+                    
+                    std::stringstream resultStream;
+                    resultStream << value;
+                    if (resultStream.str() == "true") {
+                        result.insert(labelIndexPair.first);
+                    } else if (resultStream.str() == "false") {
+                        // Nothing to do in this case.
+                    } else {
+                        throw storm::exceptions::InvalidStateException() << "Could not retrieve value of boolean variable.";
+                    }
                 }
                 
                 return result;
@@ -234,22 +307,43 @@ namespace storm {
                 // satisfying phi until psi exceeds the given threshold, the set of labels is minimal and can be returned.
                 // Otherwise, the current solution has to be ruled out and the next smallest solution is retrieved from
                 // the solver.
-                double maximalReachabilityProbability = 0;
+                
+                // Start by building the initial vector of constraints out of which we want to satisfy maximally many.
+                std::vector<z3::expr> softConstraints;
+                softConstraints.reserve(variableInformation.labelVariables.size());
+                for (auto const& labelExpr : variableInformation.labelVariables) {
+                    softConstraints.push_back(!labelExpr);
+                }
+                
                 // Create an index counter that keeps track of the next free index we can use for blocking variables.
                 uint_fast64_t nextFreeVariableIndex = 0;
+                
+                // Keep track of the command set we used to achieve the current probability as well as the probability
+                // itself.
                 std::set<uint_fast64_t> commandSet;
+                double maximalReachabilityProbability = 0;
+                bool done = false;
                 do {
-                    commandSet = findSmallestCommandSet(context, solver, variableInformation, nextFreeVariableIndex);
+                    commandSet = findSmallestCommandSet(context, solver, variableInformation, softConstraints, nextFreeVariableIndex);
                     
+                    // Restrict the given MDP to the current set of labels and compute the reachability probability.
                     storm::models::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
                     storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(subMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
                     std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false, nullptr);
                     
-                    // Now determine the maximalReachabilityProbability.
+                    // Now determine the maximal reachability probability by checking all initial states.
                     for (auto state : labeledMdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
-                } while (maximalReachabilityProbability < probabilityThreshold);
+                    
+                    if (maximalReachabilityProbability <= probabilityThreshold) {
+                        // In case we have not yet exceeded the given threshold, we have to rule out the current solution.
+                        ruleOutSolution(context, solver, commandSet, variableInformation);
+                    } else {
+                        done = true;
+                    }
+                    std::cout << "Achieved probability: " << maximalReachabilityProbability << " with " << commandSet.size() << " commands." << std::endl;
+                } while (!done);
                 
                 std::cout << "Achieved probability: " << maximalReachabilityProbability << " with " << commandSet.size() << " commands." << std::endl;
                 std::cout << "Taken commands are:" << std::endl;
