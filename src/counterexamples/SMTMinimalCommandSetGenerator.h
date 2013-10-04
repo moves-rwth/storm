@@ -144,7 +144,7 @@ namespace storm {
              * @param variableInformation A structure with information about the variables for the labels.
              * @return True iff the constraint system was satisfiable.
              */
-            static bool fuMalikMaxsatStep(z3::context& context, z3::solver& solver, VariableInformation const& variableInformation) {
+            static bool fuMalikMaxsatStep(z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, uint_fast64_t& nextFreeVariableIndex) {
                 z3::expr_vector assumptions(context);
                 for (auto const& auxVariable : variableInformation.auxiliaryVariables) {
                     assumptions.push_back(!auxVariable);
@@ -162,11 +162,22 @@ namespace storm {
                     
                     std::vector<z3::expr> blockingVariables;
                     blockingVariables.reserve(unsatCore.size());
+                    
+                    // Create stringstream to build expression names.
+                    std::stringstream variableName;
+                    
+                    // Create fresh blocking variables.
+                    for (uint_fast64_t i = 0; i < unsatCore.size(); ++i) {
+                        variableName.clear();
+                        variableName.str("");
+                        variableName << "b" << nextFreeVariableIndex;
+                        blockingVariables.push_back(context.bool_const(variableName.str().c_str()));
+                        ++nextFreeVariableIndex;
+                    }
                 }
                 
                 return false;
             }
-
             
             /*!
              * Finds the smallest set of labels such that the constraint system of the solver is still satisfiable.
@@ -176,15 +187,14 @@ namespace storm {
              * @param variableInformation A structure with information about the variables for the labels.
              * @return The smallest set of labels such that the constraint system of the solver is still satisfiable.
              */
-            static std::set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation const& variableInformation) {
-                for (uint_fast64_t i = 0; i < variableInformation.labelToIndexMap.size(); ++i) {
+            static std::set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, uint_fast64_t& nextFreeVariableIndex) {
+                for (uint_fast64_t i = 0;; ++i) {
                     if (fuMalikMaxsatStep(context, solver, variableInformation)) {
                         break;
                     }
                 }
                 
                 // Now we are ready to construct the label set from the model of the solver.
-                
                 std::set<uint_fast64_t> result;
                 
                 for (auto const& labelIndexPair : variableInformation.labelToIndexMap) {
@@ -225,9 +235,11 @@ namespace storm {
                 // Otherwise, the current solution has to be ruled out and the next smallest solution is retrieved from
                 // the solver.
                 double maximalReachabilityProbability = 0;
+                // Create an index counter that keeps track of the next free index we can use for blocking variables.
+                uint_fast64_t nextFreeVariableIndex = 0;
                 std::set<uint_fast64_t> commandSet;
                 do {
-                    commandSet = findSmallestCommandSet(context, solver, variableInformation);
+                    commandSet = findSmallestCommandSet(context, solver, variableInformation, nextFreeVariableIndex);
                     
                     storm::models::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
                     storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(subMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
