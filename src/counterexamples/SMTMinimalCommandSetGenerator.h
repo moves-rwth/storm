@@ -31,6 +31,12 @@ namespace storm {
         class SMTMinimalCommandSetGenerator {
 #ifdef STORM_HAVE_Z3
         private:
+            struct RelevancyInformation {
+                storm::storage::BitVector relevantStates;
+                std::set<uint_fast64_t> relevantLabels;
+                std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
+            };
+            
             struct VariableInformation {
                 std::vector<z3::expr> labelVariables;
                 std::vector<z3::expr> auxiliaryVariables;
@@ -44,17 +50,19 @@ namespace storm {
              * @param labeledMdp The MDP to search for relevant labels.
              * @param phiStates A bit vector representing all states that satisfy phi.
              * @param psiStates A bit vector representing all states that satisfy psi.
-             * @return A set of relevant labels, where relevant is defined as above.
+             * @return A structure containing the relevant labels as well as states.
              */
-            static std::set<uint_fast64_t> getRelevantLabels(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            static RelevancyInformation determineRelevantStatesAndLabels(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 // Create result.
-                std::set<uint_fast64_t> relevantLabels;
+                RelevancyInformation relevancyInformation;
                 
                 // Compute all relevant states, i.e. states for which there exists a scheduler that has a non-zero
                 // probabilitiy of satisfying phi until psi.
                 storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
-                storm::storage::BitVector relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
-                relevantStates &= ~psiStates;
+                relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                relevancyInformation.relevantStates &= ~psiStates;
+
+                LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantStates.getNumberOfSetBits() << " relevant states.");
 
                 // Retrieve some references for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
@@ -64,21 +72,29 @@ namespace storm {
                 // Now traverse all choices of all relevant states and check whether there is a successor target state.
                 // If so, the associated labels become relevant. Also, if a choice of relevant state has at least one
                 // relevant successor, the choice becomes relevant.
-                for (auto state : relevantStates) {
+                for (auto state : relevancyInformation.relevantStates) {
+                    relevancyInformation.relevantChoicesForRelevantStates.emplace(state, std::list<uint_fast64_t>());
+                    
                     for (uint_fast64_t row = nondeterministicChoiceIndices[state]; row < nondeterministicChoiceIndices[state + 1]; ++row) {
+                        bool currentChoiceRelevant = false;
+
                         for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(row); successorIt != transitionMatrix.constColumnIteratorEnd(row); ++successorIt) {
                             // If there is a relevant successor, we need to add the labels of the current choice.
-                            if (relevantStates.get(*successorIt) || psiStates.get(*successorIt)) {
+                            if (relevancyInformation.relevantStates.get(*successorIt) || psiStates.get(*successorIt)) {
                                 for (auto const& label : choiceLabeling[row]) {
-                                    relevantLabels.insert(label);
+                                    relevancyInformation.relevantLabels.insert(label);
+                                }
+                                if (!currentChoiceRelevant) {
+                                    currentChoiceRelevant = true;
+                                    relevancyInformation.relevantChoicesForRelevantStates[state].push_back(row);
                                 }
                             }
                         }
                     }
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Found " << relevantLabels.size() << " relevant labels.");
-                return relevantLabels;
+                LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantLabels.size() << " relevant labels.");
+                return relevancyInformation;
             }
             
             /*!
@@ -119,11 +135,12 @@ namespace storm {
              * Asserts the constraints that are initially known.
              *
              * @param program The program for which to build the constraints.
+             * @param labeledMdp The MDP that results from the given program.
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver in which to assert the constraints.
              * @param variableInformation A structure with information about the variables for the labels.
              */
-            static void assertInitialConstraints(storm::ir::Program const& program, z3::context& context, z3::solver& solver, VariableInformation const& variableInformation) {
+            static void assertInitialConstraints(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation) {
                 // Assert that at least one of the labels must be taken.
                 z3::expr formula = variableInformation.labelVariables.at(0);
                 for (uint_fast64_t index = 1; index < variableInformation.labelVariables.size(); ++index) {
@@ -134,8 +151,84 @@ namespace storm {
                 for (uint_fast64_t index = 0; index < variableInformation.labelVariables.size(); ++index) {
                     solver.add(!variableInformation.labelVariables[index] || variableInformation.auxiliaryVariables[index]);
                 }
+                
+                std::vector<std::set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
+
+                // Assert that at least one of the labels of one of the relevant initial states is taken.
+                std::vector<z3::expr> expressionVector;
+                bool firstAssignment = true;
+                for (auto state : labeledMdp.getInitialStates()) {
+                    if (relevancyInformation.relevantStates.get(state)) {
+                        for (auto const& choice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
+                            for (auto const& label : choiceLabeling[choice]) {
+                                z3::expr labelExpression = variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                                if (firstAssignment) {
+                                    expressionVector.push_back(labelExpression);
+                                    firstAssignment = false;
+                                } else {
+                                    expressionVector.back() = expressionVector.back() && labelExpression;
+                                }
+                            }
+                        }
+                    }
+                }
+                assertDisjunction(context, solver, expressionVector);
+                
+                // Assert that at least one of the labels that are selected can reach a target state in one step.
+                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+
+                // Compute the set of predecessors of target states.
+                std::unordered_set<uint_fast64_t> predecessors;
+                for (auto state : psiStates) {
+                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(state); predecessorIt != backwardTransitions.constColumnIteratorEnd(state); ++predecessorIt) {
+                        if (state != *predecessorIt) {
+                            predecessors.insert(*predecessorIt);
+                        }
+                    }
+                }
+
+                expressionVector.clear();
+                firstAssignment = true;
+                for (auto state : predecessors) {
+                    for (auto choice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
+                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(choice); successorIt != transitionMatrix.constColumnIteratorEnd(choice); ++successorIt) {
+                            if (psiStates.get(*successorIt)) {
+                                for (auto const& label : choiceLabeling[choice]) {
+                                    z3::expr labelExpression = variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                                    if (firstAssignment) {
+                                        expressionVector.push_back(labelExpression);
+                                        firstAssignment = false;
+                                    } else {
+                                        expressionVector.back() = expressionVector.back() && labelExpression;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                assertDisjunction(context, solver, expressionVector);
             }
 
+            /*!
+             * Asserts that the disjunction of the given formulae holds.
+             *
+             * @param context The Z3 context in which to build the expressions.
+             * @param solver The solver to use for the satisfiability evaluation.
+             * @param formulaVector A vector of expressions that shall form the disjunction.
+             */
+            static void assertDisjunction(z3::context& context, z3::solver& solver, std::vector<z3::expr> const& formulaVector) {
+                z3::expr disjunction(context);
+                for (uint_fast64_t i = 0; i < formulaVector.size(); ++i) {
+                    if (i == 0) {
+                        disjunction = formulaVector[i];
+                    } else {
+                        disjunction = disjunction || formulaVector[i];
+                    }
+                }
+                solver.add(disjunction);
+            }
+            
             /*!
              * Asserts that at most one of the blocking variables may be true at any time.
              *
@@ -288,20 +381,20 @@ namespace storm {
                 
                 // (1) FIXME: check whether its possible to exceed the threshold if checkThresholdFeasible is set.
 
-                // (2) Identify all commands that are relevant, because only these need to be considered later.
-                std::set<uint_fast64_t> relevantCommands = getRelevantLabels(labeledMdp, phiStates, psiStates);
+                // (2) Identify all states and commands that are relevant, because only these need to be considered later.
+                RelevancyInformation relevancyInformation = determineRelevantStatesAndLabels(labeledMdp, phiStates, psiStates);
                 
                 // (3) Create context for solver.
                 z3::context context;
                 
                 // (4) Create the variables for the relevant commands.
-                VariableInformation variableInformation = createExpressionsForRelevantLabels(context, relevantCommands);
+                VariableInformation variableInformation = createExpressionsForRelevantLabels(context, relevancyInformation.relevantLabels);
                 
                 // (5) After all variables have been created, create a solver for that context.
                 z3::solver solver(context);
 
                 // (5) Build the initial constraint system.
-                assertInitialConstraints(program, context, solver, variableInformation);
+                assertInitialConstraints(program, labeledMdp, psiStates, context, solver, variableInformation, relevancyInformation);
                 
                 // (6) Find the smallest set of commands that satisfies all constraints. If the probability of
                 // satisfying phi until psi exceeds the given threshold, the set of labels is minimal and can be returned.
@@ -323,13 +416,16 @@ namespace storm {
                 std::set<uint_fast64_t> commandSet;
                 double maximalReachabilityProbability = 0;
                 bool done = false;
+                uint_fast64_t iterations = 0;
                 do {
                     commandSet = findSmallestCommandSet(context, solver, variableInformation, softConstraints, nextFreeVariableIndex);
                     
                     // Restrict the given MDP to the current set of labels and compute the reachability probability.
                     storm::models::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
                     storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(subMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                    LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
                     std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false, nullptr);
+                    LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
                     
                     // Now determine the maximal reachability probability by checking all initial states.
                     for (auto state : labeledMdp.getInitialStates()) {
@@ -342,7 +438,8 @@ namespace storm {
                     } else {
                         done = true;
                     }
-                    std::cout << "Achieved probability: " << maximalReachabilityProbability << " with " << commandSet.size() << " commands." << std::endl;
+                    std::cout << "Achieved probability: " << maximalReachabilityProbability << " with " << commandSet.size() << " commands in iteration " << iterations << "." << std::endl;
+                    ++iterations;
                 } while (!done);
                 
                 std::cout << "Achieved probability: " << maximalReachabilityProbability << " with " << commandSet.size() << " commands." << std::endl;

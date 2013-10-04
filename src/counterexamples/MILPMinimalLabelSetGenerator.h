@@ -926,7 +926,6 @@ namespace storm {
                     for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(state); predecessorIt != backwardTransitions.constColumnIteratorEnd(state); ++predecessorIt) {
                         if (state != *predecessorIt) {
                             predecessors.insert(*predecessorIt);
-
                         }
                     }
                     
