@@ -209,6 +209,17 @@ namespace storm {
                 }
                 assertDisjunction(context, solver, expressionVector);
             }
+            
+            /*!
+             * Asserts cuts that rule out a lot of suboptimal solutions.
+             *
+             * @param program The program for which to derive the cuts.
+             * @param context The Z3 context in which to build the expressions.
+             * @param solver The solver to use for the satisfiability evaluation.
+             */
+            static void assertCuts(storm::ir::Program const& program, z3::context& context, z3::solver& solver) {
+                
+            }
 
             /*!
              * Asserts that the disjunction of the given formulae holds.
@@ -396,7 +407,10 @@ namespace storm {
                 // (5) Build the initial constraint system.
                 assertInitialConstraints(program, labeledMdp, psiStates, context, solver, variableInformation, relevancyInformation);
                 
-                // (6) Find the smallest set of commands that satisfies all constraints. If the probability of
+                // (6) Add constraints that cut off a lot of suboptimal solutions.
+                assertCuts(program, context, solver);
+                
+                // (7) Find the smallest set of commands that satisfies all constraints. If the probability of
                 // satisfying phi until psi exceeds the given threshold, the set of labels is minimal and can be returned.
                 // Otherwise, the current solution has to be ruled out and the next smallest solution is retrieved from
                 // the solver.
@@ -449,7 +463,7 @@ namespace storm {
                 }
                 std::cout << std::endl;
                 
-                // (7) Return the resulting command set.
+                // (8) Return the resulting command set.
                 return commandSet;
                 
 #else

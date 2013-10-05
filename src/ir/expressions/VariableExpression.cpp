@@ -26,6 +26,10 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            std::shared_ptr<BaseExpression> VariableExpression::clone() const {
+                return std::shared_ptr<BaseExpression>(new VariableExpression(*this));
+            }
+            
             std::shared_ptr<BaseExpression> VariableExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 // Perform the proper cloning.
                 auto renamingPair = renaming.find(this->variableName);

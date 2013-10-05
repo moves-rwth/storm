@@ -22,6 +22,10 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            std::shared_ptr<BaseExpression> DoubleLiteralExpression::clone() const {
+                return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(*this));
+            }
+
             std::shared_ptr<BaseExpression> DoubleLiteralExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->value));
             }

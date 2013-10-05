@@ -65,13 +65,20 @@ namespace storm {
                 virtual ~BaseExpression();
                 
                 /*!
+                 * Performes a deep-copy of the expression.
+                 *
+                 * @return A deep-copy of the expression.
+                 */
+                virtual std::shared_ptr<BaseExpression> clone() const = 0;
+                
+                /*!
                  * Copies the expression tree underneath (including) the current node and performs the provided renaming.
                  *
                  * @param renaming A mapping from identifier names to strings they are to be replaced with.
                  * @param variableState An object knowing about the global variable state.
                  */
                 virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const = 0;
-                
+                                
                 /*!
                  * Retrieves the value of the expression as an integer given the provided variable valuation.
                  *

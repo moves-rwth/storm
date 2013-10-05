@@ -21,6 +21,10 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            std::shared_ptr<BaseExpression> UnaryBooleanFunctionExpression::clone() const {
+                return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getChild()->clone(), functionType));
+            }
+            
             std::shared_ptr<BaseExpression> UnaryBooleanFunctionExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getChild()->clone(renaming, variableState), this->functionType));
             }

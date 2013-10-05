@@ -23,6 +23,10 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            std::shared_ptr<BaseExpression> BinaryRelationExpression::clone() const {
+                return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(), this->getRight()->clone(), relationType));
+            }
+
             std::shared_ptr<BaseExpression> BinaryRelationExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(renaming, variableState), this->getRight()->clone(renaming, variableState), this->relationType));
             }

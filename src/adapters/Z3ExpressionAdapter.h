@@ -83,7 +83,7 @@ namespace storm {
                         break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
                         << "Unknown boolean binary operator: '" << expression->getFunctionType() << "'.";
-                }    
+                }
             }
             
             virtual void visit(BinaryRelationExpression* expression) {

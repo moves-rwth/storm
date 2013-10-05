@@ -19,6 +19,10 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            std::shared_ptr<BaseExpression> UnaryNumericalFunctionExpression::clone() const {
+                return std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getType(), this->getChild()->clone(), functionType));
+            }
+            
             std::shared_ptr<BaseExpression> UnaryNumericalFunctionExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 return std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getType(), this->getChild()->clone(renaming, variableState), this->functionType));
             }
