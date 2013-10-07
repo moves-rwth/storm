@@ -151,7 +151,7 @@ public:
         for(uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
             bool stateHasValidChoice = false;
             for (uint_fast64_t choice = this->getNondeterministicChoiceIndices()[state]; choice < this->getNondeterministicChoiceIndices()[state + 1]; ++choice) {
-                bool choiceValid = storm::utility::set::isSubsetOf(choiceLabeling[state], enabledChoiceLabels);
+                bool choiceValid = storm::utility::set::isSubsetOf(choiceLabeling[choice], enabledChoiceLabels);
                 
                 // If the choice is valid, copy over all its elements.
                 if (choiceValid) {
