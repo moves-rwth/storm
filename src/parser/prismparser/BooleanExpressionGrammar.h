@@ -24,7 +24,7 @@ namespace prism {
  */
 class BooleanExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused>, public BaseGrammar<BooleanExpressionGrammar> {
 public:
-	BooleanExpressionGrammar(std::shared_ptr<VariableState>& state);
+	BooleanExpressionGrammar(std::shared_ptr<VariableState> const& state);
 	/*!
 	 * Switch to second run.
 	 * Variable names may be any valid identifier in the first run, but only defined variables in the second run.

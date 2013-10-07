@@ -26,7 +26,7 @@ public:
 
 	}
 
-	ADD* translateExpression(std::shared_ptr<storm::ir::expressions::BaseExpression> expression) {
+	ADD* translateExpression(std::unique_ptr<storm::ir::expressions::BaseExpression> const& expression) {
 		expression->accept(this);
 		return stack.top();
 	}

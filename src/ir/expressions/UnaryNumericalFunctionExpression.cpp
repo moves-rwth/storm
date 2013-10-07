@@ -11,7 +11,7 @@ namespace storm {
     namespace ir {
         namespace expressions {
             
-            UnaryNumericalFunctionExpression::UnaryNumericalFunctionExpression(ReturnType type, std::shared_ptr<BaseExpression> child, FunctionType functionType) : UnaryExpression(type, child), functionType(functionType) {
+            UnaryNumericalFunctionExpression::UnaryNumericalFunctionExpression(ReturnType type, std::unique_ptr<BaseExpression>&& child, FunctionType functionType) : UnaryExpression(type, std::move(child)), functionType(functionType) {
                 // Nothing to do here.
             }
             
@@ -19,12 +19,12 @@ namespace storm {
                 // Nothing to do here.
             }
             
-            std::shared_ptr<BaseExpression> UnaryNumericalFunctionExpression::clone() const {
-                return std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getType(), this->getChild()->clone(), functionType));
+            std::unique_ptr<BaseExpression> UnaryNumericalFunctionExpression::clone() const {
+                return std::unique_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getType(), this->getChild()->clone(), functionType));
             }
             
-            std::shared_ptr<BaseExpression> UnaryNumericalFunctionExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
-                return std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getType(), this->getChild()->clone(renaming, variableState), this->functionType));
+            std::unique_ptr<BaseExpression> UnaryNumericalFunctionExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
+                return std::unique_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getType(), this->getChild()->clone(renaming, variableState), this->functionType));
             }
             
             int_fast64_t UnaryNumericalFunctionExpression::getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {

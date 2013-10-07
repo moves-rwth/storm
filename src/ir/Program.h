@@ -60,16 +60,30 @@ namespace storm {
              * @param labels The labels defined for this model.
              */
             Program(ModelType modelType,
-                    std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> const& booleanUndefinedConstantExpressions,
-                    std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> const& integerUndefinedConstantExpressions,
-                    std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> const& doubleUndefinedConstantExpressions,
+                    std::map<std::string, std::unique_ptr<storm::ir::expressions::BooleanConstantExpression>> const& booleanUndefinedConstantExpressions,
+                    std::map<std::string, std::unique_ptr<storm::ir::expressions::IntegerConstantExpression>> const& integerUndefinedConstantExpressions,
+                    std::map<std::string, std::unique_ptr<storm::ir::expressions::DoubleConstantExpression>> const& doubleUndefinedConstantExpressions,
                     std::vector<BooleanVariable> const& globalBooleanVariables,
                     std::vector<IntegerVariable> const& globalIntegerVariables,
                     std::map<std::string, uint_fast64_t> const& globalBooleanVariableToIndexMap,
                     std::map<std::string, uint_fast64_t> const& globalIntegerVariableToIndexMap,
                     std::vector<storm::ir::Module> const& modules,
                     std::map<std::string, storm::ir::RewardModel> const& rewards,
-                    std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> const& labels);
+                    std::map<std::string, std::unique_ptr<storm::ir::expressions::BaseExpression>> const& labels);
+            
+            /*!
+             * Performs a deep-copy of the given program.
+             *
+             * @param otherProgram The program to copy.
+             */
+            Program(Program const& otherProgram);
+
+            /*!
+             * Performs a deep-copy of the given program and assigns it to the current one.
+             *
+             * @param otherProgram The program to assign.
+             */
+            Program& operator=(Program const& otherProgram);
             
             /*!
              * Retrieves the number of modules in the program.
@@ -165,7 +179,7 @@ namespace storm {
              *
              * @return A set of labels that are defined in the program.
              */
-            std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> const& getLabels() const;
+            std::map<std::string, std::unique_ptr<storm::ir::expressions::BaseExpression>> const& getLabels() const;
             
             /*!
              * Retrieves whether the given constant name is an undefined boolean constant of the program.
@@ -180,7 +194,7 @@ namespace storm {
              * @param constantName The name of the undefined boolean constant for which to retrieve the expression.
              * @return The expression associated with the given undefined boolean constant.
              */
-            std::shared_ptr<storm::ir::expressions::BooleanConstantExpression> getUndefinedBooleanConstantExpression(std::string const& constantName) const;
+            std::unique_ptr<storm::ir::expressions::BooleanConstantExpression> const& getUndefinedBooleanConstantExpression(std::string const& constantName) const;
             
             /*!
              * Retrieves whether the given constant name is an undefined integer constant of the program.
@@ -195,7 +209,7 @@ namespace storm {
              * @param constantName The name of the undefined integer constant for which to retrieve the expression.
              * @return The expression associated with the given undefined integer constant.
              */
-            std::shared_ptr<storm::ir::expressions::IntegerConstantExpression> getUndefinedIntegerConstantExpression(std::string const& constantName) const;
+            std::unique_ptr<storm::ir::expressions::IntegerConstantExpression> const& getUndefinedIntegerConstantExpression(std::string const& constantName) const;
 
             /*!
              * Retrieves whether the given constant name is an undefined double constant of the program.
@@ -210,28 +224,28 @@ namespace storm {
              * @param constantName The name of the undefined double constant for which to retrieve the expression.
              * @return The expression associated with the given undefined double constant.
              */
-            std::shared_ptr<storm::ir::expressions::DoubleConstantExpression> getUndefinedDoubleConstantExpression(std::string const& constantName) const;
+            std::unique_ptr<storm::ir::expressions::DoubleConstantExpression> const& getUndefinedDoubleConstantExpression(std::string const& constantName) const;
             
             /*!
              * Retrieves the mapping of undefined boolean constant names to their expression objects.
              *
              * @return The mapping of undefined boolean constant names to their expression objects.
              */
-            std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> const& getBooleanUndefinedConstantExpressionsMap() const;
+            std::map<std::string, std::unique_ptr<storm::ir::expressions::BooleanConstantExpression>> const& getBooleanUndefinedConstantExpressionsMap() const;
 
             /*!
              * Retrieves the mapping of undefined integer constant names to their expression objects.
              *
              * @return The mapping of undefined integer constant names to their expression objects.
              */
-            std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> const& getIntegerUndefinedConstantExpressionsMap() const;
+            std::map<std::string, std::unique_ptr<storm::ir::expressions::IntegerConstantExpression>> const& getIntegerUndefinedConstantExpressionsMap() const;
 
             /*!
              * Retrieves the mapping of undefined double constant names to their expression objects.
              *
              * @return The mapping of undefined double constant names to their expression objects.
              */
-            std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> const& getDoubleUndefinedConstantExpressionsMap() const;
+            std::map<std::string, std::unique_ptr<storm::ir::expressions::DoubleConstantExpression>> const& getDoubleUndefinedConstantExpressionsMap() const;
             
             /*!
              * Retrieves the global index of the given boolean variable.
@@ -252,13 +266,13 @@ namespace storm {
             ModelType modelType;
             
             // A map of undefined boolean constants to their expression nodes.
-            std::map<std::string, std::shared_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions;
+            std::map<std::string, std::unique_ptr<storm::ir::expressions::BooleanConstantExpression>> booleanUndefinedConstantExpressions;
             
             // A map of undefined integer constants to their expressions nodes.
-            std::map<std::string, std::shared_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions;
+            std::map<std::string, std::unique_ptr<storm::ir::expressions::IntegerConstantExpression>> integerUndefinedConstantExpressions;
             
             // A map of undefined double constants to their expressions nodes.
-            std::map<std::string, std::shared_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions;
+            std::map<std::string, std::unique_ptr<storm::ir::expressions::DoubleConstantExpression>> doubleUndefinedConstantExpressions;
             
             // A list of global boolean variables.
             std::vector<BooleanVariable> globalBooleanVariables;
@@ -279,7 +293,7 @@ namespace storm {
             std::map<std::string, storm::ir::RewardModel> rewards;
             
             // The labels that are defined for this model.
-            std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> labels;
+            std::map<std::string, std::unique_ptr<storm::ir::expressions::BaseExpression>> labels;
             
             // The set of actions present in this program.
             std::set<std::string> actions;

@@ -38,7 +38,7 @@ namespace storm {
              * @param variableName The variable that this assignment targets.
              * @param expression The expression to assign to the variable.
              */
-            Assignment(std::string const& variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& expression);
+            Assignment(std::string const& variableName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& expression);
             
             /*!
              * Creates a copy of the given assignment and performs the provided renaming.
@@ -49,6 +49,20 @@ namespace storm {
              * @param variableState An object knowing about the variables in the system.
              */
             Assignment(Assignment const& oldAssignment, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
+            
+            /*!
+             * Performs a deep-copy of the given assignment.
+             *
+             * @param otherAssignment The assignment to copy.
+             */
+            Assignment(Assignment const& otherAssignment);
+            
+            /*!
+             * Performs a deep-copy of the given assignment and assigns it to the current one.
+             *
+             * @param otherAssignment The assignment to assign.
+             */
+            Assignment& operator=(Assignment const& otherAssignment);
             
             /*!
              * Retrieves the name of the variable that this assignment targets.
@@ -62,7 +76,7 @@ namespace storm {
              *
              * @return The expression that is assigned to the variable.
              */
-            std::shared_ptr<storm::ir::expressions::BaseExpression> const& getExpression() const;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> const& getExpression() const;
             
             /*!
              * Retrieves a string representation of this assignment.
@@ -75,7 +89,7 @@ namespace storm {
             std::string variableName;
             
             // The expression that is assigned to the variable.
-            std::shared_ptr<storm::ir::expressions::BaseExpression> expression;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> expression;
         };
         
     } // namespace ir

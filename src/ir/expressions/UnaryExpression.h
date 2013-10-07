@@ -24,7 +24,7 @@ namespace storm {
                  * @param type The type of the unary expression.
                  * @param right The child of the unary expression.
                  */
-                UnaryExpression(ReturnType type, std::shared_ptr<BaseExpression> child);
+                UnaryExpression(ReturnType type, std::unique_ptr<BaseExpression>&& child);
                 
                 /*!
                  * Copy-constructs from the given expression.
@@ -38,11 +38,11 @@ namespace storm {
                  *
                  * @return The child of the expression node.
                  */
-                std::shared_ptr<BaseExpression> const& getChild() const;
+                std::unique_ptr<BaseExpression> const& getChild() const;
                 
             private:
                 // The left child of the unary expression.
-                std::shared_ptr<BaseExpression> child;
+                std::unique_ptr<BaseExpression> child;
             };
             
         } // namespace expressions

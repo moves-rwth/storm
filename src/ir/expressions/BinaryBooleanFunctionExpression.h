@@ -31,7 +31,7 @@ namespace storm {
                  * @param right The right child of the node.
                  * @param functionType The operator that is to be applied to the two children.
                  */
-                BinaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right, FunctionType functionType);
+                BinaryBooleanFunctionExpression(std::unique_ptr<BaseExpression>&& left, std::unique_ptr<BaseExpression>&& right, FunctionType functionType);
                 
                 /*!
                  * Copy-constructs from the given expression.
@@ -40,9 +40,9 @@ namespace storm {
                  */
                 BinaryBooleanFunctionExpression(BinaryBooleanFunctionExpression const& binaryBooleanFunctionExpression);
                 
-                virtual std::shared_ptr<BaseExpression> clone() const override;
+                virtual std::unique_ptr<BaseExpression> clone() const override;
                 
-                virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
+                virtual std::unique_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
                 
                 virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
                 

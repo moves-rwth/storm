@@ -25,7 +25,7 @@ namespace storm {
                  * @param left The left child of the binary expression.
                  * @param right The right child of the binary expression.
                  */
-                BinaryExpression(ReturnType type, std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right);
+                BinaryExpression(ReturnType type, std::unique_ptr<BaseExpression>&& left, std::unique_ptr<BaseExpression>&& right);
                 
                 /*!
                  * Copy-constructs from the given expression.
@@ -39,21 +39,21 @@ namespace storm {
                  *
                  * @return The left child of the expression node.
                  */
-                std::shared_ptr<BaseExpression> const& getLeft() const;
+                std::unique_ptr<BaseExpression> const& getLeft() const;
                 
                 /*!
                  * Retrieves the right child of the expression node.
                  *
                  * @return The right child of the expression node.
                  */
-                std::shared_ptr<BaseExpression> const& getRight() const;
+                std::unique_ptr<BaseExpression> const& getRight() const;
                 
             private:
                 // The left child of the binary expression.
-                std::shared_ptr<BaseExpression> left;
+                std::unique_ptr<BaseExpression> left;
                 
                 // The right child of the binary expression.
-                std::shared_ptr<BaseExpression> right;
+                std::unique_ptr<BaseExpression> right;
             };
             
         } // namespace expressions

@@ -19,16 +19,35 @@ namespace storm {
             // Nothing to do here.
         }
         
-        Variable::Variable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue)
-        : localIndex(localIndex), globalIndex(globalIndex), variableName(variableName), initialValue(initialValue) {
+        Variable::Variable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& initialValue)
+        : localIndex(localIndex), globalIndex(globalIndex), variableName(variableName), initialValue(std::move(initialValue)) {
             // Nothing to do here.
         }
         
+        Variable::Variable(Variable const& otherVariable) : localIndex(otherVariable.localIndex), globalIndex(otherVariable.globalIndex), variableName(otherVariable.variableName), initialValue() {
+            if (otherVariable.initialValue != nullptr) {
+                initialValue = otherVariable.initialValue->clone();
+            }
+        }
+        
         Variable::Variable(Variable const& var, std::string const& newName, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState)
-        : localIndex(var.getLocalIndex()), globalIndex(newGlobalIndex), variableName(newName) {
+        : localIndex(var.getLocalIndex()), globalIndex(newGlobalIndex), variableName(newName), initialValue() {
             if (var.initialValue != nullptr) {
                 this->initialValue = var.initialValue->clone(renaming, variableState);
             }
+        }
+        
+        Variable& Variable::operator=(Variable const& otherVariable) {
+            if (this != &otherVariable) {
+                this->localIndex = otherVariable.localIndex;
+                this->globalIndex = otherVariable.globalIndex;
+                this->variableName = otherVariable.variableName;
+                if (otherVariable.initialValue != nullptr) {
+                    this->initialValue = otherVariable.initialValue->clone();
+                }
+            }
+            
+            return *this;
         }
         
         std::string const& Variable::getName() const {
@@ -43,12 +62,12 @@ namespace storm {
             return localIndex;
         }
         
-        std::shared_ptr<storm::ir::expressions::BaseExpression> const& Variable::getInitialValue() const {
+        std::unique_ptr<storm::ir::expressions::BaseExpression> const& Variable::getInitialValue() const {
             return initialValue;
         }
         
-        void Variable::setInitialValue(std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue) {
-            this->initialValue = initialValue;
+        void Variable::setInitialValue(std::unique_ptr<storm::ir::expressions::BaseExpression>&& initialValue) {
+            this->initialValue = std::move(initialValue);
         }
         
     } // namespace ir

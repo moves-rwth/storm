@@ -17,8 +17,8 @@ namespace storm {
             // Nothing to do here.
         }
         
-        Assignment::Assignment(std::string const& variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& expression)
-        : variableName(variableName), expression(expression) {
+        Assignment::Assignment(std::string const& variableName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& expression)
+        : variableName(variableName), expression(std::move(expression)) {
             // Nothing to do here.
         }
         
@@ -30,11 +30,26 @@ namespace storm {
             }
         }
         
+        Assignment::Assignment(Assignment const& otherAssignment) : variableName(otherAssignment.variableName), expression() {
+            if (otherAssignment.expression != nullptr) {
+                expression = otherAssignment.expression->clone();
+            }
+        }
+        
+        Assignment& Assignment::operator=(Assignment const& otherAssignment) {
+            if (this != &otherAssignment) {
+                this->variableName = otherAssignment.variableName;
+                this->expression = otherAssignment.expression->clone();
+            }
+            
+            return *this;
+        }
+        
         std::string const& Assignment::getVariableName() const {
             return variableName;
         }
         
-        std::shared_ptr<storm::ir::expressions::BaseExpression> const& Assignment::getExpression() const {
+        std::unique_ptr<storm::ir::expressions::BaseExpression> const& Assignment::getExpression() const {
             return expression;
         }
         

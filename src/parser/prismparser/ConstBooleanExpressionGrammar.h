@@ -22,7 +22,7 @@ namespace prism {
  */
 class ConstBooleanExpressionGrammar : public qi::grammar<Iterator, std::shared_ptr<BaseExpression>(), Skipper, Unused>, public BaseGrammar<ConstBooleanExpressionGrammar> {
 public:
-	ConstBooleanExpressionGrammar(std::shared_ptr<VariableState>& state);
+	ConstBooleanExpressionGrammar(std::shared_ptr<VariableState> const& state);
 
 
 private:

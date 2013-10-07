@@ -36,8 +36,22 @@ public:
 	 * @param rewardValue An expression specifying the values of the rewards to attach to the
 	 * transitions.
 	 */
-	TransitionReward(std::string const& commandName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& statePredicate, std::shared_ptr<storm::ir::expressions::BaseExpression> const& rewardValue);
+	TransitionReward(std::string const& commandName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& statePredicate, std::unique_ptr<storm::ir::expressions::BaseExpression>&& rewardValue);
 
+    /*!
+     * Performs a deep-copy of the given transition reward.
+     *
+     * @param otherReward The transition reward to copy.
+     */
+    TransitionReward(TransitionReward const& otherReward);
+    
+    /*!
+     * Performs a deep-copy of the given transition reward and assigns it to the current one.
+     *
+     * @param otherReward The reward to assign.
+     */
+    TransitionReward& operator=(TransitionReward const& otherReward);
+    
 	/*!
 	 * Retrieves a string representation of this transition reward.
      *
@@ -57,14 +71,14 @@ public:
      *
      * @return The state predicate that is associated with this state reward.
      */
-    std::shared_ptr<storm::ir::expressions::BaseExpression> getStatePredicate() const;
+    std::unique_ptr<storm::ir::expressions::BaseExpression> const& getStatePredicate() const;
     
     /*!
      * Retrieves the reward value associated with this state reward.
      *
      * @return The reward value associated with this state reward.
      */
-    std::shared_ptr<storm::ir::expressions::BaseExpression> getRewardValue() const;
+    std::unique_ptr<storm::ir::expressions::BaseExpression> const& getRewardValue() const;
 
 private:
 	// The name of the command this transition-based reward is attached to.
@@ -72,10 +86,10 @@ private:
 
 	// A predicate that needs to be satisfied by states for the reward to be obtained (by taking
 	// a corresponding command transition).
-	std::shared_ptr<storm::ir::expressions::BaseExpression> statePredicate;
+	std::unique_ptr<storm::ir::expressions::BaseExpression> statePredicate;
 
 	// The expression specifying the value of the reward obtained along the transitions.
-	std::shared_ptr<storm::ir::expressions::BaseExpression> rewardValue;
+	std::unique_ptr<storm::ir::expressions::BaseExpression> rewardValue;
 };
 
 } // namespace ir

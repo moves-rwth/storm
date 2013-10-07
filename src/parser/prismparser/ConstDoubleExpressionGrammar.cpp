@@ -4,7 +4,7 @@ namespace storm {
 namespace parser {
 namespace prism {
 
-ConstDoubleExpressionGrammar::ConstDoubleExpressionGrammar(std::shared_ptr<VariableState>& state)
+ConstDoubleExpressionGrammar::ConstDoubleExpressionGrammar(std::shared_ptr<VariableState> const& state)
 	: ConstDoubleExpressionGrammar::base_type(constantDoubleExpression), BaseGrammar(state) {
 
 	constantDoubleExpression %= constantDoublePlusExpression;

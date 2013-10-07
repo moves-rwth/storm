@@ -26,24 +26,24 @@ namespace storm {
                 // Nothing to do here.
             }
             
-            std::shared_ptr<BaseExpression> VariableExpression::clone() const {
-                return std::shared_ptr<BaseExpression>(new VariableExpression(*this));
+            std::unique_ptr<BaseExpression> VariableExpression::clone() const {
+                return std::unique_ptr<BaseExpression>(new VariableExpression(*this));
             }
             
-            std::shared_ptr<BaseExpression> VariableExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
+            std::unique_ptr<BaseExpression> VariableExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
                 // Perform the proper cloning.
                 auto renamingPair = renaming.find(this->variableName);
                 if (renamingPair != renaming.end()) {
                     if (this->getType() == int_) {
-                        return variableState.getIntegerVariableExpression(renamingPair->second);
+                        return variableState.getIntegerVariableExpression(renamingPair->second)->clone();
                     } else {
-                        return variableState.getBooleanVariableExpression(renamingPair->second);
+                        return variableState.getBooleanVariableExpression(renamingPair->second)->clone();
                     }
                 } else {
                     if (this->getType() == int_) {
-                        return variableState.getIntegerVariableExpression(this->variableName);
+                        return variableState.getIntegerVariableExpression(this->variableName)->clone();
                     } else {
-                        return variableState.getBooleanVariableExpression(this->variableName);
+                        return variableState.getBooleanVariableExpression(this->variableName)->clone();
                     }
                 }
             }

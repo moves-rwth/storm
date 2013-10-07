@@ -18,8 +18,8 @@ namespace storm {
             // Nothing to do here.
         }
         
-        Update::Update(uint_fast64_t globalIndex, std::shared_ptr<storm::ir::expressions::BaseExpression> const& likelihoodExpression, std::map<std::string, storm::ir::Assignment> const& booleanAssignments, std::map<std::string, storm::ir::Assignment> const& integerAssignments)
-        : likelihoodExpression(likelihoodExpression), booleanAssignments(booleanAssignments), integerAssignments(integerAssignments), globalIndex(globalIndex) {
+        Update::Update(uint_fast64_t globalIndex, std::unique_ptr<storm::ir::expressions::BaseExpression>&& likelihoodExpression, std::map<std::string, storm::ir::Assignment> const& booleanAssignments, std::map<std::string, storm::ir::Assignment> const& integerAssignments)
+        : likelihoodExpression(std::move(likelihoodExpression)), booleanAssignments(booleanAssignments), integerAssignments(integerAssignments), globalIndex(globalIndex) {
             // Nothing to do here.
         }
         
@@ -41,7 +41,26 @@ namespace storm {
             this->likelihoodExpression = update.likelihoodExpression->clone(renaming, variableState);
         }
         
-        std::shared_ptr<storm::ir::expressions::BaseExpression> const& Update::getLikelihoodExpression() const {
+        Update::Update(Update const& otherUpdate) : likelihoodExpression(), booleanAssignments(otherUpdate.booleanAssignments), integerAssignments(otherUpdate.integerAssignments), globalIndex(otherUpdate.globalIndex) {
+            if (otherUpdate.likelihoodExpression != nullptr) {
+                likelihoodExpression = otherUpdate.likelihoodExpression->clone();
+            }
+        }
+        
+        Update& Update::operator=(Update const& otherUpdate) {
+            if (this != &otherUpdate) {
+                if (otherUpdate.likelihoodExpression != nullptr) {
+                    this->likelihoodExpression = otherUpdate.likelihoodExpression->clone();
+                }
+                this->booleanAssignments = otherUpdate.booleanAssignments;
+                this->integerAssignments = otherUpdate.integerAssignments;
+                this->globalIndex = otherUpdate.globalIndex;
+            }
+            
+            return *this;
+        }
+        
+        std::unique_ptr<storm::ir::expressions::BaseExpression> const& Update::getLikelihoodExpression() const {
             return likelihoodExpression;
         }
         

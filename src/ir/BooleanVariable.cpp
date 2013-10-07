@@ -17,14 +17,22 @@ namespace storm {
             // Nothing to do here.
         }
         
-        BooleanVariable::BooleanVariable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue)
-		: Variable(localIndex, globalIndex, variableName,  initialValue) {
+        BooleanVariable::BooleanVariable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& initialValue)
+		: Variable(localIndex, globalIndex, variableName, std::move(initialValue)) {
             // Nothing to do here.
         }
         
         BooleanVariable::BooleanVariable(BooleanVariable const& oldVariable, std::string const& newName, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState)
         : Variable(oldVariable, newName, newGlobalIndex, renaming, variableState) {
             // Nothing to do here.
+        }
+        
+        BooleanVariable& BooleanVariable::operator=(BooleanVariable const& otherVariable) {
+            if (this != &otherVariable) {
+                Variable::operator=(otherVariable);
+            }
+            
+            return *this;
         }
         
         std::string BooleanVariable::toString() const {

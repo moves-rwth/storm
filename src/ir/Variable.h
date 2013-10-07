@@ -41,7 +41,7 @@ namespace storm {
              * @param variableName the name of the variable.
              * @param initialValue the expression that defines the initial value of the variable.
              */
-            Variable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>());
+            Variable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& initialValue = nullptr);
             
             /*!
              * Creates a copy of the given variable and performs the provided renaming.
@@ -54,6 +54,18 @@ namespace storm {
              * @param variableState An object knowing about the variables in the system.
              */
             Variable(Variable const& oldVariable, std::string const& newName, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
+            
+            /*!
+             * Creates a deep-copy of the given variable.
+             *
+             * @param otherVariable The variable to copy.
+             */
+            Variable(Variable const& otherVariable);
+            
+            /*!
+             * Creates a deep-copy of the given variable and assigns it to the current one.
+             */
+            Variable& operator=(Variable const& otherVariable);
             
             /*!
              * Retrieves the name of the variable.
@@ -83,14 +95,14 @@ namespace storm {
              *
              * @return The expression defining the initial value of the variable.
              */
-            std::shared_ptr<storm::ir::expressions::BaseExpression> const& getInitialValue() const;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> const& getInitialValue() const;
             
             /*!
              * Sets the initial value to the given expression.
              *
              * @param initialValue The new initial value.
              */
-            void setInitialValue(std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue);
+            void setInitialValue(std::unique_ptr<storm::ir::expressions::BaseExpression>&& initialValue);
             
         private:
             // A unique (among the variables of equal type) index for the variable inside its module.
@@ -103,7 +115,7 @@ namespace storm {
             std::string variableName;
             
             // The expression defining the initial value of the variable.
-            std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> initialValue;
         };
         
     } // namespace ir

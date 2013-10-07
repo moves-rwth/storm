@@ -13,8 +13,8 @@ namespace storm {
     namespace ir {
         namespace expressions {
             
-            BinaryRelationExpression::BinaryRelationExpression(std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right, RelationType relationType)
-            : BinaryExpression(bool_, left, right), relationType(relationType) {
+            BinaryRelationExpression::BinaryRelationExpression(std::unique_ptr<BaseExpression>&& left, std::unique_ptr<BaseExpression>&& right, RelationType relationType)
+            : BinaryExpression(bool_, std::move(left), std::move(right)), relationType(relationType) {
                 // Nothing to do here.
             }
             
@@ -23,12 +23,12 @@ namespace storm {
                 // Nothing to do here.
             }
             
-            std::shared_ptr<BaseExpression> BinaryRelationExpression::clone() const {
-                return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(), this->getRight()->clone(), relationType));
+            std::unique_ptr<BaseExpression> BinaryRelationExpression::clone() const {
+                return std::unique_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(), this->getRight()->clone(), relationType));
             }
 
-            std::shared_ptr<BaseExpression> BinaryRelationExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
-                return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(renaming, variableState), this->getRight()->clone(renaming, variableState), this->relationType));
+            std::unique_ptr<BaseExpression> BinaryRelationExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
+                return std::unique_ptr<BaseExpression>(new BinaryRelationExpression(this->getLeft()->clone(renaming, variableState), this->getRight()->clone(renaming, variableState), this->relationType));
             }
             
             bool BinaryRelationExpression::getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {

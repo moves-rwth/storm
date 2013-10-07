@@ -20,12 +20,12 @@ namespace storm {
                 // Nothing to do here.
             }
 
-            std::shared_ptr<BaseExpression> BooleanLiteralExpression::clone() const {
-                return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(*this));
+            std::unique_ptr<BaseExpression> BooleanLiteralExpression::clone() const {
+                return std::unique_ptr<BaseExpression>(new BooleanLiteralExpression(*this));
             }
                                                        
-            std::shared_ptr<BaseExpression> BooleanLiteralExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
-                return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->value));
+            std::unique_ptr<BaseExpression> BooleanLiteralExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
+                return std::unique_ptr<BaseExpression>(new BooleanLiteralExpression(this->value));
             }
             
             bool BooleanLiteralExpression::getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {

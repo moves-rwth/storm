@@ -42,7 +42,7 @@ namespace storm {
              * @param likelihoodExpression An expression specifying the likelihood of this update.
              * @param assignments A map of variable names to their assignments.
              */
-            Update(uint_fast64_t globalIndex, std::shared_ptr<storm::ir::expressions::BaseExpression> const& likelihoodExpression, std::map<std::string, storm::ir::Assignment> const& booleanAssignments, std::map<std::string, storm::ir::Assignment> const& integerAssignments);
+            Update(uint_fast64_t globalIndex, std::unique_ptr<storm::ir::expressions::BaseExpression>&& likelihoodExpression, std::map<std::string, storm::ir::Assignment> const& booleanAssignments, std::map<std::string, storm::ir::Assignment> const& integerAssignments);
             
             /*!
              * Creates a copy of the given update and performs the provided renaming.
@@ -56,11 +56,25 @@ namespace storm {
             Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState);
             
             /*!
+             * Peforms a deep-copy of the given update.
+             *
+             * @param otherUpdate The update to copy.
+             */
+            Update(Update const& otherUpdate);
+            
+            /*!
+             * Performs a deep-copy of the given update and assigns it to the current one.
+             *
+             * @param otherUpdate The update to assign.
+             */
+            Update& operator=(Update const& otherUpdate);
+            
+            /*!
              * Retrieves the expression for the likelihood of this update.
              *
              * @return The expression for the likelihood of this update.
              */
-            std::shared_ptr<storm::ir::expressions::BaseExpression> const& getLikelihoodExpression() const;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> const& getLikelihoodExpression() const;
             
             /*!
              * Retrieves the number of boolean assignments associated with this update.
@@ -120,7 +134,7 @@ namespace storm {
             
         private:
             // An expression specifying the likelihood of taking this update.
-            std::shared_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> likelihoodExpression;
             
             // A mapping of boolean variable names to their assignments in this update.
             std::map<std::string, storm::ir::Assignment> booleanAssignments;

@@ -26,14 +26,14 @@ namespace prism {
 		/*!
 		 * Constructor.
 		 */
-		BaseGrammar(std::shared_ptr<VariableState>& state) : state(state) {}
+		BaseGrammar(std::shared_ptr<VariableState> const& state) : state(state) {}
 
 		/*!
 		 * Create and return a new instance of class T, usually the subclass.
 		 * @param state VariableState to be given to the constructor.
 		 * @returns Instance of class T.
 		 */
-		static T& instance(std::shared_ptr<VariableState> state = nullptr) {
+		static T& instance(std::shared_ptr<VariableState> const& state = nullptr) {
 			if (BaseGrammar::instanceObject == nullptr) {
 				BaseGrammar::instanceObject = std::shared_ptr<T>(new T(state));
 				if (!state->firstRun) BaseGrammar::instanceObject->secondRun();
@@ -62,24 +62,24 @@ namespace prism {
 		 * @param value Value of the literal.
 		 * @returns Boolean literal.
 		 */
-		std::shared_ptr<BaseExpression> createBoolLiteral(const bool value) {
-			return std::shared_ptr<BooleanLiteralExpression>(new BooleanLiteralExpression(value));
+		std::shared_ptr<BaseExpression> createBoolLiteral(bool value) {
+			return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(value));
 		}
 		/*!
 		 * Create a new double literal with the given value.
 		 * @param value Value of the literal.
 		 * @returns Double literal.
 		 */
-		std::shared_ptr<BaseExpression> createDoubleLiteral(const double value) {
-			return std::shared_ptr<DoubleLiteralExpression>(new DoubleLiteralExpression(value));
+		std::shared_ptr<BaseExpression> createDoubleLiteral(double value) {
+			return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(value));
 		}
 		/*!
 		 * Create a new integer literal with the given value.
 		 * @param value Value of the literal.
 		 * @returns Integer literal.
 		 */
-		std::shared_ptr<BaseExpression> createIntLiteral(const int_fast64_t value) {
-			return std::shared_ptr<IntegerLiteralExpression>(new IntegerLiteralExpression(value));
+		std::shared_ptr<BaseExpression> createIntLiteral(int_fast64_t value) {
+			return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(value));
 		}
 		
 		/*!
@@ -90,11 +90,11 @@ namespace prism {
 		 * @param type Return type.
 		 * @returns Plus expression.
 		 */
-		std::shared_ptr<BaseExpression> createPlus(const std::shared_ptr<BaseExpression> left, bool addition, const std::shared_ptr<BaseExpression> right, BaseExpression::ReturnType type) {
+		std::shared_ptr<BaseExpression> createPlus(std::shared_ptr<BaseExpression> const& left, bool addition, std::shared_ptr<BaseExpression> const& right, BaseExpression::ReturnType type) {
 			if (addition) {
-				return std::shared_ptr<BinaryNumericalFunctionExpression>(new BinaryNumericalFunctionExpression(type, left, right, BinaryNumericalFunctionExpression::PLUS));
+				return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(type, left->clone(), right->clone(), BinaryNumericalFunctionExpression::PLUS));
 			} else {
-				return std::shared_ptr<BinaryNumericalFunctionExpression>(new BinaryNumericalFunctionExpression(type, left, right, BinaryNumericalFunctionExpression::MINUS));
+				return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(type, left->clone(), right->clone(), BinaryNumericalFunctionExpression::MINUS));
 			}
 		}
 		/*!
@@ -104,7 +104,7 @@ namespace prism {
 		 * @param right Right operand.
 		 * @returns Double plus expression.
 		 */
-		std::shared_ptr<BaseExpression> createDoublePlus(const std::shared_ptr<BaseExpression> left, bool addition, const std::shared_ptr<BaseExpression> right) {
+		std::shared_ptr<BaseExpression> createDoublePlus(std::shared_ptr<BaseExpression> const& left, bool addition, std::shared_ptr<BaseExpression> const& right) {
 			return this->createPlus(left, addition, right, BaseExpression::double_);
 		}
 		/*!
@@ -114,7 +114,7 @@ namespace prism {
 		 * @param right Right operand.
 		 * @returns Integer plus expression.
 		 */
-		std::shared_ptr<BaseExpression> createIntPlus(const std::shared_ptr<BaseExpression> left, bool addition, const std::shared_ptr<BaseExpression> right) {
+		std::shared_ptr<BaseExpression> createIntPlus(std::shared_ptr<BaseExpression> const& left, bool addition, std::shared_ptr<BaseExpression> const& right) {
 			return this->createPlus(left, addition, right, BaseExpression::int_);
 		}
 
@@ -124,8 +124,8 @@ namespace prism {
 		 * @param right Right operand.
 		 * @returns Integer multiplication expression.
 		 */
-		std::shared_ptr<BaseExpression> createIntMult(const std::shared_ptr<BaseExpression> left, const std::shared_ptr<BaseExpression> right) {
-			return std::shared_ptr<BinaryNumericalFunctionExpression>(new BinaryNumericalFunctionExpression(BaseExpression::int_, left, right, BinaryNumericalFunctionExpression::TIMES));
+		std::shared_ptr<BaseExpression> createIntMult(std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right) {
+			return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(BaseExpression::int_, left->clone(), right->clone(), BinaryNumericalFunctionExpression::TIMES));
 		}
 		/*!
 		 * Create a new integer multiplication expression. If multiplication is true, it will be an multiplication, otherwise a division.
@@ -134,11 +134,11 @@ namespace prism {
 		 * @param right Right operand.
 		 * @returns Integer multiplication expression.
 		 */
-		std::shared_ptr<BaseExpression> createDoubleMult(const std::shared_ptr<BaseExpression> left, bool multiplication, const std::shared_ptr<BaseExpression> right) {
+		std::shared_ptr<BaseExpression> createDoubleMult(std::shared_ptr<BaseExpression> const& left, bool multiplication, std::shared_ptr<BaseExpression> const& right) {
 			if (multiplication) {
-				return std::shared_ptr<BinaryNumericalFunctionExpression>(new BinaryNumericalFunctionExpression(BaseExpression::double_, left, right, BinaryNumericalFunctionExpression::TIMES));
+				return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(BaseExpression::double_, left->clone(), right->clone(), BinaryNumericalFunctionExpression::TIMES));
 			} else {
-				return std::shared_ptr<BinaryNumericalFunctionExpression>(new BinaryNumericalFunctionExpression(BaseExpression::double_, left, right, BinaryNumericalFunctionExpression::DIVIDE));
+				return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(BaseExpression::double_, left->clone(), right->clone(), BinaryNumericalFunctionExpression::DIVIDE));
 			}
 		}
 		/*!
@@ -148,16 +148,16 @@ namespace prism {
 		 * @param right Right operand.
 		 * @returns Binary relation expression.
 		 */
-		std::shared_ptr<BaseExpression> createRelation(std::shared_ptr<BaseExpression> left, BinaryRelationExpression::RelationType relationType, std::shared_ptr<BaseExpression> right) {
-			return std::shared_ptr<BinaryRelationExpression>(new BinaryRelationExpression(left, right, relationType));
+		std::shared_ptr<BaseExpression> createRelation(std::shared_ptr<BaseExpression> const& left, BinaryRelationExpression::RelationType relationType, std::shared_ptr<BaseExpression> const& right) {
+			return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(left->clone(), right->clone(), relationType));
 		}
 		/*!
 		 * Create a new negation expression.
 		 * @param child Expression to be negated.
 		 * @returns Negation expression.
 		 */
-		std::shared_ptr<BaseExpression> createNot(std::shared_ptr<BaseExpression> child) {
-			return std::shared_ptr<UnaryBooleanFunctionExpression>(new UnaryBooleanFunctionExpression(child, UnaryBooleanFunctionExpression::NOT));
+		std::shared_ptr<BaseExpression> createNot(std::shared_ptr<BaseExpression> const& child) {
+			return std::shared_ptr<UnaryBooleanFunctionExpression>(new UnaryBooleanFunctionExpression(child->clone(), UnaryBooleanFunctionExpression::NOT));
 		}
 		/*!
 		 * Create a new And expression.
@@ -165,9 +165,8 @@ namespace prism {
 		 * @param right Right operand.
 		 * @returns And expression.
 		 */
-		std::shared_ptr<BaseExpression> createAnd(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right) {
-			//std::cerr << "Creating " << left->toString() << " & " << right->toString() << std::endl;
-			return std::shared_ptr<BinaryBooleanFunctionExpression>(new BinaryBooleanFunctionExpression(left, right, BinaryBooleanFunctionExpression::AND));
+		std::shared_ptr<BaseExpression> createAnd(std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right) {
+			return std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(left->clone(), right->clone(), BinaryBooleanFunctionExpression::AND));
 		}
 		/*!
 		 * Create a new Or expression.
@@ -175,24 +174,24 @@ namespace prism {
 		 * @param right Right operand.
 		 * @returns Or expression.
 		 */
-		std::shared_ptr<BaseExpression> createOr(std::shared_ptr<BaseExpression> left, std::shared_ptr<BaseExpression> right) {
-			return std::shared_ptr<BinaryBooleanFunctionExpression>(new BinaryBooleanFunctionExpression(left, right, BinaryBooleanFunctionExpression::OR));
+		std::shared_ptr<BaseExpression> createOr(std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right) {
+			return std::shared_ptr<BinaryBooleanFunctionExpression>(new BinaryBooleanFunctionExpression(left->clone(), right->clone(), BinaryBooleanFunctionExpression::OR));
 		}
 		/*!
 		 * Retrieve boolean variable by name.
 		 * @param name Variable name.
 		 * @returns Boolean variable.
 		 */
-		std::shared_ptr<BaseExpression> getBoolVariable(const std::string name) {
-			return state->getBooleanVariableExpression(name);
+		std::shared_ptr<BaseExpression> getBoolVariable(std::string const& name) {
+			return std::shared_ptr<BaseExpression>(new VariableExpression(*state->getBooleanVariableExpression(name)));
 		}
 		/*!
 		 * Retrieve integer variable by name.
 		 * @param name Variable name.
 		 * @returns Integer variable.
 		 */
-		std::shared_ptr<BaseExpression> getIntVariable(const std::string name) {
-			return state->getIntegerVariableExpression(name);
+		std::shared_ptr<BaseExpression> getIntVariable(std::string const& name) {
+			return std::shared_ptr<BaseExpression>(new VariableExpression(*state->getIntegerVariableExpression(name)));
 		}
 
 		/*!
@@ -200,6 +199,7 @@ namespace prism {
 		 * Any subclass that needs to do something in order to proceed to the second run should override this method.
 		 */
 		virtual void prepareSecondRun() {}
+        
 	protected:
 		/*!
 		 * Pointer to variable state.

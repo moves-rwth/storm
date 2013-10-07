@@ -11,20 +11,20 @@ namespace storm {
     namespace ir {
         namespace expressions {
             
-            BinaryExpression::BinaryExpression(ReturnType type, std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right)
-            : BaseExpression(type), left(left), right(right) {
+            BinaryExpression::BinaryExpression(ReturnType type, std::unique_ptr<BaseExpression>&& left, std::unique_ptr<BaseExpression>&& right)
+            : BaseExpression(type), left(std::move(left)), right(std::move(right)) {
                 // Nothing to do here.
             }
             
-            BinaryExpression::BinaryExpression(BinaryExpression const& binaryExpression) : BaseExpression(binaryExpression.getType()), left(binaryExpression.left), right(binaryExpression.right) {
+            BinaryExpression::BinaryExpression(BinaryExpression const& binaryExpression) : BaseExpression(binaryExpression.getType()), left(binaryExpression.left->clone()), right(binaryExpression.right->clone()) {
                 // Nothing to do here.
             }
 
-            std::shared_ptr<BaseExpression> const& BinaryExpression::getLeft() const {
+            std::unique_ptr<BaseExpression> const& BinaryExpression::getLeft() const {
                 return left;
             }
             
-            std::shared_ptr<BaseExpression> const& BinaryExpression::getRight() const {
+            std::unique_ptr<BaseExpression> const& BinaryExpression::getRight() const {
                 return right;
             }
             

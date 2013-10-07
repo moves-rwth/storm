@@ -30,7 +30,7 @@ namespace storm {
                  * @param child The child of the node.
                  * @param functionType The operator that is to be applied to the two children.
                  */
-                UnaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> child, FunctionType functionType);
+                UnaryBooleanFunctionExpression(std::unique_ptr<BaseExpression>&& child, FunctionType functionType);
                 
                 /*!
                  * Copy-constructs from the given expression.
@@ -39,9 +39,9 @@ namespace storm {
                  */
                 UnaryBooleanFunctionExpression(UnaryBooleanFunctionExpression const& unaryBooleanFunctionExpression);
                 
-                virtual std::shared_ptr<BaseExpression> clone() const override;
+                virtual std::unique_ptr<BaseExpression> clone() const override;
                 
-                virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
+                virtual std::unique_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
 
                 /*!
                  * Retrieves the operator that is associated with this node.

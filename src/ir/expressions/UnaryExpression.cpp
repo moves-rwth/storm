@@ -11,15 +11,15 @@ namespace storm {
     namespace ir {
         namespace expressions {
     
-            UnaryExpression::UnaryExpression(ReturnType type, std::shared_ptr<BaseExpression> child) : BaseExpression(type), child(child) {
+            UnaryExpression::UnaryExpression(ReturnType type, std::unique_ptr<BaseExpression>&& child) : BaseExpression(type), child(std::move(child)) {
                 // Nothing to do here.
             }
             
-            UnaryExpression::UnaryExpression(UnaryExpression const& unaryExpression) : BaseExpression(unaryExpression), child(unaryExpression.child) {
+            UnaryExpression::UnaryExpression(UnaryExpression const& unaryExpression) : BaseExpression(unaryExpression), child(unaryExpression.child->clone()) {
                 // Nothing to do here.
             }
             
-            std::shared_ptr<BaseExpression> const& UnaryExpression::getChild() const {
+            std::unique_ptr<BaseExpression> const& UnaryExpression::getChild() const {
                 return child;
             }
             

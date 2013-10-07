@@ -52,9 +52,9 @@ namespace storm {
                  */
                 VariableExpression(VariableExpression const& variableExpression);
                 
-                virtual std::shared_ptr<BaseExpression> clone() const override;
+                virtual std::unique_ptr<BaseExpression> clone() const override;
                 
-				virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
+				virtual std::unique_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
 				
 				virtual void accept(ExpressionVisitor* visitor) override;
 				

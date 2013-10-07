@@ -46,12 +46,12 @@ namespace storm {
             Iterator,
             Program(),
             qi::locals<
-            std::map<std::string, std::shared_ptr<BooleanConstantExpression>>,
-            std::map<std::string, std::shared_ptr<IntegerConstantExpression>>,
-            std::map<std::string, std::shared_ptr<DoubleConstantExpression>>,
+            std::map<std::string, std::unique_ptr<BooleanConstantExpression>>,
+            std::map<std::string, std::unique_ptr<IntegerConstantExpression>>,
+            std::map<std::string, std::unique_ptr<DoubleConstantExpression>>,
             GlobalVariableInformation,
             std::map<std::string, RewardModel>,
-            std::map<std::string, std::shared_ptr<BaseExpression>>
+            std::map<std::string, std::unique_ptr<BaseExpression>>
             >,
             Skipper> {
             public:
@@ -82,16 +82,16 @@ namespace storm {
                 Iterator,
                 Program(),
                 qi::locals<
-				std::map<std::string, std::shared_ptr<BooleanConstantExpression>>,
-				std::map<std::string, std::shared_ptr<IntegerConstantExpression>>,
-				std::map<std::string, std::shared_ptr<DoubleConstantExpression>>,
+				std::map<std::string, std::unique_ptr<BooleanConstantExpression>>,
+				std::map<std::string, std::unique_ptr<IntegerConstantExpression>>,
+				std::map<std::string, std::unique_ptr<DoubleConstantExpression>>,
                 GlobalVariableInformation,
 				std::map<std::string, RewardModel>,
-				std::map<std::string, std::shared_ptr<BaseExpression>>
+				std::map<std::string, std::unique_ptr<BaseExpression>>
                 >,
                 Skipper> start;
                 qi::rule<Iterator, Program::ModelType(), Skipper> modelTypeDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BooleanConstantExpression>>&, std::map<std::string, std::shared_ptr<IntegerConstantExpression>>&, std::map<std::string, std::shared_ptr<DoubleConstantExpression>>&), Skipper> constantDefinitionList;
+                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::unique_ptr<BooleanConstantExpression>>&, std::map<std::string, std::unique_ptr<IntegerConstantExpression>>&, std::map<std::string, std::unique_ptr<DoubleConstantExpression>>&), Skipper> constantDefinitionList;
                 qi::rule<Iterator, std::vector<Module>(), Skipper> moduleDefinitionList;
                 
                 // Rules for global variable definitions
@@ -125,16 +125,16 @@ namespace storm {
                 qi::rule<Iterator, TransitionReward(), qi::locals<std::string>, Skipper> transitionRewardDefinition;
                 
                 // Rules for label definitions.
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BaseExpression>>&), Skipper> labelDefinitionList;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BaseExpression>>&), Skipper> labelDefinition;
+                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::unique_ptr<BaseExpression>>&), Skipper> labelDefinitionList;
+                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::unique_ptr<BaseExpression>>&), Skipper> labelDefinition;
                 
                 // Rules for constant definitions.
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> constantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BooleanConstantExpression>>&, std::map<std::string, std::shared_ptr<IntegerConstantExpression>>&, std::map<std::string, std::shared_ptr<DoubleConstantExpression>>&), Skipper> undefinedConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::unique_ptr<BooleanConstantExpression>>&, std::map<std::string, std::unique_ptr<IntegerConstantExpression>>&, std::map<std::string, std::unique_ptr<DoubleConstantExpression>>&), Skipper> undefinedConstantDefinition;
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> definedConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<BooleanConstantExpression>>&), qi::locals<std::shared_ptr<BooleanConstantExpression>>, Skipper> undefinedBooleanConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<IntegerConstantExpression>>&), qi::locals<std::shared_ptr<IntegerConstantExpression>>, Skipper> undefinedIntegerConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::shared_ptr<DoubleConstantExpression>>&), qi::locals<std::shared_ptr<DoubleConstantExpression>>, Skipper> undefinedDoubleConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::unique_ptr<BooleanConstantExpression>>&), Skipper> undefinedBooleanConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::unique_ptr<IntegerConstantExpression>>&), Skipper> undefinedIntegerConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::unique_ptr<DoubleConstantExpression>>&), Skipper> undefinedDoubleConstantDefinition;
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> definedBooleanConstantDefinition;
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> definedIntegerConstantDefinition;
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> definedDoubleConstantDefinition;
@@ -148,21 +148,13 @@ namespace storm {
                 storm::parser::prism::relationalOperatorStruct relations_;
                 
                 /*!
-                 * Adds a constant of type integer with the given name and value.
-                 *
-                 * @param name The name of the constant.
-                 * @param value An expression definining the value of the constant.
-                 */
-                std::shared_ptr<BaseExpression> addIntegerConstant(std::string const& name, std::shared_ptr<BaseExpression> const& value);
-                
-                /*!
                  * Adds a label with the given name and expression to the given label-to-expression map.
                  *
                  * @param name The name of the label.
                  * @param expression The expression associated with the label.
                  * @param nameToExpressionMap The map to which the label is added.
                  */
-                void addLabel(std::string const& name, std::shared_ptr<BaseExpression> const& value, std::map<std::string, std::shared_ptr<BaseExpression>>& nameToExpressionMap);
+                void addLabel(std::string const& name, std::shared_ptr<BaseExpression> const& value, std::map<std::string, std::unique_ptr<BaseExpression>>& nameToExpressionMap);
                 
                 /*!
                  * Adds a boolean assignment for the given variable with the given expression and adds it to the
@@ -182,8 +174,14 @@ namespace storm {
                  * @param expression The expression that is assigned to the variable.
                  * @param variableToAssignmentMap The map to which the assignment is added.
                  */
-                void addIntegerAssignment(std::string const& variable, std::shared_ptr<BaseExpression> const& value, std::map<std::string, Assignment>& variableToAssignmentMap);
+                void addIntegerAssignment(std::string const& variable, std::shared_ptr<BaseExpression> const& expression, std::map<std::string, Assignment>& variableToAssignmentMap);
                 
+                void addUndefinedBooleanConstant(std::string const& name, std::map<std::string, std::unique_ptr<BooleanConstantExpression>>& nameToExpressionMap);
+
+                void addUndefinedIntegerConstant(std::string const& name, std::map<std::string, std::unique_ptr<IntegerConstantExpression>>& nameToExpressionMap);
+
+                void addUndefinedDoubleConstant(std::string const& name, std::map<std::string, std::unique_ptr<DoubleConstantExpression>>& nameToExpressionMap);
+
                 /*!
                  * Creates a module by renaming, i.e. takes the module given by the old name, creates a new module
                  * with the given name which renames all identifiers according to the given mapping.
@@ -237,7 +235,7 @@ namespace storm {
                  * @param guard The guard of the command.
                  * @param updates The updates associated with the command.
                  */
-                Command createCommand(std::string const& label, std::shared_ptr<BaseExpression> guard, std::vector<Update> const& updates);
+                Command createCommand(std::string const& label, std::shared_ptr<BaseExpression> const& guard, std::vector<Update> const& updates);
                 
                 /*!
                  * Creates an update with the given likelihood and the given assignments to boolean and integer variables, respectively.
@@ -246,7 +244,7 @@ namespace storm {
                  * @param booleanAssignments The assignments to boolean variables this update involves.
                  * @param integerAssignments The assignments to integer variables this update involves.
                  */
-                Update createUpdate(std::shared_ptr<BaseExpression> likelihood, std::map<std::string, Assignment> const& booleanAssignments, std::map<std::string, Assignment> const& integerAssignments);
+                Update createUpdate(std::shared_ptr<BaseExpression> const& likelihood, std::map<std::string, Assignment> const& booleanAssignments, std::map<std::string, Assignment> const& integerAssignments);
                 
             };
             

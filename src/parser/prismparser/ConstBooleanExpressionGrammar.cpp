@@ -6,7 +6,7 @@ namespace storm {
 namespace parser {
 namespace prism {
 
-	ConstBooleanExpressionGrammar::ConstBooleanExpressionGrammar(std::shared_ptr<VariableState>& state)
+	ConstBooleanExpressionGrammar::ConstBooleanExpressionGrammar(std::shared_ptr<VariableState> const& state)
 		: ConstBooleanExpressionGrammar::base_type(constantBooleanExpression), BaseGrammar(state) {
 
 		constantBooleanExpression %= constantOrExpression;

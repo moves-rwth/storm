@@ -43,7 +43,7 @@ namespace storm {
              * @param upperBound the upper bound of the domain of the variable.
              * @param initialValue the expression that defines the initial value of the variable.
              */
-            IntegerVariable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound, std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound, std::shared_ptr<storm::ir::expressions::BaseExpression> initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr));
+            IntegerVariable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& lowerBound, std::unique_ptr<storm::ir::expressions::BaseExpression>&& upperBound, std::unique_ptr<storm::ir::expressions::BaseExpression>&& initialValue = nullptr);
             
             /*!
              * Creates a copy of the given integer variable and performs the provided renaming.
@@ -58,16 +58,25 @@ namespace storm {
             IntegerVariable(IntegerVariable const& oldVariable, std::string const& newName, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
             
             /*!
+             * Performs a deep-copy of the given variable.
+             *
+             * @param otherVariable The variable to copy.
+             */
+            IntegerVariable(IntegerVariable const& otherVariable);
+            
+            IntegerVariable& operator=(IntegerVariable const& otherVariable);
+            
+            /*!
              * Retrieves the lower bound for this integer variable.
              * @returns the lower bound for this integer variable.
              */
-            std::shared_ptr<storm::ir::expressions::BaseExpression> getLowerBound() const;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> const& getLowerBound() const;
             
             /*!
              * Retrieves the upper bound for this integer variable.
              * @returns the upper bound for this integer variable.
              */
-            std::shared_ptr<storm::ir::expressions::BaseExpression> getUpperBound() const;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> const& getUpperBound() const;
             
             /*!
              * Retrieves a string representation of this variable.
@@ -77,10 +86,10 @@ namespace storm {
             
         private:
             // The lower bound of the domain of the variable.
-            std::shared_ptr<storm::ir::expressions::BaseExpression> lowerBound;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> lowerBound;
             
             // The upper bound of the domain of the variable.
-            std::shared_ptr<storm::ir::expressions::BaseExpression> upperBound;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> upperBound;
         };
         
     } // namespace ir

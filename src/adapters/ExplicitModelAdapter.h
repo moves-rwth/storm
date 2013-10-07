@@ -518,13 +518,13 @@ namespace storm {
              * @param program The program in which to undefine the constants.
              */
             static void undefineUndefinedConstants(storm::ir::Program& program) {
-                for (auto nameExpressionPair : program.getBooleanUndefinedConstantExpressionsMap()) {
+                for (auto const& nameExpressionPair : program.getBooleanUndefinedConstantExpressionsMap()) {
                     nameExpressionPair.second->undefine();
                 }
-                for (auto nameExpressionPair : program.getIntegerUndefinedConstantExpressionsMap()) {
+                for (auto const& nameExpressionPair : program.getIntegerUndefinedConstantExpressionsMap()) {
                     nameExpressionPair.second->undefine();
                 }
-                for (auto nameExpressionPair : program.getDoubleUndefinedConstantExpressionsMap()) {
+                for (auto const& nameExpressionPair : program.getDoubleUndefinedConstantExpressionsMap()) {
                     nameExpressionPair.second->undefine();
                 }
             }
@@ -1115,7 +1115,7 @@ namespace storm {
              * @return The state labeling of the given program.
              */
             static storm::models::AtomicPropositionsLabeling buildStateLabeling(storm::ir::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation) {
-                std::map<std::string, std::shared_ptr<storm::ir::expressions::BaseExpression>> const& labels = program.getLabels();
+                std::map<std::string, std::unique_ptr<storm::ir::expressions::BaseExpression>> const& labels = program.getLabels();
                 
                 storm::models::AtomicPropositionsLabeling result(stateInformation.reachableStates.size(), labels.size() + 1);
                 

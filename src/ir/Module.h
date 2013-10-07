@@ -61,9 +61,6 @@ namespace storm {
                    std::map<std::string, uint_fast64_t> const& integerVariableToLocalIndexMap,
                    std::vector<storm::ir::Command> const& commands);
             
-            typedef uint_fast64_t (*addIntegerVariablePtr)(std::string const& name, std::shared_ptr<storm::ir::expressions::BaseExpression> const& lower, std::shared_ptr<storm::ir::expressions::BaseExpression> const upper, std::shared_ptr<storm::ir::expressions::BaseExpression> const& init);
-            typedef uint_fast64_t (*addBooleanVariablePtr)(std::string const& name, std::shared_ptr<storm::ir::expressions::BaseExpression> const& init);
-            
             /*!
              * Special copy constructor, implementing the module renaming functionality.
              * This will create a new module having all identifiers renamed according to the given map.

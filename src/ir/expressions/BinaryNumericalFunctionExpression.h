@@ -32,18 +32,18 @@ namespace storm {
                  * @param right The right child of the  expression tree node.
                  * @param functionType The function that is applied to the children of this node.
                  */
-                BinaryNumericalFunctionExpression(ReturnType type, std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right, FunctionType functionType);
+                BinaryNumericalFunctionExpression(ReturnType type, std::unique_ptr<BaseExpression>&& left, std::unique_ptr<BaseExpression>&& right, FunctionType functionType);
                 
                 /*!
-                 * Copy-constructs from the given expression.
+                 * Performs a deep-copy of the given expression.
                  *
                  * @param binaryNumericalFunctionExpression The expression to copy.
                  */
                 BinaryNumericalFunctionExpression(BinaryNumericalFunctionExpression const& binaryNumericalFunctionExpression);
 
-                virtual std::shared_ptr<BaseExpression> clone() const override;
+                virtual std::unique_ptr<BaseExpression> clone() const override;
                 
-                virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
+                virtual std::unique_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
                 
                 /*!
                  * Retrieves the operator that is associated with this node.

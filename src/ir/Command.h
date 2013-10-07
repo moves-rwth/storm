@@ -43,7 +43,7 @@ namespace storm {
              * @param guardExpression the expression that defines the guard of the command.
              * @param updates A list of updates that is associated with this command.
              */
-            Command(uint_fast64_t globalIndex, std::string const& actionName, std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression, std::vector<storm::ir::Update> const& updates);
+            Command(uint_fast64_t globalIndex, std::string const& actionName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& guardExpression, std::vector<storm::ir::Update> const& updates);
             
             /*!
              * Creates a copy of the given command and performs the provided renaming.
@@ -57,6 +57,15 @@ namespace storm {
             Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState);
             
             /*!
+             * Performs a deep-copy of the given command.
+             *
+             * @param otherCommand The command to copy.
+             */
+            Command(Command const& otherCommand);
+            
+            Command& operator=(Command const& otherCommand);
+            
+            /*!
              * Retrieves the action name of this command.
              *
              * @return The action name of this command.
@@ -68,7 +77,7 @@ namespace storm {
              *
              * @return A reference to the guard of the command.
              */
-            std::shared_ptr<storm::ir::expressions::BaseExpression> const& getGuard() const;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> const& getGuard() const;
             
             /*!
              * Retrieves the number of updates associated with this command.
@@ -103,7 +112,7 @@ namespace storm {
             std::string actionName;
             
             // The expression that defines the guard of the command.
-            std::shared_ptr<storm::ir::expressions::BaseExpression> guardExpression;
+            std::unique_ptr<storm::ir::expressions::BaseExpression> guardExpression;
             
             // The list of updates of the command.
             std::vector<storm::ir::Update> updates;

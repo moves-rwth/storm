@@ -13,7 +13,7 @@ namespace storm {
     namespace ir {
         namespace expressions {
             
-            UnaryBooleanFunctionExpression::UnaryBooleanFunctionExpression(std::shared_ptr<BaseExpression> child, FunctionType functionType) : UnaryExpression(bool_, child), functionType(functionType) {
+            UnaryBooleanFunctionExpression::UnaryBooleanFunctionExpression(std::unique_ptr<BaseExpression>&& child, FunctionType functionType) : UnaryExpression(bool_, std::move(child)), functionType(functionType) {
                 // Nothing to do here.
             }
             
@@ -21,12 +21,12 @@ namespace storm {
                 // Nothing to do here.
             }
             
-            std::shared_ptr<BaseExpression> UnaryBooleanFunctionExpression::clone() const {
-                return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getChild()->clone(), functionType));
+            std::unique_ptr<BaseExpression> UnaryBooleanFunctionExpression::clone() const {
+                return std::unique_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getChild()->clone(), functionType));
             }
             
-            std::shared_ptr<BaseExpression> UnaryBooleanFunctionExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
-                return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getChild()->clone(renaming, variableState), this->functionType));
+            std::unique_ptr<BaseExpression> UnaryBooleanFunctionExpression::clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const {
+                return std::unique_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getChild()->clone(renaming, variableState), this->functionType));
             }
             
             UnaryBooleanFunctionExpression::FunctionType UnaryBooleanFunctionExpression::getFunctionType() const {

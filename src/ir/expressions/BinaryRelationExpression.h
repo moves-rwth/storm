@@ -31,7 +31,7 @@ namespace storm {
                  * @param right The right child of the binary expression.
                  * @param relationType The type of the relation associated with this node.
                  */
-                BinaryRelationExpression(std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right, RelationType relationType);
+                BinaryRelationExpression(std::unique_ptr<BaseExpression>&& left, std::unique_ptr<BaseExpression>&& right, RelationType relationType);
                 
                 /*!
                  * Copy-constructs from the given expression.
@@ -40,9 +40,9 @@ namespace storm {
                  */
                 BinaryRelationExpression(BinaryRelationExpression const& binaryRelationExpression);
                 
-                virtual std::shared_ptr<BaseExpression> clone() const override;
+                virtual std::unique_ptr<BaseExpression> clone() const override;
                 
-                virtual std::shared_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
+                virtual std::unique_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
                 
                 virtual bool getValueAsBool(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const override;
                 

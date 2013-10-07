@@ -41,7 +41,7 @@ namespace storm {
              * @param variableName The name of the variable.
              * @param initialValue The expression that defines the initial value of the variable.
              */
-            BooleanVariable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::shared_ptr<storm::ir::expressions::BaseExpression> const& initialValue = std::shared_ptr<storm::ir::expressions::BaseExpression>(nullptr));
+            BooleanVariable(uint_fast64_t localIndex, uint_fast64_t globalIndex, std::string const& variableName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& initialValue = nullptr);
             
             /*!
              * Creates a copy of the given boolean variable and performs the provided renaming.
@@ -54,6 +54,8 @@ namespace storm {
              * @param variableState An object knowing about the variables in the system.
              */
             BooleanVariable(BooleanVariable const& oldVariable, std::string const& newName, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState);
+            
+            BooleanVariable& operator=(BooleanVariable const& otherVariable);
             
             /*!
              * Retrieves a string representation of this variable.
