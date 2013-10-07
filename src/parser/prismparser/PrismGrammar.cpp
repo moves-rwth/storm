@@ -93,7 +93,7 @@ namespace storm {
             void PrismGrammar::createIntegerVariable(std::string const& name, std::shared_ptr<BaseExpression> const& lower, std::shared_ptr<BaseExpression> const& upper, std::shared_ptr<BaseExpression> const& init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids, bool isGlobalVariable) {
                 uint_fast64_t id = this->state->addIntegerVariable(name);
                 uint_fast64_t newLocalIndex = this->state->nextLocalIntegerVariableIndex;
-                vars.emplace_back(newLocalIndex, id, name, lower->clone(), upper->clone(), init->clone());
+                vars.emplace_back(newLocalIndex, id, name, lower != nullptr ? lower->clone() : nullptr, upper != nullptr ? upper->clone() : nullptr, init != nullptr ? init->clone() : nullptr);
                 varids[name] = newLocalIndex;
                 ++this->state->nextLocalIntegerVariableIndex;
                 this->state->localIntegerVariables_.add(name, name);
@@ -105,7 +105,7 @@ namespace storm {
             void PrismGrammar::createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& vars, std::map<std::string, uint_fast64_t>& varids, bool isGlobalVariable) {
                 uint_fast64_t id = this->state->addBooleanVariable(name);
                 uint_fast64_t newLocalIndex = this->state->nextLocalBooleanVariableIndex;
-                vars.emplace_back(newLocalIndex, id, name, init->clone());
+                vars.emplace_back(newLocalIndex, id, name, init != nullptr ? init->clone() : nullptr);
                 varids[name] = newLocalIndex;
                 ++this->state->nextLocalBooleanVariableIndex;
                 this->state->localBooleanVariables_.add(name, name);
@@ -125,7 +125,7 @@ namespace storm {
             }
             Update PrismGrammar::createUpdate(std::shared_ptr<BaseExpression> const& likelihood, std::map<std::string, Assignment> const& bools, std::map<std::string, Assignment> const& ints) {
                 this->state->nextGlobalUpdateIndex++;
-                return Update(this->state->getNextGlobalUpdateIndex() - 1, likelihood->clone(), bools, ints);
+                return Update(this->state->getNextGlobalUpdateIndex() - 1, likelihood != nullptr ? likelihood->clone() : nullptr, bools, ints);
             }
             Command PrismGrammar::createCommand(std::string const& label, std::shared_ptr<BaseExpression> const& guard, std::vector<Update> const& updates) {
                 this->state->nextGlobalCommandIndex++;

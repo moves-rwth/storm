@@ -33,7 +33,7 @@ namespace storm {
                  * @param binaryExpression The expression to copy.
                  */
                 BinaryExpression(BinaryExpression const& binaryExpression);
-                
+                                
                 /*!
                  * Retrieves the left child of the expression node.
                  *
@@ -47,6 +47,9 @@ namespace storm {
                  * @return The right child of the expression node.
                  */
                 std::unique_ptr<BaseExpression> const& getRight() const;
+                
+            protected:
+                virtual BaseExpression* performSubstitution(std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution) override;
                 
             private:
                 // The left child of the binary expression.

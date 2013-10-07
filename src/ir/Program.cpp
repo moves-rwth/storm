@@ -77,7 +77,7 @@ namespace storm {
         Program::Program(Program const& otherProgram) : modelType(otherProgram.modelType), globalBooleanVariables(otherProgram.globalBooleanVariables),
         globalIntegerVariables(otherProgram.globalIntegerVariables), globalBooleanVariableToIndexMap(otherProgram.globalBooleanVariableToIndexMap),
         globalIntegerVariableToIndexMap(otherProgram.globalIntegerVariableToIndexMap), modules(otherProgram.modules), rewards(otherProgram.rewards),
-        actionsToModuleIndexMap(), variableToModuleIndexMap() {
+        actions(otherProgram.actions), actionsToModuleIndexMap(), variableToModuleIndexMap() {
             // Perform deep-copy of the maps.
             for (auto const& booleanUndefinedConstant : otherProgram.booleanUndefinedConstantExpressions) {
                 this->booleanUndefinedConstantExpressions[booleanUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::BooleanConstantExpression>(new storm::ir::expressions::BooleanConstantExpression(*booleanUndefinedConstant.second));
@@ -102,6 +102,7 @@ namespace storm {
                 this->globalIntegerVariableToIndexMap = otherProgram.globalIntegerVariableToIndexMap;
                 this->modules = otherProgram.modules;
                 this->rewards = otherProgram.rewards;
+                this->actions = otherProgram.actions;
                 this->actionsToModuleIndexMap = otherProgram.actionsToModuleIndexMap;
                 this->variableToModuleIndexMap = otherProgram.variableToModuleIndexMap;
                 

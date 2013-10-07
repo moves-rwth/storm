@@ -55,7 +55,7 @@ namespace storm {
                 virtual std::unique_ptr<BaseExpression> clone() const override;
                 
 				virtual std::unique_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const override;
-				
+				            
 				virtual void accept(ExpressionVisitor* visitor) override;
 				
 				virtual std::string toString() const override;
@@ -79,7 +79,10 @@ namespace storm {
                  * @return The global index of the variable.
                  */
 				uint_fast64_t getGlobalVariableIndex() const;
-				
+				            
+            protected:
+                virtual BaseExpression* performSubstitution(std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution) override;
+                
 			private:
                 // The global index of the variable.
 				uint_fast64_t globalIndex;

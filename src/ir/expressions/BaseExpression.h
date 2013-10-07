@@ -33,8 +33,11 @@ namespace storm {
              * The base class for all expressions.
              */
             class BaseExpression {
-                
             public:
+                // Forward declare friend classes to allow access to substitute.
+                friend class BinaryExpression;
+                friend class UnaryExpression;
+
                 /*!
                  * Each node in an expression tree has a uniquely defined type from this enum.
                  */
@@ -78,7 +81,17 @@ namespace storm {
                  * @param variableState An object knowing about the global variable state.
                  */
                 virtual std::unique_ptr<BaseExpression> clone(std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState const& variableState) const = 0;
-                                
+                
+                /*!
+                 * Performs the given substitution by replacing each variable in the given expression that is a key in
+                 * the map by a copy of the mapped expression.
+                 *
+                 * @param expression The expression in which to perform the substitution.
+                 * @param substitution The substitution to apply.
+                 * @return The resulting expression.
+                 */
+                static std::unique_ptr<BaseExpression> substitute(std::unique_ptr<BaseExpression>&& expression, std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution);
+                
                 /*!
                  * Retrieves the value of the expression as an integer given the provided variable valuation.
                  *
@@ -136,6 +149,16 @@ namespace storm {
                  * @return The type to which the node evaluates.
                  */
                 ReturnType getType() const;
+                
+            protected:
+                /*!
+                 * Performs the given substitution on the expression, i.e. replaces all variables whose names are keys
+                 * of the map by a copy of the expression they are associated with in the map. This is intended as a helper
+                 * function for substitute.
+                 *
+                 * @param substitution The substitution to perform
+                 */
+                virtual BaseExpression* performSubstitution(std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution);
                 
             private:
                 // The type to which this node evaluates.

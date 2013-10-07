@@ -48,6 +48,20 @@ namespace storm {
                 }
             }
             
+            BaseExpression* VariableExpression::performSubstitution(std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution) {
+                // If the name of the variable is a key of the map, we need to replace it.
+                auto substitutionIterator = substitution.find(variableName);
+                
+                if (substitutionIterator != substitution.end()) {
+                    std::unique_ptr<BaseExpression> expressionClone = substitutionIterator->second.get().clone();
+                    BaseExpression* rawPointer = expressionClone.release();
+                    return rawPointer;
+                } else {
+                    // Otherwise, we don't need to replace anything.
+                    return this;
+                }
+            }
+            
             void VariableExpression::accept(ExpressionVisitor* visitor) {
                 visitor->visit(this);
             }

@@ -703,7 +703,7 @@ namespace storm {
                 std::list<Choice<ValueType>> result;
                 
                 StateType const* currentState = stateInformation.reachableStates[stateIndex];
-                
+
                 // Iterate over all modules.
                 for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
                     storm::ir::Module const& module = program.getModule(i);
@@ -757,7 +757,7 @@ namespace storm {
                 for (std::string const& action : program.getActions()) {
                     StateType const* currentState = stateInformation.reachableStates[stateIndex];
                     boost::optional<std::vector<std::list<storm::ir::Command>>> optionalActiveCommandLists = getActiveCommandsByAction(program, currentState, action);
-                    
+                                        
                     // Only process this action label, if there is at least one feasible solution.
                     if (optionalActiveCommandLists) {
                         std::vector<std::list<storm::ir::Command>> const& activeCommandList = optionalActiveCommandLists.get();

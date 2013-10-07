@@ -23,6 +23,17 @@ namespace storm {
                 return child;
             }
             
+            BaseExpression* UnaryExpression::performSubstitution(std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution) {
+                BaseExpression* newChild = child->performSubstitution(substitution);
+                
+                // Only update the child if it changed, because otherwise the child gets destroyed.
+                if (newChild != child.get()) {
+                    child = std::unique_ptr<BaseExpression>(newChild);
+                }
+                
+                return this;
+            }
+            
         } // namespace expressions
     } // namespace ir
 } // namespace storm

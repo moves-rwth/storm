@@ -26,6 +26,16 @@ namespace storm {
                 // Nothing to do here.
             }
             
+            std::unique_ptr<BaseExpression> BaseExpression::substitute(std::unique_ptr<BaseExpression>&& expression, std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution) {
+                BaseExpression* result = expression->performSubstitution(substitution);
+                
+                if (result != expression.get()) {
+                    return std::unique_ptr<BaseExpression>(result);
+                } else {
+                    return std::move(expression);
+                }
+            }
+            
             int_fast64_t BaseExpression::getValueAsInt(std::pair<std::vector<bool>, std::vector<int_fast64_t>> const* variableValues) const {
                 if (type != int_) {
                     throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression of type '"
@@ -68,6 +78,10 @@ namespace storm {
             
             BaseExpression::ReturnType BaseExpression::getType() const {
                 return type;
+            }
+            
+            BaseExpression* BaseExpression::performSubstitution(std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution) {
+                return this;
             }
             
         } // namespace expressions

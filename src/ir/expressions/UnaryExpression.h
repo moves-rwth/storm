@@ -39,6 +39,9 @@ namespace storm {
                  * @return The child of the expression node.
                  */
                 std::unique_ptr<BaseExpression> const& getChild() const;
+
+            protected:
+                virtual BaseExpression* performSubstitution(std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution) override;
                 
             private:
                 // The left child of the unary expression.

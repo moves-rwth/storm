@@ -20,6 +20,25 @@ namespace storm {
                 // Nothing to do here.
             }
 
+            BaseExpression* BinaryExpression::performSubstitution(std::map<std::string, std::reference_wrapper<BaseExpression>> const& substitution) {
+                // Get the new left successor recursively.
+                BaseExpression* newLeftSuccessor = left->performSubstitution(substitution);
+                
+                // If the left successor changed, we need to update it. If it did not change, this must not be executed,
+                // because assigning to the unique_ptr will destroy the current successor immediately.
+                if (newLeftSuccessor != left.get()) {
+                    left = std::unique_ptr<BaseExpression>(newLeftSuccessor);
+                }
+                
+                // Now do the same thing for the right successor.
+                BaseExpression* newRightSuccessor = right->performSubstitution(substitution);
+                if (newRightSuccessor != right.get()) {
+                    right = std::unique_ptr<BaseExpression>(newRightSuccessor);
+                }
+            
+                return this;
+            }
+            
             std::unique_ptr<BaseExpression> const& BinaryExpression::getLeft() const {
                 return left;
             }
