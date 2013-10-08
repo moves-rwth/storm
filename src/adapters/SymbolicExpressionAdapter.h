@@ -31,12 +31,6 @@ public:
 		return stack.top();
 	}
 
-	virtual void visit(storm::ir::expressions::BaseExpression* expression) {
-		std::cout << expression->toString() << std::endl;
-		throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression "
-			<< " of abstract superclass type.";
-	}
-
 	virtual void visit(storm::ir::expressions::BinaryBooleanFunctionExpression* expression) {
 		expression->getLeft()->accept(this);
 		expression->getRight()->accept(this);

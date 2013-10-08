@@ -63,10 +63,6 @@ namespace storm {
                 << this->getTypeName() << " because evaluation implementation is missing.";
             }
             
-            void BaseExpression::accept(ExpressionVisitor* visitor) {
-                visitor->visit(this);
-            }
-                        
             std::string BaseExpression::getTypeName() const {
                 switch(type) {
                     case bool_: return std::string("bool");

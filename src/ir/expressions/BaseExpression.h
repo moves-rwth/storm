@@ -127,7 +127,7 @@ namespace storm {
                  *
                  * @param visitor The visitor that is supposed to visit each node of the expression tree.
                  */
-                virtual void accept(ExpressionVisitor* visitor);
+                virtual void accept(ExpressionVisitor* visitor) = 0;
                 
                 /*!
                  * Retrieves a string representation of the expression tree underneath the current node.

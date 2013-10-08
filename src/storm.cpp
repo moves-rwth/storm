@@ -358,7 +358,7 @@ int main(const int argc, const char* argv[]) {
                 storm::storage::BitVector const& finishedStates = labeledMdp->getLabeledStates("finished");
                 storm::storage::BitVector const& allCoinsEqual1States = labeledMdp->getLabeledStates("all_coins_equal_1");
                 storm::storage::BitVector targetStates = finishedStates & allCoinsEqual1States;
-                storm::counterexamples::SMTMinimalCommandSetGenerator<double>::getMinimalCommandSet(program, *labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), targetStates, 0.3, true);
+                storm::counterexamples::SMTMinimalCommandSetGenerator<double>::getMinimalCommandSet(program, constants, *labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), targetStates, 0.3, true);
             }
 		}
 

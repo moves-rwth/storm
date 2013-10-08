@@ -28,7 +28,6 @@ namespace storm {
             
             class ExpressionVisitor {
             public:
-                virtual void visit(BaseExpression* expression) = 0;
                 virtual void visit(BinaryBooleanFunctionExpression* expression) = 0;
                 virtual void visit(BinaryNumericalFunctionExpression* expression) = 0;
                 virtual void visit(BinaryRelationExpression* expression) = 0;

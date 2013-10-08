@@ -18,7 +18,8 @@
 #include "z3++.h"
 #endif
 
-#include "src/ir/Program.h"
+#include "src/adapters/ExplicitModelAdapter.h"
+#include "src/adapters/Z3ExpressionAdapter.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 
@@ -158,25 +159,24 @@ namespace storm {
             }
             
             /*!
-             * Asserts cuts that rule out a lot of suboptimal solutions.
+             * Asserts cuts that are derived from the explicit representation of the model and rule out a lot of
+             * suboptimal solutions.
              *
              * @param labeledMdp The labeled MDP for which to compute the cuts.
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static void assertCuts(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
-                // Walk through the MDP and:
-                // identify labels enabled in initial states
-                // identify labels that can directly precede a given action
-                // identify labels that directly reach a target state
-                // identify labels that can directly follow a given action
-                // TODO: identify which labels need to synchronize
+            static void assertExplicitCuts(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
+                // Walk through the MDP and
+                // * identify labels enabled in initial states
+                // * identify labels that can directly precede a given action
+                // * identify labels that directly reach a target state
+                // * identify labels that can directly follow a given action
                 
                 std::set<uint_fast64_t> initialLabels;
                 std::map<uint_fast64_t, std::set<uint_fast64_t>> precedingLabels;
                 std::set<uint_fast64_t> targetLabels;
                 std::map<uint_fast64_t, std::set<uint_fast64_t>> followingLabels;
-                std::map<uint_fast64_t, std::set<uint_fast64_t>> synchronizingLabels;
                 
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
@@ -352,6 +352,47 @@ namespace storm {
                 assertConjunction(context, solver, formulae);
             }
 
+            /*!
+             * Asserts cuts that are derived from the symbolic representation of the model and rule out a lot of
+             * suboptimal solutions.
+             *
+             * @param program The symbolic representation of the model in terms of a program.
+             * @param context The Z3 context in which to build the expressions.
+             * @param solver The solver to use for the satisfiability evaluation.
+             */
+            static void assertSymbolicCuts(storm::ir::Program const& program, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
+                // TODO:
+                // find synchronization cuts
+                // find forward/backward cuts
+                
+                storm::utility::ir::VariableInformation programVariableInformation = storm::utility::ir::createVariableInformation(program);
+                
+                // Create a context and register all variables of the program with their correct type.
+                z3::context localContext;
+                std::map<std::string, z3::expr> solverVariables;
+                for (auto const& booleanVariable : programVariableInformation.booleanVariables) {
+                    solverVariables.emplace(booleanVariable.getName(), localContext.bool_const(booleanVariable.getName().c_str()));
+                }
+                for (auto const& integerVariable : programVariableInformation.integerVariables) {
+                    solverVariables.emplace(integerVariable.getName(), localContext.int_const(integerVariable.getName().c_str()));
+                }
+                
+                // Now create a corresponding local solver and assert all range bounds for the integer variables.
+                z3::solver localSolver(localContext);
+                storm::adapters::Z3ExpressionAdapter expressionAdapter(localContext, solverVariables);
+                for (auto const& integerVariable : programVariableInformation.integerVariables) {
+                    z3::expr lowerBound = expressionAdapter.translateExpression(integerVariable.getLowerBound());
+                    lowerBound = solverVariables.at(integerVariable.getName()) >= lowerBound;
+                    localSolver.add(lowerBound);
+                    
+                    z3::expr upperBound = expressionAdapter.translateExpression(integerVariable.getUpperBound());
+                    upperBound = solverVariables.at(integerVariable.getName()) <= upperBound;
+                    localSolver.add(upperBound);
+                }                
+                
+                std::cout << localSolver << std::endl;
+            }
+            
             /*!
              * Asserts that the disjunction of the given formulae holds. If the content of the disjunction is empty,
              * this corresponds to asserting false.
@@ -636,8 +677,10 @@ namespace storm {
 #endif
             
         public:
-            static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false) {
+            static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false) {
 #ifdef STORM_HAVE_Z3
+                storm::utility::ir::defineUndefinedConstants(program, constantDefinitionString);
+
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabels()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal command set generation is impossible for unlabeled model.";
@@ -661,7 +704,8 @@ namespace storm {
                 assertInitialConstraints(program, labeledMdp, psiStates, context, solver, variableInformation, relevancyInformation);
                 
                 // (6) Add constraints that cut off a lot of suboptimal solutions.
-                assertCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
+                assertExplicitCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
+                assertSymbolicCuts(program, variableInformation, relevancyInformation, context, solver);
                 
                 // (7) Find the smallest set of commands that satisfies all constraints. If the probability of
                 // satisfying phi until psi exceeds the given threshold, the set of labels is minimal and can be returned.
@@ -716,7 +760,8 @@ namespace storm {
                 }
                 std::cout << std::endl;
                 
-                // (8) Return the resulting command set.
+                // (8) Return the resulting command set after undefining the constants.
+                storm::utility::ir::undefineUndefinedConstants(program);
                 return commandSet;
                 
 #else

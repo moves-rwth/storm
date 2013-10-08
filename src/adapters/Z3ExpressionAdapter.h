@@ -14,15 +14,17 @@
 
 namespace storm {
     namespace adapters {
-
+        
         class Z3ExpressionAdapter : public storm::ir::expressions::ExpressionVisitor {
         public:
             /*!
              * Creates a Z3ExpressionAdapter over the given Z3 context.
              *
-             * @param context The Z3 context over which to build the expressions.
+             * @param context A reference to the Z3 context over which to build the expressions. Be careful to guarantee
+             * the lifetime of the context as long as the instance of this adapter is used.
+             * @param variableToExpressionMap A mapping from variable names to their corresponding Z3 expressions.
              */
-            Z3ExpressionAdapter(z3::context const& context, std::map<std::string, z3::expr> const& variableToExpressionMap) : context(context), stack(), variableToExpressionMap(variableToExpressionMap) {
+            Z3ExpressionAdapter(z3::context& context, std::map<std::string, z3::expr> const& variableToExpressionMap) : context(context), stack(), variableToExpressionMap(variableToExpressionMap) {
                 // Intentionally left empty.
             }
             
@@ -32,12 +34,14 @@ namespace storm {
              * @param expression The expression to translate.
              * @return An equivalent expression for Z3.
              */
-            z3::expr translateExpression(std::shared_ptr<storm::ir::expressions::BaseExpression> expression) {
+            z3::expr translateExpression(std::unique_ptr<storm::ir::expressions::BaseExpression> const& expression) {
                 expression->accept(this);
-                return stack.top();
+                z3::expr result = stack.top();
+                stack.pop();
+                return result;
             }
             
-            virtual void visit(BinaryBooleanFunctionExpression* expression) {
+            virtual void visit(ir::expressions::BinaryBooleanFunctionExpression* expression) {
                 expression->getLeft()->accept(this);
                 expression->getRight()->accept(this);
                 
@@ -45,7 +49,7 @@ namespace storm {
                 stack.pop();
                 z3::expr leftResult = stack.top();
                 stack.pop();
-
+                
                 switch(expression->getFunctionType()) {
                     case storm::ir::expressions::BinaryBooleanFunctionExpression::AND:
                         stack.push(leftResult && rightResult);
@@ -56,10 +60,10 @@ namespace storm {
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
                         << "Unknown boolean binary operator: '" << expression->getFunctionType() << "'.";
                 }
-
+                
             }
             
-            virtual void visit(BinaryNumericalFunctionExpression* expression) {
+            virtual void visit(ir::expressions::BinaryNumericalFunctionExpression* expression) {
                 expression->getLeft()->accept(this);
                 expression->getRight()->accept(this);
                 
@@ -86,7 +90,7 @@ namespace storm {
                 }
             }
             
-            virtual void visit(BinaryRelationExpression* expression) {
+            virtual void visit(ir::expressions::BinaryRelationExpression* expression) {
                 expression->getLeft()->accept(this);
                 expression->getRight()->accept(this);
                 
@@ -119,7 +123,7 @@ namespace storm {
                 }    
             }
             
-            virtual void visit(BooleanConstantExpression* expression) {
+            virtual void visit(ir::expressions::BooleanConstantExpression* expression) {
                 if (!expression->isDefined()) {
                     throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
 					<< ". Boolean constant '" << expression->getConstantName() << "' is undefined.";
@@ -128,26 +132,28 @@ namespace storm {
                 stack.push(context.bool_val(expression->getValue()));    
             }
             
-            virtual void visit(BooleanLiteralExpression* expression) {
-                stack.push(context.bool_val(expression->getValueAsBool(nullptr))));
+            virtual void visit(ir::expressions::BooleanLiteralExpression* expression) {
+                stack.push(context.bool_val(expression->getValueAsBool(nullptr)));
             }
             
-            virtual void visit(DoubleConstantExpression* expression) {
+            virtual void visit(ir::expressions::DoubleConstantExpression* expression) {
                 if (!expression->isDefined()) {
                     throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
 					<< ". Double constant '" << expression->getConstantName() << "' is undefined.";
                 }
                 
-                // FIXME: convert double value to suitable format.
-                stack.push(context.real_val(expression->getValue()));
+                std::stringstream fractionStream;
+                fractionStream << expression->getValue();
+                stack.push(context.real_val(fractionStream.str().c_str()));
             }
             
-            virtual void visit(DoubleLiteralExpression* expression) {
-                // FIXME: convert double value to suitable format.
-                stack.push(context.real_val(expression->getValue()));
+            virtual void visit(ir::expressions::DoubleLiteralExpression* expression) {
+                std::stringstream fractionStream;
+                fractionStream << expression->getValueAsDouble(nullptr);
+                stack.push(context.real_val(fractionStream.str().c_str()));
             }
             
-            virtual void visit(IntegerConstantExpression* expression) {
+            virtual void visit(ir::expressions::IntegerConstantExpression* expression) {
                 if (!expression->isDefined()) {
                     throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
 					<< ". Integer constant '" << expression->getConstantName() << "' is undefined.";
@@ -156,11 +162,11 @@ namespace storm {
                 stack.push(context.int_val(expression->getValue()));    
             }
             
-            virtual void visit(IntegerLiteralExpression* expression) {
-                stack.push(context.int_val(expression->getValue()));    
+            virtual void visit(ir::expressions::IntegerLiteralExpression* expression) {
+                stack.push(context.int_val(expression->getValueAsInt(nullptr)));    
             }
             
-            virtual void visit(UnaryBooleanFunctionExpression* expression) {
+            virtual void visit(ir::expressions::UnaryBooleanFunctionExpression* expression) {
                 expression->getChild()->accept(this);
                 
                 z3::expr childResult = stack.top();
@@ -175,7 +181,7 @@ namespace storm {
                 }    
             }
             
-            virtual void visit(UnaryNumericalFunctionExpression* expression) {
+            virtual void visit(ir::expressions::UnaryNumericalFunctionExpression* expression) {
                 expression->getChild()->accept(this);
                 
                 z3::expr childResult = stack.top();
@@ -190,17 +196,17 @@ namespace storm {
                 }
             }
             
-            virtual void visit(VariableExpression* expression) {
-                stack.push(variableToExpressionMap.at(expression->getVariableName());
+            virtual void visit(ir::expressions::VariableExpression* expression) {
+                stack.push(variableToExpressionMap.at(expression->getVariableName()));
             }
             
         private:
-            z3::context context;
+            z3::context& context;
             std::stack<z3::expr> stack;
-            std::map<std::string, z3::expr> variableToExpressionMap
-        }
-
+            std::map<std::string, z3::expr> variableToExpressionMap;
+        };
+        
     } // namespace adapters
 } // namespace storm
-        
+
 #endif /* STORM_ADAPTERS_Z3EXPRESSIONADAPTER_H_ */
