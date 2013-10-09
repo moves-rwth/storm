@@ -126,28 +126,6 @@ namespace storm {
             
         private:
             /*!
-             * Sets some boolean variable in the given state object.
-             *
-             * @param state The state to modify.
-             * @param index The index of the boolean variable to modify.
-             * @param value The new value of the variable.
-             */
-            static void setValue(StateType* state, uint_fast64_t index, bool value) {
-                std::get<0>(*state)[index] = value;
-            }
-            
-            /*!
-             * Set some integer variable in the given state object.
-             *
-             * @param state The state to modify.
-             * @param index index of the integer variable to modify.
-             * @param value The new value of the variable.
-             */
-            static void setValue(StateType* state, uint_fast64_t index, int_fast64_t value) {
-                std::get<1>(*state)[index] = value;
-            }
-            
-            /*!
              * Transforms a state into a somewhat readable string.
              *
              * @param state The state to transform into a string.

@@ -172,6 +172,7 @@ namespace storm {
                 // * identify labels that can directly precede a given action
                 // * identify labels that directly reach a target state
                 // * identify labels that can directly follow a given action
+                // * identify labels that can be found on each path to the target states.
                 
                 std::set<uint_fast64_t> initialLabels;
                 std::map<uint_fast64_t, std::set<uint_fast64_t>> precedingLabels;
@@ -361,7 +362,7 @@ namespace storm {
              * @param solver The solver to use for the satisfiability evaluation.
              */
             static void assertSymbolicCuts(storm::ir::Program const& program, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
-                // TODO:
+                // FIXME:
                 // find synchronization cuts
                 // find forward/backward cuts
                 
@@ -388,9 +389,106 @@ namespace storm {
                     z3::expr upperBound = expressionAdapter.translateExpression(integerVariable.getUpperBound());
                     upperBound = solverVariables.at(integerVariable.getName()) <= upperBound;
                     localSolver.add(upperBound);
-                }                
+                }
                 
-                std::cout << localSolver << std::endl;
+                // Construct an expression that exactly characterizes the initial state.
+                std::unique_ptr<storm::utility::ir::StateType> initialState(storm::utility::ir::getInitialState(program, programVariableInformation));
+                z3::expr initialStateExpression = localContext.bool_val(true);
+                for (uint_fast64_t index = 0; index < programVariableInformation.booleanVariables.size(); ++index) {
+                    if (std::get<0>(*initialState).at(programVariableInformation.booleanVariableToIndexMap.at(programVariableInformation.booleanVariables[index].getName()))) {
+                        initialStateExpression = initialStateExpression && solverVariables.at(programVariableInformation.booleanVariables[index].getName());
+                    } else {
+                        initialStateExpression = initialStateExpression && !solverVariables.at(programVariableInformation.booleanVariables[index].getName());
+                    }
+                }
+                for (uint_fast64_t index = 0; index < programVariableInformation.integerVariables.size(); ++index) {
+                    storm::ir::IntegerVariable const& variable = programVariableInformation.integerVariables[index];
+                    initialStateExpression = initialStateExpression && (solverVariables.at(variable.getName()) == localContext.int_val(std::get<1>(*initialState).at(programVariableInformation.integerVariableToIndexMap.at(variable.getName()))));
+                }
+                
+                std::map<uint_fast64_t, std::set<uint_fast64_t>> backwardImplications;
+                
+                // First check for possible backward cuts.
+                for (uint_fast64_t moduleIndex = 0; moduleIndex < program.getNumberOfModules(); ++moduleIndex) {
+                    storm::ir::Module const& module = program.getModule(moduleIndex);
+                    
+                    for (uint_fast64_t commandIndex = 0; commandIndex < module.getNumberOfCommands(); ++commandIndex) {
+                        storm::ir::Command const& command = module.getCommand(commandIndex);
+                        
+                        // If the label of the command is not relevant, skip it entirely.
+                        if (relevancyInformation.relevantLabels.find(command.getGlobalIndex()) == relevancyInformation.relevantLabels.end()) continue;
+                        
+                        // Save the state of the solver so we can easily backtrack.
+                        localSolver.push();
+                        
+                        // Check if the command is enabled in the initial state.
+                        localSolver.add(expressionAdapter.translateExpression(command.getGuard()));
+                        localSolver.add(initialStateExpression);
+                        
+                        z3::check_result checkResult = localSolver.check();
+                        localSolver.pop();
+                        localSolver.push();
+
+                        // If it is not and the action is not synchronizing, we can impose backward cuts.
+                        if (checkResult == z3::unsat && command.getActionName() == "") {
+                            localSolver.add(!expressionAdapter.translateExpression(command.getGuard()));
+                            localSolver.push();
+                            
+                            // We need to check all commands of the all modules, because they could enable the current
+                            // command via a global variable.
+                            for (uint_fast64_t otherModuleIndex = 0; otherModuleIndex < program.getNumberOfModules(); ++otherModuleIndex) {
+                                storm::ir::Module const& otherModule = program.getModule(otherModuleIndex);
+                                
+                                for (uint_fast64_t otherCommandIndex = 0; otherCommandIndex < otherModule.getNumberOfCommands(); ++otherCommandIndex) {
+                                    storm::ir::Command const& otherCommand = otherModule.getCommand(otherCommandIndex);
+                                    
+                                    // We don't need to consider irrelevant commands and the command itself.
+                                    if (relevancyInformation.relevantLabels.find(otherCommand.getGlobalIndex()) == relevancyInformation.relevantLabels.end()) continue;
+                                    if (moduleIndex == otherModuleIndex && commandIndex == otherCommandIndex) continue;
+                                    
+                                    std::vector<z3::expr> formulae;
+                                    formulae.reserve(otherCommand.getNumberOfUpdates());
+                                    
+                                    localSolver.push();
+                                    
+                                    for (uint_fast64_t updateIndex = 0; updateIndex < otherCommand.getNumberOfUpdates(); ++updateIndex) {
+                                        std::unique_ptr<storm::ir::expressions::BaseExpression> weakestPrecondition = storm::utility::ir::getWeakestPrecondition(command.getGuard(), {otherCommand.getUpdate(updateIndex)});
+                                        
+                                        formulae.push_back(expressionAdapter.translateExpression(weakestPrecondition));
+                                    }
+                                    
+                                    assertDisjunction(localContext, localSolver, formulae);
+                                    
+                                    // If the assertions were satisfiable, this means the other command could successfully
+                                    // enable the current command.
+                                    if (localSolver.check() == z3::sat) {
+                                        backwardImplications[command.getGlobalIndex()].insert(otherCommand.getGlobalIndex());
+                                    }
+                                    
+                                    localSolver.pop();
+                                }
+                            }
+                            
+                            // Remove the negated guard from the solver assertions.
+                            localSolver.pop();
+                        }
+                        
+                        // Restore state of solver where only the variable bounds are asserted.
+                        localSolver.pop();
+                    }
+                }
+                
+                std::vector<z3::expr> formulae;
+                for (auto const& labelImplicationsPair : backwardImplications) {
+                    formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelImplicationsPair.first)));
+                    
+                    for (auto label : labelImplicationsPair.second) {
+                        formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+                    }
+                    
+                    assertDisjunction(context, solver, formulae);
+                    formulae.clear();
+                }
             }
             
             /*!
@@ -564,12 +662,16 @@ namespace storm {
                 }
                                 
                 // Check whether the assumptions are satisfiable.
+                LOG4CPLUS_DEBUG(logger, "Invoking satisfiability checking.");
                 z3::check_result result = solver.check(assumptions);
+                LOG4CPLUS_DEBUG(logger, "Done invoking satisfiability checking.");
                 
-                if (result == z3::check_result::sat) {
+                if (result == z3::sat) {
                     return true;
                 } else {
+                    LOG4CPLUS_DEBUG(logger, "Computing unsat core.");
                     z3::expr_vector unsatCore = solver.unsat_core();
+                    LOG4CPLUS_DEBUG(logger, "Computed unsat core.");
                     
                     std::vector<z3::expr> blockingVariables;
                     blockingVariables.reserve(unsatCore.size());
@@ -648,6 +750,8 @@ namespace storm {
              * @return The smallest set of labels such that the constraint system of the solver is still satisfiable.
              */
             static std::set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation& variableInformation, std::vector<z3::expr>& softConstraints, uint_fast64_t& nextFreeVariableIndex) {
+                
+                solver.push();
                 for (uint_fast64_t i = 0; ; ++i) {
                     if (fuMalikMaxsatStep(context, solver, variableInformation, softConstraints, nextFreeVariableIndex)) {
                         break;
@@ -661,16 +765,19 @@ namespace storm {
                 for (auto const& labelIndexPair : variableInformation.labelToIndexMap) {
                     z3::expr value = model.eval(variableInformation.labelVariables[labelIndexPair.second]);
                     
-                    std::stringstream resultStream;
-                    resultStream << value;
-                    if (resultStream.str() == "true") {
+                    // Check whether the label variable was set or not.
+                    if (eq(value, context.bool_val(true))) {
                         result.insert(labelIndexPair.first);
-                    } else if (resultStream.str() == "false") {
+                    } else if (eq(value, context.bool_val(false))) {
                         // Nothing to do in this case.
+                    } else if (eq(value, variableInformation.labelVariables[labelIndexPair.second])) {
+                        // If the variable is a "don't care", then we rather not take it, so nothing to do in this case
+                        // as well.
                     } else {
-                        throw storm::exceptions::InvalidStateException() << "Could not retrieve value of boolean variable.";
+                        throw storm::exceptions::InvalidStateException() << "Could not retrieve value of boolean variable from illegal value.";
                     }
                 }
+                solver.pop();
                 
                 return result;
             }
@@ -749,16 +856,8 @@ namespace storm {
                     } else {
                         done = true;
                     }
-                    std::cout << "Achieved probability: " << maximalReachabilityProbability << " with " << commandSet.size() << " commands in iteration " << iterations << "." << std::endl;
                     ++iterations;
                 } while (!done);
-                
-                std::cout << "Achieved probability: " << maximalReachabilityProbability << " with " << commandSet.size() << " commands." << std::endl;
-                std::cout << "Taken commands are:" << std::endl;
-                for (auto label : commandSet) {
-                    std::cout << label << ", ";
-                }
-                std::cout << std::endl;
                 
                 // (8) Return the resulting command set after undefining the constants.
                 storm::utility::ir::undefineUndefinedConstants(program);

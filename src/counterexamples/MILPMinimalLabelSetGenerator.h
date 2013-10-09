@@ -1084,12 +1084,12 @@ namespace storm {
              * @param model The Gurobi model.
              * @param variableInformation A struct with information about the variables of the model.
              */
-            static std::unordered_set<uint_fast64_t> getUsedLabelsInSolution(GRBenv* env, GRBmodel* model, VariableInformation const& variableInformation) {
+            static std::set<uint_fast64_t> getUsedLabelsInSolution(GRBenv* env, GRBmodel* model, VariableInformation const& variableInformation) {
                 int error = 0;
 
                 // Check whether the model was optimized, so we can read off the solution.
                 if (checkGurobiModelIsOptimized(env, model)) {
-                    std::unordered_set<uint_fast64_t> result;
+                    std::set<uint_fast64_t> result;
                     double value = 0;
                     
                     for (auto labelVariablePair : variableInformation.labelToVariableIndexMap) {
@@ -1202,7 +1202,7 @@ namespace storm {
 
         public:
             
-            static std::unordered_set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+            static std::set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
 #ifdef STORM_HAVE_GUROBI
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabels()) {
@@ -1239,7 +1239,7 @@ namespace storm {
                 optimizeModel(environmentModelPair.first, environmentModelPair.second);
                 
                 // (4.5) Read off result from variables.
-                std::unordered_set<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(environmentModelPair.first, environmentModelPair.second, variableInformation);
+                std::set<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(environmentModelPair.first, environmentModelPair.second, variableInformation);
                 
                 // Display achieved probability.
                 std::pair<uint_fast64_t, double> initialStateProbabilityPair = getReachabilityProbability(environmentModelPair.first, environmentModelPair.second, labeledMdp, variableInformation);
