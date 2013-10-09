@@ -24,6 +24,8 @@ extern "C" {
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
 
+#include "src/utility/counterexamples.h"
+
 namespace storm {
     namespace counterexamples {
         
@@ -63,7 +65,7 @@ namespace storm {
             struct ChoiceInformation {
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> problematicChoicesForProblematicStates;
-                std::unordered_set<uint_fast64_t> allRelevantLabels;
+                std::set<uint_fast64_t> allRelevantLabels;
             };
 
             /*!
@@ -279,7 +281,7 @@ namespace storm {
              * variables, this value is increased.
              * @return A mapping from labels to variable indices.
              */
-            static std::unordered_map<uint_fast64_t, uint_fast64_t> createLabelVariables(GRBenv* env, GRBmodel* model, std::unordered_set<uint_fast64_t> const& relevantLabels, uint_fast64_t& nextFreeVariableIndex) {
+            static std::unordered_map<uint_fast64_t, uint_fast64_t> createLabelVariables(GRBenv* env, GRBmodel* model, std::set<uint_fast64_t> const& relevantLabels, uint_fast64_t& nextFreeVariableIndex) {
                 int error = 0;
                 std::stringstream variableNameBuffer;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
@@ -851,6 +853,37 @@ namespace storm {
                 return numberOfConstraintsCreated;
             }
             
+            /*
+             * Asserts that labels that are on all paths from initial to target states are definitely taken.
+             *
+             * @param env The Gurobi environment.
+             * @param model The Gurobi model.
+             * @param labeledMdp The labeled MDP.
+             * @param psiStates A bit vector characterizing the psi states in the model.
+             * @param choiceInformation The information about the choices in the model.
+             * @param variableInformation A struct with information about the variables of the model.
+             * @return The total number of constraints that were created.
+             */
+            static uint_fast64_t assertKnownLabels(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+                uint_fast64_t numberOfConstraintsCreated = 0;
+                int error = 0;
+
+                std::set<uint_fast64_t> knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, choiceInformation.allRelevantLabels);
+                for (auto label : knownLabels) {
+                    double coefficient = 1;
+                    int variableIndex = variableInformation.labelToVariableIndexMap.at(label);
+                    
+                    error = GRBaddconstr(model, 1, &variableIndex, &coefficient, GRB_LESS_EQUAL, 1, nullptr);
+                    if (error) {
+                        LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
+                        throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
+                    }
+                    ++numberOfConstraintsCreated;
+                }
+
+                return numberOfConstraintsCreated;
+            }
+            
             /*!
              * Asserts constraints that rule out many suboptimal policies.
              *
@@ -1068,6 +1101,10 @@ namespace storm {
                 numberOfConstraints += assertUnproblematicStateReachable(env, model, labeledMdp, stateInformation, choiceInformation, variableInformation);
                 LOG4CPLUS_DEBUG(logger, "Asserted that unproblematic state reachable from problematic states.");
 
+                // Add constraints that express that certain labels are already known to be taken.
+                numberOfConstraints += assertKnownLabels(env, model, labeledMdp, psiStates, choiceInformation, variableInformation);
+                LOG4CPLUS_DEBUG(logger, "Asserted known labels are taken.");
+                
                 // If required, assert additional constraints that reduce the number of possible policies.
                 if (includeSchedulerCuts) {
                     numberOfConstraints += assertSchedulerCuts(env, model, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation);

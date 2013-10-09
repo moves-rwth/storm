@@ -23,6 +23,7 @@
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 
+#include "src/utility/counterexamples.h"
 #include "src/utility/IRUtility.h"
 
 namespace storm {
@@ -285,68 +286,11 @@ namespace storm {
                         assertDisjunction(context, solver, formulae);
                     }
                 }
-                
-                // Now we compute the set of labels that is present on all paths from the initial to the target states.
-                std::vector<std::set<uint_fast64_t>> analysisInformation(labeledMdp.getNumberOfStates(), relevancyInformation.relevantLabels);
-                std::queue<std::pair<uint_fast64_t, uint_fast64_t>> worklist;
-                
-                // Initially, put all predecessors of target states in the worklist and empty the analysis information
-                // them.
-                for (auto state : psiStates) {
-                    analysisInformation[state] = std::set<uint_fast64_t>();
-                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(state), predecessorIte = backwardTransitions.constColumnIteratorEnd(state); predecessorIt != predecessorIte; ++predecessorIt) {
-                        if (relevancyInformation.relevantStates.get(*predecessorIt)) {
-                            worklist.push(std::make_pair(*predecessorIt, state));
-                        }
-                    }
-                }
-                
-                // Iterate as long as the worklist is non-empty.
-                while (!worklist.empty()) {
-                    std::pair<uint_fast64_t, uint_fast64_t> const& currentStateTargetStatePair = worklist.front();
-                    uint_fast64_t currentState = currentStateTargetStatePair.first;
-                    uint_fast64_t targetState = currentStateTargetStatePair.second;
-                    
-                    // Iterate over the successor states for all choices and compute new analysis information.
-                    std::set<uint_fast64_t> intersection;
-                    for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(currentState)) {
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
-                            // If we can reach the target state with this choice, we need to intersect the current
-                            // analysis information with the union of the new analysis information of the target state
-                            // and the choice labels.
-                            if (*successorIt == targetState) {
-                                std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[targetState].begin(), analysisInformation[targetState].end(), std::inserter(intersection, intersection.begin()));
-                                
-                                std::set<uint_fast64_t> choiceLabelIntersection;
-                                std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(intersection, intersection.begin()));
-                            }
-                        }
-                    }
 
-                    // If the analysis information changed, we need to update it and put all the predecessors of this
-                    // state in the worklist.
-                    if (analysisInformation[currentState] != intersection) {
-                        analysisInformation[currentState] = std::move(intersection);
-                        
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                            worklist.push(std::make_pair(*predecessorIt, currentState));
-                        }
-                    }
-
-                
-                    worklist.pop();
-                }
-
-                // Now build the intersection over the analysis information of all initial states.
-                std::set<uint_fast64_t> knownLabels(relevancyInformation.relevantLabels);
-                std::set<uint_fast64_t> tempIntersection;
-                for (auto initialState : labeledMdp.getInitialStates()) {
-                    std::set_intersection(knownLabels.begin(), knownLabels.end(), analysisInformation[initialState].begin(), analysisInformation[initialState].end(), std::inserter(tempIntersection, tempIntersection.begin()));
-                    std::swap(knownLabels, tempIntersection);
-                    tempIntersection.clear();
-                }
-
+                // Also, we can assert that all labels that are encountered along all paths from an initial to a target
+                // state are taken.
                 formulae.clear();
+                std::set<uint_fast64_t> knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, relevancyInformation.relevantLabels);
                 for (auto label : knownLabels) {
                     formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
@@ -858,6 +802,7 @@ namespace storm {
                     }
                     ++iterations;
                 } while (!done);
+                LOG4CPLUS_ERROR(logger, "Found minimal label set after " << iterations << " iterations.");
                 
                 // (8) Return the resulting command set after undefining the constants.
                 storm::utility::ir::undefineUndefinedConstants(program);
