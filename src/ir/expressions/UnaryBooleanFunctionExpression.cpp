@@ -48,10 +48,11 @@ namespace storm {
             
             std::string UnaryBooleanFunctionExpression::toString() const {
                 std::stringstream result;
+                result << "(";
                 switch (functionType) {
                     case NOT: result << "!"; break;
                 }
-                result << "(" << this->getChild()->toString() << ")";
+                result << this->getChild()->toString() << ")";
                 
                 return result.str();
             }

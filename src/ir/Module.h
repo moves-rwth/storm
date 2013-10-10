@@ -181,6 +181,12 @@ namespace storm {
              */
             std::set<uint_fast64_t> const& getCommandsByAction(std::string const& action) const;
             
+            /*!
+             * Deletes all commands with indices not in the given set from the module.
+             *
+             * @param indexSet The set of indices for which to keep the commands.
+             */
+            void restrictCommands(std::set<uint_fast64_t> const& indexSet);
         private:
             
             /*!

@@ -62,13 +62,14 @@ namespace storm {
             }
             
             std::string UnaryNumericalFunctionExpression::toString() const {
-                std::string result = "";
+                std::stringstream result;
+                result << "(";
                 switch (functionType) {
-                    case MINUS: result += "-"; break;
+                    case MINUS: result << "-"; break;
                 }
-                result += this->getChild()->toString();
+                result << this->getChild()->toString() << ")";
                 
-                return result;
+                return result.str();
             }
             
         } // namespace expressions

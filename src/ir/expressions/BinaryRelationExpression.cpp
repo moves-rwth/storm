@@ -56,7 +56,7 @@ namespace storm {
             
             std::string BinaryRelationExpression::toString() const {
                 std::stringstream result;
-                result << this->getLeft()->toString();
+                result << "(" << this->getLeft()->toString();
                 switch (relationType) {
                     case EQUAL: result << " = "; break;
                     case NOT_EQUAL: result << " != "; break;
@@ -65,7 +65,7 @@ namespace storm {
                     case GREATER: result << " > "; break;
                     case GREATER_OR_EQUAL: result << " >= "; break;
                 }
-                result << this->getRight()->toString();
+                result << this->getRight()->toString() << ")";
                 
                 return result.str();
             }

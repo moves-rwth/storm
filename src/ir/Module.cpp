@@ -186,5 +186,15 @@ namespace storm {
             }
         }
         
+        void Module::restrictCommands(std::set<uint_fast64_t> const& indexSet) {
+            std::vector<storm::ir::Command> newCommands;
+            for (auto const& command : commands) {
+                if (indexSet.find(command.getGlobalIndex()) != indexSet.end()) {
+                    newCommands.push_back(std::move(command));
+                }
+            }
+            commands = std::move(newCommands);
+        }
+        
     } // namespace ir
 } // namespace storm

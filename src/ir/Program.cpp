@@ -167,7 +167,7 @@ namespace storm {
             }
             
             for (auto const& label : labels) {
-                result << "label " << label.first << " = " << label.second->toString() <<";" << std::endl;
+                result << "label \"" << label.first << "\" = " << label.second->toString() <<";" << std::endl;
             }
             
             return result.str();
@@ -288,6 +288,12 @@ namespace storm {
         
         uint_fast64_t Program::getGlobalIndexOfIntegerVariable(std::string const& variableName) const {
             return this->globalIntegerVariableToIndexMap.at(variableName);
+        }
+        
+        void Program::restrictCommands(std::set<uint_fast64_t> const& indexSet) {
+            for (auto& module : modules) {
+                module.restrictCommands(indexSet);
+            }
         }
         
     } // namespace ir

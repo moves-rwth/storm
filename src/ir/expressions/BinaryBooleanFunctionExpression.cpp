@@ -52,12 +52,12 @@ namespace storm {
             
             std::string BinaryBooleanFunctionExpression::toString() const {
                 std::stringstream result;
-                result << this->getLeft()->toString();
+                result << "(" << this->getLeft()->toString();
                 switch (functionType) {
                     case AND: result << " & "; break;
                     case OR: result << " | "; break;
                 }
-                result << this->getRight()->toString();
+                result << this->getRight()->toString() << ")";
                 
                 return result.str();
             }

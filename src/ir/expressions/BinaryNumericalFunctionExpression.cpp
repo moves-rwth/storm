@@ -75,14 +75,14 @@ namespace storm {
             
             std::string BinaryNumericalFunctionExpression::toString() const {
                 std::stringstream result;
-                result << this->getLeft()->toString();
+                result << "(" << this->getLeft()->toString();
                 switch (functionType) {
                     case PLUS: result << " + "; break;
                     case MINUS: result << " - "; break;
                     case TIMES: result << " * "; break;
                     case DIVIDE: result << " / "; break;
                 }
-                result << this->getRight()->toString();
+                result << this->getRight()->toString() << ")";
                 return result.str();
             }
             

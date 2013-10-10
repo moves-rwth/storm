@@ -261,6 +261,12 @@ namespace storm {
              */
             uint_fast64_t getGlobalIndexOfIntegerVariable(std::string const& variableName) const;
             
+            /*!
+             * Deletes all commands with indices not in the given set from the program.
+             *
+             * @param indexSet The set of indices for which to keep the commands.
+             */
+            void restrictCommands(std::set<uint_fast64_t> const& indexSet);
         private:
             // The type of the model.
             ModelType modelType;

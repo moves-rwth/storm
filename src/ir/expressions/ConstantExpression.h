@@ -75,9 +75,10 @@ namespace storm {
                 
                 virtual std::string toString() const override {
                     std::stringstream result;
-                    result << this->getConstantName();
                     if (this->valueStructPointer->defined) {
-                        result << "[" << this->valueStructPointer->value << "]";
+                        result << this->valueStructPointer->value;
+                    } else {
+                        result << this->getConstantName();
                     }
                     return result.str();
                 }
