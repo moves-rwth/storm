@@ -16,10 +16,10 @@
 // If we have Z3 available, we have to include the C++ header.
 #ifdef STORM_HAVE_Z3
 #include "z3++.h"
+#include "src/adapters/Z3ExpressionAdapter.h"
 #endif
 
 #include "src/adapters/ExplicitModelAdapter.h"
-#include "src/adapters/Z3ExpressionAdapter.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 
