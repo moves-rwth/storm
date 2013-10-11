@@ -65,9 +65,6 @@ namespace storm {
                 // Create result.
                 RelevancyInformation relevancyInformation;
                 
-                // Compute the set of labels that are known to be taken in any case.
-                relevancyInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, relevancyInformation.relevantLabels);
-                
                 // Compute all relevant states, i.e. states for which there exists a scheduler that has a non-zero
                 // probabilitiy of satisfying phi until psi.
                 storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
@@ -94,10 +91,7 @@ namespace storm {
                             // If there is a relevant successor, we need to add the labels of the current choice.
                             if (relevancyInformation.relevantStates.get(*successorIt) || psiStates.get(*successorIt)) {
                                 for (auto const& label : choiceLabeling[row]) {
-                                    // Only insert the label if it's not already known.
-                                    if (relevancyInformation.knownLabels.find(label) == relevancyInformation.knownLabels.end()) {
-                                        relevancyInformation.relevantLabels.insert(label);
-                                    }
+                                    relevancyInformation.relevantLabels.insert(label);
                                 }
                                 if (!currentChoiceRelevant) {
                                     currentChoiceRelevant = true;
@@ -108,6 +102,14 @@ namespace storm {
                     }
                 }
                 
+                // Compute the set of labels that are known to be taken in any case.
+                relevancyInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, relevancyInformation.relevantLabels);
+                
+                if (!relevancyInformation.knownLabels.empty()) {
+                    std::set<uint_fast64_t> remainingLabels;
+                    std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(remainingLabels, remainingLabels.begin()));
+                    relevancyInformation.relevantLabels = remainingLabels;
+                }
                 
                 LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.");
                 return relevancyInformation;
@@ -141,10 +143,8 @@ namespace storm {
                     variableName.str("");
                     variableName << "h" << label;
                     
-                    variableInformation.auxiliaryVariables.push_back(context.bool_const(variableName.str().c_str()));
+                    variableInformation.originalAuxiliaryVariables.push_back(context.bool_const(variableName.str().c_str()));
                 }
-                
-                variableInformation.originalAuxiliaryVariables = variableInformation.auxiliaryVariables;
                 
                 return variableInformation;
             }
@@ -165,9 +165,9 @@ namespace storm {
                     formula = formula || variableInformation.labelVariables.at(index);
                 }
                 solver.add(formula);
-                
+
                 for (uint_fast64_t index = 0; index < variableInformation.labelVariables.size(); ++index) {
-                    solver.add(!variableInformation.labelVariables[index] || variableInformation.auxiliaryVariables[index]);
+                    solver.add(!variableInformation.labelVariables[index] || variableInformation.originalAuxiliaryVariables[index]);
                 }
             }
             
@@ -294,7 +294,9 @@ namespace storm {
                         if (intersection.empty()) {
                             formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelSetPair.first)));
                             for (auto followingLabel : labelSetPair.second) {
-                                formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(followingLabel)));
+                                if (followingLabel != labelSetPair.first) {
+                                    formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(followingLabel)));
+                                }
                             }
                         } else {
                             // If the intersection was non-empty, we clear the set so we can re-use it later.
@@ -453,7 +455,10 @@ namespace storm {
                                     storm::ir::Command const& otherCommand = otherModule.getCommand(otherCommandIndex);
                                     
                                     // We don't need to consider irrelevant commands and the command itself.
-                                    if (relevancyInformation.relevantLabels.find(otherCommand.getGlobalIndex()) == relevancyInformation.relevantLabels.end()) continue;
+                                    if (relevancyInformation.relevantLabels.find(otherCommand.getGlobalIndex()) == relevancyInformation.relevantLabels.end()
+                                        && relevancyInformation.knownLabels.find(otherCommand.getGlobalIndex()) == relevancyInformation.knownLabels.end()) {
+                                        continue;
+                                    }
                                     if (moduleIndex == otherModuleIndex && commandIndex == otherCommandIndex) continue;
                                     
                                     std::vector<z3::expr> formulae;
@@ -502,6 +507,7 @@ namespace storm {
                     // We should assert the implications if they are not already known to be true anyway.
                     std::set<uint_fast64_t> knownImplications;
                     std::set_intersection(actualImplications.begin(), actualImplications.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(knownImplications, knownImplications.begin()));
+
                     if (knownImplications.empty()) {
                         for (auto label : actualImplications) {
                             formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
@@ -555,7 +561,7 @@ namespace storm {
              * result bit.
              */
             static std::pair<z3::expr, z3::expr> createFullAdder(z3::expr in1, z3::expr in2, z3::expr carryIn) {
-                z3::expr resultBit = (in1 && !in2 && !carryIn) || (!in1 && in2 && !carryIn) || (!in1 && !in2 && carryIn);
+                z3::expr resultBit = (in1 && !in2 && !carryIn) || (!in1 && in2 && !carryIn) || (!in1 && !in2 && carryIn) || (in1 && in2 && carryIn);
                 z3::expr carryBit = in1 && in2 || in1 && carryIn || in2 && carryIn;
                 
                 return std::make_pair(carryBit, resultBit);
@@ -605,6 +611,7 @@ namespace storm {
              */
             static std::vector<std::vector<z3::expr>> createAdderPairs(z3::context& context, std::vector<std::vector<z3::expr>> const& in) {
                 std::vector<std::vector<z3::expr>> result;
+                
                 result.reserve(in.size() / 2 + in.size() % 2);
                 
                 for (uint_fast64_t index = 0; index < in.size() / 2; ++index) {
@@ -612,10 +619,10 @@ namespace storm {
                 }
                 
                 if (in.size() % 2 != 0) {
-                    result.push_back(in[in.size() - 1]);
+                    result.push_back(in.back());
                     result.back().push_back(context.bool_val(false));
                 }
-                     
+                
                 return result;
             }
             
@@ -627,6 +634,8 @@ namespace storm {
              * @return A bit vector representing the number of literals that are set to true.
              */
             static std::vector<z3::expr> createCounterCircuit(z3::context& context, std::vector<z3::expr> const& literals) {
+                LOG4CPLUS_DEBUG(logger, "Creating counter circuit for " << literals.size() << " literals.");
+
                 // Create the auxiliary vector.
                 std::vector<std::vector<z3::expr>> aux;
                 for (uint_fast64_t index = 0; index < literals.size(); ++index) {
@@ -639,6 +648,44 @@ namespace storm {
                 }
                 
                 return aux[0];
+            }
+            
+            static bool bitIsSet(uint64_t value, uint64_t index) {
+                uint64_t mask = 1 << (index & 63);
+                return (value & mask) != 0;
+            }
+            
+            static z3::expr assertLessOrEqualKRelaxed(z3::context& context, z3::solver& solver, std::vector<z3::expr> const& input, uint64_t k) {
+                LOG4CPLUS_DEBUG(logger, "Asserting solution has size less or equal " << k << ".");
+
+                z3::expr result(context);
+                if (bitIsSet(k, 0)) {
+                    result = context.bool_val(true);
+                } else {
+                    result = !input.at(0);
+                }
+                for (uint_fast64_t index = 1; index < input.size(); ++index) {
+                    z3::expr i1(context);
+                    z3::expr i2(context);
+                    
+                    if (bitIsSet(k, index)) {
+                        i1 = !input.at(index);
+                        i2 = result;
+                    } else {
+                        i1 = context.bool_val(false);
+                        i2 = context.bool_val(false);
+                    }
+                    result = i1 || i2 || (!input.at(index) && result);
+                }
+                
+                std::stringstream variableName;
+                variableName << "relaxed" << k;
+                z3::expr relaxingVariable = context.bool_const(variableName.str().c_str());
+                result = result || relaxingVariable;
+                
+                solver.add(result);
+                
+                return relaxingVariable;
             }
             
             /*!
@@ -762,6 +809,25 @@ namespace storm {
                 solver.add(blockSolutionExpression);
             }
 
+            static std::set<uint_fast64_t> getUsedLabelSet(z3::context& context, z3::model const& model, VariableInformation const& variableInformation, std::vector<z3::expr> const& usedVariables) {
+                std::set<uint_fast64_t> result;
+                for (auto const& labelIndexPair : variableInformation.labelToIndexMap) {
+                    z3::expr auxValue = model.eval(usedVariables.at(labelIndexPair.second));
+                    
+                    // Check whether the auxiliary variable was set or not.
+                    if (eq(auxValue, context.bool_val(true))) {
+                        result.insert(labelIndexPair.first);
+                    } else if (eq(auxValue, context.bool_val(false))) {
+                        // Nothing to do in this case.
+                    } else if (eq(auxValue, usedVariables.at(labelIndexPair.second))) {
+                        // If the auxiliary variable is a don't care, then we don't take the corresponding command.
+                    } else {
+                        throw storm::exceptions::InvalidStateException() << "Could not retrieve value of boolean variable from illegal value.";
+                    }
+                }
+                return result;
+            }
+            
             
             /*!
              * Finds the smallest set of labels such that the constraint system of the solver is still satisfiable.
@@ -771,55 +837,42 @@ namespace storm {
              * @param variableInformation A structure with information about the variables for the labels.
              * @return The smallest set of labels such that the constraint system of the solver is still satisfiable.
              */
-            static std::set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation& variableInformation, std::vector<z3::expr>& softConstraints, uint_fast64_t knownBound, uint_fast64_t& nextFreeVariableIndex, bool useFuMalik = false) {
+            static std::set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation& variableInformation, std::vector<z3::expr>& softConstraints, uint_fast64_t& currentBound, uint_fast64_t& nextFreeVariableIndex, bool useFuMalik = false) {
                 if (useFuMalik) {
                     while (!fuMalikMaxsatStep(context, solver, variableInformation.auxiliaryVariables, softConstraints, nextFreeVariableIndex)) {
                         // Intentionally left empty.
                     }
-                } else {
-//                    for (uint_fast64_t currentBound = knownBound; currentBound > 0; ++currentBound) {
-//                        solver.push();
-//                        assertAtMostK(context, solver, variableInformation.adderVariables);
-//                        
-//                        if (solver.check() == z3::unsat) {
-//                            // If the system has become unsat, we need to retract the last constraint.
-//                            solver.pop();
-//                        } else {
-//                            // If the system is still satisfiable
-//                            z3::model model = solver.get_model();
-//                        }
-//                    }
-                    throw storm::exceptions::InvalidStateException() << "Error!";
-                }
-                
-                // Now we are ready to construct the label set from the model of the solver.
-                std::set<uint_fast64_t> result;
-                z3::model model = solver.get_model();
-                
-                for (auto const& labelIndexPair : variableInformation.labelToIndexMap) {
-                    z3::expr auxValue = model.eval(variableInformation.originalAuxiliaryVariables[labelIndexPair.second]);
                     
-                    // Check whether the auxiliary variable was set or not.
-                    if (eq(auxValue, context.bool_val(true))) {
-                        result.insert(labelIndexPair.first);
-                    } else if (eq(auxValue, context.bool_val(false))) {
-                        // Nothing to do in this case.
-                    } else if (eq(auxValue, variableInformation.originalAuxiliaryVariables[labelIndexPair.second])) {
-                        // If the auxiliary variable is a don't care, then we don't take the corresponding command.
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "Could not retrieve value of boolean variable from illegal value.";
+                    // Now we are ready to construct the label set from the model of the solver.
+                    return getUsedLabelSet(context, solver.get_model(), variableInformation, variableInformation.originalAuxiliaryVariables);
+                } else {
+                    // Check if we can find a solution with the current bound.
+                    z3::expr assumption = !variableInformation.auxiliaryVariables.back();
+                    while (solver.check(1, &assumption) == z3::unsat) {
+                        // If the constraints are unsatisfiable, we need to relax the last at-most-k constraint and
+                        // try with an increased bound.
+                        LOG4CPLUS_DEBUG(logger, "Constraint system is unsatisfiable with at most " << currentBound << " taken commands; increasing bound.");
+                        solver.add(variableInformation.auxiliaryVariables.back());
+                        variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(context, solver, variableInformation.adderVariables, ++currentBound));
+                        assumption = !variableInformation.auxiliaryVariables.back();
                     }
+                    
+                    // At this point we know that the constraint system was satisfiable, so compute the induced label
+                    // set and return it.
+                    return getUsedLabelSet(context, solver.get_model(), variableInformation, variableInformation.labelVariables);
                 }
-                                
-                return result;
             }
             
             static std::vector<z3::expr> assertAdder(z3::context& context, z3::solver& solver, VariableInformation const& variableInformation) {
+                std::stringstream variableName;
                 std::vector<z3::expr> result;
                 
-                std::vector<z3::expr> adderVariables = createCounterCircuit(context, variableInformation.originalAuxiliaryVariables);
+                std::vector<z3::expr> adderVariables = createCounterCircuit(context, variableInformation.labelVariables);
                 for (uint_fast64_t i = 0; i < adderVariables.size(); ++i) {
-                    result.push_back(context.bool_const(""));
+                    variableName.str("");
+                    variableName.clear();
+                    variableName << "adder" << i;
+                    result.push_back(context.bool_const(variableName.str().c_str()));
                     solver.add(implies(adderVariables[i], result.back()));
                 }
                 
@@ -828,7 +881,7 @@ namespace storm {
 #endif
             
         public:
-            static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false, bool useFuMalik = true) {
+            static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false, bool useFuMalik = false) {
 #ifdef STORM_HAVE_Z3
                 storm::utility::ir::defineUndefinedConstants(program, constantDefinitionString);
 
@@ -847,21 +900,30 @@ namespace storm {
                 
                 // (4) Create the variables for the relevant commands.
                 VariableInformation variableInformation = createExpressionsForRelevantLabels(context, relevancyInformation.relevantLabels);
-                
+                LOG4CPLUS_DEBUG(logger, "Created variables.");
+
                 // (5) After all variables have been created, create a solver for that context.
                 z3::solver solver(context);
 
                 // (5) Build the initial constraint system.
-                assertInitialConstraints(program, labeledMdp, psiStates, context, solver, variableInformation, relevancyInformation);
-                
+                if (useFuMalik) {
+                    assertInitialConstraints(program, labeledMdp, psiStates, context, solver, variableInformation, relevancyInformation);
+                    LOG4CPLUS_DEBUG(logger, "Asserted initial constraints.");
+                }
+
                 // (6) If we are supposed to use the counter-circuit method, we need to assert the adder circuit.
-                if (!useFuMalik) {
+                if (useFuMalik) {
+                    variableInformation.auxiliaryVariables = variableInformation.originalAuxiliaryVariables;
+                } else {
                     variableInformation.adderVariables = assertAdder(context, solver, variableInformation);
+                    variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(context, solver, variableInformation.adderVariables, 0));
                 }
                 
                 // (6) Add constraints that cut off a lot of suboptimal solutions.
                 assertExplicitCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
+                LOG4CPLUS_DEBUG(logger, "Asserted explicit cuts.");
                 assertSymbolicCuts(program, labeledMdp, variableInformation, relevancyInformation, context, solver);
+                LOG4CPLUS_DEBUG(logger, "Asserted symbolic cuts.");
                 
                 // (7) Find the smallest set of commands that satisfies all constraints. If the probability of
                 // satisfying phi until psi exceeds the given threshold, the set of labels is minimal and can be returned.
@@ -884,9 +946,11 @@ namespace storm {
                 double maximalReachabilityProbability = 0;
                 bool done = false;
                 uint_fast64_t iterations = 0;
+                uint_fast64_t currentBound = 0;
+                
                 do {
                     LOG4CPLUS_DEBUG(logger, "Computing minimal command set.");
-                    commandSet = findSmallestCommandSet(context, solver, variableInformation, softConstraints, commandSet.size(), nextFreeVariableIndex, useFuMalik);
+                    commandSet = findSmallestCommandSet(context, solver, variableInformation, softConstraints, currentBound, nextFreeVariableIndex, useFuMalik);
                     LOG4CPLUS_DEBUG(logger, "Computed minimal command set of size " << commandSet.size() << ".");
                     
                     // Restrict the given MDP to the current set of labels and compute the reachability probability.
