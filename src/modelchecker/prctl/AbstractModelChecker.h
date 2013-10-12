@@ -21,6 +21,8 @@ namespace prctl {
 #include "src/formula/Prctl.h"
 #include "src/storage/BitVector.h"
 #include "src/models/AbstractModel.h"
+#include "src/counterexamples/PathBasedSubsystemGenerator.h"
+#include "src/settings/Settings.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -145,6 +147,7 @@ public:
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << stateFormula.toString());
 		std::cout << "Model checking formula:\t" << stateFormula.toString() << std::endl;
 		storm::storage::BitVector result;
+		bool allSatisfied = true;
 		try {
 			result = stateFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
@@ -152,11 +155,19 @@ public:
 			for (auto initialState : model.getInitialStates()) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
 				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
+				allSatisfied &= result.get(initialState);
 			}
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
 		}
+
+		if(!allSatisfied && storm::settings::Settings::getInstance()->getOptionByLongName("prctl").getArgumentByName("subSys").getValueAsBoolean()) {
+			//generate critical subsystem
+			storm::counterexamples::PathBasedSubsystemGenerator<Type>::computeCriticalSubsystem(*this, stateFormula);
+		}
+
+
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 

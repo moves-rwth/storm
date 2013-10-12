@@ -250,7 +250,7 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
         
         for (auto formula : formulaList) {
-            modelchecker.check(*formula);
+        	modelchecker.check(*formula);
             delete formula;
         }
 	}
