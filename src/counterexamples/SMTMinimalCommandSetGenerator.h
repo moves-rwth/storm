@@ -9,6 +9,7 @@
 #define STORM_COUNTEREXAMPLES_SMTMINIMALCOMMANDSETGENERATOR_MDP_H_
 
 #include <queue>
+#include <chrono>
 
 // To detect whether the usage of Z3 is possible, this include is neccessary.
 #include "storm-config.h"
@@ -38,18 +39,34 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
         private:
             struct RelevancyInformation {
+                // The set of relevant states in the model.
                 storm::storage::BitVector relevantStates;
+                
+                // The set of relevant labels.
                 std::set<uint_fast64_t> relevantLabels;
+                
+                // A set of labels that is definitely known to be taken in the final solution.
                 std::set<uint_fast64_t> knownLabels;
+                
+                // A list of relevant choices for each relevant state.
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
             };
             
             struct VariableInformation {
+                // The variables associated with the relevant labels.
                 std::vector<z3::expr> labelVariables;
-                std::vector<z3::expr> originalAuxiliaryVariables;
-                std::vector<z3::expr> auxiliaryVariables;
-                std::vector<z3::expr> adderVariables;
+                
+                // A mapping from relevant labels to their indices in the variable vector.
                 std::map<uint_fast64_t, uint_fast64_t> labelToIndexMap;
+
+                // A set of original auxiliary variables needed for the Fu-Malik procedure.
+                std::vector<z3::expr> originalAuxiliaryVariables;
+                
+                // A set of auxiliary variables that may be modified by the MaxSAT procedure.
+                std::vector<z3::expr> auxiliaryVariables;
+                
+                // A vector of variables that can be used to constrain the number of variables that are set to true.
+                std::vector<z3::expr> adderVariables;
             };
             
             /*!
@@ -150,7 +167,7 @@ namespace storm {
             }
 
             /*!
-             * Asserts the constraints that are initially known.
+             * Asserts the constraints that are initially needed for the Fu-Malik procedure.
              *
              * @param program The program for which to build the constraints.
              * @param labeledMdp The MDP that results from the given program.
@@ -158,17 +175,13 @@ namespace storm {
              * @param solver The solver in which to assert the constraints.
              * @param variableInformation A structure with information about the variables for the labels.
              */
-            static void assertInitialConstraints(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void assertFuMalikInitialConstraints(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation) {
                 // Assert that at least one of the labels must be taken.
                 z3::expr formula = variableInformation.labelVariables.at(0);
                 for (uint_fast64_t index = 1; index < variableInformation.labelVariables.size(); ++index) {
                     formula = formula || variableInformation.labelVariables.at(index);
                 }
                 solver.add(formula);
-
-                for (uint_fast64_t index = 0; index < variableInformation.labelVariables.size(); ++index) {
-                    solver.add(!variableInformation.labelVariables[index] || variableInformation.originalAuxiliaryVariables[index]);
-                }
             }
             
             /*!
@@ -185,7 +198,6 @@ namespace storm {
                 // * identify labels that can directly precede a given action
                 // * identify labels that directly reach a target state
                 // * identify labels that can directly follow a given action
-                // * identify labels that can be found on each path to the target states.
                 
                 std::set<uint_fast64_t> initialLabels;
                 std::map<uint_fast64_t, std::set<uint_fast64_t>> precedingLabels;
@@ -650,12 +662,30 @@ namespace storm {
                 return aux[0];
             }
             
+            /*!
+             * Determines whether the bit at the given index is set in the given value.
+             *
+             * @param value The value to test.
+             * @param index The index of the bit to test.
+             * @return True iff the bit at the given index is set in the given value.
+             */
             static bool bitIsSet(uint64_t value, uint64_t index) {
                 uint64_t mask = 1 << (index & 63);
                 return (value & mask) != 0;
             }
             
-            static z3::expr assertLessOrEqualKRelaxed(z3::context& context, z3::solver& solver, std::vector<z3::expr> const& input, uint64_t k) {
+            /*!
+             * Asserts a constraint in the given solver that expresses that the value encoded by the given input variables
+             * may at most represent the number k. The constraint is associated with a relaxation variable, that is
+             * returned by this function and may be used to deactivate the constraint.
+             *
+             * @param context The Z3 context in which to build the expressions.
+             * @param solver The solver to use for the satisfiability evaluation.
+             * @param input The variables that encode the value to restrict.
+             * @param k The bound for the binary-encoded value.
+             * @return The relaxation variable associated with the constraint.
+             */
+             static z3::expr assertLessOrEqualKRelaxed(z3::context& context, z3::solver& solver, std::vector<z3::expr> const& input, uint64_t k) {
                 LOG4CPLUS_DEBUG(logger, "Asserting solution has size less or equal " << k << ".");
 
                 z3::expr result(context);
@@ -695,17 +725,13 @@ namespace storm {
              * @param solver The solver to use for the satisfiability evaluation.
              * @param input The binary encoded input number.
              */
-            static void assertLessOrEqualOne(z3::context& context, z3::solver& solver, std::vector<z3::expr> const& input) {
-                std::vector<z3::expr> tmp;
-                tmp.reserve(input.size() - 1);
-                for (uint_fast64_t index = 1; index < input.size(); ++index) {
-                    tmp.push_back(!input[index]);
-                }
-                assertConjunction(context, solver, tmp);
+            static void assertLessOrEqualOne(z3::context& context, z3::solver& solver, std::vector<z3::expr> input) {
+                std::transform(input.begin(), input.end(), input.begin(), [](z3::expr e) -> z3::expr { return !e; });
+                assertConjunction(context, solver, input);
             }
             
             /*!
-             * Asserts that at most one of the blocking variables may be true at any time.
+             * Asserts that at most one of given literals may be true at any time.
              *
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
@@ -809,17 +835,24 @@ namespace storm {
                 solver.add(blockSolutionExpression);
             }
 
-            static std::set<uint_fast64_t> getUsedLabelSet(z3::context& context, z3::model const& model, VariableInformation const& variableInformation, std::vector<z3::expr> const& usedVariables) {
+            /*!
+             * Determines the set of labels that was chosen by the given model.
+             *
+             * @param context The Z3 context in which to build the expressions.
+             * @param model The Z3 model from which to extract the information.
+             * @param variableInformation A structure with information about the variables of the solver.
+             */
+            static std::set<uint_fast64_t> getUsedLabelSet(z3::context& context, z3::model const& model, VariableInformation const& variableInformation) {
                 std::set<uint_fast64_t> result;
                 for (auto const& labelIndexPair : variableInformation.labelToIndexMap) {
-                    z3::expr auxValue = model.eval(usedVariables.at(labelIndexPair.second));
+                    z3::expr auxValue = model.eval(variableInformation.labelVariables.at(labelIndexPair.second));
                     
                     // Check whether the auxiliary variable was set or not.
                     if (eq(auxValue, context.bool_val(true))) {
                         result.insert(labelIndexPair.first);
                     } else if (eq(auxValue, context.bool_val(false))) {
                         // Nothing to do in this case.
-                    } else if (eq(auxValue, usedVariables.at(labelIndexPair.second))) {
+                    } else if (eq(auxValue, variableInformation.labelVariables.at(labelIndexPair.second))) {
                         // If the auxiliary variable is a don't care, then we don't take the corresponding command.
                     } else {
                         throw storm::exceptions::InvalidStateException() << "Could not retrieve value of boolean variable from illegal value.";
@@ -828,41 +861,14 @@ namespace storm {
                 return result;
             }
             
-            
             /*!
-             * Finds the smallest set of labels such that the constraint system of the solver is still satisfiable.
+             * Asserts an adder structure in the given solver that counts the number of variables that are set to true
+             * out of the given variables.
              *
              * @param context The Z3 context in which to build the expressions.
-             * @param solver The solver to use for the satisfiability evaluation.
-             * @param variableInformation A structure with information about the variables for the labels.
-             * @return The smallest set of labels such that the constraint system of the solver is still satisfiable.
+             * @param solver The solver for which to add the adder.
+             * @param variableInformation A structure with information about the variables of the solver.
              */
-            static std::set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation& variableInformation, std::vector<z3::expr>& softConstraints, uint_fast64_t& currentBound, uint_fast64_t& nextFreeVariableIndex, bool useFuMalik = false) {
-                if (useFuMalik) {
-                    while (!fuMalikMaxsatStep(context, solver, variableInformation.auxiliaryVariables, softConstraints, nextFreeVariableIndex)) {
-                        // Intentionally left empty.
-                    }
-                    
-                    // Now we are ready to construct the label set from the model of the solver.
-                    return getUsedLabelSet(context, solver.get_model(), variableInformation, variableInformation.originalAuxiliaryVariables);
-                } else {
-                    // Check if we can find a solution with the current bound.
-                    z3::expr assumption = !variableInformation.auxiliaryVariables.back();
-                    while (solver.check(1, &assumption) == z3::unsat) {
-                        // If the constraints are unsatisfiable, we need to relax the last at-most-k constraint and
-                        // try with an increased bound.
-                        LOG4CPLUS_DEBUG(logger, "Constraint system is unsatisfiable with at most " << currentBound << " taken commands; increasing bound.");
-                        solver.add(variableInformation.auxiliaryVariables.back());
-                        variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(context, solver, variableInformation.adderVariables, ++currentBound));
-                        assumption = !variableInformation.auxiliaryVariables.back();
-                    }
-                    
-                    // At this point we know that the constraint system was satisfiable, so compute the induced label
-                    // set and return it.
-                    return getUsedLabelSet(context, solver.get_model(), variableInformation, variableInformation.labelVariables);
-                }
-            }
-            
             static std::vector<z3::expr> assertAdder(z3::context& context, z3::solver& solver, VariableInformation const& variableInformation) {
                 std::stringstream variableName;
                 std::vector<z3::expr> result;
@@ -878,11 +884,41 @@ namespace storm {
                 
                 return result;
             }
+            
+            /*!
+             * Finds the smallest set of labels such that the constraint system of the solver is still satisfiable.
+             *
+             * @param context The Z3 context in which to build the expressions.
+             * @param solver The solver to use for the satisfiability evaluation.
+             * @param variableInformation A structure with information about the variables of the solver.
+             * @param currentBound The currently known lower bound for the number of labels that need to be enabled
+             * in order to satisfy the constraint system.
+             * @return The smallest set of labels such that the constraint system of the solver is satisfiable.
+             */
+            static std::set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation& variableInformation, uint_fast64_t& currentBound) {
+                // Check if we can find a solution with the current bound.
+                z3::expr assumption = !variableInformation.auxiliaryVariables.back();
+
+                // As long as the constraints are unsatisfiable, we need to relax the last at-most-k constraint and
+                // try with an increased bound.
+                while (solver.check(1, &assumption) == z3::unsat) {
+                    LOG4CPLUS_DEBUG(logger, "Constraint system is unsatisfiable with at most " << currentBound << " taken commands; increasing bound.");
+                    solver.add(variableInformation.auxiliaryVariables.back());
+                    variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(context, solver, variableInformation.adderVariables, ++currentBound));
+                    assumption = !variableInformation.auxiliaryVariables.back();
+                }
+                
+                // At this point we know that the constraint system was satisfiable, so compute the induced label
+                // set and return it.
+                return getUsedLabelSet(context, solver.get_model(), variableInformation);
+            }
 #endif
             
         public:
-            static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false, bool useFuMalik = false) {
+            static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false) {
 #ifdef STORM_HAVE_Z3
+                auto startTime = std::chrono::high_resolution_clock::now();
+                
                 storm::utility::ir::defineUndefinedConstants(program, constantDefinitionString);
 
                 // (0) Check whether the MDP is indeed labeled.
@@ -890,8 +926,17 @@ namespace storm {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal command set generation is impossible for unlabeled model.";
                 }
                 
-                // (1) FIXME: check whether its possible to exceed the threshold if checkThresholdFeasible is set.
-
+                // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
+                double maximalReachabilityProbability = 0;
+                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false, nullptr);
+                for (auto state : labeledMdp.getInitialStates()) {
+                    maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
+                }
+                if (maximalReachabilityProbability <= probabilityThreshold) {
+                    throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be achieved in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
+                }
+                
                 // (2) Identify all states and commands that are relevant, because only these need to be considered later.
                 RelevancyInformation relevancyInformation = determineRelevantStatesAndLabels(labeledMdp, phiStates, psiStates);
                 
@@ -905,52 +950,32 @@ namespace storm {
                 // (5) After all variables have been created, create a solver for that context.
                 z3::solver solver(context);
 
-                // (5) Build the initial constraint system.
-                if (useFuMalik) {
-                    assertInitialConstraints(program, labeledMdp, psiStates, context, solver, variableInformation, relevancyInformation);
-                    LOG4CPLUS_DEBUG(logger, "Asserted initial constraints.");
-                }
-
-                // (6) If we are supposed to use the counter-circuit method, we need to assert the adder circuit.
-                if (useFuMalik) {
-                    variableInformation.auxiliaryVariables = variableInformation.originalAuxiliaryVariables;
-                } else {
-                    variableInformation.adderVariables = assertAdder(context, solver, variableInformation);
-                    variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(context, solver, variableInformation.adderVariables, 0));
-                }
+                // (6) Now assert an adder whose result variables can later be used to constrain the nummber of label
+                // variables that were set to true. Initially, we are looking for a solution that has no label enabled
+                // and subsequently relax that.
+                variableInformation.adderVariables = assertAdder(context, solver, variableInformation);
+                variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(context, solver, variableInformation.adderVariables, 0));
                 
-                // (6) Add constraints that cut off a lot of suboptimal solutions.
+                // (7) Add constraints that cut off a lot of suboptimal solutions.
                 assertExplicitCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
                 LOG4CPLUS_DEBUG(logger, "Asserted explicit cuts.");
                 assertSymbolicCuts(program, labeledMdp, variableInformation, relevancyInformation, context, solver);
                 LOG4CPLUS_DEBUG(logger, "Asserted symbolic cuts.");
                 
-                // (7) Find the smallest set of commands that satisfies all constraints. If the probability of
+                // (8) Find the smallest set of commands that satisfies all constraints. If the probability of
                 // satisfying phi until psi exceeds the given threshold, the set of labels is minimal and can be returned.
                 // Otherwise, the current solution has to be ruled out and the next smallest solution is retrieved from
                 // the solver.
                 
-                // Start by building the initial vector of constraints out of which we want to satisfy maximally many.
-                std::vector<z3::expr> softConstraints;
-                softConstraints.reserve(variableInformation.labelVariables.size());
-                for (auto const& labelExpr : variableInformation.labelVariables) {
-                    softConstraints.push_back(!labelExpr);
-                }
-                
-                // Create an index counter that keeps track of the next free index we can use for blocking variables.
-                uint_fast64_t nextFreeVariableIndex = 0;
-                
-                // Keep track of the command set we used to achieve the current probability as well as the probability
-                // itself.
+                // Set up some variables for the iterations.
                 std::set<uint_fast64_t> commandSet(relevancyInformation.relevantLabels);
-                double maximalReachabilityProbability = 0;
                 bool done = false;
                 uint_fast64_t iterations = 0;
                 uint_fast64_t currentBound = 0;
-                
+                maximalReachabilityProbability = 0;
                 do {
                     LOG4CPLUS_DEBUG(logger, "Computing minimal command set.");
-                    commandSet = findSmallestCommandSet(context, solver, variableInformation, softConstraints, currentBound, nextFreeVariableIndex, useFuMalik);
+                    commandSet = findSmallestCommandSet(context, solver, variableInformation, currentBound);
                     LOG4CPLUS_DEBUG(logger, "Computed minimal command set of size " << commandSet.size() << ".");
                     
                     // Restrict the given MDP to the current set of labels and compute the reachability probability.
@@ -976,13 +1001,12 @@ namespace storm {
                 } while (!done);
                 LOG4CPLUS_INFO(logger, "Found minimal label set after " << iterations << " iterations.");
                 
-                // Verify the results.
-                storm::ir::Program programCopy(program);
-                programCopy.restrictCommands(commandSet);
-                std::cout << programCopy.toString() << std::endl;
-                
-                // (8) Return the resulting command set after undefining the constants.
+                // (9) Return the resulting command set after undefining the constants.
                 storm::utility::ir::undefineUndefinedConstants(program);
+                
+                auto endTime = std::chrono::high_resolution_clock::now();
+                LOG4CPLUS_WARN(logger, "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms.");
+                
                 return commandSet;
                 
 #else
