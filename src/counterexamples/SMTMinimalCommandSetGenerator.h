@@ -356,6 +356,7 @@ namespace storm {
                 // FIXME: Include synchronisation cuts.
                 // FIXME: Fix backward cuts in the presence of synchronizing actions.
                 std::map<uint_fast64_t, std::set<uint_fast64_t>> precedingLabels;
+                std::set<uint_fast64_t> hasSynchronizingPredecessor;
 
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
@@ -377,6 +378,11 @@ namespace storm {
                                 }
                                 
                                 if (choiceTargetsCurrentState) {
+                                    if (choiceLabeling.at(predecessorChoice).size() > 1) {
+                                        for (auto label : choiceLabeling.at(currentChoice)) {
+                                            hasSynchronizingPredecessor.insert(label);
+                                        }
+                                    }
                                     for (auto labelToAdd : choiceLabeling[predecessorChoice]) {
                                         for (auto labelForWhichToAdd : choiceLabeling[currentChoice]) {
                                             precedingLabels[labelForWhichToAdd].insert(labelToAdd);
