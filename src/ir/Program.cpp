@@ -140,13 +140,13 @@ namespace storm {
             result << std::endl;
             
             for (auto const& element : booleanUndefinedConstantExpressions) {
-                result << "const bool " << element.first << " [" << element.second->toString() << "]" << ";" << std::endl;
+                result << "const bool " << element.second->toString() << ";" << std::endl;
             }
             for (auto const& element : integerUndefinedConstantExpressions) {
-                result << "const int " << element.first << " [" << element.second->toString() << "]" << ";" << std::endl;
+                result << "const int " << element.second->toString() << ";" << std::endl;
             }
             for (auto const& element : doubleUndefinedConstantExpressions) {
-                result << "const double " << element.first << " [" << element.second->toString() << "]" << ";" << std::endl;
+                result << "const double " << element.second->toString() << ";" << std::endl;
             }
             result << std::endl;
             
@@ -163,7 +163,7 @@ namespace storm {
             }
             
             for (auto const& rewardModel : rewards) {
-                result << rewardModel.first << ": " << rewardModel.second.toString() << std::endl;
+                result << rewardModel.second.toString() << std::endl;
             }
             
             for (auto const& label : labels) {

@@ -47,6 +47,8 @@ namespace storm {
                     case MINUS: return resultLeft - resultRight; break;
                     case TIMES: return resultLeft * resultRight; break;
                     case DIVIDE: return resultLeft / resultRight; break;
+                    case MIN: return std::min(resultLeft, resultRight); break;
+                    case MAX: return std::max(resultLeft, resultRight); break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
                         << "Unknown numeric binary operator: '" << functionType << "'.";
                 }
@@ -64,6 +66,8 @@ namespace storm {
                     case MINUS: return resultLeft - resultRight; break;
                     case TIMES: return resultLeft * resultRight; break;
                     case DIVIDE: return resultLeft / resultRight; break;
+                    case MIN: return std::min(resultLeft, resultRight); break;
+                    case MAX: return std::max(resultLeft, resultRight); break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
                         << "Unknown numeric binary operator: '" << functionType << "'.";
                 }
@@ -75,14 +79,14 @@ namespace storm {
             
             std::string BinaryNumericalFunctionExpression::toString() const {
                 std::stringstream result;
-                result << "(" << this->getLeft()->toString();
                 switch (functionType) {
-                    case PLUS: result << " + "; break;
-                    case MINUS: result << " - "; break;
-                    case TIMES: result << " * "; break;
-                    case DIVIDE: result << " / "; break;
+                    case PLUS: result << "(" << this->getLeft()->toString() << " + " << this->getRight()->toString() << ")"; break;
+                    case MINUS: result << "(" << this->getLeft()->toString() << " - " << this->getRight()->toString() << ")"; break;
+                    case TIMES: result << "(" << this->getLeft()->toString() << " * " << this->getRight()->toString() << ")"; break;
+                    case DIVIDE: result << "(" << this->getLeft()->toString() << " / " << this->getRight()->toString() << ")"; break;
+                    case MIN: result << "min(" << this->getLeft()->toString() << ", " << this->getRight()->toString() << ")"; break;
+                    case MAX: result << "max(" << this->getLeft()->toString() << ", " << this->getRight()->toString() << ")"; break;
                 }
-                result << this->getRight()->toString() << ")";
                 return result.str();
             }
             

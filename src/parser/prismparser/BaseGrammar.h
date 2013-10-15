@@ -127,6 +127,7 @@ namespace prism {
 		std::shared_ptr<BaseExpression> createIntMult(std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right) {
 			return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(BaseExpression::int_, left->clone(), right->clone(), BinaryNumericalFunctionExpression::TIMES));
 		}
+        
 		/*!
 		 * Create a new integer multiplication expression. If multiplication is true, it will be an multiplication, otherwise a division.
 		 * @param left Left operand.
@@ -141,6 +142,38 @@ namespace prism {
 				return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(BaseExpression::double_, left->clone(), right->clone(), BinaryNumericalFunctionExpression::DIVIDE));
 			}
 		}
+        
+        /*!
+         * Creates an integer min/max expression.
+         *
+         * @param min Indicates whether the expression is min or max.
+         * @param left The left operand.
+         * @param right The right operand.
+         * @return An integer min/max expression.
+         */
+        std::shared_ptr<BaseExpression> createIntMinMax(bool min, std::shared_ptr<BaseExpression> const& left, std::shared_ptr<BaseExpression> const& right) {
+            if (min) {
+                return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(BaseExpression::int_, left->clone(), right->clone(), BinaryNumericalFunctionExpression::MIN));
+            } else {
+                return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(BaseExpression::int_, left->clone(), right->clone(), BinaryNumericalFunctionExpression::MAX));
+            }
+        }
+        
+        /*!
+         * Creates an integer floor/ceil expression.
+         *
+         * @param floor Indicates whether the expression is a floor expression.
+         * @param operand The argument of the floor/ceil operation.
+         * @return An integer floor/ceil expression.
+         */
+        std::shared_ptr<BaseExpression> createIntFloorCeil(bool floor, std::shared_ptr<BaseExpression> const& operand) {
+            if (floor) {
+                return std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(BaseExpression::int_, operand->clone(), UnaryNumericalFunctionExpression::FLOOR));
+            } else {
+                return std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(BaseExpression::int_, operand->clone(), UnaryNumericalFunctionExpression::CEIL));
+            }
+        }
+        
 		/*!
 		 * Create a new binary relation expression.
 		 * @param left Left operand.

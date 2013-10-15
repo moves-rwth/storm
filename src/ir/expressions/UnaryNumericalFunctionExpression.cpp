@@ -5,6 +5,8 @@
  *      Author: Christian Dehnert
  */
 
+#include <cmath>
+
 #include "UnaryNumericalFunctionExpression.h"
 
 namespace storm {
@@ -35,6 +37,8 @@ namespace storm {
                 int_fast64_t resultChild = this->getChild()->getValueAsInt(variableValues);
                 switch(functionType) {
                     case MINUS: return -resultChild; break;
+                    case FLOOR: return static_cast<int_fast64_t>(std::floor(resultChild)); break;
+                    case CEIL: return static_cast<int_fast64_t>(std::ceil(resultChild)); break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
                         << "Unknown numerical unary operator: '" << functionType << "'.";
                 }
@@ -48,6 +52,8 @@ namespace storm {
                 double resultChild = this->getChild()->getValueAsDouble(variableValues);
                 switch(functionType) {
                     case MINUS: return -resultChild; break;
+                    case FLOOR: return std::floor(resultChild); break;
+                    case CEIL: return std::ceil(resultChild); break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
                         << "Unknown numerical unary operator: '" << functionType << "'.";
                 }
@@ -66,6 +72,8 @@ namespace storm {
                 result << "(";
                 switch (functionType) {
                     case MINUS: result << "-"; break;
+                    case FLOOR: result << "floor("; break;
+                    case CEIL: result << "ceil("; break;
                 }
                 result << this->getChild()->toString() << ")";
                 

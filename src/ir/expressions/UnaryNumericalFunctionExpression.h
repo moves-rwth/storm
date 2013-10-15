@@ -22,7 +22,7 @@ namespace storm {
                 /*!
                  * An enum type specifying the different functions applicable.
                  */
-                enum FunctionType {MINUS};
+                enum FunctionType {MINUS, FLOOR, CEIL};
                 
                 /*!
                  * Creates a unary numerical function expression tree node with the given child and function type.

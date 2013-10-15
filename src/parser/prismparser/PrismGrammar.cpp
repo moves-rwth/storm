@@ -179,7 +179,9 @@ namespace storm {
                 assignmentDefinition.name("assignment");
                 assignmentDefinitionList = assignmentDefinition(qi::_r1, qi::_r2) % "&";
                 assignmentDefinitionList.name("assignment list");
-                updateDefinition = ((ConstDoubleExpressionGrammar::instance(this->state) | qi::attr(phoenix::construct<std::shared_ptr<BaseExpression>>(phoenix::new_<storm::ir::expressions::DoubleLiteralExpression>(1)))) >> qi::lit(":")[phoenix::clear(phoenix::ref(this->state->assignedBooleanVariables_)), phoenix::clear(phoenix::ref(this->state->assignedIntegerVariables_))] > assignmentDefinitionList(qi::_a, qi::_b))[qi::_val = phoenix::bind(&PrismGrammar::createUpdate, this, qi::_1, qi::_a, qi::_b)];
+                updateDefinition = (((ConstDoubleExpressionGrammar::instance(this->state) >> qi::lit(":"))
+                                     | qi::attr(std::shared_ptr<BaseExpression>(new storm::ir::expressions::DoubleLiteralExpression(1))))[phoenix::clear(phoenix::ref(this->state->assignedBooleanVariables_)), phoenix::clear(phoenix::ref(this->state->assignedIntegerVariables_))]
+                                    >> assignmentDefinitionList(qi::_a, qi::_b))[qi::_val = phoenix::bind(&PrismGrammar::createUpdate, this, qi::_1, qi::_a, qi::_b)];
                 updateDefinition.name("update");
                 updateListDefinition = +updateDefinition % "+";
                 updateListDefinition.name("update list");

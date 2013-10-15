@@ -38,6 +38,8 @@ namespace storm {
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerMultExpression;
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> atomicIntegerExpression;
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> integerVariableExpression;
+                qi::rule<Iterator, std::shared_ptr<BaseExpression>(), qi::locals<bool>, Skipper> integerMinMaxExpression;
+                qi::rule<Iterator, std::shared_ptr<BaseExpression>(), qi::locals<bool>, Skipper> integerFloorCeilExpression;
             };
             
         }

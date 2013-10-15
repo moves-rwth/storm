@@ -22,7 +22,7 @@ namespace storm {
                 /*!
                  * An enum type specifying the different functions applicable.
                  */
-                enum FunctionType {PLUS, MINUS, TIMES, DIVIDE};
+                enum FunctionType {PLUS, MINUS, TIMES, DIVIDE, MIN, MAX};
                 
                 /*!
                  * Creates a binary numerical function expression with the given type, children and function type.

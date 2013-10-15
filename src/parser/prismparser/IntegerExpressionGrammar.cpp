@@ -19,8 +19,14 @@ namespace storm {
                 integerMultExpression %= atomicIntegerExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> atomicIntegerExpression[qi::_val = phoenix::bind(&BaseGrammar::createIntMult, this, qi::_val, qi::_1)]);
                 integerMultExpression.name("integer expression");
                 
-                atomicIntegerExpression %= (integerVariableExpression | qi::lit("(") >> integerExpression >> qi::lit(")") | ConstIntegerExpressionGrammar::instance(this->state));
+                atomicIntegerExpression %= (integerMinMaxExpression | integerFloorCeilExpression | qi::lit("(") >> integerExpression >> qi::lit(")") | integerVariableExpression | ConstIntegerExpressionGrammar::instance(this->state));
                 atomicIntegerExpression.name("integer expression");
+                
+                integerMinMaxExpression = ((qi::lit("min")[qi::_a = true] | qi::lit("max")[qi::_a = false]) >> qi::lit("(") >> integerExpression >> qi::lit(",") >> integerExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&BaseGrammar::createIntMinMax, this, qi::_a, qi::_1, qi::_2)];
+                integerMinMaxExpression.name("integer min/max expression");
+                
+                integerFloorCeilExpression = ((qi::lit("floor")[qi::_a = true] | qi::lit("ceil")[qi::_a = false]) >> qi::lit("(") >> integerExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&BaseGrammar::createIntFloorCeil, this, qi::_a, qi::_1)];
+                integerFloorCeilExpression.name("integer floor/ceil expression");
                 
                 integerVariableExpression = IdentifierGrammar::instance(this->state)[qi::_val = phoenix::bind(&BaseGrammar::getIntVariable, this, qi::_1)];
                 integerVariableExpression.name("integer variable");
