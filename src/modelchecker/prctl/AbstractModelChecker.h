@@ -21,7 +21,6 @@ namespace prctl {
 #include "src/formula/Prctl.h"
 #include "src/storage/BitVector.h"
 #include "src/models/AbstractModel.h"
-#include "src/counterexamples/PathBasedSubsystemGenerator.h"
 #include "src/settings/Settings.h"
 
 #include "log4cplus/logger.h"

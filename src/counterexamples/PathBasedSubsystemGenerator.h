@@ -10,6 +10,8 @@
 
 #include "src/models/Dtmc.h"
 #include "src/models/AbstractModel.h"
+#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/storage/BitVector.h"
 
 #include "log4cplus/logger.h"
@@ -508,7 +510,7 @@ public:
 	/*!
 	 *
 	 */
-	static void computeCriticalSubsystem(storm::modelchecker::prctl::AbstractModelChecker<T>& modelCheck, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
+	static void computeCriticalSubsystem(storm::models::Dtmc<T> const model, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
 
 		//-------------------------------------------------------------
 		// 1. Strip and handle formulas
@@ -519,8 +521,9 @@ public:
 #endif
 		LOG4CPLUS_INFO(logger, "Start finding critical subsystem.");
 
-		//get dtmc (model) from model checker
-		storm::models::Dtmc<T> model = modelCheck.template getModel<storm::models::Dtmc<T>>();
+		//make model checker
+		//TODO: Implement and use generic Model Checker factory.
+		storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<T> modelCheck {model, new storm::solver::GmmxxLinearEquationSolver<T>()};
 
 		//init bit vector to contain the subsystem
 		storm::storage::BitVector subSys(model.getNumberOfStates());
@@ -618,9 +621,6 @@ public:
 		}
 		pathCount++;
 
-		// set bigger sub system
-		modelCheck.setSubSystem(&subSys);
-
 		// Get estimate (upper bound) of new sub system probability
 		// That is: prob(target) * cost(path) * (mean(prob(inits))/prob(source))
 		subSysProb += trueProbs[shortestPath[0]] * pathProb * trueProb / trueProbs[shortestPath.back()];
@@ -639,9 +639,6 @@ public:
 				subSys.set(shortestPath[i], true);
 			}
 
-			// set bigger sub system
-			modelCheck.setSubSystem(&subSys);
-
 			// Get estimate (upper bound) of new sub system probability
 			// That is: prob(target) * cost(path) * (mean(prob(inits))/prob(source))
 			//subSysProb += (trueProbs[shortestPath.back()] == 0 ? 0 : trueProbs[shortestPath[0]] * pathProb * trueProb / trueProbs[shortestPath.back()]);
@@ -651,7 +648,7 @@ public:
 			if((pathCount % precision == 0) && subSysProb >= bound) {
 
 				//get probabilities
-				subSysProbs = pathFormulaPtr->check(modelCheck, false);
+				subSysProbs = modelCheck.checkUntil(allowedStates & subSys, targetStates & subSys, false);
 
 				//T diff = subSysProb;
 				//std::cout << "Est. prob: " << diff << std::endl;
@@ -670,7 +667,6 @@ public:
 				//std::cout << "Path count: " << pathCount << std::endl;
 
 				//Are we critical?
-				//if(!modelCheck.check(stateFormula)) break;
 				if(subSysProb >= bound){
 					break;
 				}
@@ -679,9 +675,6 @@ public:
 				}
 			}
 		}
-
-		// To be sure the model checker ignores subsystems for future calls.
-		modelCheck.setSubSystem(nullptr);
 
 #ifdef BENCHMARK
 		LOG4CPLUS_INFO(logger, "Critical subsystem found.");
