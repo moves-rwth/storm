@@ -68,14 +68,14 @@ public:
 	/*!
 	 * Constructs an AbstractModelChecker with the given model.
 	 */
-	explicit AbstractModelChecker(storm::models::AbstractModel<Type> const& model, storm::storage::BitVector* subSystem = nullptr) : model(model), subSystem(subSystem) {
+	explicit AbstractModelChecker(storm::models::AbstractModel<Type> const& model) : model(model){
 		// Intentionally left empty.
 	}
 	/*!
 	 * Copy constructs an AbstractModelChecker from the given model checker. In particular, this means that the newly
 	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	explicit AbstractModelChecker(AbstractModelChecker<Type> const& modelchecker) : model(modelchecker.model), subSystem(modelchecker.subSystem) {
+	explicit AbstractModelChecker(AbstractModelChecker<Type> const& modelchecker) : model(modelchecker.model) {
 		// Intentionally left empty.
 	}
 	
@@ -147,7 +147,6 @@ public:
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << stateFormula.toString());
 		std::cout << "Model checking formula:\t" << stateFormula.toString() << std::endl;
 		storm::storage::BitVector result;
-		bool allSatisfied = true;
 		try {
 			result = stateFormula.check(*this);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
@@ -155,18 +154,11 @@ public:
 			for (auto initialState : model.getInitialStates()) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
 				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
-				allSatisfied &= result.get(initialState);
 			}
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
 		}
-
-		if(!allSatisfied && storm::settings::Settings::getInstance()->getOptionByLongName("prctl").getArgumentByName("subSys").getValueAsBoolean()) {
-			//generate critical subsystem
-			storm::counterexamples::PathBasedSubsystemGenerator<Type>::computeCriticalSubsystem(*this, stateFormula);
-		}
-
 
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
@@ -205,11 +197,7 @@ public:
 	 */
 	storm::storage::BitVector checkAp(storm::property::prctl::Ap<Type> const& formula) const {
 		if (formula.getAp() == "true") {
-			if(subSystem != nullptr) {
-				return *subSystem;
-			} else {
-				return storm::storage::BitVector(model.getNumberOfStates(), true);
-			}
+			return storm::storage::BitVector(model.getNumberOfStates(), true);
 		} else if (formula.getAp() == "false") {
 			return storm::storage::BitVector(model.getNumberOfStates());
 		}
@@ -219,11 +207,7 @@ public:
 			throw storm::exceptions::InvalidPropertyException() << "Atomic proposition '" << formula.getAp() << "' is invalid.";
 		}
 
-		if(subSystem != nullptr) {
-			return *subSystem & storm::storage::BitVector(model.getLabeledStates(formula.getAp()));
-		} else {
-			return storm::storage::BitVector(model.getLabeledStates(formula.getAp()));
-		}
+		return storm::storage::BitVector(model.getLabeledStates(formula.getAp()));
 	}
 
 	/*!
@@ -313,15 +297,6 @@ public:
 		return result;
 	}
 
-	/*!
-	 * Sets the subsystem.
-	 *
-	 * @param subSystem The subsystem the model check is to be confined to.
-	 */
-	void setSubSystem(storm::storage::BitVector* subSys) {
-		subSystem = subSys;
-	}
-
 private:
 
 	/*!
@@ -331,13 +306,6 @@ private:
 	 * model checker object is unsafe after the object has been destroyed.
 	 */
 	storm::models::AbstractModel<Type> const& model;
-
-	/*!
-	 * A pointer to the subsystem of the Model to which the check of the model is to be confined.
-	 *
-	 * @note that this is a nullptr iff the check is not to be confined.
-	 */
-	storm::storage::BitVector* subSystem;
 };
 
 } // namespace prctl

@@ -74,6 +74,7 @@ public:
 		return formula.check(*this, false);
 	}
 
+
 	/*!
 	 * Checks the given formula that is a bounded-until formula.
 	 *
@@ -86,14 +87,29 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type> checkBoundedUntil(storm::property::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
-		// First, we need to compute the states that satisfy the sub-formulas of the bounded until-formula.
-		storm::storage::BitVector leftStates = formula.getLeft().check(*this);
-		storm::storage::BitVector rightStates = formula.getRight().check(*this);
+		return this->checkBoundedUntil(formula.getLeft().check(*this), formula.getRight().check(*this), formula.getBound(), qualitative);
+	}
+
+
+	/*!
+	 * Computes the probability to satisfy phi until psi inside a given bound for each state in the model.
+	 *
+	 * @param phiStates A bit vector indicating which states satisfy phi.
+     * @param psiStates A bit vector indicating which states satisfy psi.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
+	 */
+	virtual std::vector<Type> checkBoundedUntil(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, bool qualitative) const {
+
         std::vector<Type> result(this->getModel().getNumberOfStates());
         
         // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the
         // further analysis.
-        storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel(), leftStates, rightStates, true, formula.getBound());
+        storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel(), phiStates, psiStates, true, stepBound);
         LOG4CPLUS_INFO(logger, "Found " << statesWithProbabilityGreater0.getNumberOfSetBits() << " 'maybe' states.");
         
         // Check if we already know the result (i.e. probability 0) for all initial states and
@@ -111,7 +127,7 @@ public:
             storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0);
             
             // Compute the new set of target states in the reduced system.
-            storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % rightStates;
+            storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % psiStates;
             
             // Make all rows absorbing that satisfy the second sub-formula.
             submatrix.makeRowsAbsorbing(rightStatesInReducedSystem);
@@ -122,7 +138,7 @@ public:
             
             // Perform the matrix vector multiplication as often as required by the formula bound.
             if (linearEquationSolver != nullptr) {
-                this->linearEquationSolver->performMatrixVectorMultiplication(submatrix, subresult, nullptr, formula.getBound());
+                this->linearEquationSolver->performMatrixVectorMultiplication(submatrix, subresult, nullptr, stepBound);
             } else {
                 throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
             }
@@ -219,6 +235,7 @@ public:
 		return result;
 	}
 
+
 	/*!
 	 * Check the given formula that is an until formula.
 	 *
@@ -231,13 +248,26 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type> checkUntil(storm::property::prctl::Until<Type> const& formula, bool qualitative) const {
-		// First, we need to compute the states that satisfy the sub-formulas of the until-formula.
-		storm::storage::BitVector leftStates = formula.getLeft().check(*this);
-		storm::storage::BitVector rightStates = formula.getRight().check(*this);
+		return this->checkUntil(formula.getLeft().check(*this), formula.getRight().check(*this), qualitative);
+	}
 
-		// Then, we need to identify the states which have to be taken out of the matrix, i.e.
+	/*!
+	 * Computes the  probability to satisfy phi until psi for each state in the model.
+	 *
+	 * @param phiStates A bit vector indicating which states satisfy phi.
+     * @param psiStates A bit vector indicating which states satisfy psi.
+	 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+	 * results are only compared against the bounds 0 and 1. If set to true, this will most likely results that are only
+	 * qualitatively correct, i.e. do not represent the correct value, but only the correct relation with respect to the
+	 * bounds 0 and 1.
+	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
+	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
+	 */
+	virtual std::vector<Type> checkUntil(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const {
+
+		// We need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-        std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), leftStates, rightStates);
+        std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), phiStates, psiStates);
 		storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
 		storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
 

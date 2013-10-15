@@ -64,7 +64,7 @@ public:
 						distances[*init].second = (T) 1;
 				}
 
-				typename storm::storage::SparseMatrix<T>::ConstRowsIterator trans = transMat.begin(*init);
+				typename storm::storage::SparseMatrix<T>::ConstRowIterator trans = transMat.begin(*init);
 				for(; trans != transMat.end(*init); ++trans) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
 					if(trans.value() != (T) 0 && !subSysStates.get(trans.column())) {
@@ -111,7 +111,7 @@ public:
 			// Same goes for forbidden states since they may not be used on a path, except as last node.
 			if(!subSysStates.get(activeState.first) && allowedStates.get(activeState.first)) {
 				// Look at all neighbors
-				for(typename storm::storage::SparseMatrix<T>::ConstRowsIterator trans = transMat.begin(activeState.first); trans != transMat.end(activeState.first); ++trans) {
+				for(typename storm::storage::SparseMatrix<T>::ConstRowIterator trans = transMat.begin(activeState.first); trans != transMat.end(activeState.first); ++trans) {
 					// Only consider the transition if it's not virtual
 					if(trans.value() != (T) 0) {
 
@@ -178,7 +178,7 @@ public:
 						continue;
 				}
 
-				typename storm::storage::SparseMatrix<T>::ConstRowsIterator trans = transMat.begin(*init);
+				typename storm::storage::SparseMatrix<T>::ConstRowIterator trans = transMat.begin(*init);
 				for(; trans != transMat.end(*init); ++trans) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
 					if(trans.value() != (T) 0 && !subSysStates.get(trans.column())) {
@@ -230,7 +230,7 @@ public:
 			// Same goes for forbidden states since they may not be used on a path, except as last node.
 			if(!subSysStates.get(activeState.first) && allowedStates.get(activeState.first)) {
 				// Look at all neighbors
-				for(typename storm::storage::SparseMatrix<T>::ConstRowsIterator trans = transMat.begin(activeState.first); trans != transMat.end(activeState.first); ++trans) {
+				for(typename storm::storage::SparseMatrix<T>::ConstRowIterator trans = transMat.begin(activeState.first); trans != transMat.end(activeState.first); ++trans) {
 					// Only consider the transition if it's not virtual
 					if(trans.value() != (T) 0) {
 
@@ -508,7 +508,7 @@ public:
 	/*!
 	 *
 	 */
-	static void computeCriticalSubsystem(storm::modelchecker::prctl::AbstractModelChecker<T> const& modelCheck, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
+	static void computeCriticalSubsystem(storm::modelchecker::prctl::AbstractModelChecker<T>& modelCheck, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
 
 		//-------------------------------------------------------------
 		// 1. Strip and handle formulas
