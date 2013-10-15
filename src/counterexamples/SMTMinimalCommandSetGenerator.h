@@ -203,6 +203,7 @@ namespace storm {
                 std::map<uint_fast64_t, std::set<uint_fast64_t>> precedingLabels;
                 std::set<uint_fast64_t> targetLabels;
                 std::map<uint_fast64_t, std::set<uint_fast64_t>> followingLabels;
+                std::map<uint_fast64_t, std::set<std::set<uint_fast64_t>>> synchronizingLabels;
                 
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
@@ -213,6 +214,15 @@ namespace storm {
                 
                 for (auto currentState : relevancyInformation.relevantStates) {
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(currentState)) {
+                        
+                        // If the choice is a synchronization choice, we need to record it.
+                        if (choiceLabeling[currentChoice].size() > 1) {
+                            for (auto label : choiceLabeling[currentChoice]) {
+                                std::set<uint_fast64_t> synchSet(choiceLabeling[currentChoice]);
+                                synchSet.erase(label);
+                                synchronizingLabels[label].emplace(std::move(synchSet));
+                            }
+                        }
                         
                         // If the state is initial, we need to add all the choice labels to the initial label set.
                         if (initialStates.get(currentState)) {
@@ -320,28 +330,22 @@ namespace storm {
                     }
                 }
                 
-                // FIXME: This is currently disabled because it derives less information than the following backward cuts.
-                // Consequently, assert that for each non-initial label, we take preceding command.
-//                for (auto const& labelSetPair : precedingLabels) {
-//                    formulae.clear();
-//                    if (initialLabels.find(labelSetPair.first) == initialLabels.end()) {
-//                        // Also, if there is a known label that may follow the current label, we don't need to assert
-//                        // anything here.
-//                        std::set_intersection(labelSetPair.second.begin(), labelSetPair.second.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(intersection, intersection.begin()));
-//                        if (intersection.empty()) {
-//                            formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelSetPair.first)));
-//                            for (auto followingLabel : labelSetPair.second) {
-//                                formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(followingLabel)));
-//                            }
-//                        } else {
-//                            // If the intersection was non-empty, we clear the set so we can re-use it later.
-//                            intersection.clear();
-//                        }
-//                    }
-//                    if (formulae.size() > 0) {
-//                        assertDisjunction(context, solver, formulae);
-//                    }
-//                }
+                // Finally, assert that if we take one of the synchronizing labels, we also take one of the combinations
+                // the label appears in.
+                for (auto const& labelSynchronizingSetsPair : synchronizingLabels) {
+                    formulae.clear();
+                    formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelSynchronizingSetsPair.first)));
+                    
+                    for (auto const& synchronizingSet : labelSynchronizingSetsPair.second) {
+                        z3::expr currentCombination = context.bool_val(true);
+                        for (auto label : synchronizingSet) {
+                            currentCombination = currentCombination && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                        }
+                        formulae.push_back(currentCombination);
+                    }
+                    
+                    assertDisjunction(context, solver, formulae);
+                }
             }
 
             /*!
@@ -353,8 +357,6 @@ namespace storm {
              * @param solver The solver to use for the satisfiability evaluation.
              */
             static void assertSymbolicCuts(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
-                // FIXME: Include synchronisation cuts.
-                // FIXME: Fix backward cuts in the presence of synchronizing actions.
                 std::map<uint_fast64_t, std::set<uint_fast64_t>> precedingLabels;
                 std::set<uint_fast64_t> hasSynchronizingPredecessor;
 
