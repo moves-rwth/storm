@@ -309,7 +309,10 @@ namespace storm {
                             // Update the choice by adding the probability/target state to it.
                             double probabilityToAdd = update.getLikelihoodExpression()->getValueAsDouble(currentState);
                             probabilitySum += probabilityToAdd;
-                            addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, {update.getGlobalIndex()});
+							std::set<uint_fast64_t> lables;
+							lables.insert(update.getGlobalIndex());
+                            //addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, {update.getGlobalIndex()});
+							addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, lables);
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.

@@ -11,6 +11,7 @@
 #include <stack>
 
 #include "src/ir/expressions/ExpressionVisitor.h"
+#include "src/ir/expressions/Expressions.h"
 
 namespace storm {
     namespace adapters {

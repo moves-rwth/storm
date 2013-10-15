@@ -9,6 +9,7 @@
 #define STORM_STORAGE_LABELEDVALUES_H
 
 #include <list>
+#include <set>
 
 namespace storm {
     namespace utility {
