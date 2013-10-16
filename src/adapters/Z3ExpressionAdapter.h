@@ -58,7 +58,7 @@ namespace storm {
                         stack.push(leftResult || rightResult);
                         break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-                        << "Unknown boolean binary operator: '" << expression->getFunctionType() << "'.";
+                        << "Unknown boolean binary operator: '" << expression->getFunctionType() << "' in expression " << expression->toString() << ".";
                 }
                 
             }
@@ -85,8 +85,14 @@ namespace storm {
                     case storm::ir::expressions::BinaryNumericalFunctionExpression::DIVIDE:
                         stack.push(leftResult / rightResult);
                         break;
+                    case storm::ir::expressions::BinaryNumericalFunctionExpression::MIN:
+                        stack.push(ite(leftResult <= rightResult, leftResult, rightResult));
+                        break;
+                    case storm::ir::expressions::BinaryNumericalFunctionExpression::MAX:
+                        stack.push(ite(leftResult >= rightResult, leftResult, rightResult));
+                        break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-                        << "Unknown boolean binary operator: '" << expression->getFunctionType() << "'.";
+                        << "Unknown numerical binary operator: '" << expression->getFunctionType() << "' in expression " << expression->toString() << ".";
                 }
             }
             
@@ -119,7 +125,7 @@ namespace storm {
                         stack.push(leftResult >= rightResult);
                         break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-                        << "Unknown boolean binary operator: '" << expression->getRelationType() << "'.";
+                        << "Unknown boolean binary operator: '" << expression->getRelationType() << "' in expression " << expression->toString() << ".";
                 }    
             }
             
@@ -177,7 +183,7 @@ namespace storm {
                         stack.push(!childResult);
                         break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-                        << "Unknown boolean unary operator: '" << expression->getFunctionType() << "'.";
+                        << "Unknown boolean binary operator: '" << expression->getFunctionType() << "' in expression " << expression->toString() << ".";
                 }    
             }
             

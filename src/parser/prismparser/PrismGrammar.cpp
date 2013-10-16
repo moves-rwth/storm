@@ -245,7 +245,7 @@ namespace storm {
                 // This block defines all entities that are needed for parsing a program.
                 modelTypeDefinition = modelType_;
                 modelTypeDefinition.name("model type");
-                start = (
+                start = (qi::eps >
                          modelTypeDefinition >
                          constantDefinitionList(qi::_a, qi::_b, qi::_c) >
                          globalVariableDefinitionList(qi::_d) >

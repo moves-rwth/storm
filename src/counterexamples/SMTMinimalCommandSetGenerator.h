@@ -49,7 +49,7 @@ namespace storm {
                 std::set<uint_fast64_t> knownLabels;
                 
                 // A list of relevant choices for each relevant state.
-                std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
+                std::map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
             };
             
             struct VariableInformation {
@@ -253,10 +253,12 @@ namespace storm {
                                 targetLabels.insert(label);
                             }
                         }
-                        
-                        // Iterate over predecessors and add all choices that target the current state to the preceding
-                        // label set of all labels of all relevant choices of the current state.
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
+                    }
+                    
+                    // Iterate over predecessors and add all choices that target the current state to the preceding
+                    // label set of all labels of all relevant choices of the current state.
+                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
+                        if (relevancyInformation.relevantStates.get(*predecessorIt)) {
                             for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(*predecessorIt)) {
                                 bool choiceTargetsCurrentState = false;
                                 for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(predecessorChoice), successorIte = transitionMatrix.constColumnIteratorEnd(predecessorChoice); successorIt != successorIte; ++successorIt) {
@@ -266,9 +268,11 @@ namespace storm {
                                 }
                                 
                                 if (choiceTargetsCurrentState) {
-                                    for (auto labelToAdd : choiceLabeling[predecessorChoice]) {
-                                        for (auto labelForWhichToAdd : choiceLabeling[currentChoice]) {
-                                            precedingLabels[labelForWhichToAdd].insert(labelToAdd);
+                                    for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(currentState)) {
+                                        for (auto labelToAdd : choiceLabeling[predecessorChoice]) {
+                                            for (auto labelForWhichToAdd : choiceLabeling[currentChoice]) {
+                                                precedingLabels[labelForWhichToAdd].insert(labelToAdd);
+                                            }
                                         }
                                     }
                                 }
@@ -277,8 +281,11 @@ namespace storm {
                     }
                 }
                 
+                LOG4CPLUS_DEBUG(logger, "Successfully gathered data for explicit cuts.");
+                
                 std::vector<z3::expr> formulae;
                 
+                LOG4CPLUS_DEBUG(logger, "Asserting initial label is taken.");
                 // Start by asserting that we take at least one initial label. We may do so only if there is no initial
                 // label that is already known. Otherwise this condition would be too strong.
                 std::set<uint_fast64_t> intersection;
@@ -294,6 +301,7 @@ namespace storm {
                     intersection.clear();
                 }
                 
+                LOG4CPLUS_DEBUG(logger, "Asserting target label is taken.");
                 // Likewise, if no target label is known, we may assert that there is at least one.
                 std::set_intersection(targetLabels.begin(), targetLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(intersection, intersection.begin()));
                 if (intersection.empty()) {
@@ -306,6 +314,7 @@ namespace storm {
                     intersection.clear();
                 }
                 
+                LOG4CPLUS_DEBUG(logger, "Asserting taken labels are followed by another label if they are not a target label.");
                 // Now assert that for each non-target label, we take a following label.
                 for (auto const& labelSetPair : followingLabels) {
                     formulae.clear();
@@ -330,21 +339,38 @@ namespace storm {
                     }
                 }
                 
+                LOG4CPLUS_DEBUG(logger, "Asserting synchronization cuts.");
                 // Finally, assert that if we take one of the synchronizing labels, we also take one of the combinations
                 // the label appears in.
                 for (auto const& labelSynchronizingSetsPair : synchronizingLabels) {
                     formulae.clear();
-                    formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelSynchronizingSetsPair.first)));
-                    
-                    for (auto const& synchronizingSet : labelSynchronizingSetsPair.second) {
-                        z3::expr currentCombination = context.bool_val(true);
-                        for (auto label : synchronizingSet) {
-                            currentCombination = currentCombination && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
-                        }
-                        formulae.push_back(currentCombination);
+                    if (relevancyInformation.knownLabels.find(labelSynchronizingSetsPair.first) == relevancyInformation.knownLabels.end()) {
+                        formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelSynchronizingSetsPair.first)));
                     }
                     
-                    assertDisjunction(context, solver, formulae);
+                    // We need to be careful, because there may be one synchronisation set out of which all labels are
+                    // known, which means we must not assert anything.
+                    bool allImplicantsKnownForOneSet = false;
+                    for (auto const& synchronizingSet : labelSynchronizingSetsPair.second) {
+                        z3::expr currentCombination = context.bool_val(true);
+                        bool allImplicantsKnownForCurrentSet = true;
+                        for (auto label : synchronizingSet) {
+                            if (relevancyInformation.knownLabels.find(label) == relevancyInformation.knownLabels.end()) {
+                                currentCombination = currentCombination && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                            }
+                        }
+                        formulae.push_back(currentCombination);
+                        
+                        // If all implicants of the current set are known, we do not need to further build the constraint.
+                        if (allImplicantsKnownForCurrentSet) {
+                            allImplicantsKnownForOneSet = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!allImplicantsKnownForOneSet) {
+                        assertDisjunction(context, solver, formulae);
+                    }
                 }
             }
 
@@ -371,23 +397,25 @@ namespace storm {
                         // Iterate over predecessors and add all choices that target the current state to the preceding
                         // label set of all labels of all relevant choices of the current state.
                         for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                            for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(*predecessorIt)) {
-                                bool choiceTargetsCurrentState = false;
-                                for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(predecessorChoice), successorIte = transitionMatrix.constColumnIteratorEnd(predecessorChoice); successorIt != successorIte; ++successorIt) {
-                                    if (*successorIt == currentState) {
-                                        choiceTargetsCurrentState = true;
-                                    }
-                                }
-                                
-                                if (choiceTargetsCurrentState) {
-                                    if (choiceLabeling.at(predecessorChoice).size() > 1) {
-                                        for (auto label : choiceLabeling.at(currentChoice)) {
-                                            hasSynchronizingPredecessor.insert(label);
+                            if (relevancyInformation.relevantStates.get(*predecessorIt)) {
+                                for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(*predecessorIt)) {
+                                    bool choiceTargetsCurrentState = false;
+                                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(predecessorChoice), successorIte = transitionMatrix.constColumnIteratorEnd(predecessorChoice); successorIt != successorIte; ++successorIt) {
+                                        if (*successorIt == currentState) {
+                                            choiceTargetsCurrentState = true;
                                         }
                                     }
-                                    for (auto labelToAdd : choiceLabeling[predecessorChoice]) {
-                                        for (auto labelForWhichToAdd : choiceLabeling[currentChoice]) {
-                                            precedingLabels[labelForWhichToAdd].insert(labelToAdd);
+                                    
+                                    if (choiceTargetsCurrentState) {
+                                        if (choiceLabeling.at(predecessorChoice).size() > 1) {
+                                            for (auto label : choiceLabeling.at(currentChoice)) {
+                                                hasSynchronizingPredecessor.insert(label);
+                                            }
+                                        }
+                                        for (auto labelToAdd : choiceLabeling[predecessorChoice]) {
+                                            for (auto labelForWhichToAdd : choiceLabeling[currentChoice]) {
+                                                precedingLabels[labelForWhichToAdd].insert(labelToAdd);
+                                            }
                                         }
                                     }
                                 }
@@ -396,9 +424,6 @@ namespace storm {
                     }
                 }
                 
-                // FIXME: The following procedure to assert backward cuts is not correct in the presence of synchronizing
-                // actions, because it may be the case that several synchronizing commands are necessary to enable another
-                // command and not just one.
                 storm::utility::ir::VariableInformation programVariableInformation = storm::utility::ir::createVariableInformation(program);
                 
                 // Create a context and register all variables of the program with their correct type.
@@ -450,6 +475,10 @@ namespace storm {
 
                         // If the label of the command is not relevant, skip it entirely.
                         if (relevancyInformation.relevantLabels.find(command.getGlobalIndex()) == relevancyInformation.relevantLabels.end()) continue;
+                        
+                        // If the label has a synchronizing predecessor, we also need to skip it, because the following
+                        // procedure can only consider predecessors in isolation.
+                        if(hasSynchronizingPredecessor.find(command.getGlobalIndex()) != hasSynchronizingPredecessor.end()) continue;
                         
                         // Save the state of the solver so we can easily backtrack.
                         localSolver.push();
@@ -926,6 +955,7 @@ namespace storm {
             static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false) {
 #ifdef STORM_HAVE_Z3
                 auto startTime = std::chrono::high_resolution_clock::now();
+                auto endTime = std::chrono::high_resolution_clock::now();
                 
                 storm::utility::ir::defineUndefinedConstants(program, constantDefinitionString);
 
@@ -965,6 +995,7 @@ namespace storm {
                 variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(context, solver, variableInformation.adderVariables, 0));
                 
                 // (7) Add constraints that cut off a lot of suboptimal solutions.
+                LOG4CPLUS_DEBUG(logger, "Asserting cuts.");
                 assertExplicitCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
                 LOG4CPLUS_DEBUG(logger, "Asserted explicit cuts.");
                 assertSymbolicCuts(program, labeledMdp, variableInformation, relevancyInformation, context, solver);
@@ -981,10 +1012,11 @@ namespace storm {
                 uint_fast64_t iterations = 0;
                 uint_fast64_t currentBound = 0;
                 maximalReachabilityProbability = 0;
+                auto iterationTimer = std::chrono::high_resolution_clock::now();
                 do {
                     LOG4CPLUS_DEBUG(logger, "Computing minimal command set.");
                     commandSet = findSmallestCommandSet(context, solver, variableInformation, currentBound);
-                    LOG4CPLUS_DEBUG(logger, "Computed minimal command set of size " << commandSet.size() << ".");
+                    LOG4CPLUS_DEBUG(logger, "Computed minimal command set of size " << (commandSet.size() + relevancyInformation.knownLabels.size()) << ".");
                     
                     // Restrict the given MDP to the current set of labels and compute the reachability probability.
                     commandSet.insert(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end());
@@ -1006,14 +1038,20 @@ namespace storm {
                         done = true;
                     }
                     ++iterations;
+                    
+                    endTime = std::chrono::high_resolution_clock::now();
+                    if (std::chrono::duration_cast<std::chrono::seconds>(endTime - iterationTimer).count() > 5) {
+                        std::cout << "Performed " << iterations << " iterations in " << std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() << "s. Current command set size is " << commandSet.size() << "." << std::endl;
+                        iterationTimer = std::chrono::high_resolution_clock::now();
+                    }
                 } while (!done);
                 LOG4CPLUS_INFO(logger, "Found minimal label set after " << iterations << " iterations.");
                 
                 // (9) Return the resulting command set after undefining the constants.
                 storm::utility::ir::undefineUndefinedConstants(program);
                 
-                auto endTime = std::chrono::high_resolution_clock::now();
-                LOG4CPLUS_WARN(logger, "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms.");
+                endTime = std::chrono::high_resolution_clock::now();
+                std::cout << "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms (" << iterations << " iterations)." << std::endl;
                 
                 return commandSet;
                 

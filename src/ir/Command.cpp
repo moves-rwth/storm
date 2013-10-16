@@ -27,7 +27,7 @@ namespace storm {
         : actionName(oldCommand.getActionName()), guardExpression(oldCommand.guardExpression->clone(renaming, variableState)), globalIndex(newGlobalIndex) {
             auto renamingPair = renaming.find(this->actionName);
             if (renamingPair != renaming.end()) {
-                this->actionName = renamingPair->first;
+                this->actionName = renamingPair->second;
             }
             this->updates.reserve(oldCommand.getNumberOfUpdates());
             for (Update const& update : oldCommand.updates) {
