@@ -89,6 +89,7 @@ namespace storm {
                 relevancyInformation.relevantStates &= ~psiStates;
 
                 LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantStates.getNumberOfSetBits() << " relevant states.");
+                LOG4CPLUS_DEBUG(logger, relevancyInformation.relevantStates.toString());
 
                 // Retrieve some references for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
@@ -121,12 +122,20 @@ namespace storm {
                 
                 // Compute the set of labels that are known to be taken in any case.
                 relevancyInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, relevancyInformation.relevantLabels);
-                
                 if (!relevancyInformation.knownLabels.empty()) {
                     std::set<uint_fast64_t> remainingLabels;
                     std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(remainingLabels, remainingLabels.begin()));
                     relevancyInformation.relevantLabels = remainingLabels;
                 }
+                
+//                std::vector<std::set<uint_fast64_t>> guaranteedLabels = storm::utility::counterexamples::getGuaranteedLabelSets(labeledMdp, psiStates, relevancyInformation.relevantLabels);
+//                for (auto state : relevancyInformation.relevantStates) {
+//                    std::cout << "state " << state << " ##########################################################" << std::endl;
+//                    for (auto label : guaranteedLabels[state]) {
+//                        std::cout << label << ", ";
+//                    }
+//                    std::cout << std::endl;
+//                }
                 
                 LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.");
                 return relevancyInformation;
@@ -852,20 +861,10 @@ namespace storm {
              * @param variableInformation A structure with information about the variables for the labels.
              */
             static void ruleOutSolution(z3::context& context, z3::solver& solver, std::set<uint_fast64_t> const& commandSet, VariableInformation const& variableInformation) {
-                std::map<uint_fast64_t, uint_fast64_t>::const_iterator labelIndexIterator = variableInformation.labelToIndexMap.begin();
-                z3::expr blockSolutionExpression(context);
-                if (commandSet.find(labelIndexIterator->first) != commandSet.end()) {
-                    blockSolutionExpression = !variableInformation.labelVariables[labelIndexIterator->second];
-                } else {
-                    blockSolutionExpression = variableInformation.labelVariables[labelIndexIterator->second];
-                }
-                ++labelIndexIterator;
-
-                for (; labelIndexIterator != variableInformation.labelToIndexMap.end(); ++labelIndexIterator) {
-                    if (commandSet.find(labelIndexIterator->first) != commandSet.end()) {
-                        blockSolutionExpression = blockSolutionExpression || !variableInformation.labelVariables[labelIndexIterator->second];
-                    } else {
-                        blockSolutionExpression = blockSolutionExpression || variableInformation.labelVariables[labelIndexIterator->second];
+                z3::expr blockSolutionExpression = context.bool_val(false);
+                for (auto labelIndexPair : variableInformation.labelToIndexMap) {
+                    if (commandSet.find(labelIndexPair.first) == commandSet.end()) {
+                        blockSolutionExpression = blockSolutionExpression || variableInformation.labelVariables[labelIndexPair.second];
                     }
                 }
                 
@@ -949,6 +948,113 @@ namespace storm {
                 // set and return it.
                 return getUsedLabelSet(context, solver.get_model(), variableInformation);
             }
+            
+            static void analyzeBadSolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+                storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
+                
+                // Initialize the stack for the DFS.
+                bool targetStateIsReachable = false;
+                std::vector<uint_fast64_t> stack;
+                stack.reserve(subMdp.getNumberOfStates());
+                for (auto initialState : subMdp.getInitialStates()) {
+                    stack.push_back(initialState);
+                    reachableStates.set(initialState, true);
+                }
+                
+                storm::storage::SparseMatrix<T> const& transitionMatrix = subMdp.getTransitionMatrix();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subMdp.getNondeterministicChoiceIndices();
+                std::vector<std::set<uint_fast64_t>> const& subChoiceLabeling = subMdp.getChoiceLabeling();
+                
+                std::set<uint_fast64_t> reachableLabels;
+
+                while (!stack.empty()) {
+                    uint_fast64_t currentState = stack.back();
+                    stack.pop_back();
+
+                    for (uint_fast64_t currentChoice = nondeterministicChoiceIndices[currentState]; currentChoice < nondeterministicChoiceIndices[currentState + 1]; ++currentChoice) {
+                        bool choiceTargetsRelevantState = false;
+                        
+                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
+                            if (relevancyInformation.relevantStates.get(*successorIt) && currentState != *successorIt) {
+                                choiceTargetsRelevantState = true;
+                                if (!reachableStates.get(*successorIt)) {
+                                    reachableStates.set(*successorIt, true);
+                                    stack.push_back(*successorIt);
+                                }
+                            } else if (psiStates.get(*successorIt)) {
+                                targetStateIsReachable = true;
+                            }
+                        }
+                        
+                        if (choiceTargetsRelevantState) {
+                            for (auto label : subChoiceLabeling[currentChoice]) {
+                                reachableLabels.insert(label);
+                            }
+                        }
+                    }
+                }
+                
+                LOG4CPLUS_DEBUG(logger, "Successfully performed reachability analysis.");
+                
+                if (targetStateIsReachable) {
+                    LOG4CPLUS_ERROR(logger, "Target must be unreachable for this analysis.");
+                    throw storm::exceptions::InvalidStateException() << "Target must be unreachable for this analysis.";
+                }
+                
+                std::vector<std::set<uint_fast64_t>> const& choiceLabeling = originalMdp.getChoiceLabeling();
+                std::set<uint_fast64_t> cutLabels;
+                for (auto state : reachableStates) {
+                    for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
+                        if (!storm::utility::set::isSubsetOf(choiceLabeling[currentChoice], commandSet)) {
+                            for (auto label : choiceLabeling[currentChoice]) {
+                                if (commandSet.find(label) == commandSet.end()) {
+                                    cutLabels.insert(label);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                std::vector<z3::expr> formulae;
+                std::set<uint_fast64_t> unknownReachableLabels;
+                std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.begin()));
+                for (auto label : unknownReachableLabels) {
+                    formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+                }
+                for (auto cutLabel : cutLabels) {
+                    formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(cutLabel)));
+                }
+                
+                LOG4CPLUS_DEBUG(logger, "Asserting reachability implications.");
+                
+//                for (auto e : formulae) {
+//                    std::cout << e << ", ";
+//                }
+//                std::cout << std::endl;
+                
+                assertDisjunction(context, solver, formulae);
+//
+//                std::cout << "formulae: " << std::endl;
+//                for (auto e : formulae) {
+//                    std::cout << e << ", ";
+//                }
+//                std::cout << std::endl;
+//                
+//                storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
+//                std::cout << unreachableRelevantStates.toString() << std::endl;
+//                std::cout << reachableStates.toString() << std::endl;
+//                std::cout << "reachable commands" << std::endl;
+//                for (auto label : reachableLabels) {
+//                    std::cout << label << ", ";
+//                }
+//                std::cout << std::endl;
+//                std::cout << "cut commands" << std::endl;
+//                for (auto label : cutLabels) {
+//                    std::cout << label << ", ";
+//                }
+//                std::cout << std::endl;
+                
+            }
 #endif
             
         public:
@@ -1013,6 +1119,7 @@ namespace storm {
                 uint_fast64_t currentBound = 0;
                 maximalReachabilityProbability = 0;
                 auto iterationTimer = std::chrono::high_resolution_clock::now();
+                uint_fast64_t zeroProbabilityCount = 0;
                 do {
                     LOG4CPLUS_DEBUG(logger, "Computing minimal command set.");
                     commandSet = findSmallestCommandSet(context, solver, variableInformation, currentBound);
@@ -1027,11 +1134,19 @@ namespace storm {
                     LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
                     
                     // Now determine the maximal reachability probability by checking all initial states.
+                    maximalReachabilityProbability = 0;
                     for (auto state : labeledMdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
                     
                     if (maximalReachabilityProbability <= probabilityThreshold) {
+                        if (maximalReachabilityProbability == 0) {
+                            ++zeroProbabilityCount;
+                            
+                            // If there was no target state reachable, analyze the solution and guide the solver into the
+                            // right direction.
+                            analyzeBadSolution(context, solver, subMdp, labeledMdp, psiStates, commandSet, variableInformation, relevancyInformation);
+                        }
                         // In case we have not yet exceeded the given threshold, we have to rule out the current solution.
                         ruleOutSolution(context, solver, commandSet, variableInformation);
                     } else {
@@ -1041,7 +1156,7 @@ namespace storm {
                     
                     endTime = std::chrono::high_resolution_clock::now();
                     if (std::chrono::duration_cast<std::chrono::seconds>(endTime - iterationTimer).count() > 5) {
-                        std::cout << "Performed " << iterations << " iterations in " << std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() << "s. Current command set size is " << commandSet.size() << "." << std::endl;
+                        std::cout << "Performed " << iterations << " iterations in " << std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() << "s. Current command set size is " << commandSet.size() << ". Encountered maximal probability of zero " << zeroProbabilityCount << " times." << std::endl;
                         iterationTimer = std::chrono::high_resolution_clock::now();
                     }
                 } while (!done);

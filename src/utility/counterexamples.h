@@ -15,12 +15,12 @@ namespace storm {
         namespace counterexamples {
             
             /*!
-             * Computes a set of action labels that is visited along all paths from an initial to a target state.
+             * Computes a set of action labels that is visited along all paths from any state to a target state.
              *
-             * @return The set of action labels that is visited on all paths from an initial to a target state.
+             * @return The set of action labels that is visited on all paths from any state to a target state.
              */
             template <typename T>
-            std::set<uint_fast64_t> getGuaranteedLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& relevantLabels) {
+            std::vector<std::set<uint_fast64_t>> getGuaranteedLabelSets(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& relevantLabels) {
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
@@ -78,11 +78,22 @@ namespace storm {
                     worklist.pop();
                 }
                 
-                // Now build the intersection over the analysis information of all initial states.
+                return analysisInformation;
+            }
+            
+            /*!
+             * Computes a set of action labels that is visited along all paths from an initial state to a target state.
+             *
+             * @return The set of action labels that is visited on all paths from an initial state to a target state.
+             */
+            template <typename T>
+            std::set<uint_fast64_t> getGuaranteedLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& relevantLabels) {
+                std::vector<std::set<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(labeledMdp, psiStates, relevantLabels);
+                
                 std::set<uint_fast64_t> knownLabels(relevantLabels);
                 std::set<uint_fast64_t> tempIntersection;
                 for (auto initialState : labeledMdp.getInitialStates()) {
-                    std::set_intersection(knownLabels.begin(), knownLabels.end(), analysisInformation[initialState].begin(), analysisInformation[initialState].end(), std::inserter(tempIntersection, tempIntersection.begin()));
+                    std::set_intersection(knownLabels.begin(), knownLabels.end(), guaranteedLabels[initialState].begin(), guaranteedLabels[initialState].end(), std::inserter(tempIntersection, tempIntersection.begin()));
                     std::swap(knownLabels, tempIntersection);
                     tempIntersection.clear();
                 }

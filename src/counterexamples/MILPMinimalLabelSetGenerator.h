@@ -66,6 +66,7 @@ namespace storm {
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> problematicChoicesForProblematicStates;
                 std::set<uint_fast64_t> allRelevantLabels;
+                std::set<uint_fast64_t> knownLabels;
             };
 
             /*!
@@ -868,8 +869,8 @@ namespace storm {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 int error = 0;
 
-                std::set<uint_fast64_t> knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, choiceInformation.allRelevantLabels);
-                for (auto label : knownLabels) {
+                choiceInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, choiceInformation.allRelevantLabels);
+                for (auto label : choiceInformation.knownLabels) {
                     double coefficient = 1;
                     int variableIndex = variableInformation.labelToVariableIndexMap.at(label);
                     
@@ -963,6 +964,10 @@ namespace storm {
                     }
                     
                     for (auto predecessor : predecessors) {
+                        if (!stateInformation.relevantStates.get(predecessor)) {
+                            continue;
+                        }
+                        
                         std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(predecessor).begin();
                         for (auto relevantChoice : choiceInformation.relevantChoicesForRelevantStates.at(predecessor)) {
                             bool choiceTargetsCurrentState = false;
@@ -998,7 +1003,7 @@ namespace storm {
                     }
                     ++numberOfConstraintsCreated;
                 }
-                
+
                 // Assert that at least one initial state selects at least one action.
                 variables.clear();
                 coefficients.clear();
@@ -1241,13 +1246,24 @@ namespace storm {
             
             static std::set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
 #ifdef STORM_HAVE_GUROBI
+                auto startTime = std::chrono::high_resolution_clock::now();
+
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabels()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal label set generation is impossible for unlabeled model.";
                 }
                 
-                // (1) FIXME: check whether its possible to exceed the threshold if checkThresholdFeasible is set.
-                
+                // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
+                double maximalReachabilityProbability = 0;
+                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false, nullptr);
+                for (auto state : labeledMdp.getInitialStates()) {
+                    maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
+                }
+                if (maximalReachabilityProbability <= probabilityThreshold) {
+                    throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be achieved in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
+                }
+
                 // (2) Identify relevant and problematic states.
                 StateInformation stateInformation = determineRelevantAndProblematicStates(labeledMdp, phiStates, psiStates);
                 
@@ -1277,10 +1293,13 @@ namespace storm {
                 
                 // (4.5) Read off result from variables.
                 std::set<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(environmentModelPair.first, environmentModelPair.second, variableInformation);
+                usedLabelSet.insert(choiceInformation.knownLabels.begin(), choiceInformation.knownLabels.end());
                 
                 // Display achieved probability.
                 std::pair<uint_fast64_t, double> initialStateProbabilityPair = getReachabilityProbability(environmentModelPair.first, environmentModelPair.second, labeledMdp, variableInformation);
-                LOG4CPLUS_DEBUG(logger, "Achieved probability " << initialStateProbabilityPair.second << " in initial state " << initialStateProbabilityPair.first << ".");
+
+                auto endTime = std::chrono::high_resolution_clock::now();
+                std::cout << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
                 
                 // (4.6) Shutdown Gurobi.
                 destroyGurobiModelAndEnvironment(environmentModelPair.first, environmentModelPair.second);
