@@ -12,6 +12,7 @@
 
 #include "src/storage/LabeledValues.h"
 #include "src/ir/IR.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
