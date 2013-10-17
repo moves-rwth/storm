@@ -85,24 +85,24 @@ namespace storm {
 				// For automatic management of newArgument's lifetime
 				std::shared_ptr<ArgumentBase> argumentPtr(newArgument);
 				if (this->isBuild) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Called addArgument() on an instance of OptionBuilder which has already build an Instance.");
-					throw storm::exceptions::IllegalFunctionCallException() << "Called addArgument() on an instance of OptionBuilder which has already build an Instance.";
+					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Illegal call to addArgument() on an instance of OptionBuilder that has already built an instance.");
+					throw storm::exceptions::IllegalFunctionCallException() << "Illegal call to addArgument() on an instance of OptionBuilder that has already built an instance.";
 				}
 
 				if (newArgument->getArgumentType() == ArgumentType::Invalid) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Could not add Argument to Option \"" << getLongName() << "\" because its Type is Invalid!");
-					throw storm::exceptions::InternalTypeErrorException() << "Could not add Argument to Option \"" << getLongName() << "\" because its Type is Invalid!";
+					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Unable to add argument to option \"" << getLongName() << "\" because its type is invalid.");
+					throw storm::exceptions::InternalTypeErrorException() << "Unable to add argument to option \"" << getLongName() << "\" because its type is invalid.";
 				}
 				
 				if (!newArgument->getIsOptional() && (this->arguments.size() > 0) && (this->arguments.at(this->arguments.size() - 1).get()->getIsOptional())) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Could not add Non-Optional Argument to Option \"" << getLongName() << "\" because it already contains an optional argument! Please note that after an optional argument has been added only arguments which are also optional can be appended.");
-					throw storm::exceptions::IllegalArgumentException() << "Could not add Non-Optional Argument to Option \"" << getLongName() << "\" because it already contains an optional argument! Please note that after an optional argument has been added only arguments which are also optional can be appended.";
+					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Unable to add a non-optional argument to option \"" << getLongName() << "\", because it already contains an optional argument.");
+					throw storm::exceptions::IllegalArgumentException() << "Unable to add non-optional argument to option \"" << getLongName() << "\", because it already contains an optional argument.";
 				}
 
 				std::string lowerArgumentName = storm::utility::StringHelper::stringToLower(newArgument->getArgumentName());
 				if (argumentNameSet.find(lowerArgumentName) != argumentNameSet.end()) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Could not add Argument with Name \"" << newArgument->getArgumentName() << "\" to Option \"" << getLongName() << "\" because it already contains an argument with the same name! Please note that all argument names must be unique in its respective option.");
-					throw storm::exceptions::IllegalArgumentException() << "Could not add Argument with Name \"" << newArgument->getArgumentName() << "\" to Option \"" << getLongName() << "\" because it already contains an argument with the same name! Please note that all argument names must be unique in its respective option.";
+					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Unable to add argument with name \"" << newArgument->getArgumentName() << "\" to option \"" << getLongName() << "\", because it already contains an argument with the same name.");
+					throw storm::exceptions::IllegalArgumentException() << "Unable to add argument with name \"" << newArgument->getArgumentName() << "\" to option \"" << getLongName() << "\", because it already contains an argument with the same name.";
 				}
 				argumentNameSet.insert(lowerArgumentName);
 
@@ -113,8 +113,8 @@ namespace storm {
 
 			Option* build() {
 				if (this->isBuild) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Called build() on an instance of OptionBuilder which has already build an Instance.");
-					throw storm::exceptions::IllegalFunctionCallException() << "Called build() on an instance of OptionBuilder which has already build an Instance.";
+					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Illegal call to build() on an instance of OptionBuilder that has already built an instance.");
+					throw storm::exceptions::IllegalFunctionCallException() << "Illegal call to build() on an instance of OptionBuilder that has already built an instance.";
 				}
 
 				this->isBuild = true;

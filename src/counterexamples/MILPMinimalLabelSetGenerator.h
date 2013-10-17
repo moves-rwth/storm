@@ -104,10 +104,10 @@ namespace storm {
                 result.problematicStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
                 result.problematicStates.complement();
                 result.problematicStates &= result.relevantStates;
-                LOG4CPLUS_DEBUG(logger, "Found " << phiStates.getNumberOfSetBits() << " filter states (" << phiStates.toString() << ").");
-                LOG4CPLUS_DEBUG(logger, "Found " << psiStates.getNumberOfSetBits() << " target states (" << psiStates.toString() << ").");
-                LOG4CPLUS_DEBUG(logger, "Found " << result.relevantStates.getNumberOfSetBits() << " relevant states (" << result.relevantStates.toString() << ").");
-                LOG4CPLUS_DEBUG(logger, "Found " << result.problematicStates.getNumberOfSetBits() << " problematic states (" << result.problematicStates.toString() << ").");
+                LOG4CPLUS_DEBUG(logger, "Found " << phiStates.getNumberOfSetBits() << " filter states.");
+                LOG4CPLUS_DEBUG(logger, "Found " << psiStates.getNumberOfSetBits() << " target states.");
+                LOG4CPLUS_DEBUG(logger, "Found " << result.relevantStates.getNumberOfSetBits() << " relevant states .");
+                LOG4CPLUS_DEBUG(logger, "Found " << result.problematicStates.getNumberOfSetBits() << " problematic states.");
                 return result;
             }
             
@@ -162,6 +162,11 @@ namespace storm {
                     }
                 }
                 LOG4CPLUS_DEBUG(logger, "Found " << result.allRelevantLabels.size() << " relevant labels.");
+
+                // Finally, determine the set of labels that are known to be taken.
+                result.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, result.allRelevantLabels);
+                LOG4CPLUS_DEBUG(logger, "Found " << result.knownLabels.size() << " known labels.");
+
                 return result;
             }
             
@@ -171,7 +176,9 @@ namespace storm {
              * @param env The Gurobi environment to modify.
              */
             static void setGurobiEnvironmentProperties(GRBenv* env) {
-                int error = error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->isSet("debug") ? 1 : 0);
+                // Enable the following line to only print the output of Gurobi if the debug flag is set.
+                // int error = error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->isSet("debug") ? 1 : 0);
+                int error = error = GRBsetintparam(env, "OutputFlag", 1);
             }
             
             /*!
@@ -869,7 +876,6 @@ namespace storm {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 int error = 0;
 
-                choiceInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, choiceInformation.allRelevantLabels);
                 for (auto label : choiceInformation.knownLabels) {
                     double coefficient = 1;
                     int variableIndex = variableInformation.labelToVariableIndexMap.at(label);
@@ -964,6 +970,7 @@ namespace storm {
                     }
                     
                     for (auto predecessor : predecessors) {
+                        // If the predecessor is not a relevant state, we need to skip it.
                         if (!stateInformation.relevantStates.get(predecessor)) {
                             continue;
                         }
@@ -1003,7 +1010,7 @@ namespace storm {
                     }
                     ++numberOfConstraintsCreated;
                 }
-
+                
                 // Assert that at least one initial state selects at least one action.
                 variables.clear();
                 coefficients.clear();
@@ -1034,6 +1041,11 @@ namespace storm {
                 }
                 
                 for (auto predecessor : predecessors) {
+                    // If the predecessor is not a relevant state, we need to skip it.
+                    if (!stateInformation.relevantStates.get(predecessor)) {
+                        continue;
+                    }
+                    
                     std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(predecessor).begin();
                     for (auto relevantChoice : choiceInformation.relevantChoicesForRelevantStates.at(predecessor)) {
                         bool choiceTargetsPsiState = false;
@@ -1246,8 +1258,6 @@ namespace storm {
             
             static std::set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
 #ifdef STORM_HAVE_GUROBI
-                auto startTime = std::chrono::high_resolution_clock::now();
-
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabels()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal label set generation is impossible for unlabeled model.";
@@ -1298,14 +1308,70 @@ namespace storm {
                 // Display achieved probability.
                 std::pair<uint_fast64_t, double> initialStateProbabilityPair = getReachabilityProbability(environmentModelPair.first, environmentModelPair.second, labeledMdp, variableInformation);
 
-                auto endTime = std::chrono::high_resolution_clock::now();
-                std::cout << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
-                
                 // (4.6) Shutdown Gurobi.
                 destroyGurobiModelAndEnvironment(environmentModelPair.first, environmentModelPair.second);
                 
                 // (5) Return result.
                 return usedLabelSet;
+#else
+                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Gurobi.";
+#endif
+            }
+            
+            /*!
+             * Computes a (minimally labeled) counterexample for the given model and (safety) formula. If the model satisfies the property, an exception is thrown.
+             *
+             * @param labeledMdp A labeled MDP that is the model in which to generate the counterexample.
+             * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
+             * formula can be either an unbounded until formula or an eventually formula.
+             */
+            static void computeCounterexample(storm::models::Mdp<T> const& labeledMdp, storm::property::prctl::AbstractPrctlFormula<double> const* formulaPtr) {
+#ifdef STORM_HAVE_GUROBI
+                std::cout << std::endl << "Generating minimal label counterexample for formula " << formulaPtr->toString() << std::endl;
+                // First, we need to check whether the current formula is an Until-Formula.
+                storm::property::prctl::ProbabilisticBoundOperator<double> const* probBoundFormula = dynamic_cast<storm::property::prctl::ProbabilisticBoundOperator<double> const*>(formulaPtr);
+                if (probBoundFormula == nullptr) {
+                    LOG4CPLUS_ERROR(logger, "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.");
+                    throw storm::exceptions::InvalidPropertyException() << "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.";
+                }
+                if (probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS) {
+                    LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only strict upper bounds are supported for counterexample generation.");
+                    throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only strict upper bounds are supported for counterexample generation.";
+                }
+
+                // Now derive the probability threshold we need to exceed as well as the phi and psi states. Simultaneously, check whether the formula is of a valid shape.
+                double bound = probBoundFormula->getBound();
+                storm::property::prctl::AbstractPathFormula<double> const& pathFormula = probBoundFormula->getPathFormula();
+                storm::storage::BitVector phiStates;
+                storm::storage::BitVector psiStates;
+                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                try {
+                    storm::property::prctl::Until<double> const& untilFormula = dynamic_cast<storm::property::prctl::Until<double> const&>(pathFormula);
+                    
+                    phiStates = untilFormula.getLeft().check(modelchecker);
+                    psiStates = untilFormula.getRight().check(modelchecker);
+                } catch (std::bad_cast const& e) {
+                    // If the nested formula was not an until formula, it remains to check whether it's an eventually formula.
+                    try {
+                        storm::property::prctl::Eventually<double> const& eventuallyFormula = dynamic_cast<storm::property::prctl::Eventually<double> const&>(pathFormula);
+                        
+                        phiStates = storm::storage::BitVector(labeledMdp.getNumberOfStates(), true);
+                        psiStates = eventuallyFormula.getChild().check(modelchecker);
+                    } catch (std::bad_cast const& e) {
+                        // If the nested formula is neither an until nor a finally formula, we throw an exception.
+                        throw storm::exceptions::InvalidPropertyException() << "Formula nested inside probability bound operator must be an until or eventually formula for counterexample generation.";
+                    }
+                }
+                
+                // Delegate the actual computation work to the function of equal name.
+                auto startTime = std::chrono::high_resolution_clock::now();
+                std::set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, true, true);
+                auto endTime = std::chrono::high_resolution_clock::now();
+                std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+
+                std::cout << std::endl << "-------------------------------------------" << std::endl;
+                
+                // FIXME: Return the DTMC that results from applying the max scheduler in the MDP restricted to the computed label set.
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Gurobi.";
 #endif

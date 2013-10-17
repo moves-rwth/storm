@@ -331,55 +331,41 @@ int main(const int argc, const char* argv[]) {
                 delete modelchecker;
             }
 		} else if (s->isSet("symbolic")) {
-			std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
-			std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
+            // First, we build the model using the given symbolic model description and constant definitions.
+            std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
+            std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
             storm::ir::Program program = storm::parser::PrismParserFromFile(programFile);
-			std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
-			model->printModelInformationToStream(std::cout);
+            std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
+            model->printModelInformationToStream(std::cout);
 
-            // Enable the following lines to test the MinimalLabelSetGenerator.
-            if (model->getType() == storm::models::MDP) {
-                std::shared_ptr<storm::models::Mdp<double>> labeledMdp = model->as<storm::models::Mdp<double>>();
-            
-                // Build stuff for coin example.
-//                storm::storage::BitVector const& finishedStates = labeledMdp->getLabeledStates("finished");
-//                storm::storage::BitVector const& allCoinsEqual1States = labeledMdp->getLabeledStates("all_coins_equal_1");
-//                storm::storage::BitVector targetStates = finishedStates & allCoinsEqual1States;
-//                std::set<uint_fast64_t> labels = storm::counterexamples::MILPMinimalLabelSetGenerator<double>::getMinimalLabelSet(*labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), targetStates, 0.4, true, true);
+            if (s->isSet("mincmd")) {
+                if (model->getType() != storm::models::MDP) {
+                    LOG4CPLUS_ERROR(logger, "Minimal command counterexample generation is only supported for models of type MDP.");
+                    throw storm::exceptions::InternalTypeErrorException() << "Minimal command counterexample generation is only supported for models of type MDP.";
+                }
+                
+                std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
+                
+                // Determine whether we are required to use the MILP-version or the SAT-version.
+                bool useMILP = s->getOptionByLongName("mincmd").getArgumentByName("method").getValueAsString() == "milp";
+                
+                // Now parse the property file and receive the list of parsed formulas.
+                std::string const& propertyFile = s->getOptionByLongName("mincmd").getArgumentByName("propertyFile").getValueAsString();
+                std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(propertyFile);
 
-//                storm::storage::BitVector const& collisionStates = labeledMdp->getLabeledStates("collision_max_backoff");
-//                storm::storage::BitVector const& deliveredStates = labeledMdp->getLabeledStates("all_delivered");
-//                std::set<uint_fast64_t> labels = storm::counterexamples::MILPMinimalLabelSetGenerator<double>::getMinimalLabelSet(*labeledMdp, ~collisionStates, deliveredStates, 0.5, true, false);
-
-//                storm::storage::BitVector const& electedStates = labeledMdp->getLabeledStates("elected");
-//                std::set<uint_fast64_t> labels = storm::counterexamples::MILPMinimalLabelSetGenerator<double>::getMinimalLabelSet(*labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), electedStates, 0.5, true, true);
+                // Now generate the counterexamples for each formula.
+                for (storm::property::prctl::AbstractPrctlFormula<double>* formulaPtr : formulaList) {
+                    if (useMILP) {
+                        storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(*mdp, formulaPtr);
+                    } else {
+                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
+                    }
+                    
+                    // Once we are done with the formula, delete it.
+                    delete formulaPtr;
+                }
             }
-            
-            // Enable the following lines to test the SMTMinimalCommandSetGenerator.
-            if (model->getType() == storm::models::MDP) {
-                std::shared_ptr<storm::models::Mdp<double>> labeledMdp = model->as<storm::models::Mdp<double>>();
-                
-                // Build stuff for coin example.
-//                storm::storage::BitVector const& finishedStates = labeledMdp->getLabeledStates("finished");
-//                storm::storage::BitVector const& allCoinsEqual1States = labeledMdp->getLabeledStates("all_coins_equal_1");
-//                storm::storage::BitVector targetStates = finishedStates & allCoinsEqual1States;
-//                std::set<uint_fast64_t> labels = storm::counterexamples::SMTMinimalCommandSetGenerator<double>::getMinimalCommandSet(program, constants, *labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), targetStates, 0.4, true);
-                
-                // Build stuff for csma example.
-//                storm::storage::BitVector const& collisionStates = labeledMdp->getLabeledStates("collision_max_backoff");
-//                storm::storage::BitVector const& deliveredStates = labeledMdp->getLabeledStates("all_delivered");
-//                std::set<uint_fast64_t> labels = storm::counterexamples::SMTMinimalCommandSetGenerator<double>::getMinimalCommandSet(program, constants, *labeledMdp, ~collisionStates, deliveredStates, 0.5, true);
-                
-                // Build stuff for firewire example.
-//                storm::storage::BitVector const& electedStates = labeledMdp->getLabeledStates("elected");
-//                std::set<uint_fast64_t> labels = storm::counterexamples::SMTMinimalCommandSetGenerator<double>::getMinimalCommandSet(program, constants, *labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), electedStates, 0.5, true);
-
-                // Build stuff for wlan example.
-//                storm::storage::BitVector const& oneCollisionStates = labeledMdp->getLabeledStates("oneCollision");
-//                storm::storage::BitVector const& twoCollisionStates = labeledMdp->getLabeledStates("twoCollisions");
-//                std::set<uint_fast64_t> labels = storm::counterexamples::SMTMinimalCommandSetGenerator<double>::getMinimalCommandSet(program, constants, *labeledMdp, storm::storage::BitVector(labeledMdp->getNumberOfStates(), true), twoCollisionStates, 0.1, true);
-            }
-		}
+        }
 
         // Perform clean-up and terminate.
 		cleanUp();

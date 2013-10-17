@@ -1165,11 +1165,60 @@ namespace storm {
                 // (9) Return the resulting command set after undefining the constants.
                 storm::utility::ir::undefineUndefinedConstants(program);
                 
-                endTime = std::chrono::high_resolution_clock::now();
-                std::cout << "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms (" << iterations << " iterations)." << std::endl;
-                
                 return commandSet;
                 
+#else
+                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Z3.";
+#endif
+            }
+            
+            static void computeCounterexample(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp,  storm::property::prctl::AbstractPrctlFormula<double> const* formulaPtr) {
+#ifdef STORM_HAVE_Z3
+                std::cout << std::endl << "Generating minimal label counterexample for formula " << formulaPtr->toString() << std::endl;
+                // First, we need to check whether the current formula is an Until-Formula.
+                storm::property::prctl::ProbabilisticBoundOperator<double> const* probBoundFormula = dynamic_cast<storm::property::prctl::ProbabilisticBoundOperator<double> const*>(formulaPtr);
+                if (probBoundFormula == nullptr) {
+                    LOG4CPLUS_ERROR(logger, "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.");
+                    throw storm::exceptions::InvalidPropertyException() << "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.";
+                }
+                if (probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS) {
+                    LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only strict upper bounds are supported for counterexample generation.");
+                    throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only strict upper bounds are supported for counterexample generation.";
+                }
+                
+                // Now derive the probability threshold we need to exceed as well as the phi and psi states. Simultaneously, check whether the formula is of a valid shape.
+                double bound = probBoundFormula->getBound();
+                storm::property::prctl::AbstractPathFormula<double> const& pathFormula = probBoundFormula->getPathFormula();
+                storm::storage::BitVector phiStates;
+                storm::storage::BitVector psiStates;
+                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                try {
+                    storm::property::prctl::Until<double> const& untilFormula = dynamic_cast<storm::property::prctl::Until<double> const&>(pathFormula);
+                    
+                    phiStates = untilFormula.getLeft().check(modelchecker);
+                    psiStates = untilFormula.getRight().check(modelchecker);
+                } catch (std::bad_cast const& e) {
+                    // If the nested formula was not an until formula, it remains to check whether it's an eventually formula.
+                    try {
+                        storm::property::prctl::Eventually<double> const& eventuallyFormula = dynamic_cast<storm::property::prctl::Eventually<double> const&>(pathFormula);
+                        
+                        phiStates = storm::storage::BitVector(labeledMdp.getNumberOfStates(), true);
+                        psiStates = eventuallyFormula.getChild().check(modelchecker);
+                    } catch (std::bad_cast const& e) {
+                        // If the nested formula is neither an until nor a finally formula, we throw an exception.
+                        throw storm::exceptions::InvalidPropertyException() << "Formula nested inside probability bound operator must be an until or eventually formula for counterexample generation.";
+                    }
+                }
+                
+                // Delegate the actual computation work to the function of equal name.
+                auto startTime = std::chrono::high_resolution_clock::now();
+                std::set<uint_fast64_t> usedLabelSet = getMinimalCommandSet(program, constantDefinitionString, labeledMdp, phiStates, psiStates, bound, true);
+                auto endTime = std::chrono::high_resolution_clock::now();
+                std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                
+                std::cout << std::endl << "-------------------------------------------" << std::endl;
+                
+                // FIXME: Return the DTMC that results from applying the max scheduler in the MDP restricted to the computed label set.
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Z3.";
 #endif

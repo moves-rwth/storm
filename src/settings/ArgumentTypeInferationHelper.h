@@ -45,8 +45,8 @@ namespace storm {
 		template <typename T> 
 		ArgumentType ArgumentTypeInferation::inferToEnumType() {
 			// "Missing Template Specialization Case in ArgumentTypeInferation"
-			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToEnumType: Missing a Template Specialization Case in the ArgumentTypeInferationHelper! It seems you tried to use a new, non-standard Type as a Settings Parameter-Type!");
-			throw storm::exceptions::InternalTypeErrorException() << "Missing a Template Specialization Case in the ArgumentTypeInferationHelper!\n" << "It seems you tried to use a new, non-standard Type as a Settings Parameter-Type!";
+			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToEnumType: Missing a template specialization case in the ArgumentTypeInferationHelper.");
+			throw storm::exceptions::InternalTypeErrorException() << "Missing a template specialization case in the ArgumentTypeInferationHelper.";
 
 			return ArgumentType::Invalid;
 		}
@@ -72,16 +72,16 @@ namespace storm {
 		 */
 		template <typename T> 
 		std::string ArgumentTypeInferation::inferToString(ArgumentType argumentType, T value) {
-			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToString: inferToString was called on a non-string Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-			throw storm::exceptions::InternalTypeErrorException() << "inferToString was called on a non-string Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToString: Unable to perform inferToString on a non-string template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".");
+			throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToString on a non-string template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".";
 
 			return std::string();
 		}
 
 		template <> inline std::string ArgumentTypeInferation::inferToString<std::string>(ArgumentType argumentType, std::string value) {
 			if (argumentType != ArgumentType::String) {
-				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToString: inferToString was called on a string Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-				throw storm::exceptions::InternalTypeErrorException() << "inferToString was called on a string Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToString: Unable to perform inferToString on a non-string template object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
+				throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToString on a non-string template object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
 			}
 			return value;
 		}
@@ -91,16 +91,16 @@ namespace storm {
 		 */
 		template <typename T> 
 		int_fast64_t ArgumentTypeInferation::inferToInteger(ArgumentType argumentType, T value) {
-			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToInteger: inferToInteger was called on a non-int_fast64_t Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-			throw storm::exceptions::InternalTypeErrorException() << "inferToInteger was called on a non-int_fast64_t Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToInteger: Unable to perform inferToInteger on a non-int_fast64_t template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".");
+			throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToInteger on a non-int_fast64_t template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".";
 
 			return 0;
 		}
 
 		template <> inline int_fast64_t ArgumentTypeInferation::inferToInteger<int_fast64_t>(ArgumentType argumentType, int_fast64_t value) {
 			if (argumentType != ArgumentType::Integer) {
-				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToInteger: inferToInteger was called on a int_fast64_t Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-				throw storm::exceptions::InternalTypeErrorException() << "inferToInteger was called on an int_fast64_t Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToInteger: Unable to perform inferToInteger on a non-int_fast64_t template object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
+				throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToInteger on a non-int_fast64_t template object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
 			}
 			return value;
 		}
@@ -110,16 +110,16 @@ namespace storm {
 		 */
 		template <typename T> 
 		uint_fast64_t ArgumentTypeInferation::inferToUnsignedInteger(ArgumentType argumentType, T value) {
-			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToUnsignedInteger: inferToUnsignedInteger was called on a non-uint_fast64_t Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-			throw storm::exceptions::InternalTypeErrorException() << "inferToUnsignedInteger was called on a non-uint_fast64_t Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToUnsignedInteger: Unable to perform inferToUnsignedInteger on a non-uint_fast64_t template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".");
+			throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToUnsignedInteger on a non-uint_fast64_t template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".";
 
 			return 0;
 		}
 
 		template <> inline uint_fast64_t ArgumentTypeInferation::inferToUnsignedInteger<uint_fast64_t>(ArgumentType argumentType, uint_fast64_t value) {
 			if (argumentType != ArgumentType::UnsignedInteger) {
-				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToUnsignedInteger: inferToUnsignedInteger was called on a uint_fast64_t Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-				throw storm::exceptions::InternalTypeErrorException() << "inferToUnsignedInteger was called on an uint_fast64_t Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToUnsignedInteger: Unable to perform inferToUnsignedInteger on a non-uint_fast64_t template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".");
+				throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToUnsignedInteger on a non-uint_fast64_t template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".";
 			}
 			return value;
 		}
@@ -129,16 +129,16 @@ namespace storm {
 		 */
 		template <typename T> 
 		double ArgumentTypeInferation::inferToDouble(ArgumentType argumentType, T value) {
-			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToDouble: inferToDouble was called on a non-double Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-			throw storm::exceptions::InternalTypeErrorException() << "inferToDouble was called on a non-double Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToDouble: Unable to perform inferToDouble on a non-double template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".");
+			throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToDouble on a non-double template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".";
 
 			return 0.0;
 		}
 
 		template <> inline double ArgumentTypeInferation::inferToDouble<double>(ArgumentType argumentType, double value) {
 			if (argumentType != ArgumentType::Double) {
-				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToDouble: inferToDouble was called on a double Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-				throw storm::exceptions::InternalTypeErrorException() << "inferToDouble was called on a double Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToDouble: Unable to perform inferToDouble on a double template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".");
+				throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToDouble on a double template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".";
 			}
 			return value;
 		}
@@ -148,16 +148,16 @@ namespace storm {
 		 */
 		template <typename T> 
 		bool ArgumentTypeInferation::inferToBoolean(ArgumentType argumentType, T value) {
-			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToBoolean: inferToBoolean was called on a non-bool Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-			throw storm::exceptions::InternalTypeErrorException() << "inferToBoolean was called on a non-bool Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+			LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToBoolean: Unable to perform inferToBoolean on a non-bool template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".");
+			throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToBoolean on a non-bool template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".";
 
 			return false;
 		}
 
 		template <> inline bool ArgumentTypeInferation::inferToBoolean<bool>(ArgumentType argumentType, bool value) {
 			if (argumentType != ArgumentType::Boolean) {
-				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToBoolean: inferToBoolean was called on a bool Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!");
-				throw storm::exceptions::InternalTypeErrorException() << "inferToBoolean was called on a bool Template Object to cast to " << ArgumentTypeHelper::toString(argumentType) << "!";
+				LOG4CPLUS_ERROR(logger, "ArgumentTypeInferation::inferToBoolean: Unable to perform inferToBoolean on a non-bool template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".");
+				throw storm::exceptions::InternalTypeErrorException() << "Unable to perform inferToBoolean on a non-bool template object to cast to " << ArgumentTypeHelper::toString(argumentType) << ".";
 			}
 			return value;
 		}

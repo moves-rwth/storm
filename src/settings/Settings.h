@@ -222,8 +222,8 @@ namespace settings {
 			Option& getByLongName(std::string const& longName) const {
 				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
 				if (longNameIterator == this->options.end()) {
-					LOG4CPLUS_ERROR(logger, "Settings::getByLongName: This program does not contain an Option named \"" << longName << "\"!");
-					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option named \"" << longName << "\"!";
+					LOG4CPLUS_ERROR(logger, "Settings::getByLongName: This program does not contain an option named \"" << longName << "\".");
+					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << longName << "\".";
 				}
 				return *longNameIterator->second.get();
 			}
@@ -236,8 +236,8 @@ namespace settings {
 			Option* getPtrByLongName(std::string const& longName) const {
 				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
 				if (longNameIterator == this->options.end()) {
-					LOG4CPLUS_ERROR(logger, "Settings::getPtrByLongName: This program does not contain an Option named \"" << longName << "\"!");
-					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option named \"" << longName << "\"!";
+					LOG4CPLUS_ERROR(logger, "Settings::getPtrByLongName: This program does not contain an option named \"" << longName << "\".");
+					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << longName << "\".";
 				}
 				return longNameIterator->second.get();
 			}
@@ -250,8 +250,8 @@ namespace settings {
 			Option& getByShortName(std::string const& shortName) const {
 				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
 				if (shortNameIterator == this->shortNames.end()) {
-					LOG4CPLUS_ERROR(logger, "Settings::getByShortName: This program does not contain an Option named \"" << shortName << "\"!");
-					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option with ShortName \"" << shortName << "\"!";
+					LOG4CPLUS_ERROR(logger, "Settings::getByShortName: This program does not contain an option named \"" << shortName << "\".");
+					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << shortName << "\"";
 				}
 				return *(this->options.find(shortNameIterator->second)->second.get());
 			}
@@ -264,8 +264,8 @@ namespace settings {
 			Option* getPtrByShortName(std::string const& shortName) const {
 				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
 				if (shortNameIterator == this->shortNames.end()) {
-					LOG4CPLUS_ERROR(logger, "Settings::getPtrByShortName: This program does not contain an Option named \"" << shortName << "\"!");
-					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an Option with ShortName \"" << shortName << "\"!";
+					LOG4CPLUS_ERROR(logger, "Settings::getPtrByShortName: This program does not contain an option named \"" << shortName << "\".");
+					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << shortName << "\".";
 				}
 				return this->options.find(shortNameIterator->second)->second.get();
 			}

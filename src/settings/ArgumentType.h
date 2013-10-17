@@ -43,8 +43,8 @@ namespace storm {
 					return argumentTypeBoolean;
 					break;
 				default: {
-					LOG4CPLUS_ERROR(logger, "ArgumentTypeHelper::toString: Missing Case in ArgumentTypeHelper's switch/case Code.");
-					throw storm::exceptions::InternalTypeErrorException() << "Missing a Switch Case in the ArgumentTypeHelper!\n" << "It seems there is a new ArgumentType, but it was not added to the Helper Class!";
+					LOG4CPLUS_ERROR(logger, "ArgumentTypeHelper::toString: Missing case in ArgumentTypeHelper.");
+					throw storm::exceptions::InternalTypeErrorException() << "Missing case in ArgumentTypeHelper.";
 					}
 				}
 			}

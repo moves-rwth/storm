@@ -88,12 +88,12 @@ namespace storm {
 					bool upperBoundCondition = (value <= upperBound);
 					if (!lowerBoundCondition) { 
 						std::ostringstream stream;
-						stream << " Lower Bound Condition not met: " << lowerBound << " is not <= " << value;
+						stream << " lower bound condition not met: " << lowerBound << " is not smaller or equal than " << value << ".";
 						errorMessageTarget.append(stream.str());
 					}
 					if (!upperBoundCondition) { 
 						std::ostringstream stream;
-						stream << " Upper Bound Condition not met: " << value << " is not <= " << upperBound; 
+						stream << " upper bound condition not met: " << value << " is not smaller or equal than " << upperBound << ".";
 						errorMessageTarget.append(stream.str());
 					}
 					return (lowerBoundCondition && upperBoundCondition);
@@ -106,12 +106,12 @@ namespace storm {
 					bool upperBoundCondition = (value < upperBound);
 					if (!lowerBoundCondition) { 
 						std::ostringstream stream;
-						stream << " Lower Bound Condition not met: " << lowerBound << " is not < " << value;
+						stream << " lower bound condition not met: " << lowerBound << " is not smaller than " << value << ".";
 						errorMessageTarget.append(stream.str());
 					}
 					if (!upperBoundCondition) { 
 						std::ostringstream stream;
-						stream << " Upper Bound Condition not met: " << value << " is not < " << upperBound; 
+						stream << " upper bound condition not met: " << value << " is not smaller than < " << upperBound << ".";
 						errorMessageTarget.append(stream.str());
 					}
 					return (lowerBoundCondition && upperBoundCondition);

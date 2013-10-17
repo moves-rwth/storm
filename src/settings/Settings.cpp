@@ -51,22 +51,22 @@ void storm::settings::Settings::handleAssignment(std::string const& longOptionNa
 	uint_fast64_t givenArgsCount = arguments.size();
 
 	if (givenArgsCount > option->getArgumentCount()) {
-		LOG4CPLUS_ERROR(logger, "Settings::handleAssignment: Could not parse Arguments for Option \"" << longOptionName << "\": " << arguments.size() << " Arguments given, but max. " << option->getArgumentCount() << " Arguments expected.");
-		throw storm::exceptions::OptionParserException() << "Could not parse Arguments for Option \"" << longOptionName << "\": " << arguments.size() << " Arguments given, but max. " << option->getArgumentCount() << " Arguments expected.";
+		LOG4CPLUS_ERROR(logger, "Settings::handleAssignment: Unable to parse arguments for option \"" << longOptionName << "\": " << arguments.size() << " arguments given, but expected no more than " << option->getArgumentCount() << ".");
+		throw storm::exceptions::OptionParserException() << "Unable to parse arguments for option \"" << longOptionName << "\": " << arguments.size() << " arguments given, but expected no more than " << option->getArgumentCount() << ".";
 	}
 
 	for (uint_fast64_t i = 0; i < option->getArgumentCount(); ++i) {
 		if (i < givenArgsCount) {
 			storm::settings::fromStringAssignmentResult_t assignmentResult = option->getArgument(i).fromStringValue(arguments.at(i));
 			if (!assignmentResult.first) {
-				LOG4CPLUS_ERROR(logger, "Settings::handleAssignment: Could not parse Arguments for Option \"" << longOptionName << "\": Argument " << option->getArgument(i).getArgumentName() << " rejected the given Value \"" << arguments.at(i) << "\" with Message:\r\n" << assignmentResult.second);
-				throw storm::exceptions::OptionParserException() << "Could not parse Arguments for Option \"" << longOptionName << "\": Argument " << option->getArgument(i).getArgumentName() << " rejected the given Value \"" << arguments.at(i) << "\" with Message:\r\n" << assignmentResult.second;
+				LOG4CPLUS_ERROR(logger, "Settings::handleAssignment: Unable to parse arguments for option \"" << longOptionName << "\": argument " << option->getArgument(i).getArgumentName() << " rejected the given value \"" << arguments.at(i) << "\" with message:\r\n" << assignmentResult.second << ".");
+				throw storm::exceptions::OptionParserException() << "Unable to parse arguments for option \"" << longOptionName << "\": argument " << option->getArgument(i).getArgumentName() << " rejected the given value \"" << arguments.at(i) << "\" with message:\r\n" << assignmentResult.second << ".";
 			}
 		} else {
 			// There is no given value for this argument, only optional
 			if (!option->getArgument(i).getIsOptional()) {
-				LOG4CPLUS_ERROR(logger, "Settings::handleAssignment: Could not parse Arguments for Option \"" << longOptionName << "\": " << arguments.size() << " Arguments given, but more Arguments were expected.");
-				throw storm::exceptions::OptionParserException() << "Could not parse Arguments for Option \"" << longOptionName << "\": " << arguments.size() << " Arguments given, but more Arguments were expected.";
+				LOG4CPLUS_ERROR(logger, "Settings::handleAssignment: Unable to parse arguments for option \"" << longOptionName << "\": " << arguments.size() << " arguments given, but more arguments were expected.");
+				throw storm::exceptions::OptionParserException() << "Unable to parse arguments for option \"" << longOptionName << "\": " << arguments.size() << " arguments given, but more arguments were expected.";
 			} else {
 				option->getArgument(i).setFromDefaultValue();
 			}
@@ -136,8 +136,8 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 				// Short Option
 				std::string nextShortOptionName = storm::utility::StringHelper::stringToLower(nextOption.substr(1, nextOption.size() - 1));
 				if (!this->containsShortName(nextShortOptionName)) {
-					LOG4CPLUS_ERROR(logger, "Settings::parseCommandLine: Found an unknown ShortName for an Option: \"" << nextShortOptionName << "\".");
-					throw storm::exceptions::OptionParserException() << "Found an unknown ShortName for an Option: \"" << nextShortOptionName << "\".";
+					LOG4CPLUS_ERROR(logger, "Settings::parseCommandLine: Unknown option name  \"" << nextShortOptionName << "\".");
+					throw storm::exceptions::OptionParserException() << "Unknown option name \"" << nextShortOptionName << "\".";
 				} else {
 					longOptionName = this->getByShortName(nextShortOptionName).getLongName();
 					optionActive = true;
@@ -146,8 +146,8 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 				// Long Option
 				std::string nextLongOptionName = storm::utility::StringHelper::stringToLower(nextOption.substr(2, nextOption.size() - 2));
 				if (!this->containsLongName(nextLongOptionName)) {
-					LOG4CPLUS_ERROR(logger, "Settings::parseCommandLine: Found an unknown LongName for an Option: \"" << nextLongOptionName << "\".");
-					throw storm::exceptions::OptionParserException() << "Found an unknown LongName for an Option: \"" << nextLongOptionName << "\".";
+					LOG4CPLUS_ERROR(logger, "Settings::parseCommandLine: Unknown option name \"" << nextLongOptionName << "\".");
+					throw storm::exceptions::OptionParserException() << "Unknown option name \"" << nextLongOptionName << "\".";
 				} else {
 					longOptionName = this->getByLongName(nextLongOptionName).getLongName();
 					optionActive = true;
@@ -158,16 +158,16 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 			argCache.push_back(stringArgv.at(i));
 		} else {
 			// No Option active and this is no option.
-			LOG4CPLUS_ERROR(logger, "Settings::parseCommandLine: Found a stray argument while parsing a given configuration: \"" << stringArgv.at(i) << "\" is neither a known Option nor preceeded by an Option.");
-			throw storm::exceptions::OptionParserException() << "Found a stray argument while parsing a given configuration: \"" << stringArgv.at(i) << "\" is neither a known Option nor preceeded by an Option.";
+			LOG4CPLUS_ERROR(logger, "Settings::parseCommandLine: Found stray argument while parsing a given configuration, \"" << stringArgv.at(i) << "\" is neither a known option nor preceeded by an option.");
+			throw storm::exceptions::OptionParserException() << "Found stray argument while parsing a given configuration; \"" << stringArgv.at(i) << "\" is neither a known option nor preceeded by an option.";
 		}
 	}
 
 	for (auto it = this->options.cbegin(); it != this->options.cend(); ++it) {
 		if (!it->second.get()->getHasOptionBeenSet()) {
 			if (it->second.get()->getIsRequired()) {
-				LOG4CPLUS_ERROR(logger, "Settings::parseCommandLine: Option \"" << it->second.get()->getLongName() << "\" is marked as required, but was not set!");
-				throw storm::exceptions::OptionParserException() << "Option \"" << it->second.get()->getLongName() << "\" is marked as required, but was not set!";
+				LOG4CPLUS_ERROR(logger, "Settings::parseCommandLine: Missing required option \"" << it->second.get()->getLongName() << "\".");
+				throw storm::exceptions::OptionParserException() << "Missing required option \"" << it->second.get()->getLongName() << "\".";
 			} else {
 				// Set defaults on optional values
 				for (uint_fast64_t i = 0; i < it->second.get()->getArgumentCount(); ++i) {
@@ -188,19 +188,19 @@ bool storm::settings::Settings::registerNewModule(ModuleRegistrationFunction_t r
 		//LOG4CPLUS_DEBUG(logger, "Settings::registerNewModule: Successfully executed a registrationFunction");
 	} catch (storm::exceptions::IllegalArgumentException e) {
 		//LOG4CPLUS_ERROR(logger, "Settings::registerNewModule: Internal Error while setting up available Options!" << std::endl << "IllegalArgumentException: " << e.what() << ".");
-		std::cout << "Internal Error while setting up available Options!" << std::endl << "IllegalArgumentException: " << e.what() << "." << std::endl;
+		std::cout << "Internal Error while setting up available options." << std::endl << "IllegalArgumentException: " << e.what() << "." << std::endl;
 		return false;
 	} catch (storm::exceptions::IllegalArgumentValueException e) {
 		//LOG4CPLUS_ERROR(logger, "Settings::registerNewModule: Internal Error while setting up available Options!" << std::endl << "IllegalArgumentValueException: " << e.what() << ".");
-		std::cout << "Internal Error while setting up available Options!" << std::endl << "IllegalArgumentValueException: " << e.what() << "." << std::endl;
+		std::cout << "Internal Error while setting up available options." << std::endl << "IllegalArgumentValueException: " << e.what() << "." << std::endl;
 		return false;
 	} catch (storm::exceptions::IllegalFunctionCallException e) {
 		//LOG4CPLUS_ERROR(logger, "Settings::registerNewModule: Internal Error while setting up available Options!" << std::endl << "IllegalFunctionCallException: " << e.what() << ".");
-		std::cout << "Internal Error while setting up available Options!" << std::endl << "IllegalFunctionCallException: " << e.what() << "." << std::endl;
+		std::cout << "Internal Error while setting up available options." << std::endl << "IllegalFunctionCallException: " << e.what() << "." << std::endl;
 		return false;
 	} catch (std::exception e) {
 		//LOG4CPLUS_ERROR(logger, "Settings::registerNewModule: Internal Error while setting up available Options!" << std::endl << "std::exception: " << e.what() << ".");
-		std::cout << "Internal Error while setting up available Options!" << std::endl << "std::exception: " << e.what() << "." << std::endl;
+		std::cout << "Internal Error while setting up available options." << std::endl << "std::exception: " << e.what() << "." << std::endl;
 		return false;
 	}
 	return result;
@@ -229,7 +229,7 @@ storm::settings::Settings& storm::settings::Settings::addOption(Option* option) 
 		if (!(shortNameIterator == this->shortNames.end())) {
 			// There exists an option which uses the same shortname
 			//LOG4CPLUS_ERROR(logger, "Settings::addOption: Error: The Option \"" << shortNameIterator->second << "\" from Module \"" << this->options.find(shortNameIterator->second)->second.get()->getModuleName() << "\" uses the same ShortName as the Option \"" << option->getLongName() << "\" from Module \"" << option->getModuleName() << "\"!");
-			throw storm::exceptions::OptionUnificationException() << "Error: The Option \"" << shortNameIterator->second << "\" from Module \"" << this->options.find(shortNameIterator->second)->second.get()->getModuleName() << "\" uses the same ShortName as the Option \"" << option->getLongName() << "\" from Module \"" << option->getModuleName() << "\"!";
+			throw storm::exceptions::OptionUnificationException() << "Error: The option \"" << shortNameIterator->second << "\" of module \"" << this->options.find(shortNameIterator->second)->second.get()->getModuleName() << "\" uses the same name as option \"" << option->getLongName() << "\" of module \"" << option->getModuleName() << "\".";
 		}
 		
 		// Copy Shared_ptr
@@ -296,7 +296,7 @@ std::string storm::settings::Settings::getHelpText() const {
 		for (auto i = 0; i < o.getArgumentCount(); ++i) {
 			ArgumentBase const& a = o.getArgument(i);
 			std::string const& argumentName = a.getArgumentName();
-			ss << delimiter << delimiter << "Arg " << (i+1) << ": " << argumentName;
+			ss << delimiter << delimiter << delimiter << delimiter << "argument <" << (i+1) << "> - " << argumentName;
 			// Fill up the remaining space after the argument Name
 			for (uint_fast64_t i = argumentName.size(); i < argumentNameMaxSize; ++i) {
 				ss << " ";

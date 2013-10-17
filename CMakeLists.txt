@@ -348,9 +348,9 @@ target_link_libraries(storm-performance-tests ltl2dstar)
 if (ENABLE_GUROBI)
     message (STATUS "StoRM - Linking with Gurobi")
 	include_directories("${GUROBI_ROOT}/include")
-    target_link_libraries(storm "gurobi55")
-    target_link_libraries(storm-functional-tests "gurobi55")
-    target_link_libraries(storm-performance-tests "gurobi55")
+    target_link_libraries(storm "gurobi56")
+    target_link_libraries(storm-functional-tests "gurobi56")
+    target_link_libraries(storm-performance-tests "gurobi56")
 endif(ENABLE_GUROBI)
 
 #############################################################

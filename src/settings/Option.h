@@ -84,25 +84,25 @@ namespace storm {
 
 			void unify(Option& other) {
 				if (this->getLongName().compare(other.getLongName()) != 0) {
-					LOG4CPLUS_ERROR(logger, "Option::unify: Could not unify Option \"" << getLongName() << "\" because the Names are different (\"" << getLongName() << "\" vs. \"" << other.getLongName() << "\")!");
-					throw storm::exceptions::OptionUnificationException() << "Could not unify Option \"" << getLongName() << "\" because the Names are different (\"" << getLongName() << "\" vs. \"" << other.getLongName() << "\")!";
+					LOG4CPLUS_ERROR(logger, "Option::unify: Unable to unify option \"" << getLongName() << "\" because of mismatching names (\"" << getLongName() << "\" and \"" << other.getLongName() << "\").");
+					throw storm::exceptions::OptionUnificationException() << "Unable to unify option \"" << getLongName() << "\" because of mismatching names (\"" << getLongName() << "\" and \"" << other.getLongName() << "\").";
 				}
 				if (this->getShortName().compare(other.getShortName()) != 0) {
-					LOG4CPLUS_ERROR(logger, "Option::unify: Could not unify Option \"" << getLongName() << "\" because the Shortnames are different (\"" << getShortName() << "\" vs. \"" << other.getShortName() << "\")!");
-					throw storm::exceptions::OptionUnificationException() << "Could not unify Option \"" << getLongName() << "\" because the Shortnames are different (\"" << getShortName() << "\" vs. \"" << other.getShortName() << "\")!";
+					LOG4CPLUS_ERROR(logger, "Option::unify: Unable to unify option \"" << getLongName() << "\" because of mismatching names (\"" << getShortName() << "\" and \"" << other.getShortName() << "\").");
+					throw storm::exceptions::OptionUnificationException() << "Unable to unify option \"" << getLongName() << "\" because of mismatching names (\"" << getShortName() << "\" and \"" << other.getShortName() << "\").";
 				}
 
 				if (this->getArgumentCount() != other.getArgumentCount()) {
-					LOG4CPLUS_ERROR(logger, "Option::unify: Could not unify Option \"" << getLongName() << "\" because the Argument Counts are different!");
-					throw storm::exceptions::OptionUnificationException() << "Could not unify Option \"" << getLongName() << "\" because the Argument Counts are different!";
+					LOG4CPLUS_ERROR(logger, "Option::unify: Unable to unify option \"" << getLongName() << "\" because of mismatching argument numbers.");
+					throw storm::exceptions::OptionUnificationException() << "Unable to unify option \"" << getLongName() << "\" because of mismatching argument numbers.";
 				}
 				for(size_t i = 0; i != this->arguments.size(); i++) {
 					ArgumentBase* A = this->arguments.at(i).get();
 					ArgumentBase* B = other.arguments.at(i).get();
 
 					if (A->getArgumentType() != B->getArgumentType()) {
-						LOG4CPLUS_ERROR(logger, "Option::unify: Could not unify Option \"" << getLongName() << "\" because the Argument Types at Index " << i << " are different!");
-						throw storm::exceptions::OptionUnificationException() << "Could not unify Option \"" << getLongName() << "\" because the Argument Types at Index " << i << " are different!";
+						LOG4CPLUS_ERROR(logger, "Option::unify: Unable to unify option \"" << getLongName() << "\" because of mismatching argument types at index " << i << ".");
+						throw storm::exceptions::OptionUnificationException() << "Unable to unify option \"" << getLongName() << "\" because of mismatching argument types at index " << i << ".";
 					}
 
 					switch (A->getArgumentType()) {
@@ -123,7 +123,7 @@ namespace storm {
 							break;
 						default:
 							LOG4CPLUS_ERROR(logger, "Option::unify: Missing Case in ArgumentBuilder's switch/case Code.");
-							throw storm::exceptions::InternalTypeErrorException() << "Missing Case in ArgumentBuilder's switch/case Code.";
+							throw storm::exceptions::InternalTypeErrorException() << "Missing case in Option.";
 					}
 				}
 
@@ -139,7 +139,7 @@ namespace storm {
 			ArgumentBase& getArgument(uint_fast64_t argumentIndex) const {
 				if (argumentIndex >= getArgumentCount()) {
 					LOG4CPLUS_ERROR(logger, "Option::getArgument: argumentIndex out of bounds!");
-					throw storm::exceptions::IllegalArgumentException() << "Option::getArgument(): argumentIndex out of bounds!";
+					throw storm::exceptions::IllegalArgumentException() << "Option::getArgument(): index of argument is out of bounds.";
 				}
 				return *this->arguments.at(argumentIndex).get();
 			}
@@ -152,8 +152,8 @@ namespace storm {
 				auto argumentIterator = this->argumentNameMap.find(storm::utility::StringHelper::stringToLower(argumentName));
 
 				if (argumentIterator == this->argumentNameMap.end()) {
-					LOG4CPLUS_ERROR(logger, "Option::getArgumentByName: The Option \"" << this->getLongName() << "\" does not contain an Argument with Name \"" << argumentName << "\"!");
-					throw storm::exceptions::IllegalArgumentException() << "The Option \"" << this->getLongName() << "\" does not contain an Argument with Name \"" << argumentName << "\"!";
+					LOG4CPLUS_ERROR(logger, "Option::getArgumentByName: Unable to retrieve unknown argument \"" << argumentName << "\" of option \"" << this->getLongName() << "\".");
+					throw storm::exceptions::IllegalArgumentException() << "Unable to retrieve unknown argument \"" << argumentName << "\" of option \"" << this->getLongName() << "\".";
 				}
 
 				return *argumentIterator->second.get();
@@ -201,25 +201,25 @@ namespace storm {
 
 			void validateFields() const {
 				if (longName.empty()) {
-					LOG4CPLUS_ERROR(logger, "Option::validateFields: Tried constructing an Option with an empty longName field!");
-					throw storm::exceptions::IllegalArgumentException() << "Tried constructing an Option with an empty longName field!";
+					LOG4CPLUS_ERROR(logger, "Option::validateFields: Unable to construct an option with empty name.");
+					throw storm::exceptions::IllegalArgumentException() << "Unable to construct an option with empty name.";
 				}
 
 				if (moduleName.empty()) {
-					LOG4CPLUS_ERROR(logger, "Option::validateFields: Tried constructing an Option with an empty moduleName field!");
-					throw storm::exceptions::IllegalArgumentException() << "Tried constructing an Option with an empty moduleName field!";
+					LOG4CPLUS_ERROR(logger, "Option::validateFields: Unable to construct an option with empty module.");
+					throw storm::exceptions::IllegalArgumentException() << "Unable to construct an option with empty module.";
 				}
 
 				bool longNameContainsNonAlpha = std::find_if(longName.begin(), longName.end(), [](char c) { return !std::isalpha(c); }) != longName.end();
 				bool shortNameContainsNonAlpha = std::find_if(shortName.begin(), shortName.end(), [](char c) { return !std::isalpha(c); }) != shortName.end();
 
 				if (longNameContainsNonAlpha) {
-					LOG4CPLUS_ERROR(logger, "Option::validateFields: Tried constructing an Option with a longName that contains non-alpha characters!");
-					throw storm::exceptions::IllegalArgumentException() << "Tried constructing an Option with a longName that contains non-alpha characters!";
+					LOG4CPLUS_ERROR(logger, "Option::validateFields: Unable to construct an option with a illegal name.");
+					throw storm::exceptions::IllegalArgumentException() << "Unable to construct an option with a illegal name.";
 				}
 				if (shortNameContainsNonAlpha) {
-					LOG4CPLUS_ERROR(logger, "Option::validateFields: Tried constructing an Option with a shortName that contains non-alpha characters!");
-					throw storm::exceptions::IllegalArgumentException() << "Tried constructing an Option with a shortName that contains non-alpha characters!";
+					LOG4CPLUS_ERROR(logger, "Option::validateFields: Unable to construct an option with a illegal name.");
+					throw storm::exceptions::IllegalArgumentException() << "Unable to construct an option with a illegal name.";
 				}
 			}
 
@@ -234,13 +234,13 @@ namespace storm {
 					//}
 
 					if (!isCurrentArgumentOptional && lastEntryWasOptional) {
-						LOG4CPLUS_ERROR(logger, "Option::isArgumentsVectorValid: The Argument Vector specified for Option \"" << getLongName() << "\" is invalid! It contains a non-optional argument AFTER an optional argument.");
-						throw storm::exceptions::IllegalArgumentException() << "The Argument Vector specified for Option \"" << getLongName() << "\" is invalid! It contains a non-optional argument AFTER an optional argument.";
+						LOG4CPLUS_ERROR(logger, "Option::isArgumentsVectorValid: The argument vector specified for option \"" << getLongName() << "\" is invalid, because it contains a non-optional argument after an optional one.");
+						throw storm::exceptions::IllegalArgumentException() << "The argument vector specified for option \"" << getLongName() << "\" is invalid, because it contains a non-optional argument after an optional one.";
 					}
 					std::string lowerArgumentName = storm::utility::StringHelper::stringToLower(i->get()->getArgumentName());
 					if (argumentNameSet.find(lowerArgumentName) != argumentNameSet.end()) {
-						LOG4CPLUS_ERROR(logger, "Option::isArgumentsVectorValid: The Argument Vector specified for Option \"" << getLongName() << "\" is invalid!\nIt contains two arguments with the same name.");
-						throw storm::exceptions::IllegalArgumentException() << "The Argument Vector specified for Option \"" << getLongName() << "\" is invalid!\nIt contains two arguments with the same name.";
+						LOG4CPLUS_ERROR(logger, "Option::isArgumentsVectorValid: The argument vector specified for option \"" << getLongName() << "\" is invalid, because it contains two arguments with the same name.");
+						throw storm::exceptions::IllegalArgumentException() << "The argument vector specified for option \"" << getLongName() << "\" is invalid, because it contains two arguments with the same name.";
 					}
 					argumentNameSet.insert(lowerArgumentName);
 
