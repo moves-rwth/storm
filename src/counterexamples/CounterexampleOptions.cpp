@@ -1,6 +1,6 @@
 #include "src/settings/Settings.h"
 
-bool MILPMinimalLabelSetGeneratorOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
+bool CounterexampleOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
     std::vector<std::string> techniques;
     techniques.push_back("sat");
     techniques.push_back("milp");
