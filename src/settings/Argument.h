@@ -103,26 +103,26 @@ namespace storm {
 			template <typename S>
 			void unify(Argument<S> &rhs) {
 				if (this->getArgumentType() != rhs.getArgumentType()) {
-					LOG4CPLUS_ERROR(logger, "Argument::unify: While unifying Argument \"" << this->getArgumentName() << "\" and Argument \"" << rhs.getArgumentName() << "\": Type Missmatch: \"" << ArgumentTypeHelper::toString(this->getArgumentType()) << "\" against \"" << ArgumentTypeHelper::toString(rhs.getArgumentType()) << "\"");
-					throw storm::exceptions::ArgumentUnificationException() << "While unifying Argument \"" << this->getArgumentName() << "\" and Argument \"" << rhs.getArgumentName() << "\": Type Missmatch: \"" << ArgumentTypeHelper::toString(this->getArgumentType()) << "\" against \"" << ArgumentTypeHelper::toString(rhs.getArgumentType()) << "\"";
+					LOG4CPLUS_ERROR(logger, "Argument::unify: While unifying argument \"" << this->getArgumentName() << "\" and argument \"" << rhs.getArgumentName() << "\": Types do not match (\"" << ArgumentTypeHelper::toString(this->getArgumentType()) << "\" and \"" << ArgumentTypeHelper::toString(rhs.getArgumentType()) << "\").");
+					throw storm::exceptions::ArgumentUnificationException() << "While unifying Argument \"" << this->getArgumentName() << "\" and argument \"" << rhs.getArgumentName() << "\": Types do not match (\"" << ArgumentTypeHelper::toString(this->getArgumentType()) << "\" and \"" << ArgumentTypeHelper::toString(rhs.getArgumentType()) << "\").";
 				}
 
 				if (this->getIsOptional() != rhs.getIsOptional()) {
-					LOG4CPLUS_ERROR(logger, "Argument::unify: While unifying Argument \"" << this->getArgumentName() << "\" and Argument \"" << rhs.getArgumentName() << "\": IsOptional Missmatch!");
-					throw storm::exceptions::ArgumentUnificationException() << "While unifying Argument \"" << this->getArgumentName() << "\" and Argument \"" << rhs.getArgumentName() << "\": IsOptional Missmatch!";
+					LOG4CPLUS_ERROR(logger, "Argument::unify: While unifying argument \"" << this->getArgumentName() << "\" and argument \"" << rhs.getArgumentName() << "\": Both must either be optional or non-optional.");
+					throw storm::exceptions::ArgumentUnificationException() << "While unifying argument \"" << this->getArgumentName() << "\" and argument \"" << rhs.getArgumentName() << "\": Both must either be optional or non-optional.";
 				}
 
 				if (this->getHasDefaultValue() != rhs.getHasDefaultValue()) {
-					LOG4CPLUS_ERROR(logger, "Argument::unify: While unifying Argument \"" << this->getArgumentName() << "\" and Argument \"" << rhs.getArgumentName() << "\": defaultValue Missmatch!");
-					throw storm::exceptions::ArgumentUnificationException() << "While unifying Argument \"" << this->getArgumentName() << "\" and Argument \"" << rhs.getArgumentName() << "\": defaultValue Missmatch!";
+					LOG4CPLUS_ERROR(logger, "Argument::unify: While unifying argument \"" << this->getArgumentName() << "\" and argument \"" << rhs.getArgumentName() << "\": Mismatching default values.");
+					throw storm::exceptions::ArgumentUnificationException() << "While unifying argument \"" << this->getArgumentName() << "\" and argument \"" << rhs.getArgumentName() << "\": Mismatching default values.";
 				}
 
 				if (this->getArgumentDescription().compare(rhs.getArgumentDescription()) != 0) {
-					LOG4CPLUS_WARN(logger, "Argument::unify: While unifying Argument \"" << this->getArgumentName() << "\" and Argument \"" << rhs.getArgumentName() << "\": descriptions Missmatch!");
+					LOG4CPLUS_WARN(logger, "Argument::unify: While unifying argument \"" << this->getArgumentName() << "\" and argument \"" << rhs.getArgumentName() << "\": Mismatching descriptions.");
 				}
 
 				if (this->getArgumentName().compare(rhs.getArgumentName()) != 0) {
-					LOG4CPLUS_WARN(logger, "Argument::unify: While unifying Argument \"" << this->getArgumentName() << "\" and Argument \"" << rhs.getArgumentName() << "\": ArgumentName Missmatch!");
+					LOG4CPLUS_WARN(logger, "Argument::unify: While unifying argument \"" << this->getArgumentName() << "\" and argument \"" << rhs.getArgumentName() << "\": Mismatching descriptions.");
 				}
 
 				// Add Validation functions
@@ -134,8 +134,8 @@ namespace storm {
 
 			T getArgumentValue() const {
 				if (!this->getHasBeenSet()) {
-					LOG4CPLUS_ERROR(logger, "Argument::getArgumentValue: Called getArgumentValue() on Argument \"" << this->getArgumentName() << "\", but it was never set and does not contain a default value.");
-					throw storm::exceptions::IllegalFunctionCallException() << "Called getArgumentValue() on Argument \"" << this->getArgumentName() << "\", but it was never set and does not contain a default value.";
+					LOG4CPLUS_ERROR(logger, "Argument::getArgumentValue: Unable to retrieve argument of option \"" << this->getArgumentName() << "\", because it was never set and does not specify a default value.");
+					throw storm::exceptions::IllegalFunctionCallException() << "Unable to retrieve argument of option \"" << this->getArgumentName() << "\", because it was never set and does not specify a default value.";
 				}
 				return this->argumentValue;
 			}
@@ -150,14 +150,14 @@ namespace storm {
 
 			void setFromDefaultValue() override {
 				if (!this->hasDefaultValue) {
-					LOG4CPLUS_ERROR(logger, "Argument::setFromDefaultValue: The Argument \"" << this->getArgumentName() << "\" (" << this->getArgumentDescription() << ") was asked to set its default value but none was set!");
-					throw storm::exceptions::IllegalFunctionCallException() << "The Argument \"" << this->getArgumentName() << "\" (" << this->getArgumentDescription() << ") was asked to set its default value but none was set!";
+					LOG4CPLUS_ERROR(logger, "Argument::setFromDefaultValue: Unable to retrieve default value for argument \"" << this->getArgumentName() << "\" (" << this->getArgumentDescription() << ").");
+					throw storm::exceptions::IllegalFunctionCallException() << "Unable to retrieve default value for argument \"" << this->getArgumentName() << "\" (" << this->getArgumentDescription() << ").";
 				}
 				// this call also sets the hasBeenSet flag
 				assignmentResult_t result = this->fromTypeValue(this->defaultValue);
 				if (!result.first) {
-					LOG4CPLUS_ERROR(logger, "Argument::setFromDefaultValue: While parsing a given configuration the Argument \"" << this->getArgumentName() << "\" (" << this->getArgumentDescription() << ") could not receive its Default Value as it was rejected by its Validation Functions with message: " << result.second);
-					throw storm::exceptions::IllegalArgumentValueException() << "While parsing a given configuration the Argument \"" << this->getArgumentName() << "\" (" << this->getArgumentDescription() << ") could not receive its Default Value as it was rejected by its Validation Functions with message: " << result.second;
+					LOG4CPLUS_ERROR(logger, "Argument::setFromDefaultValue: Unable to assign default value to argument \"" << this->getArgumentName() << "\" (" << this->getArgumentDescription() << "), because default value was rejected (" << result.second << ").");
+					throw storm::exceptions::IllegalArgumentValueException() << "Unable to assign default value to argument \"" << this->getArgumentName() << "\" (" << this->getArgumentDescription() << "), because default value was rejected (" << result.second << ").";
 				}
 			}
 
@@ -185,8 +185,8 @@ namespace storm {
 					case ArgumentType::Integer:
 						return ArgumentTypeInferation::inferToInteger(ArgumentType::Integer, this->getArgumentValue());
 					default: {
-						LOG4CPLUS_ERROR(logger, "Argument::getValueAsInteger() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!");
-						throw storm::exceptions::IllegalFunctionCallException() << "getValueAsInteger() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!";
+						LOG4CPLUS_ERROR(logger, "Argument::getValueAsInteger(): Unable to retrieve value of argument \"" << getArgumentName() << "\" of type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\" as integer.");
+						throw storm::exceptions::IllegalFunctionCallException() << "Unable to retrieve value of argument \"" << getArgumentName() << "\" of type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\" as integer.";
 					}
 				}
 			}
@@ -196,8 +196,8 @@ namespace storm {
 					case ArgumentType::UnsignedInteger:
 						return ArgumentTypeInferation::inferToUnsignedInteger(ArgumentType::UnsignedInteger, this->getArgumentValue());
 					default: {
-						LOG4CPLUS_ERROR(logger, "Argument::getValueAsUnsignedInteger() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!");
-						throw storm::exceptions::IllegalFunctionCallException() << "Error: getValueAsUnsignedInteger() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!";
+						LOG4CPLUS_ERROR(logger, "Argument::getValueAsUnsignedInteger(): Unable to retrieve value of argument \"" << getArgumentName() << "\" of type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\" as unsigned integer.");
+						throw storm::exceptions::IllegalFunctionCallException() << "Unable to retrieve value of argument \"" << getArgumentName() << "\" of type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\" as unsigned integer.";
 					}
 				}
 			}
@@ -207,8 +207,8 @@ namespace storm {
 					case ArgumentType::Double:
 						return ArgumentTypeInferation::inferToDouble(ArgumentType::Double, this->getArgumentValue());
 					default: {
-						LOG4CPLUS_ERROR(logger, "Argument::getValueAsDouble() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!");
-						throw storm::exceptions::IllegalFunctionCallException() << "Error: getValueAsDouble() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!";
+						LOG4CPLUS_ERROR(logger, "Argument::getValueAsDouble(): Unable to retrieve value of argument \"" << getArgumentName() << "\" of type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\" as double.");
+						throw storm::exceptions::IllegalFunctionCallException() << "Unable to retrieve value of argument \"" << getArgumentName() << "\" of type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\" as double.";
 					}
 				}
 			}
@@ -218,8 +218,8 @@ namespace storm {
 					case ArgumentType::Boolean:
 						return ArgumentTypeInferation::inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
 					default: {
-						LOG4CPLUS_ERROR(logger, "Argument::getValueAsBoolean() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!");
-						throw storm::exceptions::IllegalFunctionCallException() << "Error: getValueAsBoolean() was called on Argument \"" << getArgumentName() << "\" of Type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\"!";
+						LOG4CPLUS_ERROR(logger, "Argument::getValueAsBoolean(): Unable to retrieve value of argument \"" << getArgumentName() << "\" of type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\" as boolean.");
+						throw storm::exceptions::IllegalFunctionCallException() << "Unable to retrieve value of argument \"" << getArgumentName() << "\" of type \"" << ArgumentTypeHelper::toString(getArgumentType()) << "\" as boolean.";
 					}
 				}
 			}
@@ -236,8 +236,8 @@ namespace storm {
 				std::string errorText = "";
 				if (!this->validateForEach(newDefault, errorText)) {
 					// A user defined Validation Function was given and it rejected the Input.
-					LOG4CPLUS_ERROR(logger, "Argument::setDefaultValue: Illegal Default Value for Argument \"" << this->getArgumentName() << "\".\nThe Validation Function rejected the Value: " << errorText);
-					throw storm::exceptions::IllegalArgumentValueException() << "Illegal Default Value for Argument \"" << this->getArgumentName() << "\".\nThe Validation Function rejected the Value: " << errorText;
+					LOG4CPLUS_ERROR(logger, "Argument::setDefaultValue: Illegal default value for argument \"" << this->getArgumentName() << "\"." << std::endl << "The validation function rejected the value (" << errorText << ").");
+					throw storm::exceptions::IllegalArgumentValueException() << "Illegal default value for argument \"" << this->getArgumentName() << "\". The validation function rejected the value (" << errorText << ").";
 				} 
 				this->defaultValue = newDefault;
 				this->hasDefaultValue = true;
