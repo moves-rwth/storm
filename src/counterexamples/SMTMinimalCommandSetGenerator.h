@@ -1058,7 +1058,7 @@ namespace storm {
 #endif
             
         public:
-            static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false) {
+            static std::pair<std::set<uint_fast64_t>, uint_fast64_t > getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false) {
 #ifdef STORM_HAVE_Z3
                 auto startTime = std::chrono::high_resolution_clock::now();
                 auto endTime = std::chrono::high_resolution_clock::now();
@@ -1156,16 +1156,15 @@ namespace storm {
                     
                     endTime = std::chrono::high_resolution_clock::now();
                     if (std::chrono::duration_cast<std::chrono::seconds>(endTime - iterationTimer).count() > 5) {
-                        std::cout << "Performed " << iterations << " iterations in " << std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() << "s. Current command set size is " << commandSet.size() << ". Encountered maximal probability of zero " << zeroProbabilityCount << " times." << std::endl;
+                        std::cout << "Checked " << iterations << " models in " << std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() << "s (out of which " << zeroProbabilityCount << " could not reach the target states). Current command set size is " << commandSet.size() << std::endl;
                         iterationTimer = std::chrono::high_resolution_clock::now();
                     }
                 } while (!done);
-                LOG4CPLUS_INFO(logger, "Found minimal label set after " << iterations << " iterations.");
                 
                 // (9) Return the resulting command set after undefining the constants.
                 storm::utility::ir::undefineUndefinedConstants(program);
                 
-                return commandSet;
+                return std::make_pair(commandSet, iterations);
                 
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Z3.";
@@ -1212,9 +1211,9 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                std::set<uint_fast64_t> usedLabelSet = getMinimalCommandSet(program, constantDefinitionString, labeledMdp, phiStates, psiStates, bound, true);
+                auto labelSetIterationPair = getMinimalCommandSet(program, constantDefinitionString, labeledMdp, phiStates, psiStates, bound, true);
                 auto endTime = std::chrono::high_resolution_clock::now();
-                std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                std::cout << std::endl << "Computed minimal label set of size " << labelSetIterationPair.first.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms (" << labelSetIterationPair.second << " models tested)." << std::endl;
                 
                 std::cout << std::endl << "-------------------------------------------" << std::endl;
                 
