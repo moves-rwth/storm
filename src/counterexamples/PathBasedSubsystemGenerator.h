@@ -13,6 +13,7 @@
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/storage/BitVector.h"
+#include "src/storage/SparseMatrix.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -66,13 +67,13 @@ public:
 						distances[*init].second = (T) 1;
 				}
 
-				typename storm::storage::SparseMatrix<T>::ConstRowIterator trans = transMat.begin(*init);
-				for(; trans != transMat.end(*init); ++trans) {
+				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(*init);
+				for(auto trans = rowIt.begin() ; trans != rowIt.end(); ++trans) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
 					if(trans.value() != (T) 0 && !subSysStates.get(trans.column())) {
 						//new state?
 						if(distances[trans.column()].second == (T) -1) {
-							distances[trans.column()].first = trans.row();
+							distances[trans.column()].first = *init;
 							distances[trans.column()].second = trans.value();
 
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), distances[trans.column()].second));
@@ -90,7 +91,7 @@ public:
 								}
 							}
 
-							distances[trans.column()].first = trans.row();
+							distances[trans.column()].first = *init;
 							distances[trans.column()].second = trans.value();
 
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), trans.value()));
@@ -113,7 +114,8 @@ public:
 			// Same goes for forbidden states since they may not be used on a path, except as last node.
 			if(!subSysStates.get(activeState.first) && allowedStates.get(activeState.first)) {
 				// Look at all neighbors
-				for(typename storm::storage::SparseMatrix<T>::ConstRowIterator trans = transMat.begin(activeState.first); trans != transMat.end(activeState.first); ++trans) {
+				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(activeState.first);
+				for(typename storm::storage::SparseMatrix<T>::ConstIterator trans = rowIt.begin(); trans != rowIt.end(); ++trans) {
 					// Only consider the transition if it's not virtual
 					if(trans.value() != (T) 0) {
 
@@ -142,7 +144,7 @@ public:
 								}
 							}
 
-							distances[trans.column()].first = trans.row();
+							distances[trans.column()].first = activeState.first;
 							distances[trans.column()].second = distance;
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), distance));
 						}
@@ -180,19 +182,19 @@ public:
 						continue;
 				}
 
-				typename storm::storage::SparseMatrix<T>::ConstRowIterator trans = transMat.begin(*init);
-				for(; trans != transMat.end(*init); ++trans) {
+				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(*init);
+				for(typename storm::storage::SparseMatrix<T>::ConstIterator trans = rowIt.begin(); trans != rowIt.end(); ++trans) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
 					if(trans.value() != (T) 0 && !subSysStates.get(trans.column())) {
 						//new state?
 						if(distances[trans.column()].second == (T) -1) {
 							//for initialization of subsys -> subsys search use prob (init -> subsys state -> found state) instead of prob(subsys state -> found state)
-							distances[trans.column()].first = trans.row();
-							distances[trans.column()].second = trans.value() * (itDistances[trans.row()].second == -1 ? 1 : itDistances[trans.row()].second);
+							distances[trans.column()].first = *init;
+							distances[trans.column()].second = trans.value() * (itDistances[*init].second == -1 ? 1 : itDistances[*init].second);
 
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), distances[trans.column()].second));
 						}
-						else if(distances[trans.column()].second < trans.value() * itDistances[trans.row()].second){
+						else if(distances[trans.column()].second < trans.value() * itDistances[*init].second){
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
@@ -206,8 +208,8 @@ public:
 							}
 
 							//for initialization of subsys -> subsys search use prob (init -> subsys state -> found state) instead of prob(subsys state -> found state)
-							distances[trans.column()].first = trans.row();
-							distances[trans.column()].second = trans.value() * (itDistances[trans.row()].second == -1 ? 1 : itDistances[trans.row()].second);
+							distances[trans.column()].first = *init;
+							distances[trans.column()].second = trans.value() * (itDistances[*init].second == -1 ? 1 : itDistances[*init].second);
 
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), trans.value()));
 						}
@@ -232,7 +234,8 @@ public:
 			// Same goes for forbidden states since they may not be used on a path, except as last node.
 			if(!subSysStates.get(activeState.first) && allowedStates.get(activeState.first)) {
 				// Look at all neighbors
-				for(typename storm::storage::SparseMatrix<T>::ConstRowIterator trans = transMat.begin(activeState.first); trans != transMat.end(activeState.first); ++trans) {
+				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(activeState.first);
+				for(typename storm::storage::SparseMatrix<T>::ConstIterator trans = rowIt.begin(); trans != rowIt.end(); ++trans) {
 					// Only consider the transition if it's not virtual
 					if(trans.value() != (T) 0) {
 
@@ -261,7 +264,7 @@ public:
 								}
 							}
 
-							distances[trans.column()].first = trans.row();
+							distances[trans.column()].first = activeState.first;
 							distances[trans.column()].second = distance;
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), distance));
 						}
@@ -510,7 +513,7 @@ public:
 	/*!
 	 *
 	 */
-	static void computeCriticalSubsystem(storm::models::Dtmc<T> const model, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
+	static void computeCriticalSubsystem(storm::models::Dtmc<T> const& model, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
 
 		//-------------------------------------------------------------
 		// 1. Strip and handle formulas
@@ -544,7 +547,7 @@ public:
 		pathFormulaPtr = &abstractPathFormula;
 
 		// get "init" labeled states
-		const storm::storage::BitVector initStates = model.getLabeledStates("init");
+		storm::storage::BitVector initStates = model.getLabeledStates("init");
 
 		//get real prob for formula
 		std::vector<T> trueProbs = pathFormulaPtr->check(modelCheck, false);
@@ -608,7 +611,20 @@ public:
 		uint_fast64_t pathCount = 0;
 		uint_fast64_t mcCount = 0;
 
-		// First compute the shortest paths from init states to all target states
+		// First test if there are init states that are also target states.
+		// If so the init state represents a subsystem with probability mass 1.
+		// -> return it
+		if((initStates & targetStates).getNumberOfSetBits() != 0) {
+			subSys.set((initStates & targetStates).getSetIndicesList().front(), true);
+
+			LOG4CPLUS_INFO(logger, "Critical subsystem: " << subSys.toString());
+			std::cout << "Critical subsystem: " << subSys.toString() << std::endl;
+
+			return;
+		}
+
+
+		// Then compute the shortest paths from init states to all target states
 		std::vector<std::pair<uint_fast64_t, T>> initTargetDistances;
 		computeShortestDistances(model.getTransitionMatrix(), initStates, targetStates, allowedStates, initTargetDistances);
 
@@ -642,7 +658,7 @@ public:
 			// Get estimate (upper bound) of new sub system probability
 			// That is: prob(target) * cost(path) * (mean(prob(inits))/prob(source))
 			//subSysProb += (trueProbs[shortestPath.back()] == 0 ? 0 : trueProbs[shortestPath[0]] * pathProb * trueProb / trueProbs[shortestPath.back()]);
-			subSysProb += 1*(trueProbs[shortestPath.back()] == 0 ? 1 : trueProbs[shortestPath[0]] * pathProb );
+			subSysProb += 1*(trueProbs[shortestPath.back()] == 0 ? 1 : trueProbs[shortestPath[0]] * pathProb == 0 ? 1 : pathProb );
 			//std::cout << "Est. prob: " << subSysProb << std::endl;
 			// Do we want to model check?
 			if((pathCount % precision == 0) && subSysProb >= bound) {

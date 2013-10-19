@@ -258,6 +258,37 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 }
 
 /*!
+ * Checks if a counterexample for the given PRCTL formula can be computed.
+ *
+ * @param formula The formula to be examined.
+ * @param model The model for which the formula is to be examined.
+ * @return true iff a counterexample can be computed
+ */
+bool checkForCounterExampleGeneration(storm::property::prctl::AbstractPrctlFormula<double> &formula, storm::models::Dtmc<double> &model) {
+	// First check if it is a formula type for which a counterexample can be generated.
+	if (dynamic_cast<storm::property::prctl::AbstractNoBoundOperator<double> const*>(&formula) != nullptr) {
+		LOG4CPLUS_ERROR(logger, "Can not generate a counterexample without a given bound.");
+		return false;
+	} else if (dynamic_cast<storm::property::prctl::AbstractStateFormula<double> const*>(&formula) != nullptr) {
+		storm::property::prctl::AbstractStateFormula<double> const& stateForm = static_cast<storm::property::prctl::AbstractStateFormula<double> const&>(formula);
+
+		// Now check if the model does not satisfy the formula.
+		// That is if there is at least one initial state of the model that does not.
+		storm::storage::BitVector result = stateForm.check(*createPrctlModelChecker(model));
+		if((result & model.getInitialStates()).getNumberOfSetBits() < model.getInitialStates().getNumberOfSetBits()) {
+			return true;
+		} else {
+			LOG4CPLUS_ERROR(logger, "Formula is satisfied. Can not generate counterexample.");
+			return false;
+		}
+
+	} else {
+		LOG4CPLUS_ERROR(logger, "Unexpected kind of formula. Expected either a No Bound or a State formula.");
+		return false;
+	}
+}
+
+/*!
  * Main entry point.
  */
 int main(const int argc, const char* argv[]) {
@@ -297,40 +328,76 @@ int main(const int argc, const char* argv[]) {
 
 			storm::parser::AutoParser<double> parser(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
 
-            // Determine which engine is to be used to choose the right model checker.
-			LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
+			//Should there be a counterexample generated in case the formula is not satisfied?
+			if(s->isSet("subSys")) {
 
-			// Depending on the model type, the appropriate model checking procedure is chosen.
-            storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
-            parser.getModel<storm::models::AbstractModel<double>>()->printModelInformationToStream(std::cout);
-			switch (parser.getType()) {
-			case storm::models::DTMC:
-				LOG4CPLUS_INFO(logger, "Model is a DTMC.");
-                modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Dtmc<double>>());
-				checkPrctlFormulae(*modelchecker);
-				break;
-			case storm::models::MDP:
-				LOG4CPLUS_INFO(logger, "Model is an MDP.");
-                modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Mdp<double>>());
-				checkPrctlFormulae(*modelchecker);
-				break;
-			case storm::models::CTMC:
-                LOG4CPLUS_INFO(logger, "Model is a CTMC.");
-                LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
-                break;
-			case storm::models::CTMDP:
-                LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
-                LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
-				break;
-			case storm::models::Unknown:
-			default:
-				LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
-				break;
+				//Differentiate between model types.
+				if(parser.getType() == storm::models::DTMC) {
+					LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+
+					if (s->isSet("prctl")) {
+						// Get specified PRCTL formulas.
+						std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
+						LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
+						std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
+
+						// Test for each formula if a counterexample can be generated for it.
+						for (auto formula : formulaList) {
+							if(checkForCounterExampleGeneration(*formula, *parser.getModel<storm::models::Dtmc<double>>())) {
+								//Generate counterexample
+								storm::counterexamples::PathBasedSubsystemGenerator<double>::computeCriticalSubsystem(*parser.getModel<storm::models::Dtmc<double>>(), static_cast<storm::property::prctl::AbstractStateFormula<double> const&>(*formula));
+
+								//Output counterexample
+								//TODO: Write output.
+
+							} else {
+								LOG4CPLUS_INFO(logger, "No counterexample generated for PRCTL formula: " << formula->toString());
+							}
+
+							delete formula;
+						}
+					} else {
+						LOG4CPLUS_ERROR(logger, "No PRCTL formula specified.");
+					}
+				} else {
+					LOG4CPLUS_ERROR(logger, "Counterexample generation for the selected model type is not supported.");
+				}
+			} else {
+				// Determine which engine is to be used to choose the right model checker.
+				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
+
+				// Depending on the model type, the appropriate model checking procedure is chosen.
+				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
+				parser.getModel<storm::models::AbstractModel<double>>()->printModelInformationToStream(std::cout);
+				switch (parser.getType()) {
+				case storm::models::DTMC:
+					LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+					modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Dtmc<double>>());
+					checkPrctlFormulae(*modelchecker);
+					break;
+				case storm::models::MDP:
+					LOG4CPLUS_INFO(logger, "Model is an MDP.");
+					modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Mdp<double>>());
+					checkPrctlFormulae(*modelchecker);
+					break;
+				case storm::models::CTMC:
+					LOG4CPLUS_INFO(logger, "Model is a CTMC.");
+					LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+					break;
+				case storm::models::CTMDP:
+					LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
+					LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+					break;
+				case storm::models::Unknown:
+				default:
+					LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
+					break;
+				}
+
+				if (modelchecker != nullptr) {
+					delete modelchecker;
+				}
 			}
-            
-            if (modelchecker != nullptr) {
-                delete modelchecker;
-            }
 		} else if (s->isSet("symbolic")) {
 			std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
 			std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
