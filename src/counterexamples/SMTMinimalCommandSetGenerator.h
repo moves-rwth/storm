@@ -120,6 +120,7 @@ namespace storm {
                     }
                 }
                 
+                
                 // Compute the set of labels that are known to be taken in any case.
                 relevancyInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, relevancyInformation.relevantLabels);
                 if (!relevancyInformation.knownLabels.empty()) {
@@ -137,6 +138,8 @@ namespace storm {
 //                    std::cout << std::endl;
 //                }
                 
+                std::cout << "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.";
+
                 LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.");
                 return relevancyInformation;
             }
@@ -1215,6 +1218,10 @@ namespace storm {
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << labelSetIterationPair.first.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms (" << labelSetIterationPair.second << " models tested)." << std::endl;
                 
+                std::cout << "Resulting program:" << std::endl;
+                storm::ir::Program restrictedProgram(program);
+                restrictedProgram.restrictCommands(labelSetIterationPair.first);
+                std::cout << restrictedProgram.toString() << std::endl;
                 std::cout << std::endl << "-------------------------------------------" << std::endl;
                 
                 // FIXME: Return the DTMC that results from applying the max scheduler in the MDP restricted to the computed label set.

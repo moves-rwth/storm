@@ -356,7 +356,7 @@ int main(const int argc, const char* argv[]) {
                 // Now generate the counterexamples for each formula.
                 for (storm::property::prctl::AbstractPrctlFormula<double>* formulaPtr : formulaList) {
                     if (useMILP) {
-                        storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(*mdp, formulaPtr);
+                        storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr);
                     } else {
                         storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
                     }

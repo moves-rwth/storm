@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 #include "src/models/Mdp.h"
+#include "src/ir/program.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
@@ -161,11 +162,11 @@ namespace storm {
                         }
                     }
                 }
-                LOG4CPLUS_DEBUG(logger, "Found " << result.allRelevantLabels.size() << " relevant labels.");
 
                 // Finally, determine the set of labels that are known to be taken.
                 result.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, result.allRelevantLabels);
-                LOG4CPLUS_DEBUG(logger, "Found " << result.knownLabels.size() << " known labels.");
+                std::cout << "Found " << result.allRelevantLabels.size() << " relevant labels and " << result.knownLabels.size() << " known labels." << std::endl;
+                LOG4CPLUS_DEBUG(logger, "Found " << result.allRelevantLabels.size() << " relevant labels and " << result.knownLabels.size() << " known labels.");
 
                 return result;
             }
@@ -1325,7 +1326,7 @@ namespace storm {
              * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
              * formula can be either an unbounded until formula or an eventually formula.
              */
-            static void computeCounterexample(storm::models::Mdp<T> const& labeledMdp, storm::property::prctl::AbstractPrctlFormula<double> const* formulaPtr) {
+            static void computeCounterexample(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::property::prctl::AbstractPrctlFormula<double> const* formulaPtr) {
 #ifdef STORM_HAVE_GUROBI
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << formulaPtr->toString() << std::endl;
                 // First, we need to check whether the current formula is an Until-Formula.
@@ -1369,6 +1370,10 @@ namespace storm {
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 
+                std::cout << "Resulting program:" << std::endl;
+                storm::ir::Program restrictedProgram(program);
+                restrictedProgram.restrictCommands(usedLabelSet);
+                std::cout << restrictedProgram.toString() << std::endl;
                 std::cout << std::endl << "-------------------------------------------" << std::endl;
                 
                 // FIXME: Return the DTMC that results from applying the max scheduler in the MDP restricted to the computed label set.
