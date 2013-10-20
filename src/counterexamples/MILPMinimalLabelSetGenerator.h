@@ -180,6 +180,12 @@ namespace storm {
                 // Enable the following line to only print the output of Gurobi if the debug flag is set.
                 // int error = error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->isSet("debug") ? 1 : 0);
                 int error = error = GRBsetintparam(env, "OutputFlag", 1);
+                
+                // Enable the following line to restrict Gurobi to one thread only.
+                // error = error = GRBsetintparam(env, "Threads", 1);
+                
+                // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
+                error = GRBsetdblparam(env, "IntFeasTol", storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
             }
             
             /*!

@@ -1164,6 +1164,8 @@ namespace storm {
                     }
                 } while (!done);
                 
+                std::cout << "Checked " << iterations << " models in total out of which " << zeroProbabilityCount << " could not reach the target states." << std::endl;
+                
                 // (9) Return the resulting command set after undefining the constants.
                 storm::utility::ir::undefineUndefinedConstants(program);
                 
