@@ -995,34 +995,36 @@ namespace storm {
                     throw storm::exceptions::InvalidStateException() << "Target must be unreachable for this analysis.";
                 }
                 
+                storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
                 storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp, subMdp.getBackwardTransitions(), phiStates, psiStates);
                 std::vector<std::set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
                 
                 std::vector<std::set<uint_fast64_t>> const& choiceLabeling = originalMdp.getChoiceLabeling();
                 std::set<std::set<uint_fast64_t>> cutLabels;
-                uint_fast64_t numberOfBorderStates = 0;
                 for (auto state : reachableStates) {
                     bool isBorderState = false;
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
                         if (!storm::utility::set::isSubsetOf(choiceLabeling[currentChoice], commandSet)) {
-                            isBorderState = true;
-                            
-                            std::set<uint_fast64_t> currentLabelSet;
-                            for (auto label : choiceLabeling[currentChoice]) {
-                                if (commandSet.find(label) == commandSet.end()) {
-                                    currentLabelSet.insert(label);
+                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = originalMdp.getTransitionMatrix().constColumnIteratorBegin(currentChoice), successorIte = originalMdp.getTransitionMatrix()x^.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
+                                if (unreachableRelevantStates.get(*successorIt)) {
+                                    isBorderState = true;
                                 }
                             }
-                            std::set<uint_fast64_t> notTakenImpliedChoices;
-                            std::set_difference(guaranteedLabelSets[state].begin(), guaranteedLabelSets[state].end(), commandSet.begin(), commandSet.end(), std::inserter(notTakenImpliedChoices, notTakenImpliedChoices.begin()));
-                            currentLabelSet.insert(notTakenImpliedChoices.begin(), notTakenImpliedChoices.end());
                             
-                            cutLabels.insert(currentLabelSet);
+                            if (isBorderState) {
+                                std::set<uint_fast64_t> currentLabelSet;
+                                for (auto label : choiceLabeling[currentChoice]) {
+                                    if (commandSet.find(label) == commandSet.end()) {
+                                        currentLabelSet.insert(label);
+                                    }
+                                }
+                                std::set<uint_fast64_t> notTakenImpliedChoices;
+                                std::set_difference(guaranteedLabelSets[state].begin(), guaranteedLabelSets[state].end(), commandSet.begin(), commandSet.end(), std::inserter(notTakenImpliedChoices, notTakenImpliedChoices.begin()));
+                                currentLabelSet.insert(notTakenImpliedChoices.begin(), notTakenImpliedChoices.end());
+                                
+                                cutLabels.insert(currentLabelSet);
+                            }
                         }
-                    }
-                    
-                    if (isBorderState) {
-                        ++numberOfBorderStates;
                     }
                 }
                 
@@ -1042,34 +1044,7 @@ namespace storm {
                 }
                 
                 LOG4CPLUS_DEBUG(logger, "Asserting reachability implications.");
-                
-//                std::cout << "reachability implications:" << std::endl;
-//                for (auto e : formulae) {
-//                    std::cout << e << ", ";
-//                }
-//                std::cout << std::endl;
-                
                 assertDisjunction(context, solver, formulae);
-//
-//                std::cout << "formulae: " << std::endl;
-//                for (auto e : formulae) {
-//                    std::cout << e << ", ";
-//                }
-//                std::cout << std::endl;
-//                
-//                storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
-//                std::cout << unreachableRelevantStates.toString() << std::endl;
-//                std::cout << reachableStates.toString() << std::endl;
-//                std::cout << "reachable commands" << std::endl;
-//                for (auto label : reachableLabels) {
-//                    std::cout << label << ", ";
-//                }
-//                std::cout << std::endl;
-//                std::cout << "cut commands" << std::endl;
-//                for (auto label : cutLabels) {
-//                    std::cout << label << ", ";
-//                }
-//                std::cout << std::endl;
                 
             }
 #endif
