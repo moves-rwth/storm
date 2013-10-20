@@ -195,7 +195,7 @@ namespace storm {
              */
             static std::pair<GRBenv*, GRBmodel*> createGurobiEnvironmentAndModel() {
                 GRBenv* env = nullptr;
-                int error = GRBloadenv(&env, "storm_gurobi.log");
+                int error = GRBloadenv(&env, "");
                 if (error || env == NULL) {
                     LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi (" << GRBgeterrormsg(env) << ").");
                     throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi (" << GRBgeterrormsg(env) << ").";

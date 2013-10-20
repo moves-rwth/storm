@@ -129,16 +129,7 @@ namespace storm {
                     relevancyInformation.relevantLabels = remainingLabels;
                 }
                 
-//                std::vector<std::set<uint_fast64_t>> guaranteedLabels = storm::utility::counterexamples::getGuaranteedLabelSets(labeledMdp, psiStates, relevancyInformation.relevantLabels);
-//                for (auto state : relevancyInformation.relevantStates) {
-//                    std::cout << "state " << state << " ##########################################################" << std::endl;
-//                    for (auto label : guaranteedLabels[state]) {
-//                        std::cout << label << ", ";
-//                    }
-//                    std::cout << std::endl;
-//                }
-                
-                std::cout << "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.";
+                std::cout << "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels." << std::endl;
 
                 LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.");
                 return relevancyInformation;
@@ -952,7 +943,7 @@ namespace storm {
                 return getUsedLabelSet(context, solver.get_model(), variableInformation);
             }
             
-            static void analyzeBadSolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeBadSolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
                 storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
                 
                 // Initialize the stack for the DFS.
@@ -1004,17 +995,34 @@ namespace storm {
                     throw storm::exceptions::InvalidStateException() << "Target must be unreachable for this analysis.";
                 }
                 
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp, subMdp.getBackwardTransitions(), phiStates, psiStates);
+                std::vector<std::set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
+                
                 std::vector<std::set<uint_fast64_t>> const& choiceLabeling = originalMdp.getChoiceLabeling();
-                std::set<uint_fast64_t> cutLabels;
+                std::set<std::set<uint_fast64_t>> cutLabels;
+                uint_fast64_t numberOfBorderStates = 0;
                 for (auto state : reachableStates) {
+                    bool isBorderState = false;
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
                         if (!storm::utility::set::isSubsetOf(choiceLabeling[currentChoice], commandSet)) {
+                            isBorderState = true;
+                            
+                            std::set<uint_fast64_t> currentLabelSet;
                             for (auto label : choiceLabeling[currentChoice]) {
                                 if (commandSet.find(label) == commandSet.end()) {
-                                    cutLabels.insert(label);
+                                    currentLabelSet.insert(label);
                                 }
                             }
+                            std::set<uint_fast64_t> notTakenImpliedChoices;
+                            std::set_difference(guaranteedLabelSets[state].begin(), guaranteedLabelSets[state].end(), commandSet.begin(), commandSet.end(), std::inserter(notTakenImpliedChoices, notTakenImpliedChoices.begin()));
+                            currentLabelSet.insert(notTakenImpliedChoices.begin(), notTakenImpliedChoices.end());
+                            
+                            cutLabels.insert(currentLabelSet);
                         }
+                    }
+                    
+                    if (isBorderState) {
+                        ++numberOfBorderStates;
                     }
                 }
                 
@@ -1024,12 +1032,18 @@ namespace storm {
                 for (auto label : unknownReachableLabels) {
                     formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
-                for (auto cutLabel : cutLabels) {
-                    formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(cutLabel)));
+                for (auto const& cutLabelSet : cutLabels) {
+                    z3::expr cube = context.bool_val(true);
+                    for (auto cutLabel : cutLabelSet) {
+                        cube = cube && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(cutLabel));
+                    }
+                    
+                    formulae.push_back(cube);
                 }
                 
                 LOG4CPLUS_DEBUG(logger, "Asserting reachability implications.");
                 
+//                std::cout << "reachability implications:" << std::endl;
 //                for (auto e : formulae) {
 //                    std::cout << e << ", ";
 //                }
@@ -1142,24 +1156,25 @@ namespace storm {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
                     
-                    if (maximalReachabilityProbability <= probabilityThreshold) {
+                    if (maximalReachabilityProbability < probabilityThreshold) {
                         if (maximalReachabilityProbability == 0) {
                             ++zeroProbabilityCount;
                             
                             // If there was no target state reachable, analyze the solution and guide the solver into the
                             // right direction.
-                            analyzeBadSolution(context, solver, subMdp, labeledMdp, psiStates, commandSet, variableInformation, relevancyInformation);
+                            analyzeBadSolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                        } else {
+                            // In case we have not yet exceeded the given threshold, we have to rule out the current solution.
+                            ruleOutSolution(context, solver, commandSet, variableInformation);
                         }
-                        // In case we have not yet exceeded the given threshold, we have to rule out the current solution.
-                        ruleOutSolution(context, solver, commandSet, variableInformation);
                     } else {
                         done = true;
                     }
                     ++iterations;
                     
                     endTime = std::chrono::high_resolution_clock::now();
-                    if (std::chrono::duration_cast<std::chrono::seconds>(endTime - iterationTimer).count() > 5) {
-                        std::cout << "Checked " << iterations << " models in " << std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() << "s (out of which " << zeroProbabilityCount << " could not reach the target states). Current command set size is " << commandSet.size() << std::endl;
+                    if (std::chrono::duration_cast<std::chrono::seconds>(endTime - iterationTimer).count() >= 5) {
+                        std::cout << "Checked " << iterations << " models in " << std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() << "s (out of which " << zeroProbabilityCount << " could not reach the target states). Current command set size is " << commandSet.size() << "." << std::endl;
                         iterationTimer = std::chrono::high_resolution_clock::now();
                     }
                 } while (!done);
