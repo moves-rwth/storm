@@ -39,12 +39,10 @@ namespace storm {
                 expression->accept(this);
                 z3::expr result = stack.top();
                 stack.pop();
-                LOG4CPLUS_DEBUG(logger, "Returning " << result << ".");
                 return result;
             }
             
             virtual void visit(ir::expressions::BinaryBooleanFunctionExpression* expression) {
-                LOG4CPLUS_DEBUG(logger, "Binary boolean function expression " << expression->toString() << ".");
                 expression->getLeft()->accept(this);
                 expression->getRight()->accept(this);
                 
@@ -100,7 +98,6 @@ namespace storm {
             }
             
             virtual void visit(ir::expressions::BinaryRelationExpression* expression) {
-                LOG4CPLUS_DEBUG(logger, "Binary boolean relation expression " << expression->toString() << ".");
                 expression->getLeft()->accept(this);
                 expression->getRight()->accept(this);
                 
@@ -173,7 +170,6 @@ namespace storm {
             }
             
             virtual void visit(ir::expressions::IntegerLiteralExpression* expression) {
-                LOG4CPLUS_DEBUG(logger, "IntegerLiteralExpression " << expression->toString() << ".");
                 stack.push(context.int_val(expression->getValueAsInt(nullptr)));
             }
             
@@ -208,7 +204,6 @@ namespace storm {
             }
             
             virtual void visit(ir::expressions::VariableExpression* expression) {
-                LOG4CPLUS_DEBUG(logger, "Variable " << expression->toString() << ".");
                 stack.push(variableToExpressionMap.at(expression->getVariableName()));
             }
             

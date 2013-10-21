@@ -525,7 +525,6 @@ namespace storm {
                             } else {
                                 guardExpression = guardExpression | !expressionAdapter.translateExpression(command.get().getGuard());
                             }
-                            std::cout << command.get().getGuard()->toString() << std::endl;
                         }
                         localSolver.add(guardExpression);
                         LOG4CPLUS_DEBUG(logger, "Asserted disjunction of negated guards.");
@@ -607,34 +606,30 @@ namespace storm {
                         // Popping the disjunction of negated guards from the solver stack.
                         localSolver.pop();
                     }
+                    
+                    for (auto const& labelSetImplicationsPair : backwardImplications) {
+                        std::vector<z3::expr> implicationExpression;
+                        
+                        // Create the first part of the implication.
+                        for (auto label : labelSetImplicationsPair.first) {
+                            if (relevancyInformation.knownLabels.find(label) == relevancyInformation.knownLabels.end()) {
+                                implicationExpression.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+                            }
+                        }
+                        
+                        // Create the disjunction of conjuncts that represent the possible implications.
+                        for (auto const& implicationSet : labelSetImplicationsPair.second) {
+                            implicationExpression.push_back(context.bool_val(true));
+                            for (auto label : implicationSet) {
+                                if (relevancyInformation.knownLabels.find(label) == relevancyInformation.knownLabels.end()) {
+                                    implicationExpression.back() = implicationExpression.back() && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                                }
+                            }
+                        }
+                        
+                        assertDisjunction(context, solver, implicationExpression);
+                    }
                 }
-                
-                std::vector<z3::expr> formulae;
-                std::cout << "got " << backwardImplications.size() << " backward implications." << std::endl;
-//                for (auto const& labelSetImplicationSetsPair : backwardImplications) {
-//                    // We only need to make this an implication if the label is not already known. If it is known,
-//                    // we can directly assert the disjunction of the implications.
-//                    if (relevancyInformation.knownLabels.find(labelImplicationsPair.first) == relevancyInformation.knownLabels.end()) {
-//                        formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelImplicationsPair.first)));
-//                    }
-//                    
-//                    std::set<uint_fast64_t> actualImplications;
-//                    std::set_intersection(labelImplicationsPair.second.begin(), labelImplicationsPair.second.end(), precedingLabels.at(labelImplicationsPair.first).begin(), precedingLabels.at(labelImplicationsPair.first).end(), std::inserter(actualImplications, actualImplications.begin()));
-//
-//                    // We should assert the implications if they are not already known to be true anyway.
-//                    std::set<uint_fast64_t> knownImplications;
-//                    std::set_intersection(actualImplications.begin(), actualImplications.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(knownImplications, knownImplications.begin()));
-//
-//                    if (knownImplications.empty()) {
-//                        for (auto label : actualImplications) {
-//                            formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
-//                        }
-//                    
-//                        std::cout << "actually asserting a backward implication." << std::endl;
-//                        assertDisjunction(context, solver, formulae);
-//                        formulae.clear();
-//                    }
-//                }
             }
             
             /*!
