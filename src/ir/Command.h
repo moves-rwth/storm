@@ -94,6 +94,13 @@ namespace storm {
             storm::ir::Update const& getUpdate(uint_fast64_t index) const;
             
             /*!
+             * Retrieves a vector of all updates associated with this command.
+             *
+             * @return A vector of updates associated with this command.
+             */
+            std::vector<storm::ir::Update> const& getUpdates() const;
+            
+            /*!
              * Retrieves the global index of the command, that is, a unique index over all modules.
              *
              * @return The global index of the command.

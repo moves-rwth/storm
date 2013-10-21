@@ -386,8 +386,9 @@ namespace storm {
              * @param solver The solver to use for the satisfiability evaluation.
              */
             static void assertSymbolicCuts(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
-                std::map<uint_fast64_t, std::set<uint_fast64_t>> precedingLabels;
-                std::set<uint_fast64_t> hasSynchronizingPredecessor;
+                
+                // A container storing the label sets that may precede a given label set.
+                std::map<std::set<uint_fast64_t>, std::set<std::set<uint_fast64_t>>> precedingLabelSets;
 
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
@@ -410,16 +411,7 @@ namespace storm {
                                     }
                                     
                                     if (choiceTargetsCurrentState) {
-                                        if (choiceLabeling.at(predecessorChoice).size() > 1) {
-                                            for (auto label : choiceLabeling.at(currentChoice)) {
-                                                hasSynchronizingPredecessor.insert(label);
-                                            }
-                                        }
-                                        for (auto labelToAdd : choiceLabeling[predecessorChoice]) {
-                                            for (auto labelForWhichToAdd : choiceLabeling[currentChoice]) {
-                                                precedingLabels[labelForWhichToAdd].insert(labelToAdd);
-                                            }
-                                        }
+                                        precedingLabelSets[choiceLabeling.at(currentChoice)].insert(choiceLabeling.at(predecessorChoice));
                                     }
                                 }
                             }
@@ -467,108 +459,182 @@ namespace storm {
                     initialStateExpression = initialStateExpression && (solverVariables.at(variable.getName()) == localContext.int_val(std::get<1>(*initialState).at(programVariableInformation.integerVariableToIndexMap.at(variable.getName()))));
                 }
                 
-                std::map<uint_fast64_t, std::set<uint_fast64_t>> backwardImplications;
+                // Store the found implications in a container similar to the preceding label sets.
+                std::map<std::set<uint_fast64_t>, std::set<std::set<uint_fast64_t>>> backwardImplications;
                 
                 // Now check for possible backward cuts.
-                for (uint_fast64_t moduleIndex = 0; moduleIndex < program.getNumberOfModules(); ++moduleIndex) {
-                    storm::ir::Module const& module = program.getModule(moduleIndex);
+                for (auto const& labelSetAndPrecedingLabelSetsPair : precedingLabelSets) {
+                
+                    // Find out the commands for the currently considered label set.
+                    std::vector<std::reference_wrapper<storm::ir::Command const>> currentCommandVector;
+                    for (uint_fast64_t moduleIndex = 0; moduleIndex < program.getNumberOfModules(); ++moduleIndex) {
+                        storm::ir::Module const& module = program.getModule(moduleIndex);
+                        
+                        for (uint_fast64_t commandIndex = 0; commandIndex < module.getNumberOfCommands(); ++commandIndex) {
+                            storm::ir::Command const& command = module.getCommand(commandIndex);
+
+                            // If the current command is one of the commands we need to consider, store a reference to it in the container.
+                            if (labelSetAndPrecedingLabelSetsPair.first.find(command.getGlobalIndex()) != labelSetAndPrecedingLabelSetsPair.first.end()) {
+                                currentCommandVector.push_back(command);
+                            }
+                        }
+                    }
                     
-                    for (uint_fast64_t commandIndex = 0; commandIndex < module.getNumberOfCommands(); ++commandIndex) {
-                        storm::ir::Command const& command = module.getCommand(commandIndex);
+                    // Save the state of the solver so we can easily backtrack.
+                    localSolver.push();
+                    
+                    // Check if the command set is enabled in the initial state.
+                    for (auto const& command : currentCommandVector) {
+                        localSolver.add(expressionAdapter.translateExpression(command.get().getGuard()));
+                    }
+                    localSolver.add(initialStateExpression);
+                    
+                    z3::check_result checkResult = localSolver.check();
+                    localSolver.pop();
+                    localSolver.push();
 
-                        // If the label of the command is not relevant, skip it entirely.
-                        if (relevancyInformation.relevantLabels.find(command.getGlobalIndex()) == relevancyInformation.relevantLabels.end()) continue;
+                    // If the solver reports unsat, then we know that the current selection is not enabled in the initial state.
+                    if (checkResult == z3::unsat) {
+                        LOG4CPLUS_DEBUG(logger, "Selection not enabled in initial state.");
+                        std::unique_ptr<storm::ir::expressions::BaseExpression> guardConjunction;
+                        if (currentCommandVector.size() == 1) {
+                            guardConjunction = currentCommandVector.begin()->get().getGuard()->clone();
+                        } else if (currentCommandVector.size() > 1) {
+                            std::vector<std::reference_wrapper<storm::ir::Command const>>::const_iterator setIterator = currentCommandVector.begin();
+                            std::unique_ptr<storm::ir::expressions::BaseExpression> first = setIterator->get().getGuard()->clone();
+                            ++setIterator;
+                            std::unique_ptr<storm::ir::expressions::BaseExpression> second = setIterator->get().getGuard()->clone();
+                            guardConjunction = std::unique_ptr<storm::ir::expressions::BaseExpression>(new storm::ir::expressions::BinaryBooleanFunctionExpression(std::move(first), std::move(second), storm::ir::expressions::BinaryBooleanFunctionExpression::AND));
+                            ++setIterator;
+                            
+                            while (setIterator != currentCommandVector.end()) {
+                                guardConjunction = std::unique_ptr<storm::ir::expressions::BaseExpression>(new storm::ir::expressions::BinaryBooleanFunctionExpression(std::move(guardConjunction), setIterator->get().getGuard()->clone(), storm::ir::expressions::BinaryBooleanFunctionExpression::AND));
+                                ++setIterator;
+                            }
+                        } else {
+                            throw storm::exceptions::InvalidStateException() << "Choice label set is empty.";
+                            LOG4CPLUS_DEBUG(logger, "Choice label set is empty.");
+                        }
                         
-                        // If the label has a synchronizing predecessor, we also need to skip it, because the following
-                        // procedure can only consider predecessors in isolation.
-                        if(hasSynchronizingPredecessor.find(command.getGlobalIndex()) != hasSynchronizingPredecessor.end()) continue;
+                        LOG4CPLUS_DEBUG(logger, "About to assert disjunction of negated guards.");
+                        z3::expr guardExpression = localContext.bool_val(false);
+                        bool firstAssignment = true;
+                        for (auto const& command : currentCommandVector) {
+                            if (firstAssignment) {
+                                guardExpression = !expressionAdapter.translateExpression(command.get().getGuard());
+                            } else {
+                                guardExpression = guardExpression | !expressionAdapter.translateExpression(command.get().getGuard());
+                            }
+                            std::cout << command.get().getGuard()->toString() << std::endl;
+                        }
+                        localSolver.add(guardExpression);
+                        LOG4CPLUS_DEBUG(logger, "Asserted disjunction of negated guards.");
                         
-                        // Save the state of the solver so we can easily backtrack.
-                        localSolver.push();
-                        
-                        // Check if the command is enabled in the initial state.
-                        localSolver.add(expressionAdapter.translateExpression(command.getGuard()));
-                        localSolver.add(initialStateExpression);
-                        
-                        z3::check_result checkResult = localSolver.check();
-                        localSolver.pop();
-                        localSolver.push();
-
-                        if (checkResult == z3::unsat) {
-                            localSolver.add(!expressionAdapter.translateExpression(command.getGuard()));
+                        // Now check the possible preceding label sets for the essential ones.
+                        for (auto const& precedingLabelSet : labelSetAndPrecedingLabelSetsPair.second) {
+                            // Create a restore point so we can easily pop-off all weakest precondition expressions.
                             localSolver.push();
                             
-                            // We need to check all commands of the all modules, because they could enable the current
-                            // command via a global variable.
-                            for (uint_fast64_t otherModuleIndex = 0; otherModuleIndex < program.getNumberOfModules(); ++otherModuleIndex) {
-                                storm::ir::Module const& otherModule = program.getModule(otherModuleIndex);
+                            // Find out the commands for the currently considered preceding label set.
+                            std::vector<std::reference_wrapper<storm::ir::Command const>> currentPrecedingCommandVector;
+                            for (uint_fast64_t moduleIndex = 0; moduleIndex < program.getNumberOfModules(); ++moduleIndex) {
+                                storm::ir::Module const& module = program.getModule(moduleIndex);
                                 
-                                for (uint_fast64_t otherCommandIndex = 0; otherCommandIndex < otherModule.getNumberOfCommands(); ++otherCommandIndex) {
-                                    storm::ir::Command const& otherCommand = otherModule.getCommand(otherCommandIndex);
+                                for (uint_fast64_t commandIndex = 0; commandIndex < module.getNumberOfCommands(); ++commandIndex) {
+                                    storm::ir::Command const& command = module.getCommand(commandIndex);
                                     
-                                    // We don't need to consider irrelevant commands and the command itself.
-                                    if (relevancyInformation.relevantLabels.find(otherCommand.getGlobalIndex()) == relevancyInformation.relevantLabels.end()
-                                        && relevancyInformation.knownLabels.find(otherCommand.getGlobalIndex()) == relevancyInformation.knownLabels.end()) {
-                                        continue;
+                                    // If the current command is one of the commands we need to consider, store a reference to it in the container.
+                                    if (precedingLabelSet.find(command.getGlobalIndex()) != precedingLabelSet.end()) {
+                                        currentPrecedingCommandVector.push_back(command);
                                     }
-                                    if (moduleIndex == otherModuleIndex && commandIndex == otherCommandIndex) continue;
-                                    
-                                    std::vector<z3::expr> formulae;
-                                    formulae.reserve(otherCommand.getNumberOfUpdates());
-                                    
-                                    localSolver.push();
-                                    
-                                    for (uint_fast64_t updateIndex = 0; updateIndex < otherCommand.getNumberOfUpdates(); ++updateIndex) {
-                                        std::unique_ptr<storm::ir::expressions::BaseExpression> weakestPrecondition = storm::utility::ir::getWeakestPrecondition(command.getGuard(), {otherCommand.getUpdate(updateIndex)});
-                                        
-                                        formulae.push_back(expressionAdapter.translateExpression(weakestPrecondition));
-                                    }
-                                    
-                                    assertDisjunction(localContext, localSolver, formulae);
-                                    
-                                    // If the assertions were satisfiable, this means the other command could successfully
-                                    // enable the current command.
-                                    if (localSolver.check() == z3::sat) {
-                                        backwardImplications[command.getGlobalIndex()].insert(otherCommand.getGlobalIndex());
-                                    }
-                                    
-                                    localSolver.pop();
                                 }
                             }
                             
-                            // Remove the negated guard from the solver assertions.
+                            // Assert all the guards of the preceding command set.
+                            for (auto const& command : currentPrecedingCommandVector) {
+                                localSolver.add(expressionAdapter.translateExpression(command.get().getGuard()));
+                            }
+                            
+                            std::vector<std::vector<storm::ir::Update>::const_iterator> iteratorVector;
+                            for (auto const& command : currentPrecedingCommandVector) {
+                                iteratorVector.push_back(command.get().getUpdates().begin());
+                            }
+                            
+                            // Iterate over all possible combinations of updates of the preceding command set.
+                            std::vector<z3::expr> formulae;
+                            bool done = false;
+                            while (!done) {
+                                std::vector<std::reference_wrapper<storm::ir::Update const>> currentUpdateCombination;
+                                for (auto const& updateIterator : iteratorVector) {
+                                    currentUpdateCombination.push_back(*updateIterator);
+                                }
+                                
+                                LOG4CPLUS_DEBUG(logger, "About to assert a weakest precondition.");
+                                std::unique_ptr<storm::ir::expressions::BaseExpression> wp = storm::utility::ir::getWeakestPrecondition(guardConjunction->clone(), currentUpdateCombination);
+                                formulae.push_back(expressionAdapter.translateExpression(wp));
+                                LOG4CPLUS_DEBUG(logger, "Asserted weakest precondition.");
+                                
+                                // Now try to move iterators to the next position if possible. If we could properly move it, we can directly
+                                // move on to the next combination of updates. If we have to reset it to the start, we
+                                uint_fast64_t k = iteratorVector.size();
+                                for (; k > 0; --k) {
+                                    ++iteratorVector[k - 1];
+                                    if (iteratorVector[k - 1] == currentPrecedingCommandVector[k - 1].get().getUpdates().end()) {
+                                        iteratorVector[k - 1] = currentPrecedingCommandVector[k - 1].get().getUpdates().begin();
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                
+                                // If we had to reset all iterator to the start, we are done.
+                                if (k == 0) {
+                                    done = true;
+                                }
+                            }
+
+                            // Now assert the disjunction of all weakest preconditions of all considered update combinations.
+                            assertDisjunction(localContext, localSolver, formulae);
+                            
+                            LOG4CPLUS_DEBUG(logger, "Asserted disjunction of all weakest preconditions.");
+                            
+                            if (localSolver.check() == z3::sat) {
+                                backwardImplications[labelSetAndPrecedingLabelSetsPair.first].insert(precedingLabelSet);
+                            }
+                            
                             localSolver.pop();
                         }
                         
-                        // Restore state of solver where only the variable bounds are asserted.
+                        // Popping the disjunction of negated guards from the solver stack.
                         localSolver.pop();
                     }
                 }
                 
                 std::vector<z3::expr> formulae;
-                for (auto const& labelImplicationsPair : backwardImplications) {
-                    // We only need to make this an implication if the label is not already known. If it is known,
-                    // we can directly assert the disjunction of the implications.
-                    if (relevancyInformation.knownLabels.find(labelImplicationsPair.first) == relevancyInformation.knownLabels.end()) {
-                        formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelImplicationsPair.first)));
-                    }
-                    
-                    std::set<uint_fast64_t> actualImplications;
-                    std::set_intersection(labelImplicationsPair.second.begin(), labelImplicationsPair.second.end(), precedingLabels.at(labelImplicationsPair.first).begin(), precedingLabels.at(labelImplicationsPair.first).end(), std::inserter(actualImplications, actualImplications.begin()));
-
-                    // We should assert the implications if they are not already known to be true anyway.
-                    std::set<uint_fast64_t> knownImplications;
-                    std::set_intersection(actualImplications.begin(), actualImplications.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(knownImplications, knownImplications.begin()));
-
-                    if (knownImplications.empty()) {
-                        for (auto label : actualImplications) {
-                            formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
-                        }
-                    
-                        assertDisjunction(context, solver, formulae);
-                        formulae.clear();
-                    }
-                }
+                std::cout << "got " << backwardImplications.size() << " backward implications." << std::endl;
+//                for (auto const& labelSetImplicationSetsPair : backwardImplications) {
+//                    // We only need to make this an implication if the label is not already known. If it is known,
+//                    // we can directly assert the disjunction of the implications.
+//                    if (relevancyInformation.knownLabels.find(labelImplicationsPair.first) == relevancyInformation.knownLabels.end()) {
+//                        formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelImplicationsPair.first)));
+//                    }
+//                    
+//                    std::set<uint_fast64_t> actualImplications;
+//                    std::set_intersection(labelImplicationsPair.second.begin(), labelImplicationsPair.second.end(), precedingLabels.at(labelImplicationsPair.first).begin(), precedingLabels.at(labelImplicationsPair.first).end(), std::inserter(actualImplications, actualImplications.begin()));
+//
+//                    // We should assert the implications if they are not already known to be true anyway.
+//                    std::set<uint_fast64_t> knownImplications;
+//                    std::set_intersection(actualImplications.begin(), actualImplications.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(knownImplications, knownImplications.begin()));
+//
+//                    if (knownImplications.empty()) {
+//                        for (auto label : actualImplications) {
+//                            formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+//                        }
+//                    
+//                        std::cout << "actually asserting a backward implication." << std::endl;
+//                        assertDisjunction(context, solver, formulae);
+//                        formulae.clear();
+//                    }
+//                }
             }
             
             /*!
@@ -1005,7 +1071,7 @@ namespace storm {
                     bool isBorderState = false;
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
                         if (!storm::utility::set::isSubsetOf(choiceLabeling[currentChoice], commandSet)) {
-                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = originalMdp.getTransitionMatrix().constColumnIteratorBegin(currentChoice), successorIte = originalMdp.getTransitionMatrix()x^.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
+                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = originalMdp.getTransitionMatrix().constColumnIteratorBegin(currentChoice), successorIte = originalMdp.getTransitionMatrix().constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
                                 if (unreachableRelevantStates.get(*successorIt)) {
                                     isBorderState = true;
                                 }

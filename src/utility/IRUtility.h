@@ -481,15 +481,15 @@ namespace storm {
              * @param expression The expression for which to build the weakest precondition.
              * @param update The update with respect to which to compute the weakest precondition.
              */
-            std::unique_ptr<storm::ir::expressions::BaseExpression> getWeakestPrecondition(std::unique_ptr<storm::ir::expressions::BaseExpression> const& booleanExpression, std::vector<storm::ir::Update> const& updates) {
+            std::unique_ptr<storm::ir::expressions::BaseExpression> getWeakestPrecondition(std::unique_ptr<storm::ir::expressions::BaseExpression> const& booleanExpression, std::vector<std::reference_wrapper<storm::ir::Update const>> const& updates) {
                 std::map<std::string, std::reference_wrapper<storm::ir::expressions::BaseExpression>> variableToExpressionMap;
                 
                 // Construct the full substitution we need to perform later.
                 for (auto const& update : updates) {
-                    for (auto const& variableAssignmentPair : update.getBooleanAssignments()) {
+                    for (auto const& variableAssignmentPair : update.get().getBooleanAssignments()) {
                         variableToExpressionMap.emplace(variableAssignmentPair.first, *variableAssignmentPair.second.getExpression());
                     }
-                    for (auto const& variableAssignmentPair : update.getIntegerAssignments()) {
+                    for (auto const& variableAssignmentPair : update.get().getIntegerAssignments()) {
                         variableToExpressionMap.emplace(variableAssignmentPair.first, *variableAssignmentPair.second.getExpression());
                     }
                 }
