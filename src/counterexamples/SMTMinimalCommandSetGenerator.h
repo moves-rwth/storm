@@ -1004,7 +1004,19 @@ namespace storm {
                 return getUsedLabelSet(context, solver.get_model(), variableInformation);
             }
             
-            static void analyzeBadSolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            /*!
+             * Analyzes the given sub-MDP that has a maximal reachability of zero (i.e. no psi states are reachable) and tries to construct assertions that aim to make at least one psi state reachable.
+             *
+             * @param context The Z3 context in which to build the expressions.
+             * @param solver The solver to use for the satisfiability evaluation.
+             * @param subMdp The sub-MDP resulting from restricting the original MDP to the given command set.
+             * @param originalMdp The original MDP.
+             * @param phiStates A bit vector characterizing all phi states in the model.
+             * @param psiState A bit vector characterizing all psi states in the model.
+             * @param commandSet The currently chosen set of commands.
+             * @param variableInformation A structure with information about the variables of the solver.
+             */
+            static void analyzeZeroProbabilitySolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
                 storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
                 
                 // Initialize the stack for the DFS.
@@ -1108,6 +1120,110 @@ namespace storm {
                 assertDisjunction(context, solver, formulae);
                 
             }
+            
+            /*!
+             * Analyzes the given sub-MDP that has a maximal reachability of zero (i.e. no psi states are reachable) and tries to construct assertions that aim to make at least one psi state reachable.
+             *
+             * @param context The Z3 context in which to build the expressions.
+             * @param solver The solver to use for the satisfiability evaluation.
+             * @param subMdp The sub-MDP resulting from restricting the original MDP to the given command set.
+             * @param originalMdp The original MDP.
+             * @param phiStates A bit vector characterizing all phi states in the model.
+             * @param psiState A bit vector characterizing all psi states in the model.
+             * @param commandSet The currently chosen set of commands.
+             * @param variableInformation A structure with information about the variables of the solver.
+             */
+            static void analyzeInsufficientProbabilitySolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+                // ruleOutSolution(context, solver, commandSet, variableInformation);
+                
+                storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
+                
+                // Initialize the stack for the DFS.
+                bool targetStateIsReachable = false;
+                std::vector<uint_fast64_t> stack;
+                stack.reserve(subMdp.getNumberOfStates());
+                for (auto initialState : subMdp.getInitialStates()) {
+                    stack.push_back(initialState);
+                    reachableStates.set(initialState, true);
+                }
+                
+                storm::storage::SparseMatrix<T> const& transitionMatrix = subMdp.getTransitionMatrix();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subMdp.getNondeterministicChoiceIndices();
+                std::vector<std::set<uint_fast64_t>> const& subChoiceLabeling = subMdp.getChoiceLabeling();
+                
+                std::set<uint_fast64_t> reachableLabels;
+                
+                while (!stack.empty()) {
+                    uint_fast64_t currentState = stack.back();
+                    stack.pop_back();
+                    
+                    for (uint_fast64_t currentChoice = nondeterministicChoiceIndices[currentState]; currentChoice < nondeterministicChoiceIndices[currentState + 1]; ++currentChoice) {
+                        bool choiceTargetsRelevantState = false;
+                        
+                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
+                            if (relevancyInformation.relevantStates.get(*successorIt) && currentState != *successorIt) {
+                                choiceTargetsRelevantState = true;
+                                if (!reachableStates.get(*successorIt)) {
+                                    reachableStates.set(*successorIt, true);
+                                    stack.push_back(*successorIt);
+                                }
+                            } else if (psiStates.get(*successorIt)) {
+                                targetStateIsReachable = true;
+                            }
+                        }
+                        
+                        if (choiceTargetsRelevantState) {
+                            for (auto label : subChoiceLabeling[currentChoice]) {
+                                reachableLabels.insert(label);
+                            }
+                        }
+                    }
+                }
+                LOG4CPLUS_DEBUG(logger, "Successfully determined reachable state space.");
+                
+                storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp, subMdp.getBackwardTransitions(), phiStates, psiStates);
+                std::vector<std::set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
+                
+                std::vector<std::set<uint_fast64_t>> const& choiceLabeling = originalMdp.getChoiceLabeling();
+                std::set<std::set<uint_fast64_t>> cutLabels;
+                for (auto state : reachableStates) {
+                    for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
+                        if (!storm::utility::set::isSubsetOf(choiceLabeling[currentChoice], commandSet)) {
+                            std::set<uint_fast64_t> currentLabelSet;
+                            for (auto label : choiceLabeling[currentChoice]) {
+                                if (commandSet.find(label) == commandSet.end()) {
+                                    currentLabelSet.insert(label);
+                                }
+                            }
+                            std::set<uint_fast64_t> notTakenImpliedChoices;
+                            std::set_difference(guaranteedLabelSets[state].begin(), guaranteedLabelSets[state].end(), commandSet.begin(), commandSet.end(), std::inserter(notTakenImpliedChoices, notTakenImpliedChoices.begin()));
+                            currentLabelSet.insert(notTakenImpliedChoices.begin(), notTakenImpliedChoices.end());
+                            
+                            cutLabels.insert(currentLabelSet);
+
+                        }
+                    }
+                }
+                
+                std::vector<z3::expr> formulae;
+                std::set<uint_fast64_t> unknownReachableLabels;
+                std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.begin()));
+                for (auto label : unknownReachableLabels) {
+                    formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+                }
+                for (auto const& cutLabelSet : cutLabels) {
+                    z3::expr cube = context.bool_val(true);
+                    for (auto cutLabel : cutLabelSet) {
+                        cube = cube && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(cutLabel));
+                    }
+                    
+                    formulae.push_back(cube);
+                }
+                
+                LOG4CPLUS_DEBUG(logger, "Asserting reachability implications.");
+                assertDisjunction(context, solver, formulae);
+            }
 #endif
             
         public:
@@ -1196,12 +1312,13 @@ namespace storm {
                         if (maximalReachabilityProbability == 0) {
                             ++zeroProbabilityCount;
                             
-                            // If there was no target state reachable, analyze the solution and guide the solver into the
-                            // right direction.
-                            analyzeBadSolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            // If there was no target state reachable, analyze the solution and guide the solver into the right direction.
+                            analyzeZeroProbabilitySolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         } else {
-                            // In case we have not yet exceeded the given threshold, we have to rule out the current solution.
-                            ruleOutSolution(context, solver, commandSet, variableInformation);
+                            
+                            // If the reachability probability was greater than zero (i.e. there is a reachable target state), but the probability was insufficient to exceed
+                            // the given threshold, we analyze the solution and try to guide the solver into the right direction.
+                            analyzeInsufficientProbabilitySolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         }
                     } else {
                         done = true;
