@@ -31,8 +31,7 @@ namespace storm {
                 std::vector<std::set<uint_fast64_t>> analysisInformation(labeledMdp.getNumberOfStates(), relevantLabels);
                 std::queue<std::pair<uint_fast64_t, uint_fast64_t>> worklist;
                 
-                // Initially, put all predecessors of target states in the worklist and empty the analysis information
-                // them.
+                // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
                 for (auto state : psiStates) {
                     analysisInformation[state] = std::set<uint_fast64_t>();
                     for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(state), predecessorIte = backwardTransitions.constColumnIteratorEnd(state); predecessorIt != predecessorIte; ++predecessorIt) {
@@ -41,9 +40,11 @@ namespace storm {
                         }
                     }
                 }
-                
+
                 // Iterate as long as the worklist is non-empty.
+                uint_fast64_t iters = 0;
                 while (!worklist.empty()) {
+                    ++iters;
                     std::pair<uint_fast64_t, uint_fast64_t> const& currentStateTargetStatePair = worklist.front();
                     uint_fast64_t currentState = currentStateTargetStatePair.first;
                     uint_fast64_t targetState = currentStateTargetStatePair.second;
@@ -66,7 +67,7 @@ namespace storm {
                     
                     // If the analysis information changed, we need to update it and put all the predecessors of this
                     // state in the worklist.
-                    if (analysisInformation[currentState] != intersection) {
+                    if (analysisInformation[currentState].size() != intersection.size()) {
                         analysisInformation[currentState] = std::move(intersection);
                         
                         for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
@@ -74,10 +75,9 @@ namespace storm {
                         }
                     }
                     
-                    
                     worklist.pop();
                 }
-                
+ 
                 return analysisInformation;
             }
             

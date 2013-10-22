@@ -1032,8 +1032,8 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subMdp.getNondeterministicChoiceIndices();
                 std::vector<std::set<uint_fast64_t>> const& subChoiceLabeling = subMdp.getChoiceLabeling();
                 
+                // Now determine which states and labels are actually reachable.
                 std::set<uint_fast64_t> reachableLabels;
-
                 while (!stack.empty()) {
                     uint_fast64_t currentState = stack.back();
                     stack.pop_back();
@@ -1072,6 +1072,8 @@ namespace storm {
                 storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp, subMdp.getBackwardTransitions(), phiStates, psiStates);
                 std::vector<std::set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
                 
+                // Search for states on the border of the reachable state space, i.e. states that are still reachable
+                // and possess a (disabled) option to leave the reachable part of the state space.
                 std::vector<std::set<uint_fast64_t>> const& choiceLabeling = originalMdp.getChoiceLabeling();
                 std::set<std::set<uint_fast64_t>> cutLabels;
                 for (auto state : reachableStates) {
@@ -1101,6 +1103,7 @@ namespace storm {
                     }
                 }
                 
+                // Given the results of the previous analysis, we construct the implications
                 std::vector<z3::expr> formulae;
                 std::set<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.begin()));
@@ -1122,7 +1125,8 @@ namespace storm {
             }
             
             /*!
-             * Analyzes the given sub-MDP that has a maximal reachability of zero (i.e. no psi states are reachable) and tries to construct assertions that aim to make at least one psi state reachable.
+             * Analyzes the given sub-MDP that has a non-zero maximal reachability and tries to construct assertions that aim to guide the solver to solutions
+             * with an improved probability value.
              *
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
@@ -1151,8 +1155,8 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subMdp.getNondeterministicChoiceIndices();
                 std::vector<std::set<uint_fast64_t>> const& subChoiceLabeling = subMdp.getChoiceLabeling();
                 
+                // Now determine which states and labels are actually reachable.
                 std::set<uint_fast64_t> reachableLabels;
-                
                 while (!stack.empty()) {
                     uint_fast64_t currentState = stack.back();
                     stack.pop_back();
@@ -1185,6 +1189,7 @@ namespace storm {
                 storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp, subMdp.getBackwardTransitions(), phiStates, psiStates);
                 std::vector<std::set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
                 
+                // Search for states for which we could enable another option and possibly improve the reachability probability.
                 std::vector<std::set<uint_fast64_t>> const& choiceLabeling = originalMdp.getChoiceLabeling();
                 std::set<std::set<uint_fast64_t>> cutLabels;
                 for (auto state : reachableStates) {
@@ -1206,6 +1211,7 @@ namespace storm {
                     }
                 }
                 
+                // Given the results of the previous analysis, we construct the implications
                 std::vector<z3::expr> formulae;
                 std::set<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.begin()));
@@ -1227,6 +1233,21 @@ namespace storm {
 #endif
             
         public:
+            
+            /*!
+             * Computes the minimal command set that is needed in the given MDP to exceed the given probability threshold for satisfying phi until psi.
+             *
+             * @param program The program that was used to build the MDP.
+             * @param constantDefinitionString A string defining the undefined constants in the given program.
+             * @param labeledMdp The MDP in which to find the minimal command set.
+             * @param phiStates A bit vector characterizing all phi states in the model.
+             * @param psiStates A bit vector characterizing all psi states in the model.
+             * @param probabilityThreshold The probability value that must be achieved or exceeded.
+             * @param strictBound A flag indicating whether the probability must be achieved (in which case the flag must be set) or strictly exceeded
+             * (if the flag is set to false).
+             * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
+             * is made and fails, an exception is thrown.
+             */
             static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false) {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
@@ -1329,6 +1350,7 @@ namespace storm {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
                     
+                    // Depending on whether the threshold was successfully achieved or not, we proceed by either analyzing the bad solution or stopping the iteration process.
                     analysisClock = std::chrono::high_resolution_clock::now();
                     if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
                         if (maximalReachabilityProbability == 0) {
@@ -1337,7 +1359,6 @@ namespace storm {
                             // If there was no target state reachable, analyze the solution and guide the solver into the right direction.
                             analyzeZeroProbabilitySolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         } else {
-                            
                             // If the reachability probability was greater than zero (i.e. there is a reachable target state), but the probability was insufficient to exceed
                             // the given threshold, we analyze the solution and try to guide the solver into the right direction.
                             analyzeInsufficientProbabilitySolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
@@ -1349,12 +1370,12 @@ namespace storm {
                     ++iterations;
                     
                     if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - localClock).count() >= 5) {
-                        std::cout << "Checked " << iterations << " models in " << std::chrono::duration_cast<std::chrono::seconds>(totalTime).count() << "s (out of which " << zeroProbabilityCount << " could not reach the target states). Current command set size is " << commandSet.size() << "." << std::endl;
+                        std::cout << "Checked " << iterations << " models in " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - totalClock).count() << "s (out of which " << zeroProbabilityCount << " could not reach the target states). Current command set size is " << commandSet.size() << "." << std::endl;
                         localClock = std::chrono::high_resolution_clock::now();
                     }
                 } while (!done);
 
-                // Compute and emit the time measurements.
+                // Compute and emit the time measurements if the corresponding flag was set.
                 totalTime = std::chrono::high_resolution_clock::now() - totalClock;
                 if (storm::settings::Settings::getInstance()->isSet("stats")) {
                     std::cout << std::endl;
@@ -1389,6 +1410,8 @@ namespace storm {
                     LOG4CPLUS_ERROR(logger, "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.";
                 }
+                
+                // Check whether we were given an upper bound, because counterexample generation is limited to this case.
                 if (probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS && probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS_EQUAL) {
                     LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.";
@@ -1431,7 +1454,6 @@ namespace storm {
                 std::cout << restrictedProgram.toString() << std::endl;
                 std::cout << std::endl << "-------------------------------------------" << std::endl;
                 
-                // FIXME: Return the DTMC that results from applying the max scheduler in the MDP restricted to the computed label set.
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Z3.";
 #endif
