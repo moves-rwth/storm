@@ -182,7 +182,7 @@ namespace storm {
                 int error = error = GRBsetintparam(env, "OutputFlag", 1);
                 
                 // Enable the following line to restrict Gurobi to one thread only.
-                // error = error = GRBsetintparam(env, "Threads", 1);
+                error = error = GRBsetintparam(env, "Threads", 1);
                 
                 // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
                 error = GRBsetdblparam(env, "IntFeasTol", storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
@@ -591,14 +591,15 @@ namespace storm {
              * @param labeledMdp The labeled MDP.
              * @param variableInformation A struct with information about the variables of the model.
              * @param probabilityThreshold The probability that the subsystem must exceed.
+             * @param strictBound A flag indicating whether the threshold must be exceeded or only matched.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertProbabilityGreaterThanThreshold(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, double probabilityThreshold) {
+            static uint_fast64_t assertProbabilityGreaterThanThreshold(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 int error = 0;
                 int variableIndex = static_cast<int>(variableInformation.virtualInitialStateVariableIndex);
                 double coefficient = 1.0;
-                error = GRBaddconstr(model, 1, &variableIndex, &coefficient, GRB_GREATER_EQUAL, probabilityThreshold + 1e-6, nullptr);
+                error = GRBaddconstr(model, 1, &variableIndex, &coefficient, GRB_GREATER_EQUAL, strictBound ? probabilityThreshold : probabilityThreshold + 1e-6, nullptr);
                 if (error) {
                     LOG4CPLUS_ERROR(logger, "Unable to assert constraint (" << GRBgeterrormsg(env) << ").");
                     throw storm::exceptions::InvalidStateException() << "Unable to assert constraint (" << GRBgeterrormsg(env) << ").";
@@ -1096,12 +1097,13 @@ namespace storm {
              * @param choiceInformation The information about the choices in the model.
              * @param variableInformation A struct with information about the variables of the model.
              * @param probabilityThreshold The probability threshold the subsystem is required to exceed.
+             * @param strictBound A flag indicating whether the threshold must be exceeded or only matched.
              * @param includeSchedulerCuts If set to true, additional constraints are asserted that reduce the set of
              * possible choices.
              */
-            static void buildConstraintSystem(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool includeSchedulerCuts = false) {
+            static void buildConstraintSystem(GRBenv* env, GRBmodel* model, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
                 // Assert that the reachability probability in the subsystem exceeds the given threshold.
-                uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(env, model, labeledMdp, variableInformation, probabilityThreshold);
+                uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(env, model, labeledMdp, variableInformation, probabilityThreshold, strictBound);
                 LOG4CPLUS_DEBUG(logger, "Asserted that reachability probability exceeds threshold.");
 
                 // Add constraints that assert the policy takes at most one action in each state.
@@ -1263,7 +1265,7 @@ namespace storm {
 
         public:
             
-            static std::set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+            static std::set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
 #ifdef STORM_HAVE_GUROBI
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabels()) {
@@ -1277,8 +1279,8 @@ namespace storm {
                 for (auto state : labeledMdp.getInitialStates()) {
                     maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                 }
-                if (maximalReachabilityProbability <= probabilityThreshold) {
-                    throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be achieved in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
+                if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
+                    throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
                 }
 
                 // (2) Identify relevant and problematic states.
@@ -1298,7 +1300,7 @@ namespace storm {
                 updateModel(environmentModelPair.first, environmentModelPair.second);
  
                 //  (4.3) Construct constraint system.
-                buildConstraintSystem(environmentModelPair.first, environmentModelPair.second, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation, probabilityThreshold, includeSchedulerCuts);
+                buildConstraintSystem(environmentModelPair.first, environmentModelPair.second, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation, probabilityThreshold, strictBound, includeSchedulerCuts);
                 
                 // Update model.
                 updateModel(environmentModelPair.first, environmentModelPair.second);
@@ -1341,10 +1343,11 @@ namespace storm {
                     LOG4CPLUS_ERROR(logger, "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.";
                 }
-                if (probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS) {
-                    LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only strict upper bounds are supported for counterexample generation.");
-                    throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only strict upper bounds are supported for counterexample generation.";
+                if (probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS && probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS_EQUAL) {
+                    LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.");
+                    throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.";
                 }
+                bool strictBound = probBoundFormula->getComparisonOperator() == storm::property::ComparisonType::LESS;
 
                 // Now derive the probability threshold we need to exceed as well as the phi and psi states. Simultaneously, check whether the formula is of a valid shape.
                 double bound = probBoundFormula->getBound();
@@ -1372,7 +1375,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                std::set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, true, true);
+                std::set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, strictBound, true, true);
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 

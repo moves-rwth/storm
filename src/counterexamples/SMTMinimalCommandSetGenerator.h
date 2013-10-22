@@ -1227,11 +1227,25 @@ namespace storm {
 #endif
             
         public:
-            static std::pair<std::set<uint_fast64_t>, uint_fast64_t > getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool checkThresholdFeasible = false) {
+            static std::set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false) {
 #ifdef STORM_HAVE_Z3
-                auto startTime = std::chrono::high_resolution_clock::now();
-                auto endTime = std::chrono::high_resolution_clock::now();
+                // Set up all clocks used for time measurement.
+                auto totalClock = std::chrono::high_resolution_clock::now();
+                auto localClock = std::chrono::high_resolution_clock::now();
+                decltype(std::chrono::high_resolution_clock::now() - totalClock) totalTime(0);
                 
+                auto setupTimeClock = std::chrono::high_resolution_clock::now();
+                decltype(std::chrono::high_resolution_clock::now() - setupTimeClock) totalSetupTime(0);
+                
+                auto solverClock = std::chrono::high_resolution_clock::now();
+                decltype(std::chrono::high_resolution_clock::now() - solverClock) totalSolverTime(0);
+                
+                auto modelCheckingClock = std::chrono::high_resolution_clock::now();
+                decltype(std::chrono::high_resolution_clock::now() - modelCheckingClock) totalModelCheckingTime(0);
+
+                auto analysisClock = std::chrono::high_resolution_clock::now();
+                decltype(std::chrono::high_resolution_clock::now() - analysisClock) totalAnalysisTime(0);
+
                 storm::utility::ir::defineUndefinedConstants(program, constantDefinitionString);
 
                 // (0) Check whether the MDP is indeed labeled.
@@ -1246,8 +1260,8 @@ namespace storm {
                 for (auto state : labeledMdp.getInitialStates()) {
                     maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                 }
-                if (maximalReachabilityProbability <= probabilityThreshold) {
-                    throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be achieved in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
+                if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
+                    throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
                 }
                 
                 // (2) Identify all states and commands that are relevant, because only these need to be considered later.
@@ -1276,6 +1290,9 @@ namespace storm {
                 assertSymbolicCuts(program, labeledMdp, variableInformation, relevancyInformation, context, solver);
                 LOG4CPLUS_DEBUG(logger, "Asserted symbolic cuts.");
                 
+                // As we are done with the setup at this point, stop the clock for the setup time.
+                totalSetupTime = std::chrono::high_resolution_clock::now() - setupTimeClock;
+                
                 // (8) Find the smallest set of commands that satisfies all constraints. If the probability of
                 // satisfying phi until psi exceeds the given threshold, the set of labels is minimal and can be returned.
                 // Otherwise, the current solution has to be ruled out and the next smallest solution is retrieved from
@@ -1291,16 +1308,20 @@ namespace storm {
                 uint_fast64_t zeroProbabilityCount = 0;
                 do {
                     LOG4CPLUS_DEBUG(logger, "Computing minimal command set.");
+                    solverClock = std::chrono::high_resolution_clock::now();
                     commandSet = findSmallestCommandSet(context, solver, variableInformation, currentBound);
+                    totalSolverTime += std::chrono::high_resolution_clock::now() - solverClock;
                     LOG4CPLUS_DEBUG(logger, "Computed minimal command set of size " << (commandSet.size() + relevancyInformation.knownLabels.size()) << ".");
                     
                     // Restrict the given MDP to the current set of labels and compute the reachability probability.
+                    modelCheckingClock = std::chrono::high_resolution_clock::now();
                     commandSet.insert(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end());
                     storm::models::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
                     storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(subMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
                     LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
                     std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false, nullptr);
                     LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
+                    totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
                     
                     // Now determine the maximal reachability probability by checking all initial states.
                     maximalReachabilityProbability = 0;
@@ -1308,7 +1329,8 @@ namespace storm {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
                     
-                    if (maximalReachabilityProbability < probabilityThreshold) {
+                    analysisClock = std::chrono::high_resolution_clock::now();
+                    if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
                         if (maximalReachabilityProbability == 0) {
                             ++zeroProbabilityCount;
                             
@@ -1323,22 +1345,36 @@ namespace storm {
                     } else {
                         done = true;
                     }
+                    totalAnalysisTime += (std::chrono::high_resolution_clock::now() - analysisClock);
                     ++iterations;
                     
-                    endTime = std::chrono::high_resolution_clock::now();
-                    if (std::chrono::duration_cast<std::chrono::seconds>(endTime - iterationTimer).count() >= 5) {
-                        std::cout << "Checked " << iterations << " models in " << std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count() << "s (out of which " << zeroProbabilityCount << " could not reach the target states). Current command set size is " << commandSet.size() << "." << std::endl;
-                        iterationTimer = std::chrono::high_resolution_clock::now();
+                    if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - localClock).count() >= 5) {
+                        std::cout << "Checked " << iterations << " models in " << std::chrono::duration_cast<std::chrono::seconds>(totalTime).count() << "s (out of which " << zeroProbabilityCount << " could not reach the target states). Current command set size is " << commandSet.size() << "." << std::endl;
+                        localClock = std::chrono::high_resolution_clock::now();
                     }
                 } while (!done);
-                
-                std::cout << "Checked " << iterations << " models in total out of which " << zeroProbabilityCount << " could not reach the target states." << std::endl;
-                
+
+                // Compute and emit the time measurements.
+                totalTime = std::chrono::high_resolution_clock::now() - totalClock;
+                if (storm::settings::Settings::getInstance()->isSet("stats")) {
+                    std::cout << std::endl;
+                    std::cout << "Time breakdown:" << std::endl;
+                    std::cout << "    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms" << std::endl;
+                    std::cout << "    * time for solving: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime).count() << "ms" << std::endl;
+                    std::cout << "    * time for checking: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalModelCheckingTime).count() << "ms" << std::endl;
+                    std::cout << "    * time for analysis: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalAnalysisTime).count() << "ms" << std::endl;
+                    std::cout << "------------------------------------------" << std::endl;
+                    std::cout << "    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms" << std::endl;
+                    std::cout << std::endl;
+                    std::cout << "Other:" << std::endl;
+                    std::cout << "    * number of models checked: " << iterations << std::endl;
+                    std::cout << "    * number of models that could not reach a target state: " << zeroProbabilityCount << " (" << 100 * static_cast<double>(zeroProbabilityCount)/iterations << "%)" << std::endl << std::endl;
+                }
+
                 // (9) Return the resulting command set after undefining the constants.
                 storm::utility::ir::undefineUndefinedConstants(program);
                 
-                return std::make_pair(commandSet, iterations);
-                
+                return commandSet;
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Z3.";
 #endif
@@ -1353,10 +1389,11 @@ namespace storm {
                     LOG4CPLUS_ERROR(logger, "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.";
                 }
-                if (probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS) {
-                    LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only strict upper bounds are supported for counterexample generation.");
-                    throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only strict upper bounds are supported for counterexample generation.";
+                if (probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS && probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS_EQUAL) {
+                    LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.");
+                    throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.";
                 }
+                bool strictBound = probBoundFormula->getComparisonOperator() == storm::property::ComparisonType::LESS;
                 
                 // Now derive the probability threshold we need to exceed as well as the phi and psi states. Simultaneously, check whether the formula is of a valid shape.
                 double bound = probBoundFormula->getBound();
@@ -1384,13 +1421,13 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto labelSetIterationPair = getMinimalCommandSet(program, constantDefinitionString, labeledMdp, phiStates, psiStates, bound, true);
+                auto labelSet = getMinimalCommandSet(program, constantDefinitionString, labeledMdp, phiStates, psiStates, bound, strictBound, true);
                 auto endTime = std::chrono::high_resolution_clock::now();
-                std::cout << std::endl << "Computed minimal label set of size " << labelSetIterationPair.first.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms (" << labelSetIterationPair.second << " models tested)." << std::endl;
+                std::cout << std::endl << "Computed minimal label set of size " << labelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
                 
-                std::cout << "Resulting program:" << std::endl;
+                std::cout << "Resulting program:" << std::endl << std::endl;
                 storm::ir::Program restrictedProgram(program);
-                restrictedProgram.restrictCommands(labelSetIterationPair.first);
+                restrictedProgram.restrictCommands(labelSet);
                 std::cout << restrictedProgram.toString() << std::endl;
                 std::cout << std::endl << "-------------------------------------------" << std::endl;
                 
