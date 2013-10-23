@@ -1083,16 +1083,18 @@ namespace storm {
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = originalMdp.getChoiceLabeling();
                 std::set<storm::storage::VectorSet<uint_fast64_t>> cutLabels;
                 for (auto state : reachableStates) {
-                    bool isBorderState = false;
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
                         if (!choiceLabeling[currentChoice].subsetOf(commandSet)) {
+                            bool isBorderChoice = false;
+
+                            // Determine whether the state has the option to leave the reachable state space and go to the unreachable relevant states.
                             for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = originalMdp.getTransitionMatrix().constColumnIteratorBegin(currentChoice), successorIte = originalMdp.getTransitionMatrix().constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
                                 if (unreachableRelevantStates.get(*successorIt)) {
-                                    isBorderState = true;
+                                    isBorderChoice = true;
                                 }
                             }
                             
-                            if (isBorderState) {
+                            if (isBorderChoice) {
                                 storm::storage::VectorSet<uint_fast64_t> currentLabelSet;
                                 for (auto label : choiceLabeling[currentChoice]) {
                                     if (!commandSet.contains(label)) {
