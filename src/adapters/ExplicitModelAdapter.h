@@ -77,7 +77,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> transitionRewardMatrix;
                 
                 // A vector that stores a labeling for each choice.
-                std::vector<std::set<uint_fast64_t>> choiceLabeling;
+                std::vector<storm::storage::VectorSet<uint_fast64_t>> choiceLabeling;
             };
             
             /*!
@@ -344,7 +344,7 @@ namespace storm {
                                         double updateProbability = update.getLikelihoodExpression()->getValueAsDouble(currentState);
                                         for (auto const& valueLabelSetPair : stateProbabilityPair.second) {
                                             // Copy the label set, so we can modify it.
-                                            std::set<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
+                                            storm::storage::VectorSet<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
                                             newLabelSet.insert(update.getGlobalIndex());
                                             
                                             newProbability.addValue(valueLabelSetPair.first * updateProbability, newLabelSet);
@@ -448,9 +448,9 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static std::pair<std::vector<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::SparseMatrix<ValueType>& transitionRewardMatrix) {
+            static std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::SparseMatrix<ValueType>& transitionRewardMatrix) {
                 std::vector<uint_fast64_t> nondeterministicChoiceIndices;
-                std::vector<std::set<uint_fast64_t>> choiceLabels;
+                std::vector<storm::storage::VectorSet<uint_fast64_t>> choiceLabels;
                 
                 // Initialize a queue and insert the initial state.
                 std::queue<uint_fast64_t> stateQueue;
@@ -488,7 +488,7 @@ namespace storm {
                         if (deterministicModel) {
                             Choice<ValueType> globalChoice("");
                             std::map<uint_fast64_t, ValueType> stateToRewardMap;
-                            std::set<uint_fast64_t> allChoiceLabels;
+                            storm::storage::VectorSet<uint_fast64_t> allChoiceLabels;
                             
                             // Combine all the choices and scale them with the total number of choices of the current state.
                             for (auto const& choice : allUnlabeledChoices) {
@@ -637,7 +637,7 @@ namespace storm {
                 bool deterministicModel = program.getModelType() == storm::ir::Program::DTMC || program.getModelType() == storm::ir::Program::CTMC;
 
                 // Build the transition and reward matrices.
-                std::pair<std::vector<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, modelComponents.transitionMatrix, modelComponents.transitionRewardMatrix);
+                std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, modelComponents.transitionMatrix, modelComponents.transitionRewardMatrix);
                 modelComponents.nondeterministicChoiceIndices = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.first);
                 modelComponents.choiceLabeling = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.second);
                 

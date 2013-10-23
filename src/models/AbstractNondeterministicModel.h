@@ -32,7 +32,7 @@ namespace storm {
                                           std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
                                           boost::optional<std::vector<T>> const& optionalStateRewardVector,
                                           boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
-                                          boost::optional<std::vector<std::set<uint_fast64_t>>> const& optionalChoiceLabeling)
+                                          boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> const& optionalChoiceLabeling)
 			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 				this->nondeterministicChoiceIndices = nondeterministicChoiceIndices;
             }
@@ -51,7 +51,7 @@ namespace storm {
                                           std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
                                           boost::optional<std::vector<T>>&& optionalStateRewardVector,
                                           boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
-                                          boost::optional<std::vector<std::set<uint_fast64_t>>>&& optionalChoiceLabeling)
+                                          boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>&& optionalChoiceLabeling)
                 // The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
                 : AbstractModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
                                std::move(optionalChoiceLabeling)), nondeterministicChoiceIndices(std::move(nondeterministicChoiceIndices)) {
@@ -221,7 +221,7 @@ namespace storm {
              * @return void
              */
             virtual void setStateIdBasedChoiceLabeling() override {
-                std::vector<std::set<uint_fast64_t>> newChoiceLabeling;
+                std::vector<storm::storage::VectorSet<uint_fast64_t>> newChoiceLabeling;
     
                 size_t stateCount = this->getNumberOfStates();
                 size_t choiceCount = this->getNumberOfChoices();

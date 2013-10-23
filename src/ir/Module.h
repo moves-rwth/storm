@@ -20,6 +20,7 @@
 #include <vector>
 #include <memory>
 
+#include "src/storage/VectorSet.h"
 #include "BooleanVariable.h"
 #include "IntegerVariable.h"
 #include "Command.h"
@@ -186,7 +187,7 @@ namespace storm {
              *
              * @param indexSet The set of indices for which to keep the commands.
              */
-            void restrictCommands(std::set<uint_fast64_t> const& indexSet);
+            void restrictCommands(storm::storage::VectorSet<uint_fast64_t> const& indexSet);
         private:
             
             /*!

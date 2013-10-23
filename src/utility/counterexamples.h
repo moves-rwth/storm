@@ -20,15 +20,15 @@ namespace storm {
              * @return The set of action labels that is visited on all paths from any state to a target state.
              */
             template <typename T>
-            std::vector<std::set<uint_fast64_t>> getGuaranteedLabelSets(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& relevantLabels) {
+            std::vector<storm::storage::VectorSet<uint_fast64_t>> getGuaranteedLabelSets(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, storm::storage::VectorSet<uint_fast64_t> const& relevantLabels) {
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
-                std::vector<std::set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
 
                 // Now we compute the set of labels that is present on all paths from the initial to the target states.
-                std::vector<std::set<uint_fast64_t>> analysisInformation(labeledMdp.getNumberOfStates(), relevantLabels);
+                std::vector<storm::storage::VectorSet<uint_fast64_t>> analysisInformation(labeledMdp.getNumberOfStates(), relevantLabels);
                 std::queue<std::pair<uint_fast64_t, uint_fast64_t>> worklist;
                 
                 // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
@@ -50,18 +50,24 @@ namespace storm {
                     uint_fast64_t targetState = currentStateTargetStatePair.second;
                     
                     // Iterate over the successor states for all choices and compute new analysis information.
-                    std::set<uint_fast64_t> intersection;
+                    storm::storage::VectorSet<uint_fast64_t> intersection(analysisInformation[currentState]);
                     for (uint_fast64_t currentChoice = nondeterministicChoiceIndices[currentState]; currentChoice < nondeterministicChoiceIndices[currentState + 1]; ++currentChoice) {
+                        storm::storage::VectorSet<uint_fast64_t> tmpIntersection;
+                        storm::storage::VectorSet<uint_fast64_t> tmpUnion;
+                        bool choiceTargetsTargetState = false;
                         for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
                             // If we can reach the target state with this choice, we need to intersect the current
                             // analysis information with the union of the new analysis information of the target state
                             // and the choice labels.
                             if (*successorIt == targetState) {
-                                std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[targetState].begin(), analysisInformation[targetState].end(), std::inserter(intersection, intersection.begin()));
-                                
-                                std::set<uint_fast64_t> choiceLabelIntersection;
-                                std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(intersection, intersection.begin()));
+                                choiceTargetsTargetState = true;
+                                std::set_union(analysisInformation[targetState].begin(), analysisInformation[targetState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(tmpUnion, tmpUnion.end()));
+                                break;
                             }
+                        }
+                        if (choiceTargetsTargetState) {
+                            std::set_intersection(intersection.begin(), intersection.end(), tmpUnion.begin(), tmpUnion.end(), std::inserter(tmpIntersection, tmpIntersection.end()));
+                            std::swap(intersection, tmpIntersection);
                         }
                     }
                     
@@ -87,15 +93,14 @@ namespace storm {
              * @return The set of action labels that is visited on all paths from an initial state to a target state.
              */
             template <typename T>
-            std::set<uint_fast64_t> getGuaranteedLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, std::set<uint_fast64_t> const& relevantLabels) {
-                std::vector<std::set<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(labeledMdp, psiStates, relevantLabels);
+            storm::storage::VectorSet<uint_fast64_t> getGuaranteedLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, storm::storage::VectorSet<uint_fast64_t> const& relevantLabels) {
+                std::vector<storm::storage::VectorSet<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(labeledMdp, psiStates, relevantLabels);
                 
-                std::set<uint_fast64_t> knownLabels(relevantLabels);
-                std::set<uint_fast64_t> tempIntersection;
+                storm::storage::VectorSet<uint_fast64_t> knownLabels(relevantLabels);
+                storm::storage::VectorSet<uint_fast64_t> tempIntersection;
                 for (auto initialState : labeledMdp.getInitialStates()) {
-                    std::set_intersection(knownLabels.begin(), knownLabels.end(), guaranteedLabels[initialState].begin(), guaranteedLabels[initialState].end(), std::inserter(tempIntersection, tempIntersection.begin()));
+                    tempIntersection = knownLabels.intersect(guaranteedLabels[initialState]);
                     std::swap(knownLabels, tempIntersection);
-                    tempIntersection.clear();
                 }
 
                 return knownLabels;
