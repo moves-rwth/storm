@@ -120,7 +120,6 @@ namespace storm {
                     }
                 }
                 
-                
                 // Compute the set of labels that are known to be taken in any case.
                 relevancyInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, relevancyInformation.relevantLabels);
                 if (!relevancyInformation.knownLabels.empty()) {
@@ -331,7 +330,6 @@ namespace storm {
                                 formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelSetPair.first)));
                             }
                             for (auto followingLabel : labelSetPair.second) {
-                                std::cout << "2 " << followingLabel << std::endl;
                                 if (followingLabel != labelSetPair.first) {
                                     formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(followingLabel)));
                                 }

@@ -48,8 +48,9 @@ namespace storm  {
                 ensureSet();
             }
             
-            VectorSet(VectorSet const& other) : data(other.data), dirty(other.dirty) {
-                // Intentionally left empty.
+            VectorSet(VectorSet const& other) : dirty(false) {
+                other.ensureSet();
+                data = other.data;
             }
             
             VectorSet& operator=(VectorSet const& other) {
@@ -69,11 +70,13 @@ namespace storm  {
             }
             
             bool operator==(VectorSet const& other) const {
+                ensureSet();
                 if (this->size() != other.size()) return false;
                 return std::equal(data.begin(), data.end(), other.begin(), other.end());
             }
             
             bool operator<(VectorSet const& other) const {
+                ensureSet();
                 if (this->size() < other.size()) return true;
                 if (this->size() > other.size()) return false;
                 for (auto it1 = this->begin(), it2 = other.begin(); it1 != this->end(); ++it1, ++it2) {
@@ -150,11 +153,13 @@ namespace storm  {
             
             template<typename InputIterator>
             iterator insert(InputIterator first, InputIterator last) {
+                dirty = true;
                 return data.insert(data.end(), first, last);
             }
             
             template<typename InputIterator>
             iterator insert(InputIterator pos, T element) {
+                dirty = true;
                 return data.insert(pos, element);
             }
             
@@ -178,7 +183,7 @@ namespace storm  {
                 uint_fast64_t lowerBound = 0;
                 uint_fast64_t upperBound = data.size();
                 while (lowerBound != upperBound) {
-                    uint_fast64_t currentPosition = (upperBound - lowerBound) / 2;
+                    uint_fast64_t currentPosition = lowerBound + (upperBound - lowerBound) / 2;
                     bool searchInLowerHalf = element < data[currentPosition];
                     if (searchInLowerHalf) {
                         upperBound = currentPosition;

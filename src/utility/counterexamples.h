@@ -49,41 +49,44 @@ namespace storm {
                     uint_fast64_t currentState = currentStateTargetStatePair.first;
                     uint_fast64_t targetState = currentStateTargetStatePair.second;
                     
+                    size_t analysisInformationSizeBefore = analysisInformation[currentState].size();
+                    
                     // Iterate over the successor states for all choices and compute new analysis information.
-                    storm::storage::VectorSet<uint_fast64_t> intersection(analysisInformation[currentState]);
                     for (uint_fast64_t currentChoice = nondeterministicChoiceIndices[currentState]; currentChoice < nondeterministicChoiceIndices[currentState + 1]; ++currentChoice) {
                         storm::storage::VectorSet<uint_fast64_t> tmpIntersection;
-                        storm::storage::VectorSet<uint_fast64_t> tmpUnion;
                         bool choiceTargetsTargetState = false;
+                        
                         for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
-                            // If we can reach the target state with this choice, we need to intersect the current
-                            // analysis information with the union of the new analysis information of the target state
-                            // and the choice labels.
                             if (*successorIt == targetState) {
                                 choiceTargetsTargetState = true;
-                                std::set_union(analysisInformation[targetState].begin(), analysisInformation[targetState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(tmpUnion, tmpUnion.end()));
                                 break;
                             }
                         }
+                        
+                        // If we can reach the target state with this choice, we need to intersect the current
+                        // analysis information with the union of the new analysis information of the target state
+                        // and the choice labels.
                         if (choiceTargetsTargetState) {
-                            std::set_intersection(intersection.begin(), intersection.end(), tmpUnion.begin(), tmpUnion.end(), std::inserter(tmpIntersection, tmpIntersection.end()));
-                            std::swap(intersection, tmpIntersection);
+                            std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[targetState].begin(), analysisInformation[targetState].end(), std::inserter(tmpIntersection, tmpIntersection.end()));
+                            std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(tmpIntersection, tmpIntersection.end()));
+                            analysisInformation[currentState] = std::move(tmpIntersection);
                         }
                     }
                     
                     // If the analysis information changed, we need to update it and put all the predecessors of this
                     // state in the worklist.
-                    if (analysisInformation[currentState].size() != intersection.size()) {
-                        analysisInformation[currentState] = std::move(intersection);
-                        
+                    if (analysisInformation[currentState].size() != analysisInformationSizeBefore) {
                         for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                            worklist.push(std::make_pair(*predecessorIt, currentState));
+                            // Only put the predecessor in the worklist if it's not already a target state.
+                            if (!psiStates.get(*predecessorIt)) {
+                                worklist.push(std::make_pair(*predecessorIt, currentState));
+                            }
                         }
                     }
                     
                     worklist.pop();
                 }
- 
+                
                 return analysisInformation;
             }
             
