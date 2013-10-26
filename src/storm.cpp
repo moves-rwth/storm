@@ -1,3 +1,4 @@
+
 /*
  *	STORM - a C++ Rebuild of MRMC
  *	
@@ -289,6 +290,63 @@ bool checkForCounterExampleGeneration(storm::property::prctl::AbstractPrctlFormu
 }
 
 /*!
+ * Handles the counterexample generation control.
+ */
+ void generateCounterExample(storm::parser::AutoParser<double> parser) {
+ 	//Differentiate between model types.
+	if(parser.getType() != storm::models::DTMC) {
+		LOG4CPLUS_ERROR(logger, "Counterexample generation for the selected model type is not supported.");
+		return;
+	}
+
+	storm::models::Dtmc<double> model = *parser.getModel<storm::models::Dtmc<double>>();
+	LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+
+	// Test for and get PRCTL formulas.
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+
+	if (!s->isSet("prctl")) {
+		LOG4CPLUS_ERROR(logger, "No PRCTL formula file specified.");
+		return;
+	}
+
+	// Get specified PRCTL formulas.
+	std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
+	LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
+	std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
+
+	// Test for each formula if a counterexample can be generated for it.
+	for (auto formula : formulaList) {
+
+		// First check if it is a formula type for which a counterexample can be generated.
+		if (dynamic_cast<storm::property::prctl::AbstractStateFormula<double> const*>(formula) == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Unexpected kind of formula. Expected a state formula.");
+			delete formula;
+			continue;
+		}
+
+		storm::property::prctl::AbstractStateFormula<double> const& stateForm = static_cast<storm::property::prctl::AbstractStateFormula<double> const&>(*formula);
+
+		// Now check if the model does not satisfy the formula.
+		// That is if there is at least one initial state of the model that does not.
+		storm::storage::BitVector result = stateForm.check(*createPrctlModelChecker(model));
+		if((result & model.getInitialStates()).getNumberOfSetBits() == model.getInitialStates().getNumberOfSetBits()) {
+			LOG4CPLUS_ERROR(logger, "Formula is satisfied. Can not generate counterexample.");
+			delete formula;
+			continue;
+		}
+
+		//Generate counterexample
+		storm::counterexamples::PathBasedSubsystemGenerator<double>::computeCriticalSubsystem(*parser.getModel<storm::models::Dtmc<double>>(), stateForm);
+
+		//Output counterexample
+		//TODO: Write output.
+
+		delete formula;
+	}
+ }
+
+/*!
  * Main entry point.
  */
 int main(const int argc, const char* argv[]) {
@@ -329,39 +387,10 @@ int main(const int argc, const char* argv[]) {
 			storm::parser::AutoParser<double> parser(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
 
 			//Should there be a counterexample generated in case the formula is not satisfied?
-			if(s->isSet("subSys")) {
+			if(s->isSet("counterExample")) {
 
-				//Differentiate between model types.
-				if(parser.getType() == storm::models::DTMC) {
-					LOG4CPLUS_INFO(logger, "Model is a DTMC.");
-
-					if (s->isSet("prctl")) {
-						// Get specified PRCTL formulas.
-						std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
-						LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
-						std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
-
-						// Test for each formula if a counterexample can be generated for it.
-						for (auto formula : formulaList) {
-							if(checkForCounterExampleGeneration(*formula, *parser.getModel<storm::models::Dtmc<double>>())) {
-								//Generate counterexample
-								storm::counterexamples::PathBasedSubsystemGenerator<double>::computeCriticalSubsystem(*parser.getModel<storm::models::Dtmc<double>>(), static_cast<storm::property::prctl::AbstractStateFormula<double> const&>(*formula));
-
-								//Output counterexample
-								//TODO: Write output.
-
-							} else {
-								LOG4CPLUS_INFO(logger, "No counterexample generated for PRCTL formula: " << formula->toString());
-							}
-
-							delete formula;
-						}
-					} else {
-						LOG4CPLUS_ERROR(logger, "No PRCTL formula specified.");
-					}
-				} else {
-					LOG4CPLUS_ERROR(logger, "Counterexample generation for the selected model type is not supported.");
-				}
+				generateCounterExample(parser);
+			
 			} else {
 				// Determine which engine is to be used to choose the right model checker.
 				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
