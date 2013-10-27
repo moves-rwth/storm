@@ -202,9 +202,11 @@ namespace storm {
                 // * identify labels that can directly follow a given action
                 
                 storm::storage::VectorSet<uint_fast64_t> initialLabels;
+                std::set<storm::storage::VectorSet<uint_fast64_t>> initialCombinations;
                 std::map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>> precedingLabels;
                 storm::storage::VectorSet<uint_fast64_t> targetLabels;
-                std::map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>> followingLabels;
+                storm::storage::VectorSet<storm::storage::VectorSet<uint_fast64_t>> targetCombinations;
+                std::map<storm::storage::VectorSet<uint_fast64_t>, std::set<storm::storage::VectorSet<uint_fast64_t>>> followingLabels;
                 std::map<uint_fast64_t, std::set<storm::storage::VectorSet<uint_fast64_t>>> synchronizingLabels;
                 
                 // Get some data from the MDP for convenient access.
@@ -220,17 +222,14 @@ namespace storm {
                         // If the choice is a synchronization choice, we need to record it.
                         if (choiceLabeling[currentChoice].size() > 1) {
                             for (auto label : choiceLabeling[currentChoice]) {
-                                storm::storage::VectorSet<uint_fast64_t> synchSet(choiceLabeling[currentChoice]);
-                                synchSet.erase(label);
-                                synchronizingLabels[label].emplace(std::move(synchSet));
+                                synchronizingLabels[label].emplace(choiceLabeling[currentChoice]);
                             }
                         }
                         
                         // If the state is initial, we need to add all the choice labels to the initial label set.
                         if (initialStates.get(currentState)) {
-                            for (auto label : choiceLabeling[currentChoice]) {
-                                initialLabels.insert(label);
-                            }
+                            initialLabels.insert(choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end());
+                            initialCombinations.insert(choiceLabeling[currentChoice]);
                         }
                         
                         // Iterate over successors and add relevant choices of relevant successors to the following label set.
@@ -238,11 +237,7 @@ namespace storm {
                         for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
                             if (relevancyInformation.relevantStates.get(*successorIt)) {
                                 for (auto relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(*successorIt)) {
-                                    for (auto labelToAdd : choiceLabeling[relevantChoice]) {
-                                        for (auto labelForWhichToAdd : choiceLabeling[currentChoice]) {
-                                            followingLabels[labelForWhichToAdd].insert(labelToAdd);
-                                        }
-                                    }
+                                    followingLabels[choiceLabeling[currentChoice]].insert(choiceLabeling[currentChoice]);
                                 }
                             } else if (psiStates.get(*successorIt)) {
                                 canReachTargetState = true;
@@ -251,9 +246,8 @@ namespace storm {
                         
                         // If the choice can reach a target state directly, we add all the labels to the target label set.
                         if (canReachTargetState) {
-                            for (auto label : choiceLabeling[currentChoice]) {
-                                targetLabels.insert(label);
-                            }
+                            targetLabels.insert(choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end());
+                            targetCombinations.insert(choiceLabeling[currentChoice]);
                         }
                     }
                     
@@ -285,62 +279,153 @@ namespace storm {
                 
                 LOG4CPLUS_DEBUG(logger, "Successfully gathered data for explicit cuts.");
                 
-                std::vector<z3::expr> formulae;
-                
-                LOG4CPLUS_DEBUG(logger, "Asserting initial label is taken.");
-                
-                // Start by asserting that we take at least one initial label. We may do so only if there is no initial
-                // label that is already known. Otherwise this condition would be too strong.
-                storm::storage::VectorSet<uint_fast64_t> intersection;
-                std::set_intersection(initialLabels.begin(), initialLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(intersection,intersection.end()));
-                if (intersection.empty()) {
-                    for (auto label : initialLabels) {
-                        formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+                LOG4CPLUS_DEBUG(logger, "Asserting initial combination is taken.");
+                {
+                    std::vector<z3::expr> formulae;
+                    
+                    // Start by asserting that we take at least one initial label. We may do so only if there is no initial
+                    // combination that is already known. Otherwise this condition would be too strong.
+                    bool initialCombinationKnown = false;
+                    for (auto const& combination : initialCombinations) {
+                        storm::storage::VectorSet<uint_fast64_t> tmpSet;
+                        std::set_difference(combination.begin(), combination.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
+                        if (tmpSet.size() == 0) {
+                            initialCombinationKnown = true;
+                            break;
+                        } else {
+                            z3::expr conj = context.bool_val(true);
+                            for (auto label : tmpSet) {
+                                conj = conj && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                            }
+                            formulae.push_back(conj);
+                        }
                     }
-                    assertDisjunction(context, solver, formulae);
-                    formulae.clear();
-                } else {
-                    // If the intersection was non-empty, we clear the set so we can re-use it later.
-                    intersection.clear();
+                    if (!initialCombinationKnown) {
+                        assertDisjunction(context, solver, formulae);
+                    }
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Asserting target label is taken.");
-                // Likewise, if no target label is known, we may assert that there is at least one.
-                std::set_intersection(targetLabels.begin(), targetLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(intersection, intersection.end()));
-                if (intersection.empty()) {
-                    for (auto label : targetLabels) {
-                        formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+                LOG4CPLUS_DEBUG(logger, "Asserting target combination is taken.");
+                {
+                    std::vector<z3::expr> formulae;
+
+                    // Likewise, if no target combination is known, we may assert that there is at least one.
+                    bool targetCombinationKnown = false;
+                    for (auto const& combination : targetCombinations) {
+                        storm::storage::VectorSet<uint_fast64_t> tmpSet;
+                        std::set_difference(combination.begin(), combination.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
+                        if (tmpSet.size() == 0) {
+                            targetCombinationKnown = true;
+                            break;
+                        } else {
+                            z3::expr conj = context.bool_val(true);
+                            for (auto label : tmpSet) {
+                                conj = conj && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                            }
+                            formulae.push_back(conj);
+                        }
                     }
-                    assertDisjunction(context, solver, formulae);
-                } else {
-                    // If the intersection was non-empty, we clear the set so we can re-use it later.
-                    intersection.clear();
+                    if (!targetCombinationKnown) {
+                        assertDisjunction(context, solver, formulae);
+                    }
+                }
+                
+                // Compute the sets of labels such that the transitions labeled with this set possess at least one known successor.
+                storm::storage::VectorSet<storm::storage::VectorSet<uint_fast64_t>> hasKnownSuccessor;
+                for (auto const& labelSetFollowingSetsPair : followingLabels) {
+                    for (auto const& set : labelSetFollowingSetsPair.second) {
+                        if (set.subsetOf(relevancyInformation.knownLabels)) {
+                            hasKnownSuccessor.insert(set);
+                            break;
+                        }
+                    }
                 }
                 
                 LOG4CPLUS_DEBUG(logger, "Asserting taken labels are followed by another label if they are not a target label.");
                 // Now assert that for each non-target label, we take a following label.
-                for (auto const& labelSetPair : followingLabels) {
-                    formulae.clear();
-                    if (!targetLabels.contains(labelSetPair.first)) {
-                        // Also, if there is a known label that may follow the current label, we don't need to assert
-                        // anything here.
-                        std::set_intersection(labelSetPair.second.begin(), labelSetPair.second.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(intersection, intersection.end()));
-                        if (intersection.empty()) {
-                            if (!relevancyInformation.knownLabels.contains(labelSetPair.first)) {
-                                formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelSetPair.first)));
-                            }
-                            for (auto followingLabel : labelSetPair.second) {
-                                if (followingLabel != labelSetPair.first) {
-                                    formulae.push_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(followingLabel)));
-                                }
-                            }
-                        } else {
-                            // If the intersection was non-empty, we clear the set so we can re-use it later.
-                            intersection.clear();
+                for (auto const& labelSetFollowingSetsPair : followingLabels) {
+                    std::vector<z3::expr> formulae;
+                    
+                    // Only build a constraint if the combination does not lead to a target state and
+                    // no successor set is already known.
+                    if (!targetCombinations.contains(labelSetFollowingSetsPair.first) && !hasKnownSuccessor.contains(labelSetFollowingSetsPair.first)) {
+                    
+                        // Compute the set of unknown labels on the left-hand side of the implication.
+                        storm::storage::VectorSet<uint_fast64_t> unknownLhsLabels;
+                        std::set_difference(labelSetFollowingSetsPair.first.begin(), labelSetFollowingSetsPair.first.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownLhsLabels, unknownLhsLabels.end()));
+                        for (auto label : unknownLhsLabels) {
+                            formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                         }
-                    }
-                    if (formulae.size() > 0) {
-                        assertDisjunction(context, solver, formulae);
+                        
+                        for (auto const& followingSet : labelSetFollowingSetsPair.second) {
+                            storm::storage::VectorSet<uint_fast64_t> tmpSet;
+                            
+                            // Check which labels of the current following set are not known. This set must be non-empty, because
+                            // otherwise a successor combination would already be known and control cannot reach this point.
+                            std::set_difference(followingSet.begin(), followingSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
+                            
+                            // Construct an expression that enables all unknown labels of the current following set.
+                            z3::expr conj = context.bool_val(true);
+                            for (auto label : tmpSet) {
+                                conj = conj && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                            }
+                            formulae.push_back(conj);
+                        }
+                        
+                        if (labelSetFollowingSetsPair.first.size() > 1) {
+                            // Taking all commands of a combination does not necessarily mean that a following label set needs to be taken.
+                            // This is because it could be that the commands are taken to enable other synchronizations. Therefore, we need
+                            // to add an additional clause that says that the right-hand side of the implication is also true if all commands
+                            // of the current choice have enabled synchronization options.
+                            z3::expr finalDisjunct = context.bool_val(false);
+                            for (auto label : labelSetFollowingSetsPair.first) {
+                                z3::expr alternativeExpressionForLabel = context.bool_val(false);
+                                std::set<storm::storage::VectorSet<uint_fast64_t>> const& synchsForCommand = synchronizingLabels.at(label);
+                                
+                                for (auto const& synchSet : synchsForCommand) {
+                                    z3::expr alternativeExpression = context.bool_val(true);
+                                    
+                                    // If the current synchSet is the same as left-hand side of the implication, we need to skip it.
+                                    if (synchSet == labelSetFollowingSetsPair.first) continue;
+                                    
+                                    // Now that we have the labels that are unknown and "missing", we still need to check whether this other
+                                    // synchronizing set already has a known successor or leads directly to a target state.
+                                    if (!hasKnownSuccessor.contains(synchSet) && !targetCombinations.contains(synchSet)) {
+                                        // If not, we can assert that we take one of its possible successors.
+                                        storm::storage::VectorSet<uint_fast64_t> unknownSynchs;
+                                        std::set_difference(synchSet.begin(), synchSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownSynchs, unknownSynchs.end()));
+                                        unknownSynchs.erase(label);
+                                        
+                                        for (auto label : unknownSynchs) {
+                                            alternativeExpression = alternativeExpression && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                                        }
+                                    
+                                        z3::expr disjunctionOverSuccessors = context.bool_val(false);
+                                        for (auto successorSet : followingLabels.at(synchSet)) {
+                                            z3::expr conjunctionOverLabels = context.bool_val(true);
+                                            for (auto label : successorSet) {
+                                                if (!relevancyInformation.knownLabels.contains(label)) {
+                                                    conjunctionOverLabels = conjunctionOverLabels && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                                                }
+                                            }
+                                            disjunctionOverSuccessors = disjunctionOverSuccessors || conjunctionOverLabels;
+                                        }
+                                        
+                                        alternativeExpression = alternativeExpression && disjunctionOverSuccessors;
+                                    }
+                                    
+                                    alternativeExpressionForLabel = alternativeExpressionForLabel || alternativeExpression;
+                                }
+                                
+                                finalDisjunct = finalDisjunct && alternativeExpressionForLabel;
+                            }
+                            
+                            formulae.push_back(finalDisjunct);
+                        }
+
+                        if (formulae.size() > 0) {
+                            assertDisjunction(context, solver, formulae);
+                        }
                     }
                 }
                 
@@ -348,7 +433,8 @@ namespace storm {
                 // Finally, assert that if we take one of the synchronizing labels, we also take one of the combinations
                 // the label appears in.
                 for (auto const& labelSynchronizingSetsPair : synchronizingLabels) {
-                    formulae.clear();
+                    std::vector<z3::expr> formulae;
+
                     if (!relevancyInformation.knownLabels.contains(labelSynchronizingSetsPair.first)) {
                         formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelSynchronizingSetsPair.first)));
                     }
@@ -360,7 +446,7 @@ namespace storm {
                         z3::expr currentCombination = context.bool_val(true);
                         bool allImplicantsKnownForCurrentSet = true;
                         for (auto label : synchronizingSet) {
-                            if (!relevancyInformation.knownLabels.contains(label)) {
+                            if (!relevancyInformation.knownLabels.contains(label) && label != labelSynchronizingSetsPair.first) {
                                 currentCombination = currentCombination && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
                             }
                         }
@@ -392,6 +478,9 @@ namespace storm {
                 // A container storing the label sets that may precede a given label set.
                 std::map<storm::storage::VectorSet<uint_fast64_t>, std::set<storm::storage::VectorSet<uint_fast64_t>>> precedingLabelSets;
 
+                // A container that maps labels to their reachable synchronization sets.
+                std::map<uint_fast64_t, std::set<storm::storage::VectorSet<uint_fast64_t>>> synchronizingLabels;
+
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
@@ -400,6 +489,14 @@ namespace storm {
                 // Compute the set of labels that may precede a given action.
                 for (auto currentState : relevancyInformation.relevantStates) {
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(currentState)) {
+                        
+                        // If the choice is a synchronization choice, we need to record it.
+                        if (choiceLabeling[currentChoice].size() > 1) {
+                            for (auto label : choiceLabeling[currentChoice]) {
+                                synchronizingLabels[label].emplace(choiceLabeling[currentChoice]);
+                            }
+                        }
+
                         // Iterate over predecessors and add all choices that target the current state to the preceding
                         // label set of all labels of all relevant choices of the current state.
                         for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
@@ -608,32 +705,110 @@ namespace storm {
                         // Popping the disjunction of negated guards from the solver stack.
                         localSolver.pop();
                     }
+                }
+                
+                // Compute the sets of labels such that the transitions labeled with this set possess at least one known successor.
+                storm::storage::VectorSet<storm::storage::VectorSet<uint_fast64_t>> hasKnownPredecessor;
+                for (auto const& labelSetImplicationsPair : backwardImplications) {
+                    for (auto const& set : labelSetImplicationsPair.second) {
+                        if (set.subsetOf(relevancyInformation.knownLabels)) {
+                            hasKnownPredecessor.insert(set);
+                            break;
+                        }
+                    }
+                }
+                
+                LOG4CPLUS_DEBUG(logger, "Asserting taken labels are preceded by another label if they are not an initial label.");
+                // Now assert that for each non-target label, we take a following label.
+                for (auto const& labelSetImplicationsPair : backwardImplications) {
+                    std::vector<z3::expr> formulae;
                     
-                    for (auto const& labelSetImplicationsPair : backwardImplications) {
-                        std::vector<z3::expr> implicationExpression;
+                    // Only build a constraint if the combination no predecessor set is already known.
+                    if (!hasKnownPredecessor.contains(labelSetImplicationsPair.first)) {
                         
-                        // Create the first part of the implication.
-                        for (auto label : labelSetImplicationsPair.first) {
-                            if (!relevancyInformation.knownLabels.contains(label)) {
-                                implicationExpression.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
-                            }
+                        // Compute the set of unknown labels on the left-hand side of the implication.
+                        storm::storage::VectorSet<uint_fast64_t> unknownLhsLabels;
+                        std::set_difference(labelSetImplicationsPair.first.begin(), labelSetImplicationsPair.first.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownLhsLabels, unknownLhsLabels.end()));
+                        for (auto label : unknownLhsLabels) {
+                            formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                         }
                         
-                        // Create the disjunction of conjuncts that represent the possible implications.
-                        for (auto const& implicationSet : labelSetImplicationsPair.second) {
-                            implicationExpression.push_back(context.bool_val(true));
-                            for (auto label : implicationSet) {
-                                if (!relevancyInformation.knownLabels.contains(label)) {
-                                    implicationExpression.back() = implicationExpression.back() && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                        for (auto const& precedingSet : labelSetImplicationsPair.second) {
+                            storm::storage::VectorSet<uint_fast64_t> tmpSet;
+                            
+                            // Check which labels of the current following set are not known. This set must be non-empty, because
+                            // otherwise a predecessor combination would already be known and control cannot reach this point.
+                            std::set_difference(precedingSet.begin(), precedingSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
+                            
+                            // Construct an expression that enables all unknown labels of the current following set.
+                            z3::expr conj = context.bool_val(true);
+                            for (auto label : tmpSet) {
+                                conj = conj && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                            }
+                            formulae.push_back(conj);
+                        }
+                        
+                        if (labelSetImplicationsPair.first.size() > 1) {
+                            // Taking all commands of a combination does not necessarily mean that a predecessor label set needs to be taken.
+                            // This is because it could be that the commands are taken to enable other synchronizations. Therefore, we need
+                            // to add an additional clause that says that the right-hand side of the implication is also true if all commands
+                            // of the current choice have enabled synchronization options.
+                            z3::expr finalDisjunct = context.bool_val(false);
+                            for (auto label : labelSetImplicationsPair.first) {
+                                z3::expr alternativeExpressionForLabel = context.bool_val(false);
+                                std::set<storm::storage::VectorSet<uint_fast64_t>> const& synchsForCommand = synchronizingLabels.at(label);
+                                
+                                for (auto const& synchSet : synchsForCommand) {
+                                    z3::expr alternativeExpression = context.bool_val(true);
+
+                                    // If the current synchSet is the same as left-hand side of the implication, we need to skip it.
+                                    if (synchSet == labelSetImplicationsPair.first) continue;
+
+                                    // Now that we have the labels that are unknown and "missing", we still need to check whether this other
+                                    // synchronizing set already has a known predecessor.
+                                    if (!hasKnownPredecessor.contains(synchSet)) {
+                                        // If not, we can assert that we take one of its possible predecessors.
+                                        storm::storage::VectorSet<uint_fast64_t> unknownSynchs;
+                                        std::set_difference(synchSet.begin(), synchSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownSynchs, unknownSynchs.end()));
+                                        unknownSynchs.erase(label);
+
+                                        for (auto label : unknownSynchs) {
+                                            alternativeExpression = alternativeExpression && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                                        }
+                                        
+                                        z3::expr disjunctionOverPredecessors = context.bool_val(false);
+                                        auto precedingLabelSetsIterator = precedingLabelSets.find(synchSet);
+                                        if (precedingLabelSetsIterator != precedingLabelSets.end()) {
+                                            for (auto precedingSet : precedingLabelSetsIterator->second) {
+                                                z3::expr conjunctionOverLabels = context.bool_val(true);
+                                                for (auto label : precedingSet) {
+                                                    if (!relevancyInformation.knownLabels.contains(label)) {
+                                                        conjunctionOverLabels = conjunctionOverLabels && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
+                                                    }
+                                                }
+                                                disjunctionOverPredecessors = disjunctionOverPredecessors || conjunctionOverLabels;
+                                            }
+                                        }
+                                        
+                                        alternativeExpression = alternativeExpression && disjunctionOverPredecessors;
+                                    }
+                                    
+                                    alternativeExpressionForLabel = alternativeExpressionForLabel || alternativeExpression;
                                 }
+                                
+                                finalDisjunct = finalDisjunct && alternativeExpressionForLabel;
                             }
+
+                            formulae.push_back(finalDisjunct);
                         }
                         
-                        assertDisjunction(context, solver, implicationExpression);
+                        if (formulae.size() > 0) {
+                            assertDisjunction(context, solver, formulae);
+                        }
                     }
                 }
             }
-            
+        
             /*!
              * Asserts that the disjunction of the given formulae holds. If the content of the disjunction is empty,
              * this corresponds to asserting false.

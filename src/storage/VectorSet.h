@@ -72,7 +72,7 @@ namespace storm  {
             bool operator==(VectorSet const& other) const {
                 ensureSet();
                 if (this->size() != other.size()) return false;
-                return std::equal(data.begin(), data.end(), other.begin(), other.end());
+                return std::equal(data.begin(), data.end(), other.begin());
             }
             
             bool operator<(VectorSet const& other) const {
