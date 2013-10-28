@@ -284,6 +284,22 @@ public:
 	}
 
 	/*!
+	 * Adds a state to the labeling.
+	 * Since this operation is quite expensive (resizing of all BitVectors containing the labeling), it should
+	 * only be used in special cases to add one or two states.
+	 * If you want to build a new AtomicPropositionlabeling:
+	 *   - Count the number of states you need.
+	 *   - Then add the labelings using addAtomicProposition() and addAtomicPropositionToState().
+	 * Do NOT use this method for this purpose.
+	 */
+	void addState() {
+		for(uint_fast64_t i = 0; i < apsCurrent; i++) {
+			singleLabelings[i].resize(singleLabelings[i].getSize() + 1);
+		}
+		stateCount++;
+	}
+
+	/*!
 	 * Calculates a hash over all values contained in this Sparse Matrix.
 	 * @return size_t A Hash Value
 	 */

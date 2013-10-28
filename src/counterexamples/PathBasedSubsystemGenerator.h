@@ -513,7 +513,7 @@ public:
 	/*!
 	 *
 	 */
-	static void computeCriticalSubsystem(storm::models::Dtmc<T> const& model, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
+	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T>& model, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
 
 		//-------------------------------------------------------------
 		// 1. Strip and handle formulas
@@ -539,7 +539,7 @@ public:
 
 		if(boundOperator == nullptr){
 			LOG4CPLUS_ERROR(logger, "No path bound operator at formula root.");
-			return;
+			return model.getSubDtmc(subSys);
 		}
 		bound = boundOperator->getBound();
 
@@ -582,7 +582,7 @@ public:
 		}
 		else {
 			LOG4CPLUS_ERROR(logger, "Strange path formula. Can't decipher.");
-			return;
+			return model.getSubDtmc(subSys);
 		}
 
 		//-------------------------------------------------------------
@@ -620,7 +620,7 @@ public:
 			LOG4CPLUS_INFO(logger, "Critical subsystem: " << subSys.toString());
 			std::cout << "Critical subsystem: " << subSys.toString() << std::endl;
 
-			return;
+			return model.getSubDtmc(subSys);
 		}
 
 
@@ -704,6 +704,7 @@ public:
 		std::cout << "Critical subsystem: " << subSys.toString() << std::endl;
 #endif
 
+		return model.getSubDtmc(subSys);
 	}
 
     };

@@ -166,6 +166,7 @@ public:
         uint_fast64_t nextPosition = 0;
         for (auto position : filter) {
             this->set(nextPosition, other.get(position));
+            nextPosition++;
         }
     }
     
