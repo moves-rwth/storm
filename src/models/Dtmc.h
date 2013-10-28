@@ -18,6 +18,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/settings/Settings.h"
+#include "src/utility/vector.h"
 
 namespace storm {
 
@@ -182,13 +183,13 @@ public:
 
 		// 2. Construct transition matrix
 
-		// Take all states indicated by the vector as well as one additional state as target of 
+		// Take all states indicated by the vector as well as one additional state s_b as target of
 		// all transitions that target a state that is not kept.
 		uint_fast64_t const newStateCount = subSysStates.getNumberOfSetBits() + 1;
 		storm::storage::SparseMatrix<T> newMat(newStateCount);
 
 		// The number of transitions of the new Dtmc is the number of transitions transfered 
-		// from the old one plus one transition for each state to the new one.
+		// from the old one plus one transition for each state to s_b.
 		newMat.initialize(subSysTransitionCount + newStateCount);
 
 		// Now fill the matrix.
@@ -215,22 +216,67 @@ public:
 			row++;
 		}
 
-		// Insert last transition: self loop on added state
+		// Insert last transition: self loop on s_b
 		newMat.addNextValue(newStateCount - 1, newStateCount - 1, (T) 1);
 
 		newMat.finalize(false);
 
-		// 3. Take care of the labeling
+		// 3. Take care of the labeling.
 		storm::models::AtomicPropositionsLabeling newLabeling = storm::models::AtomicPropositionsLabeling(this->getStateLabeling(), subSysStates);
 		newLabeling.addState();
-		//newLabeling.addAtomicProposition();
 
-		// 4. Make Dtmc from the matrix and return it
-		//TODO: test the labeling, handle optionals.
+		// 4. Handle the optionals
+
+		boost::optional<std::vector<T>> newStateRewards;
+		if(this->hasStateRewards()) {
+
+			// Get the rewards and move the needed values to the front.
+			std::vector<T> newRewards(this->getStateRewardVector());
+			storm::utility::vector::selectVectorValues(newRewards, subSysStates, newRewards);
+
+			// Throw away all values after the last state and set the reward for s_b to 0.
+			newRewards.resize(newStateCount);
+			newRewards[newStateCount - 1] = (T) 0;
+
+			newStateRewards = newRewards;
+		}
+
+		boost::optional<storm::storage::SparseMatrix<T>> newTransitionRewards;
+		if(this->hasTransitionRewards()) {
+
+			storm::storage::SparseMatrix<T> newTransRewards(newStateCount);
+			newTransRewards.initialize(subSysTransitionCount + newStateCount);
+
+			// Copy the rewards for the kept states
+			newRow = 0;
+			row = 0;
+			for(auto iter = this->getTransitionRewardMatrix().begin(); iter != this->getTransitionRewardMatrix().end(); ++iter) {
+				if(subSysStates.get(row)){
+					// Transfer transition rewards
+					for(auto colIter = iter.begin(); colIter != iter.end(); ++colIter) {
+						if(subSysStates.get(colIter.column())) {
+							newTransRewards.addNextValue(newRow, stateMapping[colIter.column()], colIter.value());
+						}
+					}
+
+					// Insert the reward (e.g. 0) for the transition taking care of the remaining outgoing probability.
+					newTransRewards.addNextValue(newRow, newStateCount - 1, (T) 0);
+
+					newRow++;
+				}
+				row++;
+			}
+
+			newTransitionRewards = newTransRewards;
+		}
+
+		//What about choice labeling?? Not documented, not parsed, not used, but there?
+
+		// 5. Make Dtmc from its parts and return it
 		return storm::models::Dtmc<T>(newMat, 
 									  newLabeling,
-									  boost::optional<std::vector<T>>(),
-									  boost::optional<storm::storage::SparseMatrix<T>>(),
+									  newStateRewards,
+									  newTransitionRewards,
 									  boost::optional<std::vector<std::set<uint_fast64_t>>>()
 									  );
 
