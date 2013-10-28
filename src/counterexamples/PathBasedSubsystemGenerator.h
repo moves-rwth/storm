@@ -617,8 +617,11 @@ public:
 		if((initStates & targetStates).getNumberOfSetBits() != 0) {
 			subSys.set((initStates & targetStates).getSetIndicesList().front(), true);
 
-			LOG4CPLUS_INFO(logger, "Critical subsystem: " << subSys.toString());
-			std::cout << "Critical subsystem: " << subSys.toString() << std::endl;
+			LOG4CPLUS_INFO(logger, "Critical subsystem found.");
+			LOG4CPLUS_INFO(logger, "Paths needed: " << pathCount);
+			LOG4CPLUS_INFO(logger, "State count of critical subsystem: " << subSys.getNumberOfSetBits());
+			LOG4CPLUS_INFO(logger, "Prob: " << 1);
+			LOG4CPLUS_INFO(logger, "Model checks: " << mcCount);
 
 			return model.getSubDtmc(subSys);
 		}
@@ -692,17 +695,11 @@ public:
 			}
 		}
 
-#ifdef BENCHMARK
 		LOG4CPLUS_INFO(logger, "Critical subsystem found.");
 		LOG4CPLUS_INFO(logger, "Paths needed: " << pathCount);
 		LOG4CPLUS_INFO(logger, "State count of critical subsystem: " << subSys.getNumberOfSetBits());
 		LOG4CPLUS_INFO(logger, "Prob: " << subSysProb);
 		LOG4CPLUS_INFO(logger, "Model checks: " << mcCount);
-		//LOG4CPLUS_INFO(logger, "Critical subsystem: " << subSys.toString());
-#else
-		LOG4CPLUS_INFO(logger, "Critical subsystem: " << subSys.toString());
-		std::cout << "Critical subsystem: " << subSys.toString() << std::endl;
-#endif
 
 		return model.getSubDtmc(subSys);
 	}
