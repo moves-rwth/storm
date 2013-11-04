@@ -524,11 +524,11 @@ public:
 #endif
 		LOG4CPLUS_INFO(logger, "Start finding critical subsystem.");
 
-		//make model checker
-		//TODO: Implement and use generic Model Checker factory.
+		// make model checker
+		// TODO: Implement and use generic Model Checker factory.
 		storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<T> modelCheck {model, new storm::solver::GmmxxLinearEquationSolver<T>()};
 
-		//init bit vector to contain the subsystem
+		// init bit vector to contain the subsystem
 		storm::storage::BitVector subSys(model.getNumberOfStates());
 
 		storm::property::prctl::AbstractPathFormula<T> const* pathFormulaPtr;
@@ -550,7 +550,9 @@ public:
 		storm::storage::BitVector initStates = model.getLabeledStates("init");
 
 		//get real prob for formula
+		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);
 		std::vector<T> trueProbs = pathFormulaPtr->check(modelCheck, false);
+		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 
 		T trueProb = 0;
 		for(auto index : initStates) {
@@ -667,7 +669,9 @@ public:
 			if((pathCount % precision == 0) && subSysProb >= bound) {
 
 				//get probabilities
+				logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);
 				subSysProbs = modelCheck.checkUntil(allowedStates & subSys, targetStates & subSys, false);
+				logger.getAppender("mainFileAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 
 				//T diff = subSysProb;
 				//std::cout << "Est. prob: " << diff << std::endl;

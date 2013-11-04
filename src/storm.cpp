@@ -337,7 +337,13 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 
 		// Now check if the model does not satisfy the formula.
 		// That is if there is at least one initial state of the model that does not.
+
+		// Also raise the logger threshold for the log file, so that the model check infos aren't logged (useless and there are lots of them)
+		// Lower it again after the model check.
+		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);
 		storm::storage::BitVector result = stateForm.check(*createPrctlModelChecker(model));
+		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
+
 		if((result & model.getInitialStates()).getNumberOfSetBits() == model.getInitialStates().getNumberOfSetBits()) {
 			std::cout << "Formula is satisfied. Can not generate counterexample.\n\n" << std::endl;
 			LOG4CPLUS_INFO(logger, "Formula is satisfied. Can not generate counterexample.");

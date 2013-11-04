@@ -27,7 +27,7 @@ namespace storm {
 namespace models {
 
 /*!
- * This class manages the labeling of the state space with a fixed number of
+ * This class manages the labeling of the state space with a number of
  * atomic propositions.
  */
 class AtomicPropositionsLabeling {
@@ -130,8 +130,9 @@ public:
 
 	/*!
 	 * Registers the name of a proposition.
-	 * Will throw an error if more atomic propositions are added than were originally declared or if an atomic
-     * proposition is registered twice.
+	 * Will throw an error if an atomic proposition is registered twice.
+	 * If more atomic propositions are added than previously declared, the maximum number of propositions
+	 * is increased and the capacity of the singleLabelings vector is matched with the new maximum.
 	 * 
      * @param ap The name of the atomic proposition to add.
 	 * @return The index of the new proposition.
@@ -142,9 +143,8 @@ public:
 			throw storm::exceptions::OutOfRangeException("Atomic Proposition already exists.");
 		}
 		if (apsCurrent >= apCountMax) {
-			LOG4CPLUS_ERROR(logger, "Added more atomic propositions than previously declared.");
-			throw storm::exceptions::OutOfRangeException("Added more atomic propositions than"
-					"previously declared.");
+			apCountMax++;
+			singleLabelings.reserve(apCountMax);
 		}
 		nameToLabelingMap[ap] = apsCurrent;
         singleLabelings.push_back(storm::storage::BitVector(stateCount));
@@ -226,9 +226,9 @@ public:
 	}
 
 	/*!
-	 * Returns the number of atomic propositions managed by this object (set in the initialization).
-     *
-	 * @return The number of atomic propositions.
+	 * Returns the internal index of a given atomic proposition.
+	 *
+	 * @return The index of the atomic proposition.
 	 */
 	uint_fast64_t getIndexOfProposition(std::string const& ap) const {
 		if (!this->containsAtomicProposition(ap)) {
@@ -300,7 +300,7 @@ public:
 	}
 
 	/*!
-	 * Calculates a hash over all values contained in this Sparse Matrix.
+	 * Calculates a hash over all values contained in this Atomic Proposition Labeling.
 	 * @return size_t A Hash Value
 	 */
 	std::size_t getHash() const {

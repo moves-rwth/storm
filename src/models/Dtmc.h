@@ -39,8 +39,9 @@ public:
 	 * @param probabilityMatrix The matrix representing the transitions in the model.
 	 * @param stateLabeling The labeling that assigns a set of atomic
 	 * propositions to each state.
-	 * @param stateRewardVector The reward values associated with the states.
-	 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+	 * @param optionalStateRewardVector The reward values associated with the states.
+	 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+	 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 	 */
 	Dtmc(storm::storage::SparseMatrix<T> const& probabilityMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
 				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
@@ -65,8 +66,9 @@ public:
 	 * @param probabilityMatrix The matrix representing the transitions in the model.
 	 * @param stateLabeling The labeling that assigns a set of atomic
 	 * propositions to each state.
-	 * @param stateRewardVector The reward values associated with the states.
-	 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+	 * @param optionalStateRewardVector The reward values associated with the states.
+	 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+	 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 	 */
 	Dtmc(storm::storage::SparseMatrix<T>&& probabilityMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
 				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
@@ -224,6 +226,10 @@ public:
 		// 3. Take care of the labeling.
 		storm::models::AtomicPropositionsLabeling newLabeling = storm::models::AtomicPropositionsLabeling(this->getStateLabeling(), subSysStates);
 		newLabeling.addState();
+		if(!newLabeling.containsAtomicProposition("s_b")) {
+			newLabeling.addAtomicProposition("s_b");
+		}
+		newLabeling.addAtomicPropositionToState("s_b", newStateCount - 1);
 
 		// 4. Handle the optionals
 
@@ -270,14 +276,26 @@ public:
 			newTransitionRewards = newTransRewards;
 		}
 
-		//What about choice labeling?? Not documented, not parsed, not used, but there?
+		boost::optional<std::vector<std::set<uint_fast64_t>>> newChoiceLabels;
+		if(this->hasChoiceLabels()) {
+
+			// Get the choice label sets and move the needed values to the front.
+			std::vector<std::set<uint_fast64_t>> newChoice(this->getChoiceLabeling());
+			storm::utility::vector::selectVectorValues(newChoice, subSysStates, newChoice);
+
+			// Throw away all values after the last state and set the choice label set for s_b as empty.
+			newChoice.resize(newStateCount);
+			newChoice[newStateCount - 1] = std::set<uint_fast64_t>();
+
+			newChoiceLabels = newChoice;
+		}
 
 		// 5. Make Dtmc from its parts and return it
 		return storm::models::Dtmc<T>(newMat, 
 									  newLabeling,
 									  newStateRewards,
 									  newTransitionRewards,
-									  boost::optional<std::vector<std::set<uint_fast64_t>>>()
+									  newChoiceLabels
 									  );
 
 	}
