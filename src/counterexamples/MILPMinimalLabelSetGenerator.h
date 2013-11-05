@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 #include "src/models/Mdp.h"
-#include "src/ir/program.h"
+#include "src/ir/Program.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"

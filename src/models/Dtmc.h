@@ -142,7 +142,7 @@ public:
 					  	  	  	  	  	  storm::models::AtomicPropositionsLabeling(this->getStateLabeling(), subSysStates),
 					  	  	  	  	  	  boost::optional<std::vector<T>>(),
 					  	  	  	  	  	  boost::optional<storm::storage::SparseMatrix<T>>(),
-					  	  	  	  	  	  boost::optional<std::vector<std::set<uint_fast64_t>>>());
+					  	  	  	  	  	  boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>());
 		}
 
 		// Does the vector have the right size?
@@ -159,7 +159,6 @@ public:
 
 		// 1. Get all necessary information from the old transition matrix
 		storm::storage::SparseMatrix<T> const & origMat = this->getTransitionMatrix();
-		uint_fast64_t const stateCount = origMat.getColumnCount();
 
 		// Iterate over all rows. Count the number of all transitions from the old system to be 
 		// transfered to the new one. Also build a mapping from the state number of the old system 
@@ -276,16 +275,16 @@ public:
 			newTransitionRewards = newTransRewards;
 		}
 
-		boost::optional<std::vector<std::set<uint_fast64_t>>> newChoiceLabels;
+		boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> newChoiceLabels;
 		if(this->hasChoiceLabels()) {
 
 			// Get the choice label sets and move the needed values to the front.
-			std::vector<std::set<uint_fast64_t>> newChoice(this->getChoiceLabeling());
+			std::vector<storm::storage::VectorSet<uint_fast64_t>> newChoice(this->getChoiceLabeling());
 			storm::utility::vector::selectVectorValues(newChoice, subSysStates, newChoice);
 
 			// Throw away all values after the last state and set the choice label set for s_b as empty.
 			newChoice.resize(newStateCount);
-			newChoice[newStateCount - 1] = std::set<uint_fast64_t>();
+			newChoice[newStateCount - 1] = storm::storage::VectorSet<uint_fast64_t>();
 
 			newChoiceLabels = newChoice;
 		}

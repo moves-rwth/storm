@@ -260,13 +260,17 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 
 /*!
  * Handles the counterexample generation control.
+ *
+ * @param parser An AutoParser to get the model from.
  */
  void generateCounterExample(storm::parser::AutoParser<double> parser) {
 	LOG4CPLUS_INFO(logger, "Starting counterexample generation.");
 	LOG4CPLUS_INFO(logger, "Testing inputs...");
 
+	storm::settings::Settings* s  = storm::settings::Settings::getInstance();
+
 	//First test output directory.
-	std::string outPath = storm::settings::Settings::getInstance()->getOptionByLongName("counterExample").getArgument(0).getValueAsString();
+	std::string outPath = s->getOptionByLongName("counterExample").getArgument(0).getValueAsString();
 	if(outPath.back() != '/' && outPath.back() != '\\') {
 		LOG4CPLUS_ERROR(logger, "The output path is not valid.");
 		return;
@@ -289,13 +293,18 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	LOG4CPLUS_INFO(logger, "Model is a DTMC.");
 
 	// Get specified PRCTL formulas.
-	std::string const chosenPrctlFile = storm::settings::Settings::getInstance()->getOptionByLongName("prctl").getArgument(0).getValueAsString();
+	if(!s->isSet("prctl")) {
+		LOG4CPLUS_ERROR(logger, "No PRCTL formula file specified.");
+		return;
+	}
+
+	std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
 	LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
 	std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
 
 	// Test for each formula if a counterexample can be generated for it.
 	if(formulaList.size() == 0) {
-		LOG4CPLUS_ERROR(logger, "No PRCTL formula file specified.");
+		LOG4CPLUS_ERROR(logger, "No PRCTL formula found.");
 		return;
 	}
 
