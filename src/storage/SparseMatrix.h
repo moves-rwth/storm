@@ -89,7 +89,7 @@ public:
 	typedef T const* ConstValueIterator;
     
     /*!
-	 * A class representing an iterator over a continguous number of rows of the matrix.
+	 * A class representing an iterator over a continuous number of rows of the matrix.
 	 */
 	class ConstIterator {
 	public:

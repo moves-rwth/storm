@@ -21,6 +21,7 @@ namespace prctl {
 #include "src/formula/Prctl.h"
 #include "src/storage/BitVector.h"
 #include "src/models/AbstractModel.h"
+#include "src/settings/Settings.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -66,7 +67,7 @@ public:
 	/*!
 	 * Constructs an AbstractModelChecker with the given model.
 	 */
-	explicit AbstractModelChecker(storm::models::AbstractModel<Type> const& model) : model(model) {
+	explicit AbstractModelChecker(storm::models::AbstractModel<Type> const& model) : model(model){
 		// Intentionally left empty.
 	}
 	/*!
@@ -157,6 +158,7 @@ public:
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
 		}
+
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 

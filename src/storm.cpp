@@ -1,3 +1,4 @@
+
 /*
  *	STORM - a C++ Rebuild of MRMC
  *	
@@ -28,6 +29,7 @@
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
+#include "src/counterexamples/PathBasedSubsystemGenerator.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/utility/ErrorHandling.h"
@@ -250,11 +252,127 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
         
         for (auto formula : formulaList) {
-            modelchecker.check(*formula);
+        	modelchecker.check(*formula);
             delete formula;
         }
 	}
 }
+
+/*!
+ * Handles the counterexample generation control.
+ */
+ void generateCounterExample(storm::parser::AutoParser<double> parser) {
+	LOG4CPLUS_INFO(logger, "Starting counterexample generation.");
+	LOG4CPLUS_INFO(logger, "Testing inputs...");
+
+	//First test output directory.
+	std::string outPath = storm::settings::Settings::getInstance()->getOptionByLongName("counterExample").getArgument(1).getValueAsString();
+	if(outPath.back() != '/' && outPath.back() != '\\') {
+		LOG4CPLUS_ERROR(logger, "The output path is not valid.");
+		return;
+	}
+	std::ofstream testFile(outPath + "test.dot");
+	if(testFile.fail()) {
+		LOG4CPLUS_ERROR(logger, "The output path is not valid.");
+		return;
+	}
+	testFile.close();
+	std::remove((outPath + "test.dot").c_str());
+
+ 	//Differentiate between model types.
+	if(parser.getType() != storm::models::DTMC) {
+		LOG4CPLUS_ERROR(logger, "Counterexample generation for the selected model type is not supported.");
+		return;
+	}
+
+	storm::models::Dtmc<double> model = *parser.getModel<storm::models::Dtmc<double>>();
+	LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+
+	// Get specified PRCTL formulas.
+	std::string const chosenPrctlFile = storm::settings::Settings::getInstance()->getOptionByLongName("counterExample").getArgument(0).getValueAsString();
+	LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
+	std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
+
+	// Test for each formula if a counterexample can be generated for it.
+	if(formulaList.size() == 0) {
+		LOG4CPLUS_ERROR(logger, "No PRCTL formula file specified.");
+		return;
+	}
+
+	// Get prctl file name without the filetype
+	uint_fast64_t first = 0;
+	if(chosenPrctlFile.find('/') != std::string::npos) {
+		first = chosenPrctlFile.find_last_of('/') + 1;
+	} else if(chosenPrctlFile.find('\\') != std::string::npos) {
+		first = chosenPrctlFile.find_last_of('\\') + 1;
+	}
+
+	uint_fast64_t length;
+	if(chosenPrctlFile.find_last_of('.') != std::string::npos && chosenPrctlFile.find_last_of('.') >= first) {
+		length = chosenPrctlFile.find_last_of('.') - first;
+	} else {
+		length = chosenPrctlFile.length() - first;
+	}
+
+	std::string outFileName = chosenPrctlFile.substr(first, length);
+
+	// Test formulas and do generation
+	uint_fast64_t fIndex = 0;
+	for (auto formula : formulaList) {
+
+		// First check if it is a formula type for which a counterexample can be generated.
+		if (dynamic_cast<storm::property::prctl::AbstractStateFormula<double> const*>(formula) == nullptr) {
+			LOG4CPLUS_ERROR(logger, "Unexpected kind of formula. Expected a state formula.");
+			delete formula;
+			continue;
+		}
+
+		storm::property::prctl::AbstractStateFormula<double> const& stateForm = static_cast<storm::property::prctl::AbstractStateFormula<double> const&>(*formula);
+
+		// Do some output
+		std::cout << "Generating counterexample for formula " << fIndex << ":" << std::endl;
+		LOG4CPLUS_INFO(logger, "Generating counterexample for formula " + std::to_string(fIndex) + ": ");
+		std::cout << "\t" << formula->toString() << "\n" << std::endl;
+		LOG4CPLUS_INFO(logger, formula->toString());
+
+		// Now check if the model does not satisfy the formula.
+		// That is if there is at least one initial state of the model that does not.
+
+		// Also raise the logger threshold for the log file, so that the model check infos aren't logged (useless and there are lots of them)
+		// Lower it again after the model check.
+		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);
+		storm::storage::BitVector result = stateForm.check(*createPrctlModelChecker(model));
+		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
+
+		if((result & model.getInitialStates()).getNumberOfSetBits() == model.getInitialStates().getNumberOfSetBits()) {
+			std::cout << "Formula is satisfied. Can not generate counterexample.\n\n" << std::endl;
+			LOG4CPLUS_INFO(logger, "Formula is satisfied. Can not generate counterexample.");
+			delete formula;
+			continue;
+		}
+
+		// Generate counterexample
+		storm::models::Dtmc<double> counterExample = storm::counterexamples::PathBasedSubsystemGenerator<double>::computeCriticalSubsystem(*parser.getModel<storm::models::Dtmc<double>>(), stateForm);
+
+		LOG4CPLUS_INFO(logger, "Found counterexample.");
+
+		// Output counterexample
+		// Do standard output
+		std::cout << "Found counterexample with following properties: " << std::endl;
+		counterExample.printModelInformationToStream(std::cout);
+		std::cout << "For full Dtmc see " << outFileName << "_" << fIndex << ".dot at given output path.\n\n" << std::endl;
+
+		// Write the .dot file
+		std::ofstream outFile(outPath + outFileName + "_" + std::to_string(fIndex) + ".dot");
+		if(outFile.good()) {
+			counterExample.writeDotToStream(outFile, true, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
+			outFile.close();
+		}
+
+		fIndex++;
+		delete formula;
+	}
+ }
 
 /*!
  * Main entry point.
@@ -296,40 +414,47 @@ int main(const int argc, const char* argv[]) {
 
 			storm::parser::AutoParser<double> parser(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
 
-            // Determine which engine is to be used to choose the right model checker.
-			LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
+			//Should there be a counterexample generated in case the formula is not satisfied?
+			if(s->isSet("counterExample")) {
 
-			// Depending on the model type, the appropriate model checking procedure is chosen.
-            storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
-            parser.getModel<storm::models::AbstractModel<double>>()->printModelInformationToStream(std::cout);
-			switch (parser.getType()) {
-			case storm::models::DTMC:
-				LOG4CPLUS_INFO(logger, "Model is a DTMC.");
-                modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Dtmc<double>>());
-				checkPrctlFormulae(*modelchecker);
-				break;
-			case storm::models::MDP:
-				LOG4CPLUS_INFO(logger, "Model is an MDP.");
-                modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Mdp<double>>());
-				checkPrctlFormulae(*modelchecker);
-				break;
-			case storm::models::CTMC:
-                LOG4CPLUS_INFO(logger, "Model is a CTMC.");
-                LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
-                break;
-			case storm::models::CTMDP:
-                LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
-                LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
-				break;
-			case storm::models::Unknown:
-			default:
-				LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
-				break;
+				generateCounterExample(parser);
+			
+			} else {
+				// Determine which engine is to be used to choose the right model checker.
+				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
+
+				// Depending on the model type, the appropriate model checking procedure is chosen.
+				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
+				parser.getModel<storm::models::AbstractModel<double>>()->printModelInformationToStream(std::cout);
+				switch (parser.getType()) {
+				case storm::models::DTMC:
+					LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+					modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Dtmc<double>>());
+					checkPrctlFormulae(*modelchecker);
+					break;
+				case storm::models::MDP:
+					LOG4CPLUS_INFO(logger, "Model is an MDP.");
+					modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Mdp<double>>());
+					checkPrctlFormulae(*modelchecker);
+					break;
+				case storm::models::CTMC:
+					LOG4CPLUS_INFO(logger, "Model is a CTMC.");
+					LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+					break;
+				case storm::models::CTMDP:
+					LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
+					LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+					break;
+				case storm::models::Unknown:
+				default:
+					LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
+					break;
+				}
+
+				if (modelchecker != nullptr) {
+					delete modelchecker;
+				}
 			}
-            
-            if (modelchecker != nullptr) {
-                delete modelchecker;
-            }
 		} else if (s->isSet("symbolic")) {
             // First, we build the model using the given symbolic model description and constant definitions.
             std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();

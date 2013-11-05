@@ -66,8 +66,8 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @param transitionMatrix The matrix representing the transitions in the model.
 		 * @param stateLabeling The labeling that assigns a set of atomic
 		 * propositions to each state.
-		 * @param stateRewardVector The reward values associated with the states.
-		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+		 * @param optionalStateRewardVector The reward values associated with the states.
+		 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
          * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
@@ -91,8 +91,9 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @param transitionMatrix The matrix representing the transitions in the model.
 		 * @param stateLabeling The labeling that assigns a set of atomic
 		 * propositions to each state.
-		 * @param stateRewardVector The reward values associated with the states.
-		 * @param transitionRewardMatrix The reward values associated with the transitions of the model.
+		 * @param optionalStateRewardVector The reward values associated with the states.
+		 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+		 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
 				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
