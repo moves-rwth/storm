@@ -266,7 +266,7 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	LOG4CPLUS_INFO(logger, "Testing inputs...");
 
 	//First test output directory.
-	std::string outPath = storm::settings::Settings::getInstance()->getOptionByLongName("counterExample").getArgument(1).getValueAsString();
+	std::string outPath = storm::settings::Settings::getInstance()->getOptionByLongName("counterExample").getArgument(0).getValueAsString();
 	if(outPath.back() != '/' && outPath.back() != '\\') {
 		LOG4CPLUS_ERROR(logger, "The output path is not valid.");
 		return;
@@ -289,7 +289,7 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	LOG4CPLUS_INFO(logger, "Model is a DTMC.");
 
 	// Get specified PRCTL formulas.
-	std::string const chosenPrctlFile = storm::settings::Settings::getInstance()->getOptionByLongName("counterExample").getArgument(0).getValueAsString();
+	std::string const chosenPrctlFile = storm::settings::Settings::getInstance()->getOptionByLongName("prctl").getArgument(0).getValueAsString();
 	LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
 	std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
 
