@@ -268,9 +268,15 @@ namespace storm {
                 
                 // A mapping of boolean variable names to their indices.
                 std::map<std::string, uint_fast64_t> booleanVariableToIndexMap;
-                
+                                
                 // List of all integer variables.
                 std::vector<storm::ir::IntegerVariable> integerVariables;
+                
+                // List of all lower bounds for integer variables.
+                std::vector<int_fast64_t> lowerBounds;
+                
+                // List of all upper bounds for integer variables.
+                std::vector<int_fast64_t> upperBounds;
                 
                 // A mapping of integer variable names to their indices.
                 std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
@@ -299,6 +305,8 @@ namespace storm {
                 // Resize the variable vectors appropriately.
                 result.booleanVariables.resize(numberOfBooleanVariables);
                 result.integerVariables.resize(numberOfIntegerVariables);
+                result.lowerBounds.resize(numberOfIntegerVariables);
+                result.upperBounds.resize(numberOfIntegerVariables);
                 
                 // Create variables.
                 for (uint_fast64_t i = 0; i < program.getNumberOfGlobalBooleanVariables(); ++i) {
@@ -310,6 +318,8 @@ namespace storm {
                     storm::ir::IntegerVariable const& var = program.getGlobalIntegerVariable(i);
                     result.integerVariables[var.getGlobalIndex()] = var;
                     result.integerVariableToIndexMap[var.getName()] = var.getGlobalIndex();
+                    result.lowerBounds[var.getGlobalIndex()] = var.getLowerBound()->getValueAsInt(nullptr);
+                    result.upperBounds[var.getGlobalIndex()] = var.getUpperBound()->getValueAsInt(nullptr);
                 }
                 for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
                     storm::ir::Module const& module = program.getModule(i);
@@ -323,6 +333,8 @@ namespace storm {
                         storm::ir::IntegerVariable const& var = module.getIntegerVariable(j);
                         result.integerVariables[var.getGlobalIndex()] = var;
                         result.integerVariableToIndexMap[var.getName()] = var.getGlobalIndex();
+                        result.lowerBounds[var.getGlobalIndex()] = var.getLowerBound()->getValueAsInt(nullptr);
+                        result.upperBounds[var.getGlobalIndex()] = var.getUpperBound()->getValueAsInt(nullptr);
                     }
                 }
                 

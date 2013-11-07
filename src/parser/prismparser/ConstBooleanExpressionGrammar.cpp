@@ -21,7 +21,7 @@ namespace prism {
 		constantNotExpression = constantAtomicBooleanExpression[qi::_val = qi::_1] | (qi::lit("!") >> constantAtomicBooleanExpression)[qi::_val = phoenix::bind(&BaseGrammar::createNot, this, qi::_1)];
 		constantNotExpression.name("constant boolean expression");
 
-		constantAtomicBooleanExpression %= (constantRelativeExpression | qi::lit("(") >> constantBooleanExpression >> qi::lit(")") | booleanLiteralExpression | booleanConstantExpression);
+		constantAtomicBooleanExpression %= (constantRelativeExpression | this->state->constantBooleanFormulas_ | qi::lit("(") >> constantBooleanExpression >> qi::lit(")") | booleanLiteralExpression | booleanConstantExpression);
 		constantAtomicBooleanExpression.name("constant boolean expression");
 
 		constantRelativeExpression = (ConstIntegerExpressionGrammar::instance(this->state) >> relations_ >> ConstIntegerExpressionGrammar::instance(this->state))[qi::_val = phoenix::bind(&BaseGrammar::createRelation, this, qi::_1, qi::_2, qi::_3)];

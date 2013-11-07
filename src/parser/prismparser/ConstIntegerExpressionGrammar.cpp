@@ -19,7 +19,7 @@ namespace storm {
                 [qi::_val = phoenix::bind(&BaseGrammar::createIntMult, this, qi::_val, qi::_1)];
                 constantIntegerMultExpression.name("constant integer expression");
                 
-                constantAtomicIntegerExpression %= (constantIntegerMinMaxExpression | constantIntegerFloorCeilExpression | qi::lit("(") >> constantIntegerExpression >> qi::lit(")") | integerConstantExpression);
+                constantAtomicIntegerExpression %= (constantIntegerMinMaxExpression | constantIntegerFloorCeilExpression | this->state->constantIntegerFormulas_ | qi::lit("(") >> constantIntegerExpression >> qi::lit(")") | integerConstantExpression);
                 constantAtomicIntegerExpression.name("constant integer expression");
                 
                 constantIntegerMinMaxExpression = ((qi::lit("min")[qi::_a = true] | qi::lit("max")[qi::_a = false]) >> qi::lit("(") >> constantIntegerExpression >> qi::lit(",") >> constantIntegerExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&BaseGrammar::createIntMinMax, this, qi::_a, qi::_1, qi::_2)];

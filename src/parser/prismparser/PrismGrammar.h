@@ -139,6 +139,15 @@ namespace storm {
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> definedIntegerConstantDefinition;
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> definedDoubleConstantDefinition;
                 
+                // Rules for formula definitions.
+                qi::rule<Iterator, qi::unused_type(), Skipper> formulaDefinitionList;
+                qi::rule<Iterator, qi::unused_type(), Skipper> formulaDefinition;
+                qi::rule<Iterator, qi::unused_type(), Skipper> constantIntegerFormulaDefinition;
+                qi::rule<Iterator, qi::unused_type(), Skipper> integerFormulaDefinition;
+                qi::rule<Iterator, qi::unused_type(), Skipper> constantDoubleFormulaDefinition;
+                qi::rule<Iterator, qi::unused_type(), Skipper> constantBooleanFormulaDefinition;
+                qi::rule<Iterator, qi::unused_type(), Skipper> booleanFormulaDefinition;
+
                 // Rules for variable recognition.
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), Skipper> booleanVariableCreatorExpression;
                 qi::rule<Iterator, std::shared_ptr<BaseExpression>(), qi::locals<std::shared_ptr<BaseExpression>>, Skipper> integerVariableCreatorExpression;

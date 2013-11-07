@@ -168,7 +168,14 @@ namespace storm {
                     setValue(newState, variableInformation.booleanVariableToIndexMap.at(variableAssignmentPair.first), variableAssignmentPair.second.getExpression()->getValueAsBool(baseState));
                 }
                 for (auto variableAssignmentPair : update.getIntegerAssignments()) {
-                    setValue(newState, variableInformation.integerVariableToIndexMap.at(variableAssignmentPair.first), variableAssignmentPair.second.getExpression()->getValueAsInt(baseState));
+                    int_fast64_t newVariableValue = variableAssignmentPair.second.getExpression()->getValueAsInt(baseState);
+                    bool isLegalValueForVariable = newVariableValue >= variableInformation.lowerBounds.at(variableInformation.integerVariableToIndexMap.at(variableAssignmentPair.first)) && newVariableValue <= variableInformation.upperBounds.at(variableInformation.integerVariableToIndexMap.at(variableAssignmentPair.first));
+                    
+                    if (!isLegalValueForVariable) {
+                        throw storm::exceptions::InvalidStateException() << "Invalid value '" << newVariableValue << "' for variable \"" << variableInformation.integerVariables.at(variableInformation.integerVariableToIndexMap.at(variableAssignmentPair.first)).getName() << "\". Please strengthen the guards if necessary or enlarge the domains of the variables.";
+                    }
+                    
+                    setValue(newState, variableInformation.integerVariableToIndexMap.at(variableAssignmentPair.first), newVariableValue);
                 }
                 return newState;
             }

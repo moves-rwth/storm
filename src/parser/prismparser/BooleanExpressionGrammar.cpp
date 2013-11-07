@@ -22,7 +22,7 @@ namespace storm {
                 notExpression = atomicBooleanExpression[qi::_val = qi::_1] | (qi::lit("!") >> atomicBooleanExpression)[qi::_val = phoenix::bind(&BaseGrammar::createNot, this, qi::_1)];
                 notExpression.name("boolean expression");
                 
-                atomicBooleanExpression %= (relativeExpression | booleanVariableExpression | qi::lit("(") >> booleanExpression >> qi::lit(")") | ConstBooleanExpressionGrammar::instance(this->state));
+                atomicBooleanExpression %= (relativeExpression | booleanVariableExpression | this->state->constantBooleanFormulas_ | this->state->booleanFormulas_ | qi::lit("(") >> booleanExpression >> qi::lit(")") | ConstBooleanExpressionGrammar::instance(this->state));
                 atomicBooleanExpression.name("boolean expression");
                 
                 relativeExpression = (IntegerExpressionGrammar::instance(this->state) >> relations_ >> IntegerExpressionGrammar::instance(this->state))[qi::_val = phoenix::bind(&BaseGrammar::createRelation, this, qi::_1, qi::_2, qi::_3)];
