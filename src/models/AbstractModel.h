@@ -19,7 +19,7 @@ namespace models {
  *  @brief  Enumeration of all supported types of models.
  */
 enum ModelType {
-    Unknown, DTMC, CTMC, MDP, CTMDP
+    Unknown, DTMC, CTMC, MDP, CTMDP, MA
 };
 
 /*!
