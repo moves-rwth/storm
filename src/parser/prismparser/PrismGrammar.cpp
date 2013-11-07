@@ -242,12 +242,28 @@ namespace storm {
                 constantDefinitionList = *(definedConstantDefinition | undefinedConstantDefinition(qi::_r1, qi::_r2, qi::_r3));
                 constantDefinitionList.name("constant declaration list");
                 
+                constantBooleanFormulaDefinition = (qi::lit("formula") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> ConstBooleanExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->constantBooleanFormulas_.add, qi::_1, qi::_2)];
+                constantBooleanFormulaDefinition.name("constant boolean formula definition");
+                booleanFormulaDefinition = (qi::lit("formula") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> BooleanExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->booleanFormulas_.add, qi::_1, qi::_2)];
+                booleanFormulaDefinition.name("boolean formula definition");
+                constantIntegerFormulaDefinition = (qi::lit("formula") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> ConstIntegerExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->constantIntegerFormulas_.add, qi::_1, qi::_2)];
+                constantIntegerFormulaDefinition.name("constant integer formula definition");
+                integerFormulaDefinition = (qi::lit("formula") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> IntegerExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->integerFormulas_.add, qi::_1, qi::_2)];
+                integerFormulaDefinition.name("integer formula definition");
+                constantDoubleFormulaDefinition = (qi::lit("formula") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> ConstDoubleExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->constantDoubleFormulas_.add, qi::_1, qi::_2)];
+                constantDoubleFormulaDefinition.name("constant double formula definition");
+                formulaDefinition = constantBooleanFormulaDefinition | booleanFormulaDefinition | constantIntegerFormulaDefinition | integerFormulaDefinition | constantDoubleFormulaDefinition;
+                formulaDefinition.name("formula definition");
+                formulaDefinitionList = *formulaDefinition;
+                formulaDefinitionList.name("formula definition list");
+
                 // This block defines all entities that are needed for parsing a program.
                 modelTypeDefinition = modelType_;
                 modelTypeDefinition.name("model type");
                 start = (qi::eps >
                          modelTypeDefinition >
                          constantDefinitionList(qi::_a, qi::_b, qi::_c) >
+                         formulaDefinitionList >
                          globalVariableDefinitionList(qi::_d) >
                          moduleDefinitionList >
                          rewardDefinitionList(qi::_e) >

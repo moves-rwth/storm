@@ -18,7 +18,7 @@ ConstDoubleExpressionGrammar::ConstDoubleExpressionGrammar(std::shared_ptr<Varia
 			[qi::_val = phoenix::bind(&BaseGrammar::createDoubleMult, this, qi::_val, qi::_a, qi::_1)];
 	constantDoubleMultExpression.name("constant double expression");
 
-	constantAtomicDoubleExpression %= (qi::lit("(") >> constantDoubleExpression >> qi::lit(")") | doubleConstantExpression);
+	constantAtomicDoubleExpression %= (qi::lit("(") >> constantDoubleExpression >> qi::lit(")") | this->state->constantDoubleFormulas_ | this->state->constantIntegerFormulas_ | doubleConstantExpression);
 	constantAtomicDoubleExpression.name("constant double expression");
 
 	doubleConstantExpression %= (this->state->doubleConstants_ | this->state->integerConstants_ | doubleLiteralExpression);

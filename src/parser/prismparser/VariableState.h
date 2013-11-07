@@ -124,7 +124,7 @@ namespace storm {
                 // Structures mapping variable and constant names to the corresponding expression nodes of
                 // the intermediate representation.
                 struct qi::symbols<char, std::shared_ptr<VariableExpression>> integerVariables_, booleanVariables_;
-                struct qi::symbols<char, std::shared_ptr<BaseExpression>> integerConstants_, booleanConstants_, doubleConstants_;
+                struct qi::symbols<char, std::shared_ptr<BaseExpression>> integerConstants_, booleanConstants_, doubleConstants_, booleanFormulas_, constantBooleanFormulas_, integerFormulas_, constantIntegerFormulas_, doubleFormulas_, constantDoubleFormulas_;
                 
                 // A structure representing the identity function over identifier names.
                 struct variableNamesStruct : qi::symbols<char, std::string> { }

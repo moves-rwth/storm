@@ -149,11 +149,18 @@ namespace storm {
             }
             
             bool VariableState::isFreeIdentifier(std::string const& identifier) const {
+            	if (this->booleanVariableNames_.find(identifier) != nullptr) return false;
                 if (this->integerVariableNames_.find(identifier) != nullptr) return false;
                 if (this->allConstantNames_.find(identifier) != nullptr) return false;
                 if (this->labelNames_.find(identifier) != nullptr) return false;
                 if (this->moduleNames_.find(identifier) != nullptr) return false;
                 if (this->keywords.find(identifier) != nullptr) return false;
+                if (this->booleanFormulas_.find(identifier) != nullptr) return false;
+                if (this->integerFormulas_.find(identifier) != nullptr) return false;
+                if (this->doubleFormulas_.find(identifier) != nullptr) return false;
+                if (this->constantBooleanFormulas_.find(identifier) != nullptr) return false;
+                if (this->constantIntegerFormulas_.find(identifier) != nullptr) return false;
+                if (this->constantDoubleFormulas_.find(identifier) != nullptr) return false;
                 return true;
             }
             

@@ -19,7 +19,7 @@ namespace storm {
                 integerMultExpression %= atomicIntegerExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> atomicIntegerExpression[qi::_val = phoenix::bind(&BaseGrammar::createIntMult, this, qi::_val, qi::_1)]);
                 integerMultExpression.name("integer expression");
                 
-                atomicIntegerExpression %= (integerMinMaxExpression | integerFloorCeilExpression | qi::lit("(") >> integerExpression >> qi::lit(")") | integerVariableExpression | ConstIntegerExpressionGrammar::instance(this->state));
+                atomicIntegerExpression %= (integerMinMaxExpression | integerFloorCeilExpression | this->state->constantIntegerFormulas_ | this->state->integerFormulas_ | qi::lit("(") >> integerExpression >> qi::lit(")") | integerVariableExpression | ConstIntegerExpressionGrammar::instance(this->state));
                 atomicIntegerExpression.name("integer expression");
                 
                 integerMinMaxExpression = ((qi::lit("min")[qi::_a = true] | qi::lit("max")[qi::_a = false]) >> qi::lit("(") >> integerExpression >> qi::lit(",") >> integerExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&BaseGrammar::createIntMinMax, this, qi::_a, qi::_1, qi::_2)];
