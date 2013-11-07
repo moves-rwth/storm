@@ -42,11 +42,11 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @param other The Source Abstract Model
 		 */
 		AbstractModel(AbstractModel<T> const& other) 
-			: transitionMatrix(other.transitionMatrix), 
+			: transitionMatrix(other.transitionMatrix),
+			choiceLabeling(other.choiceLabeling),
 			stateLabeling(other.stateLabeling),
 			stateRewardVector(other.stateRewardVector),
-			transitionRewardMatrix(other.transitionRewardMatrix),
-            choiceLabeling(other.choiceLabeling) {
+			transitionRewardMatrix(other.transitionRewardMatrix) {
 			// Intentionally left empty.
 		}
 
