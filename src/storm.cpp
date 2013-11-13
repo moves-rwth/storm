@@ -32,6 +32,7 @@
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 #include "src/counterexamples/PathBasedSubsystemGenerator.h"
 #include "src/parser/AutoParser.h"
+#include "src/parser/MarkovAutomataSparseTransitionParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
@@ -413,6 +414,10 @@ int main(const int argc, const char* argv[]) {
 		if (s->isSet("explicit")) {
 			std::string const chosenTransitionSystemFile = s->getOptionByLongName("explicit").getArgument(0).getValueAsString();
 			std::string const chosenLabelingFile = s->getOptionByLongName("explicit").getArgument(1).getValueAsString();
+            
+            // FIXME: Remove after testing.
+            storm::parser::MarkovAutomataSparseTransitionParser::ResultType result = storm::parser::MarkovAutomataSparseTransitionParser::parseMarkovAutomataTransitions(chosenTransitionSystemFile, nullptr);
+            
 			std::string chosenStateRewardsFile = "";
 			if (s->isSet("stateRewards")) {
 				chosenStateRewardsFile = s->getOptionByLongName("stateRewards").getArgument(0).getValueAsString();

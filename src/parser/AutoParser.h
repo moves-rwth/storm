@@ -8,6 +8,7 @@
 #include "src/models/AbstractModel.h"
 #include "src/parser/DeterministicModelParser.h"
 #include "src/parser/NondeterministicModelParser.h"
+#include "src/parser/MarkovAutomataSparseTransitionParser.h"
 
 #include <memory>
 #include <iostream>
@@ -117,6 +118,7 @@ class AutoParser {
 			else if (strncmp(hint, "CTMC", sizeof(hint)) == 0) hintType = storm::models::CTMC;
 			else if (strncmp(hint, "MDP", sizeof(hint)) == 0) hintType = storm::models::MDP;
 			else if (strncmp(hint, "CTMDP", sizeof(hint)) == 0) hintType = storm::models::CTMDP;
+            else if (strncmp(hint, "MA", sizeof(hint)) == 0) hintType = storm::models::MA;
 
 			return hintType;
 		}
