@@ -555,7 +555,7 @@ namespace storm {
                 }
                 for (uint_fast64_t index = 0; index < programVariableInformation.integerVariables.size(); ++index) {
                     storm::ir::IntegerVariable const& variable = programVariableInformation.integerVariables[index];
-                    initialStateExpression = initialStateExpression && (solverVariables.at(variable.getName()) == localContext.int_val(std::get<1>(*initialState).at(programVariableInformation.integerVariableToIndexMap.at(variable.getName()))));
+                    initialStateExpression = initialStateExpression && (solverVariables.at(variable.getName()) == localContext.int_val(static_cast<int>(std::get<1>(*initialState).at(programVariableInformation.integerVariableToIndexMap.at(variable.getName())))));
                 }
                 
                 // Store the found implications in a container similar to the preceding label sets.
