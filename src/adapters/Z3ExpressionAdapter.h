@@ -166,11 +166,11 @@ namespace storm {
 					<< ". Integer constant '" << expression->getConstantName() << "' is undefined.";
                 }
                 
-                stack.push(context.int_val(expression->getValue()));    
+                stack.push(context.int_val(static_cast<int>(expression->getValue())));
             }
             
             virtual void visit(ir::expressions::IntegerLiteralExpression* expression) {
-                stack.push(context.int_val(expression->getValueAsInt(nullptr)));
+                stack.push(context.int_val(static_cast<int>(expression->getValueAsInt(nullptr))));
             }
             
             virtual void visit(ir::expressions::UnaryBooleanFunctionExpression* expression) {
