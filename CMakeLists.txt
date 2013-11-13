@@ -361,9 +361,9 @@ endif(ENABLE_GUROBI)
 if (ENABLE_Z3)
     message (STATUS "StoRM - Linking with Z3")
 	include_directories("${Z3_ROOT}/include")
-    target_link_libraries(storm "z3")
-    target_link_libraries(storm-functional-tests "z3")
-    target_link_libraries(storm-performance-tests "z3")
+    target_link_libraries(storm "libz3")
+    target_link_libraries(storm-functional-tests "libz3")
+    target_link_libraries(storm-performance-tests "libz3")
 endif(ENABLE_Z3)
 
 #############################################################
