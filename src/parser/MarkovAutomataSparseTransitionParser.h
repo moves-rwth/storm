@@ -10,13 +10,6 @@ namespace storm {
         
         class MarkovAutomataSparseTransitionParser {
         public:
-            struct ResultType {
-                storm::storage::SparseMatrix<double> transitionMatrix;
-                std::vector<uint_fast64_t> nondeterministicChoiceIndices;
-                storm::storage::BitVector markovianChoices;
-                std::vector<double> exitRates;
-            };
-            
             struct FirstPassResult {
                 
                 FirstPassResult() : numberOfNonzeroEntries(0), highestStateIndex(0), numberOfChoices(0) {
@@ -26,6 +19,19 @@ namespace storm {
                 uint_fast64_t numberOfNonzeroEntries;
                 uint_fast64_t highestStateIndex;
                 uint_fast64_t numberOfChoices;
+            };
+            
+            struct ResultType {
+                
+                ResultType(FirstPassResult const& firstPassResult) : transitionMatrix(firstPassResult.numberOfChoices, firstPassResult.highestStateIndex + 1), nondeterministicChoiceIndices(firstPassResult.highestStateIndex + 2), markovianChoices(firstPassResult.numberOfChoices), exitRates(firstPassResult.numberOfChoices) {
+                    transitionMatrix.initialize(firstPassResult.numberOfNonzeroEntries);
+                    // Intentionally left empty.
+                }
+                
+                storm::storage::SparseMatrix<double> transitionMatrix;
+                std::vector<uint_fast64_t> nondeterministicChoiceIndices;
+                storm::storage::BitVector markovianChoices;
+                std::vector<double> exitRates;
             };
             
             static ResultType parseMarkovAutomataTransitions(std::string const& filename, RewardMatrixInformationStruct* rewardMatrixInformation = nullptr);

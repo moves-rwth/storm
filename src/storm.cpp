@@ -415,9 +415,6 @@ int main(const int argc, const char* argv[]) {
 			std::string const chosenTransitionSystemFile = s->getOptionByLongName("explicit").getArgument(0).getValueAsString();
 			std::string const chosenLabelingFile = s->getOptionByLongName("explicit").getArgument(1).getValueAsString();
             
-            // FIXME: Remove after testing.
-            storm::parser::MarkovAutomataSparseTransitionParser::ResultType result = storm::parser::MarkovAutomataSparseTransitionParser::parseMarkovAutomataTransitions(chosenTransitionSystemFile, nullptr);
-            
 			std::string chosenStateRewardsFile = "";
 			if (s->isSet("stateRewards")) {
 				chosenStateRewardsFile = s->getOptionByLongName("stateRewards").getArgument(0).getValueAsString();
