@@ -19,6 +19,7 @@ std::ostream& storm::models::operator<<(std::ostream& os, storm::models::ModelTy
 		case storm::models::CTMC: os << "CTMC"; break;
 		case storm::models::MDP: os << "MDP"; break;
 		case storm::models::CTMDP: os << "CTMDP"; break;
+        case storm::models::MA: os << "MA"; break;
 		default: os << "Invalid ModelType"; break;
 	}
 	return os;

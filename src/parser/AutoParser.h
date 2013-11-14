@@ -8,7 +8,7 @@
 #include "src/models/AbstractModel.h"
 #include "src/parser/DeterministicModelParser.h"
 #include "src/parser/NondeterministicModelParser.h"
-#include "src/parser/MarkovAutomataSparseTransitionParser.h"
+#include "src/parser/MarkovAutomatonParser.h"
 
 #include <memory>
 #include <iostream>
@@ -63,6 +63,10 @@ class AutoParser {
 					this->model.reset(new storm::models::Ctmdp<double>(std::move(NondeterministicModelParserAsCtmdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
 					break;
 				}
+                case storm::models::MA: {
+                    this->model.reset(new storm::models::MarkovAutomaton<double>(storm::parser::MarkovAutomatonParser::parseMarkovAutomaton(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
+					break;
+                }
 				default: ;  // Unknown
 			}
 

@@ -15,6 +15,7 @@
 
 #include "src/utility/OsDetection.h"
 #include <iostream>
+#include <fstream>
 #include <cstdio>
 #include <sstream>
 #include <vector>
@@ -32,7 +33,7 @@
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 #include "src/counterexamples/PathBasedSubsystemGenerator.h"
 #include "src/parser/AutoParser.h"
-#include "src/parser/MarkovAutomataSparseTransitionParser.h"
+#include "src/parser/MarkovAutomatonParser.h"
 #include "src/parser/PrctlParser.h"
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
@@ -407,7 +408,7 @@ int main(const int argc, const char* argv[]) {
 			// If parsing failed or the option to see the usage was set, program execution stops here.
 			return 0;
 		}
-
+        
 		// Now, the settings are received and the specified model is parsed. The actual actions taken depend on whether
         // the model was provided in explicit or symbolic format.
 		storm::settings::Settings* s = storm::settings::Settings::getInstance();
@@ -426,6 +427,33 @@ int main(const int argc, const char* argv[]) {
 
 			storm::parser::AutoParser<double> parser(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
 
+            if (s->isSet("exportdot")) {
+                std::ofstream outputFileStream;
+                outputFileStream.open(s->getOptionByLongName("exportdot").getArgument(0).getValueAsString(), std::ofstream::out);
+                switch (parser.getType()) {
+                    case storm::models::DTMC:
+                        parser.getModel<storm::models::Dtmc<double>>()->writeDotToStream(outputFileStream);
+                        break;
+                    case storm::models::CTMC:
+                        parser.getModel<storm::models::Ctmc<double>>()->writeDotToStream(outputFileStream);
+                        break;
+                    case storm::models::MDP:
+                        parser.getModel<storm::models::Mdp<double>>()->writeDotToStream(outputFileStream);
+                        break;
+                    case storm::models::CTMDP:
+                        parser.getModel<storm::models::Ctmdp<double>>()->writeDotToStream(outputFileStream);
+                        break;
+                    case storm::models::MA:
+                        parser.getModel<storm::models::MarkovAutomaton<double>>()->writeDotToStream(outputFileStream);
+                        break;
+                    default:
+                        LOG4CPLUS_ERROR(logger, "Illegal model type.");
+                        break;
+                }
+                
+                outputFileStream.close();
+            }
+            
 			//Should there be a counterexample generated in case the formula is not satisfied?
 			if(s->isSet("counterExample")) {
 
@@ -438,6 +466,7 @@ int main(const int argc, const char* argv[]) {
 				// Depending on the model type, the appropriate model checking procedure is chosen.
 				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
 				parser.getModel<storm::models::AbstractModel<double>>()->printModelInformationToStream(std::cout);
+                
 				switch (parser.getType()) {
 				case storm::models::DTMC:
 					LOG4CPLUS_INFO(logger, "Model is a DTMC.");
@@ -457,6 +486,9 @@ int main(const int argc, const char* argv[]) {
 					LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
 					LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
 					break;
+                case storm::models::MA:
+                    LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
+                    break;
 				case storm::models::Unknown:
 				default:
 					LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
@@ -503,7 +535,7 @@ int main(const int argc, const char* argv[]) {
                 }
             }
         }
-
+        
         // Perform clean-up and terminate.
 		cleanUp();
 		LOG4CPLUS_INFO(logger, "StoRM terminating.");

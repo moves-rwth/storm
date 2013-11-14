@@ -1,14 +1,12 @@
-#include "MarkovAutomataSparseTransitionParser.h"
+#include "MarkovAutomatonSparseTransitionParser.h"
 
 #include "src/settings/Settings.h"
 
 namespace storm {
     namespace parser {
  
-        MarkovAutomataSparseTransitionParser::FirstPassResult MarkovAutomataSparseTransitionParser::firstPass(char* buf, SupportedLineEndingsEnum lineEndings, RewardMatrixInformationStruct* rewardMatrixInformation) {
-            bool isRewardFile = rewardMatrixInformation != nullptr;
-            
-            MarkovAutomataSparseTransitionParser::FirstPassResult result;
+        MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char* buf, SupportedLineEndingsEnum lineEndings) {
+            MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
             // Skip the format hint.
             buf = storm::parser::forwardToNextLine(buf, lineEndings);
@@ -136,7 +134,7 @@ namespace storm {
             return result;
         }
         
-        MarkovAutomataSparseTransitionParser::ResultType MarkovAutomataSparseTransitionParser::secondPass(char* buf, SupportedLineEndingsEnum lineEndings, FirstPassResult const& firstPassResult, RewardMatrixInformationStruct* rewardMatrixInformation) {
+        MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitionParser::secondPass(char* buf, SupportedLineEndingsEnum lineEndings, FirstPassResult const& firstPassResult) {
             ResultType result(firstPassResult);
             
             bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
@@ -196,8 +194,9 @@ namespace storm {
                 if (strcmp(actionNameBuffer, "!") == 0) {
                     isMarkovianChoice = true;
                     
-                    // Mark the current choice as a Markovian one.
+                    // Mark the current choice and state as a Markovian one.
                     result.markovianChoices.set(currentChoice, true);
+                    result.markovianStates.set(source, true);
                 } else {
                     isMarkovianChoice = false;
                 }
@@ -270,7 +269,7 @@ namespace storm {
             return result;
         }
         
-        MarkovAutomataSparseTransitionParser::ResultType MarkovAutomataSparseTransitionParser::parseMarkovAutomataTransitions(std::string const& filename, RewardMatrixInformationStruct* rewardMatrixInformation) {
+        MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(std::string const& filename) {
             // Set the locale to correctly recognize floating point numbers.
             setlocale(LC_NUMERIC, "C");
             
@@ -279,8 +278,6 @@ namespace storm {
                 throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
             }
             
-            bool isRewardFile = rewardMatrixInformation != nullptr;
-            
             // Determine used line endings.
             SupportedLineEndingsEnum lineEndings = findUsedLineEndings(filename, true);
             
@@ -288,8 +285,8 @@ namespace storm {
             MappedFile file(filename.c_str());
             char* buf = file.data;
             
-            return secondPass(buf, lineEndings, firstPass(buf, lineEndings, rewardMatrixInformation), rewardMatrixInformation);
+            return secondPass(buf, lineEndings, firstPass(buf, lineEndings));
         }
         
-    }
-}
+    } // namespace parser
+} // namespace storm

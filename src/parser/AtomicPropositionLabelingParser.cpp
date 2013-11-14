@@ -190,6 +190,7 @@ storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser(uint_f
 			buf = storm::parser::trimWhitespaces(buf);
 		}
 	}
+    
 	return labeling;
 }
 

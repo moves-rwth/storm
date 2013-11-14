@@ -12,7 +12,6 @@
 #include "src/exceptions/OutOfRangeException.h"
 #include <ostream>
 #include <stdexcept>
-#include <unordered_map>
 #include <set>
 
 #include "src/utility/Hash.h"
@@ -146,8 +145,8 @@ public:
 			apCountMax++;
 			singleLabelings.reserve(apCountMax);
 		}
-		nameToLabelingMap[ap] = apsCurrent;
-        singleLabelings.push_back(storm::storage::BitVector(stateCount));
+		nameToLabelingMap.emplace(ap, apsCurrent);
+        singleLabelings.emplace_back(stateCount);
 
 		uint_fast64_t returnValue = apsCurrent++;
 		return returnValue;
@@ -279,10 +278,6 @@ public:
 		}
 	}
 
-	std::unordered_map<std::string, uint_fast64_t> const& getNameToLabelingMap() const {
-		return this->nameToLabelingMap;
-	}
-
 	/*!
 	 * Adds a state to the labeling.
 	 * Since this operation is quite expensive (resizing of all BitVectors containing the labeling), it should
@@ -342,7 +337,7 @@ private:
 	 * by mapping the name to a specific index in the array of all
 	 * individual labelings.
 	 */
-	std::unordered_map<std::string, uint_fast64_t> nameToLabelingMap;
+	std::map<std::string, uint_fast64_t> nameToLabelingMap;
 
 	/*!
 	 * Stores all individual labelings. To find the labeling associated with
