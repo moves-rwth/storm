@@ -16,6 +16,7 @@ namespace storm {
             int_fast64_t lastsource = -1;
             bool encounteredEOF = false;
             bool stateHasMarkovianChoice = false;
+            bool stateHasProbabilisticChoice = false;
             while (buf[0] != '\0' && !encounteredEOF) {
                 // At the current point, the next thing to read is the source state of the next choice to come.
                 source = checked_strtol(buf, &buf);
@@ -33,9 +34,10 @@ namespace storm {
                     ++result.numberOfChoices;
                 }
                 
-                // If we have moved to the next state, we need to clear the flag that stores whether or not the source has a Markovian choice.
+                // If we have moved to the next state, we need to clear the flag that stores whether or not the source has a Markovian or probabilistic choice.
                 if (source != lastsource) {
                     stateHasMarkovianChoice = false;
+                    stateHasProbabilisticChoice = false;
                 }
                 
                 // Record that the current source was the last source.
@@ -65,9 +67,18 @@ namespace storm {
                     isMarkovianChoice = false;
                 }
                 
-                if (isMarkovianChoice && stateHasMarkovianChoice) {
-                    LOG4CPLUS_ERROR(logger, "The state " << source << " has multiple Markovian choices.");
-                    throw storm::exceptions::WrongFormatException() << "The state " << source << " has multiple Markovian choices.";
+                if (isMarkovianChoice) {
+                    if (stateHasMarkovianChoice) {
+                        LOG4CPLUS_ERROR(logger, "The state " << source << " has multiple Markovian choices.");
+                        throw storm::exceptions::WrongFormatException() << "The state " << source << " has multiple Markovian choices.";
+                    }
+                    if (stateHasProbabilisticChoice) {
+                        LOG4CPLUS_ERROR(logger, "The state " << source << " has a probabilistic choice preceding a Markovian choice. The Markovian choice must be the first choice listed.");
+                        throw storm::exceptions::WrongFormatException() << "The state " << source << " has a probabilistic choice preceding a Markovian choice. The Markovian choice must be the first choice listed.";
+                    }
+                    stateHasMarkovianChoice = true;
+                } else {
+                    stateHasProbabilisticChoice = true;
                 }
                 
                 buf = forwardToNextLine(buf, lineEndings);
