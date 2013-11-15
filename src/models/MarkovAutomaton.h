@@ -23,12 +23,11 @@ namespace storm {
 
 		public:
 			MarkovAutomaton(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-							std::vector<uint_fast64_t>&& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates,
-							storm::storage::BitVector const& markovianChoices, std::vector<T> const& exitRates,
+							std::vector<uint_fast64_t>&& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<T> const& exitRates,
 							boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
 							boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> const& optionalChoiceLabeling)
 							: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling),
-							  markovianStates(markovianStates), markovianChoices(markovianChoices), exitRates(exitRates) {
+							  markovianStates(markovianStates), exitRates(exitRates) {
 				if (this->hasTransitionRewards()) {
 					if (!this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix())) {
 						LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -40,13 +39,12 @@ namespace storm {
 			MarkovAutomaton(storm::storage::SparseMatrix<T>&& transitionMatrix,
 							storm::models::AtomicPropositionsLabeling&& stateLabeling,
 							std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
-                            storm::storage::BitVector const& markovianStates,
-							storm::storage::BitVector const& markovianChoices, std::vector<T> const& exitRates,
+                            storm::storage::BitVector const& markovianStates, std::vector<T> const& exitRates,
 							boost::optional<std::vector<T>>&& optionalStateRewardVector,
 							boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
 							boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>&& optionalChoiceLabeling)
 							: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
-																std::move(optionalChoiceLabeling)), markovianStates(markovianStates), markovianChoices(std::move(markovianChoices)), exitRates(std::move(exitRates)) {
+																std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)) {
 		        if (this->hasTransitionRewards()) {
 		            if (!this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix())) {
 		                LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -55,11 +53,11 @@ namespace storm {
 		        }
 			}
 
-			MarkovAutomaton(MarkovAutomaton<T> const& markovAutomaton) : AbstractNondeterministicModel<T>(markovAutomaton), exitRates(markovAutomaton.exitRates), markovianStates(markovAutomaton.markovianStates), markovianChoices(markovAutomaton.markovianChoices) {
+			MarkovAutomaton(MarkovAutomaton<T> const& markovAutomaton) : AbstractNondeterministicModel<T>(markovAutomaton), exitRates(markovAutomaton.exitRates), markovianStates(markovAutomaton.markovianStates) {
 				// Intentionally left empty.
 			}
 
-			MarkovAutomaton(MarkovAutomaton<T>&& markovAutomaton) : AbstractNondeterministicModel<T>(std::move(markovAutomaton)), markovianStates(std::move(markovAutomaton.markovianStates)), markovianChoices(std::move(markovAutomaton.markovianChoices)), exitRates(std::move(markovAutomaton.exitRates)) {
+			MarkovAutomaton(MarkovAutomaton<T>&& markovAutomaton) : AbstractNondeterministicModel<T>(std::move(markovAutomaton)), markovianStates(std::move(markovAutomaton.markovianStates)), exitRates(std::move(markovAutomaton.exitRates)) {
 				// Intentionally left empty.
 			}
 
@@ -91,7 +89,9 @@ namespace storm {
                             }
                         }
                         
-                        if (!markovianChoices.get(this->getNondeterministicChoiceIndices()[state] + row)) {
+                        // If it's not a Markovian state or the current row is the first choice for this state, then we
+                        // are dealing with a probabilitic choice.
+                        if (!markovianStates.get(state) || row != 0) {
                             // For each nondeterministic choice, we draw an arrow to an intermediate node to better display
                             // the grouping of transitions.
                             outStream << "\t\"" << state << "c" << row << "\" [shape = \"point\"";

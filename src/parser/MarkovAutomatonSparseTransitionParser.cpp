@@ -194,8 +194,7 @@ namespace storm {
                 if (strcmp(actionNameBuffer, "!") == 0) {
                     isMarkovianChoice = true;
                     
-                    // Mark the current choice and state as a Markovian one.
-                    result.markovianChoices.set(currentChoice, true);
+                    // Mark the current state as a Markovian one.
                     result.markovianStates.set(source, true);
                 } else {
                     isMarkovianChoice = false;
