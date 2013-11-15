@@ -459,7 +459,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return void
 		 */
 		virtual void setStateIdBasedChoiceLabeling() = 0;
-protected:
+
         /*!
          * Exports the model to the dot-format and prints the result to the given stream.
          *
@@ -535,7 +535,8 @@ protected:
                 outStream << "}" << std::endl;
             }
         }
-        
+    
+protected:
 		/*! A matrix representing the likelihoods of moving between states. */
 		storm::storage::SparseMatrix<T> transitionMatrix;
 

@@ -430,27 +430,7 @@ int main(const int argc, const char* argv[]) {
             if (s->isSet("exportdot")) {
                 std::ofstream outputFileStream;
                 outputFileStream.open(s->getOptionByLongName("exportdot").getArgument(0).getValueAsString(), std::ofstream::out);
-                switch (parser.getType()) {
-                    case storm::models::DTMC:
-                        parser.getModel<storm::models::Dtmc<double>>()->writeDotToStream(outputFileStream);
-                        break;
-                    case storm::models::CTMC:
-                        parser.getModel<storm::models::Ctmc<double>>()->writeDotToStream(outputFileStream);
-                        break;
-                    case storm::models::MDP:
-                        parser.getModel<storm::models::Mdp<double>>()->writeDotToStream(outputFileStream);
-                        break;
-                    case storm::models::CTMDP:
-                        parser.getModel<storm::models::Ctmdp<double>>()->writeDotToStream(outputFileStream);
-                        break;
-                    case storm::models::MA:
-                        parser.getModel<storm::models::MarkovAutomaton<double>>()->writeDotToStream(outputFileStream);
-                        break;
-                    default:
-                        LOG4CPLUS_ERROR(logger, "Illegal model type.");
-                        break;
-                }
-                
+                parser.getModel<storm::models::AbstractModel<double>>()->writeDotToStream(outputFileStream);
                 outputFileStream.close();
             }
             

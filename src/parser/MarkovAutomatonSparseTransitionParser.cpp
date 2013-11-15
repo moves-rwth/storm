@@ -245,7 +245,7 @@ namespace storm {
                         // Record the value as well as the exit rate in case of a Markovian choice.
                         result.transitionMatrix.addNextValue(currentChoice, target, val);
                         if (isMarkovianChoice) {
-                            result.exitRates[currentChoice] += val;
+                            result.exitRates[source] += val;
                         }
                         
                         buf = forwardToNextLine(buf, lineEndings);
