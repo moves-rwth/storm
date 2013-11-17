@@ -14,6 +14,7 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/settings/Settings.h"
 #include "src/utility/vector.h"
+#include "src/utility/matrix.h"
 
 namespace storm {
 	namespace models {
@@ -23,11 +24,11 @@ namespace storm {
 
 		public:
 			MarkovAutomaton(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-							std::vector<uint_fast64_t>&& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<T> const& exitRates,
+							std::vector<uint_fast64_t>& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<T> const& exitRates,
 							boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
 							boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> const& optionalChoiceLabeling)
 							: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling),
-							  markovianStates(markovianStates), exitRates(exitRates) {
+                            markovianStates(markovianStates), exitRates(exitRates), isClosed(false) {
 				if (this->hasTransitionRewards()) {
 					if (!this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix())) {
 						LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -44,7 +45,7 @@ namespace storm {
 							boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
 							boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>&& optionalChoiceLabeling)
 							: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
-																std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)) {
+                                                               std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), isClosed(false) {
 		        if (this->hasTransitionRewards()) {
 		            if (!this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix())) {
 		                LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -53,11 +54,11 @@ namespace storm {
 		        }
 			}
 
-			MarkovAutomaton(MarkovAutomaton<T> const& markovAutomaton) : AbstractNondeterministicModel<T>(markovAutomaton), exitRates(markovAutomaton.exitRates), markovianStates(markovAutomaton.markovianStates) {
+			MarkovAutomaton(MarkovAutomaton<T> const& markovAutomaton) : AbstractNondeterministicModel<T>(markovAutomaton), markovianStates(markovAutomaton.markovianStates), exitRates(markovAutomaton.exitRates), isClosed(markovAutomaton.isClosed) {
 				// Intentionally left empty.
 			}
 
-			MarkovAutomaton(MarkovAutomaton<T>&& markovAutomaton) : AbstractNondeterministicModel<T>(std::move(markovAutomaton)), markovianStates(std::move(markovAutomaton.markovianStates)), exitRates(std::move(markovAutomaton.exitRates)) {
+			MarkovAutomaton(MarkovAutomaton<T>&& markovAutomaton) : AbstractNondeterministicModel<T>(std::move(markovAutomaton)), markovianStates(std::move(markovAutomaton.markovianStates)), exitRates(std::move(markovAutomaton.exitRates)), isClosed(markovAutomaton.isClosed) {
 				// Intentionally left empty.
 			}
 
@@ -148,11 +149,28 @@ namespace storm {
                 }
             }
             
+            virtual std::shared_ptr<AbstractModel<T>> applyScheduler(storm::storage::Scheduler const& scheduler) const override {
+                if (!isClosed) {
+                    throw storm::exceptions::InvalidStateException() << "Applying a scheduler to a non-closed Markov automaton is illegal; it needs to be closed first.";
+                }
+                
+                storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), this->getNondeterministicChoiceIndices(), scheduler);
+                                
+                // Construct the new nondeterministic choice indices for the resulting matrix.
+                std::vector<uint_fast64_t> nondeterministicChoiceIndices(this->getNumberOfStates() + 1);
+                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    nondeterministicChoiceIndices[state] = state;
+                }
+                nondeterministicChoiceIndices[this->getNumberOfStates()] = this->getNumberOfStates();
+            
+                return std::shared_ptr<AbstractModel<T>>(new MarkovAutomaton(newTransitionMatrix, this->getStateLabeling(), nondeterministicChoiceIndices, markovianStates, exitRates, this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>()));
+            }
+                            
 		private:
 
             storm::storage::BitVector markovianStates;
-			storm::storage::BitVector markovianChoices;
 			std::vector<T> exitRates;
+            bool isClosed;
 
 		};
 	}
