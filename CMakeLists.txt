@@ -90,6 +90,7 @@ if ("${Z3_ROOT}" STREQUAL "")
     set(ENABLE_Z3 OFF)
 else()
     set(ENABLE_Z3 ON)
+	set(Z3_LIB_NAME "z3")
 endif()
 
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -131,6 +132,10 @@ elseif(MSVC)
 	add_definitions(/D_VARIADIC_MAX=10)
 	# Windows.h breaks GMM in gmm_except.h because of its macro definition for min and max
 	add_definitions(/DNOMINMAX)
+	
+	if(ENABLE_Z3)
+		set(Z3_LIB_NAME "libz3")
+	endif()
 	
 	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
@@ -362,9 +367,9 @@ endif(ENABLE_GUROBI)
 if (ENABLE_Z3)
     message (STATUS "StoRM - Linking with Z3")
 	include_directories("${Z3_ROOT}/include")
-    target_link_libraries(storm "z3")
-    target_link_libraries(storm-functional-tests "z3")
-    target_link_libraries(storm-performance-tests "z3")
+    target_link_libraries(storm ${Z3_LIB_NAME})
+    target_link_libraries(storm-functional-tests ${Z3_LIB_NAME})
+    target_link_libraries(storm-performance-tests ${Z3_LIB_NAME})
 endif(ENABLE_Z3)
 
 #############################################################
