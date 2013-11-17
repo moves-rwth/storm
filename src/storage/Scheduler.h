@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_SCHEDULER_H_
 #define STORM_STORAGE_SCHEDULER_H_
 
+#include <cstdint>
+
 namespace storm {
     namespace storage {
         

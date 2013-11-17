@@ -18,6 +18,22 @@ namespace storm {
             if (stateChoicePair == choices.end()) {
                 throw storm::exceptions::InvalidArgumentException() << "Scheduler does not define a choice for state " << state;
             }
+            
+            return stateChoicePair->second;
+        }
+        
+        std::ostream& operator<<(std::ostream& out, PartialScheduler const& scheduler) {
+            out << "partial scheduler (defined on " << scheduler.choices.size() << " states) [ ";
+            uint_fast64_t remainingEntries = scheduler.choices.size();
+            for (auto stateChoicePair : scheduler.choices) {
+                out << stateChoicePair.first << " -> " << stateChoicePair.second;
+                --remainingEntries;
+                if (remainingEntries > 0) {
+                    out << ", ";
+                }
+            }
+            out << "]";
+            return out;
         }
         
     } // namespace storage

@@ -19,6 +19,7 @@
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 #include "src/settings/Settings.h"
+#include "src/storage/TotalScheduler.h"
 
 namespace storm {
     namespace modelchecker {
@@ -265,7 +266,7 @@ namespace storm {
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
                 virtual std::vector<Type> checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative) const {
-                    return this->checkUntil(this->minimumOperatorStack.top(), formula.getLeft().check(*this), formula.getRight().check(*this), qualitative, nullptr);
+                    return this->checkUntil(this->minimumOperatorStack.top(), formula.getLeft().check(*this), formula.getRight().check(*this), qualitative).first;
                 }
                 
                 /*!
@@ -284,7 +285,7 @@ namespace storm {
                  * @return The probabilities for the satisfying phi until psi for each state of the model. If the
                  * qualitative flag is set, exact probabilities might not be computed.
                  */
-                std::vector<Type> checkUntil(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+                std::pair<std::vector<Type>, storm::storage::TotalScheduler> checkUntil(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const {
                     // We need to identify the states which have to be taken out of the matrix, i.e.
                     // all states that have probability 0 and 1 of satisfying the until-formula.
                     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
@@ -347,12 +348,10 @@ namespace storm {
                     storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
                     storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
                                         
-                    // If we were required to generate a scheduler, do so now.
-                    if (scheduler != nullptr) {
-                        this->computeTakenChoices(this->minimumOperatorStack.top(), false, result, *scheduler, this->getModel().getNondeterministicChoiceIndices());
-                    }
+                    // Finally, compute a scheduler that achieves the extramal value.
+                    storm::storage::TotalScheduler scheduler = this->computeExtremalScheduler(this->minimumOperatorStack.top(), false, result);
                     
-                    return result;
+                    return std::make_pair(result, scheduler);
                 }
                 
                 /*!
@@ -443,7 +442,7 @@ namespace storm {
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
                 virtual std::vector<Type> checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
-                    return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula.getChild().check(*this), qualitative, nullptr);
+                    return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula.getChild().check(*this), qualitative).first;
                 }
                 
                 /*!
@@ -461,7 +460,7 @@ namespace storm {
                  * @return The expected reward values gained before a target state is reached for each state. If the
                  * qualitative flag is set, exact values might not be computed.
                  */
-                virtual std::vector<Type> checkReachabilityReward(bool minimize, storm::storage::BitVector const& targetStates, bool qualitative, std::vector<uint_fast64_t>* scheduler) const {
+                virtual std::pair<std::vector<Type>, storm::storage::TotalScheduler> checkReachabilityReward(bool minimize, storm::storage::BitVector const& targetStates, bool qualitative) const {
                     // Only compute the result if the model has at least one reward model.
                     if (!(this->getModel().hasStateRewards() || this->getModel().hasTransitionRewards())) {
                         LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
@@ -548,12 +547,10 @@ namespace storm {
                     storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constGetZero<Type>());
                     storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<Type>());
                     
-                    // If we were required to generate a scheduler, do so now.
-                    if (scheduler != nullptr) {
-                        this->computeTakenChoices(this->minimumOperatorStack.top(), true, result, *scheduler, this->getModel().getNondeterministicChoiceIndices());
-                    }
+                    // Finally, compute a scheduler that achieves the extramal value.
+                    storm::storage::TotalScheduler scheduler = this->computeExtremalScheduler(this->minimumOperatorStack.top(), false, result);
                     
-                    return result;
+                    return std::make_pair(result, scheduler);
                 }
                 
             protected:
@@ -565,8 +562,8 @@ namespace storm {
                  * @param takenChoices The output vector that is to store the taken choices.
                  * @param nondeterministicChoiceIndices The assignment of states to their nondeterministic choices in the matrix.
                  */
-                void computeTakenChoices(bool minimize, bool addRewards, std::vector<Type> const& result, std::vector<uint_fast64_t>& takenChoices, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
-                    std::vector<Type> temporaryResult(nondeterministicChoiceIndices.size() - 1);
+                storm::storage::TotalScheduler computeExtremalScheduler(bool minimize, bool addRewards, std::vector<Type> const& result) const {
+                    std::vector<Type> temporaryResult(this->getModel().getNondeterministicChoiceIndices().size() - 1);
                     std::vector<Type> nondeterministicResult(result);
                     storm::solver::GmmxxLinearEquationSolver<Type> solver;
                     solver.performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), nondeterministicResult, nullptr, 1);
@@ -585,11 +582,16 @@ namespace storm {
                         }
                         storm::utility::vector::addVectorsInPlace(nondeterministicResult, totalRewardVector);
                     }
+                    
+                    std::vector<uint_fast64_t> choices(this->getModel().getNumberOfStates());
+                    
                     if (minimize) {
-                        storm::utility::vector::reduceVectorMin(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
+                        storm::utility::vector::reduceVectorMin(nondeterministicResult, temporaryResult, this->getModel().getNondeterministicChoiceIndices(), &choices);
                     } else {
-                        storm::utility::vector::reduceVectorMax(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &takenChoices);
+                        storm::utility::vector::reduceVectorMax(nondeterministicResult, temporaryResult, this->getModel().getNondeterministicChoiceIndices(), &choices);
                     }
+                    
+                    return storm::storage::TotalScheduler(choices);
                 }
                 
                 /*!

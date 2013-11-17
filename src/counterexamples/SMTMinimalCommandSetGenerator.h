@@ -1454,7 +1454,7 @@ namespace storm {
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
                 storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
-                std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false, nullptr);
+                std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
                 for (auto state : labeledMdp.getInitialStates()) {
                     maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                 }
@@ -1517,7 +1517,7 @@ namespace storm {
                     storm::models::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
                     storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(subMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
                     LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
-                    std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false, nullptr);
+                    std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
                     LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
                     totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
                     

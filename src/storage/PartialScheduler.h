@@ -1,6 +1,9 @@
 #ifndef STORM_STORAGE_PARTIALSCHEDULER_H_
 #define STORM_STORAGE_PARTIALSCHEDULER_H_
 
+#include <unordered_map>
+#include <ostream>
+
 #include "src/storage/Scheduler.h"
 
 namespace storm {
@@ -14,9 +17,11 @@ namespace storm {
             
             uint_fast64_t getChoice(uint_fast64_t state) const override;
             
+            friend std::ostream& operator<<(std::ostream& out, PartialScheduler const& scheduler);
+
         private:
             // A mapping from all states that have defined choices to their respective choices.
-            std::unsorted_map<uint_fast64_t, uint_fast64_t> choices;
+            std::unordered_map<uint_fast64_t, uint_fast64_t> choices;
         };
     }
 }
