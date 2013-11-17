@@ -8,6 +8,7 @@ namespace storm {
         
         /*
          * This class is the abstract base class of all scheduler classes. Scheduler classes define which action is chosen in a particular state of a non-deterministic model.
+         * More concretely, a scheduler maps a state s to i if the scheduler takes the i-th action available in s (i.e. the choices are relative to the states).
          */
         class Scheduler {
         public:
