@@ -1447,7 +1447,7 @@ namespace storm {
                 storm::utility::ir::defineUndefinedConstants(program, constantDefinitionString);
 
                 // (0) Check whether the MDP is indeed labeled.
-                if (!labeledMdp.hasChoiceLabels()) {
+                if (!labeledMdp.hasChoiceLabeling()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal command set generation is impossible for unlabeled model.";
                 }
                 

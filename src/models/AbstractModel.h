@@ -9,6 +9,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
+#include "src/storage/Scheduler.h"
 #include "src/storage/VectorSet.h"
 #include "src/utility/Hash.h"
 
@@ -403,7 +404,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * Retrieves whether this model has a labeling for the choices.
          * @return True if this model has a labeling.
          */
-        bool hasChoiceLabels() const {
+        bool hasChoiceLabeling() const {
             return choiceLabeling;
         }
 
@@ -459,6 +460,15 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return void
 		 */
 		virtual void setStateIdBasedChoiceLabeling() = 0;
+    
+        /*
+         * Applies the given scheduler to the model.
+         *
+         * @param scheduler The scheduler to apply.
+         * @return The model resulting from applying the scheduler to the model.
+         */
+        virtual std::shared_ptr<AbstractModel<T>> applyScheduler(storm::storage::Scheduler const& scheduler) const = 0;
+    
 protected:
         /*!
          * Exports the model to the dot-format and prints the result to the given stream.

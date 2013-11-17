@@ -115,6 +115,18 @@ public:
 		return AbstractNondeterministicModel<T>::getHash();
 	}
 
+    virtual std::shared_ptr<AbstractModel<T>> applyScheduler(storm::storage::Scheduler const& scheduler) const override {
+        storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), this->getNondeterministicChoiceIndices(), scheduler);
+    
+        // Construct the new nondeterministic choice indices for the resulting matrix.
+        std::vector<uint_fast64_t> nondeterministicChoiceIndices(this->getNumberOfStates() + 1);
+        for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+            nondeterministicChoiceIndices[state] = state;
+        }
+        nondeterministicChoiceIndices[this->getNumberOfStates()] = this->getNumberOfStates();
+        return std::shared_ptr<AbstractModel<T>>(new Ctmdp(newTransitionMatrix, this->getStateLabeling(), nondeterministicChoiceIndices, this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>()));
+    }
+    
 private:
 
 	/*!

@@ -1,9 +1,10 @@
 #ifndef STORM_MODELS_ABSTRACTNONDETERMINISTICMODEL_H_
 #define STORM_MODELS_ABSTRACTNONDETERMINISTICMODEL_H_
 
-#include "AbstractModel.h"
-
 #include <memory>
+
+#include "AbstractModel.h"
+#include "src/storage/Scheduler.h"
 
 namespace storm {
     namespace models {
@@ -235,7 +236,7 @@ namespace storm {
     
                 this->choiceLabeling.reset(newChoiceLabeling);
             }
-                        
+        
         private:
             /*! A vector of indices mapping states to the choices (rows) in the transition matrix. */
             std::vector<uint_fast64_t> nondeterministicChoiceIndices;

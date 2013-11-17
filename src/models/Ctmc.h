@@ -86,6 +86,17 @@ public:
 	virtual std::size_t getHash() const override {
 		return AbstractDeterministicModel<T>::getHash();
 	}
+    
+    virtual std::shared_ptr<AbstractModel<T>> applyScheduler(storm::storage::Scheduler const& scheduler) const override {
+    std::vector<uint_fast64_t> nondeterministicChoiceIndices(this->getNumberOfStates() + 1);
+    for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+        nondeterministicChoiceIndices[state] = state;
+    }
+    nondeterministicChoiceIndices[this->getNumberOfStates()] = this->getNumberOfStates();
+    storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), nondeterministicChoiceIndices, scheduler);
+    
+    return std::shared_ptr<AbstractModel<T>>(new Ctmc(newTransitionMatrix, this->getStateLabeling(), this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>()));
+}
 };
 
 } // namespace models
