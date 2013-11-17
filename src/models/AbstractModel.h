@@ -10,6 +10,7 @@
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/VectorSet.h"
+#include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/utility/Hash.h"
 
 namespace storm {
@@ -146,15 +147,14 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param partition A vector containing the blocks of the partition of the system.
          * @return A sparse matrix with bool entries that represents the dependency graph of the blocks of the partition.
          */
-        storm::storage::SparseMatrix<bool> extractPartitionDependencyGraph(std::vector<std::vector<uint_fast64_t>> const& partition) const {
-            uint_fast64_t numberOfStates = partition.size();
+        storm::storage::SparseMatrix<bool> extractPartitionDependencyGraph(storm::storage::Decomposition const& decomposition) const {
+            uint_fast64_t numberOfStates = decomposition.size();
             
-            // First, we need to create a mapping of states to their SCC index, to ease the computation
-            // of dependency transitions later.
+            // First, we need to create a mapping of states to their SCC index, to ease the computation of dependency transitions later.
             std::vector<uint_fast64_t> stateToBlockMap(this->getNumberOfStates());
-            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                for (uint_fast64_t j = 0; j < partition[i].size(); ++j) {
-                    stateToBlockMap[partition[i][j]] = i;
+            for (uint_fast64_t i = 0; i < decomposition.size(); ++i) {
+                for (auto state : decomposition[i]) {
+                    stateToBlockMap[state] = i;
                 }
             }
             
@@ -162,12 +162,12 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             storm::storage::SparseMatrix<bool> dependencyGraph(numberOfStates);
             dependencyGraph.initialize();
             
-            for (uint_fast64_t currentBlockIndex = 0; currentBlockIndex < partition.size(); ++currentBlockIndex) {
+            for (uint_fast64_t currentBlockIndex = 0; currentBlockIndex < decomposition.size(); ++currentBlockIndex) {
                 // Get the next block.
-                std::vector<uint_fast64_t> const& block = partition[currentBlockIndex];
+                typename storm::storage::Decomposition::Block const& block = decomposition[currentBlockIndex];
                 
                 // Now, we determine the blocks which are reachable (in one step) from the current block.
-                std::set<uint_fast64_t> allTargetBlocks;
+                storm::storage::VectorSet<uint_fast64_t> allTargetBlocks;
                 for (auto state : block) {
                     typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(state);
                     for (auto& transition : rows) {

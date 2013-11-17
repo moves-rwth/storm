@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <vector>
+#include <set>
 
 namespace storm  {
     namespace storage {
