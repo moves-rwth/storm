@@ -21,9 +21,9 @@
 #include <vector>
 
 #include "storm-config.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/models/Dtmc.h"
 #include "src/models/MarkovAutomaton.h"
-#include "src/storage/SparseMatrix.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
