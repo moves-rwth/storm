@@ -6,6 +6,8 @@
 #include <cmath>
 #include <cstdint>
 
+#include "src/storage/VectorSet.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
@@ -138,6 +140,19 @@ public:
 			this->bucketArray = new uint64_t[bucketCount]();
 		}
 	}
+    
+    /*!
+     * Creates a bit vector that has exactly those bits set that are defined by the given set.
+     *
+     * @param length The length of the bit vector to create.
+     * @param bitsToSet A set of indices whose bits to set in the bit vector.
+	 * @param initTrue The initial value of the first |length| bits.
+     */
+    BitVector(uint_fast64_t length, storm::storage::VectorSet<uint_fast64_t> const& bitsToSet, bool initTrue = false) : BitVector(length, initTrue) {
+        for (auto bit : bitsToSet) {
+            this->set(bit, true);
+        }
+    }
 
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given bit vector.

@@ -7,15 +7,17 @@
 
 namespace storm {
     namespace storage {
+        typedef storm::storage::VectorSet<uint_fast64_t> StateBlock;
         
         /*!
-         * This class represents the decomposition of a model into state sets.
+         * This class represents the decomposition of a model into blocks which are of the template type.
          */
+        template <typename BlockType>
         class Decomposition {
         public:
-            typedef storm::storage::VectorSet<uint_fast64_t> Block;
-            typedef std::vector<Block>::iterator iterator;
-            typedef std::vector<Block>::const_iterator const_iterator;
+            typedef BlockType Block;
+            typedef typename std::vector<Block>::iterator iterator;
+            typedef typename std::vector<Block>::const_iterator const_iterator;
             
             /*
              * Creates an empty SCC decomposition.
@@ -44,6 +46,8 @@ namespace storm {
             
             Block const& operator[](uint_fast64_t index) const;
             
+            friend std::ostream& operator<<(std::ostream& out, Decomposition const& decomposition);
+
         protected:
             // The blocks of the decomposition.
             std::vector<Block> blocks;

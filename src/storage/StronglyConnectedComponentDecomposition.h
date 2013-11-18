@@ -9,7 +9,7 @@
 namespace storm {
     namespace models {
         // Forward declare the abstract model class.
-        template <typename T> class AbstractModel;
+        template <typename ValueType> class AbstractModel;
     }
     
     namespace storage {
@@ -17,8 +17,8 @@ namespace storm {
         /*!
          * This class represents the decomposition of a graph-like structure into its strongly connected components.
          */
-        template <typename T>
-        class StronglyConnectedComponentDecomposition : public Decomposition {
+        template <typename ValueType>
+        class StronglyConnectedComponentDecomposition : public Decomposition<StateBlock> {
         public:
             /*
              * Creates an empty SCC decomposition.
@@ -27,8 +27,22 @@ namespace storm {
             
             /*
              * Creates an SCC decomposition of the given model.
+             *
+             * @param model The model to decompose into SCCs.
+             * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
+             * are to be kept in the decomposition.
              */
-            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<T> const& model);
+            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs = false);
+
+            /*
+             * Creates an SCC decomposition of given block in the given model.
+             *
+             * @param model The model that contains the block.
+             * @param block The block to decompose into SCCs.
+             * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
+             * are to be kept in the decomposition.
+             */
+            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs = false);
             
             StronglyConnectedComponentDecomposition(StronglyConnectedComponentDecomposition const& other);
             
@@ -39,9 +53,11 @@ namespace storm {
             StronglyConnectedComponentDecomposition& operator=(StronglyConnectedComponentDecomposition&& other);
             
         private:
-            void performSccDecomposition(storm::models::AbstractModel<T> const& model);
+            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs);
             
-            void performSccDecompositionHelper(storm::models::AbstractModel<T> const& model, uint_fast64_t startState, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates);
+            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs);
+            
+            void performSccDecompositionHelper(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs);
         };
     }
 }

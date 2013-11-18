@@ -14,6 +14,8 @@
 #include <vector>
 #include <set>
 
+#include "src/exceptions/InvalidStateException.h"
+
 namespace storm  {
     namespace storage {
         
@@ -147,6 +149,24 @@ namespace storm  {
             const_iterator end() const {
                 ensureSet();
                 return data.end();
+            }
+            
+            T const& min() const {
+                if (this->size() == 0) {
+                    throw storm::exceptions::InvalidStateException() << "Cannot retrieve minimum of empty set.";
+                }
+                
+                ensureSet();
+                return data.first;
+            }
+            
+            T const& max() const {
+                if (this->size() == 0) {
+                    throw storm::exceptions::InvalidStateException() << "Cannot retrieve minimum of empty set.";
+                }
+                
+                ensureSet();
+                return data.back;
             }
             
             void insert(T const& element) {

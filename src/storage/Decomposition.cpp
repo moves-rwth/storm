@@ -1,57 +1,85 @@
 #include "src/storage/Decomposition.h"
+#include "src/storage/MaximalEndComponent.h"
 
 namespace storm {
     namespace storage {
         
-        Decomposition::Decomposition() : blocks() {
+        template <typename BlockType>
+        Decomposition<BlockType>::Decomposition() : blocks() {
             // Intentionally left empty.
         }
         
-        Decomposition::Decomposition(Decomposition const& other) : blocks(other.blocks) {
+        template <typename BlockType>
+        Decomposition<BlockType>::Decomposition(Decomposition const& other) : blocks(other.blocks) {
             // Intentionally left empty.
         }
         
-        Decomposition& Decomposition::operator=(Decomposition const& other) {
+        template <typename BlockType>
+        Decomposition<BlockType>& Decomposition<BlockType>::operator=(Decomposition const& other) {
             this->blocks = other.blocks;
             return *this;
         }
         
-        Decomposition::Decomposition(Decomposition&& other) : blocks(std::move(other.blocks)) {
+        template <typename BlockType>
+        Decomposition<BlockType>::Decomposition(Decomposition&& other) : blocks(std::move(other.blocks)) {
             // Intentionally left empty.
         }
         
-        Decomposition& Decomposition::operator=(Decomposition&& other) {
+        template <typename BlockType>
+        Decomposition<BlockType>& Decomposition<BlockType>::operator=(Decomposition&& other) {
             this->blocks = std::move(other.blocks);
             return *this;
         }
         
-        size_t Decomposition::size() const {
+        template <typename BlockType>
+        size_t Decomposition<BlockType>::size() const {
             return blocks.size();
         }
         
-        Decomposition::iterator Decomposition::begin() {
+        template <typename BlockType>
+        typename Decomposition<BlockType>::iterator Decomposition<BlockType>::begin() {
             return blocks.begin();
         }
         
-        Decomposition::iterator Decomposition::end() {
+        template <typename BlockType>
+        typename Decomposition<BlockType>::iterator Decomposition<BlockType>::end() {
             return blocks.end();
         }
         
-        Decomposition::const_iterator Decomposition::begin() const {
+        template <typename BlockType>
+        typename Decomposition<BlockType>::const_iterator Decomposition<BlockType>::begin() const {
             return blocks.begin();
         }
         
-        Decomposition::const_iterator Decomposition::end() const {
+        template <typename BlockType>
+        typename Decomposition<BlockType>::const_iterator Decomposition<BlockType>::end() const {
             return blocks.end();
         }
         
-        Decomposition::Block const& Decomposition::getBlock(uint_fast64_t index) const {
+        template <typename BlockType>
+        BlockType const& Decomposition<BlockType>::getBlock(uint_fast64_t index) const {
             return blocks.at(index);
         }
         
-        Decomposition::Block const& Decomposition::operator[](uint_fast64_t index) const {
+        template <typename BlockType>
+        BlockType const& Decomposition<BlockType>::operator[](uint_fast64_t index) const {
             return blocks[index];
         }
         
+        template <typename BlockType>
+        std::ostream& operator<<(std::ostream& out, Decomposition<BlockType> const& decomposition) {
+            out << "{";
+            if (decomposition.size() > 0) {
+                for (uint_fast64_t blockIndex = 0; blockIndex < decomposition.size() - 1; ++blockIndex) {
+                    out << decomposition.blocks[blockIndex] << ", ";
+                }
+                out << decomposition.blocks[decomposition.size() - 1];
+            }
+            out << "}";
+            return out;
+        }
+        
+        template class Decomposition<StateBlock>;
+        template class Decomposition<MaximalEndComponent>;
     } // namespace storage
 } // namespace storm
