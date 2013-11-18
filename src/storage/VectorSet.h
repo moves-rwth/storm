@@ -48,6 +48,14 @@ namespace storm  {
                 }
             }
             
+            VectorSet(uint_fast64_t from, uint_fast64_t to) : dirty(false) {
+                data.reserve(to - from);
+                
+                for (uint_fast64_t element = from; element < to; ++element) {
+                    data.push_back(element);
+                }
+            }
+                        
             template<typename InputIterator>
             VectorSet(InputIterator first, InputIterator last) : data(first, last), dirty(true) {
                 ensureSet();
@@ -224,6 +232,25 @@ namespace storm  {
                 return false;
             }
             
+            void erase(VectorSet const& eraseSet) {
+                if (eraseSet.size() > 0) {
+                    ensureSet();
+                    eraseSet.ensureSet();
+                
+                    for (typename std::vector<T>::reverse_iterator delIt = eraseSet.data.rbegin(), setIt = data.rbegin(); delIt != eraseSet.data.rend() && setIt != eraseSet.data.rend(); ++delIt) {
+                        while (setIt != eraseSet.data.rend() && *setIt > *delIt) {
+                            ++setIt;
+                        }
+                        if (setIt != data.rend()) break;
+                        
+                        if (*setIt == *delIt) {
+                            data.erase((setIt + 1).base());
+                            ++setIt;
+                        }
+                    }
+                }
+            }
+            
             friend std::ostream& operator<< (std::ostream& stream, VectorSet const& set) {
                 set.ensureSet();
                 stream << "VectorSet(" << set.size() << ") { ";
@@ -244,10 +271,5 @@ namespace storm  {
         };
     }
 }
-
-namespace std {
-    
-}
-
 
 #endif /* STORM_STORAGE_VECTORSET_H */

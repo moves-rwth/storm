@@ -2,7 +2,8 @@
 #define STORM_STORAGE_MAXIMALENDCOMPONENT_H_
 
 #include <unordered_map>
-#include <vector>
+
+#include "src/storage/VectorSet.h"
 
 namespace storm {
     namespace storage {
@@ -39,7 +40,22 @@ namespace storm {
              * @param state The state for which to retrieve the choices.
              * @return A list of choices of the state in the MEC.
              */
-            std::vector<uint_fast64_t> const& getChoicesForState(uint_fast64_t state) const;
+            storm::storage::VectorSet<uint_fast64_t> const& getChoicesForState(uint_fast64_t state) const;
+            
+            /*!
+             * Removes the given choice from the list of choices of the named state.
+             *
+             * @param state The state for which to remove the choice.
+             * @param choice The choice to remove from the state's choices.
+             */
+            void removeChoice(uint_fast64_t state, uint_fast64_t choice);
+            
+            /*!
+             * Removes the given state and all of its choices from the MEC.
+             *
+             * @param state The state to remove froom the MEC.
+             */
+            void removeState(uint_fast64_t state);
             
             /*!
              * Retrieves whether the given state is contained in this MEC.
@@ -49,9 +65,25 @@ namespace storm {
              */
             bool containsState(uint_fast64_t state) const;
             
+            /*!
+             * Retrievs whether the given choice for the given state is contained in the MEC.
+             *
+             * @param state The state for which to check whether the given choice is contained in the MEC.
+             * @param choice The choice for which to check whether it is contained in the MEC.
+             * @return True if the given choice is contained in the MEC.
+             */
+            bool containsChoice(uint_fast64_t state, uint_fast64_t choice) const;
+            
+            /*!
+             * Retrieves the set of states contained in the MEC.
+             *
+             * @return The set of states contained in the MEC.
+             */
+            storm::storage::VectorSet<uint_fast64_t> getStateSet() const;
+            
         private:
             // This stores the mapping from states contained in the MEC to the choices in this MEC.
-            std::unordered_map<uint_fast64_t, std::vector<uint_fast64_t>> stateToChoicesMapping;
+            std::unordered_map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>> stateToChoicesMapping;
         };
     }
 }

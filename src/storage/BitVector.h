@@ -154,6 +154,20 @@ public:
         }
     }
 
+    /*!
+     * Creates a bit vector that has exactly the bits set that are given by the provided iterator range.
+     *
+     * @param The length of the bit vector.
+     * @param begin The begin of the iterator range.
+     * @param end The end of the iterator range.
+     */
+    template<typename InputIterator>
+    BitVector(uint_fast64_t length, InputIterator begin, InputIterator end) : BitVector(length) {
+        for (InputIterator it = begin; it != end; ++it) {
+            this->set(*it, true);
+        }
+    }
+    
 	/*!
 	 * Copy Constructor. Performs a deep copy of the given bit vector.
 	 * @param bv A reference to the bit vector to be copied.
@@ -544,6 +558,20 @@ public:
         
 		return result;
 	}
+    
+    /*!
+     * Retrieves whether there is at least one bit set in the vector.
+     *
+     * @return True if there is at least one bit set in this vector.
+     */
+    bool empty() const {
+        for (uint_fast64_t i = 0; i < this->bucketCount; ++i) {
+            if (this->bucketArray[i] != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
     
     /*!
      * Returns a list containing all indices such that the bits at these indices are set to true

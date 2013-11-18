@@ -90,6 +90,9 @@ namespace storm {
             recursionIteratorStack.reserve(lowlinks.size());
             std::vector<bool> statesInStack(lowlinks.size());
             
+            // Store a bit vector of all states with a self-loop to be able to detect non-trivial SCCs with only one state.
+            storm::storage::BitVector statesWithSelfloop(lowlinks.size());
+            
             // Initialize the recursion stacks with the given initial state (and its successor iterator).
             recursionStateStack.push_back(startState);
             recursionIteratorStack.push_back(model.getRows(startState).begin());
@@ -109,6 +112,11 @@ namespace storm {
                 
                 // Now, traverse all successors of the current state.
                 for(; successorIt != model.getRows(currentState).end(); ++successorIt) {
+                    // Record if the current state has a self-loop.
+                    if (currentState == successorIt.column()) {
+                        statesWithSelfloop.set(currentState, true);
+                    }
+                    
                     // If we have not visited the successor already, we need to perform the procedure
                     // recursively on the newly found state.
                     if (!visitedStates.get(successorIt.column()) && subsystem.get(successorIt.column())) {
@@ -151,7 +159,7 @@ namespace storm {
                     } while (lastState != currentState);
                     
                     // Only add the SCC if it is non-trivial if the corresponding flag was set.
-                    if (scc.size() > 1 || !dropNaiveSccs) {
+                    if (!dropNaiveSccs || scc.size() > 1 || statesWithSelfloop.get(*scc.begin())) {
                         this->blocks.emplace_back(std::move(scc));
                     }
                 }
