@@ -1312,7 +1312,7 @@ namespace storm {
                 
                 // (4.5) Read off result from variables.
                 storm::storage::VectorSet<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(environmentModelPair.first, environmentModelPair.second, variableInformation);
-                usedLabelSet.insert(choiceInformation.knownLabels.begin(), choiceInformation.knownLabels.end());
+                usedLabelSet.insert(choiceInformation.knownLabels);
                 
                 // Display achieved probability.
                 std::pair<uint_fast64_t, double> initialStateProbabilityPair = getReachabilityProbability(environmentModelPair.first, environmentModelPair.second, labeledMdp, variableInformation);

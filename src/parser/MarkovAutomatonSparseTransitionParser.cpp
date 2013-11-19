@@ -43,29 +43,14 @@ namespace storm {
                 // Record that the current source was the last source.
                 lastsource = source;
                 
-                char actionNameBuffer[20];
-#ifdef WINDOWS
-                int length = sscanf_s(buf, "%20s\n", actionNameBuffer, 20);
-#else
-                int length = sscanf(buf, "%20s\n", actionNameBuffer);
-#endif
-                                
-                // If the number of arguments filled is not one, there was an error.
-                if (length != 1) {
-                    LOG4CPLUS_ERROR(logger, "Parsing error.");
-                    throw storm::exceptions::WrongFormatException() << "Parsing error.";
-                } else {
-                    // If the action name was parsed successfully, we need to move by the corresponding number of characters.
-                    buf += strlen(actionNameBuffer);
-                }
-                
                 // Depending on the action name, the choice is either a probabilitic one or a markovian one.
                 bool isMarkovianChoice = false;
-                if (strcmp(actionNameBuffer, "!") == 0) {
+                if (buf[0] == '!') {
                     isMarkovianChoice = true;
                 } else {
                     isMarkovianChoice = false;
                 }
+                ++buf;
                 
                 if (isMarkovianChoice) {
                     if (stateHasMarkovianChoice) {
@@ -89,33 +74,21 @@ namespace storm {
                 
                 // At this point, we need to check whether there is an additional successor or we have reached the next choice for the same or a different state.
                 do {
-                    // Now parse the next symbol to see whether there is another target state for the current choice
-                    // or not.
-                    char star[1];
-#ifdef WINDOWS
-                    length = sscanf_s(buf, "%1s\n", star, 1);
-#else
-                    length = sscanf(buf, "%1s\n", star);
-#endif
-
-                    // If the number of arguments filled is not one, there was an error.
-                    if (length == EOF) {
+                    // If the end of the file was reached, we need to abort and check whether we are in a legal state.
+                    if (buf[0] == '\0') {
                         if (!hasSuccessorState) {
-                            LOG4CPLUS_ERROR(logger, "Premature end-of-file. Expected at least one successor state for state " << source << " under action " << actionNameBuffer << ".");
-                            throw storm::exceptions::WrongFormatException() << "Premature end-of-file. Expected at least one successor state for state " << source << " under action " << actionNameBuffer << ".";
+                            LOG4CPLUS_ERROR(logger, "Premature end-of-file. Expected at least one successor state for state " << source << ".");
+                            throw storm::exceptions::WrongFormatException() << "Premature end-of-file. Expected at least one successor state for state " << source << ".";
                         } else {
                             // If there was at least one successor for the current choice, this is legal and we need to move on.
                             encounteredEOF = true;
                         }
-                    } else if (length != 1) {
-                        LOG4CPLUS_ERROR(logger, "Parsing error.");
-                        throw storm::exceptions::WrongFormatException() << "Parsing error.";
-                    } else if (strcmp(star, "*") == 0) {
+                    } else if (buf[0] == '*') {
                         // We need to record that we found at least one successor state for the current choice.
                         hasSuccessorState = true;
                         
                         // As we have encountered a "*", we know that there is an additional successor state for the current choice.
-                        buf += strlen(star);
+                        ++buf;
                         
                         // Now we need to read the successor state and check if we already saw a higher state index.
                         target = checked_strtol(buf, &buf);
@@ -161,11 +134,11 @@ namespace storm {
             while (buf[0] != '\0' && !encounteredEOF) {
                 // At the current point, the next thing to read is the source state of the next choice to come.
                 source = checked_strtol(buf, &buf);
-                
+                                
                 // If we have skipped some states, we need to insert self-loops if requested.
                 if (source > lastsource + 1) {
                     if (fixDeadlocks) {
-                        for (uint_fast64_t index = lastsource + 1; index < source; ++source) {
+                        for (uint_fast64_t index = lastsource + 1; index < source; ++index) {
                             result.nondeterministicChoiceIndices[index] = currentChoice;
                             result.transitionMatrix.addNextValue(currentChoice, index, 1);
                             ++currentChoice;
@@ -184,25 +157,9 @@ namespace storm {
                 // Record that the current source was the last source.
                 lastsource = source;
                 
-                char actionNameBuffer[20];
-#ifdef WINDOWS
-                int length = sscanf_s(buf, "%20s\n", actionNameBuffer, 20);
-#else
-                int length = sscanf(buf, "%20s\n", actionNameBuffer);
-#endif
-                
-                // If the number of arguments filled is not one, there was an error.
-                if (length != 1) {
-                    LOG4CPLUS_ERROR(logger, "Parsing error.");
-                    throw storm::exceptions::WrongFormatException() << "Parsing error.";
-                } else {
-                    // If the action name was parsed successfully, we need to move by the corresponding number of characters.
-                    buf += strlen(actionNameBuffer);
-                }
-                
                 // Depending on the action name, the choice is either a probabilitic one or a markovian one.
                 bool isMarkovianChoice = false;
-                if (strcmp(actionNameBuffer, "!") == 0) {
+                if (buf[0] == '!') {
                     isMarkovianChoice = true;
                     
                     // Mark the current state as a Markovian one.
@@ -219,40 +176,24 @@ namespace storm {
                 
                 // At this point, we need to check whether there is an additional successor or we have reached the next choice for the same or a different state.
                 do {
-                    // Now parse the next symbol to see whether there is another target state for the current choice
-                    // or not.
-                    char star[1];
-#ifdef WINDOWS
-                    length = sscanf_s(buf, "%1s\n", star, 1);
-#else
-                    length = sscanf(buf, "%1s\n", star);
-#endif
-                    
-                    // If the number of arguments filled is not one, there was an error.
-                    if (length == EOF) {
-                        if (!hasSuccessorState) {
-                            LOG4CPLUS_ERROR(logger, "Premature end-of-file. Expected at least one successor state for state " << source << " under action " << actionNameBuffer << ".");
-                            throw storm::exceptions::WrongFormatException() << "Premature end-of-file. Expected at least one successor state for state " << source << " under action " << actionNameBuffer << ".";
-                        } else {
-                            // If there was at least one successor for the current choice, this is legal and we need to move on.
-                            encounteredEOF = true;
-                        }
-                    } else if (length != 1) {
-                        LOG4CPLUS_ERROR(logger, "Parsing error.");
-                        throw storm::exceptions::WrongFormatException() << "Parsing error.";
-                    } else if (strcmp(star, "*") == 0) {
+                    // If the end of the file was reached, we need to abort and check whether we are in a legal state.
+                    if (buf[0] == '\0') {
+                        // Under the assumption that the currently open choice has at least one successor (which is given after the first run)
+                        // we may legally stop reading here.
+                        encounteredEOF = true;
+                    } else if (buf[0] == '*') {
                         // We need to record that we found at least one successor state for the current choice.
                         hasSuccessorState = true;
                         
                         // As we have encountered a "*", we know that there is an additional successor state for the current choice.
-                        buf += strlen(star);
+                        ++buf;
                         
                         // Now we need to read the successor state and check if we already saw a higher state index.
                         target = checked_strtol(buf, &buf);
                         
                         // And the corresponding probability/rate.
                         double val = checked_strtod(buf, &buf);
-
+                        
                         // Record the value as well as the exit rate in case of a Markovian choice.
                         result.transitionMatrix.addNextValue(currentChoice, target, val);
                         if (isMarkovianChoice) {

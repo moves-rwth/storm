@@ -228,7 +228,7 @@ namespace storm {
                         
                         // If the state is initial, we need to add all the choice labels to the initial label set.
                         if (initialStates.get(currentState)) {
-                            initialLabels.insert(choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end());
+                            initialLabels.insert(choiceLabeling[currentChoice]);
                             initialCombinations.insert(choiceLabeling[currentChoice]);
                         }
                         
@@ -246,7 +246,7 @@ namespace storm {
                         
                         // If the choice can reach a target state directly, we add all the labels to the target label set.
                         if (canReachTargetState) {
-                            targetLabels.insert(choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end());
+                            targetLabels.insert(choiceLabeling[currentChoice]);
                             targetCombinations.insert(choiceLabeling[currentChoice]);
                         }
                     }
@@ -1513,7 +1513,7 @@ namespace storm {
                     
                     // Restrict the given MDP to the current set of labels and compute the reachability probability.
                     modelCheckingClock = std::chrono::high_resolution_clock::now();
-                    commandSet.insert(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end());
+                    commandSet.insert(relevancyInformation.knownLabels);
                     storm::models::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
                     storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(subMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
                     LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
