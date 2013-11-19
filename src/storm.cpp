@@ -467,9 +467,11 @@ int main(const int argc, const char* argv[]) {
 					LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
 					LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
 					break;
-                case storm::models::MA:
+                case storm::models::MA: {
                     LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
+                    storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*parser.getModel<storm::models::MarkovAutomaton<double>>());
                     break;
+                }
 				case storm::models::Unknown:
 				default:
 					LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");

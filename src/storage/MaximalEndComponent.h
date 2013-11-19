@@ -32,6 +32,14 @@ namespace storm {
              * @param choices The choices to add for the state.
              */
             void addState(uint_fast64_t state, std::vector<uint_fast64_t> const& choices);
+
+            /*!
+             * Adds the given state and the given choices to the MEC.
+             *
+             * @param state The state for which to add the choices.
+             * @param choices The choices to add for the state.
+             */
+            void addState(uint_fast64_t state, std::vector<uint_fast64_t>&& choices);
             
             /*!
              * Retrieves the choices for the given state that are contained in this MEC under the
@@ -80,6 +88,8 @@ namespace storm {
              * @return The set of states contained in the MEC.
              */
             storm::storage::VectorSet<uint_fast64_t> getStateSet() const;
+            
+            friend std::ostream& operator<<(std::ostream& out, MaximalEndComponent const& component);
             
         private:
             // This stores the mapping from states contained in the MEC to the choices in this MEC.

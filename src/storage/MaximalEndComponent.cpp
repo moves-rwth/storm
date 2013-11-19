@@ -30,6 +30,10 @@ namespace storm {
             stateToChoicesMapping[state] = choices;
         }
         
+        void MaximalEndComponent::addState(uint_fast64_t state, std::vector<uint_fast64_t>&& choices) {
+            stateToChoicesMapping.emplace(state, choices);
+        }
+        
         storm::storage::VectorSet<uint_fast64_t> const& MaximalEndComponent::getChoicesForState(uint_fast64_t state) const {
             auto stateChoicePair = stateToChoicesMapping.find(state);
             
@@ -89,5 +93,15 @@ namespace storm {
             
             return storm::storage::VectorSet<uint_fast64_t>(states);
         }
+        
+        std::ostream& operator<<(std::ostream& out, MaximalEndComponent const& component) {
+            out << "{";
+            for (auto const& stateChoicesPair : component.stateToChoicesMapping) {
+                out << "{" << stateChoicesPair.first << ", " << stateChoicesPair.second << "}";
+            }
+            out << "}";
+            
+            return out;
+        }        
     }
 }

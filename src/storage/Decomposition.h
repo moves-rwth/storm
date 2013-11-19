@@ -46,7 +46,8 @@ namespace storm {
             
             Block const& operator[](uint_fast64_t index) const;
             
-            friend std::ostream& operator<<(std::ostream& out, Decomposition const& decomposition);
+            template<typename BlockTimePrime>
+            friend std::ostream& operator<<(std::ostream& out, Decomposition<BlockTimePrime> const& decomposition);
 
         protected:
             // The blocks of the decomposition.

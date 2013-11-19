@@ -321,7 +321,7 @@ public:
 	 * @param index The index where to set the truth value.
 	 * @param value The truth value to set.
 	 */
-	void set(const uint_fast64_t index, const bool value) {
+	void set(const uint_fast64_t index, bool value = true) {
 		uint_fast64_t bucket = index >> 6;
 		if (bucket >= this->bucketCount) throw storm::exceptions::OutOfRangeException() << "Written index " << index << " out of bounds.";
 		uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
@@ -334,6 +334,19 @@ public:
 			truncateLastBucket();
 		}
 	}
+    
+    /*!
+     * Sets all bits in the given iterator range.
+     *
+     * @param begin The begin of the iterator range.
+     * @param end The element past the last element of the iterator range.
+     */
+    template<typename InputIterator>
+    void set(InputIterator begin, InputIterator end) {
+        for (InputIterator it = begin; it != end; ++it) {
+            this->set(*it);
+        }
+    }
 
 	/*!
 	 * Retrieves the truth value at the given index.
@@ -571,6 +584,15 @@ public:
             }
         }
         return false;
+    }
+    
+    /*!
+     * Removes all set bits from the bit vector.
+     */
+    void clear() {
+        for (uint_fast64_t i = 0; i < this->bucketCount; ++i) {
+            this->bucketArray[i] = 0;
+        }
     }
     
     /*!

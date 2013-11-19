@@ -80,6 +80,9 @@ namespace storm {
         }
         
         template class Decomposition<StateBlock>;
+        template std::ostream& operator<<(std::ostream& out, Decomposition<StateBlock> const& decomposition);
+        
         template class Decomposition<MaximalEndComponent>;
+        template std::ostream& operator<<(std::ostream& out, Decomposition<MaximalEndComponent> const& decomposition);
     } // namespace storage
 } // namespace storm
