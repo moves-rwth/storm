@@ -8,6 +8,8 @@ namespace storm {
         MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char* buf, SupportedLineEndingsEnum lineEndings) {
             MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
+            bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
+            
             // Skip the format hint.
             buf = storm::parser::forwardToNextLine(buf, lineEndings);
             
@@ -28,11 +30,16 @@ namespace storm {
                 
                 // If we have skipped some states, we need to reserve the space for the self-loop insertion in the second pass.
                 if (source > lastsource + 1) {
-                    result.numberOfNonzeroEntries += source - lastsource - 1;
-                    result.numberOfChoices += source - lastsource - 1;
-                } else {
-                    ++result.numberOfChoices;
+                    if (fixDeadlocks) {
+                        result.numberOfNonzeroEntries += source - lastsource - 1;
+                        result.numberOfChoices += source - lastsource - 1;
+                    } else {
+                        LOG4CPLUS_ERROR(logger, "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
+                        throw storm::exceptions::WrongFormatException() << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
+                    }
                 }
+                
+                ++result.numberOfChoices;
                 
                 // If we have moved to the next state, we need to clear the flag that stores whether or not the source has a Markovian or probabilistic choice.
                 if (source != lastsource) {
