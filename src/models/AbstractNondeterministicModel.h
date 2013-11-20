@@ -237,7 +237,7 @@ namespace storm {
                 this->choiceLabeling.reset(newChoiceLabeling);
             }
         
-        private:
+        protected:
             /*! A vector of indices mapping states to the choices (rows) in the transition matrix. */
             std::vector<uint_fast64_t> nondeterministicChoiceIndices;
         };

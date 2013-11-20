@@ -37,6 +37,9 @@ namespace storm {
                         LOG4CPLUS_ERROR(logger, "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
                         throw storm::exceptions::WrongFormatException() << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
                     }
+                } else if (source < lastsource) {
+                    LOG4CPLUS_ERROR(logger, "Illegal state choice order. A choice of state " << source << " appears at an illegal position.");
+                    throw storm::exceptions::WrongFormatException() << "Illegal state choice order. A choice of state " << source << " appears at an illegal position.";
                 }
                 
                 ++result.numberOfChoices;
@@ -78,6 +81,7 @@ namespace storm {
                 // Now that we have the source state and the information whether or not the current choice is probabilistic or Markovian, we need to read the list of successors and the probabilities/rates.
                 bool hasSuccessorState = false;
                 bool encounteredNewDistribution = false;
+                uint_fast64_t lastSuccessorState = 0;
                 
                 // At this point, we need to check whether there is an additional successor or we have reached the next choice for the same or a different state.
                 do {
@@ -91,9 +95,6 @@ namespace storm {
                             encounteredEOF = true;
                         }
                     } else if (buf[0] == '*') {
-                        // We need to record that we found at least one successor state for the current choice.
-                        hasSuccessorState = true;
-                        
                         // As we have encountered a "*", we know that there is an additional successor state for the current choice.
                         ++buf;
                         
@@ -102,14 +103,22 @@ namespace storm {
                         if (target > result.highestStateIndex) {
                             result.highestStateIndex = target;
                         }
-                                                
+                        if (hasSuccessorState && target <= lastSuccessorState) {
+                            LOG4CPLUS_ERROR(logger, "Illegal transition order for source state " << source << ".");
+                            throw storm::exceptions::WrongFormatException() << "Illegal transition order for source state " << source << ".";
+                        }
+                        
                         // And the corresponding probability/rate.
                         double val = checked_strtod(buf, &buf);
                         if (val <= 0.0) {
-                            LOG4CPLUS_ERROR(logger, "Illegal probability/rate value " << val << ".");
-                            throw storm::exceptions::WrongFormatException() << "Illegal probability/rate value " << val << ".";
+                            LOG4CPLUS_ERROR(logger, "Illegal probability/rate value for transition from " << source << " to " << target << ": " << val << ".");
+                            throw storm::exceptions::WrongFormatException() << "Illegal probability/rate value for transition from " << source << " to " << target << ": " << val << ".";
                         }
-                                                
+                        
+                        // We need to record that we found at least one successor state for the current choice.
+                        hasSuccessorState = true;
+                        lastSuccessorState = target;
+                        
                         // As we found a new successor, we need to increase the number of nonzero entries.
                         ++result.numberOfNonzeroEntries;
                         

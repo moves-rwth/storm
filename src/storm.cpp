@@ -469,7 +469,9 @@ int main(const int argc, const char* argv[]) {
 					break;
                 case storm::models::MA: {
                     LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
-                    storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*parser.getModel<storm::models::MarkovAutomaton<double>>());
+                    std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = parser.getModel<storm::models::MarkovAutomaton<double>>();
+                    markovAutomaton->close();
+                    storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*markovAutomaton);
                     break;
                 }
 				case storm::models::Unknown:

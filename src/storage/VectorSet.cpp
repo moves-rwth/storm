@@ -241,7 +241,7 @@ namespace storm {
         
         template<typename ValueType>
         void VectorSet<ValueType>::erase(VectorSet<ValueType> const& eraseSet) {
-            if (eraseSet.size() > 0) {
+            if (eraseSet.size() > 0 && this->size() > 0) {
                 ensureSet();
                 eraseSet.ensureSet();
                 
@@ -249,7 +249,7 @@ namespace storm {
                     while (setIt != eraseSet.data.rend() && *setIt > *delIt) {
                         ++setIt;
                     }
-                    if (setIt != data.rend()) break;
+                    if (setIt == data.rend()) break;
                     
                     if (*setIt == *delIt) {
                         data.erase((setIt + 1).base());

@@ -580,10 +580,10 @@ public:
     bool empty() const {
         for (uint_fast64_t i = 0; i < this->bucketCount; ++i) {
             if (this->bucketArray[i] != 0) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
     
     /*!

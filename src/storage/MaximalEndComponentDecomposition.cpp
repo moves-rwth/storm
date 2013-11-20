@@ -112,8 +112,10 @@ namespace storm {
                 if (mecChanged) {
                     std::list<StateBlock>::const_iterator eraseIterator(mecIterator);
                     for (StateBlock& scc : sccs) {
-                        endComponentStateSets.push_back(std::move(scc));
-                        ++mecIterator;
+                        if (!scc.empty()) {
+                            endComponentStateSets.push_back(std::move(scc));
+                            ++mecIterator;
+                        }
                     }
                     endComponentStateSets.erase(eraseIterator);
                 } else {
