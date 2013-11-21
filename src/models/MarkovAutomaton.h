@@ -29,6 +29,9 @@ namespace storm {
 							boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> const& optionalChoiceLabeling)
 							: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling),
                             markovianStates(markovianStates), exitRates(exitRates), closed(false) {
+                                
+                this->turnRatesToProbabilities();
+                                
 				if (this->hasTransitionRewards()) {
 					if (!this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix())) {
 						LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -46,6 +49,9 @@ namespace storm {
 							boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>&& optionalChoiceLabeling)
 							: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
                                                                std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
+                                
+                this->turnRatesToProbabilities();
+                                
 		        if (this->hasTransitionRewards()) {
 		            if (!this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix())) {
 		                LOG4CPLUS_ERROR(logger, "Transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -252,6 +258,21 @@ namespace storm {
                     }
 		private:
 
+            /*!
+             * Under the assumption that the Markovian choices of this Markov automaton are expressed in terms of rates in the transition matrix, this procedure turns
+             * the rates into the corresponding probabilities by dividing each entry by the exit rate of the state.
+             */
+            void turnRatesToProbabilities() {
+                std::cout << this->transitionMatrix.toString() << std::endl;
+                for (auto state : this->markovianStates) {
+                    for (typename storm::storage::SparseMatrix<T>::ValueIterator valIt = this->transitionMatrix.valueIteratorBegin(this->getNondeterministicChoiceIndices()[state]), valIte = this->transitionMatrix.valueIteratorEnd(this->getNondeterministicChoiceIndices()[state]); valIt != valIte; ++valIt) {
+                        *valIt = *valIt / this->exitRates[state];
+                    }
+                }
+                std::cout << this->transitionMatrix.toString() << std::endl;
+            }
+
+                    
             storm::storage::BitVector markovianStates;
 			std::vector<T> exitRates;
             bool closed;

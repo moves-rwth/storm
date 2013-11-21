@@ -87,6 +87,7 @@ public:
 	 */
 	typedef uint_fast64_t const* ConstIndexIterator;
 	typedef T const* ConstValueIterator;
+    typedef T* ValueIterator;
     
     /*!
 	 * A class representing an iterator over a continuous number of rows of the matrix.
@@ -1302,6 +1303,15 @@ public:
 	ConstValueIterator constValueIteratorEnd() const {
 		return &(this->valueStorage[0]) + this->rowIndications[rowCount];
 	}
+    
+    /*!
+	 * Returns an iterator that points to the first element after the matrix.
+	 *
+	 * @returns An iterator that points to the first element after the matrix.
+	 */
+    ValueIterator valueIteratorBegin(uint_fast64_t row = 0) {
+		return &(this->valueStorage[0]) + this->rowIndications[row];
+	}
 	
 	/*!
 	 * Returns an iterator that points to the first element after the given row.
@@ -1313,6 +1323,16 @@ public:
 		return &(this->valueStorage[0]) + this->rowIndications[row + 1];
 	}
 	
+    /*!
+	 * Returns an iterator that points to the first element after the given row.
+	 *
+	 * @param row The row past which this iterator has to point.
+	 * @returns An iterator that points to the first element after the matrix.
+	 */
+	ValueIterator valueIteratorEnd(uint_fast64_t row) {
+		return &(this->valueStorage[0]) + this->rowIndications[row + 1];
+	}
+    
 	/*!
 	 * Computes the sum of the elements in a given row.
 	 *
