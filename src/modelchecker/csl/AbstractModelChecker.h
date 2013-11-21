@@ -211,7 +211,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkOr(storm::property::csl::Or<Type> const& formula) const {
+	storm::storage::BitVector checkOr(storm::property::csl::Or<Type> const& formula) const {
 		storm::storage::BitVector result = formula.getLeft().check(*this);
 		storm::storage::BitVector right = formula.getRight().check(*this);
 		result |= right;

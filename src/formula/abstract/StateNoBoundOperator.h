@@ -47,7 +47,7 @@ namespace abstract {
  * @see StateBoundOperator
  */
 template <class T, class FormulaType>
-class StateNoBoundOperator: public virtual AbstractFormula<T> {
+class StateNoBoundOperator: public virtual AbstractFormula<T>, public OptimizingOperator {
 
 	// Throw a compiler error if FormulaType is not a subclass of AbstractFormula.
 	static_assert(std::is_base_of<AbstractFormula<T>, FormulaType>::value,

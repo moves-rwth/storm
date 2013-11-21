@@ -85,7 +85,15 @@ namespace storm {
             bool isProbabilisticState(uint_fast64_t state) const {
                 return !this->markovianStates.get(state);
             }
-                            
+            
+            std::vector<T> const& getExitRates() const {
+                return this->exitRates;
+            }
+            
+            storm::storage::BitVector const& getMarkovianStates() const {
+                return this->markovianStates;
+            }
+            
             void close() {
                 if (!closed) {
                     // First, count the number of hybrid states to know how many Markovian choices
@@ -108,6 +116,11 @@ namespace storm {
                     // Now copy over all choices that need to be kept.
                     uint_fast64_t currentChoice = 0;
                     for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                        // If the state is a hybrid state, closing it will make it a probabilistic state, so we remove the Markovian marking.
+                        if (this->isHybridState(state)) {
+                            this->markovianStates.set(state, false);
+                        }
+                        
                         // Record the new beginning of choices of this state.
                         newNondeterministicChoiceIndices[state] = currentChoice;
                         

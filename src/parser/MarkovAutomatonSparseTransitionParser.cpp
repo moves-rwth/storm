@@ -53,6 +53,8 @@ namespace storm {
                 // Record that the current source was the last source.
                 lastsource = source;
                 
+                buf = trimWhitespaces(buf);
+                
                 // Depending on the action name, the choice is either a probabilitic one or a markovian one.
                 bool isMarkovianChoice = false;
                 if (buf[0] == '!') {
@@ -85,6 +87,7 @@ namespace storm {
                 
                 // At this point, we need to check whether there is an additional successor or we have reached the next choice for the same or a different state.
                 do {
+                    buf = trimWhitespaces(buf);
                     // If the end of the file was reached, we need to abort and check whether we are in a legal state.
                     if (buf[0] == '\0') {
                         if (!hasSuccessorState) {
@@ -173,6 +176,8 @@ namespace storm {
                 // Record that the current source was the last source.
                 lastsource = source;
                 
+                buf = trimWhitespaces(buf);
+                
                 // Depending on the action name, the choice is either a probabilitic one or a markovian one.
                 bool isMarkovianChoice = false;
                 if (buf[0] == '!') {
@@ -192,6 +197,8 @@ namespace storm {
                 
                 // At this point, we need to check whether there is an additional successor or we have reached the next choice for the same or a different state.
                 do {
+                    buf = trimWhitespaces(buf);
+                    
                     // If the end of the file was reached, we need to abort and check whether we are in a legal state.
                     if (buf[0] == '\0') {
                         // Under the assumption that the currently open choice has at least one successor (which is given after the first run)

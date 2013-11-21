@@ -24,7 +24,7 @@
 #include "src/models/Dtmc.h"
 #include "src/models/MarkovAutomaton.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/storage/MaximalEndComponentDecomposition.h"
+#include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -471,7 +471,10 @@ int main(const int argc, const char* argv[]) {
                     LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
                     std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = parser.getModel<storm::models::MarkovAutomaton<double>>();
                     markovAutomaton->close();
-                    storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*markovAutomaton);
+                    
+                    storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
+                    mc.checkExpectedTime(true, markovAutomaton->getLabeledStates("goal"));
+                    
                     break;
                 }
 				case storm::models::Unknown:
