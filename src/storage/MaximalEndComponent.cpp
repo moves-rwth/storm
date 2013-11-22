@@ -102,6 +102,22 @@ namespace storm {
             out << "}";
             
             return out;
-        }        
+        }
+        
+        MaximalEndComponent::iterator MaximalEndComponent::begin() {
+            return stateToChoicesMapping.begin();
+        }
+        
+        MaximalEndComponent::iterator MaximalEndComponent::end() {
+            return stateToChoicesMapping.end();
+        }
+        
+        MaximalEndComponent::const_iterator MaximalEndComponent::begin() const {
+            return stateToChoicesMapping.begin();
+        }
+        
+        MaximalEndComponent::const_iterator MaximalEndComponent::end() const {
+            return stateToChoicesMapping.end();
+        }
     }
 }

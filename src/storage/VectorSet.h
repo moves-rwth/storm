@@ -19,6 +19,9 @@
 namespace storm  {
     namespace storage {
         
+        // Forward declare bit vector class.
+        class BitVector;
+        
         template<typename ValueType>
         class VectorSet {
         public:
@@ -36,6 +39,8 @@ namespace storm  {
             VectorSet(std::vector<ValueType> const& data);
             
             VectorSet(std::set<ValueType> const& data);
+            
+            VectorSet(BitVector const& data);
             
             VectorSet(uint_fast64_t from, uint_fast64_t to);
                         

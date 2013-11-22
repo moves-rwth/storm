@@ -6,7 +6,9 @@
 #include "src/modelchecker/csl/AbstractModelChecker.h"
 #include "src/models/MarkovAutomaton.h"
 #include "src/storage/BitVector.h"
+#include "src/storage/MaximalEndComponentDecomposition.h"
 #include "src/solver/AbstractNondeterministicLinearEquationSolver.h"
+#include "src/utility/graph.h"
 #include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
@@ -69,8 +71,55 @@ namespace storm {
                     // TODO: check whether the Markov automaton is closed once again? Or should that rather be done when constructing the model checker?
                     // For now we just assume that it is closed already.
 
-                    // Start by identifying the states for which values need to be computed.
-                    storm::storage::BitVector maybeStates = ~goalStates;
+                    // First, we need to check which states have infinite expected time (by definition).
+                    storm::storage::BitVector infinityStates;
+                    if (min) {
+                        // If we need to compute the minimum expected times, we have to set the values of those states to infinity that, under all schedulers,
+                        // reach a bottom SCC without a goal state.
+                        
+                        // So we start by computing all bottom SCCs without goal states.
+                        storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition(this->getModel(), ~goalStates, true, true);
+                        
+                        // Now form the union of all these SCCs.
+                        storm::storage::BitVector unionOfNonGoalBSccs(this->getModel().getNumberOfStates());
+                        for (auto const& scc : sccDecomposition) {
+                            for (auto state : scc) {
+                                unionOfNonGoalBSccs.set(state);
+                            }
+                        }
+                        
+                        // Finally, if this union is non-empty, compute the states such that all schedulers reach some state of the union.
+                        if (!unionOfNonGoalBSccs.empty()) {
+                            infinityStates = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), unionOfNonGoalBSccs);
+                        } else {
+                            // Otherwise, we have no infinity states.
+                            infinityStates = storm::storage::BitVector(this->getModel().getNumberOfStates());
+                        }
+                    } else {
+                        // If we maximize the property, the expected time of a state is infinite, if an end-component without any goal state is reachable.
+                        
+                        // So we start by computing all MECs that have no goal state.
+                        storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(this->getModel(), ~goalStates);
+                        
+                        // Now we form the union of all states in these end components.
+                        storm::storage::BitVector unionOfNonGoalMaximalEndComponents(this->getModel().getNumberOfStates());
+                        for (auto const& mec : mecDecomposition) {
+                            for (auto const& stateActionPair : mec) {
+                                unionOfNonGoalMaximalEndComponents.set(stateActionPair.first);
+                            }
+                        }
+                        
+                        if (!unionOfNonGoalMaximalEndComponents.empty()) {
+                            // Now we need to check for which states there exists a scheduler that reaches one of the previously computed states.
+                            infinityStates = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), unionOfNonGoalMaximalEndComponents);
+                        } else {
+                            // Otherwise, we have no infinity states.
+                            infinityStates = storm::storage::BitVector(this->getModel().getNumberOfStates());
+                        }
+                    }
+
+                    // Now we identify the states for which values need to be computed.
+                    storm::storage::BitVector maybeStates = ~(goalStates | infinityStates);
                     
                     // Then, we can eliminate the rows and columns for all states whose values are already known to be 0.
                     std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
@@ -97,8 +146,11 @@ namespace storm {
                     // Create resulting vector.
                     std::vector<ValueType> result(this->getModel().getNumberOfStates());
 
-                    // Set values of resulting vector according to previous result (goal states will have a value of 0) and return the result.
+                    // Set values of resulting vector according to previous result and return the result.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
+                    storm::utility::vector::setVectorValues(result, goalStates, storm::utility::constGetZero<ValueType>());
+                    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<ValueType>());
+
                     return result;
                 }
                 

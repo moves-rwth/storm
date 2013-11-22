@@ -263,15 +263,12 @@ namespace storm {
              * the rates into the corresponding probabilities by dividing each entry by the exit rate of the state.
              */
             void turnRatesToProbabilities() {
-                std::cout << this->transitionMatrix.toString() << std::endl;
                 for (auto state : this->markovianStates) {
                     for (typename storm::storage::SparseMatrix<T>::ValueIterator valIt = this->transitionMatrix.valueIteratorBegin(this->getNondeterministicChoiceIndices()[state]), valIte = this->transitionMatrix.valueIteratorEnd(this->getNondeterministicChoiceIndices()[state]); valIt != valIte; ++valIt) {
                         *valIt = *valIt / this->exitRates[state];
                     }
                 }
-                std::cout << this->transitionMatrix.toString() << std::endl;
             }
-
                     
             storm::storage::BitVector markovianStates;
 			std::vector<T> exitRates;

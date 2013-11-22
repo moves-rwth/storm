@@ -1,4 +1,5 @@
 #include "src/storage/VectorSet.h"
+#include "src/storage/BitVector.h"
 
 namespace storm {
     namespace storage {
@@ -21,6 +22,14 @@ namespace storm {
         VectorSet<ValueType>::VectorSet(std::set<ValueType> const& data) : dirty(false) {
             this->data.reserve(data.size());
             for (auto const& element : data) {
+                this->data.push_back(element);
+            }
+        }
+        
+        template<typename ValueType>
+        VectorSet<ValueType>::VectorSet(storm::storage::BitVector const& data) : dirty(false) {
+            this->data.reserve(data.getNumberOfSetBits());
+            for (auto element : data) {
                 this->data.push_back(element);
             }
         }

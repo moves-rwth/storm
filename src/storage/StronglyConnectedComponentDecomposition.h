@@ -32,7 +32,7 @@ namespace storm {
              * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
              * are to be kept in the decomposition.
              */
-            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs = false);
+            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
 
             /*
              * Creates an SCC decomposition of given block in the given model.
@@ -42,7 +42,9 @@ namespace storm {
              * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
              * are to be kept in the decomposition.
              */
-            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs = false);
+            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            
+            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             StronglyConnectedComponentDecomposition(StronglyConnectedComponentDecomposition const& other);
             
@@ -53,11 +55,11 @@ namespace storm {
             StronglyConnectedComponentDecomposition& operator=(StronglyConnectedComponentDecomposition&& other);
             
         private:
-            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs);
+            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
             
-            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs);
+            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
             
-            void performSccDecompositionHelper(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs);
+            void performSccDecompositionHelper(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs, bool onlyBottomSccs);
         };
     }
 }

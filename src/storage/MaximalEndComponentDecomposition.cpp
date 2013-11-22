@@ -13,7 +13,12 @@ namespace storm {
         
         template<typename ValueType>
         MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model) {
-            performMaximalEndComponentDecomposition(model);
+            performMaximalEndComponentDecomposition(model, storm::storage::BitVector(model.getNumberOfStates(), true));
+        }
+        
+        template<typename ValueType>
+        MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem) {
+            performMaximalEndComponentDecomposition(model, subsystem);
         }
         
         template<typename ValueType>
@@ -39,7 +44,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model) {
+        void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem) {
             // Get some references for convenient access.
             storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
             std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
@@ -47,12 +52,12 @@ namespace storm {
             
             // Initialize the maximal end component list to be the full state space.
             std::list<StateBlock> endComponentStateSets;
-            endComponentStateSets.emplace_back(0, model.getNumberOfStates());
+            endComponentStateSets.emplace_back(subsystem);
             storm::storage::BitVector statesToCheck(model.getNumberOfStates());
             
             for (std::list<StateBlock>::const_iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
                 StateBlock const& mec = *mecIterator;
-                
+
                 // Keep track of whether the MEC changed during this iteration.
                 bool mecChanged = false;
                 
@@ -110,13 +115,14 @@ namespace storm {
                 
                 // If the MEC changed, we delete it from the list of MECs and append the possible new MEC candidates to the list instead.
                 if (mecChanged) {
-                    std::list<StateBlock>::const_iterator eraseIterator(mecIterator);
                     for (StateBlock& scc : sccs) {
                         if (!scc.empty()) {
                             endComponentStateSets.push_back(std::move(scc));
-                            ++mecIterator;
                         }
                     }
+
+                    std::list<StateBlock>::const_iterator eraseIterator(mecIterator);
+                    ++mecIterator;
                     endComponentStateSets.erase(eraseIterator);
                 } else {
                     // Otherwise, we proceed with the next MEC candidate.

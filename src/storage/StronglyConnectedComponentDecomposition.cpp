@@ -9,14 +9,19 @@ namespace storm {
         }
 
         template <typename ValueType>
-        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs) : Decomposition() {
-            performSccDecomposition(model, dropNaiveSccs);
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) : Decomposition() {
+            performSccDecomposition(model, dropNaiveSccs, onlyBottomSccs);
         }
         
         template <typename ValueType>
-        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs) {
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
             storm::storage::BitVector subsystem(model.getNumberOfStates(), block);
-            performSccDecomposition(model, subsystem, dropNaiveSccs);
+            performSccDecomposition(model, subsystem, dropNaiveSccs, onlyBottomSccs);
+        }
+        
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
+            performSccDecomposition(model, subsystem, dropNaiveSccs, onlyBottomSccs);
         }
         
         template <typename ValueType>
@@ -42,7 +47,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs) {
+        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
             LOG4CPLUS_INFO(logger, "Computing SCC decomposition.");
             
             uint_fast64_t numberOfStates = model.getNumberOfStates();
@@ -59,7 +64,7 @@ namespace storm {
             uint_fast64_t currentIndex = 0;
             for (auto state : subsystem) {
                 if (!visitedStates.get(state)) {
-                    performSccDecompositionHelper(model, state, subsystem, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, dropNaiveSccs);
+                    performSccDecompositionHelper(model, state, subsystem, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, dropNaiveSccs, onlyBottomSccs);
                 }
             }
             
@@ -68,18 +73,18 @@ namespace storm {
 
         
         template <typename ValueType>
-        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs) {
+        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) {
             uint_fast64_t numberOfStates = model.getNumberOfStates();
 
             // Prepare a block that contains all states for a call to the other overload of this function.
             storm::storage::BitVector fullSystem(numberOfStates, true);
             
             // Call the overloaded function.
-            performSccDecomposition(model, fullSystem, dropNaiveSccs);
+            performSccDecomposition(model, fullSystem, dropNaiveSccs, onlyBottomSccs);
         }
         
         template <typename ValueType>
-        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecompositionHelper(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs) {
+        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecompositionHelper(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs, bool onlyBottomSccs) {
             // Create the stacks needed for turning the recursive formulation of Tarjan's algorithm
             // into an iterative version. In particular, we keep one stack for states and one stack
             // for the iterators. The last one is not strictly needed, but reduces iteration work when
@@ -91,7 +96,16 @@ namespace storm {
             std::vector<bool> statesInStack(lowlinks.size());
             
             // Store a bit vector of all states with a self-loop to be able to detect non-trivial SCCs with only one state.
-            storm::storage::BitVector statesWithSelfloop(lowlinks.size());
+            storm::storage::BitVector statesWithSelfloop;
+            if (dropNaiveSccs) {
+                statesWithSelfloop = storm::storage::BitVector(lowlinks.size());
+            }
+            
+            // Store a bit vector of all states that can leave their SCC to be able to detect bottom SCCs.
+            storm::storage::BitVector statesThatCanLeaveTheirScc;
+            if (onlyBottomSccs) {
+                statesThatCanLeaveTheirScc = storm::storage::BitVector(lowlinks.size());
+            }
             
             // Initialize the recursion stacks with the given initial state (and its successor iterator).
             recursionStateStack.push_back(startState);
@@ -112,33 +126,45 @@ namespace storm {
                 
                 // Now, traverse all successors of the current state.
                 for(; successorIt != model.getRows(currentState).end(); ++successorIt) {
-                    // Record if the current state has a self-loop.
-                    if (currentState == successorIt.column()) {
+                    // Record if the current state has a self-loop if we are to drop naive SCCs later.
+                    if (dropNaiveSccs && currentState == successorIt.column()) {
                         statesWithSelfloop.set(currentState, true);
                     }
                     
                     // If we have not visited the successor already, we need to perform the procedure
-                    // recursively on the newly found state.
-                    if (!visitedStates.get(successorIt.column()) && subsystem.get(successorIt.column())) {
-                        // Save current iterator position so we can continue where we left off later.
-                        recursionIteratorStack.pop_back();
-                        recursionIteratorStack.push_back(successorIt);
-                        
-                        // Put unvisited successor on top of our recursion stack and remember that.
-                        recursionStateStack.push_back(successorIt.column());
-                        statesInStack[successorIt.column()] = true;
-                        
-                        // Also, put initial value for iterator on corresponding recursion stack.
-                        recursionIteratorStack.push_back(model.getRows(successorIt.column()).begin());
-                        
-                        // Perform the actual recursion step in an iterative way.
-                        goto recursionStepForward;
-                        
-                    recursionStepBackward:
-                        lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[successorIt.column()]);
-                    } else if (tarjanStackStates.get(successorIt.column())) {
-                        // Update the lowlink of the current state.
-                        lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[successorIt.column()]);
+                    // recursively on the newly found state, but only if it belongs to the subsystem in
+                    // which we are interested.
+                    if (subsystem.get(successorIt.column())) {
+                        if (!visitedStates.get(successorIt.column())) {
+                            // Save current iterator position so we can continue where we left off later.
+                            recursionIteratorStack.pop_back();
+                            recursionIteratorStack.push_back(successorIt);
+                            
+                            // Put unvisited successor on top of our recursion stack and remember that.
+                            recursionStateStack.push_back(successorIt.column());
+                            statesInStack[successorIt.column()] = true;
+                            
+                            // Also, put initial value for iterator on corresponding recursion stack.
+                            recursionIteratorStack.push_back(model.getRows(successorIt.column()).begin());
+                            
+                            // Perform the actual recursion step in an iterative way.
+                            goto recursionStepForward;
+                            
+                        recursionStepBackward:
+                            lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[successorIt.column()]);
+                            
+                            // If we are interested in bottom SCCs only, we need to check whether the current state
+                            // can leave the SCC.
+                            if (onlyBottomSccs && lowlinks[currentState] != lowlinks[successorIt.column()]) {
+                                statesThatCanLeaveTheirScc.set(currentState);
+                            }
+                        } else if (tarjanStackStates.get(successorIt.column())) {
+                            // Update the lowlink of the current state.
+                            lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[successorIt.column()]);
+                            
+                            // Since it is known that in this case, the successor state is in the same SCC as the current state
+                            // we don't need to update the bit vector of states that can leave their SCC.
+                        }
                     }
                 }
                 
@@ -148,6 +174,7 @@ namespace storm {
                     Block scc;
                     
                     uint_fast64_t lastState = 0;
+                    bool isBottomScc = true;
                     do {
                         // Pop topmost state from the algorithm's stack.
                         lastState = tarjanStack.back();
@@ -156,10 +183,20 @@ namespace storm {
                         
                         // Add the state to the current SCC.
                         scc.insert(lastState);
+                        
+                        if (onlyBottomSccs && isBottomScc && statesThatCanLeaveTheirScc.get(lastState)) {
+                            isBottomScc = false;
+                        }
                     } while (lastState != currentState);
                     
-                    // Only add the SCC if it is non-trivial if the corresponding flag was set.
-                    if (!dropNaiveSccs || scc.size() > 1 || statesWithSelfloop.get(*scc.begin())) {
+                    // Now determine whether we want to keep this SCC in the decomposition.
+                    // First, we need to check whether we should drop the SCC because of the requirement to not include naive SCCs.
+                    bool keepScc = !dropNaiveSccs || (scc.size() > 1 || statesWithSelfloop.get(*scc.begin()));
+                    // Then, we also need to make sure that it is a bottom SCC if we were required to.
+                    keepScc &= !onlyBottomSccs || isBottomScc;
+                    
+                    // Only add the SCC if we determined to keep it, based on the given parameters.
+                    if (keepScc) {
                         this->blocks.emplace_back(std::move(scc));
                     }
                 }

@@ -12,6 +12,9 @@ namespace storm {
          */
         class MaximalEndComponent {
         public:
+            typedef std::unordered_map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>>::iterator iterator;
+            typedef std::unordered_map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>>::const_iterator const_iterator;
+            
             /*!
              * Creates an empty MEC.
              */
@@ -88,6 +91,14 @@ namespace storm {
              * @return The set of states contained in the MEC.
              */
             storm::storage::VectorSet<uint_fast64_t> getStateSet() const;
+            
+            iterator begin();
+            
+            iterator end();
+            
+            const_iterator begin() const;
+            
+            const_iterator end() const;
             
             friend std::ostream& operator<<(std::ostream& out, MaximalEndComponent const& component);
             

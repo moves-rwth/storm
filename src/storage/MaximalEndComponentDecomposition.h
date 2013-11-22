@@ -24,6 +24,8 @@ namespace storm  {
              */
             MaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model);
             
+            MaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem);
+            
             MaximalEndComponentDecomposition(MaximalEndComponentDecomposition const& other);
             
             MaximalEndComponentDecomposition& operator=(MaximalEndComponentDecomposition const& other);
@@ -39,7 +41,7 @@ namespace storm  {
              *
              * @param model The model to decompose.
              */
-            void performMaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model);
+            void performMaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem);
         };
     }
 }
