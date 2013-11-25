@@ -662,6 +662,57 @@ namespace storage {
 		negateAllNonDiagonalElements();
 	}
 
+	template <typename T>
+	SparseMatrix<T> SparseMatrix<T>::transpose() const {
+
+		uint_fast64_t rowCount = this->colCount;
+		uint_fast64_t colCount = this->rowCount;
+		uint_fast64_t nonZeroEntryCount = this->nonZeroEntryCount;
+
+		std::vector<uint_fast64_t> rowIndications(rowCount + 1);
+		std::vector<uint_fast64_t> columnIndications(nonZeroEntryCount);
+		std::vector<T> values(nonZeroEntryCount, T());
+
+		// First, we need to count how many entries each column has.
+		for (uint_fast64_t i = 0; i < this->rowCount; ++i) {
+			typename storm::storage::SparseMatrix<T>::Rows rows = this->getRow(i);
+			for (auto const& transition : rows) {
+				if (transition.value() > 0) {
+					++rowIndications[transition.column() + 1];
+				}
+			}
+		}
+
+		// Now compute the accumulated offsets.
+		for (uint_fast64_t i = 1; i < rowCount + 1; ++i) {
+			rowIndications[i] = rowIndications[i - 1] + rowIndications[i];
+		}
+
+		// Create an array that stores the index for the next value to be added for
+		// each row in the transposed matrix. Initially this corresponds to the previously
+		// computed accumulated offsets.
+		std::vector<uint_fast64_t> nextIndices = rowIndications;
+
+		// Now we are ready to actually fill in the values of the transposed matrix.
+		for (uint_fast64_t i = 0; i < this->rowCount; ++i) {
+			typename storm::storage::SparseMatrix<T>::Rows rows = this->getRow(i);
+			for (auto& transition : rows) {
+				if (transition.value() > 0) {
+					values[nextIndices[transition.column()]] = transition.value();
+					columnIndications[nextIndices[transition.column()]++] = i;
+				}
+			}
+		}
+
+		storm::storage::SparseMatrix<T> transposedMatrix(rowCount, colCount,
+														 nonZeroEntryCount,
+														 std::move(rowIndications),
+														 std::move(columnIndications),
+														 std::move(values));
+
+		return transposedMatrix;
+	}
+
 	template<typename T>
 	void SparseMatrix<T>::invertDiagonal() {
 		// Check if the matrix is square, because only then it makes sense to perform this
@@ -1000,7 +1051,7 @@ namespace storage {
 
 	// Explicit instantiations of specializations of this template here.
 	template class SparseMatrix<double>;
-	template class SparseMatrix<bool>;
+	template class SparseMatrix<int>;
 
 	// Functions of the tbbHelper_MatrixRowVectorScalarProduct friend class.
 

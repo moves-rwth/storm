@@ -539,6 +539,13 @@ public:
 	void convertToEquationSystem();
 
 	/*!
+	 * Transposes the matrix.
+	 *
+	 * @return A sparse matrix that represents the transpose of this matrix.
+	 */
+	storm::storage::SparseMatrix<T> transpose() const;
+
+	/*!
 	 * Inverts all elements on the diagonal, i.e. sets the diagonal values to 1 minus their previous
 	 * value. Requires the matrix to contain each diagonal element and to be square.
 	 */
@@ -791,7 +798,7 @@ private:
 // Extern template declaration to tell the compiler that there already is an instanciation of this template somewhere.
 // The extern instance will be found by the linker. Prevents multiple instantiations of the same template specialisation.
 extern template class SparseMatrix<double>;
-extern template class SparseMatrix<bool>;
+extern template class SparseMatrix<int>;
 
 #ifdef STORM_HAVE_INTELTBB
 	/*!

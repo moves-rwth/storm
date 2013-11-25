@@ -145,10 +145,10 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
         /*!
          * Extracts the dependency graph from the model according to the given partition.
          *
-         * @param partition A vector containing the blocks of the partition of the system.
+         * @param decomposition A decomposition containing the blocks of the partition of the system.
          * @return A sparse matrix with bool entries that represents the dependency graph of the blocks of the partition.
          */
-        storm::storage::SparseMatrix<bool> extractPartitionDependencyGraph(storm::storage::Decomposition const& decomposition) const {
+        storm::storage::SparseMatrix<T> extractPartitionDependencyGraph(storm::storage::Decomposition const& decomposition) const {
             uint_fast64_t numberOfStates = decomposition.size();
             
             // First, we need to create a mapping of states to their SCC index, to ease the computation of dependency transitions later.
@@ -160,7 +160,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             }
             
             // The resulting sparse matrix will have as many rows/columns as there are blocks in the partition.
-            storm::storage::SparseMatrix<bool> dependencyGraph(numberOfStates);
+            storm::storage::SparseMatrix<T> dependencyGraph(numberOfStates);
             dependencyGraph.initialize();
             
             for (uint_fast64_t currentBlockIndex = 0; currentBlockIndex < decomposition.size(); ++currentBlockIndex) {
@@ -191,76 +191,15 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             dependencyGraph.finalize(true);
             return dependencyGraph;
         }
-    
+
         /*!
          * Retrieves the backward transition relation of the model, i.e. a set of transitions
          * between states that correspond to the reversed transition relation of this model.
          *
          * @return A sparse matrix that represents the backward transitions of this model.
          */
-        storm::storage::SparseMatrix<bool> getBackwardTransitions() const {
-            return getBackwardTransitions<bool>([](T const& value) -> bool { return value != 0; });
-        }
-    
-        /*!
-         * Retrieves the backward transition relation of the model, i.e. a set of transitions
-         * between states that correspond to the reversed transition relation of this model.
-         *
-         * @return A sparse matrix that represents the backward transitions of this model.
-         */
-        template <typename TransitionType>
-        storm::storage::SparseMatrix<TransitionType> getBackwardTransitions(std::function<TransitionType(T const&)> const& selectionFunction) const {
-            uint_fast64_t numberOfStates = this->getNumberOfStates();
-            uint_fast64_t numberOfTransitions = this->getNumberOfTransitions();
-            
-            std::vector<uint_fast64_t> rowIndications(numberOfStates + 1);
-            std::vector<uint_fast64_t> columnIndications(numberOfTransitions);
-            std::vector<TransitionType> values(numberOfTransitions, TransitionType());
-            
-            // First, we need to count how many backward transitions each state has.
-            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(i);
-                for (auto const& transition : rows) {
-                    if (transition.value() > 0) {
-                        ++rowIndications[transition.column() + 1];
-                    }
-                }
-            }
-            
-            // Now compute the accumulated offsets.
-            for (uint_fast64_t i = 1; i < numberOfStates; ++i) {
-                rowIndications[i] = rowIndications[i - 1] + rowIndications[i];
-            }
-            
-            // Put a sentinel element at the end of the indices list. This way,
-            // for each state i the range of indices can be read off between
-            // state_indices_list[i] and state_indices_list[i + 1].
-            // FIXME: This should not be necessary and already be implied by the first steps.
-            rowIndications[numberOfStates] = numberOfTransitions;
-            
-            // Create an array that stores the next index for each state. Initially
-            // this corresponds to the previously computed accumulated offsets.
-            std::vector<uint_fast64_t> nextIndices = rowIndications;
-            
-            // Now we are ready to actually fill in the list of predecessors for
-            // every state. Again, we start by considering all but the last row.
-            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(i);
-                for (auto& transition : rows) {
-                    if (transition.value() > 0) {
-                        values[nextIndices[transition.column()]] = selectionFunction(transition.value());
-                        columnIndications[nextIndices[transition.column()]++] = i;
-                    }
-                }
-            }
-            
-            storm::storage::SparseMatrix<TransitionType> backwardTransitionMatrix(numberOfStates, numberOfStates,
-                                                                                  numberOfTransitions,
-                                                                                  std::move(rowIndications),
-                                                                                  std::move(columnIndications),
-                                                                                  std::move(values));
-            
-            return backwardTransitionMatrix;
+        storm::storage::SparseMatrix<T> getBackwardTransitions() const {
+            return this->transitionMatrix.transpose();
         }
 
         /*!

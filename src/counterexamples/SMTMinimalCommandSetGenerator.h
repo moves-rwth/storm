@@ -84,7 +84,7 @@ namespace storm {
                 
                 // Compute all relevant states, i.e. states for which there exists a scheduler that has a non-zero
                 // probabilitiy of satisfying phi until psi.
-                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
                 relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
                 relevancyInformation.relevantStates &= ~psiStates;
 
@@ -214,7 +214,7 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
                 storm::storage::BitVector const& initialStates = labeledMdp.getInitialStates();
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
-                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
                 
                 for (auto currentState : relevancyInformation.relevantStates) {
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(currentState)) {
@@ -484,7 +484,7 @@ namespace storm {
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
-                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
                 
                 // Compute the set of labels that may precede a given action.
                 for (auto currentState : relevancyInformation.relevantStates) {
