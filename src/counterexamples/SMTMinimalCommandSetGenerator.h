@@ -67,6 +67,24 @@ namespace storm {
                 
                 // A vector of variables that can be used to constrain the number of variables that are set to true.
                 std::vector<z3::expr> adderVariables;
+                
+                // A flag whether or not there are variables reserved for encoding reachability of a target state.
+                bool hasReachabilityVariables;
+                
+                // Starting from here, all structures hold information only if hasReachabilityVariables is true;
+                
+                // A mapping from each pair of adjacent relevant states to their index in the corresponding variable vector.
+                std::map<std::pair<uint_fast64_t, uint_fast64_t>, uint_fast64_t> statePairToIndexMap;
+                
+                // A vector of variables associated with each pair of relevant states (s, s') such that s' is
+                // a successor of s.
+                std::vector<z3::expr> statePairVariables;
+                
+                // A mapping from relevant states to the index with the corresponding order variable in the state order variable vector.
+                std::map<uint_fast64_t, uint_fast64_t> relevantStatesToOrderVariableIndexMap;
+                
+                // A vector of variables that holds all state order variables.
+                std::vector<z3::expr> stateOrderVariables;
             };
             
             /*!
@@ -141,13 +159,14 @@ namespace storm {
              * @param relevantCommands A set of relevant labels for which to create the expressions.
              * @return A mapping from relevant labels to their corresponding expressions.
              */
-            static VariableInformation createExpressionsForRelevantLabels(z3::context& context, storm::storage::VectorSet<uint_fast64_t> const& relevantLabels) {
+            static VariableInformation createVariables(z3::context& context, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, RelevancyInformation const& relevancyInformation, bool createReachabilityVariables) {
                 VariableInformation variableInformation;
                 
                 // Create stringstream to build expression names.
                 std::stringstream variableName;
                 
-                for (auto label : relevantLabels) {                    
+                // Create the variables for the relevant labels.
+                for (auto label : relevancyInformation.relevantLabels) {
                     variableInformation.labelToIndexMap[label] = variableInformation.labelVariables.size();
                     
                     // Clear contents of the stream to construct new expression name.
@@ -163,6 +182,68 @@ namespace storm {
                     variableName << "h" << label;
                     
                     variableInformation.originalAuxiliaryVariables.push_back(context.bool_const(variableName.str().c_str()));
+                }
+                
+                // A mapping from each pair of adjacent relevant states to their index in the corresponding variable vector.
+                std::map<std::pair<uint_fast64_t, uint_fast64_t>, uint_fast64_t> statePairToIndexMap;
+                
+                // A vector of variables associated with each pair of relevant states (s, s') such that s' is
+                // a successor of s.
+                std::vector<z3::expr> statePairVariables;
+                
+                // Create variables needed for encoding reachability of a target state if requested.
+                if (createReachabilityVariables) {
+                    variableInformation.hasReachabilityVariables = true;
+                    
+                    storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
+                    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
+                    
+                    for (auto state : relevancyInformation.relevantStates) {
+                        variableInformation.relevantStatesToOrderVariableIndexMap[state] = variableInformation.stateOrderVariables.size();
+                        
+                        // Clear contents of the stream to construct new expression name.
+                        variableName.clear();
+                        variableName.str("");
+                        variableName << "o" << state;
+                        
+                        variableInformation.stateOrderVariables.push_back(context.real_const(variableName.str().c_str()));
+                        
+                        for (auto const& relevantChoices : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
+                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(relevantChoices); successorIt != transitionMatrix.constColumnIteratorEnd(relevantChoices); ++successorIt) {
+                                
+                                // If the successor state is neither the state itself nor an irrelevant state, we need to add a variable for the transition.
+                                if (state != *successorIt && (relevancyInformation.relevantStates.get(*successorIt) || psiStates.get(*successorIt))) {
+                                    
+                                    // Make sure that there is not already one variable for the state pair. This may happen because of several nondeterministic choices
+                                    // targeting the same state.
+                                    if (variableInformation.statePairToIndexMap.find(std::make_pair(state, *successorIt)) != variableInformation.statePairToIndexMap.end()) {
+                                        continue;
+                                    }
+                                    
+                                    // At this point we know that the state-pair does not have an associated variable.
+                                    variableInformation.statePairToIndexMap[std::make_pair(state, *successorIt)] = variableInformation.statePairVariables.size();
+                                    
+                                    // Clear contents of the stream to construct new expression name.
+                                    variableName.clear();
+                                    variableName.str("");
+                                    variableName << "t" << state << "_" << *successorIt;
+                                    
+                                    variableInformation.statePairVariables.push_back(context.bool_const(variableName.str().c_str()));
+                                }
+                            }
+                        }
+                    }
+                    
+                    for (auto psiState : psiStates) {
+                        variableInformation.relevantStatesToOrderVariableIndexMap[psiState] = variableInformation.stateOrderVariables.size();
+                        
+                        // Clear contents of the stream to construct new expression name.
+                        variableName.clear();
+                        variableName.str("");
+                        variableName << "o" << psiState;
+                        
+                        variableInformation.stateOrderVariables.push_back(context.real_const(variableName.str().c_str()));
+                    }
                 }
                 
                 return variableInformation;
@@ -808,6 +889,41 @@ namespace storm {
                     }
                 }
             }
+            
+            /*!
+             * Asserts constraints necessary to encode the reachability of at least one target state from the initial states.
+             */
+            static void assertReachabilityCuts(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
+                
+                // Get some data from the MDP for convenient access.
+                storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
+                std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+                
+                for (auto relevantState : relevancyInformation.relevantStates) {
+                    // Only consider the state if it's not an initial state.
+                    if (!labeledMdp.getInitialStates().get(relevantState)) {
+                        
+                        storm::storage::VectorSet<uint_fast64_t> relevantPredecessors;
+                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(relevantState), predecessorIte = backwardTransitions.constColumnIteratorEnd(relevantState); predecessorIt != predecessorIte; ++predecessorIt) {
+                            if (relevantState != *predecessorIt && relevancyInformation.relevantStates.get(*predecessorIt)) {
+                                relevantPredecessors.insert(*predecessorIt);
+                            }
+                        }
+                        
+                        storm::storage::VectorSet<uint_fast64_t> relevantSuccessors;
+                        for (auto const& relevantChoices : relevancyInformation.relevantChoicesForRelevantStates.at(relevantState)) {
+                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(relevantChoices); successorIt != transitionMatrix.constColumnIteratorEnd(relevantChoices); ++successorIt) {
+                                if (relevantState != *successorIt && (relevancyInformation.relevantStates.get(*successorIt) || psiStates.get(*successorIt))) {
+                                    relevantSuccessors.insert(*successorIt);
+                                }
+                            }
+                        }
+                        
+                        // TODO: build the constraints
+                    }
+                }
+            }
         
             /*!
              * Asserts that the disjunction of the given formulae holds. If the content of the disjunction is empty,
@@ -1425,7 +1541,7 @@ namespace storm {
              * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
              * is made and fails, an exception is thrown.
              */
-            static storm::storage::VectorSet<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false) {
+            static storm::storage::VectorSet<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1469,7 +1585,7 @@ namespace storm {
                 z3::context context;
                 
                 // (4) Create the variables for the relevant commands.
-                VariableInformation variableInformation = createExpressionsForRelevantLabels(context, relevancyInformation.relevantLabels);
+                VariableInformation variableInformation = createVariables(context, labeledMdp, psiStates, relevancyInformation, includeReachabilityEncoding);
                 LOG4CPLUS_DEBUG(logger, "Created variables.");
 
                 // (5) After all variables have been created, create a solver for that context.
@@ -1487,6 +1603,10 @@ namespace storm {
                 LOG4CPLUS_DEBUG(logger, "Asserted explicit cuts.");
                 assertSymbolicCuts(program, labeledMdp, variableInformation, relevancyInformation, context, solver);
                 LOG4CPLUS_DEBUG(logger, "Asserted symbolic cuts.");
+                if (includeReachabilityEncoding) {
+                    assertReachabilityCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
+                    LOG4CPLUS_DEBUG(logger, "Asserted reachability cuts.");
+                }
                 
                 // As we are done with the setup at this point, stop the clock for the setup time.
                 totalSetupTime = std::chrono::high_resolution_clock::now() - setupTimeClock;
