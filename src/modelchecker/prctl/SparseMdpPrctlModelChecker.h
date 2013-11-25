@@ -297,6 +297,7 @@ namespace storm {
                     storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
                     storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
                     
+                    
                     storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
                     LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
                     LOG4CPLUS_INFO(logger, "Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
@@ -347,9 +348,9 @@ namespace storm {
                     // Set values of resulting vector that are known exactly.
                     storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
                     storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
-                                        
+                    
                     // Finally, compute a scheduler that achieves the extramal value.
-                    storm::storage::TotalScheduler scheduler = this->computeExtremalScheduler(this->minimumOperatorStack.top(), false, result);
+                    storm::storage::TotalScheduler scheduler = this->computeExtremalScheduler(minimize, false, result);
                     
                     return std::make_pair(result, scheduler);
                 }
@@ -590,7 +591,7 @@ namespace storm {
                     } else {
                         storm::utility::vector::reduceVectorMax(nondeterministicResult, temporaryResult, this->getModel().getNondeterministicChoiceIndices(), &choices);
                     }
-                    
+
                     return storm::storage::TotalScheduler(choices);
                 }
                 

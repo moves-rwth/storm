@@ -46,6 +46,8 @@ namespace storm {
             virtual bool getBinaryValue(uint_fast64_t variableIndex) const = 0;
             virtual double getContinuousValue(uint_fast64_t variableIndex) const = 0;
 
+            virtual void writeModelToFile(std::string const& filename) const = 0;
+            
             virtual void setModelSense(ModelSense const& newModelSense) {
                 this->modelSense = newModelSense;
             }

@@ -35,6 +35,10 @@ namespace storm {
             this->setModelSense(modelSense);
         }
         
+        GurobiLpSolver::GurobiLpSolver(std::string const& name) : GurobiLpSolver(name, MINIMIZE) {
+            // Intentionally left empty.
+        }
+        
         GurobiLpSolver::~GurobiLpSolver() {
             GRBfreemodel(model);
             GRBfreeenv(env);
@@ -64,7 +68,22 @@ namespace storm {
         }
         
         uint_fast64_t GurobiLpSolver::createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            int error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, lowerBound, upperBound, GRB_CONTINUOUS, name.c_str());
+            int error = 0;
+            switch (variableType) {
+                case LpSolver::BOUNDED:
+                    error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, lowerBound, upperBound, GRB_CONTINUOUS, name.c_str());
+                    break;
+                case LpSolver::UNBOUNDED:
+                    error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, -GRB_INFINITY, GRB_INFINITY, GRB_CONTINUOUS, name.c_str());
+                    break;
+                case LpSolver::UPPER_BOUND:
+                    error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, -GRB_INFINITY, upperBound, GRB_CONTINUOUS, name.c_str());
+                    break;
+                case LpSolver::LOWER_BOUND:
+                    error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, lowerBound, GRB_INFINITY, GRB_CONTINUOUS, name.c_str());
+                    break;
+            }
+            
             if (error) {
                 LOG4CPLUS_ERROR(logger, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").");
                 throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").";
@@ -75,7 +94,22 @@ namespace storm {
         }
         
         uint_fast64_t GurobiLpSolver::createIntegerVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            int error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, lowerBound, upperBound, GRB_INTEGER, name.c_str());
+            int error = 0;
+            switch (variableType) {
+                case LpSolver::BOUNDED:
+                    error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, lowerBound, upperBound, GRB_INTEGER, name.c_str());
+                    break;
+                case LpSolver::UNBOUNDED:
+                    error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, -GRB_INFINITY, GRB_INFINITY, GRB_INTEGER, name.c_str());
+                    break;
+                case LpSolver::UPPER_BOUND:
+                    error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, -GRB_INFINITY, upperBound, GRB_INTEGER, name.c_str());
+                    break;
+                case LpSolver::LOWER_BOUND:
+                    error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, lowerBound, GRB_INFINITY, GRB_INTEGER, name.c_str());
+                    break;
+            }
+
             if (error) {
                 LOG4CPLUS_ERROR(logger, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").");
                 throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").";
@@ -110,8 +144,18 @@ namespace storm {
             std::vector<double> coefficientsCopy(coefficients);
             
             bool strictBound = boundType == LESS || boundType == GREATER;
-            char sense = boundType == LESS || boundType == LESS_EQUAL ? GRB_LESS_EQUAL : GRB_GREATER_EQUAL;
-            int error = GRBaddconstr(model, variablesCopy.size(), variablesCopy.data(), coefficientsCopy.data(), sense, strictBound ? rightHandSideValue : rightHandSideValue + storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble(), nullptr);
+            char sense = boundType == LESS || boundType == LESS_EQUAL ? GRB_LESS_EQUAL : boundType == EQUAL ? GRB_EQUAL : GRB_GREATER_EQUAL;
+            
+            // If the constraint enforces a strict bound, we need to do some tweaking of the right-hand side value, because Gurobi only supports
+            // non-strict bounds.
+            if (strictBound) {
+                if (boundType == LESS) {
+                    rightHandSideValue -= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+                } else if (boundType == GREATER) {
+                    rightHandSideValue += storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+                }
+            }
+            int error = GRBaddconstr(model, variablesCopy.size(), variablesCopy.data(), coefficientsCopy.data(), sense, rightHandSideValue, name == "" ? nullptr : name.c_str());
             
             if (error) {
                 LOG4CPLUS_ERROR(logger, "Unable to assert Gurobi constraint (" << GRBgeterrormsg(env) << ").");
@@ -213,6 +257,14 @@ namespace storm {
             }
             
             return value;
+        }
+        
+        void GurobiLpSolver::writeModelToFile(std::string const& filename) const {
+            int error = GRBwrite(model, filename.c_str());
+            if (error) {
+                LOG4CPLUS_ERROR(logger, "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ") to file.");
+                throw storm::exceptions::InvalidStateException() << "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ") to file.";
+            }
         }
     }
 }

@@ -21,6 +21,7 @@ namespace storm {
         class GurobiLpSolver : public LpSolver {
         public:
             GurobiLpSolver(std::string const& name, ModelSense const& modelSense);
+            GurobiLpSolver(std::string const& name);
             virtual ~GurobiLpSolver();
             
             virtual uint_fast64_t createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override;
@@ -35,6 +36,8 @@ namespace storm {
             virtual int_fast64_t getIntegerValue(uint_fast64_t variableIndex) const override;
             virtual bool getBinaryValue(uint_fast64_t variableIndex) const override;
             virtual double getContinuousValue(uint_fast64_t variableIndex) const override;
+            
+            virtual void writeModelToFile(std::string const& filename) const override;
             
         private:
             void setGurobiEnvironmentProperties() const;
@@ -88,6 +91,10 @@ namespace storm {
             }
             
             virtual double getContinuousValue(uint_fast64_t variableIndex) const override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            virtual void writeModelToFile(std::string const& filename) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
         };
