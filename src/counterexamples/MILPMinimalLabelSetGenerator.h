@@ -8,7 +8,6 @@
 #ifndef STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
 #define STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
 
-#include "src/solver/GurobiLpSolver.h"
 #include "src/models/Mdp.h"
 #include "src/ir/Program.h"
 #include "src/exceptions/NotImplementedException.h"
@@ -16,6 +15,7 @@
 #include "src/exceptions/InvalidStateException.h"
 
 #include "src/utility/counterexamples.h"
+#include "src/utility/solver.h"
 
 namespace storm {
     namespace counterexamples {
@@ -975,15 +975,13 @@ namespace storm {
                 ChoiceInformation choiceInformation = determineRelevantAndProblematicChoices(labeledMdp, stateInformation, psiStates);
                 
                 // (4) Encode resulting system as MILP problem.
-                std::unique_ptr<storm::solver::LpSolver> solver = std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver("MinimalCommandSetCounterexample"));
+                std::unique_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("MinimalCommandSetCounterexample");
                 
                 //  (4.1) Create variables.
                 VariableInformation variableInformation = createVariables(*solver, labeledMdp, stateInformation, choiceInformation);
  
                 //  (4.2) Construct constraint system.
                 buildConstraintSystem(*solver, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation, probabilityThreshold, strictBound, includeSchedulerCuts);
-
-                solver->writeModelToFile("storm.lp");
                 
                 // (4.3) Optimize the model.
                 solver->optimize();
