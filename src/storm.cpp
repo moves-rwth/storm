@@ -486,7 +486,7 @@ int main(const int argc, const char* argv[]) {
             storm::ir::Program program = storm::parser::PrismParserFromFile(programFile);
             std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
             model->printModelInformationToStream(std::cout);
-
+            
             if (s->isSet("mincmd")) {
                 if (model->getType() != storm::models::MDP) {
                     LOG4CPLUS_ERROR(logger, "Minimal command counterexample generation is only supported for models of type MDP.");
@@ -513,6 +513,44 @@ int main(const int argc, const char* argv[]) {
                     // Once we are done with the formula, delete it.
                     delete formulaPtr;
                 }
+            } else if (s->isSet("prctl")) {
+                // Determine which engine is to be used to choose the right model checker.
+				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
+                
+				// Depending on the model type, the appropriate model checking procedure is chosen.
+				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
+                
+				switch (model->getType()) {
+                    case storm::models::DTMC:
+                        LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+                        modelchecker = createPrctlModelChecker(*model->as<storm::models::Dtmc<double>>());
+                        checkPrctlFormulae(*modelchecker);
+                        break;
+                    case storm::models::MDP:
+                        LOG4CPLUS_INFO(logger, "Model is an MDP.");
+                        modelchecker = createPrctlModelChecker(*model->as<storm::models::Mdp<double>>());
+                        checkPrctlFormulae(*modelchecker);
+                        break;
+                    case storm::models::CTMC:
+                        LOG4CPLUS_INFO(logger, "Model is a CTMC.");
+                        LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+                        break;
+                    case storm::models::CTMDP:
+                        LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
+                        LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+                        break;
+                    case storm::models::MA:
+                        LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
+                        break;
+                    case storm::models::Unknown:
+                    default:
+                        LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
+                        break;
+				}
+                
+				if (modelchecker != nullptr) {
+					delete modelchecker;
+				}
             }
         }
         
