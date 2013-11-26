@@ -204,6 +204,7 @@ namespace storm {
         template<typename ValueType>
         void VectorSet<ValueType>::insert(VectorSet<ValueType> const& other) {
             data.insert(data.end(), other.data.begin(), other.data.end());
+            dirty = true;
         }
         
         template<typename ValueType>
