@@ -67,6 +67,16 @@ namespace storm {
                     return result;
                 }
                 
+                std::vector<ValueType> checkLongRunAverage(bool min, storm::storage::BitVector const& goalStates) const {
+                    // Start by decomposing the Markov automaton into its MECs.
+                    storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(this->getModel(), ~goalStates);
+                    
+                    // Now compute the long-run average for all end components in isolation.
+                    for (storm::storage::MaximalEndComponent const& mec : mecDecomposition) {
+                        
+                    }
+                }
+                
                 std::vector<ValueType> checkExpectedTime(bool min, storm::storage::BitVector const& goalStates) const {
                     // TODO: check whether the Markov automaton is closed once again? Or should that rather be done when constructing the model checker?
                     // For now we just assume that it is closed already.
