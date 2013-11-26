@@ -476,6 +476,7 @@ int main(const int argc, const char* argv[]) {
                     storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
                     std::cout << mc.checkExpectedTime(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
                     std::cout << mc.checkExpectedTime(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
+                    std::cout << mc.checkLongRunAverage(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
                     
                     break;
                 }

@@ -96,6 +96,10 @@ namespace storm {
                 return this->exitRates;
             }
             
+            T const& getExitRate(uint_fast64_t state) const {
+                return this->exitRates[state];
+            }
+            
             storm::storage::BitVector const& getMarkovianStates() const {
                 return this->markovianStates;
             }
