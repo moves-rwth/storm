@@ -438,7 +438,7 @@ int main(const int argc, const char* argv[]) {
             }
             
 			//Should there be a counterexample generated in case the formula is not satisfied?
-			if(s->isSet("counterExample")) {
+			if(s->isSet("counterexample")) {
 
 				generateCounterExample(parser);
 			
@@ -476,8 +476,8 @@ int main(const int argc, const char* argv[]) {
                     storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
                     std::cout << mc.checkExpectedTime(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
                     std::cout << mc.checkExpectedTime(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
+                    std::cout << mc.checkLongRunAverage(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
                     std::cout << mc.checkLongRunAverage(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
-                    
                     break;
                 }
 				case storm::models::Unknown:

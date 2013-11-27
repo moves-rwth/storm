@@ -249,7 +249,7 @@ namespace storm {
                         // In this case we are emitting a Markovian choice, so draw the arrows directly to the target states.
                         for (auto transitionIt = rowIt.begin(), transitionIte = rowIt.end(); transitionIt != transitionIte; ++transitionIt) {
                             if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
-                                outStream << "\t\"" << state << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ]";
+                                outStream << "\t\"" << state << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << " (" << this->exitRates[state] << ")\" ]";
                             }
                         }
                     }

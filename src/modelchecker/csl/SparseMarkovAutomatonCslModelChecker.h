@@ -79,9 +79,16 @@ namespace storm {
                     
                     // Now compute the long-run average for all end components in isolation.
                     std::vector<ValueType> lraValuesForEndComponents;
-                    for (storm::storage::MaximalEndComponent const& mec : mecDecomposition) {
-                        std::unique_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("Long-Run Average");
-                        solver->setModelSense(storm::solver::LpSolver::MAXIMIZE);
+                    
+                    // While doing so, we already gather some information for the following steps.
+                    std::vector<uint_fast64_t> stateToMecIndexMap(this->getModel().getNumberOfStates());
+                    storm::storage::BitVector statesInMecs(this->getModel().getNumberOfStates());
+                    
+                    for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
+                        storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
+                        
+                        std::unique_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC " + std::to_string(currentMecIndex));
+                        solver->setModelSense(min ? storm::solver::LpSolver::MAXIMIZE : storm::solver::LpSolver::MINIMIZE);
 
                         // First, we need to create the variables for the problem.
                         std::map<uint_fast64_t, uint_fast64_t> stateToVariableIndexMap;
@@ -95,6 +102,10 @@ namespace storm {
                         std::vector<double> coefficients;
                         for (auto const& stateChoicesPair : mec) {
                             uint_fast64_t state = stateChoicesPair.first;
+                            
+                            // Gather information for later use.
+                            statesInMecs.set(state);
+                            stateToMecIndexMap[state] = currentMecIndex;
                             
                             // Now, based on the type of the state, create a suitable constraint.
                             if (this->getModel().isMarkovianState(state)) {
@@ -111,9 +122,9 @@ namespace storm {
                                 }
                                 
                                 variables.push_back(lraValueVariableIndex);
-                                coefficients.push_back(this->getModel().getExitRate(state));
+                                coefficients.push_back(storm::utility::constGetOne<ValueType>() / this->getModel().getExitRate(state));
                                 
-                                solver->addConstraint("state" + std::to_string(state), variables, coefficients, storm::solver::LpSolver::LESS_EQUAL, storm::utility::constGetOne<ValueType>() / this->getModel().getExitRate(state));
+                                solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, goalStates.get(state) ? storm::utility::constGetOne<ValueType>() / this->getModel().getExitRate(state) : storm::utility::constGetZero<ValueType>());
                             } else {
                                 // For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
                                 // and the sum ranges over all states s'.
@@ -130,21 +141,154 @@ namespace storm {
                                         coefficients.push_back(-element.value());
                                     }
                                     
-                                    solver->addConstraint("state" + std::to_string(state), variables, coefficients, storm::solver::LpSolver::LESS_EQUAL, storm::utility::constGetZero<ValueType>());
+                                    solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, storm::utility::constGetZero<ValueType>());
                                 }
                             }
                         }
-                        
+                                                
                         solver->optimize();
                         lraValuesForEndComponents.push_back(solver->getContinuousValue(lraValueVariableIndex));
                     }
                     
-                    return lraValuesForEndComponents;
+                    // For fast transition rewriting, we build some auxiliary data structures.
+                    storm::storage::BitVector statesNotContainedInAnyMec = ~statesInMecs;
+                    uint_fast64_t firstAuxiliaryStateIndex = statesNotContainedInAnyMec.getNumberOfSetBits();
+                    uint_fast64_t lastStateNotInMecs = 0;
+                    uint_fast64_t numberOfStatesNotInMecs = 0;
+                    std::vector<uint_fast64_t> statesNotInMecsBeforeIndex;
+                    statesNotInMecsBeforeIndex.reserve(this->getModel().getNumberOfStates());
+                    for (auto state : statesNotContainedInAnyMec) {
+                        while (lastStateNotInMecs <= state) {
+                            statesNotInMecsBeforeIndex.push_back(numberOfStatesNotInMecs);
+                            ++lastStateNotInMecs;
+                        }
+                        ++numberOfStatesNotInMecs;
+                    }
+
+                    // Finally, we are ready to create the SSP matrix and right-hand side of the SSP.
+                    std::vector<ValueType> b;
+                    std::vector<uint_fast64_t> sspNondeterministicChoiceIndices;
+                    sspNondeterministicChoiceIndices.reserve(numberOfStatesNotInMecs + mecDecomposition.size() + 1);
+                    typename storm::storage::SparseMatrix<ValueType> sspMatrix;
+                    sspMatrix.initialize();
+
+                    // If the source state is not contained in any MEC, we copy its choices (and perform the necessary modifications).
+                    uint_fast64_t currentChoice = 0;
+                    for (auto state : statesNotContainedInAnyMec) {
+                        sspNondeterministicChoiceIndices.push_back(currentChoice);
+                        
+                        for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice, ++currentChoice) {
+                            std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
+                            b.push_back(storm::utility::constGetZero<ValueType>());
+                            
+                            typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);
+                            for (auto element : row) {
+                                if (statesNotContainedInAnyMec.get(element.column())) {
+                                    // If the target state is not contained in an MEC, we can copy over the entry.
+                                    sspMatrix.insertNextValue(currentChoice, statesNotInMecsBeforeIndex[element.column()], element.value());
+                                } else {
+                                    // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
+                                    // so that we are able to write the cumulative probability to the MEC into the matrix.
+                                    auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.column()]] += element.value();
+                                }
+                            }
+                            
+                            // Now insert all (cumulative) probability values that target an MEC.
+                            for (uint_fast64_t mecIndex = 0; mecIndex < auxiliaryStateToProbabilityMap.size(); ++mecIndex) {
+                                if (auxiliaryStateToProbabilityMap[mecIndex] != 0) {
+                                    sspMatrix.insertNextValue(currentChoice, firstAuxiliaryStateIndex + mecIndex, auxiliaryStateToProbabilityMap[mecIndex]);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Now we are ready to construct the choices for the auxiliary states.
+                    for (uint_fast64_t mecIndex = 0; mecIndex < mecDecomposition.size(); ++mecIndex) {
+                        storm::storage::MaximalEndComponent const& mec = mecDecomposition[mecIndex];
+                        sspNondeterministicChoiceIndices.push_back(currentChoice);
+                        
+                        for (auto const& stateChoicesPair : mec) {
+                            uint_fast64_t state = stateChoicesPair.first;
+                            storm::storage::VectorSet<uint_fast64_t> const& choicesInMec = stateChoicesPair.second;
+                            
+                            for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
+                                std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
+                                
+                                // If the choice is not contained in the MEC itself, we have to add a similar distribution to the auxiliary state.
+                                if (!choicesInMec.contains(choice)) {
+                                    b.push_back(storm::utility::constGetZero<ValueType>());
+
+                                    typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);
+                                    for (auto element : row) {
+                                        if (statesNotContainedInAnyMec.get(element.column())) {
+                                            // If the target state is not contained in an MEC, we can copy over the entry.
+                                            sspMatrix.insertNextValue(currentChoice, statesNotInMecsBeforeIndex[element.column()], element.value());
+                                        } else {
+                                            // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
+                                            // so that we are able to write the cumulative probability to the MEC into the matrix.
+                                            auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.column()]] += element.value();
+                                        }
+                                    }
+                                    
+                                    // Now insert all (cumulative) probability values that target an MEC.
+                                    for (uint_fast64_t targetMecIndex = 0; targetMecIndex < auxiliaryStateToProbabilityMap.size(); ++targetMecIndex) {
+                                        if (auxiliaryStateToProbabilityMap[targetMecIndex] != 0) {
+                                            // If the target MEC is the same as the current one, instead of adding a transition, we need to add the weighted reward
+                                            // to the right-hand side vector of the SSP.
+                                            if (mecIndex == targetMecIndex) {
+                                                b.back() += auxiliaryStateToProbabilityMap[mecIndex] * lraValuesForEndComponents[mecIndex];
+                                            } else {
+                                                // Otherwise, we add a transition to the auxiliary state that is associated with the target MEC.
+                                                sspMatrix.insertNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex]);
+                                            }
+                                        }
+                                    }
+                                    
+                                    ++currentChoice;
+                                }
+                            }
+                        }
+                        
+                        // For each auxiliary state, there is the option to achieve the reward value of the LRA associated with the MEC.
+                        sspMatrix.insertEmptyRow();
+                        ++currentChoice;
+                        b.push_back(lraValuesForEndComponents[mecIndex]);
+                    }
+                    
+                    // Add the sentinel element at the end.
+                    sspNondeterministicChoiceIndices.push_back(currentChoice);
+                    
+                    // Finalize the matrix and solve the corresponding system of equations.
+                    sspMatrix.finalize();
+                    std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
+                    if (linearEquationSolver != nullptr) {
+                        this->linearEquationSolver->solveEquationSystem(min, sspMatrix, x, b, sspNondeterministicChoiceIndices);
+                    } else {
+                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
+                    }
+                    
+                    // Prepare result vector.
+                    std::vector<ValueType> result(this->getModel().getNumberOfStates());
+                    
+                    // Set the values for states not contained in MECs.
+                    uint_fast64_t stateIndex = 0;
+                    for (auto state : statesNotContainedInAnyMec) {
+                        result[state] = x[stateIndex];
+                        ++stateIndex;
+                    }
+                    
+                    // Set the values for all states in MECs.
+                    for (auto state : statesInMecs) {
+                        result[state] = lraValuesForEndComponents[stateToMecIndexMap[state]];
+                    }
+
+                    return result;
                 }
                 
                 std::vector<ValueType> checkExpectedTime(bool min, storm::storage::BitVector const& goalStates) const {
-                    // TODO: check whether the Markov automaton is closed once again? Or should that rather be done when constructing the model checker?
-                    // For now we just assume that it is closed already.
+                    if (!this->getModel().isClosed()) {
+                        throw storm::exceptions::InvalidArgumentException() << "Unable to compute expected time on non-closed Markov automaton.";
+                    }
 
                     // First, we need to check which states have infinite expected time (by definition).
                     storm::storage::BitVector infinityStates;
