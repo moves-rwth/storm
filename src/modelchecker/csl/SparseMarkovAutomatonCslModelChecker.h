@@ -69,7 +69,45 @@ namespace storm {
                     return result;
                 }
                 
+                std::vector<ValueType> checkTimeBoundedEventually(bool min, storm::storage::BitVector const& goalStates) const {
+                    if (!this->getModel().isClosed()) {
+                        throw storm::exceptions::InvalidArgumentException() << "Unable to compute time-bounded reachability on non-closed Markov automaton.";
+                    }
+                    
+                    // (1) Compute the number of steps we need to take.
+                    
+                    // (2) Compute four sparse matrices:
+                    // * a matrix A_MSwG with all (discretized!) transitions from Markovian non-goal states to *all other* non-goal states. Note: this matrix has more columns than rows.
+                    // * a matrix A_PSwg with all (non-discretized) transitions from probabilistic non-goal states to other probabilistic non-goal states. This matrix has more rows than columns.
+                    // * a matrix A_PStoMS with all (non-discretized) transitions from probabilistic non-goal states to all Markovian non-goal states. This matrix may have any shape.
+                    
+                    // (3) Initialize three used vectors:
+                    // * v_PS holds the probability values of probabilistic non-goal states.
+                    // * v_MS holds the probability values of Markovian non-goal states.
+                    // * v_all holds the probability values of all non-goal states. This vector is needed for the Markov step.
+                    
+                    // (3) Perform value iteration
+                    // * initialize the vectors v_PS, v_MS and v_all.
+                    // * loop until the step bound has been reached
+                    // * in the loop:
+                    // *    perform value iteration using A_PSwG, v_PS and the vector x where x = x_PS + x_MS, x_PS = (A * 1_G)|PS with x_MS = A_PStoMS * v_MS
+                    //      and 1_G being the characteristic vector for all goal states.
+                    // *    copy the values from v_PS to the correct positions into v_all
+                    // *    perform one timed-step using A_MSwG, v_all and x_MS = (A * 1_G)|MS and obtain v_MS
+                    // *    copy the values from v_MS to the correct positions into v_all
+                    //
+                    // After the loop, perform one more step of the value iteration for PS states.
+                    // Finally, create the result vector out of 1_G and v_all.
+                    
+                    // Return dummy vector for the time being.
+                    return std::vector<ValueType>();
+                }
+                
                 std::vector<ValueType> checkLongRunAverage(bool min, storm::storage::BitVector const& goalStates) const {
+                    if (!this->getModel().isClosed()) {
+                        throw storm::exceptions::InvalidArgumentException() << "Unable to compute long-run average on non-closed Markov automaton.";
+                    }
+
                     // Start by decomposing the Markov automaton into its MECs.
                     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(this->getModel());
                     
@@ -145,7 +183,7 @@ namespace storm {
                                 }
                             }
                         }
-                                                
+                        
                         solver->optimize();
                         lraValuesForEndComponents.push_back(solver->getContinuousValue(lraValueVariableIndex));
                     }
