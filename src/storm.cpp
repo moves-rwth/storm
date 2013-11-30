@@ -478,6 +478,8 @@ int main(const int argc, const char* argv[]) {
                     std::cout << mc.checkExpectedTime(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
                     std::cout << mc.checkLongRunAverage(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
                     std::cout << mc.checkLongRunAverage(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
+                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 0, 1) << std::endl;
+                    std::cout << mc.checkTimeBoundedEventually(false, markovAutomaton->getLabeledStates("goal"), 0, 1) << std::endl;
                     break;
                 }
 				case storm::models::Unknown:

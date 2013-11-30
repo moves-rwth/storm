@@ -2,6 +2,7 @@
 #define STORM_MODELCHECKER_CSL_SPARSEMARKOVAUTOMATONCSLMODELCHECKER_H_
 
 #include <stack>
+#include <iomanip>
 
 #include "src/modelchecker/csl/AbstractModelChecker.h"
 #include "src/models/MarkovAutomaton.h"
@@ -69,35 +70,105 @@ namespace storm {
                     return result;
                 }
                 
-                std::vector<ValueType> checkTimeBoundedEventually(bool min, storm::storage::BitVector const& goalStates) const {
+                std::vector<ValueType> checkTimeBoundedEventually(bool min, storm::storage::BitVector const& goalStates, uint_fast64_t lowerBound, uint_fast64_t upperBound) const {
                     if (!this->getModel().isClosed()) {
                         throw storm::exceptions::InvalidArgumentException() << "Unable to compute time-bounded reachability on non-closed Markov automaton.";
                     }
                     
                     // (1) Compute the number of steps we need to take.
+                    ValueType lambda = this->getModel().getMaximalExitRate();
+                    ValueType delta = (2 * storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) / (upperBound * lambda * lambda);
+                    LOG4CPLUS_INFO(logger, "Determined delta to be " << delta << ".");
+                    
+                    // Get some data fields for convenient access.
+                    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
+                    std::vector<ValueType> const& exitRates = this->getModel().getExitRates();
+                    typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
                     
                     // (2) Compute four sparse matrices:
-                    // * a matrix A_MSwG with all (discretized!) transitions from Markovian non-goal states to *all other* non-goal states. Note: this matrix has more columns than rows.
-                    // * a matrix A_PSwg with all (non-discretized) transitions from probabilistic non-goal states to other probabilistic non-goal states. This matrix has more rows than columns.
+                    // * a matrix A_MS with all (discretized) transitions from Markovian non-goal states to all Markovian non-goal states.
+                    // * a matrix A_MStoPS with all (discretized) transitions from Markovian non-goal states to all probabilistic non-goal states.
+                    // * a matrix A_PS with all (non-discretized) transitions from probabilistic non-goal states to other probabilistic non-goal states. This matrix has more rows than columns.
                     // * a matrix A_PStoMS with all (non-discretized) transitions from probabilistic non-goal states to all Markovian non-goal states. This matrix may have any shape.
+                    storm::storage::BitVector const& markovianNonGoalStates = this->getModel().getMarkovianStates() & ~goalStates;
+                    storm::storage::BitVector const& probabilisticNonGoalStates = ~this->getModel().getMarkovianStates() & ~goalStates;
                     
-                    // (3) Initialize three used vectors:
+                    typename storm::storage::SparseMatrix<ValueType> aMarkovian = this->getModel().getTransitionMatrix().getSubmatrix(markovianNonGoalStates, this->getModel().getNondeterministicChoiceIndices(), true);
+                    typename storm::storage::SparseMatrix<ValueType> aMarkovianToProbabilistic = this->getModel().getTransitionMatrix().getSubmatrix(markovianNonGoalStates, probabilisticNonGoalStates, nondeterministicChoiceIndices);
+                    typename storm::storage::SparseMatrix<ValueType> aProbabilistic = this->getModel().getTransitionMatrix().getSubmatrix(probabilisticNonGoalStates, this->getModel().getNondeterministicChoiceIndices());
+                    typename storm::storage::SparseMatrix<ValueType> aProbabilisticToMarkovian = this->getModel().getTransitionMatrix().getSubmatrix(probabilisticNonGoalStates, markovianNonGoalStates, nondeterministicChoiceIndices);
+                    
+                    // The matrices with transitions from Markovian states need to be digitized.
+                    
+                    // Digitize aMarkovian. Based on whether the transition is a self-loop or not, we apply the two digitization rules.
+                    uint_fast64_t rowIndex = 0;
+                    for (auto state : markovianNonGoalStates) {
+                        typename storm::storage::SparseMatrix<ValueType>::MutableRows row = aMarkovian.getRow(rowIndex);
+                        for (auto element : row) {
+                            ValueType eTerm = std::exp(-exitRates[state] * delta);
+                            if (element.column() == rowIndex) {
+                                element.value() = (storm::utility::constGetOne<ValueType>() - eTerm) * element.value() + eTerm;
+                            } else {
+                                element.value() = (storm::utility::constGetOne<ValueType>() - eTerm) * element.value();
+                            }
+                        }
+                        ++rowIndex;
+                    }
+                    
+                    // Digitize aMarkovianToProbabilistic. As there are no self-loops in this case, we only need to apply the digitization formula for regular successors.
+                    rowIndex = 0;
+                    for (auto state : markovianNonGoalStates) {
+                        typename storm::storage::SparseMatrix<ValueType>::MutableRows row = aMarkovianToProbabilistic.getRow(rowIndex);
+                        for (auto element : row) {
+                            element.value() = (1 - std::exp(-exitRates[state] * delta)) * element.value();
+                        }
+                        ++rowIndex;
+                    }
+                    
+                    // (3) Initialize two vectors:
                     // * v_PS holds the probability values of probabilistic non-goal states.
                     // * v_MS holds the probability values of Markovian non-goal states.
-                    // * v_all holds the probability values of all non-goal states. This vector is needed for the Markov step.
+                    std::vector<ValueType> vProbabilistic(probabilisticNonGoalStates.getNumberOfSetBits());
+                    std::vector<ValueType> vMarkovian(markovianNonGoalStates.getNumberOfSetBits());
+                    
+                    // (4) Compute the two fixed right-hand side vectors, one for Markovian states and one for the probabilistic ones.
+                    std::vector<ValueType> bProbabilistic = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(probabilisticNonGoalStates, nondeterministicChoiceIndices, ~this->getModel().getMarkovianStates() & goalStates, aProbabilistic.getRowCount());
+                    storm::storage::BitVector probabilisticGoalStates = ~this->getModel().getMarkovianStates() & goalStates;
+                    std::vector<ValueType> bMarkovian;
+                    bMarkovian.reserve(markovianNonGoalStates.getNumberOfSetBits());
+                    for (auto state : markovianNonGoalStates) {
+                        bMarkovian.push_back(storm::utility::constGetZero<ValueType>());
+                        
+                        typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(rowIndex);
+                        for (auto element : row) {
+                            bMarkovian.back() += (1 - std::exp(-exitRates[state] * delta)) * element.value();
+                        }
+                    }
+                    
+                    std::cout << delta << std::endl;
+                    std::cout << markovianNonGoalStates.toString() << std::endl;
+                    std::cout << aMarkovian.toString() << std::endl;
+                    std::cout << aMarkovianToProbabilistic.toString() << std::endl;
+                    std::cout << probabilisticNonGoalStates.toString() << std::endl;
+                    std::cout << aProbabilistic.toString() << std::endl;
+                    std::cout << aProbabilisticToMarkovian.toString() << std::endl;
+                    std::cout << bProbabilistic << std::endl;
+                    std::cout << bMarkovian << std::endl;
                     
                     // (3) Perform value iteration
-                    // * initialize the vectors v_PS, v_MS and v_all.
                     // * loop until the step bound has been reached
                     // * in the loop:
-                    // *    perform value iteration using A_PSwG, v_PS and the vector x where x = x_PS + x_MS, x_PS = (A * 1_G)|PS with x_MS = A_PStoMS * v_MS
+                    // *    perform value iteration using A_PSwG, v_PS and the vector b where b = (A * 1_G)|PS + A_PStoMS * v_MS
                     //      and 1_G being the characteristic vector for all goal states.
-                    // *    copy the values from v_PS to the correct positions into v_all
-                    // *    perform one timed-step using A_MSwG, v_all and x_MS = (A * 1_G)|MS and obtain v_MS
-                    // *    copy the values from v_MS to the correct positions into v_all
+                    // *    perform one timed-step using v_MS := A_MSwG * v_MS + A_MStoPS * v_PS + (A * 1_G)|MS
                     //
                     // After the loop, perform one more step of the value iteration for PS states.
-                    // Finally, create the result vector out of 1_G and v_all.
+                    
+                    
+                    
+                    
+                    
+                    // (4) Finally, create the result vector out of 1_G and v_all.
                     
                     // Return dummy vector for the time being.
                     return std::vector<ValueType>();
