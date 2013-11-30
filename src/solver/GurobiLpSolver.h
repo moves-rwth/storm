@@ -2,6 +2,7 @@
 #define STORM_SOLVER_GUROBILPSOLVER
 
 #include "src/solver/LpSolver.h"
+#include "src/exceptions/NotImplementedException.h"
 
 // To detect whether the usage of Gurobi is possible, this include is neccessary.
 #include "storm-config.h"
@@ -58,6 +59,16 @@ namespace storm {
 #else
         // If Gurobi is not available, we provide a stub implementation that emits an error if any of its methods is called.
         class GurobiLpSolver : public LpSolver {
+        public:
+
+        	GurobiLpSolver(std::string const& name) : LpSolver(MINIMIZE) {
+        		throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+        	}
+
+        	virtual ~GurobiLpSolver() {
+        		throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+        	}
+
             virtual uint_fast64_t createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
@@ -66,7 +77,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            virtual uint_fast64_t createBinaryVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override {
+            virtual uint_fast64_t createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             

@@ -103,7 +103,7 @@ namespace storm {
                     // Digitize aMarkovian. Based on whether the transition is a self-loop or not, we apply the two digitization rules.
                     uint_fast64_t rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
-                        typename storm::storage::SparseMatrix<ValueType>::MutableRows row = aMarkovian.getRow(rowIndex);
+                        typename storm::storage::SparseMatrix<ValueType>::MutableRows row = aMarkovian.getMutableRow(rowIndex);
                         for (auto element : row) {
                             ValueType eTerm = std::exp(-exitRates[state] * delta);
                             if (element.column() == rowIndex) {
@@ -118,7 +118,7 @@ namespace storm {
                     // Digitize aMarkovianToProbabilistic. As there are no self-loops in this case, we only need to apply the digitization formula for regular successors.
                     rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
-                        typename storm::storage::SparseMatrix<ValueType>::MutableRows row = aMarkovianToProbabilistic.getRow(rowIndex);
+                        typename storm::storage::SparseMatrix<ValueType>::MutableRows row = aMarkovianToProbabilistic.getMutableRow(rowIndex);
                         for (auto element : row) {
                             element.value() = (1 - std::exp(-exitRates[state] * delta)) * element.value();
                         }

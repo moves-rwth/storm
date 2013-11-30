@@ -123,6 +123,62 @@ namespace storm {
             }
 
             /*!
+             * Retrieves the backward transition relation of the model, i.e. a set of transitions
+             * between states that correspond to the reversed transition relation of this model.
+             * Note: This overwrites the getBackwardsTransitions of the AbstractModel, since the simple
+             * transposition of the state matrix does not yield correct results for non-deterministic models.
+             *
+             * @return A sparse matrix that represents the backward transitions of this model.
+             */
+            storm::storage::SparseMatrix<T> getBackwardTransitions() const {
+                uint_fast64_t numberOfStates = this->getNumberOfStates();
+                uint_fast64_t numberOfTransitions = this->getNumberOfTransitions();
+
+                std::vector<uint_fast64_t> rowIndications(numberOfStates + 1);
+                std::vector<uint_fast64_t> columnIndications(numberOfTransitions);
+                std::vector<T> values(numberOfTransitions, T());
+
+                // First, we need to count how many backward transitions each state has.
+                for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+                    typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(i);
+                    for (auto const& transition : rows) {
+                        if (transition.value() > 0) {
+                            ++rowIndications[transition.column() + 1];
+                        }
+                    }
+                }
+
+                // Now compute the accumulated offsets.
+                for (uint_fast64_t i = 1; i < numberOfStates + 1; ++i) {
+                    rowIndications[i] = rowIndications[i - 1] + rowIndications[i];
+                }
+
+                // Create an array that stores the next index for each state. Initially
+                // this corresponds to the previously computed accumulated offsets.
+                std::vector<uint_fast64_t> nextIndices = rowIndications;
+
+                // Now we are ready to actually fill in the list of predecessors for
+                // every state. Again, we start by considering all but the last row.
+                for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+                    typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(i);
+                    for (auto& transition : rows) {
+                        if (transition.value() > 0) {
+                            values[nextIndices[transition.column()]] = transition.value();
+                            columnIndications[nextIndices[transition.column()]++] = i;
+                        }
+                    }
+                }
+
+                storm::storage::SparseMatrix<T> backwardTransitionMatrix(numberOfStates, numberOfStates,
+                                                                         numberOfTransitions,
+                                                                         std::move(rowIndications),
+                                                                         std::move(columnIndications),
+                                                                         std::move(values));
+
+                return backwardTransitionMatrix;
+            }
+
+            /*!
              * Calculates a hash over all values contained in this Model.
              * @return size_t A Hash Value
              */

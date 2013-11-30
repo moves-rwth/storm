@@ -25,7 +25,7 @@ namespace storm {
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
-                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
 
                 // Now we compute the set of labels that is present on all paths from the initial to the target states.
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> analysisInformation(labeledMdp.getNumberOfStates(), relevantLabels);

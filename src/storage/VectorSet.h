@@ -84,7 +84,8 @@ namespace storm  {
             
             void insert(ValueType const& element);
             
-            iterator insert(const_iterator pos, ValueType const& element);
+            // FIXME: As soon as gcc provides an erase(const_iterator) method, change this iterator back to a const_iterator.
+            iterator insert(iterator pos, ValueType const& element);
             
             void insert(VectorSet<ValueType> const& other);
             

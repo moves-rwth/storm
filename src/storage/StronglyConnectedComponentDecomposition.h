@@ -1,10 +1,11 @@
 #ifndef STORM_STORAGE_STRONGLYCONNECTEDCOMPONENTDECOMPOSITION_H_
 #define STORM_STORAGE_STRONGLYCONNECTEDCOMPONENTDECOMPOSITION_H_
 
+#include "src/storage/SparseMatrix.h"
 #include "src/storage/Decomposition.h"
 #include "src/storage/VectorSet.h"
 #include "src/storage/BitVector.h"
-#include "src/storage/SparseMatrix.h"
+
 
 namespace storm {
     namespace models {

@@ -46,7 +46,7 @@ namespace storm {
         template <typename ValueType>
         void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem) {
             // Get some references for convenient access.
-            storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
+            storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
             storm::storage::SparseMatrix<ValueType> const& transitionMatrix = model.getTransitionMatrix();
             
@@ -55,7 +55,12 @@ namespace storm {
             endComponentStateSets.emplace_back(subsystem);
             storm::storage::BitVector statesToCheck(model.getNumberOfStates());
             
-            for (std::list<StateBlock>::const_iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
+
+            // The iterator used here should really be a const_iterator.
+            // However, gcc 4.8 (and assorted libraries) does not provide an erase(const_iterator) method for std::list but only an erase(iterator).
+            // This is in compliance with the c++11 draft N3337, which specifies the change from iterator to const_iterator only for "set, multiset, map [and] multimap".
+            // FIXME: As soon as gcc provides an erase(const_iterator) method, change this iterator back to a const_iterator.
+            for (std::list<StateBlock>::iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
                 StateBlock const& mec = *mecIterator;
 
                 // Keep track of whether the MEC changed during this iteration.
@@ -121,7 +126,7 @@ namespace storm {
                         }
                     }
 
-                    std::list<StateBlock>::const_iterator eraseIterator(mecIterator);
+                    std::list<StateBlock>::iterator eraseIterator(mecIterator);
                     ++mecIterator;
                     endComponentStateSets.erase(eraseIterator);
                 } else {
