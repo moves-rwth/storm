@@ -98,7 +98,7 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     ASSERT_EQ(sccDecomposition.size(), 1290297ull);
     
     LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of crowds/crowds20_5...");
-    storm::storage::SparseMatrix<bool> sccDependencyGraph(std::move(dtmc->extractPartitionDependencyGraph(sccDecomposition)));
+    storm::storage::SparseMatrix<double> sccDependencyGraph(std::move(dtmc->extractPartitionDependencyGraph(sccDecomposition)));
     LOG4CPLUS_WARN(logger, "Done.");
     
     ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1371253ull);

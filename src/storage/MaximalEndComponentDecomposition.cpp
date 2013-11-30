@@ -46,7 +46,7 @@ namespace storm {
         template <typename ValueType>
         void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem) {
             // Get some references for convenient access.
-            storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
+            storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
             storm::storage::SparseMatrix<ValueType> const& transitionMatrix = model.getTransitionMatrix();
             

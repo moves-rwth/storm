@@ -50,7 +50,7 @@ namespace storm {
                 storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
                 
                 // Get the backwards transition relation from the model to ease the search.
-                storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
                 
                 // Add all psi states as the already satisfy the condition.
                 statesWithProbabilityGreater0 |= psiStates;
@@ -177,7 +177,7 @@ namespace storm {
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
-            storm::storage::BitVector performProbGreater0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
+            storm::storage::BitVector performProbGreater0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
                 // Prepare resulting bit vector.
                 storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
                 
@@ -245,7 +245,7 @@ namespace storm {
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
-            storm::storage::BitVector performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            storm::storage::BitVector performProb0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 storm::storage::BitVector statesWithProbability0 = performProbGreater0E(model, backwardTransitions, phiStates, psiStates);
                 statesWithProbability0.complement();
                 return statesWithProbability0;
@@ -264,7 +264,7 @@ namespace storm {
              * @return A bit vector that represents all states with probability 1.
              */
             template <typename T>
-            storm::storage::BitVector performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            storm::storage::BitVector performProb1E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 // Get some temporaries for convenience.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
@@ -338,7 +338,7 @@ namespace storm {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
                 
                 // Get the backwards transition relation from the model to ease the search.
-                storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
                 
                 result.first = performProb0A(model, backwardTransitions, phiStates, psiStates);
                 result.second = performProb1E(model, backwardTransitions, phiStates, psiStates);
@@ -360,7 +360,7 @@ namespace storm {
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
-            storm::storage::BitVector performProbGreater0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
+            storm::storage::BitVector performProbGreater0A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
                 // Prepare resulting bit vector.
                 storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
                 
@@ -451,7 +451,7 @@ namespace storm {
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
-            storm::storage::BitVector performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            storm::storage::BitVector performProb0E(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 storm::storage::BitVector statesWithProbability0 = performProbGreater0A(model, backwardTransitions, phiStates, psiStates);
                 statesWithProbability0.complement();
                 return statesWithProbability0;
@@ -470,7 +470,7 @@ namespace storm {
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
-            storm::storage::BitVector performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<bool> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            storm::storage::BitVector performProb1A(storm::models::AbstractNondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 // Get some temporaries for convenience.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
@@ -543,7 +543,7 @@ namespace storm {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
                 
                 // Get the backwards transition relation from the model to ease the search.
-                storm::storage::SparseMatrix<bool> backwardTransitions = model.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
                 
                 result.first = performProb0E(model, backwardTransitions, phiStates, psiStates);
                 result.second = performProb1A(model, backwardTransitions, phiStates, psiStates);

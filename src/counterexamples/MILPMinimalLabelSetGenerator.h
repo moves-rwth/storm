@@ -88,7 +88,7 @@ namespace storm {
              */
             static struct StateInformation determineRelevantAndProblematicStates(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 StateInformation result;
-                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
                 result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
                 result.relevantStates &= ~psiStates;
                 result.problematicStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
@@ -672,7 +672,7 @@ namespace storm {
              * @return The total number of constraints that were created.
              */
             static uint_fast64_t assertSchedulerCuts(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
-                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 std::vector<uint_fast64_t> variables;
                 std::vector<double> coefficients;
