@@ -8,6 +8,8 @@
 #ifndef STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
 #define STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
 
+#include <chrono>
+
 #include "src/models/Mdp.h"
 #include "src/ir/Program.h"
 #include "src/exceptions/NotImplementedException.h"

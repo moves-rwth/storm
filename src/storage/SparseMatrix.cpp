@@ -902,7 +902,7 @@ namespace storage {
 	}
 	
 	template<typename T>
-	typename SparseMatrix<T>::ValueIterator SparseMatrix<T>::valueIteratorBegin(uint_fast64_t row = 0) {
+	typename SparseMatrix<T>::ValueIterator SparseMatrix<T>::valueIteratorBegin(uint_fast64_t row) {
 		return &(this->valueStorage[0]) + this->rowIndications[row];
 	}
 

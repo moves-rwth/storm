@@ -196,7 +196,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename VectorSet<ValueType>::iterator VectorSet<ValueType>::insert(typename VectorSet<ValueType>::const_iterator pos, ValueType const& element) {
+        typename VectorSet<ValueType>::iterator VectorSet<ValueType>::insert(typename VectorSet<ValueType>::iterator pos, ValueType const& element) {
             dirty = true;
             return data.insert(pos, element);
         }
