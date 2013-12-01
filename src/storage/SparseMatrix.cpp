@@ -577,7 +577,7 @@ namespace storage {
 		LOG4CPLUS_DEBUG(logger, "Determined size of submatrix to be " << subRowCount << "x" << rowGroupConstraint.getNumberOfSetBits() << ".");
         
 		// Create and initialize resulting matrix.
-		SparseMatrix result(subRowCount, rowGroupConstraint.getNumberOfSetBits());
+		SparseMatrix result(subRowCount, columnConstraint.getNumberOfSetBits());
 		result.initialize(subNonZeroEntries);
         
 		// Create a temporary vector that stores for each index whose bit is set

@@ -22,7 +22,7 @@ namespace storm {
             class SparseMarkovAutomatonCslModelChecker : public AbstractModelChecker<ValueType> {
             public:
                 
-                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>* linearEquationSolver) : AbstractModelChecker<ValueType>(model), minimumOperatorStack(), linearEquationSolver(linearEquationSolver) {
+                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model) : AbstractModelChecker<ValueType>(model), minimumOperatorStack() {
                     // Intentionally left empty.
                 }
                 
@@ -70,36 +70,20 @@ namespace storm {
                     return result;
                 }
                 
-                std::vector<ValueType> checkTimeBoundedEventually(bool min, storm::storage::BitVector const& goalStates, uint_fast64_t lowerBound, uint_fast64_t upperBound) const {
-                    if (!this->getModel().isClosed()) {
-                        throw storm::exceptions::InvalidArgumentException() << "Unable to compute time-bounded reachability on non-closed Markov automaton.";
-                    }
-                    
-                    // (1) Compute the number of steps we need to take.
-                    ValueType lambda = this->getModel().getMaximalExitRate();
-                    ValueType delta = (2 * storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) / (upperBound * lambda * lambda);
-                    LOG4CPLUS_INFO(logger, "Determined delta to be " << delta << ".");
-                    
-                    // Get some data fields for convenient access.
-                    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
-                    std::vector<ValueType> const& exitRates = this->getModel().getExitRates();
-                    typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
-                    
-                    // (2) Compute four sparse matrices:
-                    // * a matrix A_MS with all (discretized) transitions from Markovian non-goal states to all Markovian non-goal states.
-                    // * a matrix A_MStoPS with all (discretized) transitions from Markovian non-goal states to all probabilistic non-goal states.
-                    // * a matrix A_PS with all (non-discretized) transitions from probabilistic non-goal states to other probabilistic non-goal states. This matrix has more rows than columns.
-                    // * a matrix A_PStoMS with all (non-discretized) transitions from probabilistic non-goal states to all Markovian non-goal states. This matrix may have any shape.
-                    storm::storage::BitVector const& markovianNonGoalStates = this->getModel().getMarkovianStates() & ~goalStates;
-                    storm::storage::BitVector const& probabilisticNonGoalStates = ~this->getModel().getMarkovianStates() & ~goalStates;
-                    
-                    typename storm::storage::SparseMatrix<ValueType> aMarkovian = this->getModel().getTransitionMatrix().getSubmatrix(markovianNonGoalStates, this->getModel().getNondeterministicChoiceIndices(), true);
-                    typename storm::storage::SparseMatrix<ValueType> aMarkovianToProbabilistic = this->getModel().getTransitionMatrix().getSubmatrix(markovianNonGoalStates, probabilisticNonGoalStates, nondeterministicChoiceIndices);
-                    typename storm::storage::SparseMatrix<ValueType> aProbabilistic = this->getModel().getTransitionMatrix().getSubmatrix(probabilisticNonGoalStates, this->getModel().getNondeterministicChoiceIndices());
-                    typename storm::storage::SparseMatrix<ValueType> aProbabilisticToMarkovian = this->getModel().getTransitionMatrix().getSubmatrix(probabilisticNonGoalStates, markovianNonGoalStates, nondeterministicChoiceIndices);
+                static void computeBoundedReachability(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps) {
+                    // Start by computing four sparse matrices:
+                    // * a matrix aMarkovian with all (discretized) transitions from Markovian non-goal states to all Markovian non-goal states.
+                    // * a matrix aMarkovianToProbabilistic with all (discretized) transitions from Markovian non-goal states to all probabilistic non-goal states.
+                    // * a matrix aProbabilistic with all (non-discretized) transitions from probabilistic non-goal states to other probabilistic non-goal states.
+                    // * a matrix aProbabilisticToMarkovian with all (non-discretized) transitions from probabilistic non-goal states to all Markovian non-goal states.
+                    typename storm::storage::SparseMatrix<ValueType> aMarkovian = transitionMatrix.getSubmatrix(markovianNonGoalStates, nondeterministicChoiceIndices, true);
+                    typename storm::storage::SparseMatrix<ValueType> aMarkovianToProbabilistic = transitionMatrix.getSubmatrix(markovianNonGoalStates, probabilisticNonGoalStates, nondeterministicChoiceIndices);
+                    std::vector<uint_fast64_t> markovianNondeterministicChoiceIndices = computeNondeterministicChoiceIndicesForConstraint(nondeterministicChoiceIndices, markovianNonGoalStates);
+                    typename storm::storage::SparseMatrix<ValueType> aProbabilistic = transitionMatrix.getSubmatrix(probabilisticNonGoalStates, nondeterministicChoiceIndices);
+                    typename storm::storage::SparseMatrix<ValueType> aProbabilisticToMarkovian = transitionMatrix.getSubmatrix(probabilisticNonGoalStates, markovianNonGoalStates, nondeterministicChoiceIndices);
+                    std::vector<uint_fast64_t> probabilisticNondeterministicChoiceIndices = computeNondeterministicChoiceIndicesForConstraint(nondeterministicChoiceIndices, probabilisticNonGoalStates);
                     
                     // The matrices with transitions from Markovian states need to be digitized.
-                    
                     // Digitize aMarkovian. Based on whether the transition is a self-loop or not, we apply the two digitization rules.
                     uint_fast64_t rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
@@ -125,53 +109,128 @@ namespace storm {
                         ++rowIndex;
                     }
                     
-                    // (3) Initialize two vectors:
-                    // * v_PS holds the probability values of probabilistic non-goal states.
-                    // * v_MS holds the probability values of Markovian non-goal states.
-                    std::vector<ValueType> vProbabilistic(probabilisticNonGoalStates.getNumberOfSetBits());
-                    std::vector<ValueType> vMarkovian(markovianNonGoalStates.getNumberOfSetBits());
+                    // Initialize the two vectors that hold the variable one-step probabilities to all target states for probabilistic and Markovian (non-goal) states.
+                    std::vector<ValueType> bProbabilistic(aProbabilistic.getRowCount());
+                    std::vector<ValueType> bMarkovian(markovianNonGoalStates.getNumberOfSetBits());
                     
-                    // (4) Compute the two fixed right-hand side vectors, one for Markovian states and one for the probabilistic ones.
-                    std::vector<ValueType> bProbabilistic = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(probabilisticNonGoalStates, nondeterministicChoiceIndices, ~this->getModel().getMarkovianStates() & goalStates, aProbabilistic.getRowCount());
-                    storm::storage::BitVector probabilisticGoalStates = ~this->getModel().getMarkovianStates() & goalStates;
-                    std::vector<ValueType> bMarkovian;
-                    bMarkovian.reserve(markovianNonGoalStates.getNumberOfSetBits());
+                    // Compute the two fixed right-hand side vectors, one for Markovian states and one for the probabilistic ones.
+                    std::vector<ValueType> bProbabilisticFixed = transitionMatrix.getConstrainedRowSumVector(probabilisticNonGoalStates, nondeterministicChoiceIndices, goalStates, aProbabilistic.getRowCount());
+                    std::vector<ValueType> bMarkovianFixed;
+                    bMarkovianFixed.reserve(markovianNonGoalStates.getNumberOfSetBits());
                     for (auto state : markovianNonGoalStates) {
-                        bMarkovian.push_back(storm::utility::constGetZero<ValueType>());
+                        bMarkovianFixed.push_back(storm::utility::constGetZero<ValueType>());
                         
-                        typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(rowIndex);
+                        typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(nondeterministicChoiceIndices[state]);
                         for (auto element : row) {
-                            bMarkovian.back() += (1 - std::exp(-exitRates[state] * delta)) * element.value();
+                            if (goalStates.get(element.column())) {
+                                bMarkovianFixed.back() += (1 - std::exp(-exitRates[state] * delta)) * element.value();
+                            }
                         }
                     }
                     
-                    std::cout << delta << std::endl;
-                    std::cout << markovianNonGoalStates.toString() << std::endl;
-                    std::cout << aMarkovian.toString() << std::endl;
-                    std::cout << aMarkovianToProbabilistic.toString() << std::endl;
-                    std::cout << probabilisticNonGoalStates.toString() << std::endl;
-                    std::cout << aProbabilistic.toString() << std::endl;
-                    std::cout << aProbabilisticToMarkovian.toString() << std::endl;
-                    std::cout << bProbabilistic << std::endl;
-                    std::cout << bMarkovian << std::endl;
+                    std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
                     
-                    // (3) Perform value iteration
+                    // Perform the actual value iteration
                     // * loop until the step bound has been reached
                     // * in the loop:
                     // *    perform value iteration using A_PSwG, v_PS and the vector b where b = (A * 1_G)|PS + A_PStoMS * v_MS
                     //      and 1_G being the characteristic vector for all goal states.
                     // *    perform one timed-step using v_MS := A_MSwG * v_MS + A_MStoPS * v_PS + (A * 1_G)|MS
-                    //
+                    std::vector<ValueType> markovianNonGoalValuesSwap(markovianNonGoalValues);
+                    std::vector<ValueType> multiplicationResultScratchMemory(aProbabilistic.getRowCount());
+                    std::vector<ValueType> aProbabilisticScratchMemory(probabilisticNonGoalValues.size());
+                    for (uint_fast64_t currentStep = 0; currentStep < numberOfSteps; ++currentStep) {
+                        // Start by (re-)computing bProbabilistic = bProbabilisticFixed + aProbabilisticToMarkovian * vMarkovian.
+                        aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
+                        storm::utility::vector::addVectorsInPlace(bProbabilistic, bProbabilisticFixed);
+                        
+                        // Now perform the inner value iteration for probabilistic states.
+                        nondeterministiclinearEquationSolver->solveEquationSystem(min, aProbabilistic, probabilisticNonGoalValues, bProbabilistic, probabilisticNondeterministicChoiceIndices, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
+                        
+                        // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
+                        aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
+                        storm::utility::vector::addVectorsInPlace(bMarkovian, bMarkovianFixed);
+                        aMarkovian.multiplyWithVector(markovianNonGoalValues, markovianNonGoalValuesSwap);
+                        std::swap(markovianNonGoalValues, markovianNonGoalValuesSwap);
+                        storm::utility::vector::addVectorsInPlace(markovianNonGoalValues, bMarkovian);
+                    }
+                    
                     // After the loop, perform one more step of the value iteration for PS states.
+                    aProbabilisticToMarkovian.multiplyWithVector(probabilisticNonGoalValues, bProbabilistic);
+                    storm::utility::vector::addVectorsInPlace(bProbabilistic, bProbabilisticFixed);
+                    nondeterministiclinearEquationSolver->solveEquationSystem(min, aProbabilistic, probabilisticNonGoalValues, bProbabilistic, probabilisticNondeterministicChoiceIndices);
+                }
+                
+                std::vector<ValueType> checkTimeBoundedEventually(bool min, storm::storage::BitVector const& goalStates, ValueType lowerBound, ValueType upperBound) const {
+                    // Check whether the automaton is closed.
+                    if (!this->getModel().isClosed()) {
+                        throw storm::exceptions::InvalidArgumentException() << "Unable to compute time-bounded reachability on non-closed Markov automaton.";
+                    }
                     
+                    // Check whether the given bounds were valid.
+                    if (lowerBound < storm::utility::constGetZero<ValueType>() || upperBound < storm::utility::constGetZero<ValueType>() || upperBound < lowerBound) {
+                        throw storm::exceptions::InvalidArgumentException() << "Illegal interval [";
+                    }
+
+                    // Get some data fields for convenient access.
+                    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
+                    typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
+                    std::vector<ValueType> const& exitRates = this->getModel().getExitRates();
+                    storm::storage::BitVector const& markovianStates = this->getModel().getMarkovianStates();
+
+                    // (1) Compute the accuracy we need to achieve the required error bound.
+                    ValueType maxExitRate = this->getModel().getMaximalExitRate();
+                    ValueType delta = (2 * storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) / (upperBound * maxExitRate * maxExitRate);
                     
+                    // (2) Compute the number of steps we need to make for the interval.
+                    uint_fast64_t numberOfSteps = static_cast<uint_fast64_t>(std::ceil((upperBound - lowerBound) / delta));
+                    std::cout << "Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [" << lowerBound << ", " << upperBound << "]." << std::endl;
                     
+                    // (3) Compute the non-goal states and initialize two vectors
+                    // * vProbabilistic holds the probability values of probabilistic non-goal states.
+                    // * vMarkovian holds the probability values of Markovian non-goal states.
+                    storm::storage::BitVector const& markovianNonGoalStates = markovianStates & ~goalStates;
+                    storm::storage::BitVector const& probabilisticNonGoalStates = ~markovianStates & ~goalStates;
+                    std::vector<ValueType> vProbabilistic(probabilisticNonGoalStates.getNumberOfSetBits());
+                    std::vector<ValueType> vMarkovian(markovianNonGoalStates.getNumberOfSetBits());
                     
-                    
-                    // (4) Finally, create the result vector out of 1_G and v_all.
-                    
-                    // Return dummy vector for the time being.
-                    return std::vector<ValueType>();
+                    computeBoundedReachability(min, transitionMatrix, nondeterministicChoiceIndices, exitRates, markovianStates, goalStates, markovianNonGoalStates, probabilisticNonGoalStates, vMarkovian, vProbabilistic, delta, numberOfSteps);
+
+                    // (4) If the lower bound of interval was non-zero, we need to take the current values as the starting values for a subsequent value iteration.
+                    if (lowerBound != storm::utility::constGetZero<ValueType>()) {
+                        std::vector<ValueType> vAllProbabilistic((~markovianStates).getNumberOfSetBits());
+                        std::vector<ValueType> vAllMarkovian(markovianStates.getNumberOfSetBits());
+                        
+                        // Create the starting value vectors for the next value iteration based on the results of the previous one.
+                        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, ~markovianStates % goalStates, storm::utility::constGetOne<ValueType>());
+                        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, ~markovianStates % ~goalStates, vProbabilistic);
+                        std::cout << vAllProbabilistic << std::endl;
+                        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, markovianStates % goalStates, storm::utility::constGetOne<ValueType>());
+                        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, markovianStates % ~goalStates, vMarkovian);
+                        std::cout << vAllMarkovian << std::endl;
+                        
+                        // Compute the number of steps to reach the target interval.
+                        numberOfSteps = static_cast<uint_fast64_t>(std::ceil(lowerBound / delta));
+                        std::cout << "Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [0, " << lowerBound << "]." << std::endl;
+                        // FIXME: According to IMCA, the value of delta needs to be recomputed here, but using the equations from the source this doesn't make sense, because they always evaluate to the original value of delta.
+                        
+                        // Compute the bounded reachability for interval [0, b-a].
+                        computeBoundedReachability(min, transitionMatrix, nondeterministicChoiceIndices, exitRates, markovianStates, storm::storage::BitVector(this->getModel().getNumberOfStates()), markovianStates, ~markovianStates, vAllMarkovian, vAllProbabilistic, delta, numberOfSteps);
+                        
+                        // Create the result vector out of vAllProbabilistic and vAllMarkovian and return it.
+                        std::vector<ValueType> result(this->getModel().getNumberOfStates());
+                        storm::utility::vector::setVectorValues(result, ~markovianStates, vAllProbabilistic);
+                        storm::utility::vector::setVectorValues(result, markovianStates, vAllMarkovian);
+                        
+                        return result;
+                    } else {
+                        // Create the result vector out of 1_G, vProbabilistic and vMarkovian and return it.
+                        std::vector<ValueType> result(this->getModel().getNumberOfStates());
+                        storm::utility::vector::setVectorValues<ValueType>(result, goalStates, storm::utility::constGetOne<ValueType>());
+                        storm::utility::vector::setVectorValues(result, probabilisticNonGoalStates, vProbabilistic);
+                        storm::utility::vector::setVectorValues(result, markovianNonGoalStates, vMarkovian);
+                        return result;
+                    }
                 }
                 
                 std::vector<ValueType> checkLongRunAverage(bool min, storm::storage::BitVector const& goalStates) const {
@@ -370,11 +429,8 @@ namespace storm {
                     // Finalize the matrix and solve the corresponding system of equations.
                     sspMatrix.finalize();
                     std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
-                    if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->solveEquationSystem(min, sspMatrix, x, b, sspNondeterministicChoiceIndices);
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                    }
+                    std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
+                    nondeterministiclinearEquationSolver->solveEquationSystem(min, sspMatrix, x, b, sspNondeterministicChoiceIndices);
                     
                     // Prepare result vector.
                     std::vector<ValueType> result(this->getModel().getNumberOfStates());
@@ -451,7 +507,7 @@ namespace storm {
                     
                     // Then, we can eliminate the rows and columns for all states whose values are already known to be 0.
                     std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
-                    std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
+                    std::vector<uint_fast64_t> subNondeterministicChoiceIndices = computeNondeterministicChoiceIndicesForConstraint(this->getModel().getNondeterministicChoiceIndices(), maybeStates);
                     storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
 
                     // Now prepare the mean sojourn times for all states so they can be used as the right-hand side of the equation system.
@@ -465,11 +521,8 @@ namespace storm {
                     storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, this->getModel().getNondeterministicChoiceIndices(), meanSojournTimes);
                     
                     // Solve the corresponding system of equations.
-                    if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->solveEquationSystem(min, submatrix, x, b, subNondeterministicChoiceIndices);
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                    }
+                    std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
+                    nondeterministiclinearEquationSolver->solveEquationSystem(min, submatrix, x, b, subNondeterministicChoiceIndices);
                     
                     // Create resulting vector.
                     std::vector<ValueType> result(this->getModel().getNumberOfStates());
@@ -497,10 +550,7 @@ namespace storm {
                  * @param constraint A bit vector specifying which states are kept.
                  * @returns A vector of the nondeterministic choice indices of the subsystem induced by the given constraint.
                  */
-                std::vector<uint_fast64_t> computeNondeterministicChoiceIndicesForConstraint(storm::storage::BitVector const& constraint) const {
-                    // First, get a reference to the full nondeterministic choice indices.
-                    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
-                    
+                static std::vector<uint_fast64_t> computeNondeterministicChoiceIndicesForConstraint(std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& constraint) {
                     // Reserve the known amount of slots for the resulting vector.
                     std::vector<uint_fast64_t> subNondeterministicChoiceIndices(constraint.getNumberOfSetBits() + 1);
                     uint_fast64_t currentRowCount = 0;
@@ -522,9 +572,6 @@ namespace storm {
                     
                     return subNondeterministicChoiceIndices;
                 }
-                
-                // An object that is used for solving linear equations and performing matrix-vector multiplication.
-                std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> linearEquationSolver;
             };
         }
     }

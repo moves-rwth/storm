@@ -47,42 +47,41 @@ namespace storm {
                 delete gmmxxMatrix;
             }
             
-            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const override {
-                // Get the settings object to customize solving.
-                storm::settings::Settings* s = storm::settings::Settings::getInstance();
-                
-                // Get relevant user-defined settings for solving the equations.
-                double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-                uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
-				bool relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
-                
+            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* multiplyResult = nullptr, std::vector<Type>* newX = nullptr) const override {
                 // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
                 gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
                 
                 // Set up the environment for the power method.
-                std::vector<Type> multiplyResult(A.getRowCount());
+                if (multiplyResult == nullptr) {
+                    multiplyResult = new std::vector<Type>(A.getRowCount());
+                }
+        
                 std::vector<Type>* currentX = &x;
-                std::vector<Type>* newX = new std::vector<Type>(x.size());
+                bool xMemoryProvided = true;
+                if (newX == nullptr) {
+                    newX = new std::vector<Type>(x.size());
+                    xMemoryProvided = false;
+                }
                 std::vector<Type>* swap = nullptr;
                 uint_fast64_t iterations = 0;
                 bool converged = false;
                 
                 // Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
                 // of iterations.
-                while (!converged && iterations < maxIterations) {
+                while (!converged && iterations < this->maxIterations) {
                     // Compute x' = A*x + b.
-                    gmm::mult(*gmmxxMatrix, *currentX, multiplyResult);
-                    gmm::add(b, multiplyResult);
+                    gmm::mult(*gmmxxMatrix, *currentX, *multiplyResult);
+                    gmm::add(b, *multiplyResult);
                     
                     // Reduce the vector x' by applying min/max for all non-deterministic choices.
                     if (minimize) {
-                        storm::utility::vector::reduceVectorMin(multiplyResult, *newX, nondeterministicChoiceIndices);
+                        storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, nondeterministicChoiceIndices);
                     } else {
-                        storm::utility::vector::reduceVectorMax(multiplyResult, *newX, nondeterministicChoiceIndices);
+                        storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, nondeterministicChoiceIndices);
                     }
                     
                     // Determine whether the method converged.
-                    converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, precision, relative);
+                    converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, this->precision, this->relative);
                     
                     // Update environment variables.
                     swap = currentX;
@@ -95,8 +94,10 @@ namespace storm {
                 // is currently stored in currentX, but x is the output vector.
                 if (iterations % 2 == 1) {
                     std::swap(x, *currentX);
-                    delete currentX;
-                } else {
+                    if (!xMemoryProvided) {
+                        delete currentX;
+                    }
+                } else if (!xMemoryProvided) {
                     delete newX;
                 }
                 delete gmmxxMatrix;
