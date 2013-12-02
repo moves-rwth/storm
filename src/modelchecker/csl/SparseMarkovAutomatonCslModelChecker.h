@@ -179,7 +179,7 @@ namespace storm {
 
                     // (1) Compute the accuracy we need to achieve the required error bound.
                     ValueType maxExitRate = this->getModel().getMaximalExitRate();
-                    ValueType delta = (2 * storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) / (upperBound * maxExitRate * maxExitRate);
+                    ValueType delta = (2 * storm::settings::Settings::getInstance()->getOptionByLongName("digiprecision").getArgument(0).getValueAsDouble()) / (upperBound * maxExitRate * maxExitRate);
                     
                     // (2) Compute the number of steps we need to make for the interval.
                     uint_fast64_t numberOfSteps = static_cast<uint_fast64_t>(std::ceil((upperBound - lowerBound) / delta));
@@ -203,10 +203,8 @@ namespace storm {
                         // Create the starting value vectors for the next value iteration based on the results of the previous one.
                         storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, ~markovianStates % goalStates, storm::utility::constGetOne<ValueType>());
                         storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, ~markovianStates % ~goalStates, vProbabilistic);
-                        std::cout << vAllProbabilistic << std::endl;
                         storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, markovianStates % goalStates, storm::utility::constGetOne<ValueType>());
                         storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, markovianStates % ~goalStates, vMarkovian);
-                        std::cout << vAllMarkovian << std::endl;
                         
                         // Compute the number of steps to reach the target interval.
                         numberOfSteps = static_cast<uint_fast64_t>(std::ceil(lowerBound / delta));
