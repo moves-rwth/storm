@@ -2,8 +2,7 @@
 #define STORM_UTILITY_SOLVER_H_
 
 #include "src/solver/AbstractNondeterministicLinearEquationSolver.h"
-#include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
-#include "src/solver/GurobiLpSolver.h"
+#include "src/solver/LpSolver.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
 

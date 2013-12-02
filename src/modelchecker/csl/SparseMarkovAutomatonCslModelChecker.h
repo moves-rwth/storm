@@ -274,9 +274,9 @@ namespace storm {
                         }
 
                         // Compute the LRA value for the current MEC.
-                        lraValuesForEndComponents.push_back(this->computeLraForMaximalEndComponent(min, transitionMatrix, nondeterministicChoiceIndices, this->getModel().getMarkovianStates(), this->getModel().getExitRates(), goalStates, mec));
+                        lraValuesForEndComponents.push_back(this->computeLraForMaximalEndComponent(min, transitionMatrix, nondeterministicChoiceIndices, this->getModel().getMarkovianStates(), this->getModel().getExitRates(), goalStates, mec, currentMecIndex));
                     }
-                    
+                                        
                     // For fast transition rewriting, we build some auxiliary data structures.
                     storm::storage::BitVector statesNotContainedInAnyMec = ~statesInMecs;
                     uint_fast64_t firstAuxiliaryStateIndex = statesNotContainedInAnyMec.getNumberOfSetBits();
@@ -388,23 +388,23 @@ namespace storm {
                     // Finalize the matrix and solve the corresponding system of equations.
                     sspMatrix.finalize();
                     std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
-                    std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
-                    nondeterministiclinearEquationSolver->solveEquationSystem(min, sspMatrix, x, b, sspNondeterministicChoiceIndices);
+                    nondeterministicLinearEquationSolver->solveEquationSystem(min, sspMatrix, x, b, sspNondeterministicChoiceIndices);
                     
                     // Prepare result vector.
                     std::vector<ValueType> result(this->getModel().getNumberOfStates());
                     
+                    std::cout << "res " << result << std::endl;
+                    
                     // Set the values for states not contained in MECs.
-                    uint_fast64_t stateIndex = 0;
-                    for (auto state : statesNotContainedInAnyMec) {
-                        result[state] = x[stateIndex];
-                        ++stateIndex;
-                    }
+                    std::cout << x << std::endl;
+                    storm::utility::vector::setVectorValues(result, statesNotContainedInAnyMec, x);
+                    std::cout << "res " << result << std::endl;
                     
                     // Set the values for all states in MECs.
                     for (auto state : statesInMecs) {
                         result[state] = lraValuesForEndComponents[stateToMecIndexMap[state]];
                     }
+                    std::cout << "res " << result << std::endl;
 
                     return result;
                 }
@@ -428,9 +428,10 @@ namespace storm {
                  * @param exitRates A vector with exit rates for all states. Exit rates of probabilistic states are assumed to be zero.
                  * @param goalStates A bit vector indicating which states are to be considered as goal states.
                  * @param mec The maximal end component to consider for computing the long-run average.
+                 * @param mecIndex The index of the MEC.
                  * @return The long-run average of being in a goal state for the given MEC.
                  */
-                static ValueType computeLraForMaximalEndComponent(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::MaximalEndComponent const& mec) {
+                static ValueType computeLraForMaximalEndComponent(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::MaximalEndComponent const& mec, uint_fast64_t mecIndex = 0) {
                     std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
                     solver->setModelSense(min ? storm::solver::LpSolver::MAXIMIZE : storm::solver::LpSolver::MINIMIZE);
                     

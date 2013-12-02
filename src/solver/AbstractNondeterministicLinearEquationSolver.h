@@ -83,9 +83,6 @@ namespace storm {
 //                LOG4CPLUS_INFO(logger, "Starting iterative solver.");
 
                 // Set up the environment for the power method.
-//                auto startTime = std::chrono::high_resolution_clock::now();
-//                std::chrono::nanoseconds  totalTime(0);
-
                 bool multiplyResultMemoryProvided = true;
                 if (multiplyResult == nullptr) {
                     multiplyResult = new std::vector<Type>(A.getRowCount());

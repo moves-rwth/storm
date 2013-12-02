@@ -1,10 +1,21 @@
 #include "src/utility/solver.h"
 
+#include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
+#include "src/solver/GurobiLpSolver.h"
+#include "src/solver/GlpkLpSolver.h"
+
 namespace storm {
     namespace utility {
         namespace solver {
             std::shared_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name) {
-                return std::shared_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
+                std::string const& lpSolver = storm::settings::Settings::getInstance()->getOptionByLongName("lpSolver").getArgument(0).getValueAsString();
+                if (lpSolver == "gurobi") {
+                    return std::shared_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
+                } else if (lpSolver == "glpk") {
+                    return std::shared_ptr<storm::solver::LpSolver>(new storm::solver::GlpkLpSolver(name));
+                }
+                
+                throw storm::exceptions::InvalidSettingsException() << "No suitable LP-solver selected.";
             }
             
             template<typename ValueType>
