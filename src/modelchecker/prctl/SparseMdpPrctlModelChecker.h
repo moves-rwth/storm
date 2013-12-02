@@ -18,6 +18,7 @@
 #include "src/models/Mdp.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
+#include "src/utility/solver.h"
 #include "src/settings/Settings.h"
 #include "src/storage/TotalScheduler.h"
 
@@ -37,7 +38,7 @@ namespace storm {
                  *
                  * @param model The MDP to be checked.
                  */
-                explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, storm::solver::AbstractNondeterministicLinearEquationSolver<Type>* linearEquationSolver) : AbstractModelChecker<Type>(model), minimumOperatorStack(), linearEquationSolver(linearEquationSolver) {
+                explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
                     // Intentionally left empty.
                 }
                 
@@ -46,7 +47,7 @@ namespace storm {
                  * constructed model checker will have the model of the given model checker as its associated model.
                  */
                 explicit SparseMdpPrctlModelChecker(storm::modelchecker::prctl::SparseMdpPrctlModelChecker<Type> const& modelchecker)
-                : AbstractModelChecker<Type>(modelchecker),  minimumOperatorStack(), linearEquationSolver(new storm::solver::AbstractNondeterministicLinearEquationSolver<Type>()) {
+                : AbstractModelChecker<Type>(modelchecker),  minimumOperatorStack(), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
                     // Intentionally left empty.
                 }
                 
@@ -115,7 +116,7 @@ namespace storm {
                         storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0, this->getModel().getNondeterministicChoiceIndices());
                         
                         // Get the "new" nondeterministic choice indices for the submatrix.
-                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(statesWithProbabilityGreater0);
+                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(this->getModel().getNondeterministicChoiceIndices(), statesWithProbabilityGreater0);
                         
                         // Compute the new set of target states in the reduced system.
                         storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % psiStates;
@@ -127,11 +128,7 @@ namespace storm {
                         std::vector<Type> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
                         storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
                         
-                        if (linearEquationSolver != nullptr) {
-                            this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), submatrix, subresult, subNondeterministicChoiceIndices, nullptr, stepBound);
-                        } else {
-                            throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                        }
+                        this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), submatrix, subresult, subNondeterministicChoiceIndices, nullptr, stepBound);
                         
                         // Set the values of the resulting vector accordingly.
                         storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
@@ -172,11 +169,7 @@ namespace storm {
                     std::vector<Type> result(this->getModel().getNumberOfStates());
                     storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constGetOne<Type>());
                     
-                    if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices());
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                    }
+                    this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices());
                     
                     return result;
                 }
@@ -325,7 +318,7 @@ namespace storm {
                         storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
                         
                         // Get the "new" nondeterministic choice indices for the submatrix.
-                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
+                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(this->getModel().getNondeterministicChoiceIndices(), maybeStates);
                         
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
@@ -335,11 +328,7 @@ namespace storm {
                         std::vector<Type> x(maybeStates.getNumberOfSetBits());
                                                 
                         // Solve the corresponding system of equations.
-                        if (linearEquationSolver != nullptr) {
-                            this->linearEquationSolver->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
-                        } else {
-                            throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                        }
+                        this->nondeterministicLinearEquationSolver->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<Type>(result, maybeStates, x);
@@ -376,11 +365,7 @@ namespace storm {
                     // Initialize result to state rewards of the model.
                     std::vector<Type> result(this->getModel().getStateRewardVector());
                     
-                    if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), nullptr, formula.getBound());
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                    }
+                    this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), nullptr, formula.getBound());
                     
                     return result;
                 }
@@ -422,11 +407,7 @@ namespace storm {
                         result.resize(this->getModel().getNumberOfStates());
                     }
                     
-                    if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), &totalRewardVector, formula.getBound());
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                    }
+                    this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), &totalRewardVector, formula.getBound());
                     
                     return result;
                 }
@@ -500,7 +481,7 @@ namespace storm {
                         storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
                         
                         // Get the "new" nondeterministic choice indices for the submatrix.
-                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
+                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(this->getModel().getNondeterministicChoiceIndices(), maybeStates);
                         
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
@@ -534,11 +515,7 @@ namespace storm {
                         std::vector<Type> x(maybeStates.getNumberOfSetBits());
                         
                         // Solve the corresponding system of equations.
-                        if (linearEquationSolver != nullptr) {
-                            this->linearEquationSolver->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
-                        } else {
-                            throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                        }
+                        this->nondeterministicLinearEquationSolver->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<Type>(result, maybeStates, x);
@@ -601,45 +578,11 @@ namespace storm {
                  */
                 mutable std::stack<bool> minimumOperatorStack;
                 
-            private:
                 /*!
-                 * Computes the nondeterministic choice indices vector resulting from reducing the full system to the states given
-                 * by the parameter constraint.
-                 *
-                 * @param constraint A bit vector specifying which states are kept.
-                 * @returns A vector of the nondeterministic choice indices of the subsystem induced by the given constraint.
+                 * A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
                  */
-                std::vector<uint_fast64_t> computeNondeterministicChoiceIndicesForConstraint(storm::storage::BitVector const& constraint) const {
-                    // First, get a reference to the full nondeterministic choice indices.
-                    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
-                    
-                    // Reserve the known amount of slots for the resulting vector.
-                    std::vector<uint_fast64_t> subNondeterministicChoiceIndices(constraint.getNumberOfSetBits() + 1);
-                    uint_fast64_t currentRowCount = 0;
-                    uint_fast64_t currentIndexCount = 1;
-                    
-                    // Set the first element as this will clearly begin at offset 0.
-                    subNondeterministicChoiceIndices[0] = 0;
-                    
-                    // Loop over all states that need to be kept and copy the relative indices of the nondeterministic choices over
-                    // to the resulting vector.
-                    for (auto index : constraint) {
-                        subNondeterministicChoiceIndices[currentIndexCount] = currentRowCount + nondeterministicChoiceIndices[index + 1] - nondeterministicChoiceIndices[index];
-                        currentRowCount += nondeterministicChoiceIndices[index + 1] - nondeterministicChoiceIndices[index];
-                        ++currentIndexCount;
-                    }
-                    
-                    // Put a sentinel element at the end.
-                    subNondeterministicChoiceIndices[constraint.getNumberOfSetBits()] = currentRowCount;
-                    
-                    return subNondeterministicChoiceIndices;
-                }
-                                
-                // An object that is used for solving linear equations and performing matrix-vector multiplication.
-                std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> linearEquationSolver;
-                
+                std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver;
             };
-            
         } // namespace prctl
     } // namespace modelchecker
 } // namespace storm

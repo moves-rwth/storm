@@ -2,7 +2,6 @@
 #define STORM_MODELCHECKER_CSL_SPARSEMARKOVAUTOMATONCSLMODELCHECKER_H_
 
 #include <stack>
-#include <iomanip>
 
 #include "src/modelchecker/csl/AbstractModelChecker.h"
 #include "src/models/MarkovAutomaton.h"
@@ -22,7 +21,7 @@ namespace storm {
             class SparseMarkovAutomatonCslModelChecker : public AbstractModelChecker<ValueType> {
             public:
                 
-                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model) : AbstractModelChecker<ValueType>(model), minimumOperatorStack() {
+                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) : AbstractModelChecker<ValueType>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
                     // Intentionally left empty.
                 }
                 
@@ -78,10 +77,10 @@ namespace storm {
                     // * a matrix aProbabilisticToMarkovian with all (non-discretized) transitions from probabilistic non-goal states to all Markovian non-goal states.
                     typename storm::storage::SparseMatrix<ValueType> aMarkovian = transitionMatrix.getSubmatrix(markovianNonGoalStates, nondeterministicChoiceIndices, true);
                     typename storm::storage::SparseMatrix<ValueType> aMarkovianToProbabilistic = transitionMatrix.getSubmatrix(markovianNonGoalStates, probabilisticNonGoalStates, nondeterministicChoiceIndices);
-                    std::vector<uint_fast64_t> markovianNondeterministicChoiceIndices = computeNondeterministicChoiceIndicesForConstraint(nondeterministicChoiceIndices, markovianNonGoalStates);
+                    std::vector<uint_fast64_t> markovianNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(nondeterministicChoiceIndices, markovianNonGoalStates);
                     typename storm::storage::SparseMatrix<ValueType> aProbabilistic = transitionMatrix.getSubmatrix(probabilisticNonGoalStates, nondeterministicChoiceIndices);
                     typename storm::storage::SparseMatrix<ValueType> aProbabilisticToMarkovian = transitionMatrix.getSubmatrix(probabilisticNonGoalStates, markovianNonGoalStates, nondeterministicChoiceIndices);
-                    std::vector<uint_fast64_t> probabilisticNondeterministicChoiceIndices = computeNondeterministicChoiceIndicesForConstraint(nondeterministicChoiceIndices, probabilisticNonGoalStates);
+                    std::vector<uint_fast64_t> probabilisticNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(nondeterministicChoiceIndices, probabilisticNonGoalStates);
                     
                     // The matrices with transitions from Markovian states need to be digitized.
                     // Digitize aMarkovian. Based on whether the transition is a self-loop or not, we apply the two digitization rules.
@@ -128,7 +127,7 @@ namespace storm {
                         }
                     }
                     
-                    std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
+                    std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
                     
                     // Perform the actual value iteration
                     // * loop until the step bound has been reached
@@ -234,8 +233,19 @@ namespace storm {
                 }
                 
                 std::vector<ValueType> checkLongRunAverage(bool min, storm::storage::BitVector const& goalStates) const {
+                    // Check whether the automaton is closed.
                     if (!this->getModel().isClosed()) {
                         throw storm::exceptions::InvalidArgumentException() << "Unable to compute long-run average on non-closed Markov automaton.";
+                    }
+                    
+                    // If there are no goal states, we avoid the computation and directly return zero.
+                    if (goalStates.empty()) {
+                        return std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::constGetZero<ValueType>());
+                    }
+                    
+                    // Likewise, if all bits are set, we can avoid the computation and set.
+                    if ((~goalStates).empty()) {
+                        return std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::constGetOne<ValueType>());
                     }
 
                     // Start by decomposing the Markov automaton into its MECs.
@@ -245,7 +255,7 @@ namespace storm {
                     typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
                     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
                     
-                    // Now compute the long-run average for all end components in isolation.
+                    // Now start with compute the long-run average for all end components in isolation.
                     std::vector<ValueType> lraValuesForEndComponents;
                     
                     // While doing so, we already gather some information for the following steps.
@@ -255,67 +265,16 @@ namespace storm {
                     for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
                         storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
                         
-                        std::unique_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC " + std::to_string(currentMecIndex));
-                        solver->setModelSense(min ? storm::solver::LpSolver::MAXIMIZE : storm::solver::LpSolver::MINIMIZE);
-
-                        // First, we need to create the variables for the problem.
-                        std::map<uint_fast64_t, uint_fast64_t> stateToVariableIndexMap;
-                        for (auto const& stateChoicesPair : mec) {
-                            stateToVariableIndexMap[stateChoicesPair.first] = solver->createContinuousVariable("x" + std::to_string(stateChoicesPair.first), storm::solver::LpSolver::UNBOUNDED, 0, 0, 0);
-                        }
-                        uint_fast64_t lraValueVariableIndex = solver->createContinuousVariable("k", storm::solver::LpSolver::UNBOUNDED, 0, 0, 1);
-                        
-                        // Now we encode the problem as constraints.
-                        std::vector<uint_fast64_t> variables;
-                        std::vector<double> coefficients;
+                        // Gather information for later use.
                         for (auto const& stateChoicesPair : mec) {
                             uint_fast64_t state = stateChoicesPair.first;
                             
-                            // Gather information for later use.
                             statesInMecs.set(state);
                             stateToMecIndexMap[state] = currentMecIndex;
-                            
-                            // Now, based on the type of the state, create a suitable constraint.
-                            if (this->getModel().isMarkovianState(state)) {
-                                variables.clear();
-                                coefficients.clear();
-                                
-                                variables.push_back(stateToVariableIndexMap.at(state));
-                                coefficients.push_back(1);
-                                
-                                typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(nondeterministicChoiceIndices[state]);
-                                for (auto element : row) {
-                                    variables.push_back(stateToVariableIndexMap.at(element.column()));
-                                    coefficients.push_back(-element.value());
-                                }
-                                
-                                variables.push_back(lraValueVariableIndex);
-                                coefficients.push_back(storm::utility::constGetOne<ValueType>() / this->getModel().getExitRate(state));
-                                
-                                solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, goalStates.get(state) ? storm::utility::constGetOne<ValueType>() / this->getModel().getExitRate(state) : storm::utility::constGetZero<ValueType>());
-                            } else {
-                                // For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
-                                // and the sum ranges over all states s'.
-                                for (auto choice : stateChoicesPair.second) {
-                                    variables.clear();
-                                    coefficients.clear();
-                                    
-                                    variables.push_back(stateToVariableIndexMap.at(state));
-                                    coefficients.push_back(1);
-                                    
-                                    typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);
-                                    for (auto element : row) {
-                                        variables.push_back(stateToVariableIndexMap.at(element.column()));
-                                        coefficients.push_back(-element.value());
-                                    }
-                                    
-                                    solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, storm::utility::constGetZero<ValueType>());
-                                }
-                            }
                         }
-                        
-                        solver->optimize();
-                        lraValuesForEndComponents.push_back(solver->getContinuousValue(lraValueVariableIndex));
+
+                        // Compute the LRA value for the current MEC.
+                        lraValuesForEndComponents.push_back(this->computeLraForMaximalEndComponent(min, transitionMatrix, nondeterministicChoiceIndices, this->getModel().getMarkovianStates(), this->getModel().getExitRates(), goalStates, mec));
                     }
                     
                     // For fast transition rewriting, we build some auxiliary data structures.
@@ -429,7 +388,7 @@ namespace storm {
                     // Finalize the matrix and solve the corresponding system of equations.
                     sspMatrix.finalize();
                     std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
-                    std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
+                    std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
                     nondeterministiclinearEquationSolver->solveEquationSystem(min, sspMatrix, x, b, sspNondeterministicChoiceIndices);
                     
                     // Prepare result vector.
@@ -451,10 +410,102 @@ namespace storm {
                 }
                 
                 std::vector<ValueType> checkExpectedTime(bool min, storm::storage::BitVector const& goalStates) const {
+                    // Reduce the problem of computing the expected time to computing expected rewards where the rewards
+                    // for all probabilistic states are zero and the reward values of Markovian states is 1.
+                    std::vector<ValueType> rewardValues(this->getModel().getNumberOfStates(), storm::utility::constGetZero<ValueType>());
+                    storm::utility::vector::setVectorValues(rewardValues, this->getModel().getMarkovianStates(), storm::utility::constGetOne<ValueType>());
+                    return this->computeExpectedRewards(min, goalStates, rewardValues);
+                }
+                
+            protected:
+                /*!
+                 * Computes the long-run average value for the given maximal end component of a Markov automaton.
+                 *
+                 * @param min Sets whether the long-run average is to be minimized or maximized.
+                 * @param transitionMatrix The transition matrix of the underlying Markov automaton.
+                 * @param nondeterministicChoiceIndices A vector indicating at which row the choice of a given state begins.
+                 * @param markovianStates A bit vector storing all markovian states.
+                 * @param exitRates A vector with exit rates for all states. Exit rates of probabilistic states are assumed to be zero.
+                 * @param goalStates A bit vector indicating which states are to be considered as goal states.
+                 * @param mec The maximal end component to consider for computing the long-run average.
+                 * @return The long-run average of being in a goal state for the given MEC.
+                 */
+                static ValueType computeLraForMaximalEndComponent(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::MaximalEndComponent const& mec) {
+                    std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
+                    solver->setModelSense(min ? storm::solver::LpSolver::MAXIMIZE : storm::solver::LpSolver::MINIMIZE);
+                    
+                    // First, we need to create the variables for the problem.
+                    std::map<uint_fast64_t, uint_fast64_t> stateToVariableIndexMap;
+                    for (auto const& stateChoicesPair : mec) {
+                        stateToVariableIndexMap[stateChoicesPair.first] = solver->createContinuousVariable("x" + std::to_string(stateChoicesPair.first), storm::solver::LpSolver::UNBOUNDED, 0, 0, 0);
+                    }
+                    uint_fast64_t lraValueVariableIndex = solver->createContinuousVariable("k", storm::solver::LpSolver::UNBOUNDED, 0, 0, 1);
+                    
+                    // Now we encode the problem as constraints.
+                    std::vector<uint_fast64_t> variables;
+                    std::vector<double> coefficients;
+                    for (auto const& stateChoicesPair : mec) {
+                        uint_fast64_t state = stateChoicesPair.first;
+                        
+                        // Now, based on the type of the state, create a suitable constraint.
+                        if (markovianStates.get(state)) {
+                            variables.clear();
+                            coefficients.clear();
+                            
+                            variables.push_back(stateToVariableIndexMap.at(state));
+                            coefficients.push_back(1);
+                            
+                            typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(nondeterministicChoiceIndices[state]);
+                            for (auto element : row) {
+                                variables.push_back(stateToVariableIndexMap.at(element.column()));
+                                coefficients.push_back(-element.value());
+                            }
+                            
+                            variables.push_back(lraValueVariableIndex);
+                            coefficients.push_back(storm::utility::constGetOne<ValueType>() / exitRates[state]);
+                            
+                            solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, goalStates.get(state) ? storm::utility::constGetOne<ValueType>() / exitRates[state] : storm::utility::constGetZero<ValueType>());
+                        } else {
+                            // For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
+                            // and the sum ranges over all states s'.
+                            for (auto choice : stateChoicesPair.second) {
+                                variables.clear();
+                                coefficients.clear();
+                                
+                                variables.push_back(stateToVariableIndexMap.at(state));
+                                coefficients.push_back(1);
+                                
+                                typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);
+                                for (auto element : row) {
+                                    variables.push_back(stateToVariableIndexMap.at(element.column()));
+                                    coefficients.push_back(-element.value());
+                                }
+                                
+                                solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, storm::utility::constGetZero<ValueType>());
+                            }
+                        }
+                    }
+                    
+                    solver->optimize();
+                    return solver->getContinuousValue(lraValueVariableIndex);
+                }
+                
+                /*!
+                 * Computes the expected reward that is gained from each state before entering any of the goal states.
+                 *
+                 * @param min Indicates whether minimal or maximal rewards are to be computed.
+                 * @param goalStates The goal states that define until which point rewards are gained.
+                 * @param stateRewards A vector that defines the reward gained in each state. For probabilistic states, this is an instantaneous reward
+                 * that is fully gained and for Markovian states the actually gained reward is dependent on the expected time to stay in the
+                 * state, i.e. it is gouverned by the exit rate of the state.
+                 * @return A vector that contains the expected reward for each state of the model.
+                 */
+                std::vector<ValueType> computeExpectedRewards(bool min, storm::storage::BitVector const& goalStates, std::vector<ValueType> const& stateRewards) const {
+                    // Check whether the automaton is closed.
                     if (!this->getModel().isClosed()) {
                         throw storm::exceptions::InvalidArgumentException() << "Unable to compute expected time on non-closed Markov automaton.";
                     }
-
+                    
                     // First, we need to check which states have infinite expected time (by definition).
                     storm::storage::BitVector infinityStates;
                     if (min) {
@@ -501,77 +552,50 @@ namespace storm {
                             infinityStates = storm::storage::BitVector(this->getModel().getNumberOfStates());
                         }
                     }
-
+                    
                     // Now we identify the states for which values need to be computed.
                     storm::storage::BitVector maybeStates = ~(goalStates | infinityStates);
                     
                     // Then, we can eliminate the rows and columns for all states whose values are already known to be 0.
                     std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
-                    std::vector<uint_fast64_t> subNondeterministicChoiceIndices = computeNondeterministicChoiceIndicesForConstraint(this->getModel().getNondeterministicChoiceIndices(), maybeStates);
+                    std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(this->getModel().getNondeterministicChoiceIndices(), maybeStates);
                     storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
-
-                    // Now prepare the mean sojourn times for all states so they can be used as the right-hand side of the equation system.
-                    std::vector<ValueType> meanSojournTimes(this->getModel().getExitRates());
+                    
+                    // Now prepare the expected reward values for all states so they can be used as the right-hand side of the equation system.
+                    std::vector<ValueType> rewardValues(stateRewards);
                     for (auto state : this->getModel().getMarkovianStates()) {
-                        meanSojournTimes[state] = storm::utility::constGetOne<ValueType>() / meanSojournTimes[state];
+                        rewardValues[state] = rewardValues[state] / this->getModel().getExitRates()[state];
                     }
                     
                     // Finally, prepare the actual right-hand side.
                     std::vector<ValueType> b(submatrix.getRowCount());
-                    storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, this->getModel().getNondeterministicChoiceIndices(), meanSojournTimes);
+                    storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, this->getModel().getNondeterministicChoiceIndices(), rewardValues);
                     
                     // Solve the corresponding system of equations.
-                    std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
+                    std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
                     nondeterministiclinearEquationSolver->solveEquationSystem(min, submatrix, x, b, subNondeterministicChoiceIndices);
                     
                     // Create resulting vector.
                     std::vector<ValueType> result(this->getModel().getNumberOfStates());
-
+                    
                     // Set values of resulting vector according to previous result and return the result.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
                     storm::utility::vector::setVectorValues(result, goalStates, storm::utility::constGetZero<ValueType>());
                     storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<ValueType>());
-
+                    
                     return result;
                 }
                 
-            protected:
                 /*!
                  * A stack used for storing whether we are currently computing min or max probabilities or rewards, respectively.
                  * The topmost element is true if and only if we are currently computing minimum probabilities or rewards.
                  */
                 mutable std::stack<bool> minimumOperatorStack;
                 
-            private:
                 /*!
-                 * Computes the nondeterministic choice indices vector resulting from reducing the full system to the states given
-                 * by the parameter constraint.
-                 *
-                 * @param constraint A bit vector specifying which states are kept.
-                 * @returns A vector of the nondeterministic choice indices of the subsystem induced by the given constraint.
+                 * A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
                  */
-                static std::vector<uint_fast64_t> computeNondeterministicChoiceIndicesForConstraint(std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& constraint) {
-                    // Reserve the known amount of slots for the resulting vector.
-                    std::vector<uint_fast64_t> subNondeterministicChoiceIndices(constraint.getNumberOfSetBits() + 1);
-                    uint_fast64_t currentRowCount = 0;
-                    uint_fast64_t currentIndexCount = 1;
-                    
-                    // Set the first element as this will clearly begin at offset 0.
-                    subNondeterministicChoiceIndices[0] = 0;
-                    
-                    // Loop over all states that need to be kept and copy the relative indices of the nondeterministic choices over
-                    // to the resulting vector.
-                    for (auto index : constraint) {
-                        subNondeterministicChoiceIndices[currentIndexCount] = currentRowCount + nondeterministicChoiceIndices[index + 1] - nondeterministicChoiceIndices[index];
-                        currentRowCount += nondeterministicChoiceIndices[index + 1] - nondeterministicChoiceIndices[index];
-                        ++currentIndexCount;
-                    }
-                    
-                    // Put a sentinel element at the end.
-                    subNondeterministicChoiceIndices[constraint.getNumberOfSetBits()] = currentRowCount;
-                    
-                    return subNondeterministicChoiceIndices;
-                }
+                std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver;
             };
         }
     }

@@ -86,8 +86,10 @@ namespace storm {
 //                auto startTime = std::chrono::high_resolution_clock::now();
 //                std::chrono::nanoseconds  totalTime(0);
 
+                bool multiplyResultMemoryProvided = true;
                 if (multiplyResult == nullptr) {
                     multiplyResult = new std::vector<Type>(A.getRowCount());
+                    multiplyResultMemoryProvided = false;
                 }
                 std::vector<Type>* currentX = &x;
                 bool xMemoryProvided = true;
@@ -133,6 +135,10 @@ namespace storm {
                     }
                 } else if (!xMemoryProvided) {
                     delete newX;
+                }
+                
+                if (!multiplyResultMemoryProvided) {
+                    delete multiplyResult;
                 }
 
 //                // Check if the solver converged and issue a warning otherwise.

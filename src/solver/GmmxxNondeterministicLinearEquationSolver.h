@@ -52,8 +52,10 @@ namespace storm {
                 gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
                 
                 // Set up the environment for the power method.
+                bool multiplyResultMemoryProvided = true;
                 if (multiplyResult == nullptr) {
                     multiplyResult = new std::vector<Type>(A.getRowCount());
+                    multiplyResultMemoryProvided = false;
                 }
         
                 std::vector<Type>* currentX = &x;
@@ -101,7 +103,11 @@ namespace storm {
                     delete newX;
                 }
                 delete gmmxxMatrix;
-                
+        
+                if (!multiplyResultMemoryProvided) {
+                    delete multiplyResult;
+                }
+        
                 // Check if the solver converged and issue a warning otherwise.
                 if (converged) {
                     LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");

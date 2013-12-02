@@ -5,19 +5,16 @@
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/solver/GurobiLpSolver.h"
 
+#include "src/exceptions/InvalidSettingsException.h"
+
 namespace storm {
     namespace utility {
         namespace solver {
             
-            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name) {
-                return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
-            }
+            std::shared_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name);
             
             template<typename ValueType>
-            std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> getNondeterministicLinearEquationSolver() {
-                return std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>>(new storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>());
-//                return std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>>(new storm::solver::GmmxxNondeterministicLinearEquationSolver<ValueType>());
-            }
+            std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> getNondeterministicLinearEquationSolver();
         }
     }
 }
