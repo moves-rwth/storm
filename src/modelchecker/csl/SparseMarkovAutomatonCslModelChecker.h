@@ -312,7 +312,7 @@ namespace storm {
                             for (auto element : row) {
                                 if (statesNotContainedInAnyMec.get(element.column())) {
                                     // If the target state is not contained in an MEC, we can copy over the entry.
-                                    sspMatrix.insertNextValue(currentChoice, statesNotInMecsBeforeIndex[element.column()], element.value());
+                                    sspMatrix.insertNextValue(currentChoice, statesNotInMecsBeforeIndex[element.column()], element.value(), true);
                                 } else {
                                     // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                     // so that we are able to write the cumulative probability to the MEC into the matrix.
@@ -323,7 +323,7 @@ namespace storm {
                             // Now insert all (cumulative) probability values that target an MEC.
                             for (uint_fast64_t mecIndex = 0; mecIndex < auxiliaryStateToProbabilityMap.size(); ++mecIndex) {
                                 if (auxiliaryStateToProbabilityMap[mecIndex] != 0) {
-                                    sspMatrix.insertNextValue(currentChoice, firstAuxiliaryStateIndex + mecIndex, auxiliaryStateToProbabilityMap[mecIndex]);
+                                    sspMatrix.insertNextValue(currentChoice, firstAuxiliaryStateIndex + mecIndex, auxiliaryStateToProbabilityMap[mecIndex], true);
                                 }
                             }
                         }
@@ -349,7 +349,7 @@ namespace storm {
                                     for (auto element : row) {
                                         if (statesNotContainedInAnyMec.get(element.column())) {
                                             // If the target state is not contained in an MEC, we can copy over the entry.
-                                            sspMatrix.insertNextValue(currentChoice, statesNotInMecsBeforeIndex[element.column()], element.value());
+                                            sspMatrix.insertNextValue(currentChoice, statesNotInMecsBeforeIndex[element.column()], element.value(), true);
                                         } else {
                                             // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                             // so that we are able to write the cumulative probability to the MEC into the matrix.
@@ -366,7 +366,7 @@ namespace storm {
                                                 b.back() += auxiliaryStateToProbabilityMap[mecIndex] * lraValuesForEndComponents[mecIndex];
                                             } else {
                                                 // Otherwise, we add a transition to the auxiliary state that is associated with the target MEC.
-                                                sspMatrix.insertNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex]);
+                                                sspMatrix.insertNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex], true);
                                             }
                                         }
                                     }
