@@ -377,7 +377,7 @@ namespace storm {
                         }
                         
                         // For each auxiliary state, there is the option to achieve the reward value of the LRA associated with the MEC.
-                        sspMatrix.insertEmptyRow();
+                        sspMatrix.insertEmptyRow(true);
                         ++currentChoice;
                         b.push_back(lraValuesForEndComponents[mecIndex]);
                     }
