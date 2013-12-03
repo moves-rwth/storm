@@ -56,7 +56,7 @@ namespace storm {
                 // A bit vector indicating which states possess a Markovian choice.
                 storm::storage::BitVector markovianStates;
                 
-                // A vector that stores the exit rates for each
+                // A vector that stores the exit rates for each state. For all states that do not possess Markovian choices this is equal to 0.
                 std::vector<double> exitRates;
             };
             
