@@ -62,7 +62,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual GlpkLpSolver() {
+            virtual ~GlpkLpSolver() {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
