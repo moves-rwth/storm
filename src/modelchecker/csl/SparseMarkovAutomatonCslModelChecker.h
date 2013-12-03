@@ -4,6 +4,7 @@
 #include <stack>
 
 #include "src/modelchecker/csl/AbstractModelChecker.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/models/MarkovAutomaton.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/MaximalEndComponentDecomposition.h"
@@ -20,7 +21,6 @@ namespace storm {
             template<typename ValueType>
             class SparseMarkovAutomatonCslModelChecker : public AbstractModelChecker<ValueType> {
             public:
-                
                 explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) : AbstractModelChecker<ValueType>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
                     // Intentionally left empty.
                 }
@@ -34,7 +34,13 @@ namespace storm {
                 }
                 
                 std::vector<ValueType> checkUntil(storm::property::csl::Until<ValueType> const& formula, bool qualitative) const {
-                    throw storm::exceptions::NotImplementedException() << "Model checking Until formulas on Markov automata is not yet implemented.";
+                    storm::storage::BitVector leftStates = formula.getLeft().check(*this);
+                    storm::storage::BitVector rightStates = formula.getRight().check(*this);
+                    return computeUnboundedUntilProbabilities(minimumOperatorStack.top(), leftStates, rightStates, qualitative).first;
+                }
+                
+                std::pair<std::vector<ValueType>, storm::storage::TotalScheduler> computeUnboundedUntilProbabilities(bool min, storm::storage::BitVector const& leftStates, storm::storage::BitVector const& rightStates, bool qualitative) const {
+                    return storm::modelchecker::prctl::SparseMdpPrctlModelChecker<ValueType>::computeUnboundedUntilProbabilities(min, this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), leftStates, rightStates, nondeterministicLinearEquationSolver, qualitative);
                 }
                 
                 std::vector<ValueType> checkTimeBoundedUntil(storm::property::csl::TimeBoundedUntil<ValueType> const& formula, bool qualitative) const {
@@ -42,7 +48,8 @@ namespace storm {
                 }
                 
                 std::vector<ValueType> checkTimeBoundedEventually(storm::property::csl::TimeBoundedEventually<ValueType> const& formula, bool qualitative) const {
-                    throw storm::exceptions::NotImplementedException() << "Model checking time-bounded Until formulas on Markov automata is not yet implemented.";
+                    storm::storage::BitVector goalStates = formula.getChild().check(*this);
+                    return this->checkTimeBoundedEventually(this->minimumOperatorStack.top(), goalStates, formula.getLowerBound(), formula.getUpperBound());
                 }
                 
                 std::vector<ValueType> checkGlobally(storm::property::csl::Globally<ValueType> const& formula, bool qualitative) const {
@@ -50,7 +57,8 @@ namespace storm {
                 }
                 
                 std::vector<ValueType> checkEventually(storm::property::csl::Eventually<ValueType> const& formula, bool qualitative) const {
-                    throw storm::exceptions::NotImplementedException() << "Model checking Eventually formulas on Markov automata is not yet implemented.";
+                    storm::storage::BitVector subFormulaStates = formula.getChild().check(*this);
+                    return computeUnboundedUntilProbabilities(minimumOperatorStack.top(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), subFormulaStates, qualitative).first;
                 }
                 
                 std::vector<ValueType> checkNext(storm::property::csl::Next<ValueType> const& formula, bool qualitative) const {
@@ -391,18 +399,13 @@ namespace storm {
                     // Prepare result vector.
                     std::vector<ValueType> result(this->getModel().getNumberOfStates());
                     
-                    std::cout << "res " << result << std::endl;
-                    
                     // Set the values for states not contained in MECs.
-                    std::cout << x << std::endl;
                     storm::utility::vector::setVectorValues(result, statesNotContainedInAnyMec, x);
-                    std::cout << "res " << result << std::endl;
                     
                     // Set the values for all states in MECs.
                     for (auto state : statesInMecs) {
                         result[state] = lraValuesForEndComponents[stateToMecIndexMap[state]];
                     }
-                    std::cout << "res " << result << std::endl;
 
                     return result;
                 }

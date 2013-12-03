@@ -90,10 +90,9 @@ namespace storm {
              */
             static struct StateInformation determineRelevantAndProblematicStates(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 StateInformation result;
-                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
-                result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.relevantStates &= ~psiStates;
-                result.problematicStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                result.problematicStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.problematicStates.complement();
                 result.problematicStates &= result.relevantStates;
                 LOG4CPLUS_DEBUG(logger, "Found " << phiStates.getNumberOfSetBits() << " filter states.");

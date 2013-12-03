@@ -570,7 +570,7 @@ public:
 		storm::property::prctl::Until<T> const* until = dynamic_cast<storm::property::prctl::Until<T> const*>(pathFormulaPtr);
 		if(eventually != nullptr) {
 			targetStates = eventually->getChild().check(modelCheck);
-			allowedStates = storm::storage::BitVector(targetStates.getSize(), true);
+			allowedStates = storm::storage::BitVector(targetStates.size(), true);
 		}
 		else if(globally != nullptr){
 			//eventually reaching a state without property visiting only states with property

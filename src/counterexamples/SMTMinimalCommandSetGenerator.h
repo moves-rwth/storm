@@ -103,7 +103,7 @@ namespace storm {
                 // Compute all relevant states, i.e. states for which there exists a scheduler that has a non-zero
                 // probabilitiy of satisfying phi until psi.
                 storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
-                relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
                 relevancyInformation.relevantStates &= ~psiStates;
 
                 LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantStates.getNumberOfSetBits() << " relevant states.");
@@ -1427,7 +1427,7 @@ namespace storm {
                 }
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
-                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp, subMdp.getBackwardTransitions(), phiStates, psiStates);
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getTransitionMatrix(), subMdp.getNondeterministicChoiceIndices(), subMdp.getBackwardTransitions(), phiStates, psiStates);
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
                 
                 LOG4CPLUS_DEBUG(logger, "Found " << reachableLabels.size() << " reachable labels and " << reachableStates.getNumberOfSetBits() << " reachable states.");
@@ -1547,7 +1547,7 @@ namespace storm {
                 LOG4CPLUS_DEBUG(logger, "Successfully determined reachable state space.");
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
-                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp, subMdp.getBackwardTransitions(), phiStates, psiStates);
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getTransitionMatrix(), subMdp.getNondeterministicChoiceIndices(), subMdp.getBackwardTransitions(), phiStates, psiStates);
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
                 
                 // Search for states for which we could enable another option and possibly improve the reachability probability.
