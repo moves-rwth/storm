@@ -15,6 +15,7 @@
 #include <new>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 #include <iterator>
 #include <set>
 #include <cstdint>
@@ -155,6 +156,89 @@ public:
 	};
     
     /*!
+	 * A class representing an iterator over a continuous number of rows of the matrix.
+	 */
+	class Iterator {
+	public:
+		/*!
+		 * Constructs an iterator from the given parameters.
+		 *
+		 * @param valuePtr A pointer to the value of the first element that is to be iterated over.
+         * @param columnPtr A pointer to the column of the first element that is to be iterated over.
+		 */
+		Iterator(T* valuePtr, uint_fast64_t* columnPtr) : valuePtr(valuePtr), columnPtr(columnPtr) {
+			// Intentionally left empty.
+		}
+        
+		/*!
+		 * Moves the iterator to the next non-zero element.
+		 *
+		 * @return A reference to itself.
+		 */
+		Iterator& operator++() {
+			++valuePtr;
+            ++columnPtr;
+			return *this;
+		}
+        
+        /*!
+         * Dereferences the iterator by returning a reference to itself. This is needed for making use of the range-based
+         * for loop over transitions.
+         *
+         * @return A reference to itself.
+         */
+        Iterator& operator*() {
+            return *this;
+        }
+        
+		/*!
+		 * Compares the two iterators for inequality.
+		 *
+		 * @return True iff the given iterator points to a different index as the current iterator.
+		 */
+		bool operator!=(Iterator const& other) const {
+			return this->valuePtr != other.valuePtr;
+		}
+        
+		/*!
+		 * Assigns the position of the given iterator to the current iterator.
+         *
+         * @return A reference to itself.
+		 */
+		Iterator& operator=(Iterator const& other) {
+			this->valuePtr = other.valuePtr;
+			this->columnPtr = other.columnPtr;
+			return *this;
+		}
+        
+        /*!
+         * Retrieves the column that is associated with the current non-zero element to which this iterator
+         * points.
+		 *
+		 * @return The column of the current non-zero element to which this iterator points.
+         */
+		uint_fast64_t column() {
+			return *columnPtr;
+		}
+		
+        /*!
+         * Retrieves the value of the current non-zero element to which this iterator points.
+		 *
+		 * @return The value of the current non-zero element to which this iterator points.
+         */
+		T& value() {
+			return *valuePtr;
+		}
+        
+    private:
+        // A pointer to the value of the current non-zero element.
+        T* valuePtr;
+        
+        // A pointer to the column of the current non-zero element.
+        uint_fast64_t* columnPtr;
+	};
+    
+    /*!
      * This class represents a number of consecutive rows of the matrix.
      */
     class Rows {
@@ -188,6 +272,51 @@ public:
         
         // The pointer to the column of the first element.
         uint_fast64_t const* columnPtr;
+        
+        // The number of non-zero entries in the rows.
+        uint_fast64_t entryCount;
+    };
+    
+    /*!
+     * This class represents a number of consecutive rows of the matrix.
+     */
+    class MutableRows {
+    public:
+        /*!
+         * Constructs a row from the given parameters.
+         *
+         * @param valuePtr A pointer to the value of the first non-zero element of the rows.
+         * @param columnPtr A pointer to the column of the first non-zero element of the rows.
+         * @param entryCount The number of non-zero elements of the rows.
+         */
+        MutableRows(T* valuePtr, uint_fast64_t* columnPtr, uint_fast64_t entryCount) : valuePtr(valuePtr), columnPtr(columnPtr), entryCount(entryCount) {
+            // Intentionally left empty.
+        }
+        
+        /*!
+         * Retrieves an iterator that points to the beginning of the rows.
+         *
+         * @return An iterator that points to the beginning of the rows.
+         */
+        Iterator begin() {
+            return Iterator(valuePtr, columnPtr);
+        }
+        
+        /*!
+         * Retrieves an iterator that points past the last element of the rows.
+         *
+         * @return An iterator that points past the last element of the rows.
+         */
+        Iterator end() {
+            return Iterator(valuePtr + entryCount, columnPtr + entryCount);
+        }
+        
+    private:
+        // The pointer to the value of the first element.
+        T* valuePtr;
+        
+        // The pointer to the column of the first element.
+        uint_fast64_t* columnPtr;
         
         // The number of non-zero entries in the rows.
         uint_fast64_t entryCount;
@@ -528,7 +657,19 @@ public:
 	 * @returns A matrix corresponding to a submatrix of the current matrix in which only row groups
 	 * and columns given by the row group constraint are kept and all others are dropped.
 	 */
-	SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices) const;
+	SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = false) const;
+    
+    /*!
+	 * Creates a submatrix of the current matrix by keeping only row groups and columns in the given
+	 * row group and column constraint, respectively.
+	 *
+	 * @param rowGroupConstraint A bit vector indicating which row groups to keep.
+     * @param columnConstraint A bit vector indicating which columns to keep.
+	 * @param rowGroupIndices A vector indicating which rows belong to a given row group.
+	 * @returns A matrix corresponding to a submatrix of the current matrix in which only row groups
+	 * and columns given by the row group constraint are kept and all others are dropped.
+	 */
+	SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = false) const;
     
     SparseMatrix getSubmatrix(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = true) const;
 
@@ -610,6 +751,23 @@ public:
      * @return An object representing the given row.
      */
     Rows getRow(uint_fast64_t row) const;
+    
+    /*!
+     * Returns an object representing the consecutive rows given by the parameters.
+     *
+     * @param startRow The starting row.
+     * @param endRow The ending row (which is included in the result).
+     * @return An object representing the consecutive rows given by the parameters.
+     */
+    MutableRows getMutableRows(uint_fast64_t startRow, uint_fast64_t endRow);
+    
+    /*!
+     * Returns an object representing the given row.
+     *
+     * @param row The chosen row.
+     * @return An object representing the given row.
+     */
+    MutableRows getMutableRow(uint_fast64_t row);
     
 	/*!
 	 * Returns a const iterator to the rows of the matrix.

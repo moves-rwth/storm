@@ -5,6 +5,8 @@
  *      Author: Manuel Sascha Weiand
  */
 
+#include <iomanip>
+
 #include "src/storage/SparseMatrix.h"
 
 namespace storm {
@@ -540,64 +542,97 @@ namespace storage {
 	}
 
 	template<typename T>
-	SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices) const {
+    SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
+        return getSubmatrix(rowGroupConstraint, rowGroupConstraint, rowGroupIndices, insertDiagonalEntries);
+	}
+    
+    template<typename T>
+    SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
 		LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix (of unknown size).");
-
+        
 		// First, we need to determine the number of non-zero entries and the number of rows of the sub-matrix.
 		uint_fast64_t subNonZeroEntries = 0;
 		uint_fast64_t subRowCount = 0;
 		for (auto index : rowGroupConstraint) {
 			subRowCount += rowGroupIndices[index + 1] - rowGroupIndices[index];
 			for (uint_fast64_t i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
+                bool foundDiagonalElement = false;
+                
 				for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
-					if (rowGroupConstraint.get(columnIndications[j])) {
+					if (columnConstraint.get(columnIndications[j])) {
 						++subNonZeroEntries;
+                        
+                        if (index == columnIndications[j]) {
+                            foundDiagonalElement = true;
+                        }
 					}
 				}
+                
+                if (insertDiagonalEntries && !foundDiagonalElement) {
+                    ++subNonZeroEntries;
+                }
 			}
 		}
-
+        
 		LOG4CPLUS_DEBUG(logger, "Determined size of submatrix to be " << subRowCount << "x" << rowGroupConstraint.getNumberOfSetBits() << ".");
-
+        
 		// Create and initialize resulting matrix.
-		SparseMatrix result(subRowCount, rowGroupConstraint.getNumberOfSetBits());
+		SparseMatrix result(subRowCount, columnConstraint.getNumberOfSetBits());
 		result.initialize(subNonZeroEntries);
-
+        
 		// Create a temporary vector that stores for each index whose bit is set
 		// to true the number of bits that were set before that particular index.
         std::vector<uint_fast64_t> bitsSetBeforeIndex;
         bitsSetBeforeIndex.reserve(colCount);
-
+        
         // Compute the information to fill this vector.
 		uint_fast64_t lastIndex = 0;
 		uint_fast64_t currentNumberOfSetBits = 0;
-		for (auto index : rowGroupConstraint) {
+        
+        // If we are requested to add missing diagonal entries, we need to make sure the corresponding rows
+        storm::storage::BitVector columnBitCountConstraint = columnConstraint;
+        if (insertDiagonalEntries) {
+            columnBitCountConstraint |= rowGroupConstraint;
+        }
+		for (auto index : columnBitCountConstraint) {
 			while (lastIndex <= index) {
 				bitsSetBeforeIndex.push_back(currentNumberOfSetBits);
                 ++lastIndex;
 			}
 			++currentNumberOfSetBits;
 		}
-
+        
 		// Copy over selected entries.
 		uint_fast64_t rowCount = 0;
 		for (auto index : rowGroupConstraint) {
 			for (uint_fast64_t i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
+                bool insertedDiagonalElement = false;
+                
 				for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
-					if (rowGroupConstraint.get(columnIndications[j])) {
+					if (columnConstraint.get(columnIndications[j])) {
+                        if (index == columnIndications[j]) {
+                            insertedDiagonalElement = true;
+                        } else if (insertDiagonalEntries && !insertedDiagonalElement && columnIndications[j] > index) {
+                            result.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::constGetZero<T>());
+                            insertedDiagonalElement = true;
+                        }
 						result.addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[j]], valueStorage[j]);
 					}
 				}
+                if (insertDiagonalEntries && !insertedDiagonalElement) {
+                    result.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::constGetZero<T>());
+                }
+                
 				++rowCount;
 			}
 		}
-
+        
 		// Finalize sub-matrix and return result.
 		result.finalize();
 		LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
 		return result;
 	}
-
+    
 	template<typename T>
     SparseMatrix<T> SparseMatrix<T>::getSubmatrix(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
         LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix (of unknown size).");
@@ -850,6 +885,16 @@ namespace storage {
 	typename SparseMatrix<T>::Rows SparseMatrix<T>::getRows(uint_fast64_t startRow, uint_fast64_t endRow) const {
         return Rows(this->valueStorage.data() + this->rowIndications[startRow], this->columnIndications.data() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
     }
+    
+    template<typename T>
+    typename SparseMatrix<T>::MutableRows SparseMatrix<T>::getMutableRows(uint_fast64_t startRow, uint_fast64_t endRow) {
+        return MutableRows(this->valueStorage.data() + this->rowIndications[startRow], this->columnIndications.data() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
+    }
+    
+    template<typename T>
+    typename SparseMatrix<T>::MutableRows SparseMatrix<T>::getMutableRow(uint_fast64_t row) {
+        return getMutableRows(row, row);
+    }
 
 	template<typename T>
 	typename SparseMatrix<T>::Rows SparseMatrix<T>::getRow(uint_fast64_t row) const {
@@ -989,7 +1034,7 @@ namespace storage {
 			uint_fast64_t currentRealIndex = 0;
 			while (currentRealIndex < colCount) {
 				if (nextIndex < rowIndications[i + 1] && currentRealIndex == columnIndications[nextIndex]) {
-					result << valueStorage[nextIndex] << "\t";
+					result << std::setprecision(8) << valueStorage[nextIndex] << "\t";
 					++nextIndex;
 				} else {
 					result << "0\t";

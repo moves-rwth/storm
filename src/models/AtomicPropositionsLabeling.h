@@ -289,7 +289,7 @@ public:
 	 */
 	void addState() {
 		for(uint_fast64_t i = 0; i < apsCurrent; i++) {
-			singleLabelings[i].resize(singleLabelings[i].getSize() + 1);
+			singleLabelings[i].resize(singleLabelings[i].size() + 1);
 		}
 		stateCount++;
 	}

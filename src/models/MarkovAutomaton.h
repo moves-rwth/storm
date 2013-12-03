@@ -100,6 +100,14 @@ namespace storm {
                 return this->exitRates[state];
             }
             
+            T getMaximalExitRate() const {
+                T result = storm::utility::constGetZero<T>();
+                for (auto markovianState : this->markovianStates) {
+                    result = std::max(result, this->exitRates[markovianState]);
+                }
+                return result;
+            }
+            
             storm::storage::BitVector const& getMarkovianStates() const {
                 return this->markovianStates;
             }

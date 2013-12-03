@@ -34,10 +34,15 @@ bool storm::utility::StormOptions::optionsRegistered = storm::settings::Settings
     
 	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "fixDeadlocks", "", "If the model contains deadlock states, setting this option will insert self-loops for these states.").build());
     
-	std::vector<std::string> matrixLibrarys;
-	matrixLibrarys.push_back("gmm++");
-	matrixLibrarys.push_back("native");
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "matrixLibrary", "m", "Sets which matrix library is preferred for numerical operations.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("matrixLibraryName", "The name of a matrix library. Valid values are gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(matrixLibrarys)).setDefaultValueString("gmm++").build()).build());
+	std::vector<std::string> matrixLibraries;
+	matrixLibraries.push_back("gmm++");
+	matrixLibraries.push_back("native");
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "matrixLibrary", "m", "Sets which matrix library is preferred for numerical operations.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("matrixLibraryName", "The name of a matrix library. Valid values are gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(matrixLibraries)).setDefaultValueString("gmm++").build()).build());
 
+    std::vector<std::string> lpSolvers;
+	lpSolvers.push_back("gurobi");
+	lpSolvers.push_back("glpk");
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "lpSolver", "", "Sets which LP solver is preferred.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("LP solver name", "The name of an available LP solver. Valid values are gurobi and glpk.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
+    
 	return true;
 });

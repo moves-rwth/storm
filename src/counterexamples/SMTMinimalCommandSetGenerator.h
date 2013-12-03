@@ -103,7 +103,7 @@ namespace storm {
                 // Compute all relevant states, i.e. states for which there exists a scheduler that has a non-zero
                 // probabilitiy of satisfying phi until psi.
                 storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
-                relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
                 relevancyInformation.relevantStates &= ~psiStates;
 
                 LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantStates.getNumberOfSetBits() << " relevant states.");
@@ -902,7 +902,7 @@ namespace storm {
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
-                storm::storage::SparseMatrix<bool> backwardTransitions = labeledMdp.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
 
                 // First, we add the formulas that encode
                 // (1) if an incoming transition is chosen, an outgoing one is chosen as well (for non-initial states)
@@ -1427,7 +1427,7 @@ namespace storm {
                 }
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
-                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp, subMdp.getBackwardTransitions(), phiStates, psiStates);
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getTransitionMatrix(), subMdp.getNondeterministicChoiceIndices(), subMdp.getBackwardTransitions(), phiStates, psiStates);
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
                 
                 LOG4CPLUS_DEBUG(logger, "Found " << reachableLabels.size() << " reachable labels and " << reachableStates.getNumberOfSetBits() << " reachable states.");
@@ -1547,7 +1547,7 @@ namespace storm {
                 LOG4CPLUS_DEBUG(logger, "Successfully determined reachable state space.");
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
-                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp, subMdp.getBackwardTransitions(), phiStates, psiStates);
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getTransitionMatrix(), subMdp.getNondeterministicChoiceIndices(), subMdp.getBackwardTransitions(), phiStates, psiStates);
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
                 
                 // Search for states for which we could enable another option and possibly improve the reachability probability.
@@ -1635,7 +1635,7 @@ namespace storm {
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
-                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
                 std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
                 for (auto state : labeledMdp.getInitialStates()) {
                     maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
@@ -1701,7 +1701,7 @@ namespace storm {
                     modelCheckingClock = std::chrono::high_resolution_clock::now();
                     commandSet.insert(relevancyInformation.knownLabels);
                     storm::models::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
-                    storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(subMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                    storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(subMdp);
                     LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
                     std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
                     LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
@@ -1786,7 +1786,7 @@ namespace storm {
                 storm::property::prctl::AbstractPathFormula<double> const& pathFormula = probBoundFormula->getPathFormula();
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
-                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
                 try {
                     storm::property::prctl::Until<double> const& untilFormula = dynamic_cast<storm::property::prctl::Until<double> const&>(pathFormula);
                     

@@ -675,8 +675,8 @@ public:
 	/*!
 	 * Retrieves the number of bits this bit vector can store.
 	 */
-	uint_fast64_t getSize() const {
-		return bitCount;
+	size_t size() const {
+		return static_cast<size_t>(bitCount);
 	}
 
 	/*!

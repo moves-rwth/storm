@@ -147,13 +147,13 @@ public:
 		}
 
 		// Does the vector have the right size?
-		if(subSysStates.getSize() != this->getNumberOfStates()) {
+		if(subSysStates.size() != this->getNumberOfStates()) {
 			LOG4CPLUS_INFO(logger, "BitVector has wrong size. Resizing it...");
 			subSysStates.resize(this->getNumberOfStates());
 		}
 
 		// Test if it is a proper subsystem of this Dtmc, i.e. if there is at least one state to be left out.
-		if(subSysStates.getNumberOfSetBits() == subSysStates.getSize()) {
+		if(subSysStates.getNumberOfSetBits() == subSysStates.size()) {
 			LOG4CPLUS_INFO(logger, "All states are kept. This is no proper subsystem.");
 			return storm::models::Dtmc<T>(*this);
 		}

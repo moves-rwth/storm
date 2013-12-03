@@ -18,6 +18,7 @@
 #include "src/models/Mdp.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
+#include "src/utility/solver.h"
 #include "src/settings/Settings.h"
 #include "src/storage/TotalScheduler.h"
 
@@ -37,7 +38,7 @@ namespace storm {
                  *
                  * @param model The MDP to be checked.
                  */
-                explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, storm::solver::AbstractNondeterministicLinearEquationSolver<Type>* linearEquationSolver) : AbstractModelChecker<Type>(model), minimumOperatorStack(), linearEquationSolver(linearEquationSolver) {
+                explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
                     // Intentionally left empty.
                 }
                 
@@ -46,7 +47,7 @@ namespace storm {
                  * constructed model checker will have the model of the given model checker as its associated model.
                  */
                 explicit SparseMdpPrctlModelChecker(storm::modelchecker::prctl::SparseMdpPrctlModelChecker<Type> const& modelchecker)
-                : AbstractModelChecker<Type>(modelchecker),  minimumOperatorStack(), linearEquationSolver(new storm::solver::AbstractNondeterministicLinearEquationSolver<Type>()) {
+                : AbstractModelChecker<Type>(modelchecker),  minimumOperatorStack(), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
                     // Intentionally left empty.
                 }
                 
@@ -95,9 +96,9 @@ namespace storm {
                     // Determine the states that have 0 probability of reaching the target states.
                     storm::storage::BitVector statesWithProbabilityGreater0;
                     if (this->minimumOperatorStack.top()) {
-                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
+                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0A(this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
                     } else {
-                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
+                        statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
                     }
                     
                     // Check if we already know the result (i.e. probability 0) for all initial states and
@@ -115,7 +116,7 @@ namespace storm {
                         storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0, this->getModel().getNondeterministicChoiceIndices());
                         
                         // Get the "new" nondeterministic choice indices for the submatrix.
-                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(statesWithProbabilityGreater0);
+                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(this->getModel().getNondeterministicChoiceIndices(), statesWithProbabilityGreater0);
                         
                         // Compute the new set of target states in the reduced system.
                         storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % psiStates;
@@ -127,11 +128,7 @@ namespace storm {
                         std::vector<Type> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
                         storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
                         
-                        if (linearEquationSolver != nullptr) {
-                            this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), submatrix, subresult, subNondeterministicChoiceIndices, nullptr, stepBound);
-                        } else {
-                            throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                        }
+                        this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), submatrix, subresult, subNondeterministicChoiceIndices, nullptr, stepBound);
                         
                         // Set the values of the resulting vector accordingly.
                         storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
@@ -172,11 +169,7 @@ namespace storm {
                     std::vector<Type> result(this->getModel().getNumberOfStates());
                     storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constGetOne<Type>());
                     
-                    if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices());
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                    }
+                    this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices());
                     
                     return result;
                 }
@@ -285,18 +278,19 @@ namespace storm {
                  * @return The probabilities for the satisfying phi until psi for each state of the model. If the
                  * qualitative flag is set, exact probabilities might not be computed.
                  */
-                std::pair<std::vector<Type>, storm::storage::TotalScheduler> checkUntil(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const {
+                static std::pair<std::vector<Type>, storm::storage::TotalScheduler> computeUnboundedUntilProbabilities(bool minimize, storm::storage::SparseMatrix<Type> const& transitionMatrix, std::vector<uint_fast64_t> nondeterministicChoiceIndices, storm::storage::SparseMatrix<Type> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver, bool qualitative) {
+                    size_t numberOfStates = phiStates.size();
+                    
                     // We need to identify the states which have to be taken out of the matrix, i.e.
                     // all states that have probability 0 and 1 of satisfying the until-formula.
                     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
                     if (minimize) {
-                        statesWithProbability01 = storm::utility::graph::performProb01Min(this->getModel(), phiStates, psiStates);
+                        statesWithProbability01 = storm::utility::graph::performProb01Min(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
                     } else {
-                        statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel(), phiStates, psiStates);
+                        statesWithProbability01 = storm::utility::graph::performProb01Max(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
                     }
                     storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
                     storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
-                    
                     
                     storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
                     LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
@@ -304,10 +298,10 @@ namespace storm {
                     LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                     
                     // Create resulting vector.
-                    std::vector<Type> result(this->getModel().getNumberOfStates());
+                    std::vector<Type> result(numberOfStates);
                     
                     // Check whether we need to compute exact probabilities for some states.
-                    if (this->getModel().getInitialStates().isDisjointFrom(maybeStates) || qualitative) {
+                    if (initialStates.isDisjointFrom(maybeStates) || qualitative) {
                         if (qualitative) {
                             LOG4CPLUS_INFO(logger, "The formula was checked qualitatively. No exact probabilities were computed.");
                         } else {
@@ -322,24 +316,20 @@ namespace storm {
                         
                         // First, we can eliminate the rows and columns from the original transition probability matrix for states
                         // whose probabilities are already known.
-                        storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
+                        storm::storage::SparseMatrix<Type> submatrix = transitionMatrix.getSubmatrix(maybeStates, nondeterministicChoiceIndices);
                         
                         // Get the "new" nondeterministic choice indices for the submatrix.
-                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
+                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(nondeterministicChoiceIndices, maybeStates);
                         
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
-                        std::vector<Type> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, this->getModel().getNondeterministicChoiceIndices(), statesWithProbability1, submatrix.getRowCount());
+                        std::vector<Type> b = transitionMatrix.getConstrainedRowSumVector(maybeStates, nondeterministicChoiceIndices, statesWithProbability1, submatrix.getRowCount());
                         
                         // Create vector for results for maybe states.
                         std::vector<Type> x(maybeStates.getNumberOfSetBits());
-                                                
+                        
                         // Solve the corresponding system of equations.
-                        if (linearEquationSolver != nullptr) {
-                            this->linearEquationSolver->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
-                        } else {
-                            throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                        }
+                        nondeterministicLinearEquationSolver->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<Type>(result, maybeStates, x);
@@ -350,9 +340,13 @@ namespace storm {
                     storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
                     
                     // Finally, compute a scheduler that achieves the extramal value.
-                    storm::storage::TotalScheduler scheduler = this->computeExtremalScheduler(minimize, false, result);
-                    
+                    storm::storage::TotalScheduler scheduler = computeExtremalScheduler(minimize, transitionMatrix, nondeterministicChoiceIndices, result);
+
                     return std::make_pair(result, scheduler);
+                }
+                
+                std::pair<std::vector<Type>, storm::storage::TotalScheduler> checkUntil(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const {
+                    return computeUnboundedUntilProbabilities(minimize, this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), phiStates, psiStates, this->nondeterministicLinearEquationSolver, qualitative);
                 }
                 
                 /*!
@@ -376,11 +370,7 @@ namespace storm {
                     // Initialize result to state rewards of the model.
                     std::vector<Type> result(this->getModel().getStateRewardVector());
                     
-                    if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), nullptr, formula.getBound());
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                    }
+                    this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), nullptr, formula.getBound());
                     
                     return result;
                 }
@@ -422,11 +412,7 @@ namespace storm {
                         result.resize(this->getModel().getNumberOfStates());
                     }
                     
-                    if (linearEquationSolver != nullptr) {
-                        this->linearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), &totalRewardVector, formula.getBound());
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                    }
+                    this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices(), &totalRewardVector, formula.getBound());
                     
                     return result;
                 }
@@ -472,9 +458,9 @@ namespace storm {
                     storm::storage::BitVector infinityStates;
                     storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
                     if (minimize) {
-                        infinityStates = std::move(storm::utility::graph::performProb1A(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, targetStates));
+                        infinityStates = std::move(storm::utility::graph::performProb1A(this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getBackwardTransitions(), trueStates, targetStates));
                     } else {
-                        infinityStates = std::move(storm::utility::graph::performProb1E(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, targetStates));
+                        infinityStates = std::move(storm::utility::graph::performProb1E(this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getBackwardTransitions(), trueStates, targetStates));
                     }
                     infinityStates.complement();
                     storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
@@ -500,7 +486,7 @@ namespace storm {
                         storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
                         
                         // Get the "new" nondeterministic choice indices for the submatrix.
-                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = this->computeNondeterministicChoiceIndicesForConstraint(maybeStates);
+                        std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(this->getModel().getNondeterministicChoiceIndices(), maybeStates);
                         
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
@@ -534,11 +520,7 @@ namespace storm {
                         std::vector<Type> x(maybeStates.getNumberOfSetBits());
                         
                         // Solve the corresponding system of equations.
-                        if (linearEquationSolver != nullptr) {
-                            this->linearEquationSolver->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
-                        } else {
-                            throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
-                        }
+                        this->nondeterministicLinearEquationSolver->solveEquationSystem(minimize, submatrix, x, b, subNondeterministicChoiceIndices);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<Type>(result, maybeStates, x);
@@ -549,8 +531,8 @@ namespace storm {
                     storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<Type>());
                     
                     // Finally, compute a scheduler that achieves the extramal value.
-                    storm::storage::TotalScheduler scheduler = this->computeExtremalScheduler(this->minimumOperatorStack.top(), false, result);
-                    
+                    storm::storage::TotalScheduler scheduler = computeExtremalScheduler(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), result, this->getModel().hasStateRewards() ? &this->getModel().getStateRewardVector() : nullptr, this->getModel().hasTransitionRewards() ? &this->getModel().getTransitionRewardMatrix() : nullptr);
+
                     return std::make_pair(result, scheduler);
                 }
                 
@@ -563,33 +545,33 @@ namespace storm {
                  * @param takenChoices The output vector that is to store the taken choices.
                  * @param nondeterministicChoiceIndices The assignment of states to their nondeterministic choices in the matrix.
                  */
-                storm::storage::TotalScheduler computeExtremalScheduler(bool minimize, bool addRewards, std::vector<Type> const& result) const {
-                    std::vector<Type> temporaryResult(this->getModel().getNondeterministicChoiceIndices().size() - 1);
+                static storm::storage::TotalScheduler computeExtremalScheduler(bool minimize, storm::storage::SparseMatrix<Type> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type> const& result, std::vector<Type> const* stateRewardVector = nullptr, storm::storage::SparseMatrix<Type> const* transitionRewardMatrix = nullptr) {
+                    std::vector<Type> temporaryResult(nondeterministicChoiceIndices.size() - 1);
                     std::vector<Type> nondeterministicResult(result);
                     storm::solver::GmmxxLinearEquationSolver<Type> solver;
-                    solver.performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), nondeterministicResult, nullptr, 1);
-                    if (addRewards) {
+                    solver.performMatrixVectorMultiplication(transitionMatrix, nondeterministicResult, nullptr, 1);
+                    if (stateRewardVector != nullptr || transitionRewardMatrix != nullptr) {
                         std::vector<Type> totalRewardVector;
-                        if (this->getModel().hasTransitionRewards()) {
-                            std::vector<Type> totalRewardVector = this->getModel().getTransitionMatrix().getPointwiseProductRowSumVector(this->getModel().getTransitionRewardMatrix());
-                            if (this->getModel().hasStateRewards()) {
+                        if (transitionRewardMatrix != nullptr) {
+                            totalRewardVector = transitionMatrix.getPointwiseProductRowSumVector(*transitionRewardMatrix);
+                            if (stateRewardVector != nullptr) {
                                 std::vector<Type> stateRewards(totalRewardVector.size());
-                                storm::utility::vector::selectVectorValuesRepeatedly(stateRewards, storm::storage::BitVector(this->getModel().getStateRewardVector().size(), true), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getStateRewardVector());
+                                storm::utility::vector::selectVectorValuesRepeatedly(stateRewards, storm::storage::BitVector(stateRewardVector->size(), true), nondeterministicChoiceIndices, *stateRewardVector);
                                 storm::utility::vector::addVectorsInPlace(totalRewardVector, stateRewards);
                             }
                         } else {
                             totalRewardVector.resize(nondeterministicResult.size());
-                            storm::utility::vector::selectVectorValuesRepeatedly(totalRewardVector, storm::storage::BitVector(this->getModel().getStateRewardVector().size(), true), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getStateRewardVector());
+                            storm::utility::vector::selectVectorValuesRepeatedly(totalRewardVector, storm::storage::BitVector(stateRewardVector->size(), true), nondeterministicChoiceIndices, *stateRewardVector);
                         }
                         storm::utility::vector::addVectorsInPlace(nondeterministicResult, totalRewardVector);
                     }
                     
-                    std::vector<uint_fast64_t> choices(this->getModel().getNumberOfStates());
+                    std::vector<uint_fast64_t> choices(result.size());
                     
                     if (minimize) {
-                        storm::utility::vector::reduceVectorMin(nondeterministicResult, temporaryResult, this->getModel().getNondeterministicChoiceIndices(), &choices);
+                        storm::utility::vector::reduceVectorMin(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &choices);
                     } else {
-                        storm::utility::vector::reduceVectorMax(nondeterministicResult, temporaryResult, this->getModel().getNondeterministicChoiceIndices(), &choices);
+                        storm::utility::vector::reduceVectorMax(nondeterministicResult, temporaryResult, nondeterministicChoiceIndices, &choices);
                     }
 
                     return storm::storage::TotalScheduler(choices);
@@ -601,45 +583,11 @@ namespace storm {
                  */
                 mutable std::stack<bool> minimumOperatorStack;
                 
-            private:
                 /*!
-                 * Computes the nondeterministic choice indices vector resulting from reducing the full system to the states given
-                 * by the parameter constraint.
-                 *
-                 * @param constraint A bit vector specifying which states are kept.
-                 * @returns A vector of the nondeterministic choice indices of the subsystem induced by the given constraint.
+                 * A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
                  */
-                std::vector<uint_fast64_t> computeNondeterministicChoiceIndicesForConstraint(storm::storage::BitVector const& constraint) const {
-                    // First, get a reference to the full nondeterministic choice indices.
-                    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
-                    
-                    // Reserve the known amount of slots for the resulting vector.
-                    std::vector<uint_fast64_t> subNondeterministicChoiceIndices(constraint.getNumberOfSetBits() + 1);
-                    uint_fast64_t currentRowCount = 0;
-                    uint_fast64_t currentIndexCount = 1;
-                    
-                    // Set the first element as this will clearly begin at offset 0.
-                    subNondeterministicChoiceIndices[0] = 0;
-                    
-                    // Loop over all states that need to be kept and copy the relative indices of the nondeterministic choices over
-                    // to the resulting vector.
-                    for (auto index : constraint) {
-                        subNondeterministicChoiceIndices[currentIndexCount] = currentRowCount + nondeterministicChoiceIndices[index + 1] - nondeterministicChoiceIndices[index];
-                        currentRowCount += nondeterministicChoiceIndices[index + 1] - nondeterministicChoiceIndices[index];
-                        ++currentIndexCount;
-                    }
-                    
-                    // Put a sentinel element at the end.
-                    subNondeterministicChoiceIndices[constraint.getNumberOfSetBits()] = currentRowCount;
-                    
-                    return subNondeterministicChoiceIndices;
-                }
-                                
-                // An object that is used for solving linear equations and performing matrix-vector multiplication.
-                std::unique_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> linearEquationSolver;
-                
+                std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver;
             };
-            
         } // namespace prctl
     } // namespace modelchecker
 } // namespace storm

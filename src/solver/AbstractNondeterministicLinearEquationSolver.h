@@ -13,9 +13,19 @@ namespace storm {
         template<class Type>
         class AbstractNondeterministicLinearEquationSolver {
         public:
+            AbstractNondeterministicLinearEquationSolver() {
+                storm::settings::Settings* s = storm::settings::Settings::getInstance();
+                precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+                maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
+                relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
+            }
+            
+            AbstractNondeterministicLinearEquationSolver(double precision, uint_fast64_t maxIterations, bool relative) : precision(precision), maxIterations(maxIterations), relative(relative) {
+                // Intentionally left empty.
+            }
             
             virtual AbstractNondeterministicLinearEquationSolver<Type>* clone() const {
-                return new AbstractNondeterministicLinearEquationSolver<Type>();
+                return new AbstractNondeterministicLinearEquationSolver<Type>(this->precision, this->maxIterations, this->relative);
             }
             
             /*!
@@ -69,38 +79,38 @@ namespace storm {
              * as there are states in the MDP.
              * @returns The solution vector x of the system of linear equations as the content of the parameter x.
              */
-            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
-                LOG4CPLUS_INFO(logger, "Starting iterative solver.");
-                
-                // Get the settings object to customize solving.
-				storm::settings::Settings* s = storm::settings::Settings::getInstance();
-                
-                // Get relevant user-defined settings for solving the equations.
-                double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-                uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
-                bool relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
-                
+            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* multiplyResult = nullptr, std::vector<Type>* newX = nullptr) const {
+//                LOG4CPLUS_INFO(logger, "Starting iterative solver.");
+
                 // Set up the environment for the power method.
-                std::vector<Type> multiplyResult(A.getRowCount());
+                bool multiplyResultMemoryProvided = true;
+                if (multiplyResult == nullptr) {
+                    multiplyResult = new std::vector<Type>(A.getRowCount());
+                    multiplyResultMemoryProvided = false;
+                }
                 std::vector<Type>* currentX = &x;
-                std::vector<Type>* newX = new std::vector<Type>(x.size());
+                bool xMemoryProvided = true;
+                if (newX == nullptr) {
+                    newX = new std::vector<Type>(x.size());
+                    xMemoryProvided = false;
+                }
                 std::vector<Type>* swap = nullptr;
                 uint_fast64_t iterations = 0;
                 bool converged = false;
-                
+
                 // Proceed with the iterations as long as the method did not converge or reach the
                 // user-specified maximum number of iterations.
                 while (!converged && iterations < maxIterations) {
                     // Compute x' = A*x + b.
-                    A.multiplyWithVector(*currentX, multiplyResult);
-                    storm::utility::vector::addVectorsInPlace(multiplyResult, b);
+                    A.multiplyWithVector(*currentX, *multiplyResult);
+                    storm::utility::vector::addVectorsInPlace(*multiplyResult, b);
                     
                     // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                     // element of the min/max operator stack.
                     if (minimize) {
-                        storm::utility::vector::reduceVectorMin(multiplyResult, *newX, nondeterministicChoiceIndices);
+                        storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, nondeterministicChoiceIndices);
                     } else {
-                        storm::utility::vector::reduceVectorMax(multiplyResult, *newX, nondeterministicChoiceIndices);
+                        storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, nondeterministicChoiceIndices);
                     }
                     
                     // Determine whether the method converged.
@@ -112,24 +122,36 @@ namespace storm {
                     newX = swap;
                     ++iterations;
                 }
-                
+
                 // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
                 // is currently stored in currentX, but x is the output vector.
                 if (iterations % 2 == 1) {
                     std::swap(x, *currentX);
-                    delete currentX;
-                } else {
+                    if (!xMemoryProvided) {
+                        delete currentX;
+                    }
+                } else if (!xMemoryProvided) {
                     delete newX;
                 }
                 
-                // Check if the solver converged and issue a warning otherwise.
-                if (converged) {
-                    LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
-                } else {
-                    LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+                if (!multiplyResultMemoryProvided) {
+                    delete multiplyResult;
                 }
+
+//                // Check if the solver converged and issue a warning otherwise.
+//                if (converged) {
+//                    LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+//                } else {
+//                    LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+//                }
+
             }
             
+        protected:
+            double precision;
+            uint_fast64_t maxIterations;
+            bool relative;
+
         };
         
     } // namespace solver

@@ -17,7 +17,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 2095783ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7714385ull);
 
-	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<double>>(new storm::solver::AbstractNondeterministicLinearEquationSolver<double>()));
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -106,7 +106,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 63616ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 213472ull);
     
-	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<double>>(new storm::solver::AbstractNondeterministicLinearEquationSolver<double>()));
     
     storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("finished");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);

@@ -32,6 +32,7 @@ option(USE_INTELTBB "Sets whether the Intel TBB Extensions should be used." OFF)
 option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
+option(ENABLE_GLPK "Sets whether StoRM is built with support for glpk." OFF)
 set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
 set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
@@ -182,6 +183,13 @@ if (ENABLE_GUROBI)
 	set(STORM_CPP_GUROBI_DEF "define")
 else()
 	set(STORM_CPP_GUROBI_DEF "undef")
+endif()
+
+# glpk defines
+if (ENABLE_GLPK)
+	set(STORM_CPP_GLPK_DEF "define")
+else()
+	set(STORM_CPP_GLPK_DEF "undef")
 endif()
 
 # Z3 Defines
@@ -358,6 +366,18 @@ if (ENABLE_GUROBI)
     target_link_libraries(storm-functional-tests "gurobi56")
     target_link_libraries(storm-performance-tests "gurobi56")
 endif(ENABLE_GUROBI)
+
+#############################################################
+##
+##	glpk (optional)
+##
+#############################################################
+if (ENABLE_GLPK)
+    message (STATUS "StoRM - Linking with glpk")
+    target_link_libraries(storm "glpk")
+    target_link_libraries(storm-functional-tests "glpk")
+    target_link_libraries(storm-performance-tests "glpk")
+endif(ENABLE_GLPK)
 
 #############################################################
 ##
