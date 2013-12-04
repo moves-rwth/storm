@@ -56,7 +56,7 @@ namespace storm {
                 statesWithProbabilityGreater0 |= psiStates;
                 
                 // Initialize the stack used for the DFS with the states.
-                std::vector<uint_fast64_t> stack = psiStates.getSetIndicesList();
+                std::vector<uint_fast64_t> stack(psiStates.begin(), psiStates.end());
                 
                 // Initialize the stack for the step bound, if the number of steps is bounded.
                 std::vector<uint_fast64_t> stepStack;
@@ -187,7 +187,7 @@ namespace storm {
                 statesWithProbabilityGreater0 |= psiStates;
                 
                 // Initialize the stack used for the DFS with the states
-                std::vector<uint_fast64_t> stack = psiStates.getSetIndicesList();
+                std::vector<uint_fast64_t> stack(psiStates.begin(), psiStates.end());
                 
                 // Initialize the stack for the step bound, if the number of steps is bounded.
                 std::vector<uint_fast64_t> stepStack;
@@ -285,7 +285,7 @@ namespace storm {
                 while (!done) {
                     stack.clear();
                     storm::storage::BitVector nextStates(psiStates);
-                    psiStates.addSetIndicesToVector(stack);
+                    stack.insert(stack.end(), psiStates.begin(), psiStates.end());
                     
                     while (!stack.empty()) {
                         currentState = stack.back();
@@ -377,7 +377,7 @@ namespace storm {
                 statesWithProbabilityGreater0 |= psiStates;
                 
                 // Initialize the stack used for the DFS with the states
-                std::vector<uint_fast64_t> stack = psiStates.getSetIndicesList();
+                std::vector<uint_fast64_t> stack(psiStates.begin(), psiStates.end());
                 
                 // Initialize the stack for the step bound, if the number of steps is bounded.
                 std::vector<uint_fast64_t> stepStack;
@@ -496,7 +496,7 @@ namespace storm {
                 while (!done) {
                     stack.clear();
                     storm::storage::BitVector nextStates(psiStates);
-                    psiStates.addSetIndicesToVector(stack);
+                    stack.insert(stack.end(), psiStates.begin(), psiStates.end());
                     
                     while (!stack.empty()) {
                         currentState = stack.back();

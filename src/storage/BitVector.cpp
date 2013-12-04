@@ -34,6 +34,10 @@ namespace storm {
 		bool BitVector::const_iterator::operator!=(const_iterator const& otherIterator) const {
 			return currentIndex != otherIterator.currentIndex;
 		}
+        
+        bool BitVector::const_iterator::operator==(const_iterator const& otherIterator) const {
+            return currentIndex == otherIterator.currentIndex;
+        }
 
         BitVector::BitVector() : bitCount(0), bucketVector() {
             // Intentionally left empty.
@@ -350,22 +354,7 @@ namespace storm {
                 element = 0;
             }
         }
-        
-        std::vector<uint_fast64_t> BitVector::getSetIndicesList() const {
-            std::vector<uint_fast64_t> result;
-            result.reserve(this->getNumberOfSetBits());
-            for (auto index : *this) {
-                result.push_back(index);
-            }
-            return result;
-        }
-        
-        void BitVector::addSetIndicesToVector(std::vector<uint_fast64_t>& vector) const {
-            for (auto index : *this) {
-                vector.push_back(index);
-            }
-        }
-        
+                
         uint_fast64_t BitVector::getNumberOfSetBits() const {
             return getNumberOfSetBitsBeforeIndex(bucketVector.size() << 6);
         }

@@ -36,6 +36,9 @@ namespace storm  {
             
             VectorSet(uint_fast64_t size);
             
+            template<typename InputIterator>
+            VectorSet(InputIterator first, InputIterator last);
+            
             VectorSet(std::vector<ValueType> const& data);
             
             VectorSet(std::set<ValueType> const& data);

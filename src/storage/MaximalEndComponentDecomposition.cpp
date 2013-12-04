@@ -103,8 +103,7 @@ namespace storm {
                         
                         // Now erase the states that have no option to stay inside the MEC with all successors.
                         mecChanged |= !statesToRemove.empty();
-                        std::vector<uint_fast64_t> statesToRemoveList = statesToRemove.getSetIndicesList();
-                        scc.erase(storm::storage::VectorSet<uint_fast64_t>(statesToRemoveList));
+                        scc.erase(storm::storage::VectorSet<uint_fast64_t>(statesToRemove.begin(), statesToRemove.end()));
                         
                         // Now check which states should be reconsidered, because successors of them were removed.
                         statesToCheck.clear();

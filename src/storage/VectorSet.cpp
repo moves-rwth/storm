@@ -14,6 +14,12 @@ namespace storm {
         }
         
         template<typename ValueType>
+        template<typename InputIterator>
+        VectorSet<ValueType>::VectorSet(InputIterator first, InputIterator last) : dirty(true) {
+            this->data.insert(this->data.end(), first, last);
+        }
+        
+        template<typename ValueType>
         VectorSet<ValueType>::VectorSet(std::vector<ValueType> const& data) : data(data), dirty(true) {
             ensureSet();
         }
@@ -286,6 +292,7 @@ namespace storm {
         
         template class VectorSet<uint_fast64_t>;
         template class VectorSet<VectorSet<uint_fast64_t>>;
+        template VectorSet<uint_fast64_t>::VectorSet(storm::storage::BitVector::const_iterator, storm::storage::BitVector::const_iterator);
         template std::ostream& operator<<(std::ostream& stream, VectorSet<uint_fast64_t> const& set);
         template std::ostream& operator<<(std::ostream& stream, VectorSet<VectorSet<uint_fast64_t>> const& set);
     }

@@ -617,7 +617,7 @@ public:
 		// If so the init state represents a subsystem with probability mass 1.
 		// -> return it
 		if((initStates & targetStates).getNumberOfSetBits() != 0) {
-			subSys.set((initStates & targetStates).getSetIndicesList().front(), true);
+			subSys.set(*(initStates & targetStates).begin());
 
 			LOG4CPLUS_INFO(logger, "Critical subsystem found.");
 			LOG4CPLUS_INFO(logger, "Paths needed: " << pathCount);

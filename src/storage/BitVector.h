@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <ostream>
 #include <vector>
+#include <iterator>
 
 namespace storm {
     namespace storage {
@@ -18,7 +19,7 @@ namespace storm {
              * A class that enables iterating over the indices of the bit vector whose corresponding bits are set to true.
              * Note that this is a const iterator, which cannot alter the bit vector.
              */
-            class const_iterator {
+            class const_iterator : public std::iterator<std::input_iterator_tag, uint_fast64_t> {
                 // Declare the BitVector class as a friend class to access its internal storage.
                 friend class BitVector;
                 
@@ -56,7 +57,15 @@ namespace storm {
                  * @param otherIterator The iterator with respect to which inequality is checked.
                  * @return True if the two iterators are unequal.
                  */
-                bool operator!=(const const_iterator& otherIterator) const;
+                bool operator!=(const_iterator const& otherIterator) const;
+                
+                /*!
+                 * Compares the iterator with another iterator for equality.
+                 *
+                 * @param otherIterator The iterator with respect to which equality is checked.
+                 * @return True if the two iterators are equal.
+                 */
+                bool operator==(const_iterator const& otherIterator) const;
                 
             private:
                 // The underlying bit vector of this iterator.
@@ -286,22 +295,7 @@ namespace storm {
              * Removes all set bits from the bit vector.
              */
             void clear();
-            
-            /*!
-             * Returns a list containing all indices such that the bits at these indices are set to true
-             * in the bit vector.
-             *
-             * @return A vector of indices of set bits in the bit vector.
-             */
-            std::vector<uint_fast64_t> getSetIndicesList() const;
-            
-            /*!
-             * Adds all indices of bits set to one to the given list.
-             *
-             * @param list The list to which to append the indices.
-             */
-            void addSetIndicesToVector(std::vector<uint_fast64_t>& vector) const;
-            
+                        
             /*!
              * Returns the number of bits that are set (to one) in this bit vector.
              *
