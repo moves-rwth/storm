@@ -55,25 +55,25 @@ public:
 
 		// First store all transitions from initial states
 		// Also save all found initial states in array of discovered states.
-		for(storm::storage::BitVector::constIndexIterator init = subSysStates.begin(); init != subSysStates.end(); ++init) {
+		for(auto init : subSysStates) {
 			//use init state only if it is allowed
-			if(allowedStates.get(*init)) {
+			if(allowedStates.get(init)) {
 
-				if(terminalStates.get(*init)) {
+				if(terminalStates.get(init)) {
 						// it's an init -> target search
 						// save target state as discovered and get it's outgoing transitions
 
-						distances[*init].first = *init;
-						distances[*init].second = (T) 1;
+						distances[init].first = init;
+						distances[init].second = (T) 1;
 				}
 
-				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(*init);
+				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(init);
 				for(auto trans = rowIt.begin() ; trans != rowIt.end(); ++trans) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
 					if(trans.value() != (T) 0 && !subSysStates.get(trans.column())) {
 						//new state?
 						if(distances[trans.column()].second == (T) -1) {
-							distances[trans.column()].first = *init;
+							distances[trans.column()].first = init;
 							distances[trans.column()].second = trans.value();
 
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), distances[trans.column()].second));
@@ -91,7 +91,7 @@ public:
 								}
 							}
 
-							distances[trans.column()].first = *init;
+							distances[trans.column()].first = init;
 							distances[trans.column()].second = trans.value();
 
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), trans.value()));
@@ -171,30 +171,30 @@ public:
 
 		// First store all transitions from initial states
 		// Also save all found initial states in array of discovered states.
-		for(storm::storage::BitVector::constIndexIterator init = subSysStates.begin(); init != subSysStates.end(); ++init) {
+		for(auto init : subSysStates) {
 			//use init state only if it is allowed
-			if(allowedStates.get(*init)) {
+			if(allowedStates.get(init)) {
 
-				if(terminalStates.get(*init)) {
+				if(terminalStates.get(init)) {
 						// it's a subsys -> subsys search
 						// ignore terminal state completely
 						// (since any target state that is only reached by a path going through this state should not be reached)
 						continue;
 				}
 
-				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(*init);
+				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(init);
 				for(typename storm::storage::SparseMatrix<T>::ConstIterator trans = rowIt.begin(); trans != rowIt.end(); ++trans) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
 					if(trans.value() != (T) 0 && !subSysStates.get(trans.column())) {
 						//new state?
 						if(distances[trans.column()].second == (T) -1) {
 							//for initialization of subsys -> subsys search use prob (init -> subsys state -> found state) instead of prob(subsys state -> found state)
-							distances[trans.column()].first = *init;
-							distances[trans.column()].second = trans.value() * (itDistances[*init].second == -1 ? 1 : itDistances[*init].second);
+							distances[trans.column()].first = init;
+							distances[trans.column()].second = trans.value() * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
 
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), distances[trans.column()].second));
 						}
-						else if(distances[trans.column()].second < trans.value() * itDistances[*init].second){
+						else if(distances[trans.column()].second < trans.value() * itDistances[init].second){
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
@@ -208,8 +208,8 @@ public:
 							}
 
 							//for initialization of subsys -> subsys search use prob (init -> subsys state -> found state) instead of prob(subsys state -> found state)
-							distances[trans.column()].first = *init;
-							distances[trans.column()].second = trans.value() * (itDistances[*init].second == -1 ? 1 : itDistances[*init].second);
+							distances[trans.column()].first = init;
+							distances[trans.column()].second = trans.value() * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
 
 							activeSet.insert(std::pair<uint_fast64_t, T>(trans.column(), trans.value()));
 						}
@@ -429,12 +429,12 @@ public:
 		uint_fast64_t bestIndex = 0;
 		T bestValue = (T) 0;
 
-		for(storm::storage::BitVector::constIndexIterator term = terminalStates.begin(); term != terminalStates.end(); ++term) {
+		for(auto term : terminalStates) {
 
 			//the terminal state might not have been found if it is in a system of forbidden states
-			if(distances[*term].second != -1 && distances[*term].second > bestValue){
-				bestIndex = *term;
-				bestValue = distances[*term].second;
+			if(distances[term].second != -1 && distances[term].second > bestValue){
+				bestIndex = term;
+				bestValue = distances[term].second;
 
 				//if set, stop since the first target that is not null was the only one found
 				if(stopAtFirstTarget) break;
@@ -443,12 +443,12 @@ public:
 
 		if(!itSearch) {
 			// it's a subSys->subSys search. So target states are terminals and subsys states
-			for(auto term = subSysStates.begin(); term != subSysStates.end(); ++term) {
+			for(auto term : subSysStates) {
 
 				//the terminal state might not have been found if it is in a system of forbidden states
-				if(distances[*term].second != -1 && distances[*term].second > bestValue){
-					bestIndex = *term;
-					bestValue = distances[*term].second;
+				if(distances[term].second != -1 && distances[term].second > bestValue){
+					bestIndex = term;
+					bestValue = distances[term].second;
 
 					//if set, stop since the first target that is not null was the only one found
 					if(stopAtFirstTarget) break;

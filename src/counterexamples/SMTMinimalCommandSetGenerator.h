@@ -107,7 +107,7 @@ namespace storm {
                 relevancyInformation.relevantStates &= ~psiStates;
 
                 LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantStates.getNumberOfSetBits() << " relevant states.");
-                LOG4CPLUS_DEBUG(logger, relevancyInformation.relevantStates.toString());
+                LOG4CPLUS_DEBUG(logger, relevancyInformation.relevantStates);
 
                 // Retrieve some references for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();

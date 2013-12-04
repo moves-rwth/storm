@@ -10,6 +10,7 @@
 
 #include "src/storage/BitVector.h"
 #include "src/exceptions/OutOfRangeException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 #include <ostream>
 #include <stdexcept>
 #include <set>
@@ -311,7 +312,7 @@ public:
 		}
 
 		for (auto it = singleLabelings.begin(); it != singleLabelings.end(); ++it) {
-			boost::hash_combine(result, it->getHash());
+			boost::hash_combine(result, it->hash());
 		}
 
 		return result;

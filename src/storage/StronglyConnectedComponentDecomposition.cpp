@@ -15,7 +15,7 @@ namespace storm {
         
         template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
-            storm::storage::BitVector subsystem(model.getNumberOfStates(), block);
+            storm::storage::BitVector subsystem(model.getNumberOfStates(), block.begin(), block.end());
             performSccDecomposition(model, subsystem, dropNaiveSccs, onlyBottomSccs);
         }
         

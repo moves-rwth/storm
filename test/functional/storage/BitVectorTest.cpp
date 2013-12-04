@@ -36,7 +36,7 @@ TEST(BitVectorTest, ResizeTest) {
 	for (int i = 0; i < 32; ++i) {
 		ASSERT_TRUE(bvA.get(i));
 	}
-
+    
 	bool result;
 	for (int i = 32; i < 70; ++i) {
 		result = true;
