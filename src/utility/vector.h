@@ -2,7 +2,7 @@
 #define STORM_UTILITY_VECTOR_H_
 
 #include "Eigen/Core"
-#include "ConstTemplates.h"
+#include "constants.h"
 #include <iostream>
 #include <algorithm>
 #include <functional>
@@ -130,7 +130,7 @@ namespace storm {
             template<class T>
             void subtractFromConstantOneVector(std::vector<T>& vector) {
                 for (auto& element : vector) {
-                    element = storm::utility::constGetOne<T>() - element;
+                    element = storm::utility::constantOne<T>() - element;
                 }
             }
             

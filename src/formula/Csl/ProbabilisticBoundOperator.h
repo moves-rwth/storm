@@ -11,7 +11,7 @@
 #include "AbstractStateFormula.h"
 #include "AbstractPathFormula.h"
 #include "src/formula/abstract/ProbabilisticBoundOperator.h"
-#include "utility/ConstTemplates.h"
+#include "utility/constants.h"
 
 namespace storm {
 namespace property {
@@ -61,7 +61,7 @@ public:
 	 * Empty constructor
 	 */
 	ProbabilisticBoundOperator() : storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>
-		(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+		(LESS_EQUAL, storm::utility::constantZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 

@@ -12,7 +12,7 @@
 
 #include "src/models/Dtmc.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "src/utility/ConstTemplates.h"
+#include "src/utility/constants.h"
 #include "src/exceptions/NoConvergenceException.h"
 
 #include "Eigen/Sparse"

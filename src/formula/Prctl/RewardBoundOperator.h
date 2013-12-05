@@ -11,7 +11,7 @@
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
 #include "src/formula/abstract/RewardBoundOperator.h"
-#include "utility/ConstTemplates.h"
+#include "utility/constants.h"
 
 namespace storm {
 namespace property {

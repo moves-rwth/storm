@@ -20,7 +20,7 @@
 
 #include "src/models/AbstractDeterministicModel.h"
 #include "src/models/AbstractNondeterministicModel.h"
-#include "ConstTemplates.h"
+#include "constants.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"
@@ -668,8 +668,8 @@ namespace storm {
                 
                 LOG4CPLUS_INFO(logger, "Performing Dijkstra search.");
                 
-				const uint_fast64_t noPredecessorValue = storm::utility::constGetZero<uint_fast64_t>();
-                std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::constGetZero<T>());
+				const uint_fast64_t noPredecessorValue = storm::utility::constantZero<uint_fast64_t>();
+                std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::constantZero<T>());
                 std::vector<uint_fast64_t> predecessors(model.getNumberOfStates(), noPredecessorValue);
                 
                 // Set the probability to 1 for all starting states.
@@ -679,8 +679,8 @@ namespace storm {
                 std::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
 #endif
                 for (auto state : startingStates) {
-                    probabilityStateSet.emplace(storm::utility::constGetOne<T>(), state);
-                    probabilities[state] = storm::utility::constGetOne<T>();
+                    probabilityStateSet.emplace(storm::utility::constantOne<T>(), state);
+                    probabilities[state] = storm::utility::constantOne<T>();
                 }
                 
                 // As long as there is one reachable state, we need to consider it.

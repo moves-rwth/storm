@@ -1,5 +1,5 @@
 /*
- * ConstTemplates.h
+ * constants.h
  *
  *  Created on: 11.10.2012
  *      Author: Thomas Heinemann
@@ -33,12 +33,12 @@ namespace utility {
  *
  * @note
  * 	The template parameter is just inferred by the return type; GCC is not able to infer this
- * 	automatically, hence the type should always be stated explicitly (e.g. @c constGetZero<int>();)
+ * 	automatically, hence the type should always be stated explicitly (e.g. @c constantZero<int>();)
  *
  * @return Value 0, fit to the return type
  */
 template<typename _Scalar>
-static inline _Scalar constGetZero() {
+static inline _Scalar constantZero() {
    return _Scalar(0);
 }
 
@@ -51,7 +51,7 @@ static inline _Scalar constGetZero() {
  * @return Value 0, fit to the type int_fast32_t
  */
 template <>
-inline int_fast32_t constGetZero() {
+inline int_fast32_t constantZero() {
    return 0;
 }
 
@@ -60,7 +60,7 @@ inline int_fast32_t constGetZero() {
  * @return Value 0, fit to the type uint_fast64_t
  */
 template <>
-inline uint_fast64_t constGetZero() {
+inline uint_fast64_t constantZero() {
    return 0;
 }
 
@@ -69,7 +69,7 @@ inline uint_fast64_t constGetZero() {
  * @return Value 0.0, fit to the type double
  */
 template <>
-inline double constGetZero() {
+inline double constantZero() {
    return 0.0;
 }
     
@@ -78,7 +78,7 @@ inline double constGetZero() {
  * @return A LabeledValues object that represents a value of 0.
  */
 template<>
-inline storm::storage::LabeledValues<double> constGetZero() {
+inline storm::storage::LabeledValues<double> constantZero() {
     return storm::storage::LabeledValues<double>(0.0);
 }
 
@@ -91,12 +91,12 @@ inline storm::storage::LabeledValues<double> constGetZero() {
  *
  * @note
  * 	The template parameter is just inferred by the return type; GCC is not able to infer this
- * 	automatically, hence the type should always be stated explicitly (e.g. @c constGetOne<int>();)
+ * 	automatically, hence the type should always be stated explicitly (e.g. @c constantOne<int>();)
  *
  * @return Value 1, fit to the return type
  */
 template<typename _Scalar>
-static inline _Scalar constGetOne() {
+static inline _Scalar constantOne() {
    return _Scalar(1);
 }
 
@@ -109,7 +109,7 @@ static inline _Scalar constGetOne() {
  * @return Value 1, fit to the type int_fast32_t
  */
 template<>
-inline int_fast32_t constGetOne() {
+inline int_fast32_t constantOne() {
    return 1;
 }
 
@@ -118,7 +118,7 @@ inline int_fast32_t constGetOne() {
  * @return Value 1, fit to the type uint_fast61_t
  */
 template<>
-inline uint_fast64_t constGetOne() {
+inline uint_fast64_t constantOne() {
    return 1;
 }
 
@@ -127,7 +127,7 @@ inline uint_fast64_t constGetOne() {
  * @return Value 1.0, fit to the type double
  */
 template<>
-inline double constGetOne() {
+inline double constantOne() {
    return 1.0;
 }
 
@@ -136,7 +136,7 @@ inline double constGetOne() {
  * @return A LabeledValues object that represents a value of 1.
  */
 template<>
-inline storm::storage::LabeledValues<double> constGetOne() {
+inline storm::storage::LabeledValues<double> constantOne() {
     return storm::storage::LabeledValues<double>(1.0);
 }
     
@@ -149,12 +149,12 @@ inline storm::storage::LabeledValues<double> constGetOne() {
  *
  * @note
  * 	The template parameter is just inferred by the return type; GCC is not able to infer this
- * 	automatically, hence the type should always be stated explicitly (e.g. @c constGetOne<int>();)
+ * 	automatically, hence the type should always be stated explicitly (e.g. @c constantOne<int>();)
  *
  * @return Value Infinity, fit to the return type
  */
 template<typename _Scalar>
-static inline _Scalar constGetInfinity() {
+static inline _Scalar constantInfinity() {
    return std::numeric_limits<_Scalar>::infinity();
 }
 
@@ -167,7 +167,7 @@ static inline _Scalar constGetInfinity() {
  * @return Value Infinity, fit to the type uint_fast32_t
  */
 template<>
-inline int_fast32_t constGetInfinity() {
+inline int_fast32_t constantInfinity() {
 	throw storm::exceptions::InvalidArgumentException() << "Integer has no infinity.";
 	return std::numeric_limits<int_fast32_t>::max();
 }
@@ -177,7 +177,7 @@ inline int_fast32_t constGetInfinity() {
  * @return Value Infinity, fit to the type uint_fast64_t
  */
 template<>
-inline uint_fast64_t constGetInfinity() {
+inline uint_fast64_t constantInfinity() {
 	throw storm::exceptions::InvalidArgumentException() << "Integer has no infinity.";
 	return std::numeric_limits<uint_fast64_t>::max();
 }
@@ -187,7 +187,7 @@ inline uint_fast64_t constGetInfinity() {
  * @return Value Infinity, fit to the type double
  */
 template<>
-inline double constGetInfinity() {
+inline double constantInfinity() {
    return std::numeric_limits<double>::infinity();
 }
 
@@ -196,7 +196,7 @@ inline double constGetInfinity() {
  * @return Value Infinity, fit to the type LabeledValues.
  */
 template<>
-inline storm::storage::LabeledValues<double> constGetInfinity() {
+inline storm::storage::LabeledValues<double> constantInfinity() {
     return storm::storage::LabeledValues<double>(std::numeric_limits<double>::infinity());
 }
     

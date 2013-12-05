@@ -173,7 +173,7 @@ public:
             // If no choice of the current state may be taken, we insert a self-loop to the state instead.
             if (!stateHasValidChoice) {
                 nondeterministicChoiceIndices.push_back(currentRow);
-                transitionMatrix.insertNextValue(currentRow, state, storm::utility::constGetOne<T>(), true);
+                transitionMatrix.insertNextValue(currentRow, state, storm::utility::constantOne<T>(), true);
                 newChoiceLabeling.emplace_back();
                 ++currentRow;
             }

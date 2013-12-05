@@ -3,7 +3,7 @@
 
 #include "AbstractLinearEquationSolver.h"
 #include "src/adapters/GmmxxAdapter.h"
-#include "src/utility/ConstTemplates.h"
+#include "src/utility/constants.h"
 #include "src/settings/Settings.h"
 #include "src/utility/vector.h"
 

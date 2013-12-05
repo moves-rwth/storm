@@ -101,7 +101,7 @@ namespace storm {
             }
             
             T getMaximalExitRate() const {
-                T result = storm::utility::constGetZero<T>();
+                T result = storm::utility::constantZero<T>();
                 for (auto markovianState : this->markovianStates) {
                     result = std::max(result, this->exitRates[markovianState]);
                 }

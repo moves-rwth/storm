@@ -8,6 +8,8 @@
 #ifndef STORM_ADAPTERS_STORMADAPTER_H_
 #define STORM_ADAPTERS_STORMADAPTER_H_
 
+#include "gmm/gmm_matrix.h"
+#include "Eigen/Sparse"
 #include "src/storage/SparseMatrix.h"
 
 #include "log4cplus/logger.h"

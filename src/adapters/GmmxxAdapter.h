@@ -10,6 +10,8 @@
 
 #include <new>
 
+#include "gmm/gmm_matrix.h"
+
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/ConversionHelper.h"
 

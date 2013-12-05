@@ -6,6 +6,9 @@
  */
 
 #include <iomanip>
+#include <boost/functional/hash.hpp>
+
+#include "gmm/gmm_matrix.h"
 
 #include "src/storage/SparseMatrix.h"
 
@@ -439,10 +442,10 @@ namespace storage {
 		// If there is at least one nonzero entry in this row, we can just set it to one, modify its
 		// column indication to the one given by the parameter and set all subsequent elements of this
 		// row to zero.
-		valueStorage[rowStart] = storm::utility::constGetOne<T>();
+		valueStorage[rowStart] = storm::utility::constantOne<T>();
 		columnIndications[rowStart] = column;
 		for (uint_fast64_t index = rowStart + 1; index < rowEnd; ++index) {
-			valueStorage[index] = storm::utility::constGetZero<T>();
+			valueStorage[index] = storm::utility::constantZero<T>();
 			columnIndications[index] = 0;
 		}
 
@@ -613,14 +616,14 @@ namespace storage {
                         if (index == columnIndications[j]) {
                             insertedDiagonalElement = true;
                         } else if (insertDiagonalEntries && !insertedDiagonalElement && columnIndications[j] > index) {
-                            result.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::constGetZero<T>());
+                            result.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::constantZero<T>());
                             insertedDiagonalElement = true;
                         }
 						result.addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[j]], valueStorage[j]);
 					}
 				}
                 if (insertDiagonalEntries && !insertedDiagonalElement) {
-                    result.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::constGetZero<T>());
+                    result.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::constantZero<T>());
                 }
                 
 				++rowCount;
@@ -675,13 +678,13 @@ namespace storage {
                 if (columnIndications[i] == rowGroupIndex) {
                     insertedDiagonalElement = true;
                 } else if (insertDiagonalEntries && !insertedDiagonalElement && columnIndications[i] > rowGroupIndex) {
-                    submatrix.addNextValue(rowGroupIndex, rowGroupIndex, storm::utility::constGetZero<T>());
+                    submatrix.addNextValue(rowGroupIndex, rowGroupIndex, storm::utility::constantZero<T>());
                     insertedDiagonalElement = true;
                 }
                 submatrix.addNextValue(rowGroupIndex, columnIndications[i], valueStorage[i]);
             }
             if (insertDiagonalEntries && !insertedDiagonalElement) {
-                submatrix.addNextValue(rowGroupIndex, rowGroupIndex, storm::utility::constGetZero<T>());
+                submatrix.addNextValue(rowGroupIndex, rowGroupIndex, storm::utility::constantZero<T>());
             }
         }
 
@@ -758,7 +761,7 @@ namespace storage {
 
 		// Now iterate over all rows and set the diagonal elements to the inverted value.
 		// If there is a row without the diagonal element, an exception is thrown.
-		T one = storm::utility::constGetOne<T>();
+		T one = storm::utility::constantOne<T>();
 		bool foundDiagonalElement = false;
 		for (uint_fast64_t row = 0; row < rowCount; ++row) {
 			uint_fast64_t rowStart = rowIndications[row];
@@ -814,12 +817,12 @@ namespace storage {
 		resultDinv.initialize(rowCount);
 
 		// constant 1 for diagonal inversion
-		T constOne = storm::utility::constGetOne<T>();
+		T constOne = storm::utility::constantOne<T>();
 
 		// copy diagonal entries to other matrix
 		for (uint_fast64_t i = 0; i < rowCount; ++i) {
 			resultDinv.addNextValue(i, i, constOne / resultLU.getValue(i, i));
-			resultLU.getValue(i, i) = storm::utility::constGetZero<T>();
+			resultLU.getValue(i, i) = storm::utility::constantZero<T>();
 		}
 		resultDinv.finalize();
 
@@ -829,7 +832,7 @@ namespace storage {
 	template<typename T>
 	std::vector<T> SparseMatrix<T>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) const {
 		// Prepare result.
-		std::vector<T> result(rowCount, storm::utility::constGetZero<T>());
+		std::vector<T> result(rowCount, storm::utility::constantZero<T>());
 
 		// Iterate over all elements of the current matrix and either continue with the next element
 		// in case the given matrix does not have a non-zero element at this column position, or
@@ -860,7 +863,7 @@ namespace storage {
         ConstRowIterator rowIt = this->begin();
 
         for (auto resultIt = result.begin(), resultIte = result.end(); resultIt != resultIte; ++resultIt, ++rowIt) {
-            *resultIt = storm::utility::constGetZero<T>();
+            *resultIt = storm::utility::constantZero<T>();
 
             for (auto elementIt = rowIt.begin(), elementIte = rowIt.end(); elementIt != elementIte; ++elementIt) {
                 *resultIt += elementIt.value() * vector[elementIt.column()];
@@ -958,7 +961,7 @@ namespace storage {
 
 	template<typename T>
 	T SparseMatrix<T>::getRowSum(uint_fast64_t row) const {
-		T sum = storm::utility::constGetZero<T>();
+		T sum = storm::utility::constantZero<T>();
 		for (auto it = this->constValueIteratorBegin(row), ite = this->constValueIteratorEnd(row); it != ite; ++it) {
 			sum += *it;
 		}
@@ -1064,9 +1067,9 @@ namespace storage {
 		boost::hash_combine(result, nonZeroEntryCount);
 		boost::hash_combine(result, currentSize);
 		boost::hash_combine(result, lastRow);
-		boost::hash_combine(result, storm::utility::Hash<T>::getHash(valueStorage));
-		boost::hash_combine(result, storm::utility::Hash<uint_fast64_t>::getHash(columnIndications));
-		boost::hash_combine(result, storm::utility::Hash<uint_fast64_t>::getHash(rowIndications));
+		boost::hash_combine(result, boost::hash_range(valueStorage.begin(), valueStorage.end()));
+		boost::hash_combine(result, boost::hash_range(columnIndications.begin(), columnIndications.end()));
+		boost::hash_combine(result, boost::hash_range(rowIndications.begin(), rowIndications.end()));
 
 		return result;
 	}
@@ -1085,7 +1088,7 @@ namespace storage {
 	bool SparseMatrix<T>::prepareInternalStorage(bool initializeElements) {
 		if (initializeElements) {
 			// Set up the arrays for the elements that are not on the diagonal.
-			valueStorage.resize(nonZeroEntryCount, storm::utility::constGetZero<T>());
+			valueStorage.resize(nonZeroEntryCount, storm::utility::constantZero<T>());
 			columnIndications.resize(nonZeroEntryCount, 0);
 
 			// Set up the rowIndications vector and reserve one element more than there are rows in
@@ -1122,7 +1125,7 @@ namespace storage {
 			uint_fast64_t indexEnd = matrixA->rowIndications.at(row + 1);
 
 			// Initialize the result to be 0.
-			T element = storm::utility::constGetZero<T>();
+			T element = storm::utility::constantZero<T>();
 
 			for (; index != indexEnd; ++index) {
 				element += matrixA->valueStorage.at(index) * vectorX->at(matrixA->columnIndications.at(index));

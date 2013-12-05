@@ -11,29 +11,19 @@
 #	include <iterator>
 #endif
 
-#include <exception>
-#include <new>
 #include <algorithm>
 #include <iostream>
-#include <iomanip>
-#include <iterator>
-#include <set>
 #include <cstdint>
+
+#include "src/storage/BitVector.h"
+#include "src/utility/constants.h"
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/storage/BitVector.h"
-
-#include "src/utility/ConstTemplates.h"
-#include "src/utility/Hash.h"
-#include "Eigen/Sparse"
-#include "gmm/gmm_matrix.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
-
 extern log4cplus::Logger logger;
 
 // Forward declaration for adapter classes.

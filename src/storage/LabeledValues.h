@@ -14,7 +14,7 @@
 namespace storm {
     namespace utility {
         template<class ValueType>
-        static ValueType constGetZero();
+        static ValueType constantZero();
     }
     
     namespace storage {
@@ -186,7 +186,7 @@ namespace storm {
              * @return The sum of the values.
              */
             ValueType getSum() const {
-                ValueType sum = storm::utility::constGetZero<ValueType>();
+                ValueType sum = storm::utility::constantZero<ValueType>();
                 for (auto const& valueLabelListPair : *this) {
                     sum += valueLabelListPair.first;
                 }

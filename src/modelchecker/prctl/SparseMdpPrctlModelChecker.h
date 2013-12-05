@@ -126,13 +126,13 @@ namespace storm {
                         
                         // Create the vector with which to multiply.
                         std::vector<Type> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
-                        storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
+                        storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constantOne<Type>());
                         
                         this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), submatrix, subresult, subNondeterministicChoiceIndices, nullptr, stepBound);
                         
                         // Set the values of the resulting vector accordingly.
                         storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
-                        storm::utility::vector::setVectorValues(result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
+                        storm::utility::vector::setVectorValues(result, ~statesWithProbabilityGreater0, storm::utility::constantZero<Type>());
                     }
                     
                     return result;
@@ -167,7 +167,7 @@ namespace storm {
                 virtual std::vector<Type> checkNext(storm::storage::BitVector const& nextStates, bool qualitative) const {
                     // Create the vector with which to multiply and initialize it correctly.
                     std::vector<Type> result(this->getModel().getNumberOfStates());
-                    storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constGetOne<Type>());
+                    storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constantOne<Type>());
                     
                     this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, this->getModel().getNondeterministicChoiceIndices());
                     
@@ -336,8 +336,8 @@ namespace storm {
                     }
                     
                     // Set values of resulting vector that are known exactly.
-                    storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
-                    storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
+                    storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constantZero<Type>());
+                    storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constantOne<Type>());
                     
                     // Finally, compute a scheduler that achieves the extramal value.
                     storm::storage::TotalScheduler scheduler = computeExtremalScheduler(minimize, transitionMatrix, nondeterministicChoiceIndices, result);
@@ -477,7 +477,7 @@ namespace storm {
                                        << " No exact rewards were computed.");
                         // Set the values for all maybe-states to 1 to indicate that their reward values
                         // are neither 0 nor infinity.
-                        storm::utility::vector::setVectorValues<Type>(result, maybeStates, storm::utility::constGetOne<Type>());
+                        storm::utility::vector::setVectorValues<Type>(result, maybeStates, storm::utility::constantOne<Type>());
                     } else {
                         // In this case we have to compute the reward values for the remaining states.
                         
@@ -527,8 +527,8 @@ namespace storm {
                     }
                     
                     // Set values of resulting vector that are known exactly.
-                    storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constGetZero<Type>());
-                    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<Type>());
+                    storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constantZero<Type>());
+                    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constantInfinity<Type>());
                     
                     // Finally, compute a scheduler that achieves the extramal value.
                     storm::storage::TotalScheduler scheduler = computeExtremalScheduler(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), result, this->getModel().hasStateRewards() ? &this->getModel().getStateRewardVector() : nullptr, this->getModel().hasTransitionRewards() ? &this->getModel().getTransitionRewardMatrix() : nullptr);

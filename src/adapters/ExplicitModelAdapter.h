@@ -480,7 +480,7 @@ namespace storm {
                     // requested and issue an error otherwise.
                     if (totalNumberOfChoices == 0) {
                         if (storm::settings::Settings::getInstance()->isSet("fixDeadlocks")) {
-                            transitionMatrix.insertNextValue(currentRow, currentState, storm::utility::constGetOne<ValueType>(), true);
+                            transitionMatrix.insertNextValue(currentRow, currentState, storm::utility::constantOne<ValueType>(), true);
                             if (transitionRewards.size() > 0) {
                                 transitionRewardMatrix.insertEmptyRow(true);
                             }

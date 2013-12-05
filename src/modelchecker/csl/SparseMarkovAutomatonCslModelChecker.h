@@ -98,9 +98,9 @@ namespace storm {
                         for (auto element : row) {
                             ValueType eTerm = std::exp(-exitRates[state] * delta);
                             if (element.column() == rowIndex) {
-                                element.value() = (storm::utility::constGetOne<ValueType>() - eTerm) * element.value() + eTerm;
+                                element.value() = (storm::utility::constantOne<ValueType>() - eTerm) * element.value() + eTerm;
                             } else {
-                                element.value() = (storm::utility::constGetOne<ValueType>() - eTerm) * element.value();
+                                element.value() = (storm::utility::constantOne<ValueType>() - eTerm) * element.value();
                             }
                         }
                         ++rowIndex;
@@ -125,7 +125,7 @@ namespace storm {
                     std::vector<ValueType> bMarkovianFixed;
                     bMarkovianFixed.reserve(markovianNonGoalStates.getNumberOfSetBits());
                     for (auto state : markovianNonGoalStates) {
-                        bMarkovianFixed.push_back(storm::utility::constGetZero<ValueType>());
+                        bMarkovianFixed.push_back(storm::utility::constantZero<ValueType>());
                         
                         typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(nondeterministicChoiceIndices[state]);
                         for (auto element : row) {
@@ -175,7 +175,7 @@ namespace storm {
                     }
                     
                     // Check whether the given bounds were valid.
-                    if (lowerBound < storm::utility::constGetZero<ValueType>() || upperBound < storm::utility::constGetZero<ValueType>() || upperBound < lowerBound) {
+                    if (lowerBound < storm::utility::constantZero<ValueType>() || upperBound < storm::utility::constantZero<ValueType>() || upperBound < lowerBound) {
                         throw storm::exceptions::InvalidArgumentException() << "Illegal interval [";
                     }
 
@@ -204,14 +204,14 @@ namespace storm {
                     computeBoundedReachability(min, transitionMatrix, nondeterministicChoiceIndices, exitRates, markovianStates, goalStates, markovianNonGoalStates, probabilisticNonGoalStates, vMarkovian, vProbabilistic, delta, numberOfSteps);
 
                     // (4) If the lower bound of interval was non-zero, we need to take the current values as the starting values for a subsequent value iteration.
-                    if (lowerBound != storm::utility::constGetZero<ValueType>()) {
+                    if (lowerBound != storm::utility::constantZero<ValueType>()) {
                         std::vector<ValueType> vAllProbabilistic((~markovianStates).getNumberOfSetBits());
                         std::vector<ValueType> vAllMarkovian(markovianStates.getNumberOfSetBits());
                         
                         // Create the starting value vectors for the next value iteration based on the results of the previous one.
-                        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, goalStates % ~markovianStates, storm::utility::constGetOne<ValueType>());
+                        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, goalStates % ~markovianStates, storm::utility::constantOne<ValueType>());
                         storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, ~goalStates % ~markovianStates, vProbabilistic);
-                        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, goalStates % markovianStates, storm::utility::constGetOne<ValueType>());
+                        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, goalStates % markovianStates, storm::utility::constantOne<ValueType>());
                         storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, ~goalStates % markovianStates, vMarkovian);
                         
                         // Compute the number of steps to reach the target interval.
@@ -231,7 +231,7 @@ namespace storm {
                     } else {
                         // Create the result vector out of 1_G, vProbabilistic and vMarkovian and return it.
                         std::vector<ValueType> result(this->getModel().getNumberOfStates());
-                        storm::utility::vector::setVectorValues<ValueType>(result, goalStates, storm::utility::constGetOne<ValueType>());
+                        storm::utility::vector::setVectorValues<ValueType>(result, goalStates, storm::utility::constantOne<ValueType>());
                         storm::utility::vector::setVectorValues(result, probabilisticNonGoalStates, vProbabilistic);
                         storm::utility::vector::setVectorValues(result, markovianNonGoalStates, vMarkovian);
                         return result;
@@ -246,12 +246,12 @@ namespace storm {
                     
                     // If there are no goal states, we avoid the computation and directly return zero.
                     if (goalStates.empty()) {
-                        return std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::constGetZero<ValueType>());
+                        return std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::constantZero<ValueType>());
                     }
                     
                     // Likewise, if all bits are set, we can avoid the computation and set.
                     if ((~goalStates).empty()) {
-                        return std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::constGetOne<ValueType>());
+                        return std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::constantOne<ValueType>());
                     }
 
                     // Start by decomposing the Markov automaton into its MECs.
@@ -312,7 +312,7 @@ namespace storm {
                         
                         for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice, ++currentChoice) {
                             std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
-                            b.push_back(storm::utility::constGetZero<ValueType>());
+                            b.push_back(storm::utility::constantZero<ValueType>());
                             
                             typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);
                             for (auto element : row) {
@@ -349,7 +349,7 @@ namespace storm {
                                 
                                 // If the choice is not contained in the MEC itself, we have to add a similar distribution to the auxiliary state.
                                 if (!choicesInMec.contains(choice)) {
-                                    b.push_back(storm::utility::constGetZero<ValueType>());
+                                    b.push_back(storm::utility::constantZero<ValueType>());
 
                                     typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);
                                     for (auto element : row) {
@@ -413,8 +413,8 @@ namespace storm {
                 std::vector<ValueType> checkExpectedTime(bool min, storm::storage::BitVector const& goalStates) const {
                     // Reduce the problem of computing the expected time to computing expected rewards where the rewards
                     // for all probabilistic states are zero and the reward values of Markovian states is 1.
-                    std::vector<ValueType> rewardValues(this->getModel().getNumberOfStates(), storm::utility::constGetZero<ValueType>());
-                    storm::utility::vector::setVectorValues(rewardValues, this->getModel().getMarkovianStates(), storm::utility::constGetOne<ValueType>());
+                    std::vector<ValueType> rewardValues(this->getModel().getNumberOfStates(), storm::utility::constantZero<ValueType>());
+                    storm::utility::vector::setVectorValues(rewardValues, this->getModel().getMarkovianStates(), storm::utility::constantOne<ValueType>());
                     return this->computeExpectedRewards(min, goalStates, rewardValues);
                 }
                 
@@ -464,9 +464,9 @@ namespace storm {
                             }
                             
                             variables.push_back(lraValueVariableIndex);
-                            coefficients.push_back(storm::utility::constGetOne<ValueType>() / exitRates[state]);
+                            coefficients.push_back(storm::utility::constantOne<ValueType>() / exitRates[state]);
                             
-                            solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, goalStates.get(state) ? storm::utility::constGetOne<ValueType>() / exitRates[state] : storm::utility::constGetZero<ValueType>());
+                            solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, goalStates.get(state) ? storm::utility::constantOne<ValueType>() / exitRates[state] : storm::utility::constantZero<ValueType>());
                         } else {
                             // For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
                             // and the sum ranges over all states s'.
@@ -483,7 +483,7 @@ namespace storm {
                                     coefficients.push_back(-element.value());
                                 }
                                 
-                                solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, storm::utility::constGetZero<ValueType>());
+                                solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, storm::utility::constantZero<ValueType>());
                             }
                         }
                     }
@@ -582,8 +582,8 @@ namespace storm {
                     
                     // Set values of resulting vector according to previous result and return the result.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
-                    storm::utility::vector::setVectorValues(result, goalStates, storm::utility::constGetZero<ValueType>());
-                    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<ValueType>());
+                    storm::utility::vector::setVectorValues(result, goalStates, storm::utility::constantZero<ValueType>());
+                    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constantInfinity<ValueType>());
                     
                     return result;
                 }

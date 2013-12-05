@@ -37,7 +37,7 @@ namespace storm {
                         }
                     } else {
                         // If no valid choice for the state is defined, we insert a self-loop.
-                        result.insertNextValue(state, state, storm::utility::constGetOne<T>());
+                        result.insertNextValue(state, state, storm::utility::constantOne<T>());
                     }
                 }
                 

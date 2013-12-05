@@ -9,7 +9,7 @@
 #define STORM_FORMULA_ABSTRACT_REWARDBOUNDOPERATOR_H_
 
 #include "PathBoundOperator.h"
-#include "utility/ConstTemplates.h"
+#include "utility/constants.h"
 
 namespace storm {
 namespace property {
@@ -47,7 +47,7 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	RewardBoundOperator() : PathBoundOperator<T, FormulaType>(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+	RewardBoundOperator() : PathBoundOperator<T, FormulaType>(LESS_EQUAL, storm::utility::constantZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 

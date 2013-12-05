@@ -98,7 +98,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
             auto rowIt = this->transitionMatrix.begin();
             for (uint_fast64_t i = 0; i < this->transitionMatrix.getRowCount(); ++i, ++rowIt) {
                 for (auto transitionIt = rowIt.begin(), transitionIte = rowIt.end(); transitionIt != transitionIte; ++transitionIt) {
-                    if (transitionIt.value() != storm::utility::constGetZero<T>()) {
+                    if (transitionIt.value() != storm::utility::constantZero<T>()) {
                         if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
                             outStream << "\t" << i << " -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ];" << std::endl;
                         }

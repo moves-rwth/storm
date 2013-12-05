@@ -134,7 +134,7 @@ public:
             
             // Create the vector with which to multiply.
             std::vector<Type> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
-            storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
+            storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constantOne<Type>());
             
             // Perform the matrix vector multiplication as often as required by the formula bound.
             if (linearEquationSolver != nullptr) {
@@ -145,7 +145,7 @@ public:
             
             // Set the values of the resulting vector accordingly.
             storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
-            storm::utility::vector::setVectorValues<Type>(result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
+            storm::utility::vector::setVectorValues<Type>(result, ~statesWithProbabilityGreater0, storm::utility::constantZero<Type>());
         }
         
 		return result;
@@ -168,7 +168,7 @@ public:
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> result(this->getModel().getNumberOfStates());
-		storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constGetOne<Type>());
+		storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constantOne<Type>());
 
 		// Perform one single matrix-vector multiplication.
         if (linearEquationSolver != nullptr) {
@@ -321,8 +321,8 @@ public:
         }
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
-		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
+		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constantZero<Type>());
+		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constantOne<Type>());
 
 		return result;
 	}
@@ -444,7 +444,7 @@ public:
                             << " No exact rewards were computed.");
             // Set the values for all maybe-states to 1 to indicate that their reward values
             // are neither 0 nor infinity.
-            storm::utility::vector::setVectorValues<Type>(result, maybeStates, storm::utility::constGetOne<Type>());
+            storm::utility::vector::setVectorValues<Type>(result, maybeStates, storm::utility::constantOne<Type>());
         } else {
             // In this case we have to compute the reward values for the remaining states.
             // We can eliminate the rows and columns from the original transition probability matrix.
@@ -455,7 +455,7 @@ public:
             
             // Initialize the x vector with 1 for each element. This is the initial guess for
             // the iterative solvers.
-            std::vector<Type> x(submatrix.getColumnCount(), storm::utility::constGetOne<Type>());
+            std::vector<Type> x(submatrix.getColumnCount(), storm::utility::constantOne<Type>());
             
             // Prepare the right-hand side of the equation system.
             std::vector<Type> b(submatrix.getRowCount());
@@ -495,8 +495,8 @@ public:
         }
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constGetZero<Type>());
-		storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<Type>());
+		storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constantZero<Type>());
+		storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constantInfinity<Type>());
 
 		return result;
 	}
