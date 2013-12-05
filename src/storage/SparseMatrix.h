@@ -154,8 +154,7 @@ namespace storm {
             /*!
              * This class represents a number of consecutive rows of the matrix.
              */
-            template<typename ValueType>
-            class BaseRows {
+            class rows {
             public:
                 /*!
                  * Constructs an object that represents the rows defined by the value of the first entry, the column
@@ -165,25 +164,25 @@ namespace storm {
                  * @param columnPtr A pointer to the column of the first entry of the rows.
                  * @param entryCount The number of entrys in the rows.
                  */
-                Rows(ValueType* valuePtr, uint_fast64_t const* columnPtr, uint_fast64_t entryCount);
+                rows(T* valuePtr, uint_fast64_t const* columnPtr, uint_fast64_t entryCount);
                 
                 /*!
                  * Retrieves an iterator that points to the beginning of the rows.
                  *
                  * @return An iterator that points to the beginning of the rows.
                  */
-                BaseIterator<ValueType> begin();
+                iterator begin();
                 
                 /*!
                  * Retrieves an iterator that points past the last entry of the rows.
                  *
                  * @return An iterator that points past the last entry of the rows.
                  */
-                BaseIterator<ValueType> end() const;
+                iterator end();
                 
             private:
                 // The pointer to the value of the first entry.
-                ValueType* valuePtr;
+                T* valuePtr;
                 
                 // The pointer to the column of the first entry.
                 uint_fast64_t const* columnPtr;
@@ -191,9 +190,46 @@ namespace storm {
                 // The number of non-zero entries in the rows.
                 uint_fast64_t entryCount;
             };
-            
-            typedef BaseRows<T> rows;
-            typedef BaseRows<T const> const_rows;
+
+            /*!
+             * This class represents a number of consecutive rows of the matrix.
+             */
+            class const_rows {
+            public:
+                /*!
+                 * Constructs an object that represents the rows defined by the value of the first entry, the column
+                 * of the first entry and the number of entries in this row set.
+                 *
+                 * @param valuePtr A pointer to the value of the first entry of the rows.
+                 * @param columnPtr A pointer to the column of the first entry of the rows.
+                 * @param entryCount The number of entrys in the rows.
+                 */
+                const_rows(T const* valuePtr, uint_fast64_t const* columnPtr, uint_fast64_t entryCount);
+                
+                /*!
+                 * Retrieves an iterator that points to the beginning of the rows.
+                 *
+                 * @return An iterator that points to the beginning of the rows.
+                 */
+                const_iterator begin() const;
+                
+                /*!
+                 * Retrieves an iterator that points past the last entry of the rows.
+                 *
+                 * @return An iterator that points past the last entry of the rows.
+                 */
+                const_iterator end() const;
+                
+            private:
+                // The pointer to the value of the first entry.
+                T const* valuePtr;
+                
+                // The pointer to the column of the first entry.
+                uint_fast64_t const* columnPtr;
+                
+                // The number of non-zero entries in the rows.
+                uint_fast64_t entryCount;
+            };
             
             /*!
              * An enum representing the internal state of the matrix. After creation, the matrix is UNINITIALIZED.
@@ -217,7 +253,7 @@ namespace storm {
              * @param size The number of rows and columns of the matrix.
              * @param entries The number of entries of the matrix.
              */
-            SparseMatrix(uint_fast64_t size = 0, uint_fast64_t entries);
+            SparseMatrix(uint_fast64_t size = 0, uint_fast64_t entries = 0);
             
             /*!
              * Constructs a sparse matrix by performing a deep-copy of the given matrix.
@@ -236,27 +272,26 @@ namespace storm {
             /*!
              * Constructs a sparse matrix by moving the given contents.
              *
-             * @param colCount The number of columns of the matrix.
+             * @param columnCount The number of columns of the matrix.
              * @param rowIndications The row indications vector of the matrix to be constructed.
              * @param columnIndications The column indications vector of the matrix to be constructed.
              * @param values The vector containing the values of the entries in the matrix.
              */
-            SparseMatrix(uint_fast64_t colCount, std::vector<uint_fast64_t>&& rowIndications,
-                         std::vector<uint_fast64_t>&& columnIndications, std::vector<T>&& values);
+            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<uint_fast64_t>&& columnIndications, std::vector<T>&& values);
             
             /*!
              * Assigns the contents of the given matrix to the current one by deep-copying its contents.
              *
              * @param other The matrix from which to copy-assign.
              */
-            storm::storage::SparseMatrix<T>& operator=(SparseMatrix<T> const& other);
+            SparseMatrix<T>& operator=(SparseMatrix<T> const& other);
             
             /*!
              * Assigns the contents of the given matrix to the current one by moving its contents.
              *
              * @param other The matrix from which to move to contents.
              */
-            storm::storage::SparseMatrix<T>& operator=(SparseMatrix<T>&& other);
+            SparseMatrix<T>& operator=(SparseMatrix<T>&& other);
             
             /*!
              * Sets the matrix entry at the given row and column to the given value. After all entries have been added,
@@ -268,15 +303,10 @@ namespace storm {
              * treated as empty. If these constraints are not met, an exception is thrown.
              *
              * @param row The row in which the matrix entry is to be set.
-             * @param col The column in which the matrix entry is to be set.
+             * @param column The column in which the matrix entry is to be set.
              * @param value The value that is to be set at the specified row and column.
              */
-            void addNextValue(uint_fast64_t row, uint_fast64_t col,	T const& value);
-            
-            /*!
-             * Inserts an empty row in the matrix.
-             */
-            void insertEmptyRow();
+            void addNextValue(uint_fast64_t row, uint_fast64_t column,	T const& value);
             
             /*
              * Finalizes the sparse matrix to indicate that initialization process has been completed and the matrix
@@ -631,8 +661,8 @@ namespace storm {
         
 #ifdef STORM_HAVE_INTELTBB
         /*!
-         *	This function is a helper for Parallel Execution of the multipliyWithVector functionality.
-         *  It uses Intels TBB parallel_for paradigm to split up the row/vector multiplication and summation
+         *	This function is a helper for the parallel execution of the multipliyWithVector method.
+         *  It uses Intel's TBB parallel_for paradigm to split up the row/vector multiplication and summation.
          */
         template <typename M, typename V, typename T>
         class tbbHelper_MatrixRowVectorScalarProduct {
@@ -645,7 +675,6 @@ namespace storm {
             V * resultVector;
             V const* vectorX;
             M const* matrixA;
-            
         };
 #endif
         
