@@ -71,7 +71,7 @@ public:
         // Now we need to copy the fraction of the single labelings given by the substates.
         singleLabelings.reserve(apCountMax);
         for (auto const& labeling : atomicPropositionsLabeling.singleLabelings) {
-            singleLabelings.emplace_back(labeling, substates);
+            singleLabelings.emplace_back(labeling % substates);
         }
     }
 

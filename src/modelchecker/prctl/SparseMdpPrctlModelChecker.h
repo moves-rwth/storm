@@ -119,7 +119,7 @@ namespace storm {
                         std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(this->getModel().getNondeterministicChoiceIndices(), statesWithProbabilityGreater0);
                         
                         // Compute the new set of target states in the reduced system.
-                        storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % psiStates;
+                        storm::storage::BitVector rightStatesInReducedSystem = psiStates % statesWithProbabilityGreater0;
                         
                         // Make all rows absorbing that satisfy the second sub-formula.
                         submatrix.makeRowsAbsorbing(rightStatesInReducedSystem, subNondeterministicChoiceIndices);

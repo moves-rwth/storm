@@ -209,10 +209,10 @@ namespace storm {
                         std::vector<ValueType> vAllMarkovian(markovianStates.getNumberOfSetBits());
                         
                         // Create the starting value vectors for the next value iteration based on the results of the previous one.
-                        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, ~markovianStates % goalStates, storm::utility::constGetOne<ValueType>());
-                        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, ~markovianStates % ~goalStates, vProbabilistic);
-                        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, markovianStates % goalStates, storm::utility::constGetOne<ValueType>());
-                        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, markovianStates % ~goalStates, vMarkovian);
+                        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, goalStates % ~markovianStates, storm::utility::constGetOne<ValueType>());
+                        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, ~goalStates % ~markovianStates, vProbabilistic);
+                        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, goalStates % markovianStates, storm::utility::constGetOne<ValueType>());
+                        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, ~goalStates % markovianStates, vMarkovian);
                         
                         // Compute the number of steps to reach the target interval.
                         numberOfSteps = static_cast<uint_fast64_t>(std::ceil(lowerBound / delta));

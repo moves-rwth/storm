@@ -127,7 +127,7 @@ public:
             storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0);
             
             // Compute the new set of target states in the reduced system.
-            storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % psiStates;
+            storm::storage::BitVector rightStatesInReducedSystem = psiStates % statesWithProbabilityGreater0;
             
             // Make all rows absorbing that satisfy the second sub-formula.
             submatrix.makeRowsAbsorbing(rightStatesInReducedSystem);
