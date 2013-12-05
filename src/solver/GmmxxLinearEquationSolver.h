@@ -205,7 +205,7 @@ namespace storm {
 				bool relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
                 
                 // Get a Jacobi decomposition of the matrix A.
-                typename storm::storage::SparseMatrix<Type>::SparseJacobiDecomposition_t jacobiDecomposition = A.getJacobiDecomposition();
+                std::pair<storm::storage::SparseMatrix<Type>, storm::storage::SparseMatrix<Type>> jacobiDecomposition = A.getJacobiDecomposition();
                 
                 // Convert the (inverted) diagonal matrix to gmm++'s format.
                 gmm::csr_matrix<Type>* gmmxxDiagonalInverted = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(std::move(jacobiDecomposition.second));

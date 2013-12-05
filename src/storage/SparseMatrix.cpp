@@ -8,9 +8,12 @@
 #include <iomanip>
 #include <boost/functional/hash.hpp>
 
-#include "gmm/gmm_matrix.h"
-
 #include "src/storage/SparseMatrix.h"
+#include "src/exceptions/InvalidStateException.h"
+
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
 
 namespace storm {
 namespace storage {
@@ -805,7 +808,7 @@ namespace storage {
 	}
 
 	template<typename T>
-	typename SparseMatrix<T>::SparseJacobiDecomposition_t SparseMatrix<T>::getJacobiDecomposition() const {
+	typename std::pair<storm::storage::SparseMatrix<T>, storm::storage::SparseMatrix<T>> SparseMatrix<T>::getJacobiDecomposition() const {
 		uint_fast64_t rowCount = this->getRowCount();
 		uint_fast64_t colCount = this->getColumnCount();
 		if (rowCount != colCount) {
@@ -988,15 +991,6 @@ namespace storage {
 			}
 		}
 		return true;
-	}
-
-	template<typename T>
-	std::string SparseMatrix<T>::toStringCompressed() const {
-		std::stringstream result;
-		result << rowIndications << std::endl;
-		result << columnIndications << std::endl;
-		result << valueStorage << std::endl;
-		return result.str();
 	}
 
 	template<typename T>
