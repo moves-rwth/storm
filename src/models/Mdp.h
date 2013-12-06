@@ -52,7 +52,7 @@ public:
 			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
             boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> const& optionalChoiceLabeling)
 			: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
-		if (!this->checkValidityOfProbabilityMatrix()) {
+        if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
 		}
@@ -216,6 +216,7 @@ private:
 		double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
 		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); row++) {
 			T sum = this->getTransitionMatrix().getRowSum(row);
+                        
 			if (sum == 0) continue;
 			if (std::abs(sum - 1) > precision)  {
 				return false;

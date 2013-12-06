@@ -231,6 +231,7 @@ namespace storm {
                 columnIndications.push_back(column);
                 columnCount = column + 1;
                 rowCount = row + 1;
+                ++currentEntryCount;
             }
         }
         
