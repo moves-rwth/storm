@@ -94,8 +94,7 @@ namespace storm {
                     // Digitize aMarkovian. Based on whether the transition is a self-loop or not, we apply the two digitization rules.
                     uint_fast64_t rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
-                        typename storm::storage::SparseMatrix<ValueType>::MutableRows row = aMarkovian.getMutableRow(rowIndex);
-                        for (auto element : row) {
+                        for (auto& element : aMarkovian.getRow(rowIndex)) {
                             ValueType eTerm = std::exp(-exitRates[state] * delta);
                             if (element.column() == rowIndex) {
                                 element.value() = (storm::utility::constantOne<ValueType>() - eTerm) * element.value() + eTerm;
@@ -109,8 +108,7 @@ namespace storm {
                     // Digitize aMarkovianToProbabilistic. As there are no self-loops in this case, we only need to apply the digitization formula for regular successors.
                     rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
-                        typename storm::storage::SparseMatrix<ValueType>::MutableRows row = aMarkovianToProbabilistic.getMutableRow(rowIndex);
-                        for (auto element : row) {
+                        for (auto element : aMarkovianToProbabilistic.getRow(rowIndex)) {
                             element.value() = (1 - std::exp(-exitRates[state] * delta)) * element.value();
                         }
                         ++rowIndex;
@@ -121,14 +119,13 @@ namespace storm {
                     std::vector<ValueType> bMarkovian(markovianNonGoalStates.getNumberOfSetBits());
                     
                     // Compute the two fixed right-hand side vectors, one for Markovian states and one for the probabilistic ones.
-                    std::vector<ValueType> bProbabilisticFixed = transitionMatrix.getConstrainedRowSumVector(probabilisticNonGoalStates, nondeterministicChoiceIndices, goalStates, aProbabilistic.getRowCount());
+                    std::vector<ValueType> bProbabilisticFixed = transitionMatrix.getConstrainedRowSumVector(probabilisticNonGoalStates, nondeterministicChoiceIndices, goalStates);
                     std::vector<ValueType> bMarkovianFixed;
                     bMarkovianFixed.reserve(markovianNonGoalStates.getNumberOfSetBits());
                     for (auto state : markovianNonGoalStates) {
                         bMarkovianFixed.push_back(storm::utility::constantZero<ValueType>());
                         
-                        typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(nondeterministicChoiceIndices[state]);
-                        for (auto element : row) {
+                        for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
                             if (goalStates.get(element.column())) {
                                 bMarkovianFixed.back() += (1 - std::exp(-exitRates[state] * delta)) * element.value();
                             }

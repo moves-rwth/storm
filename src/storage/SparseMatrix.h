@@ -270,6 +270,16 @@ namespace storm {
             SparseMatrix(SparseMatrix<T>&& other);
             
             /*!
+             * Constructs a sparse matrix by copying the given contents.
+             *
+             * @param columnCount The number of columns of the matrix.
+             * @param rowIndications The row indications vector of the matrix to be constructed.
+             * @param columnIndications The column indications vector of the matrix to be constructed.
+             * @param values The vector containing the values of the entries in the matrix.
+             */
+            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<uint_fast64_t> const& columnIndications, std::vector<T> const& values);
+            
+            /*!
              * Constructs a sparse matrix by moving the given contents.
              *
              * @param columnCount The number of columns of the matrix.
@@ -469,6 +479,11 @@ namespace storm {
             void negateAllNonDiagonalEntries();
             
             /*!
+             * Sets all diagonal elements to zero.
+             */
+            void deleteDiagonalEntries();
+            
+            /*!
              * Calculates the Jacobi decomposition of this sparse matrix. For this operation, the matrix must be square.
              *
              * @return A pair (L+U, D^-1) containing the matrix L+U and the inverted diagonal matrix D^-1.
@@ -592,8 +607,9 @@ namespace storm {
              * @return True iff the current matrix is a submatrix of the given matrix.
              */
             bool isSubmatrixOf(SparseMatrix<T> const& matrix) const;
-                        
-            friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
+            
+            template<typename TPrime>
+            friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
             
             /*!
              * Returns the size of the matrix in memory measured in bytes.

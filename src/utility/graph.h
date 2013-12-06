@@ -81,17 +81,17 @@ namespace storm {
                         stepStack.pop_back();
                     }
                     
-                    for (auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                        if (phiStates.get(*predecessorIt) && (!statesWithProbabilityGreater0.get(*predecessorIt) || (useStepBound && remainingSteps[*predecessorIt] < currentStepBound - 1))) {
+                    for (auto& entry : backwardTransitions.getRow(currentState)) {
+                        if (phiStates.get(entry.column()) && (!statesWithProbabilityGreater0.get(entry.column()) || (useStepBound && remainingSteps[entry.column()] < currentStepBound - 1))) {
                             // If we don't have a bound on the number of steps to take, just add the state to the stack.
                             if (!useStepBound) {
-                                statesWithProbabilityGreater0.set(*predecessorIt, true);
-                                stack.push_back(*predecessorIt);
+                                statesWithProbabilityGreater0.set(entry.column(), true);
+                                stack.push_back(entry.column());
                             } else if (currentStepBound > 0) {
                                 // If there is at least one more step to go, we need to push the state and the new number of steps.
-                                remainingSteps[*predecessorIt] = currentStepBound - 1;
-                                statesWithProbabilityGreater0.set(*predecessorIt, true);
-                                stack.push_back(*predecessorIt);
+                                remainingSteps[entry.column()] = currentStepBound - 1;
+                                statesWithProbabilityGreater0.set(entry.column(), true);
+                                stack.push_back(entry.column());
                                 stepStack.push_back(currentStepBound - 1);
                             }
                         }
@@ -212,17 +212,17 @@ namespace storm {
                         stepStack.pop_back();
                     }
                     
-                    for (auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                        if (phiStates.get(*predecessorIt) && (!statesWithProbabilityGreater0.get(*predecessorIt) || (useStepBound && remainingSteps[*predecessorIt] < currentStepBound - 1))) {
+                    for (auto& entry : backwardTransitions.getRow(currentState)) {
+                        if (phiStates.get(entry.column()) && (!statesWithProbabilityGreater0.get(entry.column()) || (useStepBound && remainingSteps[entry.column()] < currentStepBound - 1))) {
                             // If we don't have a bound on the number of steps to take, just add the state to the stack.
                             if (!useStepBound) {
-                                statesWithProbabilityGreater0.set(*predecessorIt, true);
-                                stack.push_back(*predecessorIt);
+                                statesWithProbabilityGreater0.set(entry.column(), true);
+                                stack.push_back(entry.column());
                             } else if (currentStepBound > 0) {
                                 // If there is at least one more step to go, we need to push the state and the new number of steps.
-                                remainingSteps[*predecessorIt] = currentStepBound - 1;
-                                statesWithProbabilityGreater0.set(*predecessorIt, true);
-                                stack.push_back(*predecessorIt);
+                                remainingSteps[entry.column()] = currentStepBound - 1;
+                                statesWithProbabilityGreater0.set(entry.column(), true);
+                                stack.push_back(entry.column());
                                 stepStack.push_back(currentStepBound - 1);
                             }
                         }
@@ -291,14 +291,14 @@ namespace storm {
                         currentState = stack.back();
                         stack.pop_back();
                         
-                        for(auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                            if (phiStates.get(*predecessorIt) && !nextStates.get(*predecessorIt)) {
+                        for (auto& predecessorEntry : backwardTransitions.getRow(currentState)) {
+                            if (phiStates.get(predecessorEntry.column()) && !nextStates.get(predecessorEntry.column())) {
                                 // Check whether the predecessor has only successors in the current state set for one of the
                                 // nondeterminstic choices.
-                                for (auto row = nondeterministicChoiceIndices[*predecessorIt]; row < nondeterministicChoiceIndices[*predecessorIt + 1]; ++row) {
+                                for (auto row = nondeterministicChoiceIndices[predecessorEntry.column()]; row < nondeterministicChoiceIndices[predecessorEntry.column() + 1]; ++row) {
                                     bool allSuccessorsInCurrentStates = true;
-                                    for (auto targetIt = transitionMatrix.constColumnIteratorBegin(row), targetIte = transitionMatrix.constColumnIteratorEnd(row); targetIt != targetIte; ++targetIt) {
-                                        if (!currentStates.get(*targetIt)) {
+                                    for (auto& targetEntry : transitionMatrix.getRow(row)) {
+                                        if (!currentStates.get(targetEntry.column())) {
                                             allSuccessorsInCurrentStates = false;
                                             break;
                                         }
@@ -308,8 +308,8 @@ namespace storm {
                                     // add it to the set of states for the next iteration and perform a backward search from
                                     // that state.
                                     if (allSuccessorsInCurrentStates) {
-                                        nextStates.set(*predecessorIt, true);
-                                        stack.push_back(*predecessorIt);
+                                        nextStates.set(predecessorEntry.column(), true);
+                                        stack.push_back(predecessorEntry.column());
                                         break;
                                     }
                                 }
@@ -402,15 +402,15 @@ namespace storm {
                         stepStack.pop_back();
                     }
                     
-                    for(auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                        if (phiStates.get(*predecessorIt) && (!statesWithProbabilityGreater0.get(*predecessorIt) || (useStepBound && remainingSteps[*predecessorIt] < currentStepBound - 1))) {
+                    for(auto& predecessorEntry : backwardTransitions.getRow(currentState)) {
+                        if (phiStates.get(predecessorEntry.column()) && (!statesWithProbabilityGreater0.get(predecessorEntry.column()) || (useStepBound && remainingSteps[predecessorEntry.column()] < currentStepBound - 1))) {
                             // Check whether the predecessor has at least one successor in the current state set for every
                             // nondeterministic choice.
                             bool addToStatesWithProbabilityGreater0 = true;
-                            for (auto row = nondeterministicChoiceIndices[*predecessorIt]; row < nondeterministicChoiceIndices[*predecessorIt + 1]; ++row) {
+                            for (auto row = nondeterministicChoiceIndices[predecessorEntry.column()]; row < nondeterministicChoiceIndices[predecessorEntry.column() + 1]; ++row) {
                                 bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
-                                for (auto successorIt = transitionMatrix.constColumnIteratorBegin(row), successorIte = transitionMatrix.constColumnIteratorEnd(row); successorIt != successorIte; ++successorIt) {
-                                    if (statesWithProbabilityGreater0.get(*successorIt)) {
+                                for (auto& successorEntry : transitionMatrix.getRow(row)) {
+                                    if (statesWithProbabilityGreater0.get(successorEntry.column())) {
                                         hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
                                         break;
                                     }
@@ -426,13 +426,13 @@ namespace storm {
                             if (addToStatesWithProbabilityGreater0) {
                                 // If we don't have a bound on the number of steps to take, just add the state to the stack.
                                 if (!useStepBound) {
-                                    statesWithProbabilityGreater0.set(*predecessorIt, true);
-                                    stack.push_back(*predecessorIt);
+                                    statesWithProbabilityGreater0.set(predecessorEntry.column(), true);
+                                    stack.push_back(predecessorEntry.column());
                                 } else if (currentStepBound > 0) {
                                     // If there is at least one more step to go, we need to push the state and the new number of steps.
-                                    remainingSteps[*predecessorIt] = currentStepBound - 1;
-                                    statesWithProbabilityGreater0.set(*predecessorIt, true);
-                                    stack.push_back(*predecessorIt);
+                                    remainingSteps[predecessorEntry.column()] = currentStepBound - 1;
+                                    statesWithProbabilityGreater0.set(predecessorEntry.column(), true);
+                                    stack.push_back(predecessorEntry.column());
                                     stepStack.push_back(currentStepBound - 1);
                                 }
                             }
@@ -502,17 +502,15 @@ namespace storm {
                         currentState = stack.back();
                         stack.pop_back();
                         
-                        for(auto predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                            if (phiStates.get(*predecessorIt) && !nextStates.get(*predecessorIt)) {
+                        for(auto& predecessorEntry : backwardTransitions.getRow(currentState)) {
+                            if (phiStates.get(predecessorEntry.column()) && !nextStates.get(predecessorEntry.column())) {
                                 // Check whether the predecessor has only successors in the current state set for all of the
                                 // nondeterminstic choices.
                                 bool allSuccessorsInCurrentStatesForAllChoices = true;
-                                for (auto row = nondeterministicChoiceIndices[*predecessorIt]; row < nondeterministicChoiceIndices[*predecessorIt + 1]; ++row) {
-                                    for (auto successorIt = transitionMatrix.constColumnIteratorBegin(row), successorIte = transitionMatrix.constColumnIteratorEnd(row); successorIt != successorIte; ++successorIt) {
-                                        if (!currentStates.get(*successorIt)) {
-                                            allSuccessorsInCurrentStatesForAllChoices = false;
-                                            goto afterCheckLoop;
-                                        }
+                                for (auto& successorEntry : transitionMatrix.getRows(nondeterministicChoiceIndices[predecessorEntry.column()], nondeterministicChoiceIndices[predecessorEntry.column() + 1] - 1)) {
+                                    if (!currentStates.get(successorEntry.column())) {
+                                        allSuccessorsInCurrentStatesForAllChoices = false;
+                                        goto afterCheckLoop;
                                     }
                                 }
                                 
@@ -521,8 +519,8 @@ namespace storm {
                                 // add it to the set of states for the next iteration and perform a backward search from
                                 // that state.
                                 if (allSuccessorsInCurrentStatesForAllChoices) {
-                                    nextStates.set(*predecessorIt, true);
-                                    stack.push_back(*predecessorIt);
+                                    nextStates.set(predecessorEntry.column(), true);
+                                    stack.push_back(predecessorEntry.column());
                                 }
                             }
                         }
@@ -541,7 +539,6 @@ namespace storm {
             template <typename T>
             std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
-                
                 result.first = performProb0E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
                 result.second = performProb1A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
                 return result;
@@ -584,7 +581,7 @@ namespace storm {
                 // Prepare the stacks needed for recursion.
                 std::vector<uint_fast64_t> recursionStack;
                 recursionStack.reserve(matrix.getRowCount());
-                std::vector<typename storm::storage::SparseMatrix<T>::ConstIndexIterator> iteratorRecursionStack;
+                std::vector<typename storm::storage::SparseMatrix<T>::const_iterator> iteratorRecursionStack;
                 iteratorRecursionStack.reserve(numberOfStates);
                 
                 // Perform a depth-first search over the given transitions and record states in the reverse order they were visited.
@@ -592,27 +589,23 @@ namespace storm {
                 for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
                     if (!visitedStates.get(state)) {
                         recursionStack.push_back(state);
-                        iteratorRecursionStack.push_back(matrix.constColumnIteratorBegin(state));
+                        iteratorRecursionStack.push_back(matrix.begin(state));
                         
                     recursionStepForward:
                         while (!recursionStack.empty()) {
                             uint_fast64_t currentState = recursionStack.back();
-                            typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = iteratorRecursionStack.back();
+                            typename storm::storage::SparseMatrix<T>::const_iterator successorIterator = iteratorRecursionStack.back();
                             
                             visitedStates.set(currentState, true);
                             
                         recursionStepBackward:
-                            for (; successorIt != matrix.constColumnIteratorEnd(currentState); ++successorIt) {
-                                if (!visitedStates.get(*successorIt)) {
+                            for (; successorIterator != matrix.end(currentState); ++successorIterator) {
+                                if (!visitedStates.get(successorIterator.column())) {
                                     // Put unvisited successor on top of our recursion stack and remember that.
-                                    recursionStack.push_back(*successorIt);
-                                    
-                                    // Save current iterator position so we can continue where we left off later.
-                                    iteratorRecursionStack.pop_back();
-                                    iteratorRecursionStack.push_back(successorIt + 1);
+                                    recursionStack.push_back(successorIterator.column());
                                     
                                     // Also, put initial value for iterator on corresponding recursion stack.
-                                    iteratorRecursionStack.push_back(matrix.constColumnIteratorBegin(*successorIt));
+                                    iteratorRecursionStack.push_back(matrix.begin(successorIterator.column()));
                                     
                                     goto recursionStepForward;
                                 }
@@ -630,7 +623,7 @@ namespace storm {
                             // original recursive call.
                             if (recursionStack.size() > 0) {
                                 currentState = recursionStack.back();
-                                successorIt = iteratorRecursionStack.back();
+                                successorIterator = iteratorRecursionStack.back();
                                 
                                 goto recursionStepBackward;
                             }
@@ -674,7 +667,7 @@ namespace storm {
                 
                 // Set the probability to 1 for all starting states.
 #ifdef LINUX
-					 boost::container::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
+                boost::container::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
 #else
                 std::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
 #endif
@@ -690,7 +683,7 @@ namespace storm {
                     probabilityStateSet.erase(probabilityStateSet.begin());
                     
                     // Now check the new distances for all successors of the current state.
-                    typename storm::storage::SparseMatrix<T>::Rows row = transitions.getRows(probabilityStatePair.second, probabilityStatePair.second);
+                    typename storm::storage::SparseMatrix<T>::Rows row = transitions.getRow(probabilityStatePair.second);
                     for (auto& transition : row) {
                         // Only follow the transition if it lies within the filtered states.
                         if (filterStates != nullptr && filterStates->get(transition.column())) {

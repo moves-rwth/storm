@@ -104,7 +104,6 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type> checkBoundedUntil(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, bool qualitative) const {
-
         std::vector<Type> result(this->getModel().getNumberOfStates());
         
         // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the
@@ -122,7 +121,7 @@ public:
             storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, Type(0.5));
         } else {
             // In this case we have have to compute the probabilities.
-            
+
             // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
             storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0);
             
@@ -192,9 +191,7 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type> checkBoundedEventually(storm::property::prctl::BoundedEventually<Type> const& formula, bool qualitative) const {
-		// Create equivalent temporary bounded until formula and check it.
-		storm::property::prctl::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
-		return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
+        return this->checkBoundedUntil(storm::storage::BitVector(this->getModel().getNumberOfStates(), true), formula.getChild().check(*this), formula.getBound(), qualitative);
 	}
 
 	/*!

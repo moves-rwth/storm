@@ -34,9 +34,9 @@ namespace storm {
                 // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
                 for (auto state : psiStates) {
                     analysisInformation[state] = std::set<uint_fast64_t>();
-                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(state), predecessorIte = backwardTransitions.constColumnIteratorEnd(state); predecessorIt != predecessorIte; ++predecessorIt) {
-                        if (*predecessorIt != state) {
-                            worklist.push(std::make_pair(*predecessorIt, state));
+                    for (auto& predecessorEntry : backwardTransitions.getRow(state)) {
+                        if (predecessorEntry.column() != state) {
+                            worklist.push(std::make_pair(predecessorEntry.column(), state));
                         }
                     }
                 }
@@ -56,8 +56,8 @@ namespace storm {
                         storm::storage::VectorSet<uint_fast64_t> tmpIntersection;
                         bool choiceTargetsTargetState = false;
                         
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
-                            if (*successorIt == targetState) {
+                        for (auto& entry : transitionMatrix.getRow(currentChoice)) {
+                            if (entry.column() == targetState) {
                                 choiceTargetsTargetState = true;
                                 break;
                             }
@@ -76,10 +76,10 @@ namespace storm {
                     // If the analysis information changed, we need to update it and put all the predecessors of this
                     // state in the worklist.
                     if (analysisInformation[currentState].size() != analysisInformationSizeBefore) {
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
+                        for (auto& predecessorEntry : backwardTransitions.getRow(currentState)) {
                             // Only put the predecessor in the worklist if it's not already a target state.
-                            if (!psiStates.get(*predecessorIt)) {
-                                worklist.push(std::make_pair(*predecessorIt, currentState));
+                            if (!psiStates.get(predecessorEntry.column())) {
+                                worklist.push(std::make_pair(predecessorEntry.column(), currentState));
                             }
                         }
                     }

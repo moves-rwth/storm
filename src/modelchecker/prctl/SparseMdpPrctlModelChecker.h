@@ -323,7 +323,7 @@ namespace storm {
                         
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
-                        std::vector<Type> b = transitionMatrix.getConstrainedRowSumVector(maybeStates, nondeterministicChoiceIndices, statesWithProbability1, submatrix.getRowCount());
+                        std::vector<Type> b = transitionMatrix.getConstrainedRowSumVector(maybeStates, nondeterministicChoiceIndices, statesWithProbability1);
                         
                         // Create vector for results for maybe states.
                         std::vector<Type> x(maybeStates.getNumberOfSetBits());

@@ -1,7 +1,6 @@
 #ifndef STORM_UTILITY_VECTOR_H_
 #define STORM_UTILITY_VECTOR_H_
 
-#include "Eigen/Core"
 #include "constants.h"
 #include <iostream>
 #include <algorithm>
@@ -43,21 +42,7 @@ namespace storm {
                     vector[position] = value;
                 }
             }
-            
-            /*!
-             * Sets the provided value at the provided positions in the given vector.
-             *
-             * @param vector The vector in which the value is to be set.
-             * @param positions The positions at which the value is to be set.
-             * @param value The value that is to be set.
-             */
-            template<class T>
-            void setVectorValues(Eigen::Matrix<T, -1, 1, 0, -1, 1>& eigenVector, storm::storage::BitVector const& positions, T value) {
-                for (auto position : positions) {
-                    eigenVector(position, 0) = value;
-                }
-            }
-            
+                        
             /*!
              * Selects the elements from a vector at the specified positions and writes them consecutively into another vector.
              * @param vector The vector into which the selected elements are to be written.

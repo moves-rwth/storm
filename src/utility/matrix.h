@@ -31,13 +31,13 @@ namespace storm {
                         }
                         
                         // If a valid choice for this state is defined, we copy over the corresponding entries.
-                        typename storm::storage::SparseMatrix<T>::Rows selectedRow = transitionMatrix.getRow(choice);
+                        typename storm::storage::SparseMatrix<T>::const_rows selectedRow = transitionMatrix.getRow(choice);
                         for (auto entry : selectedRow) {
-                            result.insertNextValue(state, entry.column(), entry.value());
+                            result.addNextValue(state, entry.column(), entry.value());
                         }
                     } else {
                         // If no valid choice for the state is defined, we insert a self-loop.
-                        result.insertNextValue(state, state, storm::utility::constantOne<T>());
+                        result.addNextValue(state, state, storm::utility::constantOne<T>());
                     }
                 }
                 

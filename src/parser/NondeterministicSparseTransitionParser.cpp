@@ -264,13 +264,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 	 *	Those two values, as well as the number of nonzero elements, was been calculated in the first run.
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << choices << " x " << (maxnode+1) << " with " << nonzero << " entries.");
-	storm::storage::SparseMatrix<double> matrix(choices, maxnode + 1);
-	matrix.initialize(nonzero);
-	if (!matrix.isInitialized()) {
-		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << choices << " x " << (maxnode+1) << ".");
-		throw std::bad_alloc();
-	}
-	
+	storm::storage::SparseMatrix<double> matrix(choices, maxnode + 1, nonzero);
 
 	/*
 	 *	Create row mapping.

@@ -123,9 +123,9 @@ namespace storm {
                     for (uint_fast64_t row = nondeterministicChoiceIndices[state]; row < nondeterministicChoiceIndices[state + 1]; ++row) {
                         bool currentChoiceRelevant = false;
 
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(row); successorIt != transitionMatrix.constColumnIteratorEnd(row); ++successorIt) {
+                        for (auto& entry : transitionMatrix.getRow(row)) {
                             // If there is a relevant successor, we need to add the labels of the current choice.
-                            if (relevancyInformation.relevantStates.get(*successorIt) || psiStates.get(*successorIt)) {
+                            if (relevancyInformation.relevantStates.get(entry.column()) || psiStates.get(entry.column())) {
                                 for (auto const& label : choiceLabeling[row]) {
                                     relevancyInformation.relevantLabels.insert(label);
                                 }
@@ -208,25 +208,25 @@ namespace storm {
                         
                         variableInformation.stateOrderVariables.push_back(context.real_const(variableName.str().c_str()));
                         
-                        for (auto const& relevantChoices : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
-                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(relevantChoices); successorIt != transitionMatrix.constColumnIteratorEnd(relevantChoices); ++successorIt) {
+                        for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
+                            for (auto const& entry : transitionMatrix.getRow(relevantChoice)) {
                                 
                                 // If the successor state is neither the state itself nor an irrelevant state, we need to add a variable for the transition.
-                                if (state != *successorIt && (relevancyInformation.relevantStates.get(*successorIt) || psiStates.get(*successorIt))) {
+                                if (state != entry.column() && (relevancyInformation.relevantStates.get(entry.column()) || psiStates.get(entry.column()))) {
                                     
                                     // Make sure that there is not already one variable for the state pair. This may happen because of several nondeterministic choices
                                     // targeting the same state.
-                                    if (variableInformation.statePairToIndexMap.find(std::make_pair(state, *successorIt)) != variableInformation.statePairToIndexMap.end()) {
+                                    if (variableInformation.statePairToIndexMap.find(std::make_pair(state, entry.column())) != variableInformation.statePairToIndexMap.end()) {
                                         continue;
                                     }
                                     
                                     // At this point we know that the state-pair does not have an associated variable.
-                                    variableInformation.statePairToIndexMap[std::make_pair(state, *successorIt)] = variableInformation.statePairVariables.size();
+                                    variableInformation.statePairToIndexMap[std::make_pair(state, entry.column())] = variableInformation.statePairVariables.size();
                                     
                                     // Clear contents of the stream to construct new expression name.
                                     variableName.clear();
                                     variableName.str("");
-                                    variableName << "t" << state << "_" << *successorIt;
+                                    variableName << "t" << state << "_" << entry.column();
                                     
                                     variableInformation.statePairVariables.push_back(context.bool_const(variableName.str().c_str()));
                                 }
@@ -315,12 +315,12 @@ namespace storm {
                         
                         // Iterate over successors and add relevant choices of relevant successors to the following label set.
                         bool canReachTargetState = false;
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
-                            if (relevancyInformation.relevantStates.get(*successorIt)) {
-                                for (auto relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(*successorIt)) {
+                        for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
+                            if (relevancyInformation.relevantStates.get(entry.column())) {
+                                for (auto relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(entry.column())) {
                                     followingLabels[choiceLabeling[currentChoice]].insert(choiceLabeling[currentChoice]);
                                 }
-                            } else if (psiStates.get(*successorIt)) {
+                            } else if (psiStates.get(entry.column())) {
                                 canReachTargetState = true;
                             }
                         }
@@ -334,12 +334,12 @@ namespace storm {
                     
                     // Iterate over predecessors and add all choices that target the current state to the preceding
                     // label set of all labels of all relevant choices of the current state.
-                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                        if (relevancyInformation.relevantStates.get(*predecessorIt)) {
-                            for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(*predecessorIt)) {
+                    for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
+                        if (relevancyInformation.relevantStates.get(predecessorEntry.column())) {
+                            for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.column())) {
                                 bool choiceTargetsCurrentState = false;
-                                for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(predecessorChoice), successorIte = transitionMatrix.constColumnIteratorEnd(predecessorChoice); successorIt != successorIte; ++successorIt) {
-                                    if (*successorIt == currentState) {
+                                for (auto const& successorEntry : transitionMatrix.getRow(predecessorChoice)) {
+                                    if (successorEntry.column() == currentState) {
                                         choiceTargetsCurrentState = true;
                                     }
                                 }
@@ -580,12 +580,12 @@ namespace storm {
 
                         // Iterate over predecessors and add all choices that target the current state to the preceding
                         // label set of all labels of all relevant choices of the current state.
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(currentState), predecessorIte = backwardTransitions.constColumnIteratorEnd(currentState); predecessorIt != predecessorIte; ++predecessorIt) {
-                            if (relevancyInformation.relevantStates.get(*predecessorIt)) {
-                                for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(*predecessorIt)) {
+                        for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
+                            if (relevancyInformation.relevantStates.get(predecessorEntry.column())) {
+                                for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.column())) {
                                     bool choiceTargetsCurrentState = false;
-                                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(predecessorChoice), successorIte = transitionMatrix.constColumnIteratorEnd(predecessorChoice); successorIt != successorIte; ++successorIt) {
-                                        if (*successorIt == currentState) {
+                                    for (auto const& successorEntry : transitionMatrix.getRow(predecessorChoice)) {
+                                        if (successorEntry.column() == currentState) {
                                             choiceTargetsCurrentState = true;
                                         }
                                     }
@@ -912,17 +912,17 @@ namespace storm {
                     if (!labeledMdp.getInitialStates().get(relevantState)) {
                         // Assert the constraints (1).
                         storm::storage::VectorSet<uint_fast64_t> relevantPredecessors;
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(relevantState), predecessorIte = backwardTransitions.constColumnIteratorEnd(relevantState); predecessorIt != predecessorIte; ++predecessorIt) {
-                            if (relevantState != *predecessorIt && relevancyInformation.relevantStates.get(*predecessorIt)) {
-                                relevantPredecessors.insert(*predecessorIt);
+                        for (auto const& predecessorEntry : backwardTransitions.getRow(relevantState)) {
+                            if (relevantState != predecessorEntry.column() && relevancyInformation.relevantStates.get(predecessorEntry.column())) {
+                                relevantPredecessors.insert(predecessorEntry.column());
                             }
                         }
                         
                         storm::storage::VectorSet<uint_fast64_t> relevantSuccessors;
                         for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(relevantState)) {
-                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(relevantChoice); successorIt != transitionMatrix.constColumnIteratorEnd(relevantChoice); ++successorIt) {
-                                if (relevantState != *successorIt && (relevancyInformation.relevantStates.get(*successorIt) || psiStates.get(*successorIt))) {
-                                    relevantSuccessors.insert(*successorIt);
+                            for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
+                                if (relevantState != successorEntry.column() && (relevancyInformation.relevantStates.get(successorEntry.column()) || psiStates.get(successorEntry.column()))) {
+                                    relevantSuccessors.insert(successorEntry.column());
                                 }
                             }
                         }
@@ -940,9 +940,9 @@ namespace storm {
                         // Assert the constraints (2).
                         storm::storage::VectorSet<uint_fast64_t> relevantSuccessors;
                         for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(relevantState)) {
-                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(relevantChoice); successorIt != transitionMatrix.constColumnIteratorEnd(relevantChoice); ++successorIt) {
-                                if (relevantState != *successorIt && (relevancyInformation.relevantStates.get(*successorIt) || psiStates.get(*successorIt))) {
-                                    relevantSuccessors.insert(*successorIt);
+                            for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
+                                if (relevantState != successorEntry.column() && (relevancyInformation.relevantStates.get(successorEntry.column()) || psiStates.get(successorEntry.column()))) {
+                                    relevantSuccessors.insert(successorEntry.column());
                                 }
                             }
                         }
@@ -964,8 +964,8 @@ namespace storm {
                     // Assert constraint for (1).
                     storm::storage::VectorSet<uint_fast64_t> choicesForStatePair;
                     for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(sourceState)) {
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(relevantChoice); successorIt != transitionMatrix.constColumnIteratorEnd(relevantChoice); ++successorIt) {
-                            if (*successorIt == targetState) {
+                        for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
+                            if (successorEntry.column() == targetState) {
                                 choicesForStatePair.insert(relevantChoice);
                             }
                         }
@@ -1399,14 +1399,14 @@ namespace storm {
                     for (uint_fast64_t currentChoice = nondeterministicChoiceIndices[currentState]; currentChoice < nondeterministicChoiceIndices[currentState + 1]; ++currentChoice) {
                         bool choiceTargetsRelevantState = false;
                         
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
-                            if (relevancyInformation.relevantStates.get(*successorIt) && currentState != *successorIt) {
+                        for (auto const& successorEntry : transitionMatrix.getRow(currentChoice)) {
+                            if (relevancyInformation.relevantStates.get(successorEntry.column()) && currentState != successorEntry.column()) {
                                 choiceTargetsRelevantState = true;
-                                if (!reachableStates.get(*successorIt)) {
-                                    reachableStates.set(*successorIt, true);
-                                    stack.push_back(*successorIt);
+                                if (!reachableStates.get(successorEntry.column())) {
+                                    reachableStates.set(successorEntry.column());
+                                    stack.push_back(successorEntry.column());
                                 }
-                            } else if (psiStates.get(*successorIt)) {
+                            } else if (psiStates.get(successorEntry.column())) {
                                 targetStateIsReachable = true;
                             }
                         }
@@ -1442,8 +1442,8 @@ namespace storm {
                             bool isBorderChoice = false;
 
                             // Determine whether the state has the option to leave the reachable state space and go to the unreachable relevant states.
-                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = originalMdp.getTransitionMatrix().constColumnIteratorBegin(currentChoice), successorIte = originalMdp.getTransitionMatrix().constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
-                                if (unreachableRelevantStates.get(*successorIt)) {
+                            for (auto const& successorEntry : originalMdp.getTransitionMatrix().getRow(currentChoice)) {
+                                if (unreachableRelevantStates.get(successorEntry.column())) {
                                     isBorderChoice = true;
                                 }
                             }
@@ -1525,14 +1525,14 @@ namespace storm {
                     for (uint_fast64_t currentChoice = nondeterministicChoiceIndices[currentState]; currentChoice < nondeterministicChoiceIndices[currentState + 1]; ++currentChoice) {
                         bool choiceTargetsRelevantState = false;
                         
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(currentChoice), successorIte = transitionMatrix.constColumnIteratorEnd(currentChoice); successorIt != successorIte; ++successorIt) {
-                            if (relevancyInformation.relevantStates.get(*successorIt) && currentState != *successorIt) {
+                        for (auto const& successorEntry : transitionMatrix.getRow(currentChoice)) {
+                            if (relevancyInformation.relevantStates.get(successorEntry.column()) && currentState != successorEntry.column()) {
                                 choiceTargetsRelevantState = true;
-                                if (!reachableStates.get(*successorIt)) {
-                                    reachableStates.set(*successorIt, true);
-                                    stack.push_back(*successorIt);
+                                if (!reachableStates.get(successorEntry.column())) {
+                                    reachableStates.set(successorEntry.column(), true);
+                                    stack.push_back(successorEntry.column());
                                 }
-                            } else if (psiStates.get(*successorIt)) {
+                            } else if (psiStates.get(successorEntry.column())) {
                                 targetStateIsReachable = true;
                             }
                         }

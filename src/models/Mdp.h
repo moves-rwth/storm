@@ -144,7 +144,6 @@ public:
         std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = this->getChoiceLabeling();
         
         storm::storage::SparseMatrix<T> transitionMatrix;
-        transitionMatrix.initialize();
         std::vector<uint_fast64_t> nondeterministicChoiceIndices;
         std::vector<storm::storage::VectorSet<uint_fast64_t>> newChoiceLabeling;
         
@@ -161,9 +160,8 @@ public:
                         nondeterministicChoiceIndices.push_back(currentRow);
                     }
                     stateHasValidChoice = true;
-                    typename storm::storage::SparseMatrix<T>::Rows row = this->getTransitionMatrix().getRows(choice, choice);
-                    for (typename storm::storage::SparseMatrix<T>::ConstIterator rowIt = row.begin(), rowIte = row.end(); rowIt != rowIte; ++rowIt) {
-                        transitionMatrix.insertNextValue(currentRow, rowIt.column(), rowIt.value(), true);
+                    for (auto const& entry : this->getTransitionMatrix().getRow(choice)) {
+                        transitionMatrix.addNextValue(currentRow, entry.column(), entry.value());
                     }
                     newChoiceLabeling.emplace_back(choiceLabeling[choice]);
                     ++currentRow;
@@ -173,12 +171,12 @@ public:
             // If no choice of the current state may be taken, we insert a self-loop to the state instead.
             if (!stateHasValidChoice) {
                 nondeterministicChoiceIndices.push_back(currentRow);
-                transitionMatrix.insertNextValue(currentRow, state, storm::utility::constantOne<T>(), true);
+                transitionMatrix.addNextValue(currentRow, state, storm::utility::constantOne<T>());
                 newChoiceLabeling.emplace_back();
                 ++currentRow;
             }
         }
-        transitionMatrix.finalize(true);
+        transitionMatrix.finalize();
         nondeterministicChoiceIndices.push_back(currentRow);
                 
         Mdp<T> restrictedMdp(std::move(transitionMatrix), storm::models::AtomicPropositionsLabeling(this->getStateLabeling()), std::move(nondeterministicChoiceIndices), this->hasStateRewards() ? boost::optional<std::vector<T>>(this->getStateRewardVector()) : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<T>>(this->getTransitionRewardMatrix()) : boost::optional<storm::storage::SparseMatrix<T>>(), boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>(newChoiceLabeling));

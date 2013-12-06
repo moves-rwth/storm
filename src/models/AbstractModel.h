@@ -208,23 +208,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param state The state for which to retrieve the rows.
          * @return An object representing the matrix rows associated with the given state.
          */
-        virtual typename storm::storage::SparseMatrix<T>::Rows getRows(uint_fast64_t state) const = 0;
-    
-        /*!
-         * Returns an iterator to the successors of the given state.
-         *
-         * @param state The state for which to return the iterator.
-         * @return An iterator to the successors of the given state.
-         */
-        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorBegin(uint_fast64_t state) const = 0;
-    
-        /*!
-         * Returns an iterator pointing to the element past the successors of the given state.
-         *
-         * @param state The state for which to return the iterator.
-         * @return An iterator pointing to the element past the successors of the given state.
-         */
-        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorEnd(uint_fast64_t state) const = 0;
+        virtual typename storm::storage::SparseMatrix<T>::const_rows getRows(uint_fast64_t state) const = 0;
         
 		/*!
 		 * Returns the state space size of the model.
@@ -239,7 +223,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return The number of (non-zero) transitions of the model.
 		 */
 		virtual uint_fast64_t getNumberOfTransitions() const {
-			return this->getTransitionMatrix().getNonZeroEntryCount();
+			return this->getTransitionMatrix().getEntryCount();
 		}
 
         /*!
@@ -383,13 +367,13 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 */
 		virtual size_t getHash() const {
 			std::size_t result = 0;
-			boost::hash_combine(result, transitionMatrix.getHash());
+			boost::hash_combine(result, transitionMatrix.hash());
 			boost::hash_combine(result, stateLabeling.getHash());
 			if (stateRewardVector) {
 				boost::hash_combine(result, storm::utility::Hash<T>::getHash(stateRewardVector.get()));
 			}
 			if (transitionRewardMatrix) {
-				boost::hash_combine(result, transitionRewardMatrix.get().getHash());
+				boost::hash_combine(result, transitionRewardMatrix.get().hash());
 			}
 			return result;
 		}

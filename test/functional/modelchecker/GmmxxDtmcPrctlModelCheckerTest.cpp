@@ -116,7 +116,6 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
-
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
 	ASSERT_EQ(dtmc->getNumberOfStates(), 12400ull);

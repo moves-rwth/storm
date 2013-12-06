@@ -159,19 +159,18 @@ public:
 		}
 
 		// 1. Get all necessary information from the old transition matrix
-		storm::storage::SparseMatrix<T> const & origMat = this->getTransitionMatrix();
+		storm::storage::SparseMatrix<T> const& origMat = this->getTransitionMatrix();
 
 		// Iterate over all rows. Count the number of all transitions from the old system to be 
 		// transfered to the new one. Also build a mapping from the state number of the old system 
 		// to the state number of the new system.
 		uint_fast64_t subSysTransitionCount = 0;
-		uint_fast64_t row = 0;
 		uint_fast64_t newRow = 0;
 		std::vector<uint_fast64_t> stateMapping;
-		for(auto iter = origMat.begin(); iter != origMat.end(); ++iter) {
+		for(uint_fast64_t row = 0; row < origMat.getRowCount(); ++row) {
 			if(subSysStates.get(row)){
-				for(auto colIter = iter.begin(); colIter != iter.end(); ++colIter) {
-					if(subSysStates.get(colIter.column())) {
+				for(auto& entry : origMat.getRow(row)) {
+					if(subSysStates.get(entry.column())) {
 						subSysTransitionCount++;	
 					} 
 				}
@@ -180,7 +179,6 @@ public:
 			} else {
 				stateMapping.push_back((uint_fast64_t) -1);
 			}
-			row++;
 		}
 
 		// 2. Construct transition matrix
@@ -188,40 +186,37 @@ public:
 		// Take all states indicated by the vector as well as one additional state s_b as target of
 		// all transitions that target a state that is not kept.
 		uint_fast64_t const newStateCount = subSysStates.getNumberOfSetBits() + 1;
-		storm::storage::SparseMatrix<T> newMat(newStateCount);
 
-		// The number of transitions of the new Dtmc is the number of transitions transfered 
+		// The number of transitions of the new Dtmc is the number of transitions transfered
 		// from the old one plus one transition for each state to s_b.
-		newMat.initialize(subSysTransitionCount + newStateCount);
+		storm::storage::SparseMatrix<T> newMat(newStateCount, subSysTransitionCount + newStateCount);
 
 		// Now fill the matrix.
 		newRow = 0;
-		row = 0;
 		T rest = 0;
-		for(auto iter = origMat.begin(); iter != origMat.end(); ++iter) {
+		for(uint_fast64_t row = 0; row < origMat.getRowCount(); ++row) {
 			if(subSysStates.get(row)){
 				// Transfer transitions
-				for(auto colIter = iter.begin(); colIter != iter.end(); ++colIter) {
-					if(subSysStates.get(colIter.column())) {
-						newMat.addNextValue(newRow, stateMapping[colIter.column()], colIter.value());
+				for(auto& entry : origMat.getRow(row)) {
+					if(subSysStates.get(entry.column())) {
+						newMat.addNextValue(newRow, stateMapping[entry.column()], entry.value());
 					} else {
-						rest += colIter.value();
+						rest += entry.value();
 					}
 				}
 
 				// Insert the transition taking care of the remaining outgoing probability.
 				newMat.addNextValue(newRow, newStateCount - 1, rest);
-				rest = (T) 0;
+				rest = storm::utility::constantZero<T>();
 
 				newRow++;
 			}
-			row++;
 		}
 
 		// Insert last transition: self loop on s_b
-		newMat.addNextValue(newStateCount - 1, newStateCount - 1, (T) 1);
+		newMat.addNextValue(newStateCount - 1, newStateCount - 1, storm::utility::constantOne<T>());
 
-		newMat.finalize(false);
+		newMat.finalize();
 
 		// 3. Take care of the labeling.
 		storm::models::AtomicPropositionsLabeling newLabeling = storm::models::AtomicPropositionsLabeling(this->getStateLabeling(), subSysStates);
@@ -250,27 +245,24 @@ public:
 		boost::optional<storm::storage::SparseMatrix<T>> newTransitionRewards;
 		if(this->hasTransitionRewards()) {
 
-			storm::storage::SparseMatrix<T> newTransRewards(newStateCount);
-			newTransRewards.initialize(subSysTransitionCount + newStateCount);
+			storm::storage::SparseMatrix<T> newTransRewards(newStateCount, subSysTransitionCount + newStateCount);
 
 			// Copy the rewards for the kept states
 			newRow = 0;
-			row = 0;
-			for(auto iter = this->getTransitionRewardMatrix().begin(); iter != this->getTransitionRewardMatrix().end(); ++iter) {
+			for(uint_fast64_t row = 0; row < this->getTransitionRewardMatrix().getRowCount(); ++row) {
 				if(subSysStates.get(row)){
 					// Transfer transition rewards
-					for(auto colIter = iter.begin(); colIter != iter.end(); ++colIter) {
-						if(subSysStates.get(colIter.column())) {
-							newTransRewards.addNextValue(newRow, stateMapping[colIter.column()], colIter.value());
+					for(auto& entry : this->getTransitionRewardMatrix().getRow(row)) {
+						if(subSysStates.get(entry.column())) {
+							newTransRewards.addNextValue(newRow, stateMapping[entry.column()], entry.value());
 						}
 					}
 
 					// Insert the reward (e.g. 0) for the transition taking care of the remaining outgoing probability.
-					newTransRewards.addNextValue(newRow, newStateCount - 1, (T) 0);
+					newTransRewards.addNextValue(newRow, newStateCount - 1, storm::utility::constantZero<T>());
 
 					newRow++;
 				}
-				row++;
 			}
 
 			newTransitionRewards = newTransRewards;

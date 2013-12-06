@@ -91,7 +91,7 @@ namespace storm {
             // all successors of a particular state are considered.
             std::vector<uint_fast64_t> recursionStateStack;
             recursionStateStack.reserve(lowlinks.size());
-            std::vector<typename storm::storage::SparseMatrix<ValueType>::ConstIterator> recursionIteratorStack;
+            std::vector<typename storm::storage::SparseMatrix<ValueType>::const_iterator> recursionIteratorStack;
             recursionIteratorStack.reserve(lowlinks.size());
             std::vector<bool> statesInStack(lowlinks.size());
             
@@ -114,7 +114,7 @@ namespace storm {
         recursionStepForward:
             while (!recursionStateStack.empty()) {
                 uint_fast64_t currentState = recursionStateStack.back();
-                typename storm::storage::SparseMatrix<ValueType>::ConstIterator successorIt = recursionIteratorStack.back();
+                typename storm::storage::SparseMatrix<ValueType>::const_iterator successorIt = recursionIteratorStack.back();
                 
                 // Perform the treatment of newly discovered state as defined by Tarjan's algorithm.
                 visitedStates.set(currentState, true);

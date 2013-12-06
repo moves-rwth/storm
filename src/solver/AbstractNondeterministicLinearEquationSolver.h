@@ -80,8 +80,7 @@ namespace storm {
              * @returns The solution vector x of the system of linear equations as the content of the parameter x.
              */
             virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* multiplyResult = nullptr, std::vector<Type>* newX = nullptr) const {
-//                LOG4CPLUS_INFO(logger, "Starting iterative solver.");
-
+                
                 // Set up the environment for the power method.
                 bool multiplyResultMemoryProvided = true;
                 if (multiplyResult == nullptr) {
@@ -137,14 +136,6 @@ namespace storm {
                 if (!multiplyResultMemoryProvided) {
                     delete multiplyResult;
                 }
-
-//                // Check if the solver converged and issue a warning otherwise.
-//                if (converged) {
-//                    LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
-//                } else {
-//                    LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
-//                }
-
             }
             
         protected:

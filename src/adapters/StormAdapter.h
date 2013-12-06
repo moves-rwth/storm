@@ -33,30 +33,7 @@ public:
 		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros from gmm++ format into Storm.");
 
 		// Prepare the resulting matrix.
-		storm::storage::SparseMatrix<T>* result = new storm::storage::SparseMatrix<T>(matrix.nrows(), matrix.ncols());
-		
-		// Set internal NonZero Counter
-		result->nonZeroEntryCount = realNonZeros;
-		result->setState(result->Initialized);
-
-		if (!result->prepareInternalStorage(false)) {
-			LOG4CPLUS_ERROR(logger, "Unable to allocate internal storage while converting GMM++ Matrix to Storm.");
-			delete result;
-			return nullptr;
-		} else {
-			
-			// Copy Row Indications
-			std::copy(matrix.jc.begin(), matrix.jc.end(), std::back_inserter(result->rowIndications));
-			// Copy Columns Indications
-			std::copy(matrix.ir.begin(), matrix.ir.end(), std::back_inserter(result->columnIndications));
-			// And do the same thing with the actual values.
-			std::copy(matrix.pr.begin(), matrix.pr.end(), std::back_inserter(result->valueStorage));
-
-			result->currentSize = realNonZeros;
-			result->lastRow = matrix.nrows() - 1;
-		}
-
-		result->finalize();
+		storm::storage::SparseMatrix<T>* result = new storm::storage::SparseMatrix<T>(matrix.ncols(), matrix.jc, matrix.ir, matrix.pr);
 
 		LOG4CPLUS_DEBUG(logger, "Done converting matrix to storm format.");
 

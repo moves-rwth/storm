@@ -67,8 +67,7 @@ public:
 						distances[init].second = (T) 1;
 				}
 
-				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(init);
-				for(auto trans = rowIt.begin() ; trans != rowIt.end(); ++trans) {
+				for(auto& trans : transMat.getRow(init)) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
 					if(trans.value() != (T) 0 && !subSysStates.get(trans.column())) {
 						//new state?
@@ -114,8 +113,7 @@ public:
 			// Same goes for forbidden states since they may not be used on a path, except as last node.
 			if(!subSysStates.get(activeState.first) && allowedStates.get(activeState.first)) {
 				// Look at all neighbors
-				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(activeState.first);
-				for(typename storm::storage::SparseMatrix<T>::ConstIterator trans = rowIt.begin(); trans != rowIt.end(); ++trans) {
+				for(auto& trans : transMat.getRow(activeState.first)) {
 					// Only consider the transition if it's not virtual
 					if(trans.value() != (T) 0) {
 
@@ -182,8 +180,7 @@ public:
 						continue;
 				}
 
-				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(init);
-				for(typename storm::storage::SparseMatrix<T>::ConstIterator trans = rowIt.begin(); trans != rowIt.end(); ++trans) {
+				for(auto& trans : transMat.getRow(init)) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
 					if(trans.value() != (T) 0 && !subSysStates.get(trans.column())) {
 						//new state?
@@ -234,8 +231,7 @@ public:
 			// Same goes for forbidden states since they may not be used on a path, except as last node.
 			if(!subSysStates.get(activeState.first) && allowedStates.get(activeState.first)) {
 				// Look at all neighbors
-				typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIt = transMat.begin(activeState.first);
-				for(typename storm::storage::SparseMatrix<T>::ConstIterator trans = rowIt.begin(); trans != rowIt.end(); ++trans) {
+				for(auto& trans : transMat.getRow(activeState.first)) {
 					// Only consider the transition if it's not virtual
 					if(trans.value() != (T) 0) {
 

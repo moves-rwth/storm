@@ -110,18 +110,10 @@ namespace storm {
                 return nondeterministicChoiceIndices;
             }
             
-            virtual typename storm::storage::SparseMatrix<T>::Rows getRows(uint_fast64_t state) const override {
+            virtual typename storm::storage::SparseMatrix<T>::const_rows getRows(uint_fast64_t state) const override {
                 return this->transitionMatrix.getRows(nondeterministicChoiceIndices[state], nondeterministicChoiceIndices[state + 1] - 1);
             }
         
-            virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorBegin(uint_fast64_t state) const override {
-                return this->transitionMatrix.begin(nondeterministicChoiceIndices[state]);
-            }
-    
-            virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorEnd(uint_fast64_t state) const override {
-            return this->transitionMatrix.end(nondeterministicChoiceIndices[state + 1] - 1);
-            }
-
             /*!
              * Retrieves the backward transition relation of the model, i.e. a set of transitions
              * between states that correspond to the reversed transition relation of this model.
@@ -140,7 +132,7 @@ namespace storm {
 
                 // First, we need to count how many backward transitions each state has.
                 for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                    typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(i);
+                    typename storm::storage::SparseMatrix<T>::const_rows rows = this->getRows(i);
                     for (auto const& transition : rows) {
                         if (transition.value() > 0) {
                             ++rowIndications[transition.column() + 1];
@@ -160,7 +152,7 @@ namespace storm {
                 // Now we are ready to actually fill in the list of predecessors for
                 // every state. Again, we start by considering all but the last row.
                 for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                    typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(i);
+                    typename storm::storage::SparseMatrix<T>::const_rows rows = this->getRows(i);
                     for (auto& transition : rows) {
                         if (transition.value() > 0) {
                             values[nextIndices[transition.column()]] = transition.value();
@@ -169,11 +161,7 @@ namespace storm {
                     }
                 }
 
-                storm::storage::SparseMatrix<T> backwardTransitionMatrix(numberOfStates, numberOfStates,
-                                                                         numberOfTransitions,
-                                                                         std::move(rowIndications),
-                                                                         std::move(columnIndications),
-                                                                         std::move(values));
+                storm::storage::SparseMatrix<T> backwardTransitionMatrix(numberOfStates, std::move(rowIndications), std::move(columnIndications), std::move(values));
 
                 return backwardTransitionMatrix;
             }
@@ -209,16 +197,17 @@ namespace storm {
                 AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
     
                 // Write the probability distributions for all the states.
-                auto rowIt = this->transitionMatrix.begin();
                 for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
                     uint_fast64_t rowCount = nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state];
                     bool highlightChoice = true;
         
                     // For this, we need to iterate over all available nondeterministic choices in the current state.
-                    for (uint_fast64_t row = 0; row < rowCount; ++row, ++rowIt) {
+                    for (uint_fast64_t choice = 0; choice < rowCount; ++choice) {
+                        typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(nondeterministicChoiceIndices[state] + choice);
+                        
                         if (scheduler != nullptr) {
                             // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
-                            if ((*scheduler)[state] == row) {
+                            if ((*scheduler)[state] == choice) {
                                 highlightChoice = true;
                             } else {
                                 highlightChoice = false;
@@ -227,7 +216,7 @@ namespace storm {
             
                         // For each nondeterministic choice, we draw an arrow to an intermediate node to better display
                         // the grouping of transitions.
-                        outStream << "\t\"" << state << "c" << row << "\" [shape = \"point\"";
+                        outStream << "\t\"" << state << "c" << choice << "\" [shape = \"point\"";
             
                         // If we were given a scheduler to highlight, we do so now.
                         if (scheduler != nullptr) {
@@ -237,7 +226,7 @@ namespace storm {
                         }
                         outStream << "];" << std::endl;
                         
-                        outStream << "\t" << state << " -> \"" << state << "c" << row << "\"";
+                        outStream << "\t" << state << " -> \"" << state << "c" << choice << "\"";
             
                         // If we were given a scheduler to highlight, we do so now.
                         if (scheduler != nullptr) {
@@ -250,9 +239,9 @@ namespace storm {
                         outStream << ";" << std::endl;
             
                         // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
-                        for (auto transitionIt = rowIt.begin(), transitionIte = rowIt.end(); transitionIt != transitionIte; ++transitionIt) {
-                            if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
-                                outStream << "\t\"" << state << "c" << row << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ]";
+                        for (auto const& transition : row) {
+                            if (subsystem == nullptr || subsystem->get(transition.column())) {
+                                outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.column() << " [ label= \"" << transition.value() << "\" ]";
                                 
                                 // If we were given a scheduler to highlight, we do so now.
                                 if (scheduler != nullptr) {

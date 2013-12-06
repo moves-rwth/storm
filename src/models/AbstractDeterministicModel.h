@@ -71,18 +71,10 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 			// Intentionally left empty.
 		}
     
-        virtual typename storm::storage::SparseMatrix<T>::Rows getRows(uint_fast64_t state) const override {
+        virtual typename storm::storage::SparseMatrix<T>::const_rows getRows(uint_fast64_t state) const override {
             return this->transitionMatrix.getRows(state, state);
         }
     
-        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorBegin(uint_fast64_t state) const override {
-            return this->transitionMatrix.begin(state);
-        }
-    
-        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorEnd(uint_fast64_t state) const override {
-            return this->transitionMatrix.end(state);
-        }
-
 		/*!
 		 * Calculates a hash over all values contained in this Model.
 		 * @return size_t A Hash Value
@@ -97,10 +89,11 @@ class AbstractDeterministicModel: public AbstractModel<T> {
             // Simply iterate over all transitions and draw the arrows with probability information attached.
             auto rowIt = this->transitionMatrix.begin();
             for (uint_fast64_t i = 0; i < this->transitionMatrix.getRowCount(); ++i, ++rowIt) {
-                for (auto transitionIt = rowIt.begin(), transitionIte = rowIt.end(); transitionIt != transitionIte; ++transitionIt) {
-                    if (transitionIt.value() != storm::utility::constantZero<T>()) {
-                        if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
-                            outStream << "\t" << i << " -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ];" << std::endl;
+                typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(i);
+                for (auto& transition : row) {
+                    if (transition.value() != storm::utility::constantZero<T>()) {
+                        if (subsystem == nullptr || subsystem->get(transition.column())) {
+                            outStream << "\t" << i << " -> " << transition.column() << " [ label= \"" << transition.value() << "\" ];" << std::endl;
                         }
                     }
                 }

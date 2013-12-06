@@ -82,8 +82,8 @@ namespace storm {
                             
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 bool choiceContainedInMEC = true;
-                                for (typename storm::storage::SparseMatrix<ValueType>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(choice), successorIte = transitionMatrix.constColumnIteratorEnd(choice); successorIt != successorIte; ++successorIt) {
-                                    if (!scc.contains(*successorIt)) {
+                                for (auto& entry : transitionMatrix.getRow(choice)) {
+                                    if (!scc.contains(entry.column())) {
                                         choiceContainedInMEC = false;
                                         break;
                                     }
@@ -108,9 +108,9 @@ namespace storm {
                         // Now check which states should be reconsidered, because successors of them were removed.
                         statesToCheck.clear();
                         for (auto state : statesToRemove) {
-                            for (typename storm::storage::SparseMatrix<ValueType>::ConstIndexIterator predIt = backwardTransitions.constColumnIteratorBegin(state), predIte = backwardTransitions.constColumnIteratorEnd(state); predIt != predIte; ++predIt) {
-                                if (scc.contains(*predIt)) {
-                                    statesToCheck.set(*predIt);
+                            for (auto& entry : transitionMatrix.getRow(state)) {
+                                if (scc.contains(entry.column())) {
+                                    statesToCheck.set(entry.column());
                                 }
                             }
                         }
@@ -144,8 +144,8 @@ namespace storm {
                     std::vector<uint_fast64_t> containedChoices;
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool choiceContained = true;
-                        for (typename storm::storage::SparseMatrix<ValueType>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(choice), successorIte = transitionMatrix.constColumnIteratorEnd(choice); successorIt != successorIte; ++successorIt) {
-                            if (!mecStateSet.contains(*successorIt)) {
+                        for (auto& entry : transitionMatrix.getRow(choice)) {
+                            if (!mecStateSet.contains(entry.column())) {
                                 choiceContained = false;
                                 break;
                             }
