@@ -376,9 +376,8 @@ namespace storm {
             T getConstrainedRowSum(uint_fast64_t row, storm::storage::BitVector const& columns) const;
             
             /*!
-             * Computes a vector whose i-th entry is the sum of the entries in the i-th row where only those entries are
-             * added that are in selected columns. Likewise, this sum is only computed for selected rows and set to zero
-             * for all unselected rows.
+             * Computes a vector whose i-th entry is the sum of the entries in the i-th selected row where only those
+             * entries are added that are in selected columns.
              *
              * @param rowConstraint A bit vector that indicates for which rows to compute the constrained sum.
              * @param columnConstraint A bit vector that indicates which columns to add in the selected rows.
@@ -397,7 +396,7 @@ namespace storm {
              * @return A vector whose entries represent the sums of selected columns for all rows in selected row
              * groups.
              */
-            std::vector<T> getConstrainedRowSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint, uint_fast64_t numberOfRows) const;
+            std::vector<T> getConstrainedRowSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint) const;
             
             /*!
              * Creates a submatrix of the current matrix by dropping all rows and columns whose bits are not
@@ -447,17 +446,17 @@ namespace storm {
             SparseMatrix getSubmatrix(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = true) const;
             
             /*!
-             * Transforms the matrix into an equation system. That is, it transforms the matrix A into a matrix (1-A).
-             */
-            void convertToEquationSystem();
-            
-            /*!
              * Transposes the matrix.
              *
              * @return A sparse matrix that represents the transpose of this matrix.
              */
             storm::storage::SparseMatrix<T> transpose() const;
             
+            /*!
+             * Transforms the matrix into an equation system. That is, it transforms the matrix A into a matrix (1-A).
+             */
+            void convertToEquationSystem();
+
             /*!
              * Inverts all entries on the diagonal, i.e. sets the diagonal values to one minus their previous value.
              * Requires the matrix to contain each diagonal entry and to be square.
@@ -467,7 +466,7 @@ namespace storm {
             /*!
              * Negates (w.r.t. addition) all entries that are not on the diagonal.
              */
-            void negateAllNonDiagonalentries();
+            void negateAllNonDiagonalEntries();
             
             /*!
              * Calculates the Jacobi decomposition of this sparse matrix. For this operation, the matrix must be square.

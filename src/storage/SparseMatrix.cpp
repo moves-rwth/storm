@@ -323,12 +323,12 @@ namespace storm {
         }
         
         template<typename T>
-        std::vector<T> SparseMatrix<T>::getConstrainedRowSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint, uint_fast64_t numberOfRows) const {
-            std::vector<T> result(numberOfRows);
-            uint_fast64_t currentRowCount = 0;
+        std::vector<T> SparseMatrix<T>::getConstrainedRowSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint) const {
+            std::vector<T> result;
+            result.reserve(rowGroupConstraint.getNumberOfSetBits());
             for (auto rowGroup : rowGroupConstraint) {
                 for (uint_fast64_t row = rowGroupIndices[rowGroup]; row < rowGroupIndices[rowGroup + 1]; ++row) {
-                    result[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
+                    result.push_back(getConstrainedRowSum(row, columnConstraint));
                 }
             }
             return result;
@@ -336,33 +336,28 @@ namespace storm {
         
         template<typename T>
         SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& constraint) const {
-            LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix with " << constraint.getNumberOfSetBits() << " rows.");
-            
-            // Check for valid constraint.
+            // Check whether we select at least some rows and columns.
             if (constraint.getNumberOfSetBits() == 0) {
-                LOG4CPLUS_ERROR(logger, "Trying to create a sub-matrix of size 0.");
-                throw storm::exceptions::InvalidArgumentException("Trying to create a sub-matrix of size 0.");
+                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::getSubmatrix: cannot create empty submatrix.";
             }
             
-            // First, we need to determine the number of non-zero entries of the
-            // sub-matrix.
-            uint_fast64_t subNonZeroEntries = 0;
+            // First, we need to determine the number of entries of the submatrix.
+            uint_fast64_t subEntries = 0;
             for (auto rowIndex : constraint) {
                 for (uint_fast64_t i = rowIndications[rowIndex]; i < rowIndications[rowIndex + 1]; ++i) {
                     if (constraint.get(columnIndications[i])) {
-                        ++subNonZeroEntries;
+                        ++subEntries;
                     }
                 }
             }
             
             // Create and initialize resulting matrix.
-            SparseMatrix result(constraint.getNumberOfSetBits());
-            result.initialize(subNonZeroEntries);
+            SparseMatrix result(constraint.getNumberOfSetBits(), subEntries);
             
-            // Create a temporary vecotr that stores for each index whose bit is set
-            // to true the number of bits that were set before that particular index.
+            // Create a temporary vecotr that stores for each index whose bit is set to true the number of bits that
+            // were set before that particular index.
             std::vector<uint_fast64_t> bitsSetBeforeIndex;
-            bitsSetBeforeIndex.reserve(colCount);
+            bitsSetBeforeIndex.reserve(columnCount);
             
             // Compute the information to fill this vector.
             uint_fast64_t lastIndex = 0;
@@ -375,7 +370,7 @@ namespace storm {
                 ++currentNumberOfSetBits;
             }
             
-            // Copy over selected entries.
+            // Copy over selected entries and use the previously computed vector to get the column offset.
             uint_fast64_t rowCount = 0;
             for (auto rowIndex : constraint) {
                 for (uint_fast64_t i = rowIndications[rowIndex]; i < rowIndications[rowIndex + 1]; ++i) {
@@ -387,9 +382,8 @@ namespace storm {
                 ++rowCount;
             }
             
-            // Finalize sub-matrix and return result.
+            // Finalize submatrix and return result.
             result.finalize();
-            LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
             return result;
         }
         
@@ -400,19 +394,17 @@ namespace storm {
         
         template<typename T>
         SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
-            LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix (of unknown size).");
-            
-            // First, we need to determine the number of non-zero entries and the number of rows of the sub-matrix.
-            uint_fast64_t subNonZeroEntries = 0;
-            uint_fast64_t subRowCount = 0;
+            // First, we need to determine the number of entries and the number of rows of the submatrix.
+            uint_fast64_t subEntries = 0;
+            uint_fast64_t subRows = 0;
             for (auto index : rowGroupConstraint) {
-                subRowCount += rowGroupIndices[index + 1] - rowGroupIndices[index];
+                subRows += rowGroupIndices[index + 1] - rowGroupIndices[index];
                 for (uint_fast64_t i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
                     bool foundDiagonalElement = false;
                     
                     for (uint_fast64_t j = rowIndications[i]; j < rowIndications[i + 1]; ++j) {
                         if (columnConstraint.get(columnIndications[j])) {
-                            ++subNonZeroEntries;
+                            ++subEntries;
                             
                             if (index == columnIndications[j]) {
                                 foundDiagonalElement = true;
@@ -420,28 +412,27 @@ namespace storm {
                         }
                     }
                     
+                    // If requested, we need to reserve one entry more for inserting the diagonal zero entry.
                     if (insertDiagonalEntries && !foundDiagonalElement) {
-                        ++subNonZeroEntries;
+                        ++subEntries;
                     }
                 }
             }
             
-            LOG4CPLUS_DEBUG(logger, "Determined size of submatrix to be " << subRowCount << "x" << rowGroupConstraint.getNumberOfSetBits() << ".");
-            
             // Create and initialize resulting matrix.
-            SparseMatrix result(subRowCount, columnConstraint.getNumberOfSetBits());
-            result.initialize(subNonZeroEntries);
+            SparseMatrix result(subRows, columnConstraint.getNumberOfSetBits(), subEntries);
             
-            // Create a temporary vector that stores for each index whose bit is set
-            // to true the number of bits that were set before that particular index.
+            // Create a temporary vector that stores for each index whose bit is set to true the number of bits that
+            // were set before that particular index.
             std::vector<uint_fast64_t> bitsSetBeforeIndex;
-            bitsSetBeforeIndex.reserve(colCount);
+            bitsSetBeforeIndex.reserve(columnCount);
             
             // Compute the information to fill this vector.
             uint_fast64_t lastIndex = 0;
             uint_fast64_t currentNumberOfSetBits = 0;
             
-            // If we are requested to add missing diagonal entries, we need to make sure the corresponding rows
+            // If we are requested to add missing diagonal entries, we need to make sure the corresponding rows are also
+            // taken.
             storm::storage::BitVector columnBitCountConstraint = columnConstraint;
             if (insertDiagonalEntries) {
                 columnBitCountConstraint |= rowGroupConstraint;
@@ -479,19 +470,15 @@ namespace storm {
                 }
             }
             
-            // Finalize sub-matrix and return result.
             result.finalize();
-            LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
             return result;
         }
         
         template<typename T>
         SparseMatrix<T> SparseMatrix<T>::getSubmatrix(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
-            LOG4CPLUS_DEBUG(logger, "Creating a sub-matrix (of unknown size).");
-            
-            // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for diagonal
-            // entries.
-            uint_fast64_t subNonZeroEntries = 0;
+            // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
+            // diagonal entries if requested.
+            uint_fast64_t subEntries = 0;
             for (uint_fast64_t rowGroupIndex = 0, rowGroupIndexEnd = rowGroupToRowIndexMapping.size(); rowGroupIndex < rowGroupIndexEnd; ++rowGroupIndex) {
                 // Determine which row we need to select from the current row group.
                 uint_fast64_t rowToCopy = rowGroupIndices[rowGroupIndex] + rowGroupToRowIndexMapping[rowGroupIndex];
@@ -502,26 +489,23 @@ namespace storm {
                     if (columnIndications[i] == rowGroupIndex) {
                         foundDiagonalElement = true;
                     }
-                    ++subNonZeroEntries;
+                    ++subEntries;
                 }
                 if (insertDiagonalEntries && !foundDiagonalElement) {
-                    ++subNonZeroEntries;
+                    ++subEntries;
                 }
             }
             
-            LOG4CPLUS_DEBUG(logger, "Determined size of submatrix to be " << (rowGroupIndices.size() - 1) << "x" << colCount << " with " << subNonZeroEntries << " non-zero elements.");
-            
             // Now create the matrix to be returned with the appropriate size.
-            SparseMatrix<T> submatrix(rowGroupIndices.size() - 1, colCount);
-            submatrix.initialize(subNonZeroEntries);
+            SparseMatrix<T> submatrix(rowGroupIndices.size() - 1, columnCount, subEntries);
             
             // Copy over the selected lines from the source matrix.
             for (uint_fast64_t rowGroupIndex = 0, rowGroupIndexEnd = rowGroupToRowIndexMapping.size(); rowGroupIndex < rowGroupIndexEnd; ++rowGroupIndex) {
                 // Determine which row we need to select from the current row group.
                 uint_fast64_t rowToCopy = rowGroupIndices[rowGroupIndex] + rowGroupToRowIndexMapping[rowGroupIndex];
                 
-                // Iterate through that row and copy the entries. This also inserts a zero element on the diagonal if there
-                // is no entry yet.
+                // Iterate through that row and copy the entries. This also inserts a zero element on the diagonal if
+                // there is no entry yet.
                 bool insertedDiagonalElement = false;
                 for (uint_fast64_t i = rowIndications[rowToCopy], rowEnd = rowIndications[rowToCopy + 1]; i < rowEnd; ++i) {
                     if (columnIndications[i] == rowGroupIndex) {
@@ -539,26 +523,19 @@ namespace storm {
             
             // Finalize created matrix and return result.
             submatrix.finalize();
-            LOG4CPLUS_DEBUG(logger, "Done creating sub-matrix.");
             return submatrix;
-        }
-        
-        template<typename T>
-        void SparseMatrix<T>::convertToEquationSystem() {
-            invertDiagonal();
-            negateAllNonDiagonalElements();
         }
         
         template <typename T>
         SparseMatrix<T> SparseMatrix<T>::transpose() const {
             
-            uint_fast64_t rowCount = this->colCount;
-            uint_fast64_t colCount = this->rowCount;
-            uint_fast64_t nonZeroEntryCount = this->nonZeroEntryCount;
+            uint_fast64_t rowCount = this->columnCount;
+            uint_fast64_t columnCount = this->rowCount;
+            uint_fast64_t entryCount = this->nonZeroEntryCount;
             
             std::vector<uint_fast64_t> rowIndications(rowCount + 1);
-            std::vector<uint_fast64_t> columnIndications(nonZeroEntryCount);
-            std::vector<T> values(nonZeroEntryCount, T());
+            std::vector<uint_fast64_t> columnIndications(entryCount);
+            std::vector<T> values(entryCount);
             
             // First, we need to count how many entries each column has.
             for (uint_fast64_t i = 0; i < this->rowCount; ++i) {
@@ -598,6 +575,12 @@ namespace storm {
                                                              std::move(values));
             
             return transposedMatrix;
+        }
+        
+        template<typename T>
+        void SparseMatrix<T>::convertToEquationSystem() {
+            invertDiagonal();
+            negateAllNonDiagonalEntries();
         }
         
         template<typename T>
