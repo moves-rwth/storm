@@ -40,7 +40,7 @@ NondeterministicModelParserResultContainer<double> parseNondeterministicModel(st
 	NondeterministicModelParserResultContainer<double> result(std::move(resultTransitionSystem), std::move(nondeterministicSparseTransitionParserResult.second), std::move(resultLabeling));
 	
 	if (stateRewardFile != "") {
-		result.stateRewards.reset(storm::parser::SparseStateRewardParser(stateCount, stateRewardFile));
+		result.stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile));
 	}
 	if (transitionRewardFile != "") {
 		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(rowCount, stateCount, &result.rowMapping);

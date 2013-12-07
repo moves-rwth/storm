@@ -39,7 +39,7 @@ DeterministicModelParserResultContainer<double> parseDeterministicModel(std::str
 	DeterministicModelParserResultContainer<double> result(std::move(resultTransitionSystem), std::move(resultLabeling));
 
 	if (stateRewardFile != "") {
-		result.stateRewards.reset(storm::parser::SparseStateRewardParser(stateCount, stateRewardFile));
+		result.stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile));
 	}
 	if (transitionRewardFile != "") {
 		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(rowCount, stateCount, nullptr);

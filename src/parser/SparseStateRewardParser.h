@@ -2,18 +2,25 @@
 #define STORM_PARSER_SPARSESTATEREWARDPARSER_H_
 
 #include <cstdint>
-#include "src/parser/Parser.h"
-#include <memory>
 #include <vector>
+#include <string>
 
 namespace storm {
 
 namespace parser {
 
 /*!
- *	@brief Load state reward file and return vector of state rewards.
+ * A class providing the functionality to parse a the state rewards of a model.
  */
-std::vector<double> SparseStateRewardParser(uint_fast64_t stateCount, std::string const &filename);
+class SparseStateRewardParser {
+public:
+
+	/*!
+	 *	@brief Load state reward file and return vector of state rewards.
+	 */
+	static std::vector<double> parseSparseStateReward(uint_fast64_t stateCount, std::string const &filename);
+
+};
 
 } // namespace parser
 

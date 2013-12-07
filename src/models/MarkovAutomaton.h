@@ -182,84 +182,84 @@ namespace storm {
                 return std::shared_ptr<AbstractModel<T>>(new MarkovAutomaton(newTransitionMatrix, this->getStateLabeling(), nondeterministicChoiceIndices, markovianStates, exitRates, this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>()));
             }
         
-        virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
-        AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
-        
-        // Write the probability distributions for all the states.
-        auto rowIt = this->transitionMatrix.begin();
-        for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
-            uint_fast64_t rowCount = this->getNondeterministicChoiceIndices()[state + 1] - this->getNondeterministicChoiceIndices()[state];
-            bool highlightChoice = true;
-            
-            // For this, we need to iterate over all available nondeterministic choices in the current state.
-            for (uint_fast64_t row = 0; row < rowCount; ++row, ++rowIt) {
-                if (scheduler != nullptr) {
-                    // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
-                    if ((*scheduler)[state] == row) {
-                        highlightChoice = true;
-                    } else {
-                        highlightChoice = false;
-                    }
-                }
-                
-                // If it's not a Markovian state or the current row is the first choice for this state, then we
-                // are dealing with a probabilitic choice.
-                if (!markovianStates.get(state) || row != 0) {
-                    // For each nondeterministic choice, we draw an arrow to an intermediate node to better display
-                    // the grouping of transitions.
-                    outStream << "\t\"" << state << "c" << row << "\" [shape = \"point\"";
-                    
-                    // If we were given a scheduler to highlight, we do so now.
-                    if (scheduler != nullptr) {
-                        if (highlightChoice) {
-                            outStream << ", fillcolor=\"red\"";
-                        }
-                    }
-                    outStream << "];" << std::endl;
-                    
-                    outStream << "\t" << state << " -> \"" << state << "c" << row << "\"";
-                    
-                    // If we were given a scheduler to highlight, we do so now.
-                    if (scheduler != nullptr) {
-                        if (highlightChoice) {
-                            outStream << " [color=\"red\", penwidth = 2]";
-                        } else {
-                            outStream << " [style = \"dotted\"]";
-                        }
-                    }
-                    outStream << ";" << std::endl;
-                    
-                    // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
-                    for (auto transitionIt = rowIt.begin(), transitionIte = rowIt.end(); transitionIt != transitionIte; ++transitionIt) {
-                        if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
-                            outStream << "\t\"" << state << "c" << row << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ]";
-                            
-                            // If we were given a scheduler to highlight, we do so now.
-                            if (scheduler != nullptr) {
-                                if (highlightChoice) {
-                                    outStream << " [color=\"red\", penwidth = 2]";
-                                } else {
-                                    outStream << " [style = \"dotted\"]";
-                                }
-                            }
-                            outStream << ";" << std::endl;
-                        }
-                    }
-                    } else {
-                        // In this case we are emitting a Markovian choice, so draw the arrows directly to the target states.
-                        for (auto transitionIt = rowIt.begin(), transitionIte = rowIt.end(); transitionIt != transitionIte; ++transitionIt) {
-                            if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
-                                outStream << "\t\"" << state << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << " (" << this->exitRates[state] << ")\" ]";
-                            }
-                        }
-                    }
-                    }
-                    }
-                    
-                    if (finalizeOutput) {
-                        outStream << "}" << std::endl;
-                    }
-                    }
+			virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
+			AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
+
+			// Write the probability distributions for all the states.
+			auto rowIt = this->transitionMatrix.begin();
+			for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
+				uint_fast64_t rowCount = this->getNondeterministicChoiceIndices()[state + 1] - this->getNondeterministicChoiceIndices()[state];
+				bool highlightChoice = true;
+
+				// For this, we need to iterate over all available nondeterministic choices in the current state.
+				for (uint_fast64_t row = 0; row < rowCount; ++row, ++rowIt) {
+					if (scheduler != nullptr) {
+						// If the scheduler picked the current choice, we will not make it dotted, but highlight it.
+						if ((*scheduler)[state] == row) {
+							highlightChoice = true;
+						} else {
+							highlightChoice = false;
+						}
+					}
+
+					// If it's not a Markovian state or the current row is the first choice for this state, then we
+					// are dealing with a probabilitic choice.
+					if (!markovianStates.get(state) || row != 0) {
+						// For each nondeterministic choice, we draw an arrow to an intermediate node to better display
+						// the grouping of transitions.
+						outStream << "\t\"" << state << "c" << row << "\" [shape = \"point\"";
+
+						// If we were given a scheduler to highlight, we do so now.
+						if (scheduler != nullptr) {
+							if (highlightChoice) {
+								outStream << ", fillcolor=\"red\"";
+							}
+						}
+						outStream << "];" << std::endl;
+
+						outStream << "\t" << state << " -> \"" << state << "c" << row << "\"";
+
+						// If we were given a scheduler to highlight, we do so now.
+						if (scheduler != nullptr) {
+							if (highlightChoice) {
+								outStream << " [color=\"red\", penwidth = 2]";
+							} else {
+								outStream << " [style = \"dotted\"]";
+							}
+						}
+						outStream << ";" << std::endl;
+
+						// Now draw all probabilitic arcs that belong to this nondeterminstic choice.
+						for (auto transitionIt = rowIt.begin(), transitionIte = rowIt.end(); transitionIt != transitionIte; ++transitionIt) {
+							if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
+								outStream << "\t\"" << state << "c" << row << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << "\" ]";
+
+								// If we were given a scheduler to highlight, we do so now.
+								if (scheduler != nullptr) {
+									if (highlightChoice) {
+										outStream << " [color=\"red\", penwidth = 2]";
+									} else {
+										outStream << " [style = \"dotted\"]";
+									}
+								}
+								outStream << ";" << std::endl;
+							}
+						}
+						} else {
+							// In this case we are emitting a Markovian choice, so draw the arrows directly to the target states.
+							for (auto transitionIt = rowIt.begin(), transitionIte = rowIt.end(); transitionIt != transitionIte; ++transitionIt) {
+								if (subsystem == nullptr || subsystem->get(transitionIt.column())) {
+									outStream << "\t\"" << state << "\" -> " << transitionIt.column() << " [ label= \"" << transitionIt.value() << " (" << this->exitRates[state] << ")\" ]";
+								}
+							}
+						}
+					}
+				}
+
+				if (finalizeOutput) {
+					outStream << "}" << std::endl;
+				}
+			}
 		private:
 
             /*!

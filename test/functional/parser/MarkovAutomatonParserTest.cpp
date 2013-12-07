@@ -9,8 +9,13 @@
 #include "storm-config.h"
 #include "src/settings/Settings.h"
 
+#include <cmath>
+#include <vector>
+
 #include "src/parser/MarkovAutomatonSparseTransitionParser.h"
+#include "src/parser/SparseStateRewardParser.h"
 #include "src/parser/Parser.h"
+#include "src/parser/MarkovAutomatonParser.h"
 
 #define STATE_COUNT 6
 #define CHOICE_COUNT 7
@@ -176,3 +181,37 @@ TEST(MarkovAutomatonSparseTransitionParserTest, DeadlockTest) {
 		storm::settings::Settings::getInstance()->set("fixDeadlocks");
 	}
 }*/
+
+double round(double val, int precision)
+{
+    std::stringstream s;
+    s << std::setprecision(precision) << std::setiosflags(std::ios_base::fixed) << val;
+    s >> val;
+    return val;
+}
+
+TEST(SparseStateRewardParserTest, BasicParseTest) {
+
+	// Get the parsing result.
+	std::vector<double> result = storm::parser::SparseStateRewardParser::parseSparseStateReward(100, STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/state_reward_parser_basic.state.rew");
+
+	// Now test if the correct value were parsed.
+	for(int i = 0; i < 100; i++) {
+		ASSERT_EQ(std::round(result[i]) , std::round(2*i + 15/13*i*i - 1.5/(i+0.1) + 15.7));
+	}
+}
+
+TEST(MarkovAutomatonParserTest, BasicParseTest) {
+
+	// Get the parsing result.
+	storm::models::MarkovAutomaton<double> result = storm::parser::MarkovAutomatonParser::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_general_input_01.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/ma_general_input_01.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/ma_general_input_01.state.rew", "");
+
+	// Test sizes and counts.
+	ASSERT_EQ(result.getNumberOfStates(), STATE_COUNT);
+	ASSERT_EQ(result.getNumberOfChoices(), CHOICE_COUNT);
+	ASSERT_EQ(result.getNumberOfTransitions(), 12);
+
+	// Test
+	std::vector<double> rates = result.getExitRates();
+	ASSERT_EQ(rates[0], 2);
+}

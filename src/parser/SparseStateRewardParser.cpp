@@ -7,29 +7,18 @@
 
 #include "src/parser/SparseStateRewardParser.h"
 
-#include <errno.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <locale.h>
 #include <iostream>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <string>
-#include <vector>
-#include <clocale>
 
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
-#include "src/utility/OsDetection.h"
+#include "src/parser/Parser.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
 namespace storm {
-namespace parser {
 
+namespace parser {
 
 /*!
  *	Reads a state reward file and puts the result in a state reward vector.
@@ -38,7 +27,7 @@ namespace parser {
  *	@param filename The filename of the state reward file.
  *	@return The created state reward vector.
  */
-std::vector<double> SparseStateRewardParser(uint_fast64_t stateCount, std::string const & filename) {
+std::vector<double> SparseStateRewardParser::parseSparseStateReward(uint_fast64_t stateCount, std::string const & filename) {
 	// Open file.
 	if (!fileExistsAndIsReadable(filename.c_str())) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
@@ -51,28 +40,27 @@ std::vector<double> SparseStateRewardParser(uint_fast64_t stateCount, std::strin
 	// Create state reward vector with given state count.
 	std::vector<double> stateRewards(stateCount);
 
-	{
-		// Now parse state reward assignments.
-		uint_fast64_t state;
-		double reward;
+	// Now parse state reward assignments.
+	uint_fast64_t state;
+	double reward;
 
-		// Iterate over states.
-		while (buf[0] != '\0') {
-			// Parse state number and reward value.
-			state = checked_strtol(buf, &buf);
-			reward = checked_strtod(buf, &buf);
-			if (reward < 0.0) {
-				LOG4CPLUS_ERROR(logger, "Expected positive reward value but got \"" << reward << "\".");
-				throw storm::exceptions::WrongFormatException() << "State reward file specifies illegal reward value.";
-			}
-
-			stateRewards[state] = reward;
-
-			buf = trimWhitespaces(buf);
+	// Iterate over states.
+	while (buf[0] != '\0') {
+		// Parse state number and reward value.
+		state = checked_strtol(buf, &buf);
+		reward = checked_strtod(buf, &buf);
+		if (reward < 0.0) {
+			LOG4CPLUS_ERROR(logger, "Expected positive reward value but got \"" << reward << "\".");
+			throw storm::exceptions::WrongFormatException() << "State reward file specifies illegal reward value.";
 		}
+
+		stateRewards[state] = reward;
+
+		buf = trimWhitespaces(buf);
 	}
 	return stateRewards;
 }
 
 }  // namespace parser
+
 }  // namespace storm
