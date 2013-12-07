@@ -126,6 +126,11 @@ namespace parser {
 	double checked_strtod(const char* str, char** end);
 	
 	/*!
+	 * @brief Skips all non whitespace characters until the next whitespace.
+	 */
+	char* skipWord(char* buf);
+
+	/*!
 	 *	@brief Skips common whitespaces in a string.
 	 */
 	char* trimWhitespaces(char* buf);

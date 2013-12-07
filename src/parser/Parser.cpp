@@ -60,7 +60,16 @@ bool storm::parser::fileExistsAndIsReadable(const char* fileName) {
 }
 
 /*!
- *	Skips spaces, tabs, newlines and carriage returns. Returns pointer
+ * Skips all numbers, letters and special characters.
+ * Returns a pointer to the first char that is a whitespace.
+ */
+char* storm::parser::skipWord(char* buf){
+	while((*buf != ' ') && (*buf != '\t') && (*buf != '\n') && (*buf != '\r')) buf++;
+	return buf;
+}
+
+/*!
+ *	Skips spaces, tabs, newlines and carriage returns. Returns a pointer
  *	to first char that is not a whitespace.
  *	@param buf String buffer
  *	@return	pointer to first non-whitespace character
@@ -78,7 +87,6 @@ storm::parser::SupportedLineEndingsEnum storm::parser::findUsedLineEndings(std::
 	char* buf = nullptr;
 	char* const bufferEnd = fileMap.dataend;
 
-	bool sawR = false;
 	for (buf = fileMap.data; buf != bufferEnd; ++buf) {
 		if (*buf == '\r') {
 			// check for following \n

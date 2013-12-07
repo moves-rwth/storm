@@ -57,12 +57,12 @@ namespace storm {
                 
                 // Depending on the action name, the choice is either a probabilitic one or a markovian one.
                 bool isMarkovianChoice = false;
-                if (buf[0] == '!') {
+                if (buf[0] == '!' &&  skipWord(buf) - buf == 1) {
                     isMarkovianChoice = true;
-                } else {
+                }else {
                     isMarkovianChoice = false;
                 }
-                ++buf;
+                buf = skipWord(buf);
                 
                 if (isMarkovianChoice) {
                     if (stateHasMarkovianChoice) {
@@ -99,7 +99,7 @@ namespace storm {
                         }
                     } else if (buf[0] == '*') {
                         // As we have encountered a "*", we know that there is an additional successor state for the current choice.
-                        ++buf;
+                        buf= skipWord(buf);
                         
                         // Now we need to read the successor state and check if we already saw a higher state index.
                         target = checked_strtol(buf, &buf);
@@ -180,7 +180,7 @@ namespace storm {
                 
                 // Depending on the action name, the choice is either a probabilitic one or a markovian one.
                 bool isMarkovianChoice = false;
-                if (buf[0] == '!') {
+                if (buf[0] == '!' && skipWord(buf) - buf == 1) {
                     isMarkovianChoice = true;
                     
                     // Mark the current state as a Markovian one.
@@ -209,7 +209,7 @@ namespace storm {
                         hasSuccessorState = true;
                         
                         // As we have encountered a "*", we know that there is an additional successor state for the current choice.
-                        ++buf;
+                        buf = skipWord(buf);
                         
                         // Now we need to read the successor state and check if we already saw a higher state index.
                         target = checked_strtol(buf, &buf);
