@@ -101,25 +101,21 @@ namespace storm {
         }
         
         template<typename T>
-        SparseMatrix<T>::SparseMatrix(uint_fast64_t rows, uint_fast64_t columns, uint_fast64_t entries) : rowCount(rows), columnCount(columns), entryCount(entries), valueStorage(), columnIndications(), rowIndications(), internalStatus(UNINITIALIZED), currentEntryCount(0), lastRow(0), lastColumn(0) {
-            storagePreallocated = rows != 0 && columns != 0 && entries != 0;
+        SparseMatrix<T>::SparseMatrix(uint_fast64_t rows, uint_fast64_t columns, uint_fast64_t entries) : rowCountSet(rows != 0), rowCount(rows), columnCountSet(columns != 0), columnCount(columns), entryCount(entries), storagePreallocated(rows != 0 && columns != 0 && entries != 0), valueStorage(), columnIndications(), rowIndications(), internalStatus(UNINITIALIZED), currentEntryCount(0), lastRow(0), lastColumn(0) {
             prepareInternalStorage();
         }
-        
+                
         template<typename T>
-        SparseMatrix<T>::SparseMatrix(uint_fast64_t size, uint_fast64_t entries) : SparseMatrix(size, size, entries) {
-            // Intentionally left empty.
-        }
-        
-        template<typename T>
-        SparseMatrix<T>::SparseMatrix(SparseMatrix<T> const& other) : rowCount(other.rowCount), columnCount(other.columnCount), entryCount(other.entryCount), storagePreallocated(other.storagePreallocated), valueStorage(other.valueStorage), columnIndications(other.columnIndications), rowIndications(other.rowIndications), internalStatus(other.internalStatus), currentEntryCount(other.currentEntryCount), lastRow(other.lastRow), lastColumn(other.lastColumn) {
+        SparseMatrix<T>::SparseMatrix(SparseMatrix<T> const& other) : rowCountSet(other.rowCountSet), rowCount(other.rowCount), columnCountSet(other.columnCountSet), columnCount(other.columnCount), entryCount(other.entryCount), storagePreallocated(other.storagePreallocated), valueStorage(other.valueStorage), columnIndications(other.columnIndications), rowIndications(other.rowIndications), internalStatus(other.internalStatus), currentEntryCount(other.currentEntryCount), lastRow(other.lastRow), lastColumn(other.lastColumn) {
             // Intentionally left empty.
         }
 
         template<typename T>
-        SparseMatrix<T>::SparseMatrix(SparseMatrix<T>&& other) : rowCount(other.rowCount), columnCount(other.columnCount), entryCount(other.entryCount), storagePreallocated(other.storagePreallocated), valueStorage(std::move(other.valueStorage)), columnIndications(std::move(other.columnIndications)), rowIndications(std::move(other.rowIndications)), internalStatus(other.internalStatus), currentEntryCount(other.currentEntryCount), lastRow(other.lastRow), lastColumn(other.lastColumn) {
+        SparseMatrix<T>::SparseMatrix(SparseMatrix<T>&& other) : rowCountSet(other.rowCountSet), rowCount(other.rowCount), columnCountSet(other.columnCountSet), columnCount(other.columnCount), entryCount(other.entryCount), storagePreallocated(other.storagePreallocated), valueStorage(std::move(other.valueStorage)), columnIndications(std::move(other.columnIndications)), rowIndications(std::move(other.rowIndications)), internalStatus(other.internalStatus), currentEntryCount(other.currentEntryCount), lastRow(other.lastRow), lastColumn(other.lastColumn) {
             // Now update the source matrix
+            other.rowCountSet = false;
             other.rowCount = 0;
+            other.columnCountSet = false;
             other.columnCount = 0;
             other.entryCount = 0;
             other.storagePreallocated = false;
@@ -143,7 +139,9 @@ namespace storm {
         SparseMatrix<T>& SparseMatrix<T>::operator=(SparseMatrix<T> const& other) {
             // Only perform assignment if source and target are not the same.
             if (this != &other) {
+                rowCountSet = other.rowCountSet;
                 rowCount = other.rowCount;
+                columnCountSet = other.columnCountSet;
                 columnCount = other.columnCount;
                 entryCount = other.entryCount;
                 
@@ -164,7 +162,9 @@ namespace storm {
         SparseMatrix<T>& SparseMatrix<T>::operator=(SparseMatrix<T>&& other) {
             // Only perform assignment if source and target are not the same.
             if (this != &other) {
+                rowCountSet = other.rowCountSet;
                 rowCount = other.rowCount;
+                columnCountSet = other.columnCountSet;
                 columnCount = other.columnCount;
                 entryCount = other.entryCount;
                 
@@ -187,8 +187,16 @@ namespace storm {
             // differently.
             if (storagePreallocated) {
                 // Check whether the given row and column positions are valid and throw error otherwise.
-                if (row > rowCount || column > columnCount) {
+                if (row >= rowCount || column >= columnCount) {
                     throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::addNextValue: adding entry at out-of-bounds position (" << row << ", " << column << ") in matrix of size (" << rowCount << ", " << columnCount << ").";
+                }
+            } else if (rowCountSet) {
+                if (row >= rowCount) {
+                    throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::addNextValue: adding entry at out-of-bounds row " << row << " in matrix with " << rowCount << " rows.";
+                }
+            } else if (columnCountSet) {
+                if (column >= columnCount) {
+                    throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::addNextValue: adding entry at out-of-bounds column " << column << " in matrix with " << columnCount << " columns.";
                 }
             }
             
@@ -225,18 +233,21 @@ namespace storm {
             if (storagePreallocated) {
                 valueStorage[currentEntryCount] = value;
                 columnIndications[currentEntryCount] = column;
-                ++currentEntryCount;
             } else {
                 valueStorage.push_back(value);
                 columnIndications.push_back(column);
-                columnCount = column + 1;
-                rowCount = row + 1;
-                ++currentEntryCount;
+                if (!columnCountSet) {
+                    columnCount = column + 1;
+                }
+                if (!rowCountSet) {
+                    rowCount = row + 1;
+                }
             }
+            ++currentEntryCount;
         }
         
         template<typename T>
-        void SparseMatrix<T>::finalize() {
+        void SparseMatrix<T>::finalize(uint_fast64_t overriddenRowCount, uint_fast64_t overridenColumnCount) {
             // Check whether it's safe to finalize the matrix and throw error otherwise.
             if (internalStatus == INITIALIZED) {
                 throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::finalize: finalizing an initialized matrix is forbidden.";
@@ -249,6 +260,9 @@ namespace storm {
                         rowIndications[i] = currentEntryCount;
                     }
                 } else {
+                    if (!rowCountSet) {
+                        rowCount = std::max(overriddenRowCount, rowCount);
+                    }
                     for (uint_fast64_t i = lastRow + 1; i < rowCount; ++i) {
                         rowIndications.push_back(currentEntryCount);
                     }
@@ -258,11 +272,15 @@ namespace storm {
                 // as now the indices of row i are always between rowIndications[i] and rowIndications[i + 1], also for
                 // the first and last row.
                 if (storagePreallocated) {
-                    rowIndications[rowCount] = entryCount;
+                    rowIndications[rowCount] = currentEntryCount;
                 } else {
-                    rowIndications.push_back(entryCount);
+                    rowIndications.push_back(currentEntryCount);
+                    if (!columnCountSet) {
+                        columnCount = std::max(columnCount, overridenColumnCount);
+                    }
                 }
 
+                entryCount = currentEntryCount;
                 internalStatus = INITIALIZED;
             }
         }
@@ -383,7 +401,7 @@ namespace storm {
             }
             
             // Create and initialize resulting matrix.
-            SparseMatrix result(constraint.getNumberOfSetBits(), subEntries);
+            SparseMatrix result(constraint.getNumberOfSetBits(), constraint.getNumberOfSetBits(), subEntries);
             
             // Create a temporary vecotr that stores for each index whose bit is set to true the number of bits that
             // were set before that particular index.
@@ -834,7 +852,7 @@ namespace storm {
         }
         
         template<typename T>
-        bool SparseMatrix<T>::isSubmatrixOf(SparseMatrix<T> const& matrix) const {
+        bool SparseMatrix<T>::isSubmatrixOf(SparseMatrix<T> const& matrix) const {            
             // Check for matching sizes.
             if (this->getRowCount() != matrix.getRowCount()) return false;
             if (this->getColumnCount() != matrix.getColumnCount()) return false;
@@ -914,6 +932,8 @@ namespace storm {
                 valueStorage = std::vector<T>(entryCount, storm::utility::constantZero<T>());
                 columnIndications = std::vector<uint_fast64_t>(entryCount, 0);
                 rowIndications = std::vector<uint_fast64_t>(rowCount + 1, 0);
+            } else {
+                rowIndications.push_back(0);
             }
         }
         

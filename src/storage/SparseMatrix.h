@@ -245,16 +245,8 @@ namespace storm {
              * @param columns The number of columns of the matrix.
              * @param entries The number of entries of the matrix.
              */
-            SparseMatrix(uint_fast64_t rows, uint_fast64_t columns, uint_fast64_t entries);
-            
-            /*!
-             * Constructs a square sparse matrix object with the given number rows and entries.
-             *
-             * @param size The number of rows and columns of the matrix.
-             * @param entries The number of entries of the matrix.
-             */
-            SparseMatrix(uint_fast64_t size = 0, uint_fast64_t entries = 0);
-            
+            SparseMatrix(uint_fast64_t rows = 0, uint_fast64_t columns = 0, uint_fast64_t entries = 0);
+                        
             /*!
              * Constructs a sparse matrix by performing a deep-copy of the given matrix.
              *
@@ -316,13 +308,23 @@ namespace storm {
              * @param column The column in which the matrix entry is to be set.
              * @param value The value that is to be set at the specified row and column.
              */
-            void addNextValue(uint_fast64_t row, uint_fast64_t column,	T const& value);
+            void addNextValue(uint_fast64_t row, uint_fast64_t column,T const& value);
             
             /*
              * Finalizes the sparse matrix to indicate that initialization process has been completed and the matrix
              * may now be used. This must be called after all entries have been added to the matrix via addNextValue.
+             *
+             * @param overriddenRowCount If this is set to a value that is greater than the current number of rows,
+             * this will cause the finalize method to add empty rows at the end of the matrix until the given row count
+             * has been matched. Note that this will *not* override the row count that has been given upon construction
+             * (if any), but will only take effect if the matrix has been created without the number of rows given.
+             * @param overriddenColumnCount If this is set to a value that is greater than the current number of columns,
+             * this will cause the finalize method to set the number of columns to the given value. Note that this will
+             * *not* override the column count that has been given upon construction (if any), but will only take effect
+             * if the matrix has been created without the number of columns given. By construction, the matrix will have
+             * no entries in the columns that have been added this way.
              */
-            void finalize();
+            void finalize(uint_fast64_t overriddenRowCount = 0, uint_fast64_t overriddenColumnCount = 0);
             
             /*!
              * Returns the number of rows of the matrix.
@@ -633,9 +635,15 @@ namespace storm {
              */
             void prepareInternalStorage();
 
+            // A flag indicating whether the number of rows was set upon construction.
+            bool rowCountSet;
+
             // The number of rows of the matrix.
             uint_fast64_t rowCount;
             
+            // A flag indicating whether the number of columns was set upon construction.
+            bool columnCountSet;
+
             // The number of columns of the matrix.
             uint_fast64_t columnCount;
             

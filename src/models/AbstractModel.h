@@ -160,8 +160,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             }
             
             // The resulting sparse matrix will have as many rows/columns as there are blocks in the partition.
-            storm::storage::SparseMatrix<T> dependencyGraph(numberOfStates);
-            dependencyGraph.initialize();
+            storm::storage::SparseMatrix<T> dependencyGraph(numberOfStates, numberOfStates);
             
             for (uint_fast64_t currentBlockIndex = 0; currentBlockIndex < decomposition.size(); ++currentBlockIndex) {
                 // Get the next block.
@@ -170,9 +169,8 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 // Now, we determine the blocks which are reachable (in one step) from the current block.
                 storm::storage::VectorSet<uint_fast64_t> allTargetBlocks;
                 for (auto state : block) {
-                    typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(state);
-                    for (auto& transition : rows) {
-                        uint_fast64_t targetBlock = stateToBlockMap[transition.column()];
+                    for (auto const& transitionEntry : this->getRows(state)) {
+                        uint_fast64_t targetBlock = stateToBlockMap[transitionEntry.column()];
                         
                         // We only need to consider transitions that are actually leaving the SCC.
                         if (targetBlock != currentBlockIndex) {
@@ -183,7 +181,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 
                 // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
                 for (auto targetBlock : allTargetBlocks) {
-                    dependencyGraph.insertNextValue(currentBlockIndex, targetBlock, true);
+                    dependencyGraph.addNextValue(currentBlockIndex, targetBlock, storm::utility::constantOne<T>());
                 }
             }
             

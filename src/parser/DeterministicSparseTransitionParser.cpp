@@ -201,7 +201,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 	 *	The number of non-zero elements is computed by firstPass().
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxStateId+1) << " x " << (maxStateId+1) << ".");
-	storm::storage::SparseMatrix<double> resultMatrix(maxStateId + 1, nonZeroEntryCount);
+	storm::storage::SparseMatrix<double> resultMatrix(maxStateId + 1, maxStateId + 1, nonZeroEntryCount);
 
 	int_fast64_t row, lastRow = -1, col;
 	double val;

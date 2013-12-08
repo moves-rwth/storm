@@ -101,7 +101,7 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     storm::storage::SparseMatrix<double> sccDependencyGraph(std::move(dtmc->extractPartitionDependencyGraph(sccDecomposition)));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1371253ull);
+    ASSERT_EQ(sccDependencyGraph.getEntryCount(), 1371253ull);
     
     dtmc = nullptr;
     
@@ -118,7 +118,7 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     sccDependencyGraph = std::move(dtmc2->extractPartitionDependencyGraph(sccDecomposition));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1535367ull);
+    ASSERT_EQ(sccDependencyGraph.getEntryCount(), 1535367ull);
     
     dtmc2 = nullptr;
     
@@ -135,7 +135,7 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     sccDependencyGraph = std::move(mdp->extractPartitionDependencyGraph(sccDecomposition));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 489918ull);
+    ASSERT_EQ(sccDependencyGraph.getEntryCount(), 489918ull);
     
     mdp = nullptr;
     
@@ -152,7 +152,7 @@ TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
     sccDependencyGraph = std::move(mdp2->extractPartitionDependencyGraph(sccDecomposition));
     LOG4CPLUS_WARN(logger, "Done.");
     
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 7888ull);
+    ASSERT_EQ(sccDependencyGraph.getEntryCount(), 7888ull);
 
     mdp2 = nullptr;
 }

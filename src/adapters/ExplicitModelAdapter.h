@@ -637,7 +637,7 @@ namespace storm {
                 
                 // Finalize the resulting matrices.
                 modelComponents.transitionMatrix.finalize();
-                modelComponents.transitionRewardMatrix.finalize();
+                modelComponents.transitionRewardMatrix.finalize(modelComponents.transitionMatrix.getRowCount());
                 
                 // Now build the state labeling.
                 modelComponents.stateLabeling = buildStateLabeling(program, variableInformation, stateInformation);
