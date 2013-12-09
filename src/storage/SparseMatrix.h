@@ -68,88 +68,8 @@ namespace storm {
             friend class tbbHelper_MatrixRowVectorScalarProduct;
 #endif
             
-            /*!
-             * A class representing an iterator over consecutive entries of the matrix. If the value type is const,
-             * then the values cannot be changed by an iterator. If the value type is not const, the value of an entry
-             * may be changed, but the column value not. This is due to the internal representation of the matrix,
-             * which would break down when arbitrarily changing column values.
-             */
-            template<typename ValueType>
-            class BaseIterator : std::iterator<std::input_iterator_tag, ValueType> {
-            public:
-                /*!
-                 * Constructs an iterator point to the given value and column entry.
-                 *
-                 * @param valuePtr A pointer to the value of the first entry of the iterator range.
-                 * @param columnPtr A pointer to the column of the first entry of the iterator range.
-                 */
-                BaseIterator(ValueType* valuePtr, uint_fast64_t const* columnPtr);
-                
-                /*!
-                 * Constructs an iterator that points to the same entry as the given iterator.
-                 */
-                BaseIterator(BaseIterator<ValueType> const& other);
-                
-                /*!
-                 * Assigns the position of the given iterator to the current iterator.
-                 *
-                 * @return A reference to the iterator itself.
-                 */
-                BaseIterator& operator=(BaseIterator<ValueType> const& other);
-                
-                /*!
-                 * Moves the iterator to the next entry.
-                 *
-                 * @return A reference to the iterator itself.
-                 */
-                BaseIterator& operator++();
-                
-                /*!
-                 * Dereferences the iterator by returning a reference to itself. This is needed for making use of the
-                 * range-based for loop over transitions.
-                 *
-                 * @return A reference to the iterator itself.
-                 */
-                BaseIterator& operator*();
-                
-                /*!
-                 * Compares the two iterators for inequality.
-                 *
-                 * @return True iff the given iterator points to different entries.
-                 */
-                bool operator!=(BaseIterator const& other) const;
-                
-                /*!
-                 * Compares the two iterators for equality.
-                 *
-                 * @return True iff the given iterator points to the same entry.
-                 */
-                bool operator==(BaseIterator<ValueType> const& other) const;
-                
-                /*!
-                 * Retrieves the column that is associated with the entry to which this iterator points.
-                 *
-                 * @return The column of the entry to which this iterator points.
-                 */
-                uint_fast64_t column() const;
-                
-                /*!
-                 * Retrieves the value of the entry to which this iterator points.
-                 *
-                 * @return The value of the entry to which this iterator points.
-                 */
-                ValueType& value() const;
-                
-            private:
-                // A pointer to the value of the current non-zero entry.
-                ValueType* valuePtr;
-                
-                // A pointer to the column of the current non-zero entry.
-                uint_fast64_t const* columnPtr;
-            };
-            
-            typedef BaseIterator<T> iterator;
-            typedef BaseIterator<T const> const_iterator;
+            typedef typename std::vector<std::pair<uint_fast64_t, T>>::iterator iterator;
+            typedef typename std::vector<std::pair<uint_fast64_t, T>>::const_iterator const_iterator;
             
             /*!
              * This class represents a number of consecutive rows of the matrix.
@@ -160,11 +80,10 @@ namespace storm {
                  * Constructs an object that represents the rows defined by the value of the first entry, the column
                  * of the first entry and the number of entries in this row set.
                  *
-                 * @param valuePtr A pointer to the value of the first entry of the rows.
-                 * @param columnPtr A pointer to the column of the first entry of the rows.
+                 * @param columnAndValuePtr A pointer to the columnd and value of the first entry of the rows.
                  * @param entryCount The number of entrys in the rows.
                  */
-                rows(T* valuePtr, uint_fast64_t const* columnPtr, uint_fast64_t entryCount);
+                rows(std::pair<uint_fast64_t, T>* columnAndValuePtr, uint_fast64_t entryCount);
                 
                 /*!
                  * Retrieves an iterator that points to the beginning of the rows.
@@ -181,11 +100,8 @@ namespace storm {
                 iterator end();
                 
             private:
-                // The pointer to the value of the first entry.
-                T* valuePtr;
-                
-                // The pointer to the column of the first entry.
-                uint_fast64_t const* columnPtr;
+                // The pointer to the columnd and value of the first entry.
+                std::pair<uint_fast64_t, T>* columnAndValuePtr;
                 
                 // The number of non-zero entries in the rows.
                 uint_fast64_t entryCount;
@@ -200,11 +116,10 @@ namespace storm {
                  * Constructs an object that represents the rows defined by the value of the first entry, the column
                  * of the first entry and the number of entries in this row set.
                  *
-                 * @param valuePtr A pointer to the value of the first entry of the rows.
-                 * @param columnPtr A pointer to the column of the first entry of the rows.
+                 * @param columnAndValuePtr A pointer to the columnd and value of the first entry of the rows.
                  * @param entryCount The number of entrys in the rows.
                  */
-                const_rows(T const* valuePtr, uint_fast64_t const* columnPtr, uint_fast64_t entryCount);
+                const_rows(std::pair<uint_fast64_t, T> const* columnAndValuePtr, uint_fast64_t entryCount);
                 
                 /*!
                  * Retrieves an iterator that points to the beginning of the rows.
@@ -221,11 +136,8 @@ namespace storm {
                 const_iterator end() const;
                 
             private:
-                // The pointer to the value of the first entry.
-                T const* valuePtr;
-                
-                // The pointer to the column of the first entry.
-                uint_fast64_t const* columnPtr;
+                // The pointer to the columnd and value of the first entry.
+                std::pair<uint_fast64_t, T> const* columnAndValuePtr;
                 
                 // The number of non-zero entries in the rows.
                 uint_fast64_t entryCount;
@@ -266,6 +178,15 @@ namespace storm {
              *
              * @param columnCount The number of columns of the matrix.
              * @param rowIndications The row indications vector of the matrix to be constructed.
+             * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
+             */
+            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<std::pair<uint_fast64_t, T>> const& columnsAndValues);
+
+            /*!
+             * Constructs a sparse matrix by copying the given contents.
+             *
+             * @param columnCount The number of columns of the matrix.
+             * @param rowIndications The row indications vector of the matrix to be constructed.
              * @param columnIndications The column indications vector of the matrix to be constructed.
              * @param values The vector containing the values of the entries in the matrix.
              */
@@ -281,6 +202,15 @@ namespace storm {
              */
             SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<uint_fast64_t>&& columnIndications, std::vector<T>&& values);
             
+            /*!
+             * Constructs a sparse matrix by moving the given contents.
+             *
+             * @param columnCount The number of columns of the matrix.
+             * @param rowIndications The row indications vector of the matrix to be constructed.
+             * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
+             */
+            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<std::pair<uint_fast64_t, T>>&& columnsAndValues);
+
             /*!
              * Assigns the contents of the given matrix to the current one by deep-copying its contents.
              *
@@ -666,11 +596,8 @@ namespace storm {
             // Stores whether the storage of the matrix was preallocated or not.
             bool storagePreallocated;
             
-            // The storage for the values of all entries in the matrix.
-            std::vector<T> valueStorage;
-            
-            // Stores the column for each entry of the matrix.
-            std::vector<uint_fast64_t> columnIndications;
+            // The storage for the columns and values of all entries in the matrix.
+            std::vector<std::pair<uint_fast64_t, T>> columnsAndValues;
             
             // A vector containing the indices at which each given row begins. This index is to be interpreted as an
             // index in the valueStorage and the columnIndications vectors. Put differently, the values of the entries
