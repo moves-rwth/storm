@@ -182,7 +182,57 @@ namespace storm {
         }
         
         template<typename T>
+        bool SparseMatrix<T>::operator==(SparseMatrix<T> const& other) const {
+            if (this == &other) {
+                return true;
+            }
+            
+            if (this->isInitialized() != other.isInitialized()) {
+                return false;
+            }
+            
+            bool equalityResult = true;
+            
+            // If the matrix is initialized, we only care about the contents and not the auxiliary members.
+            if (!this->isInitialized()) {
+                equalityResult &= rowCountSet == other.rowCountSet;
+                equalityResult &= columnCountSet == other.columnCountSet;
+                equalityResult &= internalStatus == other.internalStatus;
+                equalityResult &= currentEntryCount == other.currentEntryCount;
+                equalityResult &= lastRow == other.lastRow;
+                equalityResult &= lastColumn == other.lastColumn;
+            }
+            
+            equalityResult &= rowCount == other.rowCount;
+            equalityResult &= columnCount == other.columnCount;
+            
+            // For the actual contents, we need to do a little bit more work, because we want to ignore elements that
+            // are set to zero, please they may be represented implicitly in the other matrix.
+            for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
+                for (uint_fast64_t elem = rowIndications[row], elem2 = other.rowIndications[row]; elem < rowIndications[row + 1] && elem2 < other.rowIndications[row + 1]; ++elem, ++elem2) {
+                    // Skip over all zero entries in both matrices.
+                    while (elem < rowIndications[row + 1] && valueStorage[elem] == storm::utility::constantZero<T>()) {
+                        ++elem;
+                    }
+                    while (elem2 < other.rowIndications[row + 1] && other.valueStorage[elem2] == storm::utility::constantZero<T>()) {
+                        ++elem2;
+                    }
+                    if ((elem == rowIndications[row + 1]) ^ (elem2 == other.rowIndications[row + 1]) || columnIndications[elem] != other.columnIndications[elem2] || valueStorage[elem] != other.valueStorage[elem2]) {
+                        equalityResult = false;
+                        break;
+                    }
+                }
+            }
+
+            return equalityResult;
+        }
+        
+        template<typename T>
         void SparseMatrix<T>::addNextValue(uint_fast64_t row, uint_fast64_t column, T const& value) {
+            if (this->isInitialized()) {
+                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::addNextValue: adding an entry to an already initialized matrix.";
+            }
+            
             // Depending on whether the internal data storage was preallocated or not, adding the value is done somewhat
             // differently.
             if (storagePreallocated) {
@@ -190,13 +240,16 @@ namespace storm {
                 if (row >= rowCount || column >= columnCount) {
                     throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::addNextValue: adding entry at out-of-bounds position (" << row << ", " << column << ") in matrix of size (" << rowCount << ", " << columnCount << ").";
                 }
-            } else if (rowCountSet) {
-                if (row >= rowCount) {
-                    throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::addNextValue: adding entry at out-of-bounds row " << row << " in matrix with " << rowCount << " rows.";
+            } else {
+                if (rowCountSet) {
+                    if (row >= rowCount) {
+                        throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::addNextValue: adding entry at out-of-bounds row " << row << " in matrix with " << rowCount << " rows.";
+                    }
                 }
-            } else if (columnCountSet) {
-                if (column >= columnCount) {
-                    throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::addNextValue: adding entry at out-of-bounds column " << column << " in matrix with " << columnCount << " columns.";
+                if (columnCountSet) {
+                    if (column >= columnCount) {
+                        throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::addNextValue: adding entry at out-of-bounds column " << column << " in matrix with " << columnCount << " columns.";
+                    }
                 }
             }
             
@@ -249,8 +302,8 @@ namespace storm {
         template<typename T>
         void SparseMatrix<T>::finalize(uint_fast64_t overriddenRowCount, uint_fast64_t overridenColumnCount) {
             // Check whether it's safe to finalize the matrix and throw error otherwise.
-            if (internalStatus == INITIALIZED) {
-                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::finalize: finalizing an initialized matrix is forbidden.";
+            if (this->isInitialized()) {
+                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::finalize: matrix has already been initialized.";
             } else if (storagePreallocated && currentEntryCount != entryCount) {
                 throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::finalize: expected " << entryCount << " entries, but got " << currentEntryCount << " instead.";
             } else {
@@ -287,26 +340,30 @@ namespace storm {
         
         template<typename T>
         uint_fast64_t SparseMatrix<T>::getRowCount() const {
+            checkReady("getRowCount");
             return rowCount;
         }
         
         template<typename T>
         uint_fast64_t SparseMatrix<T>::getColumnCount() const {
+            checkReady("getColumnCount");
             return columnCount;
         }
         
         template<typename T>
-        bool SparseMatrix<T>::isInitialized() {
+        bool SparseMatrix<T>::isInitialized() const {
             return internalStatus == INITIALIZED;
         }
         
         template<typename T>
         uint_fast64_t SparseMatrix<T>::getEntryCount() const {
+            checkReady("getEntryCount");
             return entryCount;
         }
         
         template<typename T>
         void SparseMatrix<T>::makeRowsAbsorbing(storm::storage::BitVector const& rows) {
+            checkReady("makeRowsAbsorbing");
             for (auto row : rows) {
                 makeRowAbsorbing(row, row);
             }
@@ -314,6 +371,7 @@ namespace storm {
         
         template<typename T>
         void SparseMatrix<T>::makeRowsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices) {
+            checkReady("makeRowsAbsorbing");
             for (auto rowGroup : rowGroupConstraint) {
                 for (uint_fast64_t row = rowGroupIndices[rowGroup]; row < rowGroupIndices[rowGroup + 1]; ++row) {
                     makeRowAbsorbing(row, rowGroup);
@@ -323,6 +381,7 @@ namespace storm {
         
         template<typename T>
         void SparseMatrix<T>::makeRowAbsorbing(const uint_fast64_t row, const uint_fast64_t column) {
+            checkReady("makeRowAbsorbing");
             if (row > rowCount) {
                 throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::makeRowAbsorbing: access to row " << row << " is out of bounds.";
             }
@@ -352,6 +411,7 @@ namespace storm {
         
         template<typename T>
         T SparseMatrix<T>::getConstrainedRowSum(uint_fast64_t row, storm::storage::BitVector const& constraint) const {
+            checkReady("getConstrainedRowSum");
             T result(0);
             for (uint_fast64_t i = rowIndications[row]; i < rowIndications[row + 1]; ++i) {
                 if (constraint.get(columnIndications[i])) {
@@ -363,6 +423,7 @@ namespace storm {
         
         template<typename T>
         std::vector<T> SparseMatrix<T>::getConstrainedRowSumVector(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint) const {
+            checkReady("getConstrainedRowSumVector");
             std::vector<T> result(rowConstraint.getNumberOfSetBits());
             uint_fast64_t currentRowCount = 0;
             for (auto row : rowConstraint) {
@@ -373,6 +434,7 @@ namespace storm {
         
         template<typename T>
         std::vector<T> SparseMatrix<T>::getConstrainedRowSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint) const {
+            checkReady("getConstrainedRowSumVector");
             std::vector<T> result;
             result.reserve(rowGroupConstraint.getNumberOfSetBits());
             for (auto rowGroup : rowGroupConstraint) {
@@ -385,55 +447,13 @@ namespace storm {
         
         template<typename T>
         SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& constraint) const {
-            // Check whether we select at least some rows and columns.
-            if (constraint.getNumberOfSetBits() == 0) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::getSubmatrix: cannot create empty submatrix.";
+            // Create a fake row grouping to reduce this to a call to a more general method.
+            std::vector<uint_fast64_t> rowGroupIndices(rowCount + 1);
+            uint_fast64_t i = 0;
+            for (std::vector<uint_fast64_t>::iterator it = rowGroupIndices.begin(); it != rowGroupIndices.end(); ++it, ++i) {
+                *it = i;
             }
-            
-            // First, we need to determine the number of entries of the submatrix.
-            uint_fast64_t subEntries = 0;
-            for (auto rowIndex : constraint) {
-                for (uint_fast64_t i = rowIndications[rowIndex]; i < rowIndications[rowIndex + 1]; ++i) {
-                    if (constraint.get(columnIndications[i])) {
-                        ++subEntries;
-                    }
-                }
-            }
-            
-            // Create and initialize resulting matrix.
-            SparseMatrix result(constraint.getNumberOfSetBits(), constraint.getNumberOfSetBits(), subEntries);
-            
-            // Create a temporary vecotr that stores for each index whose bit is set to true the number of bits that
-            // were set before that particular index.
-            std::vector<uint_fast64_t> bitsSetBeforeIndex;
-            bitsSetBeforeIndex.reserve(columnCount);
-            
-            // Compute the information to fill this vector.
-            uint_fast64_t lastIndex = 0;
-            uint_fast64_t currentNumberOfSetBits = 0;
-            for (auto index : constraint) {
-                while (lastIndex <= index) {
-                    bitsSetBeforeIndex.push_back(currentNumberOfSetBits);
-                    ++lastIndex;
-                }
-                ++currentNumberOfSetBits;
-            }
-            
-            // Copy over selected entries and use the previously computed vector to get the column offset.
-            uint_fast64_t rowCount = 0;
-            for (auto rowIndex : constraint) {
-                for (uint_fast64_t i = rowIndications[rowIndex]; i < rowIndications[rowIndex + 1]; ++i) {
-                    if (constraint.get(columnIndications[i])) {
-                        result.addNextValue(rowCount, bitsSetBeforeIndex[columnIndications[i]], valueStorage[i]);
-                    }
-                }
-                
-                ++rowCount;
-            }
-            
-            // Finalize submatrix and return result.
-            result.finalize();
-            return result;
+            return getSubmatrix(constraint, constraint, rowGroupIndices);
         }
         
         template<typename T>
@@ -443,6 +463,7 @@ namespace storm {
         
         template<typename T>
         SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
+            checkReady("getSubmatrix");
             // First, we need to determine the number of entries and the number of rows of the submatrix.
             uint_fast64_t subEntries = 0;
             uint_fast64_t subRows = 0;
@@ -525,6 +546,7 @@ namespace storm {
         
         template<typename T>
         SparseMatrix<T> SparseMatrix<T>::getSubmatrix(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
+            checkReady("getSubmatrix");
             // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
             // diagonal entries if requested.
             uint_fast64_t subEntries = 0;
@@ -577,7 +599,8 @@ namespace storm {
         
         template <typename T>
         SparseMatrix<T> SparseMatrix<T>::transpose() const {
-            
+            checkReady("transpose");
+
             uint_fast64_t rowCount = this->columnCount;
             uint_fast64_t columnCount = this->rowCount;
             uint_fast64_t entryCount = this->entryCount;
@@ -628,6 +651,8 @@ namespace storm {
         
         template<typename T>
         void SparseMatrix<T>::invertDiagonal() {
+            checkReady("invertDiagonal");
+            
             // Check if the matrix is square, because only then it makes sense to perform this
             // transformation.
             if (this->getRowCount() != this->getColumnCount()) {
@@ -660,6 +685,8 @@ namespace storm {
         
         template<typename T>
         void SparseMatrix<T>::negateAllNonDiagonalEntries() {
+            checkReady("negateAllNonDiagonalEntries");
+
             // Check if the matrix is square, because only then it makes sense to perform this transformation.
             if (this->getRowCount() != this->getColumnCount()) {
                 throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::invertDiagonal: matrix is non-square.";
@@ -680,6 +707,8 @@ namespace storm {
         
         template<typename T>
         void SparseMatrix<T>::deleteDiagonalEntries() {
+            checkReady("deleteDiagonalEntries");
+
             // Check if the matrix is square, because only then it makes sense to perform this transformation.
             if (this->getRowCount() != this->getColumnCount()) {
                 throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::deleteDiagonalEntries: matrix is non-square.";
@@ -700,6 +729,8 @@ namespace storm {
         
         template<typename T>
         typename std::pair<storm::storage::SparseMatrix<T>, storm::storage::SparseMatrix<T>> SparseMatrix<T>::getJacobiDecomposition() const {
+            checkReady("getJacobiDecomposition");
+
             if (rowCount != columnCount) {
                 throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::invertDiagonal: matrix is non-square.";
             }
@@ -730,6 +761,8 @@ namespace storm {
         
         template<typename T>
         std::vector<T> SparseMatrix<T>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) const {
+            checkReady("getPointwiseProductRowSumVector");
+
             std::vector<T> result(rowCount, storm::utility::constantZero<T>());
             
             // Iterate over all elements of the current matrix and either continue with the next element in case the
@@ -755,6 +788,7 @@ namespace storm {
         
         template<typename T>
         void SparseMatrix<T>::multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const {
+            checkReady("multiplyWithVector");
 #ifdef STORM_HAVE_INTELTBB
             tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size()), tbbHelper_MatrixRowVectorScalarProduct<storm::storage::SparseMatrix<T>, std::vector<T>, T>(this, &vector, &result));
 #else
@@ -778,6 +812,8 @@ namespace storm {
         
         template<typename T>
         uint_fast64_t SparseMatrix<T>::getSizeInMemory() const {
+            checkReady("getSizeInMemory");
+
             uint_fast64_t size = sizeof(*this);
             
             // Add value_storage size.
@@ -794,56 +830,67 @@ namespace storm {
         
         template<typename T>
         typename SparseMatrix<T>::const_rows SparseMatrix<T>::getRows(uint_fast64_t startRow, uint_fast64_t endRow) const {
+            checkReady("getRows");
             return const_rows(this->valueStorage.data() + this->rowIndications[startRow], this->columnIndications.data() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
         }
 
         template<typename T>
         typename SparseMatrix<T>::rows SparseMatrix<T>::getRows(uint_fast64_t startRow, uint_fast64_t endRow) {
+            checkReady("getRows");
             return rows(this->valueStorage.data() + this->rowIndications[startRow], this->columnIndications.data() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
         }
 
         template<typename T>
         typename SparseMatrix<T>::const_rows SparseMatrix<T>::getRow(uint_fast64_t row) const {
+            checkReady("getRow");
             return getRows(row, row);
         }
 
         template<typename T>
         typename SparseMatrix<T>::rows SparseMatrix<T>::getRow(uint_fast64_t row) {
+            checkReady("getRow");
             return getRows(row, row);
         }
 
         template<typename T>
         typename SparseMatrix<T>::const_iterator SparseMatrix<T>::begin(uint_fast64_t row) const {
+            checkReady("begin");
             return const_iterator(this->valueStorage.data() + this->rowIndications[row], this->columnIndications.data() + this->rowIndications[row]);
         }
 
         template<typename T>
         typename SparseMatrix<T>::iterator SparseMatrix<T>::begin(uint_fast64_t row)  {
+            checkReady("begin");
             return iterator(this->valueStorage.data() + this->rowIndications[row], this->columnIndications.data() + this->rowIndications[row]);
         }
         
         template<typename T>
         typename SparseMatrix<T>::const_iterator SparseMatrix<T>::end(uint_fast64_t row) const {
+            checkReady("end");
             return const_iterator(this->valueStorage.data() + this->rowIndications[row + 1], this->columnIndications.data() + this->rowIndications[row + 1]);
         }
         
         template<typename T>
         typename SparseMatrix<T>::iterator SparseMatrix<T>::end(uint_fast64_t row)  {
+            checkReady("end");
             return iterator(this->valueStorage.data() + this->rowIndications[row + 1], this->columnIndications.data() + this->rowIndications[row + 1]);
         }
 
         template<typename T>
         typename SparseMatrix<T>::const_iterator SparseMatrix<T>::end() const {
+            checkReady("end");
             return const_iterator(this->valueStorage.data() + this->rowIndications[rowCount], this->columnIndications.data() + this->rowIndications[rowCount]);
         }
         
         template<typename T>
         typename SparseMatrix<T>::iterator SparseMatrix<T>::end()  {
+            checkReady("end");
             return iterator(this->valueStorage.data() + this->rowIndications[rowCount], this->columnIndications.data() + this->rowIndications[rowCount]);
         }
                 
         template<typename T>
         T SparseMatrix<T>::getRowSum(uint_fast64_t row) const {
+            checkReady("getRowSum");
             T sum = storm::utility::constantZero<T>();
             for (typename std::vector<T>::const_iterator valueIterator = valueStorage.begin() + rowIndications[row], valueIteratorEnd = valueStorage.begin() + rowIndications[row + 1]; valueIterator != valueIteratorEnd; ++valueIterator) {
                 sum += *valueIterator;
@@ -853,13 +900,15 @@ namespace storm {
         
         template<typename T>
         bool SparseMatrix<T>::isSubmatrixOf(SparseMatrix<T> const& matrix) const {            
+            checkReady("isSubmatrixOf");
+
             // Check for matching sizes.
             if (this->getRowCount() != matrix.getRowCount()) return false;
             if (this->getColumnCount() != matrix.getColumnCount()) return false;
             
             // Check the subset property for all rows individually.
             for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
-                for (uint_fast64_t elem = rowIndications[row], elem2 = matrix.rowIndications[row]; elem < rowIndications[row + 1] && elem < matrix.rowIndications[row + 1]; ++elem) {
+                for (uint_fast64_t elem = rowIndications[row], elem2 = matrix.rowIndications[row]; elem < rowIndications[row + 1]; ++elem) {
                     // Skip over all entries of the other matrix that are before the current entry in the current matrix.
                     while (elem2 < matrix.rowIndications[row + 1] && matrix.columnIndications[elem2] < columnIndications[elem]) {
                         ++elem2;
@@ -874,6 +923,8 @@ namespace storm {
         
         template<typename T>
         std::ostream& operator<<(std::ostream& out, SparseMatrix<T> const& matrix) {
+            matrix.checkReady("operator<<");
+
             // Print column numbers in header.
             out << "\t\t";
             for (uint_fast64_t i = 0; i < matrix.columnCount; ++i) {
@@ -937,13 +988,22 @@ namespace storm {
             }
         }
         
+        template<typename T>
+        void SparseMatrix<T>::checkReady(std::string const& methodName) const {
+            if (!this->isInitialized()) {
+                throw storm::exceptions::InvalidStateException() << "Invalid call to SparseMatrix::" << methodName << ": matrix used for operation has not been initialized properly.";
+            }
+        }
+        
         // Explicitly instantiate the matrix and the nested classes.
         template class SparseMatrix<double>::BaseIterator<double const>;
         template class SparseMatrix<double>::BaseIterator<double>;
         template class SparseMatrix<double>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
         template class SparseMatrix<int>::BaseIterator<int const>;
         template class SparseMatrix<int>::BaseIterator<int>;
         template class SparseMatrix<int>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
         
 #ifdef STORM_HAVE_INTELTBB
         
@@ -972,7 +1032,6 @@ namespace storm {
         template class tbbHelper_MatrixRowVectorScalarProduct<storm::storage::SparseMatrix<double>, std::vector<double>, double>;
         
 #endif
-        
         
     } // namespace storage
 } // namespace storm

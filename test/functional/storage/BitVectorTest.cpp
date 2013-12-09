@@ -3,7 +3,7 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
 
-TEST(BitVectorTest, InitToZeroTest) {
+TEST(BitVectorTest, InitToZero) {
 	storm::storage::BitVector vector(32);
     
 	for (uint_fast64_t i = 0; i < 32; ++i) {
@@ -14,7 +14,7 @@ TEST(BitVectorTest, InitToZeroTest) {
     ASSERT_FALSE(vector.full());
 }
 
-TEST(BitVectorTest, InitToOneTest) {
+TEST(BitVectorTest, InitToOne) {
 	storm::storage::BitVector vector(32, true);
     
 	for (uint_fast64_t i = 0; i < 32; ++i) {
@@ -24,11 +24,11 @@ TEST(BitVectorTest, InitToOneTest) {
     ASSERT_TRUE(vector.full());
 }
 
-TEST(BitVectorTest, InitFromIteratorTest) {
+TEST(BitVectorTest, InitFromIterator) {
     std::vector<uint_fast64_t> valueVector = {0, 4, 10};
 	storm::storage::BitVector vector(32, valueVector.begin(), valueVector.end());
     
-    ASSERT_EQ(vector.size(), 32);
+    ASSERT_EQ(32, vector.size());
     
 	for (uint_fast64_t i = 0; i < 32; ++i) {
         if (i == 0 || i == 4 || i == 10) {
@@ -39,7 +39,7 @@ TEST(BitVectorTest, InitFromIteratorTest) {
 	}
 }
 
-TEST(BitVectorTest, GetSetTest) {
+TEST(BitVectorTest, GetSet) {
 	storm::storage::BitVector vector(32);
 
 	for (uint_fast64_t i = 0; i < 32; ++i) {
@@ -47,18 +47,18 @@ TEST(BitVectorTest, GetSetTest) {
 	}
 
 	for (uint_fast64_t i = 0; i < 32; ++i) {
-		ASSERT_EQ(vector.get(i), i % 2 == 0);
+		ASSERT_EQ(i % 2 == 0, vector.get(i));
 	}
 }
 
-TEST(BitVectorTest, GetSetExceptionTest) {
+TEST(BitVectorTest, GetSetException) {
 	storm::storage::BitVector vector(32);
     
     ASSERT_THROW(vector.get(32), storm::exceptions::OutOfRangeException);
     ASSERT_THROW(vector.set(32), storm::exceptions::OutOfRangeException);
 }
 
-TEST(BitVectorTest, ResizeTest) {
+TEST(BitVectorTest, Resize) {
 	storm::storage::BitVector vector(32);
 	
 	for (uint_fast64_t i = 0; i < 32; ++i) {
@@ -67,8 +67,8 @@ TEST(BitVectorTest, ResizeTest) {
 
 	vector.resize(70);
     
-    ASSERT_EQ(vector.size(), 70);
-    ASSERT_EQ(vector.getNumberOfSetBits(), 32);
+    ASSERT_EQ(70, vector.size());
+    ASSERT_EQ(32, vector.getNumberOfSetBits());
 
 	for (uint_fast64_t i = 0; i < 32; ++i) {
 		ASSERT_TRUE(vector.get(i));
@@ -82,8 +82,8 @@ TEST(BitVectorTest, ResizeTest) {
     
     vector.resize(72, true);
     
-    ASSERT_EQ(vector.size(), 72);
-    ASSERT_EQ(vector.getNumberOfSetBits(), 34);
+    ASSERT_EQ(72, vector.size());
+    ASSERT_EQ(34, vector.getNumberOfSetBits());
     
     for (uint_fast64_t i = 0; i < 32; ++i) {
 		ASSERT_TRUE(vector.get(i));
@@ -98,19 +98,19 @@ TEST(BitVectorTest, ResizeTest) {
     }
 
     vector.resize(16, 0);
-    ASSERT_EQ(vector.size(), 16);
-    ASSERT_EQ(vector.getNumberOfSetBits(), 16);
+    ASSERT_EQ(16, vector.size());
+    ASSERT_EQ(16, vector.getNumberOfSetBits());
     
     for (uint_fast64_t i = 0; i < 16; ++i) {
 		ASSERT_TRUE(vector.get(i));
 	}
     
     vector.resize(65, 1);
-    ASSERT_EQ(vector.size(), 65);
+    ASSERT_EQ(65, vector.size());
     ASSERT_TRUE(vector.full());
 }
 
-TEST(BitVectorTest, OperatorAndTest) {
+TEST(BitVectorTest, OperatorAnd) {
 	storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32);
     
@@ -129,7 +129,7 @@ TEST(BitVectorTest, OperatorAndTest) {
     ASSERT_TRUE(andResult.get(31));
 }
 
-TEST(BitVectorTest, OperatorAndEqualTest) {
+TEST(BitVectorTest, OperatorAndEqual) {
 	storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32);
     
@@ -149,7 +149,7 @@ TEST(BitVectorTest, OperatorAndEqualTest) {
 }
 
 
-TEST(BitVectorTest, OperatorOrTest) {
+TEST(BitVectorTest, OperatorOr) {
 	storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32);
     
@@ -168,7 +168,7 @@ TEST(BitVectorTest, OperatorOrTest) {
     ASSERT_FALSE(orResult.get(31));
 }
 
-TEST(BitVectorTest, OperatorOrEqualTest) {
+TEST(BitVectorTest, OperatorOrEqual) {
 	storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32);
     
@@ -187,7 +187,7 @@ TEST(BitVectorTest, OperatorOrEqualTest) {
     ASSERT_FALSE(vector1.get(31));
 }
 
-TEST(BitVectorTest, OperatorXorTest) {
+TEST(BitVectorTest, OperatorXor) {
 	storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32);
     
@@ -206,7 +206,7 @@ TEST(BitVectorTest, OperatorXorTest) {
 	}
 }
 
-TEST(BitVectorTest, OperatorModuloTest) {
+TEST(BitVectorTest, OperatorModulo) {
     storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32);
     
@@ -240,7 +240,7 @@ TEST(BitVectorTest, OperatorModuloTest) {
     ASSERT_THROW(vector1 % vector3, storm::exceptions::InvalidArgumentException);
 }
 
-TEST(BitVectorTest, OperatorNotTest) {
+TEST(BitVectorTest, OperatorNot) {
 	storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32);
 
@@ -256,7 +256,7 @@ TEST(BitVectorTest, OperatorNotTest) {
 	}
 }
 
-TEST(BitVectorTest, ComplementTest) {
+TEST(BitVectorTest, Complement) {
 	storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32);
     
@@ -272,7 +272,7 @@ TEST(BitVectorTest, ComplementTest) {
 	}
 }
 
-TEST(BitVectorTest, ImpliesTest) {
+TEST(BitVectorTest, Implies) {
     storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32, true);
     
@@ -291,7 +291,7 @@ TEST(BitVectorTest, ImpliesTest) {
     ASSERT_TRUE(impliesResult.get(31));
 }
 
-TEST(BitVectorTest, SubsetTest) {
+TEST(BitVectorTest, Subset) {
     storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32, true);
     
@@ -306,7 +306,7 @@ TEST(BitVectorTest, SubsetTest) {
     ASSERT_FALSE(vector1.isSubsetOf(vector2));
 }
 
-TEST(BitVectorTest, DisjointTest) {
+TEST(BitVectorTest, Disjoint) {
     storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32);
     
@@ -322,7 +322,7 @@ TEST(BitVectorTest, DisjointTest) {
     ASSERT_FALSE(vector1.isDisjointFrom(vector2));
 }
 
-TEST(BitVectorTest, EmptyTest) {
+TEST(BitVectorTest, Empty) {
     storm::storage::BitVector vector(32);
     
     ASSERT_TRUE(vector.empty());
@@ -337,7 +337,7 @@ TEST(BitVectorTest, EmptyTest) {
     ASSERT_TRUE(vector.empty());
 }
 
-TEST(BitVectorTest, FullTest) {
+TEST(BitVectorTest, Full) {
     storm::storage::BitVector vector(32, true);
     
     ASSERT_TRUE(vector.full());
@@ -352,27 +352,27 @@ TEST(BitVectorTest, FullTest) {
     ASSERT_TRUE(vector.full());
 }
 
-TEST(BitVectorTest, NumberOfSetBitsTest) {
+TEST(BitVectorTest, NumberOfSetBits) {
     storm::storage::BitVector vector(32);
     
     for (uint_fast64_t i = 0; i < 32; ++i) {
 		vector.set(i, i % 2 == 0);
 	}
 
-    ASSERT_EQ(vector.getNumberOfSetBits(), 16);
+    ASSERT_EQ(16, vector.getNumberOfSetBits());
 }
 
-TEST(BitVectorTest, NumberOfSetBitsBeforeIndexTest) {
+TEST(BitVectorTest, NumberOfSetBitsBeforeIndex) {
     storm::storage::BitVector vector(32);
     
     for (uint_fast64_t i = 0; i < 32; ++i) {
 		vector.set(i, i % 2 == 0);
 	}
     
-    ASSERT_EQ(vector.getNumberOfSetBitsBeforeIndex(14), 7);
+    ASSERT_EQ(7, vector.getNumberOfSetBitsBeforeIndex(14));
 }
 
-TEST(BitVectorTest, BeginEndTest) {
+TEST(BitVectorTest, BeginEnd) {
     storm::storage::BitVector vector(32);
     
     ASSERT_TRUE(vector.begin() == vector.end());
@@ -386,20 +386,20 @@ TEST(BitVectorTest, BeginEndTest) {
     ASSERT_TRUE(vector.begin() == vector.end());
 }
 
-TEST(BitVectorTest, NextSetIndexTest) {
+TEST(BitVectorTest, NextSetIndex) {
     storm::storage::BitVector vector(32);
     
     vector.set(14);
     vector.set(17);
     
-    ASSERT_EQ(vector.getNextSetIndex(14), 14);
-    ASSERT_EQ(vector.getNextSetIndex(15), 17);
-    ASSERT_EQ(vector.getNextSetIndex(16), 17);
-    ASSERT_EQ(vector.getNextSetIndex(17), 17);
-    ASSERT_EQ(vector.getNextSetIndex(18), vector.size());
+    ASSERT_EQ(14, vector.getNextSetIndex(14));
+    ASSERT_EQ(17, vector.getNextSetIndex(15));
+    ASSERT_EQ(17, vector.getNextSetIndex(16));
+    ASSERT_EQ(17, vector.getNextSetIndex(17));
+    ASSERT_EQ(vector.size(), vector.getNextSetIndex(18));
 }
 
-TEST(BitVectorTest, IteratorTest) {
+TEST(BitVectorTest, Iterator) {
     storm::storage::BitVector vector(32);
     
     for (uint_fast64_t i = 0; i < 32; ++i) {

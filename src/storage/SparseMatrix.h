@@ -296,6 +296,14 @@ namespace storm {
             SparseMatrix<T>& operator=(SparseMatrix<T>&& other);
             
             /*!
+             * Determines whether the current and the given matrix are semantically equal.
+             *
+             * @param other The matrix with which to compare the current matrix.
+             * @return True iff the given matrix is semantically equal to the current one.
+             */
+            bool operator==(SparseMatrix<T> const& other) const;
+            
+            /*!
              * Sets the matrix entry at the given row and column to the given value. After all entries have been added,
              * a call to finalize(false) is mandatory.
              *
@@ -352,7 +360,7 @@ namespace storm {
              *
              * @return True iff the matrix was initialized properly and is ready for further use.
              */
-            bool isInitialized();
+            bool isInitialized() const;
             
             /*!
              * This function makes the given rows absorbing.
@@ -634,6 +642,11 @@ namespace storm {
              * will cause occasional reallocations.
              */
             void prepareInternalStorage();
+            
+            /*!
+             * Checks whether the matrix is properly initialized and throws an exception otherwise.
+             */
+            void checkReady(std::string const& methodName) const;
 
             // A flag indicating whether the number of rows was set upon construction.
             bool rowCountSet;

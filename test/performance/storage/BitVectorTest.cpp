@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "src/storage/BitVector.h"
 
-TEST(BitVectorTest, IterationTest) {
+TEST(BitVectorTest, Iteration) {
     storm::storage::BitVector vector(819200, true);
     
     for (uint_fast64_t i = 0; i < 10000; ++i) {
