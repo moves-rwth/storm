@@ -40,6 +40,103 @@ namespace storm {
         class tbbHelper_MatrixRowVectorScalarProduct;
 #endif
         
+        // Forward declare matrix class.
+        template<typename T> class SparseMatrix;
+        
+        /*!
+         * A class that can be used to build a sparse matrix by adding value by value.
+         */
+        template<typename T>
+        class SparseMatrixBuilder {
+        public:
+            /*!
+             * Constructs a sparse matrix builder producing a matrix with the given number of rows, columns and entries.
+             *
+             * @param rows The number of rows of the resulting matrix.
+             * @param columns The number of columns of the resulting matrix.
+             * @param entries The number of entries of the resulting matrix.
+             */
+            SparseMatrixBuilder(uint_fast64_t rows = 0, uint_fast64_t columns = 0, uint_fast64_t entries = 0);
+            
+            /*!
+             * Sets the matrix entry at the given row and column to the given value. After all entries have been added,
+             * a call to finalize(false) is mandatory.
+             *
+             * Note: this is a linear setter. That is, it must be called consecutively for each entry, row by row and
+             * column by column. As multiple entries per column are admitted, consecutive calls to this method are
+             * admitted to mention the same row-column-pair. If rows are skipped entirely, the corresponding rows are
+             * treated as empty. If these constraints are not met, an exception is thrown.
+             *
+             * @param row The row in which the matrix entry is to be set.
+             * @param column The column in which the matrix entry is to be set.
+             * @param value The value that is to be set at the specified row and column.
+             */
+            void addNextValue(uint_fast64_t row, uint_fast64_t column, T const& value);
+            
+            /*
+             * Finalizes the sparse matrix to indicate that initialization process has been completed and the matrix
+             * may now be used. This must be called after all entries have been added to the matrix via addNextValue.
+             *
+             * @param overriddenRowCount If this is set to a value that is greater than the current number of rows,
+             * this will cause the finalize method to add empty rows at the end of the matrix until the given row count
+             * has been matched. Note that this will *not* override the row count that has been given upon construction
+             * (if any), but will only take effect if the matrix has been created without the number of rows given.
+             * @param overriddenColumnCount If this is set to a value that is greater than the current number of columns,
+             * this will cause the finalize method to set the number of columns to the given value. Note that this will
+             * *not* override the column count that has been given upon construction (if any), but will only take effect
+             * if the matrix has been created without the number of columns given. By construction, the matrix will have
+             * no entries in the columns that have been added this way.
+             */
+            SparseMatrix<T> build(uint_fast64_t overriddenRowCount = 0, uint_fast64_t overriddenColumnCount = 0);
+            
+        private:
+            /*!
+             * Prepares the internal storage of the builder. This relies on the number of entries and the number of rows
+             * being set correctly. They may, however, be zero, in which case the insertion of elements in the builder
+             * will cause occasional reallocations.
+             */
+            void prepareInternalStorage();
+
+            // A flag indicating whether the number of rows was set upon construction.
+            bool rowCountSet;
+            
+            // The number of rows of the matrix.
+            uint_fast64_t rowCount;
+            
+            // A flag indicating whether the number of columns was set upon construction.
+            bool columnCountSet;
+            
+            // The number of columns of the matrix.
+            uint_fast64_t columnCount;
+            
+            // The number of entries in the matrix.
+            uint_fast64_t entryCount;
+            
+            // Stores whether the storage of the matrix was preallocated or not.
+            bool storagePreallocated;
+            
+            // The storage for the columns and values of all entries in the matrix.
+            std::vector<std::pair<uint_fast64_t, T>> columnsAndValues;
+            
+            // A vector containing the indices at which each given row begins. This index is to be interpreted as an
+            // index in the valueStorage and the columnIndications vectors. Put differently, the values of the entries
+            // in row i are valueStorage[rowIndications[i]] to valueStorage[rowIndications[i + 1]] where the last
+            // entry is not included anymore.
+            std::vector<uint_fast64_t> rowIndications;
+            
+            // Stores the current number of entries in the matrix. This is used for inserting an entry into a matrix
+            // with preallocated storage.
+            uint_fast64_t currentEntryCount;
+            
+            // Stores the row of the last entry in the matrix. This is used for correctly inserting an entry into a
+            // matrix.
+            uint_fast64_t lastRow;
+            
+            // Stores the column of the currently last entry in the matrix. This is used for correctly inserting an
+            // entry into a matrix.
+            uint_fast64_t lastColumn;
+        };
+        
         /*!
          * A class that holds a possibly non-square matrix in the compressed row storage format. That is, it is supposed
          * to store non-zero entries only, but zeros may be explicitly stored if necessary for certain operations.
@@ -68,8 +165,8 @@ namespace storm {
             friend class tbbHelper_MatrixRowVectorScalarProduct;
 #endif
             
-            typedef std::pair<uint_fast64_t, T>* iterator;
-            typedef std::pair<uint_fast64_t, T> const* const_iterator;
+            typedef typename std::vector<std::pair<uint_fast64_t, T>>::iterator iterator;
+            typedef typename std::vector<std::pair<uint_fast64_t, T> const>::const_iterator const_iterator;
             
             /*!
              * This class represents a number of consecutive rows of the matrix.
@@ -151,14 +248,10 @@ namespace storm {
             enum MatrixStatus { UNINITIALIZED, INITIALIZED };
             
             /*!
-             * Constructs a sparse matrix object with the given number of rows, columns and number of entries.
-             *
-             * @param rows The number of rows of the matrix.
-             * @param columns The number of columns of the matrix.
-             * @param entries The number of entries of the matrix.
+             * Constructs an empty sparse matrix.
              */
-            SparseMatrix(uint_fast64_t rows = 0, uint_fast64_t columns = 0, uint_fast64_t entries = 0);
-                        
+            SparseMatrix();
+            
             /*!
              * Constructs a sparse matrix by performing a deep-copy of the given matrix.
              *
@@ -234,37 +327,6 @@ namespace storm {
             bool operator==(SparseMatrix<T> const& other) const;
             
             /*!
-             * Sets the matrix entry at the given row and column to the given value. After all entries have been added,
-             * a call to finalize(false) is mandatory.
-             *
-             * Note: this is a linear setter. That is, it must be called consecutively for each entry, row by row and
-             * column by column. As multiple entries per column are admitted, consecutive calls to this method are
-             * admitted to mention the same row-column-pair. If rows are skipped entirely, the corresponding rows are
-             * treated as empty. If these constraints are not met, an exception is thrown.
-             *
-             * @param row The row in which the matrix entry is to be set.
-             * @param column The column in which the matrix entry is to be set.
-             * @param value The value that is to be set at the specified row and column.
-             */
-            void addNextValue(uint_fast64_t row, uint_fast64_t column,T const& value);
-            
-            /*
-             * Finalizes the sparse matrix to indicate that initialization process has been completed and the matrix
-             * may now be used. This must be called after all entries have been added to the matrix via addNextValue.
-             *
-             * @param overriddenRowCount If this is set to a value that is greater than the current number of rows,
-             * this will cause the finalize method to add empty rows at the end of the matrix until the given row count
-             * has been matched. Note that this will *not* override the row count that has been given upon construction
-             * (if any), but will only take effect if the matrix has been created without the number of rows given.
-             * @param overriddenColumnCount If this is set to a value that is greater than the current number of columns,
-             * this will cause the finalize method to set the number of columns to the given value. Note that this will
-             * *not* override the column count that has been given upon construction (if any), but will only take effect
-             * if the matrix has been created without the number of columns given. By construction, the matrix will have
-             * no entries in the columns that have been added this way.
-             */
-            void finalize(uint_fast64_t overriddenRowCount = 0, uint_fast64_t overriddenColumnCount = 0);
-            
-            /*!
              * Returns the number of rows of the matrix.
              *
              * @return The number of rows of the matrix.
@@ -284,13 +346,6 @@ namespace storm {
              * @return The number of entries in the matrix.
              */
             uint_fast64_t getEntryCount() const;
-            
-            /*!
-             * Checks whether the matrix was initialized properly and is ready for further use.
-             *
-             * @return True iff the matrix was initialized properly and is ready for further use.
-             */
-            bool isInitialized() const;
             
             /*!
              * This function makes the given rows absorbing.
@@ -566,35 +621,14 @@ namespace storm {
             std::size_t hash() const;
             
         private:
-            /*!
-             * Prepares the internal storage of the matrix. This relies on the number of entries and the number of rows
-             * being set correctly. They may, however, be zero, in which case the insertion of elements in the matrix
-             * will cause occasional reallocations.
-             */
-            void prepareInternalStorage();
-            
-            /*!
-             * Checks whether the matrix is properly initialized and throws an exception otherwise.
-             */
-            void checkReady(std::string const& methodName) const;
-
-            // A flag indicating whether the number of rows was set upon construction.
-            bool rowCountSet;
-
             // The number of rows of the matrix.
             uint_fast64_t rowCount;
             
-            // A flag indicating whether the number of columns was set upon construction.
-            bool columnCountSet;
-
             // The number of columns of the matrix.
             uint_fast64_t columnCount;
             
             // The number of entries in the matrix.
             uint_fast64_t entryCount;
-            
-            // Stores whether the storage of the matrix was preallocated or not.
-            bool storagePreallocated;
             
             // The storage for the columns and values of all entries in the matrix.
             std::vector<std::pair<uint_fast64_t, T>> columnsAndValues;
@@ -604,22 +638,6 @@ namespace storm {
             // in row i are valueStorage[rowIndications[i]] to valueStorage[rowIndications[i + 1]] where the last
             // entry is not included anymore.
             std::vector<uint_fast64_t> rowIndications;
-            
-            // The internal status of the matrix.
-            MatrixStatus internalStatus;
-            
-            // Stores the current number of entries in the matrix. This is used for inserting an entry into a matrix
-            // with preallocated storage.
-            uint_fast64_t currentEntryCount;
-            
-            // Stores the row of the last entry in the matrix. This is used for correctly inserting an entry into a
-            // matrix.
-            uint_fast64_t lastRow;
-            
-            // Stores the column of the currently last entry in the matrix. This is used for correctly inserting an
-            // entry into a matrix.
-            uint_fast64_t lastColumn;
-            
         };
         
 #ifdef STORM_HAVE_INTELTBB

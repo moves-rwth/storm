@@ -455,7 +455,7 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::SparseMatrix<ValueType>& transitionRewardMatrix) {
+            static std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
                 std::vector<uint_fast64_t> nondeterministicChoiceIndices;
                 std::vector<storm::storage::VectorSet<uint_fast64_t>> choiceLabels;
                 
@@ -480,7 +480,7 @@ namespace storm {
                     // requested and issue an error otherwise.
                     if (totalNumberOfChoices == 0) {
                         if (storm::settings::Settings::getInstance()->isSet("fixDeadlocks")) {
-                            transitionMatrix.addNextValue(currentRow, currentState, storm::utility::constantOne<ValueType>());
+                            transitionMatrixBuilder.addNextValue(currentRow, currentState, storm::utility::constantOne<ValueType>());
                             ++currentRow;
                         } else {
                             LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
@@ -528,13 +528,13 @@ namespace storm {
                             choiceLabels.push_back(globalChoice.getChoiceLabels());
                             
                             for (auto const& stateProbabilityPair : globalChoice) {
-                                transitionMatrix.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
+                                transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                             }
                             
                             // Add all transition rewards to the matrix and add dummy entry if there is none.
                             if (stateToRewardMap.size() > 0) {
                                 for (auto const& stateRewardPair : stateToRewardMap) {
-                                    transitionRewardMatrix.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
+                                    transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
                                 }
                             }
                             
@@ -549,7 +549,7 @@ namespace storm {
                                 choiceLabels.emplace_back(std::move(choice.getChoiceLabels()));
                                 
                                 for (auto const& stateProbabilityPair : choice) {
-                                    transitionMatrix.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
+                                    transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
@@ -563,7 +563,7 @@ namespace storm {
                                 // Add all transition rewards to the matrix and add dummy entry if there is none.
                                 if (stateToRewardMap.size() > 0) {
                                     for (auto const& stateRewardPair : stateToRewardMap) {
-                                        transitionRewardMatrix.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
+                                        transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
                                     }
                                 }
                                 
@@ -576,7 +576,7 @@ namespace storm {
                                 choiceLabels.emplace_back(std::move(choice.getChoiceLabels()));
 
                                 for (auto const& stateProbabilityPair : choice) {
-                                    transitionMatrix.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
+                                    transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
@@ -590,7 +590,7 @@ namespace storm {
                                 // Add all transition rewards to the matrix and add dummy entry if there is none.
                                 if (stateToRewardMap.size() > 0) {
                                     for (auto const& stateRewardPair : stateToRewardMap) {
-                                        transitionRewardMatrix.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
+                                        transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
                                     }
                                 }
 
@@ -631,13 +631,15 @@ namespace storm {
                 bool deterministicModel = program.getModelType() == storm::ir::Program::DTMC || program.getModelType() == storm::ir::Program::CTMC;
 
                 // Build the transition and reward matrices.
-                std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, modelComponents.transitionMatrix, modelComponents.transitionRewardMatrix);
+                storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder;
+                storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder;
+                std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
                 modelComponents.nondeterministicChoiceIndices = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.first);
                 modelComponents.choiceLabeling = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.second);
                 
                 // Finalize the resulting matrices.
-                modelComponents.transitionMatrix.finalize();
-                modelComponents.transitionRewardMatrix.finalize(modelComponents.transitionMatrix.getRowCount());
+                modelComponents.transitionMatrix = transitionMatrixBuilder.build();
+                modelComponents.transitionRewardMatrix = transitionRewardMatrixBuilder.build(modelComponents.transitionMatrix.getRowCount());
                 
                 // Now build the state labeling.
                 modelComponents.stateLabeling = buildStateLabeling(program, variableInformation, stateInformation);

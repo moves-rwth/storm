@@ -2,13 +2,15 @@
 #include "src/storage/SparseMatrix.h"
 
 TEST(SparseMatrix, Iteration) {
-    storm::storage::SparseMatrix<double> matrix;
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder;
     for (uint_fast64_t row = 0; row < 10000; ++row) {
         for (uint_fast64_t column = 0; column < row; ++column) {
-            ASSERT_NO_THROW(matrix.addNextValue(row, column, row+column));
+            ASSERT_NO_THROW(matrixBuilder.addNextValue(row, column, row+column));
         }
     }
-    ASSERT_NO_THROW(matrix.finalize());
+    
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = matrixBuilder.build());
     
     for (uint_fast64_t row = 0; row < matrix.getRowCount(); ++row) {
         for (auto const& entry : matrix.getRow(row)) {
@@ -21,13 +23,15 @@ TEST(SparseMatrix, Iteration) {
 }
 
 TEST(SparseMatrix, Multiplication) {
-    storm::storage::SparseMatrix<double> matrix;
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder;
     for (uint_fast64_t row = 0; row < 2000; ++row) {
         for (uint_fast64_t column = 0; column < row; ++column) {
-            ASSERT_NO_THROW(matrix.addNextValue(row, column, row+column));
+            ASSERT_NO_THROW(matrixBuilder.addNextValue(row, column, row+column));
         }
     }
-    ASSERT_NO_THROW(matrix.finalize());
+
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = matrixBuilder.build());
     
     std::vector<double> x(matrix.getColumnCount(), 1.0);
     std::vector<double> result(matrix.getRowCount());

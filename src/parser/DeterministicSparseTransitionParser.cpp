@@ -201,7 +201,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 	 *	The number of non-zero elements is computed by firstPass().
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << (maxStateId+1) << " x " << (maxStateId+1) << ".");
-	storm::storage::SparseMatrix<double> resultMatrix(maxStateId + 1, maxStateId + 1, nonZeroEntryCount);
+	storm::storage::SparseMatrixBuilder<double> matrixBuilder(maxStateId + 1, maxStateId + 1, nonZeroEntryCount);
 
 	int_fast64_t row, lastRow = -1, col;
 	double val;
@@ -225,7 +225,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 		if (lastRow != row) {
 			if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
 				if (insertDiagonalEntriesIfMissing && !isRewardMatrix) {
-					resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
+					matrixBuilder.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
 					// LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
 				} else if (!isRewardMatrix) {
 					// LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
@@ -236,7 +236,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 			for (int_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
 				hadDeadlocks = true;
 				if (fixDeadlocks && !isRewardMatrix) {
-					resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
+					matrixBuilder.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
 					rowHadDiagonalEntry = true;
 					// LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
 				} else if (!isRewardMatrix) {
@@ -253,20 +253,20 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 		} else if (col > row && !rowHadDiagonalEntry) {
 			rowHadDiagonalEntry = true;
 			if (insertDiagonalEntriesIfMissing && !isRewardMatrix) {
-				resultMatrix.addNextValue(row, row, storm::utility::constantZero<double>());
+				matrixBuilder.addNextValue(row, row, storm::utility::constantZero<double>());
 				// LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
 			} else if (!isRewardMatrix) {
 				// LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
 			}
 		}
 
-		resultMatrix.addNextValue(row, col, val);
+		matrixBuilder.addNextValue(row, col, val);
 		buf = trimWhitespaces(buf);
 	}
 
 	if (!rowHadDiagonalEntry) {
 		if (insertDiagonalEntriesIfMissing && !isRewardMatrix) {
-			resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
+			matrixBuilder.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
 			// LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
 		} else if (!isRewardMatrix) {
 			// LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
@@ -275,12 +275,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 
 	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
 
-	/*
-	 *	Finalize Matrix.
-	 */	
-	resultMatrix.finalize();
-
-	return resultMatrix;
+	return matrixBuilder.build();
 }
 
 }  // namespace parser

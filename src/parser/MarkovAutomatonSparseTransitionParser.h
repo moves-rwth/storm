@@ -39,7 +39,7 @@ namespace storm {
              */
             struct ResultType {
                 
-                ResultType(FirstPassResult const& firstPassResult) : transitionMatrix(firstPassResult.numberOfChoices, firstPassResult.highestStateIndex + 1, firstPassResult.numberOfNonzeroEntries), nondeterministicChoiceIndices(firstPassResult.highestStateIndex + 2), markovianChoices(firstPassResult.numberOfChoices), markovianStates(firstPassResult.highestStateIndex + 1), exitRates(firstPassResult.highestStateIndex + 1) {
+                ResultType(FirstPassResult const& firstPassResult) : transitionMatrix(), nondeterministicChoiceIndices(firstPassResult.highestStateIndex + 2), markovianChoices(firstPassResult.numberOfChoices), markovianStates(firstPassResult.highestStateIndex + 1), exitRates(firstPassResult.highestStateIndex + 1) {
                     // Intentionally left empty.
                 }
                 

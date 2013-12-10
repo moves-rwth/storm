@@ -45,12 +45,9 @@ namespace storm {
              * @return A bit vector with all indices of states that have a probability greater than 0.
              */
             template <typename T>
-            storm::storage::BitVector performProbGreater0(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
+            storm::storage::BitVector performProbGreater0(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
                 // Prepare the resulting bit vector.
                 storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
-                
-                // Get the backwards transition relation from the model to ease the search.
-                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
                 
                 // Add all psi states as the already satisfy the condition.
                 statesWithProbabilityGreater0 |= psiStates;
@@ -82,7 +79,7 @@ namespace storm {
                     }
                     
                     for (typename storm::storage::SparseMatrix<T>::const_iterator entryIt = backwardTransitions.begin(currentState), entryIte = backwardTransitions.end(currentState); entryIt != entryIte; ++entryIt) {
-                        if (phiStates.get(entryIt->first) && (!statesWithProbabilityGreater0.get(entryIt->first) || (useStepBound && remainingSteps[entryIt->first] < currentStepBound - 1))) {
+                        if (phiStates[entryIt->first] && (!statesWithProbabilityGreater0.get(entryIt->first) || (useStepBound && remainingSteps[entryIt->first] < currentStepBound - 1))) {
                             // If we don't have a bound on the number of steps to take, just add the state to the stack.
                             if (!useStepBound) {
                                 statesWithProbabilityGreater0.set(entryIt->first, true);
@@ -117,8 +114,8 @@ namespace storm {
              * @return A bit vector with all indices of states that have a probability greater than 1.
              */
             template <typename T>
-            storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0) {
-                storm::storage::BitVector statesWithProbability1 = performProbGreater0(model, ~psiStates, ~statesWithProbabilityGreater0);
+            storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0) {
+                storm::storage::BitVector statesWithProbability1 = performProbGreater0(model, backwardTransitions, ~psiStates, ~statesWithProbabilityGreater0);
                 statesWithProbability1.complement();
                 return statesWithProbability1;
             }
@@ -136,9 +133,9 @@ namespace storm {
              * @return A bit vector with all indices of states that have a probability greater than 1.
              */
             template <typename T>
-            storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
-                storm::storage::BitVector statesWithProbabilityGreater0 = performProbGreater0(model, phiStates, psiStates);
-                storm::storage::BitVector statesWithProbability1 = performProbGreater0(model, ~psiStates, ~(statesWithProbabilityGreater0));
+            storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                storm::storage::BitVector statesWithProbabilityGreater0 = performProbGreater0(model, backwardTransitions, phiStates, psiStates);
+                storm::storage::BitVector statesWithProbability1 = performProbGreater0(model, backwardTransitions, ~psiStates, ~(statesWithProbabilityGreater0));
                 statesWithProbability1.complement();
                 return statesWithProbability1;
             }
@@ -156,8 +153,9 @@ namespace storm {
             template <typename T>
             static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
-                result.first = performProbGreater0(model, phiStates, psiStates);
-                result.second = performProb1(model, phiStates, psiStates, result.first);
+                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
+                result.first = performProbGreater0(model, backwardTransitions, phiStates, psiStates);
+                result.second = performProb1(model, backwardTransitions, phiStates, psiStates, result.first);
                 result.first.complement();
                 return result;
             }

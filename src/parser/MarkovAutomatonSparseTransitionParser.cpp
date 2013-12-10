@@ -139,6 +139,7 @@ namespace storm {
         
         MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitionParser::secondPass(char* buf, SupportedLineEndingsEnum lineEndings, FirstPassResult const& firstPassResult) {
             ResultType result(firstPassResult);
+            storm::storage::SparseMatrixBuilder<double> matrixBuilder(firstPassResult.numberOfChoices, firstPassResult.highestStateIndex + 1, firstPassResult.numberOfNonzeroEntries);
             
             bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
             
@@ -159,7 +160,7 @@ namespace storm {
                     if (fixDeadlocks) {
                         for (uint_fast64_t index = lastsource + 1; index < source; ++index) {
                             result.nondeterministicChoiceIndices[index] = currentChoice;
-                            result.transitionMatrix.addNextValue(currentChoice, index, 1);
+                            matrixBuilder.addNextValue(currentChoice, index, 1);
                             ++currentChoice;
                         }
                     } else {
@@ -218,7 +219,7 @@ namespace storm {
                         double val = checked_strtod(buf, &buf);
                         
                         // Record the value as well as the exit rate in case of a Markovian choice.
-                        result.transitionMatrix.addNextValue(currentChoice, target, val);
+                        matrixBuilder.addNextValue(currentChoice, target, val);
                         if (isMarkovianChoice) {
                             result.exitRates[source] += val;
                         }
@@ -235,7 +236,7 @@ namespace storm {
             }
             
             // As we have added all entries at this point, we need to finalize the matrix.
-            result.transitionMatrix.finalize();
+            result.transitionMatrix = matrixBuilder.build();
             
             // Put a sentinel element at the end.
             result.nondeterministicChoiceIndices[firstPassResult.highestStateIndex + 1] = currentChoice;

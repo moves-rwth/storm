@@ -160,7 +160,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             }
             
             // The resulting sparse matrix will have as many rows/columns as there are blocks in the partition.
-            storm::storage::SparseMatrix<T> dependencyGraph(numberOfStates, numberOfStates);
+            storm::storage::SparseMatrixBuilder<T> dependencyGraphBuilder(numberOfStates, numberOfStates);
             
             for (uint_fast64_t currentBlockIndex = 0; currentBlockIndex < decomposition.size(); ++currentBlockIndex) {
                 // Get the next block.
@@ -181,13 +181,11 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 
                 // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
                 for (auto targetBlock : allTargetBlocks) {
-                    dependencyGraph.addNextValue(currentBlockIndex, targetBlock, storm::utility::constantOne<T>());
+                    dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::constantOne<T>());
                 }
             }
             
-            // Finalize the matrix and return result.
-            dependencyGraph.finalize(true);
-            return dependencyGraph;
+            return dependencyGraphBuilder.build();
         }
 
         /*!

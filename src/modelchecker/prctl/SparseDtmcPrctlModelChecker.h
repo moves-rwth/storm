@@ -90,7 +90,6 @@ public:
 		return this->checkBoundedUntil(formula.getLeft().check(*this), formula.getRight().check(*this), formula.getBound(), qualitative);
 	}
 
-
 	/*!
 	 * Computes the probability to satisfy phi until psi inside a given bound for each state in the model.
 	 *
@@ -108,7 +107,7 @@ public:
         
         // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the
         // further analysis.
-        storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel(), phiStates, psiStates, true, stepBound);
+        storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
         LOG4CPLUS_INFO(logger, "Found " << statesWithProbabilityGreater0.getNumberOfSetBits() << " 'maybe' states.");
         
         // Check if we already know the result (i.e. probability 0) for all initial states and
@@ -264,9 +263,7 @@ public:
 
 		// We need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
-		LOG4CPLUS_INFO(logger, "Running Prob01.");
         std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), phiStates, psiStates);
-        LOG4CPLUS_INFO(logger, "Done running Prob01.");
 		storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
 		storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
 
@@ -427,7 +424,7 @@ public:
 
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel(), trueStates, targetStates);
+		storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, targetStates);
 		infinityStates.complement();
 		storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
 		LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");

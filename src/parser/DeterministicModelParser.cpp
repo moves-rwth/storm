@@ -28,10 +28,10 @@ namespace parser {
  */
 DeterministicModelParserResultContainer<double> parseDeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
 																		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-
 	storm::storage::SparseMatrix<double> resultTransitionSystem(std::move(storm::parser::DeterministicSparseTransitionParser(transitionSystemFile)));
 
 	uint_fast64_t stateCount = resultTransitionSystem.getColumnCount();
+
 	uint_fast64_t rowCount = resultTransitionSystem.getRowCount();
 
 	storm::models::AtomicPropositionsLabeling resultLabeling(std::move(storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile)));

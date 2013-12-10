@@ -12,6 +12,7 @@ TEST(GraphTest, PerformProb01) {
 	storm::storage::BitVector trueStates(dtmc->getNumberOfStates(), true);
 
     LOG4CPLUS_WARN(logger, "Computing prob01 (3 times) for crowds/crowds20_5...");
+    
     std::pair<storm::storage::BitVector, storm::storage::BitVector> prob01(storm::utility::graph::performProb01(*dtmc, trueStates, storm::storage::BitVector(dtmc->getLabeledStates("observe0Greater1"))));
     
     ASSERT_EQ(prob01.first.getNumberOfSetBits(), 1724414ull);
