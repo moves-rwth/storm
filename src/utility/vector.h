@@ -135,8 +135,11 @@ namespace storm {
                     LOG4CPLUS_ERROR(logger, "Lengths of vectors do not match, which makes operation impossible.");
                     throw storm::exceptions::InvalidArgumentException() << "Length of vectors do not match, which makes operation impossible.";
                 }
-                
+#ifdef STORM_HAVE_INTELTBB
+                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size(), target.size() / 4), [&](tbb::blocked_range<uint_fast64_t>& range) { for (uint_fast64_t current = range.begin(), end = range.end(); current < end; ++current) { target[current] += summand[current]; } });
+#else
                 std::transform(target.begin(), target.end(), summand.begin(), target.begin(), std::plus<T>());
+#endif
             }
             
             /*!

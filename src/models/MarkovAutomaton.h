@@ -127,7 +127,7 @@ namespace storm {
                     uint_fast64_t newNumberOfRows = this->getNumberOfChoices() - numberOfHybridStates;
                     
                     // Create the matrix for the new transition relation and the corresponding nondeterministic choice vector.
-                    storm::storage::SparseMatrix<T> newTransitionMatrix;
+                    storm::storage::SparseMatrixBuilder<T> newTransitionMatrixBuilder;
                     std::vector<uint_fast64_t> newNondeterministicChoiceIndices(this->getNumberOfStates() + 1);
                     
                     // Now copy over all choices that need to be kept.
@@ -149,7 +149,7 @@ namespace storm {
 
                         for (uint_fast64_t row = this->nondeterministicChoiceIndices[state] + (this->isHybridState(state) ? 1 : 0); row < this->nondeterministicChoiceIndices[state + 1]; ++row) {
                             for (auto const& entry : this->transitionMatrix.getRow(row)) {
-                                newTransitionMatrix.addNextValue(currentChoice, entry.first, entry.second);
+                                newTransitionMatrixBuilder.addNextValue(currentChoice, entry.first, entry.second);
                             }
                             ++currentChoice;
                         }
@@ -159,8 +159,7 @@ namespace storm {
                     newNondeterministicChoiceIndices.back() = currentChoice;
                     
                     // Finalize the matrix and put the new transition data in place.
-                    newTransitionMatrix.finalize();
-                    this->transitionMatrix = std::move(newTransitionMatrix);
+                    this->transitionMatrix = newTransitionMatrixBuilder.build();
                     this->nondeterministicChoiceIndices = std::move(newNondeterministicChoiceIndices);
                     
                     // Mark the automaton as closed.

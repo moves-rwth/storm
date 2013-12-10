@@ -36,8 +36,8 @@ namespace storm {
         
 #ifdef STORM_HAVE_INTELTBB
         // Forward declaration of the TBB Helper class.
-        template <typename M, typename V, typename T>
-        class tbbHelper_MatrixRowVectorScalarProduct;
+        template <typename ValueType>
+        class TbbMatrixRowVectorScalarProduct;
 #endif
         
         // Forward declare matrix class.
@@ -642,20 +642,34 @@ namespace storm {
         
 #ifdef STORM_HAVE_INTELTBB
         /*!
-         *	This function is a helper for the parallel execution of the multipliyWithVector method.
-         *  It uses Intel's TBB parallel_for paradigm to split up the row/vector multiplication and summation.
+         * This class is a helper class for parallel matrix-vector multiplication using Intel TBB.
          */
-        template <typename M, typename V, typename T>
-        class tbbHelper_MatrixRowVectorScalarProduct {
+        template <typename ValueType>
+        class TbbMatrixRowVectorScalarProduct {
         public:
-            tbbHelper_MatrixRowVectorScalarProduct(M const* matrixA, V const* vectorX, V * resultVector);
+            /*!
+             * Constructs a helper object with which TBB can perform parallel matrix-vector multiplication.
+             *
+             * @param matrix The matrix to use for the multiplication.
+             * @param vector The vector with which to multiply the matrix.
+             * @param result The vector that is supposed to hold the result after performing the multiplication.
+             */
+            TbbMatrixRowVectorScalarProduct(SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& vector, std::vector<ValueType>& result);
             
-            void operator() (const tbb::blocked_range<uint_fast64_t>& r) const;
+            /*!
+             * Performs the actual multiplication of a row with the vector.
+             */
+            void operator() (tbb::blocked_range<uint_fast64_t> const& range) const;
             
         private:
-            V * resultVector;
-            V const* vectorX;
-            M const* matrixA;
+            // The vector that is supposed to hold the result after performing the multiplication.
+            std::vector<ValueType>& result;
+            
+            // The vector with which to multiply the matrix.
+            std::vector<ValueType> const& vector;
+            
+            // The matrix to use for the multiplication.
+            SparseMatrix<ValueType> const& matrix;
         };
 #endif
         

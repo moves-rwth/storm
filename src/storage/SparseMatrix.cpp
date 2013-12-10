@@ -693,7 +693,7 @@ namespace storm {
         template<typename T>
         void SparseMatrix<T>::multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const {
 #ifdef STORM_HAVE_INTELTBB
-            tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size()), tbbHelper_MatrixRowVectorScalarProduct<storm::storage::SparseMatrix<T>, std::vector<T>, T>(this, &vector, &result));
+            tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size()), TbbMatrixRowVectorScalarProduct<T>(*this, vector, result));
 #else
             const_iterator it = this->begin();
             const_iterator ite = this->begin();
@@ -865,30 +865,26 @@ namespace storm {
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
         
 #ifdef STORM_HAVE_INTELTBB
+        template <typename ValueType>
+        TbbMatrixRowVectorScalarProduct<ValueType>::TbbMatrixRowVectorScalarProduct(SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& vector, std::vector<ValueType>& result) : result(result), vector(vector), matrix(matrix) {
+            // Intentionally left empty.
+        }
         
-        template <typename M, typename V, typename T>
-        tbbHelper_MatrixRowVectorScalarProduct<typename M, typename V, typename T>::tbbHelper_MatrixRowVectorScalarProduct(M const* matrixA, V const* vectorX, V * resultVector) : matrixA(matrixA), vectorX(vectorX), resultVector(resultVector) {}
-        
-        template <typename M, typename V, typename T>
-        void tbbHelper_MatrixRowVectorScalarProduct<typename M, typename V, typename T>::operator() (const tbb::blocked_range<uint_fast64_t>& r) const {
-            for (uint_fast64_t row = r.begin(); row < r.end(); ++row) {
-                uint_fast64_t index = matrixA->rowIndications.at(row);
-                uint_fast64_t indexEnd = matrixA->rowIndications.at(row + 1);
-                
-                // Initialize the result to be 0.
-                T element = storm::utility::constantZero<T>();
-                
-                for (; index != indexEnd; ++index) {
-                    element += matrixA->valueStorage.at(index) * vectorX->at(matrixA->columnIndications.at(index));
+        template <typename ValueType>
+        void TbbMatrixRowVectorScalarProduct<ValueType>::operator() (tbb::blocked_range<uint_fast64_t> const& range) const {
+            for (uint_fast64_t row = range.begin(); row < range.end(); ++row) {
+                ValueType element = storm::utility::constantZero<ValueType>();
+
+                for (typename SparseMatrix<ValueType>::const_iterator it = matrix.begin(row), ite = matrix.end(row); it != ite; ++it) {
+                    element += it->second * vector[it->first];
                 }
                 
-                // Write back to the result Vector
-                resultVector->at(row) = element;
+                result[row] = element;
             }
         }
         
-        // Explicit instanciations of specializations of this template here.
-        template class tbbHelper_MatrixRowVectorScalarProduct<storm::storage::SparseMatrix<double>, std::vector<double>, double>;
+        // Explicitly instantiate the helper class.
+        template class TbbMatrixRowVectorScalarProduct<double>;
         
 #endif
         

@@ -123,9 +123,9 @@ namespace storm {
                     for (uint_fast64_t row = nondeterministicChoiceIndices[state]; row < nondeterministicChoiceIndices[state + 1]; ++row) {
                         bool currentChoiceRelevant = false;
 
-                        for (auto& entry : transitionMatrix.getRow(row)) {
+                        for (auto const& entry : transitionMatrix.getRow(row)) {
                             // If there is a relevant successor, we need to add the labels of the current choice.
-                            if (relevancyInformation.relevantStates.get(entry.column()) || psiStates.get(entry.column())) {
+                            if (relevancyInformation.relevantStates.get(entry.first) || psiStates.get(entry.first)) {
                                 for (auto const& label : choiceLabeling[row]) {
                                     relevancyInformation.relevantLabels.insert(label);
                                 }
@@ -212,21 +212,21 @@ namespace storm {
                             for (auto const& entry : transitionMatrix.getRow(relevantChoice)) {
                                 
                                 // If the successor state is neither the state itself nor an irrelevant state, we need to add a variable for the transition.
-                                if (state != entry.column() && (relevancyInformation.relevantStates.get(entry.column()) || psiStates.get(entry.column()))) {
+                                if (state != entry.first && (relevancyInformation.relevantStates.get(entry.first) || psiStates.get(entry.first))) {
                                     
                                     // Make sure that there is not already one variable for the state pair. This may happen because of several nondeterministic choices
                                     // targeting the same state.
-                                    if (variableInformation.statePairToIndexMap.find(std::make_pair(state, entry.column())) != variableInformation.statePairToIndexMap.end()) {
+                                    if (variableInformation.statePairToIndexMap.find(std::make_pair(state, entry.first)) != variableInformation.statePairToIndexMap.end()) {
                                         continue;
                                     }
                                     
                                     // At this point we know that the state-pair does not have an associated variable.
-                                    variableInformation.statePairToIndexMap[std::make_pair(state, entry.column())] = variableInformation.statePairVariables.size();
+                                    variableInformation.statePairToIndexMap[std::make_pair(state, entry.first)] = variableInformation.statePairVariables.size();
                                     
                                     // Clear contents of the stream to construct new expression name.
                                     variableName.clear();
                                     variableName.str("");
-                                    variableName << "t" << state << "_" << entry.column();
+                                    variableName << "t" << state << "_" << entry.first;
                                     
                                     variableInformation.statePairVariables.push_back(context.bool_const(variableName.str().c_str()));
                                 }
@@ -316,11 +316,11 @@ namespace storm {
                         // Iterate over successors and add relevant choices of relevant successors to the following label set.
                         bool canReachTargetState = false;
                         for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
-                            if (relevancyInformation.relevantStates.get(entry.column())) {
-                                for (auto relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(entry.column())) {
+                            if (relevancyInformation.relevantStates.get(entry.first)) {
+                                for (auto relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(entry.first)) {
                                     followingLabels[choiceLabeling[currentChoice]].insert(choiceLabeling[currentChoice]);
                                 }
-                            } else if (psiStates.get(entry.column())) {
+                            } else if (psiStates.get(entry.first)) {
                                 canReachTargetState = true;
                             }
                         }
@@ -335,11 +335,11 @@ namespace storm {
                     // Iterate over predecessors and add all choices that target the current state to the preceding
                     // label set of all labels of all relevant choices of the current state.
                     for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
-                        if (relevancyInformation.relevantStates.get(predecessorEntry.column())) {
-                            for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.column())) {
+                        if (relevancyInformation.relevantStates.get(predecessorEntry.first)) {
+                            for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.first)) {
                                 bool choiceTargetsCurrentState = false;
                                 for (auto const& successorEntry : transitionMatrix.getRow(predecessorChoice)) {
-                                    if (successorEntry.column() == currentState) {
+                                    if (successorEntry.first == currentState) {
                                         choiceTargetsCurrentState = true;
                                     }
                                 }
@@ -581,11 +581,11 @@ namespace storm {
                         // Iterate over predecessors and add all choices that target the current state to the preceding
                         // label set of all labels of all relevant choices of the current state.
                         for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
-                            if (relevancyInformation.relevantStates.get(predecessorEntry.column())) {
-                                for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.column())) {
+                            if (relevancyInformation.relevantStates.get(predecessorEntry.first)) {
+                                for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.first)) {
                                     bool choiceTargetsCurrentState = false;
                                     for (auto const& successorEntry : transitionMatrix.getRow(predecessorChoice)) {
-                                        if (successorEntry.column() == currentState) {
+                                        if (successorEntry.first == currentState) {
                                             choiceTargetsCurrentState = true;
                                         }
                                     }
@@ -913,16 +913,16 @@ namespace storm {
                         // Assert the constraints (1).
                         storm::storage::VectorSet<uint_fast64_t> relevantPredecessors;
                         for (auto const& predecessorEntry : backwardTransitions.getRow(relevantState)) {
-                            if (relevantState != predecessorEntry.column() && relevancyInformation.relevantStates.get(predecessorEntry.column())) {
-                                relevantPredecessors.insert(predecessorEntry.column());
+                            if (relevantState != predecessorEntry.first && relevancyInformation.relevantStates.get(predecessorEntry.first)) {
+                                relevantPredecessors.insert(predecessorEntry.first);
                             }
                         }
                         
                         storm::storage::VectorSet<uint_fast64_t> relevantSuccessors;
                         for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(relevantState)) {
                             for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
-                                if (relevantState != successorEntry.column() && (relevancyInformation.relevantStates.get(successorEntry.column()) || psiStates.get(successorEntry.column()))) {
-                                    relevantSuccessors.insert(successorEntry.column());
+                                if (relevantState != successorEntry.first && (relevancyInformation.relevantStates.get(successorEntry.first) || psiStates.get(successorEntry.first))) {
+                                    relevantSuccessors.insert(successorEntry.first);
                                 }
                             }
                         }
@@ -941,8 +941,8 @@ namespace storm {
                         storm::storage::VectorSet<uint_fast64_t> relevantSuccessors;
                         for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(relevantState)) {
                             for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
-                                if (relevantState != successorEntry.column() && (relevancyInformation.relevantStates.get(successorEntry.column()) || psiStates.get(successorEntry.column()))) {
-                                    relevantSuccessors.insert(successorEntry.column());
+                                if (relevantState != successorEntry.first && (relevancyInformation.relevantStates.get(successorEntry.first) || psiStates.get(successorEntry.first))) {
+                                    relevantSuccessors.insert(successorEntry.first);
                                 }
                             }
                         }
@@ -965,7 +965,7 @@ namespace storm {
                     storm::storage::VectorSet<uint_fast64_t> choicesForStatePair;
                     for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(sourceState)) {
                         for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
-                            if (successorEntry.column() == targetState) {
+                            if (successorEntry.first == targetState) {
                                 choicesForStatePair.insert(relevantChoice);
                             }
                         }
@@ -1400,13 +1400,13 @@ namespace storm {
                         bool choiceTargetsRelevantState = false;
                         
                         for (auto const& successorEntry : transitionMatrix.getRow(currentChoice)) {
-                            if (relevancyInformation.relevantStates.get(successorEntry.column()) && currentState != successorEntry.column()) {
+                            if (relevancyInformation.relevantStates.get(successorEntry.first) && currentState != successorEntry.first) {
                                 choiceTargetsRelevantState = true;
-                                if (!reachableStates.get(successorEntry.column())) {
-                                    reachableStates.set(successorEntry.column());
-                                    stack.push_back(successorEntry.column());
+                                if (!reachableStates.get(successorEntry.first)) {
+                                    reachableStates.set(successorEntry.first);
+                                    stack.push_back(successorEntry.first);
                                 }
-                            } else if (psiStates.get(successorEntry.column())) {
+                            } else if (psiStates.get(successorEntry.first)) {
                                 targetStateIsReachable = true;
                             }
                         }
@@ -1443,7 +1443,7 @@ namespace storm {
 
                             // Determine whether the state has the option to leave the reachable state space and go to the unreachable relevant states.
                             for (auto const& successorEntry : originalMdp.getTransitionMatrix().getRow(currentChoice)) {
-                                if (unreachableRelevantStates.get(successorEntry.column())) {
+                                if (unreachableRelevantStates.get(successorEntry.first)) {
                                     isBorderChoice = true;
                                 }
                             }
@@ -1526,13 +1526,13 @@ namespace storm {
                         bool choiceTargetsRelevantState = false;
                         
                         for (auto const& successorEntry : transitionMatrix.getRow(currentChoice)) {
-                            if (relevancyInformation.relevantStates.get(successorEntry.column()) && currentState != successorEntry.column()) {
+                            if (relevancyInformation.relevantStates.get(successorEntry.first) && currentState != successorEntry.first) {
                                 choiceTargetsRelevantState = true;
-                                if (!reachableStates.get(successorEntry.column())) {
-                                    reachableStates.set(successorEntry.column(), true);
-                                    stack.push_back(successorEntry.column());
+                                if (!reachableStates.get(successorEntry.first)) {
+                                    reachableStates.set(successorEntry.first, true);
+                                    stack.push_back(successorEntry.first);
                                 }
-                            } else if (psiStates.get(successorEntry.column())) {
+                            } else if (psiStates.get(successorEntry.first)) {
                                 targetStateIsReachable = true;
                             }
                         }

@@ -45,14 +45,14 @@ set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory
 ##
 #############################################################
 
-set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb41_20130314_merged-win-lin-mac/")
-if(MSVC)
-	set(ENV{TBB_ARCH_PLATFORM} "intel64/vc11")
-elseif(CMAKE_COMPILER_IS_GNUCC)
-	set(ENV{TBB_ARCH_PLATFORM} "intel64/gcc4.4")
-else(CLANG)
-	set(ENV{TBB_ARCH_PLATFORM} "intel64/clang3.2")
-endif()
+#set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb41_20130314_merged-win-lin-mac/")
+#if(MSVC)
+#	set(ENV{TBB_ARCH_PLATFORM} "intel64/vc11")
+#elseif(CMAKE_COMPILER_IS_GNUCC)
+#	set(ENV{TBB_ARCH_PLATFORM} "intel64/gcc4.4")
+#else(CLANG)
+#	set(ENV{TBB_ARCH_PLATFORM} "intel64/clang3.2")
+#endif()
 
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
@@ -438,6 +438,7 @@ if (TBB_FOUND)
 	message(STATUS "StoRM - Found Intel TBB with Interface Version ${TBB_INTERFACE_VERSION}")
 	if (USE_INTELTBB)
 		message(STATUS "StoRM - Linking with Intel TBB for activated Matrix/Vector MT")
+        message(${TBB_LIBRARY_DIRS})
 		include_directories(${TBB_INCLUDE_DIRS})
 		target_link_libraries(storm tbb tbbmalloc)
 		target_link_libraries(storm-functional-tests tbb tbbmalloc)

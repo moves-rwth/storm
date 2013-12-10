@@ -99,21 +99,34 @@ namespace storm {
 
                 // Proceed with the iterations as long as the method did not converge or reach the
                 // user-specified maximum number of iterations.
+                std::chrono::nanoseconds multTime(0);
+                std::chrono::nanoseconds addTime(0);
+                std::chrono::nanoseconds reduceTime(0);
+                std::chrono::nanoseconds convergedTime(0);
+                auto clock = std::chrono::high_resolution_clock::now();
                 while (!converged && iterations < maxIterations) {
                     // Compute x' = A*x + b.
+                    clock = std::chrono::high_resolution_clock::now();
                     A.multiplyWithVector(*currentX, *multiplyResult);
+                    multTime += std::chrono::high_resolution_clock::now() - clock;
+                    clock = std::chrono::high_resolution_clock::now();
                     storm::utility::vector::addVectorsInPlace(*multiplyResult, b);
+                    addTime += std::chrono::high_resolution_clock::now() - clock;
                     
                     // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                     // element of the min/max operator stack.
+                    clock = std::chrono::high_resolution_clock::now();
                     if (minimize) {
                         storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, nondeterministicChoiceIndices);
                     } else {
                         storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, nondeterministicChoiceIndices);
                     }
+                    reduceTime += std::chrono::high_resolution_clock::now() - clock;
                     
                     // Determine whether the method converged.
+                    clock = std::chrono::high_resolution_clock::now();
                     converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, precision, relative);
+                    convergedTime += std::chrono::high_resolution_clock::now() - clock;
                     
                     // Update environment variables.
                     swap = currentX;
@@ -121,6 +134,11 @@ namespace storm {
                     newX = swap;
                     ++iterations;
                 }
+                
+                std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(multTime).count() << "ms" << std::endl;
+                std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(addTime).count() << "ms" << std::endl;
+                std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(reduceTime).count() << "ms" << std::endl;
+                std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(convergedTime).count() << "ms" << std::endl;
 
                 // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
                 // is currently stored in currentX, but x is the output vector.

@@ -139,7 +139,7 @@ public:
 		// Is there any state in the subsystem?
 		if(subSysStates.getNumberOfSetBits() == 0) {
 			LOG4CPLUS_ERROR(logger, "No states in subsystem!");
-			return storm::models::Dtmc<T>(storm::storage::SparseMatrix<T>(0),
+			return storm::models::Dtmc<T>(storm::storage::SparseMatrix<T>(),
 					  	  	  	  	  	  storm::models::AtomicPropositionsLabeling(this->getStateLabeling(), subSysStates),
 					  	  	  	  	  	  boost::optional<std::vector<T>>(),
 					  	  	  	  	  	  boost::optional<storm::storage::SparseMatrix<T>>(),
@@ -189,7 +189,7 @@ public:
 
 		// The number of transitions of the new Dtmc is the number of transitions transfered
 		// from the old one plus one transition for each state to s_b.
-		storm::storage::SparseMatrix<T> newMat(newStateCount, subSysTransitionCount + newStateCount);
+		storm::storage::SparseMatrixBuilder<T> newMatBuilder(newStateCount, subSysTransitionCount + newStateCount);
 
 		// Now fill the matrix.
 		newRow = 0;
@@ -199,14 +199,14 @@ public:
 				// Transfer transitions
 				for(auto& entry : origMat.getRow(row)) {
 					if(subSysStates.get(entry.first)) {
-						newMat.addNextValue(newRow, stateMapping[entry.first], entry.second);
+						newMatBuilder.addNextValue(newRow, stateMapping[entry.first], entry.second);
 					} else {
 						rest += entry.second;
 					}
 				}
 
 				// Insert the transition taking care of the remaining outgoing probability.
-				newMat.addNextValue(newRow, newStateCount - 1, rest);
+				newMatBuilder.addNextValue(newRow, newStateCount - 1, rest);
 				rest = storm::utility::constantZero<T>();
 
 				newRow++;
@@ -214,9 +214,7 @@ public:
 		}
 
 		// Insert last transition: self loop on s_b
-		newMat.addNextValue(newStateCount - 1, newStateCount - 1, storm::utility::constantOne<T>());
-
-		newMat.finalize();
+		newMatBuilder.addNextValue(newStateCount - 1, newStateCount - 1, storm::utility::constantOne<T>());
 
 		// 3. Take care of the labeling.
 		storm::models::AtomicPropositionsLabeling newLabeling = storm::models::AtomicPropositionsLabeling(this->getStateLabeling(), subSysStates);
@@ -245,7 +243,7 @@ public:
 		boost::optional<storm::storage::SparseMatrix<T>> newTransitionRewards;
 		if(this->hasTransitionRewards()) {
 
-			storm::storage::SparseMatrix<T> newTransRewards(newStateCount, subSysTransitionCount + newStateCount);
+			storm::storage::SparseMatrixBuilder<T> newTransRewardsBuilder(newStateCount, subSysTransitionCount + newStateCount);
 
 			// Copy the rewards for the kept states
 			newRow = 0;
@@ -254,18 +252,18 @@ public:
 					// Transfer transition rewards
 					for(auto& entry : this->getTransitionRewardMatrix().getRow(row)) {
 						if(subSysStates.get(entry.first)) {
-							newTransRewards.addNextValue(newRow, stateMapping[entry.first], entry.second);
+							newTransRewardsBuilder.addNextValue(newRow, stateMapping[entry.first], entry.second);
 						}
 					}
 
 					// Insert the reward (e.g. 0) for the transition taking care of the remaining outgoing probability.
-					newTransRewards.addNextValue(newRow, newStateCount - 1, storm::utility::constantZero<T>());
+					newTransRewardsBuilder.addNextValue(newRow, newStateCount - 1, storm::utility::constantZero<T>());
 
 					newRow++;
 				}
 			}
 
-			newTransitionRewards = newTransRewards;
+			newTransitionRewards = newTransRewardsBuilder.build();
 		}
 
 		boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> newChoiceLabels;
@@ -283,12 +281,7 @@ public:
 		}
 
 		// 5. Make Dtmc from its parts and return it
-		return storm::models::Dtmc<T>(newMat, 
-									  newLabeling,
-									  newStateRewards,
-									  newTransitionRewards,
-									  newChoiceLabels
-									  );
+		return storm::models::Dtmc<T>(newMatBuilder.build(), newLabeling, newStateRewards, std::move(newTransitionRewards), newChoiceLabels);
 
 	}
 
