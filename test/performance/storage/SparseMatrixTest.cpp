@@ -13,7 +13,7 @@ TEST(SparseMatrix, Iteration) {
     for (uint_fast64_t row = 0; row < matrix.getRowCount(); ++row) {
         for (auto const& entry : matrix.getRow(row)) {
             // The following can never be true, but prevents the compiler from optimizing away the loop.
-            if (entry.column() > matrix.getColumnCount()) {
+            if (entry.first > matrix.getColumnCount()) {
                 ASSERT_TRUE(false);
             }
         }

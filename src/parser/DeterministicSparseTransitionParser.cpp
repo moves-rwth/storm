@@ -226,9 +226,9 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 			if ((lastRow != -1) && (!rowHadDiagonalEntry)) {
 				if (insertDiagonalEntriesIfMissing && !isRewardMatrix) {
 					resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
-					LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
+					// LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
 				} else if (!isRewardMatrix) {
-					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
+					// LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
 				}
 				// No increment for lastRow
 				rowHadDiagonalEntry = true;
@@ -238,9 +238,9 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 				if (fixDeadlocks && !isRewardMatrix) {
 					resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
 					rowHadDiagonalEntry = true;
-					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
+					// LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
 				} else if (!isRewardMatrix) {
-					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
+					// LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
 					// FIXME Why no exception at this point? This will break the App.
 				}
 			}
@@ -254,9 +254,9 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 			rowHadDiagonalEntry = true;
 			if (insertDiagonalEntriesIfMissing && !isRewardMatrix) {
 				resultMatrix.addNextValue(row, row, storm::utility::constantZero<double>());
-				LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
+				// LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
 			} else if (!isRewardMatrix) {
-				LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
+				// LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
 			}
 		}
 
@@ -267,9 +267,9 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser(std::st
 	if (!rowHadDiagonalEntry) {
 		if (insertDiagonalEntriesIfMissing && !isRewardMatrix) {
 			resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
-			LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
+			// LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
 		} else if (!isRewardMatrix) {
-			LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
+			// LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
 		}
 	}
 

@@ -21,7 +21,7 @@ TEST(GraphTest, PerformProb01) {
 
     ASSERT_EQ(prob01.first.getNumberOfSetBits(), 574016ull);
     ASSERT_EQ(prob01.second.getNumberOfSetBits(), 825797ull);
-    
+        
     prob01 = storm::utility::graph::performProb01(*dtmc, trueStates, storm::storage::BitVector(dtmc->getLabeledStates("observeOnlyTrueSender")));
 
     ASSERT_EQ(prob01.first.getNumberOfSetBits(), 1785309ull);

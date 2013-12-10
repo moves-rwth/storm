@@ -35,8 +35,8 @@ namespace storm {
                 for (auto state : psiStates) {
                     analysisInformation[state] = std::set<uint_fast64_t>();
                     for (auto& predecessorEntry : backwardTransitions.getRow(state)) {
-                        if (predecessorEntry.column() != state) {
-                            worklist.push(std::make_pair(predecessorEntry.column(), state));
+                        if (predecessorEntry.first != state) {
+                            worklist.push(std::make_pair(predecessorEntry.first, state));
                         }
                     }
                 }
@@ -57,7 +57,7 @@ namespace storm {
                         bool choiceTargetsTargetState = false;
                         
                         for (auto& entry : transitionMatrix.getRow(currentChoice)) {
-                            if (entry.column() == targetState) {
+                            if (entry.first == targetState) {
                                 choiceTargetsTargetState = true;
                                 break;
                             }
@@ -78,8 +78,8 @@ namespace storm {
                     if (analysisInformation[currentState].size() != analysisInformationSizeBefore) {
                         for (auto& predecessorEntry : backwardTransitions.getRow(currentState)) {
                             // Only put the predecessor in the worklist if it's not already a target state.
-                            if (!psiStates.get(predecessorEntry.column())) {
-                                worklist.push(std::make_pair(predecessorEntry.column(), currentState));
+                            if (!psiStates.get(predecessorEntry.first)) {
+                                worklist.push(std::make_pair(predecessorEntry.first, currentState));
                             }
                         }
                     }

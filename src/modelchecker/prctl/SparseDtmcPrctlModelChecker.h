@@ -264,7 +264,9 @@ public:
 
 		// We need to identify the states which have to be taken out of the matrix, i.e.
 		// all states that have probability 0 and 1 of satisfying the until-formula.
+		LOG4CPLUS_INFO(logger, "Running Prob01.");
         std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), phiStates, psiStates);
+        LOG4CPLUS_INFO(logger, "Done running Prob01.");
 		storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
 		storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
 

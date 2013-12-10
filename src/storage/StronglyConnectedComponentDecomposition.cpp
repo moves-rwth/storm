@@ -127,40 +127,40 @@ namespace storm {
                 // Now, traverse all successors of the current state.
                 for(; successorIt != model.getRows(currentState).end(); ++successorIt) {
                     // Record if the current state has a self-loop if we are to drop naive SCCs later.
-                    if (dropNaiveSccs && currentState == successorIt.column()) {
+                    if (dropNaiveSccs && currentState == successorIt->first) {
                         statesWithSelfloop.set(currentState, true);
                     }
                     
                     // If we have not visited the successor already, we need to perform the procedure
                     // recursively on the newly found state, but only if it belongs to the subsystem in
                     // which we are interested.
-                    if (subsystem.get(successorIt.column())) {
-                        if (!visitedStates.get(successorIt.column())) {
+                    if (subsystem.get(successorIt->first)) {
+                        if (!visitedStates.get(successorIt->first)) {
                             // Save current iterator position so we can continue where we left off later.
                             recursionIteratorStack.pop_back();
                             recursionIteratorStack.push_back(successorIt);
                             
                             // Put unvisited successor on top of our recursion stack and remember that.
-                            recursionStateStack.push_back(successorIt.column());
-                            statesInStack[successorIt.column()] = true;
+                            recursionStateStack.push_back(successorIt->first);
+                            statesInStack[successorIt->first] = true;
                             
                             // Also, put initial value for iterator on corresponding recursion stack.
-                            recursionIteratorStack.push_back(model.getRows(successorIt.column()).begin());
+                            recursionIteratorStack.push_back(model.getRows(successorIt->first).begin());
                             
                             // Perform the actual recursion step in an iterative way.
                             goto recursionStepForward;
                             
                         recursionStepBackward:
-                            lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[successorIt.column()]);
+                            lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[successorIt->first]);
                             
                             // If we are interested in bottom SCCs only, we need to check whether the current state
                             // can leave the SCC.
-                            if (onlyBottomSccs && lowlinks[currentState] != lowlinks[successorIt.column()]) {
+                            if (onlyBottomSccs && lowlinks[currentState] != lowlinks[successorIt->first]) {
                                 statesThatCanLeaveTheirScc.set(currentState);
                             }
-                        } else if (tarjanStackStates.get(successorIt.column())) {
+                        } else if (tarjanStackStates.get(successorIt->first)) {
                             // Update the lowlink of the current state.
-                            lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[successorIt.column()]);
+                            lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[successorIt->first]);
                             
                             // Since it is known that in this case, the successor state is in the same SCC as the current state
                             // we don't need to update the bit vector of states that can leave their SCC.

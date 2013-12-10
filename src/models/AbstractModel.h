@@ -170,7 +170,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 storm::storage::VectorSet<uint_fast64_t> allTargetBlocks;
                 for (auto state : block) {
                     for (auto const& transitionEntry : this->getRows(state)) {
-                        uint_fast64_t targetBlock = stateToBlockMap[transitionEntry.column()];
+                        uint_fast64_t targetBlock = stateToBlockMap[transitionEntry.first];
                         
                         // We only need to consider transitions that are actually leaving the SCC.
                         if (targetBlock != currentBlockIndex) {

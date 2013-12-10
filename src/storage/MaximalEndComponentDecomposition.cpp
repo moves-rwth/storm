@@ -82,8 +82,8 @@ namespace storm {
                             
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 bool choiceContainedInMEC = true;
-                                for (auto& entry : transitionMatrix.getRow(choice)) {
-                                    if (!scc.contains(entry.column())) {
+                                for (auto const& entry : transitionMatrix.getRow(choice)) {
+                                    if (!scc.contains(entry.first)) {
                                         choiceContainedInMEC = false;
                                         break;
                                     }
@@ -108,9 +108,9 @@ namespace storm {
                         // Now check which states should be reconsidered, because successors of them were removed.
                         statesToCheck.clear();
                         for (auto state : statesToRemove) {
-                            for (auto& entry : transitionMatrix.getRow(state)) {
-                                if (scc.contains(entry.column())) {
-                                    statesToCheck.set(entry.column());
+                            for (auto const& entry : transitionMatrix.getRow(state)) {
+                                if (scc.contains(entry.first)) {
+                                    statesToCheck.set(entry.first);
                                 }
                             }
                         }
@@ -144,8 +144,8 @@ namespace storm {
                     std::vector<uint_fast64_t> containedChoices;
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool choiceContained = true;
-                        for (auto& entry : transitionMatrix.getRow(choice)) {
-                            if (!mecStateSet.contains(entry.column())) {
+                        for (auto const& entry : transitionMatrix.getRow(choice)) {
+                            if (!mecStateSet.contains(entry.first)) {
                                 choiceContained = false;
                                 break;
                             }

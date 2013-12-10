@@ -90,10 +90,10 @@ class AbstractDeterministicModel: public AbstractModel<T> {
             auto rowIt = this->transitionMatrix.begin();
             for (uint_fast64_t i = 0; i < this->transitionMatrix.getRowCount(); ++i, ++rowIt) {
                 typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(i);
-                for (auto& transition : row) {
-                    if (transition.value() != storm::utility::constantZero<T>()) {
-                        if (subsystem == nullptr || subsystem->get(transition.column())) {
-                            outStream << "\t" << i << " -> " << transition.column() << " [ label= \"" << transition.value() << "\" ];" << std::endl;
+                for (auto const& transition : row) {
+                    if (transition.second != storm::utility::constantZero<T>()) {
+                        if (subsystem == nullptr || subsystem->get(transition.first)) {
+                            outStream << "\t" << i << " -> " << transition.first << " [ label= \"" << transition.second << "\" ];" << std::endl;
                         }
                     }
                 }

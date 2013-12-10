@@ -169,8 +169,8 @@ public:
 		std::vector<uint_fast64_t> stateMapping;
 		for(uint_fast64_t row = 0; row < origMat.getRowCount(); ++row) {
 			if(subSysStates.get(row)){
-				for(auto& entry : origMat.getRow(row)) {
-					if(subSysStates.get(entry.column())) {
+				for(auto const& entry : origMat.getRow(row)) {
+					if(subSysStates.get(entry.first)) {
 						subSysTransitionCount++;	
 					} 
 				}
@@ -198,10 +198,10 @@ public:
 			if(subSysStates.get(row)){
 				// Transfer transitions
 				for(auto& entry : origMat.getRow(row)) {
-					if(subSysStates.get(entry.column())) {
-						newMat.addNextValue(newRow, stateMapping[entry.column()], entry.value());
+					if(subSysStates.get(entry.first)) {
+						newMat.addNextValue(newRow, stateMapping[entry.first], entry.second);
 					} else {
-						rest += entry.value();
+						rest += entry.second;
 					}
 				}
 
@@ -253,8 +253,8 @@ public:
 				if(subSysStates.get(row)){
 					// Transfer transition rewards
 					for(auto& entry : this->getTransitionRewardMatrix().getRow(row)) {
-						if(subSysStates.get(entry.column())) {
-							newTransRewards.addNextValue(newRow, stateMapping[entry.column()], entry.value());
+						if(subSysStates.get(entry.first)) {
+							newTransRewards.addNextValue(newRow, stateMapping[entry.first], entry.second);
 						}
 					}
 

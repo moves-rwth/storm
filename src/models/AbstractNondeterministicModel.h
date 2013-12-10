@@ -134,8 +134,8 @@ namespace storm {
                 for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                     typename storm::storage::SparseMatrix<T>::const_rows rows = this->getRows(i);
                     for (auto const& transition : rows) {
-                        if (transition.value() > 0) {
-                            ++rowIndications[transition.column() + 1];
+                        if (transition.second > 0) {
+                            ++rowIndications[transition.first + 1];
                         }
                     }
                 }
@@ -153,10 +153,10 @@ namespace storm {
                 // every state. Again, we start by considering all but the last row.
                 for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                     typename storm::storage::SparseMatrix<T>::const_rows rows = this->getRows(i);
-                    for (auto& transition : rows) {
-                        if (transition.value() > 0) {
-                            values[nextIndices[transition.column()]] = transition.value();
-                            columnIndications[nextIndices[transition.column()]++] = i;
+                    for (auto const& transition : rows) {
+                        if (transition.second > 0) {
+                            values[nextIndices[transition.first]] = transition.second;
+                            columnIndications[nextIndices[transition.first]++] = i;
                         }
                     }
                 }
@@ -240,8 +240,8 @@ namespace storm {
             
                         // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
                         for (auto const& transition : row) {
-                            if (subsystem == nullptr || subsystem->get(transition.column())) {
-                                outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.column() << " [ label= \"" << transition.value() << "\" ]";
+                            if (subsystem == nullptr || subsystem->get(transition.first)) {
+                                outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.first << " [ label= \"" << transition.second << "\" ]";
                                 
                                 // If we were given a scheduler to highlight, we do so now.
                                 if (scheduler != nullptr) {

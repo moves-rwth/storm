@@ -494,24 +494,24 @@ TEST(SparseMatrix, Iteration) {
     ASSERT_NO_THROW(matrix.finalize());
     
     for (auto const& entry : matrix.getRow(4)) {
-        if (entry.column() == 0) {
-            ASSERT_EQ(0.1, entry.value());
-        } else if (entry.column() == 1) {
-            ASSERT_EQ(0.2, entry.value());
-        } else if (entry.column() == 3) {
-            ASSERT_EQ(0.3, entry.value());
+        if (entry.first == 0) {
+            ASSERT_EQ(0.1, entry.second);
+        } else if (entry.first == 1) {
+            ASSERT_EQ(0.2, entry.second);
+        } else if (entry.first == 3) {
+            ASSERT_EQ(0.3, entry.second);
         } else {
             ASSERT_TRUE(false);
         }
     }
     
     for (storm::storage::SparseMatrix<double>::iterator it = matrix.begin(4), ite = matrix.end(4); it != ite; ++it) {
-        if (it.column() == 0) {
-            ASSERT_EQ(0.1, it.value());
-        } else if (it.column() == 1) {
-            ASSERT_EQ(0.2, it.value());
-        } else if (it.column() == 3) {
-            ASSERT_EQ(0.3, it.value());
+        if (it->first == 0) {
+            ASSERT_EQ(0.1, it->second);
+        } else if (it->first == 1) {
+            ASSERT_EQ(0.2, it->second);
+        } else if (it->first == 3) {
+            ASSERT_EQ(0.3, it->second);
         } else {
             ASSERT_TRUE(false);
         }

@@ -68,8 +68,8 @@ namespace storm {
             friend class tbbHelper_MatrixRowVectorScalarProduct;
 #endif
             
-            typedef typename std::vector<std::pair<uint_fast64_t, T>>::iterator iterator;
-            typedef typename std::vector<std::pair<uint_fast64_t, T>>::const_iterator const_iterator;
+            typedef std::pair<uint_fast64_t, T>* iterator;
+            typedef std::pair<uint_fast64_t, T> const* const_iterator;
             
             /*!
              * This class represents a number of consecutive rows of the matrix.
@@ -80,10 +80,10 @@ namespace storm {
                  * Constructs an object that represents the rows defined by the value of the first entry, the column
                  * of the first entry and the number of entries in this row set.
                  *
-                 * @param columnAndValuePtr A pointer to the columnd and value of the first entry of the rows.
+                 * @param begin An iterator that points to the beginning of the row.
                  * @param entryCount The number of entrys in the rows.
                  */
-                rows(std::pair<uint_fast64_t, T>* columnAndValuePtr, uint_fast64_t entryCount);
+                rows(iterator begin, uint_fast64_t entryCount);
                 
                 /*!
                  * Retrieves an iterator that points to the beginning of the rows.
@@ -101,7 +101,7 @@ namespace storm {
                 
             private:
                 // The pointer to the columnd and value of the first entry.
-                std::pair<uint_fast64_t, T>* columnAndValuePtr;
+                iterator beginIterator;
                 
                 // The number of non-zero entries in the rows.
                 uint_fast64_t entryCount;
@@ -116,10 +116,10 @@ namespace storm {
                  * Constructs an object that represents the rows defined by the value of the first entry, the column
                  * of the first entry and the number of entries in this row set.
                  *
-                 * @param columnAndValuePtr A pointer to the columnd and value of the first entry of the rows.
+                 * @param begin An iterator that points to the beginning of the row.
                  * @param entryCount The number of entrys in the rows.
                  */
-                const_rows(std::pair<uint_fast64_t, T> const* columnAndValuePtr, uint_fast64_t entryCount);
+                const_rows(const_iterator begin, uint_fast64_t entryCount);
                 
                 /*!
                  * Retrieves an iterator that points to the beginning of the rows.
@@ -137,7 +137,7 @@ namespace storm {
                 
             private:
                 // The pointer to the columnd and value of the first entry.
-                std::pair<uint_fast64_t, T> const* columnAndValuePtr;
+                const_iterator beginIterator;
                 
                 // The number of non-zero entries in the rows.
                 uint_fast64_t entryCount;
@@ -507,7 +507,7 @@ namespace storm {
              * @param row The row past the end of which the iterator has to point.
              * @return An iterator that points past the end of the given row.
              */
-            const_iterator end(uint_fast64_t row = 0) const;
+            const_iterator end(uint_fast64_t row) const;
 
             /*!
              * Retrieves an iterator that points past the end of the given row.
@@ -515,7 +515,7 @@ namespace storm {
              * @param row The row past the end of which the iterator has to point.
              * @return An iterator that points past the end of the given row.
              */
-            iterator end(uint_fast64_t row = 0);
+            iterator end(uint_fast64_t row);
 
             /*!
              * Retrieves an iterator that points past the end of the last row of the matrix.
