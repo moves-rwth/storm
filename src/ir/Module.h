@@ -9,6 +9,7 @@
 #define STORM_IR_MODULE_H_
 
 #include "utility/OsDetection.h"
+#include <boost/container/flat_set.hpp>
 
 #ifdef LINUX
 #include <boost/container/map.hpp>
@@ -20,7 +21,6 @@
 #include <vector>
 #include <memory>
 
-#include "src/storage/VectorSet.h"
 #include "BooleanVariable.h"
 #include "IntegerVariable.h"
 #include "Command.h"
@@ -187,7 +187,7 @@ namespace storm {
              *
              * @param indexSet The set of indices for which to keep the commands.
              */
-            void restrictCommands(storm::storage::VectorSet<uint_fast64_t> const& indexSet);
+            void restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet);
         private:
             
             /*!

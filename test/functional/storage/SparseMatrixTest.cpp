@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/OutOfRangeException.h"
 
 TEST(SparseMatrixBuilder, CreationWithDimensions) {
@@ -54,10 +54,10 @@ TEST(SparseMatrixBuilder, CreationWithNumberOfRows) {
 TEST(SparseMatrixBuilder, CreationWithoutDimensions) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder;
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));
-    ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 2, 1.2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 3, 1.2));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 0, 0.5));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 1, 0.7));
-    ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 3, 0.2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 2, 0.2));
 
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = matrixBuilder.build());

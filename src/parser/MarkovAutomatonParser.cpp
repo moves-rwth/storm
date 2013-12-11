@@ -19,7 +19,7 @@ namespace storm {
                 throw storm::exceptions::WrongFormatException() << "Transition rewards are unsupported for Markov automata.";
             }
             
-            storm::models::MarkovAutomaton<double> resultingAutomaton(std::move(transitionResult.transitionMatrix), std::move(resultLabeling), std::move(transitionResult.nondeterministicChoiceIndices), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>());
+            storm::models::MarkovAutomaton<double> resultingAutomaton(std::move(transitionResult.transitionMatrix), std::move(resultLabeling), std::move(transitionResult.nondeterministicChoiceIndices), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
             
             return resultingAutomaton;
         }

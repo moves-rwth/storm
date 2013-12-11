@@ -9,7 +9,7 @@
 #define STORM_STORAGE_LABELEDVALUES_H
 
 #include <list>
-#include "src/storage/VectorSet.h"
+#include <boost/container/flat_set.hpp>
 
 namespace storm {
     namespace utility {
@@ -45,8 +45,8 @@ namespace storm {
              * @param value The value to add.
              * @return A reference to the list of labels that is associated with the given value.
              */
-            storm::storage::VectorSet<uint_fast64_t>& addValue(ValueType value) {
-                valueLabelList.emplace_back(value, storm::storage::VectorSet<uint_fast64_t>());
+            boost::container::flat_set<uint_fast64_t>& addValue(ValueType value) {
+                valueLabelList.emplace_back(value, boost::container::flat_set<uint_fast64_t>());
                 return valueLabelList.back().second;
             }
             
@@ -57,7 +57,7 @@ namespace storm {
              * @param labels The labels to associate with this value.
              * @return A reference to the list of labels that is associated with the given value.
              */
-            storm::storage::VectorSet<uint_fast64_t>& addValue(ValueType value, storm::storage::VectorSet<uint_fast64_t> const& labels) {
+            boost::container::flat_set<uint_fast64_t>& addValue(ValueType value, boost::container::flat_set<uint_fast64_t> const& labels) {
                 valueLabelList.emplace_back(value, labels);
                 return valueLabelList.back().second;
             }
@@ -67,7 +67,7 @@ namespace storm {
              *
              * @return An iterator pointing to the first labeled probability.
              */
-            typename std::list<std::pair<ValueType, storm::storage::VectorSet<uint_fast64_t>>>::iterator begin() {
+            typename std::list<std::pair<ValueType, boost::container::flat_set<uint_fast64_t>>>::iterator begin() {
                 return valueLabelList.begin();
             }
             
@@ -76,7 +76,7 @@ namespace storm {
              *
              * @return An iterator pointing past the last labeled probability.
              */
-            typename std::list<std::pair<ValueType, storm::storage::VectorSet<uint_fast64_t>>>::const_iterator end() {
+            typename std::list<std::pair<ValueType, boost::container::flat_set<uint_fast64_t>>>::const_iterator end() {
                 return valueLabelList.end();
             }
             
@@ -85,7 +85,7 @@ namespace storm {
              *
              * @return A const iterator pointing to the first labeled probability.
              */
-            typename std::list<std::pair<ValueType, storm::storage::VectorSet<uint_fast64_t>>>::const_iterator begin() const {
+            typename std::list<std::pair<ValueType, boost::container::flat_set<uint_fast64_t>>>::const_iterator begin() const {
                 return valueLabelList.begin();
             }
             
@@ -94,7 +94,7 @@ namespace storm {
              *
              * @return A const iterator pointing past the last labeled probability.
              */
-            typename std::list<std::pair<ValueType, storm::storage::VectorSet<uint_fast64_t>>>::const_iterator end() const {
+            typename std::list<std::pair<ValueType, boost::container::flat_set<uint_fast64_t>>>::const_iterator end() const {
                 return valueLabelList.end();
             }
             
@@ -178,7 +178,7 @@ namespace storm {
             
         private:
             // The actual storage used to store the list of values and the associated labels.
-            std::list<std::pair<ValueType, storm::storage::VectorSet<uint_fast64_t>>> valueLabelList;
+            std::list<std::pair<ValueType, boost::container::flat_set<uint_fast64_t>>> valueLabelList;
             
             /*!
              * Returns the sum of the values.

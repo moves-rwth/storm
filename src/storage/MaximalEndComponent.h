@@ -2,8 +2,7 @@
 #define STORM_STORAGE_MAXIMALENDCOMPONENT_H_
 
 #include <unordered_map>
-
-#include "src/storage/VectorSet.h"
+#include <boost/container/flat_set.hpp>
 
 namespace storm {
     namespace storage {
@@ -12,8 +11,8 @@ namespace storm {
          */
         class MaximalEndComponent {
         public:
-            typedef std::unordered_map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>>::iterator iterator;
-            typedef std::unordered_map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>>::const_iterator const_iterator;
+            typedef std::unordered_map<uint_fast64_t, boost::container::flat_set<uint_fast64_t>>::iterator iterator;
+            typedef std::unordered_map<uint_fast64_t, boost::container::flat_set<uint_fast64_t>>::const_iterator const_iterator;
             
             /*!
              * Creates an empty MEC.
@@ -51,7 +50,7 @@ namespace storm {
              * @param state The state for which to retrieve the choices.
              * @return A list of choices of the state in the MEC.
              */
-            storm::storage::VectorSet<uint_fast64_t> const& getChoicesForState(uint_fast64_t state) const;
+            boost::container::flat_set<uint_fast64_t> const& getChoicesForState(uint_fast64_t state) const;
             
             /*!
              * Removes the given choice from the list of choices of the named state.
@@ -90,7 +89,7 @@ namespace storm {
              *
              * @return The set of states contained in the MEC.
              */
-            storm::storage::VectorSet<uint_fast64_t> getStateSet() const;
+            boost::container::flat_set<uint_fast64_t> getStateSet() const;
             
             iterator begin();
             
@@ -104,7 +103,7 @@ namespace storm {
             
         private:
             // This stores the mapping from states contained in the MEC to the choices in this MEC.
-            std::unordered_map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>> stateToChoicesMapping;
+            std::unordered_map<uint_fast64_t, boost::container::flat_set<uint_fast64_t>> stateToChoicesMapping;
         };
     }
 }

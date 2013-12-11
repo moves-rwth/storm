@@ -26,7 +26,7 @@ namespace storm {
 			MarkovAutomaton(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
 							std::vector<uint_fast64_t>& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<T> const& exitRates,
 							boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
-							boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> const& optionalChoiceLabeling)
+							boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
 							: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling),
                             markovianStates(markovianStates), exitRates(exitRates), closed(false) {
                                 
@@ -46,7 +46,7 @@ namespace storm {
                             storm::storage::BitVector const& markovianStates, std::vector<T> const& exitRates,
 							boost::optional<std::vector<T>>&& optionalStateRewardVector,
 							boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
-							boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>&& optionalChoiceLabeling)
+							boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
 							: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
                                                                std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
                                 
@@ -181,7 +181,7 @@ namespace storm {
                 }
                 nondeterministicChoiceIndices[this->getNumberOfStates()] = this->getNumberOfStates();
             
-                return std::shared_ptr<AbstractModel<T>>(new MarkovAutomaton(newTransitionMatrix, this->getStateLabeling(), nondeterministicChoiceIndices, markovianStates, exitRates, this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>()));
+                return std::shared_ptr<AbstractModel<T>>(new MarkovAutomaton(newTransitionMatrix, this->getStateLabeling(), nondeterministicChoiceIndices, markovianStates, exitRates, this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>()));
             }
         
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {

@@ -57,8 +57,8 @@ namespace storm {
             struct ChoiceInformation {
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> problematicChoicesForProblematicStates;
-                storm::storage::VectorSet<uint_fast64_t> allRelevantLabels;
-                storm::storage::VectorSet<uint_fast64_t> knownLabels;
+                boost::container::flat_set<uint_fast64_t> allRelevantLabels;
+                boost::container::flat_set<uint_fast64_t> knownLabels;
             };
 
             /*!
@@ -116,7 +116,7 @@ namespace storm {
                 ChoiceInformation result;
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 
                 // Now traverse all choices of all relevant states and check whether there is a relevant target state.
                 // If so, the associated labels become relevant. Also, if a choice of relevant state has at least one
@@ -168,7 +168,7 @@ namespace storm {
              * @param relevantLabels The set of relevant labels of the model.
              * @return A mapping from labels to variable indices.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver& solver, storm::storage::VectorSet<uint_fast64_t> const& relevantLabels) {
+            static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver& solver, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
                 int error = 0;
                 std::stringstream variableNameBuffer;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
@@ -482,7 +482,7 @@ namespace storm {
             static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 for (auto state : stateInformation.relevantStates) {
                     std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(state).begin();
                     for (auto choice : choiceInformation.relevantChoicesForRelevantStates.at(state)) {
@@ -888,8 +888,8 @@ namespace storm {
              * @param solver The MILP solver.
              * @param variableInformation A struct with information about the variables of the model.
              */
-            static storm::storage::VectorSet<uint_fast64_t> getUsedLabelsInSolution(storm::solver::LpSolver const& solver, VariableInformation const& variableInformation) {
-                storm::storage::VectorSet<uint_fast64_t> result;
+            static boost::container::flat_set<uint_fast64_t> getUsedLabelsInSolution(storm::solver::LpSolver const& solver, VariableInformation const& variableInformation) {
+                boost::container::flat_set<uint_fast64_t> result;
 
                 for (auto labelVariablePair : variableInformation.labelToVariableIndexMap) {
                     bool labelTaken = solver.getBinaryValue(labelVariablePair.second);
@@ -951,7 +951,7 @@ namespace storm {
                 
         public:
             
-            static storm::storage::VectorSet<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabeling()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal label set generation is impossible for unlabeled model.";
@@ -987,8 +987,8 @@ namespace storm {
                 solver->optimize();
                 
                 // (4.4) Read off result from variables.
-                storm::storage::VectorSet<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(*solver, variableInformation);
-                usedLabelSet.insert(choiceInformation.knownLabels);
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(*solver, variableInformation);
+                usedLabelSet.insert(choiceInformation.knownLabels.begin(), choiceInformation.knownLabels.end());
                 
                 // Display achieved probability.
                 std::pair<uint_fast64_t, double> initialStateProbabilityPair = getReachabilityProbability(*solver, labeledMdp, variableInformation);
@@ -1044,7 +1044,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                storm::storage::VectorSet<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, strictBound, true, true);
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, strictBound, true, true);
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 

@@ -14,6 +14,7 @@
 #include <vector>
 #include <queue>
 #include <boost/functional/hash.hpp>
+#include <boost/container/flat_set.hpp>
 
 #include "src/ir/Program.h"
 #include "src/ir/RewardModel.h"
@@ -77,7 +78,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> transitionRewardMatrix;
                 
                 // A vector that stores a labeling for each choice.
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> choiceLabeling;
+                std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabeling;
             };
             
             /*!
@@ -294,10 +295,9 @@ namespace storm {
                             // Update the choice by adding the probability/target state to it.
                             double probabilityToAdd = update.getLikelihoodExpression()->getValueAsDouble(currentState);
                             probabilitySum += probabilityToAdd;
-							std::set<uint_fast64_t> lables;
-							lables.insert(update.getGlobalIndex());
-                            //addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, {update.getGlobalIndex()});
-							addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, lables);
+                            boost::container::flat_set<uint_fast64_t> labels;
+							labels.insert(update.getGlobalIndex());
+							addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, labels);
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
@@ -351,7 +351,7 @@ namespace storm {
                                         double updateProbability = update.getLikelihoodExpression()->getValueAsDouble(currentState);
                                         for (auto const& valueLabelSetPair : stateProbabilityPair.second) {
                                             // Copy the label set, so we can modify it.
-                                            storm::storage::VectorSet<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
+                                            boost::container::flat_set<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
                                             newLabelSet.insert(update.getGlobalIndex());
                                             
                                             newProbability.addValue(valueLabelSetPair.first * updateProbability, newLabelSet);
@@ -455,9 +455,9 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
+            static std::pair<std::vector<uint_fast64_t>, std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
                 std::vector<uint_fast64_t> nondeterministicChoiceIndices;
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> choiceLabels;
+                std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabels;
                 
                 // Initialize a queue and insert the initial state.
                 std::queue<uint_fast64_t> stateQueue;
@@ -492,7 +492,7 @@ namespace storm {
                         if (deterministicModel) {
                             Choice<ValueType> globalChoice("");
                             std::map<uint_fast64_t, ValueType> stateToRewardMap;
-                            storm::storage::VectorSet<uint_fast64_t> allChoiceLabels;
+                            boost::container::flat_set<uint_fast64_t> allChoiceLabels;
                             
                             // Combine all the choices and scale them with the total number of choices of the current state.
                             for (auto const& choice : allUnlabeledChoices) {
@@ -633,7 +633,7 @@ namespace storm {
                 // Build the transition and reward matrices.
                 storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder;
                 storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder;
-                std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
+                std::pair<std::vector<uint_fast64_t>, std::vector<boost::container::flat_set<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
                 modelComponents.nondeterministicChoiceIndices = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.first);
                 modelComponents.choiceLabeling = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.second);
                 

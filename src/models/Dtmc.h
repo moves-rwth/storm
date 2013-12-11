@@ -46,7 +46,7 @@ public:
 	 */
 	Dtmc(storm::storage::SparseMatrix<T> const& probabilityMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
 				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> const& optionalChoiceLabeling)
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
 			: AbstractDeterministicModel<T>(probabilityMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
@@ -73,7 +73,7 @@ public:
 	 */
 	Dtmc(storm::storage::SparseMatrix<T>&& probabilityMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
 				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>&& optionalChoiceLabeling)
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
 				// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
 			: AbstractDeterministicModel<T>(std::move(probabilityMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
                                             std::move(optionalChoiceLabeling)) {
@@ -143,7 +143,7 @@ public:
 					  	  	  	  	  	  storm::models::AtomicPropositionsLabeling(this->getStateLabeling(), subSysStates),
 					  	  	  	  	  	  boost::optional<std::vector<T>>(),
 					  	  	  	  	  	  boost::optional<storm::storage::SparseMatrix<T>>(),
-					  	  	  	  	  	  boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>());
+					  	  	  	  	  	  boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 		}
 
 		// Does the vector have the right size?
@@ -266,16 +266,16 @@ public:
 			newTransitionRewards = newTransRewardsBuilder.build();
 		}
 
-		boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> newChoiceLabels;
+		boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> newChoiceLabels;
 		if(this->hasChoiceLabeling()) {
 
 			// Get the choice label sets and move the needed values to the front.
-			std::vector<storm::storage::VectorSet<uint_fast64_t>> newChoice(this->getChoiceLabeling());
+			std::vector<boost::container::flat_set<uint_fast64_t>> newChoice(this->getChoiceLabeling());
 			storm::utility::vector::selectVectorValues(newChoice, subSysStates, newChoice);
 
 			// Throw away all values after the last state and set the choice label set for s_b as empty.
 			newChoice.resize(newStateCount);
-			newChoice[newStateCount - 1] = storm::storage::VectorSet<uint_fast64_t>();
+			newChoice[newStateCount - 1] = boost::container::flat_set<uint_fast64_t>();
 
 			newChoiceLabels = newChoice;
 		}
@@ -293,7 +293,7 @@ public:
         nondeterministicChoiceIndices[this->getNumberOfStates()] = this->getNumberOfStates();
         storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), nondeterministicChoiceIndices, scheduler);
     
-        return std::shared_ptr<AbstractModel<T>>(new Dtmc(newTransitionMatrix, this->getStateLabeling(), this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>()));
+        return std::shared_ptr<AbstractModel<T>>(new Dtmc(newTransitionMatrix, this->getStateLabeling(), this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>()));
     }
 
 private:

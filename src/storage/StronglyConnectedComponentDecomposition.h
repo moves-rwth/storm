@@ -1,9 +1,10 @@
 #ifndef STORM_STORAGE_STRONGLYCONNECTEDCOMPONENTDECOMPOSITION_H_
 #define STORM_STORAGE_STRONGLYCONNECTEDCOMPONENTDECOMPOSITION_H_
 
+#include <boost/container/flat_set.hpp>
+
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/Decomposition.h"
-#include "src/storage/VectorSet.h"
 #include "src/storage/BitVector.h"
 
 

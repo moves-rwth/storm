@@ -2,12 +2,13 @@
 #define STORM_STORAGE_DECOMPOSITION_H_
 
 #include <vector>
-
-#include "src/storage/VectorSet.h"
+#include <boost/container/flat_set.hpp>
 
 namespace storm {
     namespace storage {
-        typedef storm::storage::VectorSet<uint_fast64_t> StateBlock;
+        typedef boost::container::flat_set<uint_fast64_t> StateBlock;
+        
+        std::ostream& operator<<(std::ostream& out, StateBlock const& block);
         
         /*!
          * This class represents the decomposition of a model into blocks which are of the template type.

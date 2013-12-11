@@ -52,7 +52,7 @@ namespace storm {
             
             // Initialize the maximal end component list to be the full state space.
             std::list<StateBlock> endComponentStateSets;
-            endComponentStateSets.emplace_back(subsystem);
+            endComponentStateSets.emplace_back(subsystem.begin(), subsystem.end());
             storm::storage::BitVector statesToCheck(model.getNumberOfStates());
             
 
@@ -83,7 +83,7 @@ namespace storm {
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 bool choiceContainedInMEC = true;
                                 for (auto const& entry : transitionMatrix.getRow(choice)) {
-                                    if (!scc.contains(entry.first)) {
+                                    if (scc.find(entry.first) == scc.end()) {
                                         choiceContainedInMEC = false;
                                         break;
                                     }
@@ -103,13 +103,15 @@ namespace storm {
                         
                         // Now erase the states that have no option to stay inside the MEC with all successors.
                         mecChanged |= !statesToRemove.empty();
-                        scc.erase(storm::storage::VectorSet<uint_fast64_t>(statesToRemove.begin(), statesToRemove.end()));
+                        for (uint_fast64_t state : statesToRemove) {
+                            scc.erase(state);
+                        }
                         
                         // Now check which states should be reconsidered, because successors of them were removed.
                         statesToCheck.clear();
                         for (auto state : statesToRemove) {
                             for (auto const& entry : transitionMatrix.getRow(state)) {
-                                if (scc.contains(entry.first)) {
+                                if (scc.find(entry.first) != scc.end()) {
                                     statesToCheck.set(entry.first);
                                 }
                             }
@@ -145,7 +147,7 @@ namespace storm {
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool choiceContained = true;
                         for (auto const& entry : transitionMatrix.getRow(choice)) {
-                            if (!mecStateSet.contains(entry.first)) {
+                            if (mecStateSet.find(entry.first) == mecStateSet.end()) {
                                 choiceContained = false;
                                 break;
                             }

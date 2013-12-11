@@ -4,6 +4,8 @@
 namespace storm {
     namespace storage {
         
+        std::ostream& operator<<(std::ostream& out, boost::container::flat_set<uint_fast64_t> const& block);
+
         MaximalEndComponent::MaximalEndComponent() : stateToChoicesMapping() {
             // Intentionally left empty.
         }
@@ -27,14 +29,14 @@ namespace storm {
         }
         
         void MaximalEndComponent::addState(uint_fast64_t state, std::vector<uint_fast64_t> const& choices) {
-            stateToChoicesMapping[state] = choices;
+            stateToChoicesMapping[state] = boost::container::flat_set<uint_fast64_t>(choices.begin(), choices.end());
         }
         
         void MaximalEndComponent::addState(uint_fast64_t state, std::vector<uint_fast64_t>&& choices) {
-            stateToChoicesMapping.emplace(state, choices);
+            stateToChoicesMapping.emplace(state, boost::container::flat_set<uint_fast64_t>(choices.begin(), choices.end()));
         }
         
-        storm::storage::VectorSet<uint_fast64_t> const& MaximalEndComponent::getChoicesForState(uint_fast64_t state) const {
+        boost::container::flat_set<uint_fast64_t> const& MaximalEndComponent::getChoicesForState(uint_fast64_t state) const {
             auto stateChoicePair = stateToChoicesMapping.find(state);
             
             if (stateChoicePair == stateToChoicesMapping.end()) {
@@ -80,10 +82,10 @@ namespace storm {
                 throw storm::exceptions::InvalidStateException() << "Cannot delete choice for state not contained in MEC.";
             }
             
-            return stateChoicePair->second.contains(choice);
+            return stateChoicePair->second.find(choice) != stateChoicePair->second.end();
         }
         
-        storm::storage::VectorSet<uint_fast64_t> MaximalEndComponent::getStateSet() const {
+        boost::container::flat_set<uint_fast64_t> MaximalEndComponent::getStateSet() const {
             std::vector<uint_fast64_t> states;
             states.reserve(stateToChoicesMapping.size());
             
@@ -91,7 +93,7 @@ namespace storm {
                 states.push_back(stateChoicesPair.first);
             }
             
-            return storm::storage::VectorSet<uint_fast64_t>(states);
+            return boost::container::flat_set<uint_fast64_t>(states.begin(), states.end());
         }
         
         std::ostream& operator<<(std::ostream& out, MaximalEndComponent const& component) {

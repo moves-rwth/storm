@@ -20,20 +20,20 @@ namespace storm {
              * @return The set of action labels that is visited on all paths from any state to a target state.
              */
             template <typename T>
-            std::vector<storm::storage::VectorSet<uint_fast64_t>> getGuaranteedLabelSets(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, storm::storage::VectorSet<uint_fast64_t> const& relevantLabels) {
+            std::vector<boost::container::flat_set<uint_fast64_t>> getGuaranteedLabelSets(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
 
                 // Now we compute the set of labels that is present on all paths from the initial to the target states.
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> analysisInformation(labeledMdp.getNumberOfStates(), relevantLabels);
+                std::vector<boost::container::flat_set<uint_fast64_t>> analysisInformation(labeledMdp.getNumberOfStates(), relevantLabels);
                 std::queue<std::pair<uint_fast64_t, uint_fast64_t>> worklist;
                 
                 // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
                 for (auto state : psiStates) {
-                    analysisInformation[state] = std::set<uint_fast64_t>();
+                    analysisInformation[state] = boost::container::flat_set<uint_fast64_t>();
                     for (auto& predecessorEntry : backwardTransitions.getRow(state)) {
                         if (predecessorEntry.first != state) {
                             worklist.push(std::make_pair(predecessorEntry.first, state));
@@ -53,7 +53,7 @@ namespace storm {
                     
                     // Iterate over the successor states for all choices and compute new analysis information.
                     for (uint_fast64_t currentChoice = nondeterministicChoiceIndices[currentState]; currentChoice < nondeterministicChoiceIndices[currentState + 1]; ++currentChoice) {
-                        storm::storage::VectorSet<uint_fast64_t> tmpIntersection;
+                        boost::container::flat_set<uint_fast64_t> tmpIntersection;
                         bool choiceTargetsTargetState = false;
                         
                         for (auto& entry : transitionMatrix.getRow(currentChoice)) {
@@ -96,13 +96,13 @@ namespace storm {
              * @return The set of action labels that is visited on all paths from an initial state to a target state.
              */
             template <typename T>
-            storm::storage::VectorSet<uint_fast64_t> getGuaranteedLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, storm::storage::VectorSet<uint_fast64_t> const& relevantLabels) {
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(labeledMdp, psiStates, relevantLabels);
+            boost::container::flat_set<uint_fast64_t> getGuaranteedLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(labeledMdp, psiStates, relevantLabels);
                 
-                storm::storage::VectorSet<uint_fast64_t> knownLabels(relevantLabels);
-                storm::storage::VectorSet<uint_fast64_t> tempIntersection;
+                boost::container::flat_set<uint_fast64_t> knownLabels(relevantLabels);
+                boost::container::flat_set<uint_fast64_t> tempIntersection;
                 for (auto initialState : labeledMdp.getInitialStates()) {
-                    tempIntersection = knownLabels.intersect(guaranteedLabels[initialState]);
+                    std::set_intersection(knownLabels.begin(), knownLabels.end(), guaranteedLabels[initialState].begin(), guaranteedLabels[initialState].end(), std::inserter(tempIntersection, tempIntersection.end()));
                     std::swap(knownLabels, tempIntersection);
                 }
 

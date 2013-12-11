@@ -339,13 +339,13 @@ namespace storm {
                         
                         for (auto const& stateChoicesPair : mec) {
                             uint_fast64_t state = stateChoicesPair.first;
-                            storm::storage::VectorSet<uint_fast64_t> const& choicesInMec = stateChoicesPair.second;
+                            boost::container::flat_set<uint_fast64_t> const& choicesInMec = stateChoicesPair.second;
                             
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
                                 
                                 // If the choice is not contained in the MEC itself, we have to add a similar distribution to the auxiliary state.
-                                if (!choicesInMec.contains(choice)) {
+                                if (choicesInMec.find(choice) == choicesInMec.end()) {
                                     b.push_back(storm::utility::constantZero<ValueType>());
 
                                     typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);

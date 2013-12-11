@@ -186,10 +186,10 @@ namespace storm {
             }
         }
         
-        void Module::restrictCommands(storm::storage::VectorSet<uint_fast64_t> const& indexSet) {
+        void Module::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
             std::vector<storm::ir::Command> newCommands;
             for (auto const& command : commands) {
-                if (indexSet.contains(command.getGlobalIndex())) {
+                if (indexSet.find(command.getGlobalIndex()) != indexSet.end()) {
                     newCommands.push_back(std::move(command));
                 }
             }

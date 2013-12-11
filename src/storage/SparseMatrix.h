@@ -34,12 +34,6 @@ namespace storm {
 namespace storm {
     namespace storage {
         
-#ifdef STORM_HAVE_INTELTBB
-        // Forward declaration of the TBB Helper class.
-        template <typename ValueType>
-        class TbbMatrixRowVectorScalarProduct;
-#endif
-        
         // Forward declare matrix class.
         template<typename T> class SparseMatrix;
         
@@ -158,12 +152,6 @@ namespace storm {
             friend class storm::adapters::GmmxxAdapter;
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
-            
-#ifdef STORM_HAVE_INTELTBB
-            // Declare the helper class for TBB as friend.
-            template <typename ValueType>
-            friend class TbbMatrixRowVectorScalarProduct;
-#endif
             
             typedef typename std::vector<std::pair<uint_fast64_t, T>>::iterator iterator;
             typedef typename std::vector<std::pair<uint_fast64_t, T> const>::const_iterator const_iterator;
@@ -619,42 +607,7 @@ namespace storm {
             // entry is not included anymore.
             std::vector<uint_fast64_t> rowIndications;
         };
-        
-#ifdef STORM_HAVE_INTELTBB
-        /*!
-         * This class is a helper class for parallel matrix-vector multiplication using Intel TBB.
-         */
-        template <typename ValueType>
-        class TbbMatrixRowVectorScalarProduct {
-        public:
-            /*!
-             * Constructs a helper object with which TBB can perform parallel matrix-vector multiplication.
-             *
-             * @param matrix The matrix to use for the multiplication.
-             * @param vector The vector with which to multiply the matrix.
-             * @param result The vector that is supposed to hold the result after performing the multiplication.
-             */
-            TbbMatrixRowVectorScalarProduct(SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& vector, std::vector<ValueType>& result);
-            
-            /*!
-             * Performs the actual multiplication of a range of rows with the given vector.
-             *
-             * @param range The range of rows to multiply with the given vector.
-             */
-            void operator() (tbb::blocked_range<uint_fast64_t> const& range) const;
-            
-        private:
-            // The vector that is supposed to hold the result after performing the multiplication.
-            std::vector<ValueType>& result;
-            
-            // The vector with which to multiply the matrix.
-            std::vector<ValueType> const& vector;
-            
-            // The matrix to use for the multiplication.
-            SparseMatrix<ValueType> const& matrix;
-        };
-#endif
-        
+
     } // namespace storage
 } // namespace storm
 
