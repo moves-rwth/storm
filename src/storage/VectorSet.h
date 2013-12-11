@@ -8,6 +8,7 @@
 #ifndef STORM_STORAGE_VECTORSET_H
 #define STORM_STORAGE_VECTORSET_H
 
+#include <cstdint>
 #include <set>
 #include <algorithm>
 #include <iostream>

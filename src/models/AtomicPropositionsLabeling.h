@@ -14,6 +14,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <set>
+#include <map>
 
 #include "src/utility/Hash.h"
 
