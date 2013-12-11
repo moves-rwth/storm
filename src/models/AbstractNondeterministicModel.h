@@ -127,8 +127,7 @@ namespace storm {
                 uint_fast64_t numberOfTransitions = this->getNumberOfTransitions();
 
                 std::vector<uint_fast64_t> rowIndications(numberOfStates + 1);
-                std::vector<uint_fast64_t> columnIndications(numberOfTransitions);
-                std::vector<T> values(numberOfTransitions, T());
+                std::vector<std::pair<uint_fast64_t, T>> columnsAndValues(numberOfTransitions, std::make_pair(0, storm::utility::constantZero<T>()));
 
                 // First, we need to count how many backward transitions each state has.
                 for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
@@ -155,13 +154,13 @@ namespace storm {
                     typename storm::storage::SparseMatrix<T>::const_rows rows = this->getRows(i);
                     for (auto const& transition : rows) {
                         if (transition.second > 0) {
-                            values[nextIndices[transition.first]] = transition.second;
-                            columnIndications[nextIndices[transition.first]++] = i;
+                            columnsAndValues[nextIndices[transition.first]] = std::make_pair(i, transition.second);
+                            ++nextIndices[transition.first];
                         }
                     }
                 }
 
-                storm::storage::SparseMatrix<T> backwardTransitionMatrix(numberOfStates, std::move(rowIndications), std::move(columnIndications), std::move(values));
+                storm::storage::SparseMatrix<T> backwardTransitionMatrix(numberOfStates, std::move(rowIndications), std::move(columnsAndValues));
 
                 return backwardTransitionMatrix;
             }

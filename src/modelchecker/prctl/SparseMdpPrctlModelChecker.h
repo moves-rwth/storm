@@ -14,7 +14,7 @@
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
 #include "src/solver/AbstractNondeterministicLinearEquationSolver.h"
-#include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/solver/AbstractLinearEquationSolver.h"
 #include "src/models/Mdp.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
@@ -550,10 +550,10 @@ namespace storm {
                  * @param nondeterministicChoiceIndices The assignment of states to their nondeterministic choices in the matrix.
                  */
                 static storm::storage::TotalScheduler computeExtremalScheduler(bool minimize, storm::storage::SparseMatrix<Type> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type> const& result, std::vector<Type> const* stateRewardVector = nullptr, storm::storage::SparseMatrix<Type> const* transitionRewardMatrix = nullptr) {
-                    std::vector<Type> temporaryResult(nondeterministicChoiceIndices.size() - 1);
-                    std::vector<Type> nondeterministicResult(result);
-                    storm::solver::GmmxxLinearEquationSolver<Type> solver;
-                    solver.performMatrixVectorMultiplication(transitionMatrix, nondeterministicResult, nullptr, 1);
+                    std::vector<Type> temporaryResult(result.size());
+                    std::vector<Type> nondeterministicResult(transitionMatrix.getRowCount());
+                    transitionMatrix.multiplyWithVector(result, nondeterministicResult);
+                                                        
                     if (stateRewardVector != nullptr || transitionRewardMatrix != nullptr) {
                         std::vector<Type> totalRewardVector;
                         if (transitionRewardMatrix != nullptr) {

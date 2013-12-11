@@ -147,8 +147,15 @@ TEST(SparseMatrix, Build) {
 }
 
 TEST(SparseMatrix, CreationWithMovingContents) {
-    ASSERT_NO_THROW(storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, {1, 2, 0, 1, 3}, {1.0, 1.2, 0.5, 0.7, 0.2}));
-    storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, {1, 2, 0, 1, 3}, {1.0, 1.2, 0.5, 0.7, 0.2});
+    std::vector<std::pair<uint_fast64_t, double>> columnsAndValues;
+    columnsAndValues.emplace_back(1, 1.0);
+    columnsAndValues.emplace_back(2, 1.2);
+    columnsAndValues.emplace_back(0, 0.5);
+    columnsAndValues.emplace_back(1, 0.7);
+    columnsAndValues.emplace_back(3, 0.2);
+    
+    ASSERT_NO_THROW(storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, columnsAndValues));
+    storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, columnsAndValues);
     ASSERT_EQ(3, matrix.getRowCount());
     ASSERT_EQ(4, matrix.getColumnCount());
     ASSERT_EQ(5, matrix.getEntryCount());

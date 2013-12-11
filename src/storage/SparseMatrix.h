@@ -274,26 +274,6 @@ namespace storm {
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
              */
             SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<std::pair<uint_fast64_t, T>> const& columnsAndValues);
-
-            /*!
-             * Constructs a sparse matrix by copying the given contents.
-             *
-             * @param columnCount The number of columns of the matrix.
-             * @param rowIndications The row indications vector of the matrix to be constructed.
-             * @param columnIndications The column indications vector of the matrix to be constructed.
-             * @param values The vector containing the values of the entries in the matrix.
-             */
-            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<uint_fast64_t> const& columnIndications, std::vector<T> const& values);
-            
-            /*!
-             * Constructs a sparse matrix by moving the given contents.
-             *
-             * @param columnCount The number of columns of the matrix.
-             * @param rowIndications The row indications vector of the matrix to be constructed.
-             * @param columnIndications The column indications vector of the matrix to be constructed.
-             * @param values The vector containing the values of the entries in the matrix.
-             */
-            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<uint_fast64_t>&& columnIndications, std::vector<T>&& values);
             
             /*!
              * Constructs a sparse matrix by moving the given contents.

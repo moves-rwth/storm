@@ -185,42 +185,10 @@ namespace storm {
         }
         
         template<typename T>
-        SparseMatrix<T>::SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<uint_fast64_t> const& columnIndications, std::vector<T> const& values) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(values.size()), columnsAndValues(), rowIndications(rowIndications) {
-            if (columnIndications.size() != values.size()) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::SparseMatrix: value and column vector length mismatch.";
-            }
-            
-            // Preserve enough storage to avoid reallocations.
-            columnsAndValues.reserve(values.size());
-            
-            // Now zip the two vectors for columns and values.
-            typename std::vector<uint_fast64_t>::const_iterator columnIt = columnIndications.begin();
-            for (typename std::vector<T>::const_iterator valueIt = values.begin(), valueIte = values.end(); valueIt != valueIte; ++valueIt, ++columnIt) {
-                columnsAndValues.emplace_back(*columnIt, *valueIt);
-            }
-        }
-        
-        template<typename T>
         SparseMatrix<T>::SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<std::pair<uint_fast64_t, T>>&& columnsAndValues) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), columnsAndValues(std::move(columnsAndValues)), rowIndications(std::move(rowIndications)) {
             // Intentionally left empty.
         }
-        
-        template<typename T>
-        SparseMatrix<T>::SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<uint_fast64_t>&& columnIndications, std::vector<T>&& values) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(values.size()), columnsAndValues(), rowIndications(std::move(rowIndications)) {
-            if (columnIndications.size() != values.size()) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::SparseMatrix: value and column vector length mismatch.";
-            }
-            
-            // Preserve enough storage to avoid reallocations.
-            columnsAndValues.reserve(values.size());
-            
-            // Now zip the two vectors for columns and values.
-            typename std::vector<uint_fast64_t>::const_iterator columnIt = columnIndications.begin();
-            for (typename std::vector<T>::const_iterator valueIt = values.begin(), valueIte = values.end(); valueIt != valueIte; ++valueIt, ++columnIt) {
-                columnsAndValues.emplace_back(*columnIt, *valueIt);
-            }
-        }
-        
+                
         template<typename T>
         SparseMatrix<T>& SparseMatrix<T>::operator=(SparseMatrix<T> const& other) {
             // Only perform assignment if source and target are not the same.

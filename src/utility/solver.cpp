@@ -1,5 +1,6 @@
 #include "src/utility/solver.h"
 
+#include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/solver/GurobiLpSolver.h"
 #include "src/solver/GlpkLpSolver.h"
@@ -19,6 +20,16 @@ namespace storm {
             }
             
             template<typename ValueType>
+            std::shared_ptr<storm::solver::AbstractLinearEquationSolver<ValueType>> getLinearEquationSolver() {
+                std::string const& matrixLibrary = storm::settings::Settings::getInstance()->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString();
+                if (matrixLibrary == "gmm++") {
+                    return std::shared_ptr<storm::solver::AbstractLinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>());
+                }
+                
+                throw storm::exceptions::InvalidSettingsException() << "No suitable linear equation solver selected.";
+            }
+            
+            template<typename ValueType>
             std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> getNondeterministicLinearEquationSolver() {
                 std::string const& matrixLibrary = storm::settings::Settings::getInstance()->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString();
                 if (matrixLibrary == "gmm++") {
@@ -30,6 +41,8 @@ namespace storm {
                 throw storm::exceptions::InvalidSettingsException() << "No suitable nondeterministic linear equation solver selected.";
             }
             
+            template std::shared_ptr<storm::solver::AbstractLinearEquationSolver<double>> getLinearEquationSolver();
+
             template std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<double>> getNondeterministicLinearEquationSolver();
         }
     }
