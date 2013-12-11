@@ -38,10 +38,14 @@ namespace storm {
                  *
                  * @param model The MDP to be checked.
                  */
-                explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
                     // Intentionally left empty.
                 }
                 
+				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+					// Intentionally left empty.
+				}
+
                 /*!
                  * Copy constructs a SparseMdpPrctlModelChecker from the given model checker. In particular, this means that the newly
                  * constructed model checker will have the model of the given model checker as its associated model.
