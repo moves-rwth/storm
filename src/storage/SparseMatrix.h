@@ -161,8 +161,8 @@ namespace storm {
             
 #ifdef STORM_HAVE_INTELTBB
             // Declare the helper class for TBB as friend.
-            template <typename M, typename V, typename TPrime>
-            friend class tbbHelper_MatrixRowVectorScalarProduct;
+            template <typename ValueType>
+            friend class TbbMatrixRowVectorScalarProduct;
 #endif
             
             typedef typename std::vector<std::pair<uint_fast64_t, T>>::iterator iterator;
@@ -657,7 +657,9 @@ namespace storm {
             TbbMatrixRowVectorScalarProduct(SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& vector, std::vector<ValueType>& result);
             
             /*!
-             * Performs the actual multiplication of a row with the vector.
+             * Performs the actual multiplication of a range of rows with the given vector.
+             *
+             * @param range The range of rows to multiply with the given vector.
              */
             void operator() (tbb::blocked_range<uint_fast64_t> const& range) const;
             

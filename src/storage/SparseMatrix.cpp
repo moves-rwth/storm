@@ -696,7 +696,7 @@ namespace storm {
             tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size()), TbbMatrixRowVectorScalarProduct<T>(*this, vector, result));
 #else
             const_iterator it = this->begin();
-            const_iterator ite = this->begin();
+            const_iterator ite;
             typename std::vector<uint_fast64_t>::const_iterator rowIterator = rowIndications.begin();
             typename std::vector<uint_fast64_t>::const_iterator rowIteratorEnd = rowIndications.end();
             typename std::vector<T>::iterator resultIterator = result.begin();
@@ -705,7 +705,7 @@ namespace storm {
             for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
                 *resultIterator = storm::utility::constantZero<T>();
                 
-                for (ite = it + (*(rowIterator + 1) - *rowIterator); it != ite; ++it) {
+                for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
                     *resultIterator += it->second * vector[it->first];
                 }
             }
@@ -872,20 +872,26 @@ namespace storm {
         
         template <typename ValueType>
         void TbbMatrixRowVectorScalarProduct<ValueType>::operator() (tbb::blocked_range<uint_fast64_t> const& range) const {
-            for (uint_fast64_t row = range.begin(); row < range.end(); ++row) {
-                ValueType element = storm::utility::constantZero<ValueType>();
-
-                for (typename SparseMatrix<ValueType>::const_iterator it = matrix.begin(row), ite = matrix.end(row); it != ite; ++it) {
-                    element += it->second * vector[it->first];
-                }
+            uint_fast64_t startRow = range.begin();
+            uint_fast64_t endRow = range.end();
+            typename SparseMatrix<ValueType>::const_iterator it = matrix.begin(startRow);
+            typename SparseMatrix<ValueType>::const_iterator ite;
+            typename std::vector<uint_fast64_t>::const_iterator rowIterator = matrix.rowIndications.begin() + startRow;
+            typename std::vector<uint_fast64_t>::const_iterator rowIteratorEnd = matrix.rowIndications.begin() + endRow;
+            typename std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
+            typename std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
+            
+            for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
+                *resultIterator = storm::utility::constantZero<ValueType>();
                 
-                result[row] = element;
+                for (ite = matrix.begin() + *(rowIterator + 1); it != ite; ++it) {
+                    *resultIterator += it->second * vector[it->first];
+                }
             }
         }
         
         // Explicitly instantiate the helper class.
         template class TbbMatrixRowVectorScalarProduct<double>;
-        
 #endif
         
     } // namespace storage

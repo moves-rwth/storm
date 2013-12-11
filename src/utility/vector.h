@@ -131,12 +131,22 @@ namespace storm {
              */
             template<class T>
             void addVectorsInPlace(std::vector<T>& target, std::vector<T> const& summand) {
+#ifdef DEBUG
                 if (target.size() != summand.size()) {
-                    LOG4CPLUS_ERROR(logger, "Lengths of vectors do not match, which makes operation impossible.");
-                    throw storm::exceptions::InvalidArgumentException() << "Length of vectors do not match, which makes operation impossible.";
+                    throw storm::exceptions::InvalidArgumentException() << "Invalid call to storm::utility::vector::addVectorsInPlace: operand lengths mismatch.";
                 }
+#endif
 #ifdef STORM_HAVE_INTELTBB
-                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size(), target.size() / 4), [&](tbb::blocked_range<uint_fast64_t>& range) { for (uint_fast64_t current = range.begin(), end = range.end(); current < end; ++current) { target[current] += summand[current]; } });
+                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
+                                  [&](tbb::blocked_range<uint_fast64_t> const& range) {
+                                        uint_fast64_t firstRow = range.begin();
+                                        uint_fast64_t endRow = range.end();
+                                      
+                                        typename std::vector<T>::iterator targetIt = target.begin() + firstRow;
+                                        for (typename std::vector<T>::const_iterator summandIt = summand.begin() + firstRow, summandIte = summand.begin() + endRow; summandIt != summandIte; ++summandIt, ++targetIt) {
+                                                *targetIt += *summandIt;
+                                        }
+                                  });
 #else
                 std::transform(target.begin(), target.end(), summand.begin(), target.begin(), std::plus<T>());
 #endif
@@ -153,30 +163,78 @@ namespace storm {
              * @param choices If non-null, this vector is used to store the choices made during the selection.
              */
             template<class T>
-            void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::function<bool (T const&, T const&)> filter, std::vector<uint_fast64_t>* choices = nullptr) {
-                uint_fast64_t currentSourceRow = 0;
-                uint_fast64_t currentTargetRow = -1;
-                uint_fast64_t currentLocalRow = 0;
-                for (auto it = source.cbegin(), ite = source.cend(); it != ite; ++it, ++currentSourceRow, ++currentLocalRow) {
-                    // Check whether we have considered all source rows for the current target row.
-                    if (rowGrouping[currentTargetRow + 1] <= currentSourceRow || currentSourceRow == 0) {
-                        currentLocalRow = 0;
-                        ++currentTargetRow;
-                        target[currentTargetRow] = source[currentSourceRow];
-                        if (choices != nullptr) {
-                            (*choices)[currentTargetRow] = 0;
-                        }
-                        continue;
+            void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::function<bool (T const&, T const&)> filter, std::vector<uint_fast64_t>* choices) {
+#ifdef STORM_HAVE_INTELTBB
+                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
+                                  [&](tbb::blocked_range<uint_fast64_t> const& range) {
+                                      uint_fast64_t startRow = range.begin();
+                                      uint_fast64_t endRow = range.end();
+                                      
+                                      typename std::vector<T>::iterator targetIt = target.begin() + startRow;
+                                      typename std::vector<T>::iterator targetIte = target.begin() + endRow;
+                                      typename std::vector<uint_fast64_t>::const_iterator rowGroupingIt = rowGrouping.begin() + startRow;
+                                      typename std::vector<T>::const_iterator sourceIt = source.begin() + *rowGroupingIt;
+                                      typename std::vector<T>::const_iterator sourceIte;
+                                      typename std::vector<uint_fast64_t>::iterator choiceIt;
+                                      uint_fast64_t localChoice;
+                                      if (choices != nullptr) {
+                                          choiceIt = choices->begin();
+                                      }
+
+                                      for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
+                                          *targetIt = *sourceIt;
+                                          ++sourceIt;
+                                          localChoice = 0;
+                                          if (choices != nullptr) {
+                                              *choiceIt = 0;
+                                          }
+                                          
+                                          for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                                              if (filter(*sourceIt, *targetIt)) {
+                                                  *targetIt = *sourceIt;
+                                                  if (choices != nullptr) {
+                                                      *choiceIt = localChoice;
+                                                  }
+                                              }
+                                          }
+                                          
+                                          if (choices != nullptr) {
+                                              ++choiceIt;
+                                          }
+                                      }
+                                  });
+#else
+                typename std::vector<T>::iterator targetIt = target.begin();
+                typename std::vector<T>::iterator targetIte = target.end();
+                typename std::vector<uint_fast64_t>::const_iterator rowGroupingIt = rowGrouping.begin();
+                typename std::vector<T>::const_iterator sourceIt = source.begin();
+                typename std::vector<T>::const_iterator sourceIte;
+                typename std::vector<uint_fast64_t>::iterator choiceIt;
+                uint_fast64_t localChoice;
+                if (choices != nullptr) {
+                    choiceIt = choices->begin();
+                }
+                
+                for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
+                    *targetIt = *sourceIt;
+                    ++sourceIt;
+                    localChoice = 0;
+                    if (choices != nullptr) {
+                        *choiceIt = 0;
                     }
-                    
-                    // We have to upate the value, so only overwrite the current value if the value passes the filter.
-                    if (filter(*it, target[currentTargetRow])) {
-                        target[currentTargetRow] = *it;
-                        if (choices != nullptr) {
-                            (*choices)[currentTargetRow] = currentLocalRow;
+                    for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                        if (filter(*sourceIt, *targetIt)) {
+                            *targetIt = *sourceIt;
+                            if (choices != nullptr) {
+                                *choiceIt = localChoice;
+                            }
                         }
+                    }
+                    if (choices != nullptr) {
+                        ++choiceIt;
                     }
                 }
+#endif
             }
             
             /*!
