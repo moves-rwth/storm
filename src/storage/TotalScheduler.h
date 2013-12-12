@@ -11,8 +11,19 @@ namespace storm {
         
         class TotalScheduler : public Scheduler {
         public:
-            TotalScheduler(uint_fast64_t numberOfStates);
+            /*!
+             * Creates a total scheduler that defines a choice for the given number of states. By default, all choices
+             * are initialized to zero.
+             *
+             * @param numberOfStates The number of states for which the scheduler defines a choice.
+             */
+            TotalScheduler(uint_fast64_t numberOfStates = 0);
             
+            /*!
+             * Creates a total scheduler that defines the choices for states according to the given vector.
+             *
+             * @param choices A vector whose i-th entry defines the choice of state i.
+             */
             TotalScheduler(std::vector<uint_fast64_t> const& choices);
             
             void setChoice(uint_fast64_t state, uint_fast64_t choice) override;

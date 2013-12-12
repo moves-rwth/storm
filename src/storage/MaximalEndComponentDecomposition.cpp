@@ -1,7 +1,8 @@
-#include "src/storage/MaximalEndComponentDecomposition.h"
-
 #include <list>
 #include <queue>
+
+#include "src/storage/MaximalEndComponentDecomposition.h"
+#include "src/storage/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
     namespace storage {
@@ -55,14 +56,15 @@ namespace storm {
             endComponentStateSets.emplace_back(subsystem.begin(), subsystem.end());
             storm::storage::BitVector statesToCheck(model.getNumberOfStates());
             
-
+            
             // The iterator used here should really be a const_iterator.
-            // However, gcc 4.8 (and assorted libraries) does not provide an erase(const_iterator) method for std::list but only an erase(iterator).
-            // This is in compliance with the c++11 draft N3337, which specifies the change from iterator to const_iterator only for "set, multiset, map [and] multimap".
+            // However, gcc 4.8 (and assorted libraries) does not provide an erase(const_iterator) method for std::list
+            // but only an erase(iterator). This is in compliance with the c++11 draft N3337, which specifies the change
+            // from iterator to const_iterator only for "set, multiset, map [and] multimap".
             // FIXME: As soon as gcc provides an erase(const_iterator) method, change this iterator back to a const_iterator.
             for (std::list<StateBlock>::iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
                 StateBlock const& mec = *mecIterator;
-
+                
                 // Keep track of whether the MEC changed during this iteration.
                 bool mecChanged = false;
                 
@@ -119,14 +121,15 @@ namespace storm {
                     }
                 }
                 
-                // If the MEC changed, we delete it from the list of MECs and append the possible new MEC candidates to the list instead.
+                // If the MEC changed, we delete it from the list of MECs and append the possible new MEC candidates to
+                // the list instead.
                 if (mecChanged) {
                     for (StateBlock& scc : sccs) {
                         if (!scc.empty()) {
                             endComponentStateSets.push_back(std::move(scc));
                         }
                     }
-
+                    
                     std::list<StateBlock>::iterator eraseIterator(mecIterator);
                     ++mecIterator;
                     endComponentStateSets.erase(eraseIterator);
@@ -135,15 +138,16 @@ namespace storm {
                     ++mecIterator;
                 }
                 
-            } // end of loop over all MEC candidates
+            } // End of loop over all MEC candidates.
             
-            // Now that we computed the underlying state sets of the MECs, we need to properly identify the choices contained in the MEC.
+            // Now that we computed the underlying state sets of the MECs, we need to properly identify the choices
+            // contained in the MEC and store them as actual MECs.
             this->blocks.reserve(endComponentStateSets.size());
             for (auto const& mecStateSet : endComponentStateSets) {
                 MaximalEndComponent newMec;
                 
                 for (auto state : mecStateSet) {
-                    std::vector<uint_fast64_t> containedChoices;
+                    MaximalEndComponent::set_type containedChoices;
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool choiceContained = true;
                         for (auto const& entry : transitionMatrix.getRow(choice)) {
@@ -154,7 +158,7 @@ namespace storm {
                         }
                         
                         if (choiceContained) {
-                            containedChoices.push_back(choice);
+                            containedChoices.insert(choice);
                         }
                     }
                     
@@ -163,10 +167,9 @@ namespace storm {
                 
                 this->blocks.emplace_back(std::move(newMec));
             }
-            
-            LOG4CPLUS_INFO(logger, "Computed MEC decomposition of size " << this->size() << ".");
         }
         
+        // Explicitly instantiate the MEC decomposition.
         template class MaximalEndComponentDecomposition<double>;
     }
 }

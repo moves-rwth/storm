@@ -15,7 +15,7 @@ namespace storm {
         }
         
         bool TotalScheduler::isChoiceDefined(uint_fast64_t state) const {
-            return true;
+            return state < choices.size();
         }
         
         uint_fast64_t TotalScheduler::getChoice(uint_fast64_t state) const {

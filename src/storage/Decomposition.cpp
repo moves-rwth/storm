@@ -62,7 +62,17 @@ namespace storm {
         }
         
         template <typename BlockType>
+        BlockType& Decomposition<BlockType>::getBlock(uint_fast64_t index) {
+            return blocks.at(index);
+        }
+        
+        template <typename BlockType>
         BlockType const& Decomposition<BlockType>::operator[](uint_fast64_t index) const {
+            return blocks[index];
+        }
+        
+        template <typename BlockType>
+        BlockType& Decomposition<BlockType>::operator[](uint_fast64_t index) {
             return blocks[index];
         }
         
@@ -74,7 +84,7 @@ namespace storm {
             out << "}";
             return out;
         }
-                
+        
         template <typename BlockType>
         std::ostream& operator<<(std::ostream& out, Decomposition<BlockType> const& decomposition) {
             out << "[";

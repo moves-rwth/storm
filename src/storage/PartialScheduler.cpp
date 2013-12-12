@@ -5,27 +5,27 @@ namespace storm {
     namespace storage {
         
         void PartialScheduler::setChoice(uint_fast64_t state, uint_fast64_t choice) {
-            choices[state] = choice;
+            stateToChoiceMapping[state] = choice;
         }
         
         bool PartialScheduler::isChoiceDefined(uint_fast64_t state) const {
-            return choices.find(state) != choices.end();
+            return stateToChoiceMapping.find(state) != choices.end();
         }
         
         uint_fast64_t PartialScheduler::getChoice(uint_fast64_t state) const {
-            auto stateChoicePair = choices.find(state);
+            auto stateChoicePair = stateToChoiceMapping.find(state);
             
-            if (stateChoicePair == choices.end()) {
-                throw storm::exceptions::InvalidArgumentException() << "Scheduler does not define a choice for state " << state;
+            if (stateChoicePair == stateToChoiceMapping.end()) {
+                throw storm::exceptions::InvalidArgumentException() << "Invalid call to PartialScheduler::getChoice: scheduler does not define a choice for state " << state << ".";
             }
             
             return stateChoicePair->second;
         }
         
         std::ostream& operator<<(std::ostream& out, PartialScheduler const& scheduler) {
-            out << "partial scheduler (defined on " << scheduler.choices.size() << " states) [ ";
-            uint_fast64_t remainingEntries = scheduler.choices.size();
-            for (auto stateChoicePair : scheduler.choices) {
+            out << "partial scheduler (defined on " << scheduler.stateToChoiceMapping.size() << " states) [ ";
+            uint_fast64_t remainingEntries = scheduler.stateToChoiceMapping.size();
+            for (auto const& stateChoicePair : scheduler.stateToChoiceMapping) {
                 out << stateChoicePair.first << " -> " << stateChoicePair.second;
                 --remainingEntries;
                 if (remainingEntries > 0) {

@@ -11,6 +11,8 @@ namespace storm {
         
         class PartialScheduler : public Scheduler {
         public:
+            typedef std::unordered_map<uint_fast64_t, uint_fast64_t> map_type;
+            
             void setChoice(uint_fast64_t state, uint_fast64_t choice) override;
             
             bool isChoiceDefined(uint_fast64_t state) const override;
@@ -21,7 +23,7 @@ namespace storm {
 
         private:
             // A mapping from all states that have defined choices to their respective choices.
-            std::unordered_map<uint_fast64_t, uint_fast64_t> choices;
+            map_type stateToChoiceMapping;
         };
     }
 }
