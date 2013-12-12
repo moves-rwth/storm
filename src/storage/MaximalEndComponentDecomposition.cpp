@@ -64,7 +64,7 @@ namespace storm {
             // FIXME: As soon as gcc provides an erase(const_iterator) method, change this iterator back to a const_iterator.
             for (std::list<StateBlock>::iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
                 StateBlock const& mec = *mecIterator;
-                
+
                 // Keep track of whether the MEC changed during this iteration.
                 bool mecChanged = false;
                 
@@ -73,7 +73,7 @@ namespace storm {
                 
                 // We need to do another iteration in case we have either more than once SCC or the SCC is smaller than
                 // the MEC canditate itself.
-                mecChanged |= sccs.size() > 1 || sccs[0].size() < mec.size();
+                mecChanged |= sccs.size() > 1 || (sccs.size() > 0 && sccs[0].size() < mec.size());
                 
                 // Check for each of the SCCs whether there is at least one action for each state that does not leave the SCC.
                 for (auto& scc : sccs) {
@@ -115,7 +115,7 @@ namespace storm {
                         // Now check which states should be reconsidered, because successors of them were removed.
                         statesToCheck.clear();
                         for (auto state : statesToRemove) {
-                            for (auto const& entry : transitionMatrix.getRow(state)) {
+                            for (auto const& entry : backwardTransitions.getRow(state)) {
                                 if (scc.find(entry.first) != scc.end()) {
                                     statesToCheck.set(entry.first);
                                 }
@@ -142,7 +142,7 @@ namespace storm {
                 }
                 
             } // End of loop over all MEC candidates.
-            
+                        
             // Now that we computed the underlying state sets of the MECs, we need to properly identify the choices
             // contained in the MEC and store them as actual MECs.
             this->blocks.reserve(endComponentStateSets.size());

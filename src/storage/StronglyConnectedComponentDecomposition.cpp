@@ -94,12 +94,6 @@ namespace storm {
                 statesWithSelfloop = storm::storage::BitVector(lowlinks.size());
             }
             
-            // Store a bit vector of all states that can leave their SCC to be able to detect bottom SCCs.
-            storm::storage::BitVector statesThatCanLeaveTheirScc;
-            if (onlyBottomSccs) {
-                statesThatCanLeaveTheirScc = storm::storage::BitVector(lowlinks.size());
-            }
-            
             // Initialize the recursion stacks with the given initial state (and its successor iterator).
             recursionStateStack.push_back(startState);
             recursionIteratorStack.push_back(model.getRows(startState).begin());
@@ -144,18 +138,9 @@ namespace storm {
                             
                         recursionStepBackward:
                             lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[successorIt->first]);
-                            
-                            // If we are interested in bottom SCCs only, we need to check whether the current state
-                            // can leave the SCC.
-                            if (onlyBottomSccs && lowlinks[currentState] != lowlinks[successorIt->first]) {
-                                statesThatCanLeaveTheirScc.set(currentState);
-                            }
                         } else if (tarjanStackStates.get(successorIt->first)) {
                             // Update the lowlink of the current state.
                             lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[successorIt->first]);
-                            
-                            // Since it is known that in this case, the successor state is in the same SCC as the
-                            // current state we don't need to update the bit vector of states that can leave their SCC.
                         }
                     }
                 }
@@ -166,7 +151,6 @@ namespace storm {
                     Block scc;
                     
                     uint_fast64_t lastState = 0;
-                    bool isBottomScc = true;
                     do {
                         // Pop topmost state from the algorithm's stack.
                         lastState = tarjanStack.back();
@@ -175,12 +159,20 @@ namespace storm {
                         
                         // Add the state to the current SCC.
                         scc.insert(lastState);
-                        
-                        if (onlyBottomSccs && isBottomScc && statesThatCanLeaveTheirScc.get(lastState)) {
-                            isBottomScc = false;
-                        }
                     } while (lastState != currentState);
-                    
+
+                    bool isBottomScc = true;
+                    if (onlyBottomSccs) {
+                        for (auto const& state : scc) {
+                            for (auto const& successor : model.getRows(state)) {
+                                if (scc.find(successor.first) == scc.end()) {
+                                    isBottomScc = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     // Now determine whether we want to keep this SCC in the decomposition.
                     // First, we need to check whether we should drop the SCC because of the requirement to not include
                     // naive SCCs.
