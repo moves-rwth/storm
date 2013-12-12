@@ -70,7 +70,10 @@ namespace storm {
                 
                 // Get an SCC decomposition of the current MEC candidate.
                 StronglyConnectedComponentDecomposition<ValueType> sccs(model, mec, true);
-                mecChanged |= sccs.size() > 1;
+                
+                // We need to do another iteration in case we have either more than once SCC or the SCC is smaller than
+                // the MEC canditate itself.
+                mecChanged |= sccs.size() > 1 || sccs[0].size() < mec.size();
                 
                 // Check for each of the SCCs whether there is at least one action for each state that does not leave the SCC.
                 for (auto& scc : sccs) {

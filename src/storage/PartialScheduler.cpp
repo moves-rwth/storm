@@ -9,7 +9,7 @@ namespace storm {
         }
         
         bool PartialScheduler::isChoiceDefined(uint_fast64_t state) const {
-            return stateToChoiceMapping.find(state) != choices.end();
+            return stateToChoiceMapping.find(state) != stateToChoiceMapping.end();
         }
         
         uint_fast64_t PartialScheduler::getChoice(uint_fast64_t state) const {
