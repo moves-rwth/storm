@@ -31,12 +31,12 @@ public:
 	 * @return A pointer to a row-major sparse matrix in gmm++ format.
 	 */
 	template<class T>
-	static gmm::csr_matrix<T>* toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix) {
+	static std::unique_ptr<gmm::csr_matrix<T>> toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix) {
 		uint_fast64_t realNonZeros = matrix.getEntryCount();
 		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
 
 		// Prepare the resulting matrix.
-		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(matrix.rowCount, matrix.columnCount);
+        std::unique_ptr<gmm::csr_matrix<T>> result(new gmm::csr_matrix<T>(matrix.getRowCount(), matrix.getColumnCount()));
 
 		// Copy Row Indications
 		std::copy(matrix.rowIndications.begin(), matrix.rowIndications.end(), result->jc.begin());
@@ -65,13 +65,13 @@ public:
 	 * @return A pointer to a row-major sparse matrix in gmm++ format.
 	 */
 	template<class T>
-	static gmm::csr_matrix<T>* toGmmxxSparseMatrix(storm::storage::SparseMatrix<T>&& matrix) {
+	static std::unique_ptr<gmm::csr_matrix<T>> toGmmxxSparseMatrix(storm::storage::SparseMatrix<T>&& matrix) {
 		uint_fast64_t realNonZeros = matrix.getEntryCount();
         std::cout << "here?!" << std::endl;
 		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
 
 		// Prepare the resulting matrix.
-		gmm::csr_matrix<T>* result = new gmm::csr_matrix<T>(matrix.rowCount, matrix.columnCount);
+        std::unique_ptr<gmm::csr_matrix<T>> result(new gmm::csr_matrix<T>(matrix.getRowCount(), matrix.getColumnCount()));
 
 		typedef unsigned long long IND_TYPE;
         typedef std::vector<IND_TYPE> vectorType_ull_t;

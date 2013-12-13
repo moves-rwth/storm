@@ -22,7 +22,7 @@ namespace storm {
             
             virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const override {
                 // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-                gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
+                std::unique_ptr<gmm::csr_matrix<Type>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
                 
                 // Create vector for result of multiplication, which is reduced to the result vector after
                 // each multiplication.
@@ -42,14 +42,11 @@ namespace storm {
                         storm::utility::vector::reduceVectorMax(multiplyResult, x, nondeterministicChoiceIndices);
                     }
                 }
-                
-                // Delete intermediate results and return result.
-                delete gmmxxMatrix;
             }
             
             virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* multiplyResult = nullptr, std::vector<Type>* newX = nullptr) const override {
                 // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-                gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
+                std::unique_ptr<gmm::csr_matrix<Type>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
                 
                 // Set up the environment for the power method.
                 bool multiplyResultMemoryProvided = true;
@@ -102,7 +99,6 @@ namespace storm {
                 } else if (!xMemoryProvided) {
                     delete newX;
                 }
-                delete gmmxxMatrix;
         
                 if (!multiplyResultMemoryProvided) {
                     delete multiplyResult;

@@ -16,8 +16,8 @@ namespace storm {
             AbstractNondeterministicLinearEquationSolver() {
                 storm::settings::Settings* s = storm::settings::Settings::getInstance();
                 precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-                maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
-                relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
+                maxIterations = s->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
+                relative = !s->isSet("absolute");
             }
             
             AbstractNondeterministicLinearEquationSolver(double precision, uint_fast64_t maxIterations, bool relative) : precision(precision), maxIterations(maxIterations), relative(relative) {
