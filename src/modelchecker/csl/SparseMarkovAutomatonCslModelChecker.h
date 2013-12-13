@@ -77,7 +77,7 @@ namespace storm {
                     return result;
                 }
                 
-                static void computeBoundedReachability(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps) {
+                static void computeBoundedReachabilityProbabilities(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps) {
                     // Start by computing four sparse matrices:
                     // * a matrix aMarkovian with all (discretized) transitions from Markovian non-goal states to all Markovian non-goal states.
                     // * a matrix aMarkovianToProbabilistic with all (discretized) transitions from Markovian non-goal states to all probabilistic non-goal states.
@@ -108,12 +108,12 @@ namespace storm {
                     // Digitize aMarkovianToProbabilistic. As there are no self-loops in this case, we only need to apply the digitization formula for regular successors.
                     rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
-                        for (auto element : aMarkovianToProbabilistic.getRow(rowIndex)) {
+                        for (auto& element : aMarkovianToProbabilistic.getRow(rowIndex)) {
                             element.second = (1 - std::exp(-exitRates[state] * delta)) * element.second;
                         }
                         ++rowIndex;
                     }
-                    
+
                     // Initialize the two vectors that hold the variable one-step probabilities to all target states for probabilistic and Markovian (non-goal) states.
                     std::vector<ValueType> bProbabilistic(aProbabilistic.getRowCount());
                     std::vector<ValueType> bMarkovian(markovianNonGoalStates.getNumberOfSetBits());
@@ -125,7 +125,7 @@ namespace storm {
                     for (auto state : markovianNonGoalStates) {
                         bMarkovianFixed.push_back(storm::utility::constantZero<ValueType>());
                         
-                        for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
+                        for (auto& element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
                             if (goalStates.get(element.first)) {
                                 bMarkovianFixed.back() += (1 - std::exp(-exitRates[state] * delta)) * element.second;
                             }
@@ -160,9 +160,9 @@ namespace storm {
                     }
                     
                     // After the loop, perform one more step of the value iteration for PS states.
-                    aProbabilisticToMarkovian.multiplyWithVector(probabilisticNonGoalValues, bProbabilistic);
+                    aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
                     storm::utility::vector::addVectorsInPlace(bProbabilistic, bProbabilisticFixed);
-                    nondeterministiclinearEquationSolver->solveEquationSystem(min, aProbabilistic, probabilisticNonGoalValues, bProbabilistic, probabilisticNondeterministicChoiceIndices);
+                    nondeterministiclinearEquationSolver->solveEquationSystem(min, aProbabilistic, probabilisticNonGoalValues, bProbabilistic, probabilisticNondeterministicChoiceIndices, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
                 }
                 
                 std::vector<ValueType> checkTimeBoundedEventually(bool min, storm::storage::BitVector const& goalStates, ValueType lowerBound, ValueType upperBound) const {
@@ -198,7 +198,7 @@ namespace storm {
                     std::vector<ValueType> vProbabilistic(probabilisticNonGoalStates.getNumberOfSetBits());
                     std::vector<ValueType> vMarkovian(markovianNonGoalStates.getNumberOfSetBits());
                     
-                    computeBoundedReachability(min, transitionMatrix, nondeterministicChoiceIndices, exitRates, markovianStates, goalStates, markovianNonGoalStates, probabilisticNonGoalStates, vMarkovian, vProbabilistic, delta, numberOfSteps);
+                    computeBoundedReachabilityProbabilities(min, transitionMatrix, nondeterministicChoiceIndices, exitRates, markovianStates, goalStates, markovianNonGoalStates, probabilisticNonGoalStates, vMarkovian, vProbabilistic, delta, numberOfSteps);
 
                     // (4) If the lower bound of interval was non-zero, we need to take the current values as the starting values for a subsequent value iteration.
                     if (lowerBound != storm::utility::constantZero<ValueType>()) {
@@ -214,10 +214,9 @@ namespace storm {
                         // Compute the number of steps to reach the target interval.
                         numberOfSteps = static_cast<uint_fast64_t>(std::ceil(lowerBound / delta));
                         std::cout << "Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [0, " << lowerBound << "]." << std::endl;
-                        // FIXME: According to IMCA, the value of delta needs to be recomputed here, but using the equations from the source this doesn't make sense, because they always evaluate to the original value of delta.
                         
                         // Compute the bounded reachability for interval [0, b-a].
-                        computeBoundedReachability(min, transitionMatrix, nondeterministicChoiceIndices, exitRates, markovianStates, storm::storage::BitVector(this->getModel().getNumberOfStates()), markovianStates, ~markovianStates, vAllMarkovian, vAllProbabilistic, delta, numberOfSteps);
+                        computeBoundedReachabilityProbabilities(min, transitionMatrix, nondeterministicChoiceIndices, exitRates, markovianStates, storm::storage::BitVector(this->getModel().getNumberOfStates()), markovianStates, ~markovianStates, vAllMarkovian, vAllProbabilistic, delta, numberOfSteps);
                         
                         // Create the result vector out of vAllProbabilistic and vAllMarkovian and return it.
                         std::vector<ValueType> result(this->getModel().getNumberOfStates());
@@ -279,7 +278,7 @@ namespace storm {
                         // Compute the LRA value for the current MEC.
                         lraValuesForEndComponents.push_back(this->computeLraForMaximalEndComponent(min, transitionMatrix, nondeterministicChoiceIndices, this->getModel().getMarkovianStates(), this->getModel().getExitRates(), goalStates, mec, currentMecIndex));
                     }
-                                        
+                    
                     // For fast transition rewriting, we build some auxiliary data structures.
                     storm::storage::BitVector statesNotContainedInAnyMec = ~statesInMecs;
                     uint_fast64_t firstAuxiliaryStateIndex = statesNotContainedInAnyMec.getNumberOfSetBits();
@@ -299,8 +298,7 @@ namespace storm {
                     std::vector<ValueType> b;
                     std::vector<uint_fast64_t> sspNondeterministicChoiceIndices;
                     sspNondeterministicChoiceIndices.reserve(numberOfStatesNotInMecs + mecDecomposition.size() + 1);
-                    typename storm::storage::SparseMatrix<ValueType> sspMatrix;
-                    sspMatrix.initialize();
+                    typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder;
 
                     // If the source state is not contained in any MEC, we copy its choices (and perform the necessary modifications).
                     uint_fast64_t currentChoice = 0;
@@ -311,11 +309,10 @@ namespace storm {
                             std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
                             b.push_back(storm::utility::constantZero<ValueType>());
                             
-                            typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);
-                            for (auto element : row) {
+                            for (auto element : transitionMatrix.getRow(choice)) {
                                 if (statesNotContainedInAnyMec.get(element.first)) {
                                     // If the target state is not contained in an MEC, we can copy over the entry.
-                                    sspMatrix.insertNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second, true);
+                                    sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second);
                                 } else {
                                     // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                     // so that we are able to write the cumulative probability to the MEC into the matrix.
@@ -326,7 +323,7 @@ namespace storm {
                             // Now insert all (cumulative) probability values that target an MEC.
                             for (uint_fast64_t mecIndex = 0; mecIndex < auxiliaryStateToProbabilityMap.size(); ++mecIndex) {
                                 if (auxiliaryStateToProbabilityMap[mecIndex] != 0) {
-                                    sspMatrix.insertNextValue(currentChoice, firstAuxiliaryStateIndex + mecIndex, auxiliaryStateToProbabilityMap[mecIndex], true);
+                                    sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + mecIndex, auxiliaryStateToProbabilityMap[mecIndex]);
                                 }
                             }
                         }
@@ -348,11 +345,10 @@ namespace storm {
                                 if (choicesInMec.find(choice) == choicesInMec.end()) {
                                     b.push_back(storm::utility::constantZero<ValueType>());
 
-                                    typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);
-                                    for (auto element : row) {
+                                    for (auto element : transitionMatrix.getRow(choice)) {
                                         if (statesNotContainedInAnyMec.get(element.first)) {
                                             // If the target state is not contained in an MEC, we can copy over the entry.
-                                            sspMatrix.insertNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second, true);
+                                            sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second);
                                         } else {
                                             // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                             // so that we are able to write the cumulative probability to the MEC into the matrix.
@@ -369,7 +365,7 @@ namespace storm {
                                                 b.back() += auxiliaryStateToProbabilityMap[mecIndex] * lraValuesForEndComponents[mecIndex];
                                             } else {
                                                 // Otherwise, we add a transition to the auxiliary state that is associated with the target MEC.
-                                                sspMatrix.insertNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex], true);
+                                                sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex]);
                                             }
                                         }
                                     }
@@ -380,7 +376,6 @@ namespace storm {
                         }
                         
                         // For each auxiliary state, there is the option to achieve the reward value of the LRA associated with the MEC.
-                        sspMatrix.insertEmptyRow(true);
                         ++currentChoice;
                         b.push_back(lraValuesForEndComponents[mecIndex]);
                     }
@@ -389,7 +384,8 @@ namespace storm {
                     sspNondeterministicChoiceIndices.push_back(currentChoice);
                     
                     // Finalize the matrix and solve the corresponding system of equations.
-                    sspMatrix.finalize();
+                    storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice + 1);
+                    
                     std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
                     nondeterministicLinearEquationSolver->solveEquationSystem(min, sspMatrix, x, b, sspNondeterministicChoiceIndices);
                     
@@ -454,8 +450,7 @@ namespace storm {
                             variables.push_back(stateToVariableIndexMap.at(state));
                             coefficients.push_back(1);
                             
-                            typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(nondeterministicChoiceIndices[state]);
-                            for (auto element : row) {
+                            for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
                                 variables.push_back(stateToVariableIndexMap.at(element.first));
                                 coefficients.push_back(-element.second);
                             }
@@ -474,8 +469,7 @@ namespace storm {
                                 variables.push_back(stateToVariableIndexMap.at(state));
                                 coefficients.push_back(1);
                                 
-                                typename storm::storage::SparseMatrix<ValueType>::Rows row = transitionMatrix.getRow(choice);
-                                for (auto element : row) {
+                                for (auto element : transitionMatrix.getRow(choice)) {
                                     variables.push_back(stateToVariableIndexMap.at(element.first));
                                     coefficients.push_back(-element.second);
                                 }
@@ -524,7 +518,7 @@ namespace storm {
                         
                         // Finally, if this union is non-empty, compute the states such that all schedulers reach some state of the union.
                         if (!unionOfNonGoalBSccs.empty()) {
-                            infinityStates = storm::utility::graph::performProbGreater0A(this->getModel(), this->getModel().getBackwardTransitions(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), unionOfNonGoalBSccs);
+                            infinityStates = storm::utility::graph::performProbGreater0A(this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getBackwardTransitions(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), unionOfNonGoalBSccs);
                         } else {
                             // Otherwise, we have no infinity states.
                             infinityStates = storm::storage::BitVector(this->getModel().getNumberOfStates());
@@ -545,7 +539,7 @@ namespace storm {
                         
                         if (!unionOfNonGoalMaximalEndComponents.empty()) {
                             // Now we need to check for which states there exists a scheduler that reaches one of the previously computed states.
-                            infinityStates = storm::utility::graph::performProbGreater0E(this->getModel(), this->getModel().getBackwardTransitions(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), unionOfNonGoalMaximalEndComponents);
+                            infinityStates = storm::utility::graph::performProbGreater0E(this->getModel().getTransitionMatrix(), this->getModel().getNondeterministicChoiceIndices(), this->getModel().getBackwardTransitions(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), unionOfNonGoalMaximalEndComponents);
                         } else {
                             // Otherwise, we have no infinity states.
                             infinityStates = storm::storage::BitVector(this->getModel().getNumberOfStates());

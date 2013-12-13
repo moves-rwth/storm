@@ -1,5 +1,12 @@
 #include <boost/functional/hash.hpp>
 
+// To detect whether the usage of TBB is possible, this include is neccessary
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_INTELTBB
+#include "tbb/tbb.h"
+#endif
+
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidStateException.h"
 
@@ -661,7 +668,7 @@ namespace storm {
         template<typename T>
         void SparseMatrix<T>::multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const {
 #ifdef STORM_HAVE_INTELTBB
-            tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size()),
+            tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size(), 10),
                               [&] (tbb::blocked_range<uint_fast64_t> const& range) {
                                   uint_fast64_t startRow = range.begin();
                                   uint_fast64_t endRow = range.end();

@@ -1,16 +1,6 @@
 #ifndef STORM_STORAGE_SPARSEMATRIX_H_
 #define STORM_STORAGE_SPARSEMATRIX_H_
 
-// To detect whether the usage of TBB is possible, this include is neccessary
-#include "storm-config.h"
-
-#ifdef STORM_HAVE_INTELTBB
-#	include "utility/OsDetection.h" // This fixes a potential dependency ordering problem between GMM and TBB
-#	include <new>
-#	include "tbb/tbb.h"
-#	include <iterator>
-#endif
-
 #include <algorithm>
 #include <iostream>
 #include <cstdint>

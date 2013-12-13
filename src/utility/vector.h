@@ -1,6 +1,11 @@
 #ifndef STORM_UTILITY_VECTOR_H_
 #define STORM_UTILITY_VECTOR_H_
 
+#include "storm-config.h"
+#ifdef STORM_HAVE_INTELTBB
+#include "tbb/tbb.h"
+#endif
+
 #include "constants.h"
 #include <iostream>
 #include <algorithm>
