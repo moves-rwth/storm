@@ -11,8 +11,11 @@ MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTran
 
 	bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
 
-	// Skip the format hint.
-	buf = storm::parser::forwardToNextLine(buf, lineEndings);
+	// Skip the format hint if it is there.
+	buf = trimWhitespaces(buf);
+	if(buf[0] != '0') {
+		buf = storm::parser::forwardToNextLine(buf, lineEndings);
+	}
 
 	// Now read the transitions.
 	int_fast64_t source, target = -1;

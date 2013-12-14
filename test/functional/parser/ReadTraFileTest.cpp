@@ -14,13 +14,13 @@
 
 TEST(ReadTraFileTest, NonExistingFileTest) {
    //No matter what happens, please don't create a file with the name "nonExistingFile.not"! :-)
-   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 /* The following test case is based on one of the original MRMC test cases
  */
 TEST(ReadTraFileTest, ParseFileTest1) {
-	storm::storage::SparseMatrix<double> result = storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/csl_general_input_01.tra");
+	storm::storage::SparseMatrix<double> result = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/csl_general_input_01.tra");
 
 	double val = 0.0;
 	ASSERT_TRUE(result.getValue(0, 0, &val));
@@ -65,13 +65,13 @@ TEST(ReadTraFileTest, ParseFileTest1) {
 }
 
 TEST(ReadTraFileTest, WrongFormatTestHeader1) {
-   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/wrong_format_header1.tra"), storm::exceptions::WrongFormatException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/wrong_format_header1.tra"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadTraFileTest, WrongFormatTestHeader2) {
-   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/wrong_format_header2.tra"), storm::exceptions::WrongFormatException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/wrong_format_header2.tra"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadTraFileTest, WrongFormatTestTransition) {
-   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/wrong_format_transition.tra"), storm::exceptions::WrongFormatException);
+   ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/wrong_format_transition.tra"), storm::exceptions::WrongFormatException);
 }

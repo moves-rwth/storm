@@ -29,7 +29,7 @@ namespace parser {
 DeterministicModelParserResultContainer<double> parseDeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
 																		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 
-	storm::storage::SparseMatrix<double> resultTransitionSystem(std::move(storm::parser::DeterministicSparseTransitionParser(transitionSystemFile)));
+	storm::storage::SparseMatrix<double> resultTransitionSystem(std::move(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(transitionSystemFile)));
 
 	uint_fast64_t stateCount = resultTransitionSystem.getColumnCount();
 	uint_fast64_t rowCount = resultTransitionSystem.getRowCount();
@@ -42,9 +42,8 @@ DeterministicModelParserResultContainer<double> parseDeterministicModel(std::str
 		result.stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile));
 	}
 	if (transitionRewardFile != "") {
-		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(rowCount, stateCount, nullptr);
-		result.transitionRewards.reset(std::move(storm::parser::DeterministicSparseTransitionParser(transitionRewardFile, false, rewardMatrixInfo)));
-		delete rewardMatrixInfo;
+		RewardMatrixInformationStruct rewardMatrixInfo(rowCount, stateCount, nullptr);
+		result.transitionRewards.reset(std::move(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(transitionRewardFile, rewardMatrixInfo)));
 	}
 
 	return result;
