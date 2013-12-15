@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#include "src/solver/NativeNondeterministicLinearEquationSolver.h"
 #include "src/settings/Settings.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
@@ -16,7 +17,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
     
-	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<double>>(new storm::solver::AbstractNondeterministicLinearEquationSolver<double>()));
+	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
     
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("two");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -84,8 +85,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - 7.3333294987678527832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    
+	ASSERT_LT(std::abs(result[0] - 7.3333323), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
@@ -94,8 +94,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);;
     
-	ASSERT_LT(std::abs(result[0] - 7.3333294987678527832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    
+	ASSERT_LT(std::abs(result[0] - 7.3333323), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	storm::parser::AutoParser<double> stateRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "");
@@ -104,7 +103,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	std::shared_ptr<storm::models::Mdp<double>> stateRewardMdp = stateRewardParser.getModel<storm::models::Mdp<double>>();
     
-    storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<double>>(new storm::solver::AbstractNondeterministicLinearEquationSolver<double>()));
+    storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
 
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
@@ -112,8 +111,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - 7.3333294987678527832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    
+	ASSERT_LT(std::abs(result[0] - 7.3333323), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
@@ -122,8 +120,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - 7.3333294987678527832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    
+	ASSERT_LT(std::abs(result[0] - 7.3333323), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	storm::parser::AutoParser<double> stateAndTransitionRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
@@ -132,7 +129,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	std::shared_ptr<storm::models::Mdp<double>> stateAndTransitionRewardMdp = stateAndTransitionRewardParser.getModel<storm::models::Mdp<double>>();
     
-	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<double>>(new storm::solver::AbstractNondeterministicLinearEquationSolver<double>()));
+	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
@@ -140,8 +137,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - (2 * 7.3333294987678527832)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    
+	ASSERT_LT(std::abs(result[0] - 14.66666611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
@@ -150,8 +146,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - (2 * 7.3333294987678527832)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    
+	ASSERT_LT(std::abs(result[0] - 14.66666611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
 }
 
@@ -166,7 +161,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);
 
-	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<double>>(new storm::solver::AbstractNondeterministicLinearEquationSolver<double>()));
+	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
 
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
@@ -214,8 +209,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.checkNoBoundOperator(*rewardFormula);;
 
-	ASSERT_LT(std::abs(result[0] - 4.28568908480604982), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-
+	ASSERT_LT(std::abs(result[0] - 4.285709145), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
@@ -224,7 +218,6 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.checkNoBoundOperator(*rewardFormula);;
 
-	ASSERT_LT(std::abs(result[0] - 4.2856904354441400784), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-
+	ASSERT_LT(std::abs(result[0] - 4.285709145), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
 }

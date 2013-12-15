@@ -1,148 +1,64 @@
 #ifndef STORM_SOLVER_ABSTRACTNONDETERMINISTICLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_ABSTRACTNONDETERMINISTICLINEAREQUATIONSOLVER_H_
 
-#include "src/storage/SparseMatrix.h"
-#include "src/utility/vector.h"
-#include "src/settings/Settings.h"
-
 #include <vector>
+
+#include "src/storage/SparseMatrix.h"
 
 namespace storm {
     namespace solver {
         
-        template<class Type>
+        /*!
+         * A class that represents an abstract nondeterministic linear equation solver. In addition to solving linear
+         * equation systems involving min/max operators, .
+         */
+        template<class ValueType>
         class AbstractNondeterministicLinearEquationSolver {
         public:
-            AbstractNondeterministicLinearEquationSolver() {
-                storm::settings::Settings* s = storm::settings::Settings::getInstance();
-                precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-                maxIterations = s->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-                relative = !s->isSet("absolute");
-            }
-            
-            AbstractNondeterministicLinearEquationSolver(double precision, uint_fast64_t maxIterations, bool relative) : precision(precision), maxIterations(maxIterations), relative(relative) {
-                // Intentionally left empty.
-            }
-            
-            virtual AbstractNondeterministicLinearEquationSolver<Type>* clone() const {
-                return new AbstractNondeterministicLinearEquationSolver<Type>(this->precision, this->maxIterations, this->relative);
-            }
-            
             /*!
-             * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes x[i+1] = A*x[i] + b
-             * until x[n], where x[0] = x.
+             * Makes a copy of the nondeterministic linear equation solver.
              *
-             * @param minimize If set, all choices are resolved such that the solution value becomes minimal and maximal otherwise.
-             * @param A The matrix that is to be multiplied against the vector.
-             * @param x The initial vector that is to be multiplied against the matrix. This is also the output parameter,
-             * i.e. after the method returns, this vector will contain the computed values.
-             * @param nondeterministicChoiceIndices The assignment of states to their rows in the matrix.
-             * @param b If not null, this vector is being added to the result after each matrix-vector multiplication.
-             * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
-             * @returns The result of the repeated matrix-vector multiplication as the content of the parameter vector.
+             * @return A pointer to a copy of the nondeterministic linear equation solver.
              */
-            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const {
-                // Create vector for result of multiplication, which is reduced to the result vector after
-                // each multiplication.
-                std::vector<Type> multiplyResult(A.getRowCount());
-                
-                // Now perform matrix-vector multiplication as long as we meet the bound of the formula.
-                for (uint_fast64_t i = 0; i < n; ++i) {
-                    A.multiplyWithVector(x, multiplyResult);
-                    
-                    // Add b if it is non-null.
-                    if (b != nullptr) {
-                        storm::utility::vector::addVectorsInPlace(multiplyResult, *b);
-                    }
-                    
-                    // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
-                    // element of the min/max operator stack.
-                    if (minimize) {
-                        storm::utility::vector::reduceVectorMin(multiplyResult, x, nondeterministicChoiceIndices);
-                    } else {
-                        storm::utility::vector::reduceVectorMax(multiplyResult, x, nondeterministicChoiceIndices);
-                    }
-                }
-            }
+            virtual AbstractNondeterministicLinearEquationSolver<ValueType>* clone() const = 0;
             
             /*!
-             * Solves the equation system A*x = b given by the parameters.
+             * Solves the equation system x = min/max(A*x + b) given by the parameters.
              *
-             * @param minimize If set, all choices are resolved such that the solution value becomes minimal and maximal otherwise.
+             * @param minimize If set, all the value of a group of rows is the taken as the minimum over all rows and as
+             * the maximum otherwise.
              * @param A The matrix specifying the coefficients of the linear equations.
-             * @param x The solution vector x. The initial values of x represent a guess of the real values to the solver, but
-             * may be ignored.
-             * @param b The right-hand side of the equation system.
-             * @param nondeterministicChoiceIndices The assignment of states to their rows in the matrix.
-             * @param takenChoices If not null, this vector will be filled with the nondeterministic choices taken by the states
-             * to achieve the solution of the equation system. This assumes that the given vector has at least as many elements
-             * as there are states in the MDP.
-             * @returns The solution vector x of the system of linear equations as the content of the parameter x.
+             * @param x The solution vector x. The initial values of x represent a guess of the real values to the
+             * solver, but may be ignored.
+             * @param b The vector to add after matrix-vector multiplication.
+             * @param rowGroupIndices A vector indicating which rows of the matrix belong to one group.
+             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
+             * vector must be equal to the number of rows of A.
+             * @param newX If non-null, this memory is used as a scratch memory. If given, the length of this
+             * vector must be equal to the length of the vector x (and thus to the number of columns of A).
+             * @return The solution vector x of the system of linear equations as the content of the parameter x.
              */
-            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* multiplyResult = nullptr, std::vector<Type>* newX = nullptr) const {
-                
-                // Set up the environment for the power method.
-                bool multiplyResultMemoryProvided = true;
-                if (multiplyResult == nullptr) {
-                    multiplyResult = new std::vector<Type>(A.getRowCount());
-                    multiplyResultMemoryProvided = false;
-                }
-                std::vector<Type>* currentX = &x;
-                bool xMemoryProvided = true;
-                if (newX == nullptr) {
-                    newX = new std::vector<Type>(x.size());
-                    xMemoryProvided = false;
-                }
-                std::vector<Type>* swap = nullptr;
-                uint_fast64_t iterations = 0;
-                bool converged = false;
-
-                // Proceed with the iterations as long as the method did not converge or reach the
-                // user-specified maximum number of iterations.
-                while (!converged && iterations < maxIterations) {
-                    // Compute x' = A*x + b.
-                    A.multiplyWithVector(*currentX, *multiplyResult);
-                    storm::utility::vector::addVectorsInPlace(*multiplyResult, b);
-                    
-                    // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
-                    // element of the min/max operator stack.
-                    if (minimize) {
-                        storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, nondeterministicChoiceIndices);
-                    } else {
-                        storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, nondeterministicChoiceIndices);
-                    }
-                    
-                    // Determine whether the method converged.
-                    converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, precision, relative);
-                    
-                    // Update environment variables.
-                    swap = currentX;
-                    currentX = newX;
-                    newX = swap;
-                    ++iterations;
-                }
-
-                // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
-                // is currently stored in currentX, but x is the output vector.
-                if (iterations % 2 == 1) {
-                    std::swap(x, *currentX);
-                    if (!xMemoryProvided) {
-                        delete currentX;
-                    }
-                } else if (!xMemoryProvided) {
-                    delete newX;
-                }
-                
-                if (!multiplyResultMemoryProvided) {
-                    delete multiplyResult;
-                }
-            }
+            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
             
-        protected:
-            double precision;
-            uint_fast64_t maxIterations;
-            bool relative;
-
+            /*!
+             * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
+             * x[i+1] = min/max(A*x[i] + b) until x[n], where x[0] = x. After each multiplication and addition, the
+             * minimal/maximal value out of each row group is selected to reduce the resulting vector to obtain the
+             * vector for the next iteration.
+             *
+             * @param minimize If set, all the value of a group of rows is the taken as the minimum over all rows and as
+             * the maximum otherwise.
+             * @param A The matrix that is to be multiplied with the vector.
+             * @param x The initial vector that is to be multiplied with the matrix. This is also the output parameter,
+             * i.e. after the method returns, this vector will contain the computed values.
+             * @param rowGroupIndices A vector indicating which rows of the matrix belong to one group.
+             * @param b If not null, this vector is added after each multiplication.
+             * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
+             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
+             * vector must be equal to the number of rows of A.
+             * @return The result of the repeated matrix-vector multiplication as the content of the vector x.
+             */
+            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
         };
         
     } // namespace solver

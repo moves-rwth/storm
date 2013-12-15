@@ -34,15 +34,20 @@ bool storm::utility::StormOptions::optionsRegistered = storm::settings::Settings
     
 	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "fixDeadlocks", "", "If the model contains deadlock states, setting this option will insert self-loops for these states.").build());
     
-	std::vector<std::string> matrixLibraries;
-	matrixLibraries.push_back("gmm++");
-	matrixLibraries.push_back("native");
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "matrixLibrary", "m", "Sets which matrix library is preferred for numerical operations.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("matrixLibraryName", "The name of a matrix library. Valid values are gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(matrixLibraries)).setDefaultValueString("gmm++").build()).build());
+	std::vector<std::string> linearEquationSolver;
+	linearEquationSolver.push_back("gmm++");
+	linearEquationSolver.push_back("native");
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "linsolver", "", "Sets which solver is preferred for solving systems of linear equations.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
+
+    std::vector<std::string> nondeterministicLinearEquationSolver;
+	nondeterministicLinearEquationSolver.push_back("gmm++");
+	nondeterministicLinearEquationSolver.push_back("native");
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "linsolver", "", "Sets which solver is preferred for solving systems of linear equations arising from nondeterministic systems.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nondeterministicLinearEquationSolver)).setDefaultValueString("native").build()).build());
 
     std::vector<std::string> lpSolvers;
 	lpSolvers.push_back("gurobi");
 	lpSolvers.push_back("glpk");
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "lpSolver", "", "Sets which LP solver is preferred.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("LP solver name", "The name of an available LP solver. Valid values are gurobi and glpk.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "lpsolver", "", "Sets which LP solver is preferred.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("LP solver name", "The name of an available LP solver. Valid values are gurobi and glpk.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
     
 	return true;
 });

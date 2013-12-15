@@ -45,7 +45,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(SolutionMethod method, double precision, bool relative, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, uint_fast64_t restart) : method(method), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), preconditioner(preconditioner), restart(restart) {
+        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, bool relative, uint_fast64_t restart) : method(method), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), preconditioner(preconditioner), restart(restart) {
             // Intentionally left empty.
         }
         
@@ -150,12 +150,12 @@ namespace storm {
         void GmmxxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             // Transform the transition probability A to the gmm++ format to use its arithmetic.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
-            
+
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
             std::vector<ValueType>* swap = nullptr;
             std::vector<ValueType>* currentX = &x;
-            
+
             bool multiplyResultProvided = true;
             std::vector<ValueType>* nextX = multiplyResult;
             if (nextX == nullptr) {
@@ -182,7 +182,7 @@ namespace storm {
             }
             
             // If the vector for the temporary multiplication result was not provided, we need to delete it.
-            if (multiplyResultProvided) {
+            if (!multiplyResultProvided) {
                 delete copyX;
             }
         }
@@ -196,7 +196,7 @@ namespace storm {
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmDinv = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.second));
             // Convert the LU matrix to gmm++'s format.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.first));
-            
+        
             // To avoid copying the contents of the vector in the loop, we create a temporary x to swap with.
             bool multiplyResultProvided = true;
             std::vector<ValueType>* nextX = multiplyResult;
@@ -220,12 +220,12 @@ namespace storm {
                 gmm::add(b, gmm::scaled(tmpX, -storm::utility::constantOne<ValueType>()), tmpX);
                 gmm::mult(*gmmDinv, tmpX, *nextX);
                 
-                // Swap the two pointers as a preparation for the next iteration.
-                std::swap(nextX, currentX);
-                
                 // Now check if the process already converged within our precision.
                 converged = storm::utility::vector::equalModuloPrecision(*currentX, *nextX, precision, relative);
-                
+
+                // Swap the two pointers as a preparation for the next iteration.
+                std::swap(nextX, currentX);
+
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterationCount;
             }

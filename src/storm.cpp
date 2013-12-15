@@ -40,6 +40,7 @@
 #include "src/parser/PrctlParser.h"
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
+#include "src/utility/vector.h"
 
 #include "src/settings/Settings.h"
 // Registers all standard options
@@ -462,7 +463,7 @@ int main(const int argc, const char* argv[]) {
                     LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
                     std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = parser.getModel<storm::models::MarkovAutomaton<double>>();
                     markovAutomaton->close();
-                    storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<double>>(new storm::solver::AbstractNondeterministicLinearEquationSolver<double>()));
+                    storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton);
 //                    std::cout << mc.checkExpectedTime(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
 //                    std::cout << mc.checkExpectedTime(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
 //                    std::cout << mc.checkLongRunAverage(true, markovAutomaton->getLabeledStates("goal")) << std::endl;

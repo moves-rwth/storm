@@ -15,6 +15,9 @@
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
+template<typename ValueType>
+std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector);
+
 namespace storm {
     namespace utility {
         namespace vector {
@@ -129,6 +132,48 @@ namespace storm {
             }
             
             /*!
+             * Applies the given operation pointwise on the two given vectors and writes the result into the first
+             * vector.
+             *
+             * @param target The first operand and target vector.
+             * @param secondOperand The second operand.
+             */
+            template<class T>
+            void applyPointwiseInPlace(std::vector<T>& target, std::vector<T> const& secondOperand, std::function<T (T const&, T const&)> function) {
+#ifdef DEBUG
+                if (target.size() != summand.size()) {
+                    throw storm::exceptions::InvalidArgumentException() << "Invalid call to storm::utility::vector::applyPointwiseInPlace: operand lengths mismatch.";
+                }
+#endif
+#ifdef STORM_HAVE_INTELTBB
+                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
+                                  [&](tbb::blocked_range<uint_fast64_t> const& range) {
+                                      std::transform(target.begin() + range.begin(), target.begin() + range.end(), secondOperand.begin() + range.begin(), target.begin() + range.begin(), function);
+                                  });
+#else
+                std::transform(target.begin(), target.end(), secondOperand.begin(), secondOperand.begin(), function);
+#endif
+            }
+            
+            /*!
+             * Applies the given function pointwise on the given vector.
+             *
+             * @param target The vector to which to apply the function.
+             * @param function The function to apply.
+             */
+            template<class T>
+            void applyPointwiseInPlace(std::vector<T>& target, std::function<T (T const&)> function) {
+#ifdef STORM_HAVE_INTELTBB
+                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
+                                  [&](tbb::blocked_range<uint_fast64_t> const& range) {
+                                      std::transform(target.begin() + range.begin(), target.begin() + range.end(), target.begin() + range.begin(), function);
+                                  });
+#else
+                std::transform(target.begin(), target.end(), target.begin(), function);
+#endif
+            }
+            
+            /*!
              * Adds the two given vectors and writes the result into the first operand.
              *
              * @param target The first summand and target vector.
@@ -136,25 +181,29 @@ namespace storm {
              */
             template<class T>
             void addVectorsInPlace(std::vector<T>& target, std::vector<T> const& summand) {
-#ifdef DEBUG
-                if (target.size() != summand.size()) {
-                    throw storm::exceptions::InvalidArgumentException() << "Invalid call to storm::utility::vector::addVectorsInPlace: operand lengths mismatch.";
-                }
-#endif
-#ifdef STORM_HAVE_INTELTBB
-                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
-                                  [&](tbb::blocked_range<uint_fast64_t> const& range) {
-                                        uint_fast64_t firstRow = range.begin();
-                                        uint_fast64_t endRow = range.end();
-                                      
-                                        typename std::vector<T>::iterator targetIt = target.begin() + firstRow;
-                                        for (typename std::vector<T>::const_iterator summandIt = summand.begin() + firstRow, summandIte = summand.begin() + endRow; summandIt != summandIte; ++summandIt, ++targetIt) {
-                                                *targetIt += *summandIt;
-                                        }
-                                  });
-#else
-                std::transform(target.begin(), target.end(), summand.begin(), target.begin(), std::plus<T>());
-#endif
+                applyPointwiseInPlace<T>(target, summand, std::plus<T>());
+            }
+            
+            /*!
+             * Subtracts the two given vectors and writes the result into the first operand.
+             *
+             * @param target The first summand and target vector.
+             * @param summand The second summand.
+             */
+            template<class T>
+            void subtractVectorsInPlace(std::vector<T>& target, std::vector<T> const& summand) {
+                applyPointwiseInPlace<T>(target, summand, std::minus<T>());
+            }
+            
+            /*!
+             * Subtracts the two given vectors and writes the result into the first operand.
+             *
+             * @param target The first summand and target vector.
+             * @param summand The second summand.
+             */
+            template<class T>
+            void scaleVectorInPlace(std::vector<T>& target, T const& factor) {
+                applyPointwiseInPlace<T>(target, [&] (T const& argument) { return argument * factor; });
             }
             
             /*!
@@ -371,7 +420,6 @@ namespace storm {
                 
                 return subVector;
             }
-            
         } // namespace vector
     } // namespace utility
 } // namespace storm

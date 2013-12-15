@@ -27,14 +27,14 @@ namespace storm {
              *
              * @param method The method to use for linear equation solving.
              * @param precision The precision to use for convergence detection.
-             * @param relative If set, the relative error rather than the absolute error is considered for convergence
-             * detection.
              * @param maximalNumberOfIterations The maximal number of iterations do perform before iteration is aborted.
              * @param preconditioner The preconditioner to use when solving linear equation systems.
+             * @param relative If set, the relative error rather than the absolute error is considered for convergence
+             * detection.
              * @param restart An optional argument that specifies after how many iterations restarted methods are
              * supposed to actually to a restart.
              */
-            GmmxxLinearEquationSolver(SolutionMethod method, double precision, bool relative, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, uint_fast64_t restart = 0);
+            GmmxxLinearEquationSolver(SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, bool relative = true, uint_fast64_t restart = 0);
             
             /*!
              * Constructs a linear equation solver with parameters being set according to the settings object.

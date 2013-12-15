@@ -483,8 +483,6 @@ public:
 
 		//At last compensate for the distance between init and source state
 		probability = itSearch ? probability : probability / itDistances[bestIndex].second;
-
-		LOG4CPLUS_DEBUG(logger, "Found path: " << shortestPath);
 	}
 
 private:

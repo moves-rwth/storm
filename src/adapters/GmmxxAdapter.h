@@ -67,7 +67,6 @@ public:
 	template<class T>
 	static std::unique_ptr<gmm::csr_matrix<T>> toGmmxxSparseMatrix(storm::storage::SparseMatrix<T>&& matrix) {
 		uint_fast64_t realNonZeros = matrix.getEntryCount();
-        std::cout << "here?!" << std::endl;
 		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
 
 		// Prepare the resulting matrix.
@@ -77,11 +76,7 @@ public:
         typedef std::vector<IND_TYPE> vectorType_ull_t;
         typedef std::vector<T> vectorType_T_t; 
 
-        // Move Row Indications
-        result->jc.~vectorType_ull_t(); // Call Destructor inplace
-		new (&result->jc) vectorType_ull_t(std::move(*storm::utility::ConversionHelper::toUnsignedLongLong(&matrix.rowIndications)));
-        
-        // Copy columns and values.
+        // Copy columns and values. It is absolutely necessary to do so before moving the row indications vector.
         std::vector<T> values;
         values.reserve(matrix.getEntryCount());
         std::vector<uint_fast64_t> columns;
@@ -91,6 +86,9 @@ public:
             columns.emplace_back(entry.first);
             values.emplace_back(entry.second);
         }
+
+        // Move Row Indications
+        result->jc = std::move(matrix.rowIndications);
         
         std::swap(result->ir, columns);
         std::swap(result->pr, values);

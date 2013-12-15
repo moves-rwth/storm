@@ -1,14 +1,13 @@
-#include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
+#include "src/solver/NativeNondeterministicLinearEquationSolver.h"
 #include "src/settings/Settings.h"
-#include "src/adapters/GmmxxAdapter.h"
 #include "src/utility/vector.h"
 
-bool GmmxxNondeterministicLinearEquationSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
-	instance->addOption(storm::settings::OptionBuilder("GmmxxNondeterminsticLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
+bool NativeNondeterministicLinearEquationSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
+	instance->addOption(storm::settings::OptionBuilder("NativeNondeterminsticLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
     
-	instance->addOption(storm::settings::OptionBuilder("GmmxxNondeterminsticLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-6).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+	instance->addOption(storm::settings::OptionBuilder("NativeNondeterminsticLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
     
-	instance->addOption(storm::settings::OptionBuilder("GmmxxNondeterminsticLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
+	instance->addOption(storm::settings::OptionBuilder("NativeNondeterminsticLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
     
 	return true;
 });
@@ -17,7 +16,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        GmmxxNondeterministicLinearEquationSolver<ValueType>::GmmxxNondeterministicLinearEquationSolver() {
+        NativeNondeterministicLinearEquationSolver<ValueType>::NativeNondeterministicLinearEquationSolver() {
             // Get the settings object to customize solving.
             storm::settings::Settings* settings = storm::settings::Settings::getInstance();
             
@@ -28,20 +27,17 @@ namespace storm {
         }
         
         template<typename ValueType>
-        GmmxxNondeterministicLinearEquationSolver<ValueType>::GmmxxNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
+        NativeNondeterministicLinearEquationSolver<ValueType>::NativeNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
             // Intentionally left empty.
         }
-
         
         template<typename ValueType>
-        AbstractNondeterministicLinearEquationSolver<ValueType>* GmmxxNondeterministicLinearEquationSolver<ValueType>::clone() const {
-            return new GmmxxNondeterministicLinearEquationSolver<ValueType>(*this);
+        AbstractNondeterministicLinearEquationSolver<ValueType>* NativeNondeterministicLinearEquationSolver<ValueType>::clone() const {
+            return new NativeNondeterministicLinearEquationSolver<ValueType>(*this);
         }
         
         template<typename ValueType>
-        void GmmxxNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
-            // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
+        void NativeNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             
             // Set up the environment for the power method. If scratch memory was not provided, we need to create it.
             bool multiplyResultMemoryProvided = true;
@@ -49,7 +45,6 @@ namespace storm {
                 multiplyResult = new std::vector<ValueType>(A.getRowCount());
                 multiplyResultMemoryProvided = false;
             }
-            
             std::vector<ValueType>* currentX = &x;
             bool xMemoryProvided = true;
             if (newX == nullptr) {
@@ -59,18 +54,19 @@ namespace storm {
             std::vector<ValueType>* swap = nullptr;
             uint_fast64_t iterations = 0;
             bool converged = false;
-            
+
             // Keep track of which of the vectors for x is the auxiliary copy.
             std::vector<ValueType>* copyX = newX;
 
-            // Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
-            // of iterations.
+            // Proceed with the iterations as long as the method did not converge or reach the
+            // user-specified maximum number of iterations.
             while (!converged && iterations < maximalNumberOfIterations) {
                 // Compute x' = A*x + b.
-                gmm::mult(*gmmxxMatrix, *currentX, *multiplyResult);
-                gmm::add(b, *multiplyResult);
+                A.multiplyWithVector(*currentX, *multiplyResult);
+                storm::utility::vector::addVectorsInPlace(*multiplyResult, b);
                 
-                // Reduce the vector x by applying min/max over all nondeterministic choices.
+                // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
+                // element of the min/max operator stack.
                 if (minimize) {
                     storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, nondeterministicChoiceIndices);
                 } else {
@@ -78,7 +74,7 @@ namespace storm {
                 }
                 
                 // Determine whether the method converged.
-                converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, this->precision, this->relative);
+                converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, precision, relative);
                 
                 // Update environment variables.
                 std::swap(currentX, newX);
@@ -91,7 +87,7 @@ namespace storm {
             } else {
                 LOG4CPLUS_WARN(logger, "Iterative solver did not converge after " << iterations << " iterations.");
             }
-            
+    
             // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
             // is currently stored in currentX, but x is the output vector.
             if (currentX == copyX) {
@@ -108,24 +104,26 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
-            // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
+        void NativeNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             
+            // If scratch memory was not provided, we need to create it.
             bool multiplyResultMemoryProvided = true;
             if (multiplyResult == nullptr) {
                 multiplyResult = new std::vector<ValueType>(A.getRowCount());
                 multiplyResultMemoryProvided = false;
             }
-            
+
             // Now perform matrix-vector multiplication as long as we meet the bound of the formula.
             for (uint_fast64_t i = 0; i < n; ++i) {
-                gmm::mult(*gmmxxMatrix, x, *multiplyResult);
+                A.multiplyWithVector(x, *multiplyResult);
                 
+                // Add b if it is non-null.
                 if (b != nullptr) {
-                    gmm::add(*b, *multiplyResult);
+                    storm::utility::vector::addVectorsInPlace(*multiplyResult, *b);
                 }
                 
+                // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
+                // element of the min/max operator stack.
                 if (minimize) {
                     storm::utility::vector::reduceVectorMin(*multiplyResult, x, nondeterministicChoiceIndices);
                 } else {
@@ -137,8 +135,8 @@ namespace storm {
                 delete multiplyResult;
             }
         }
-
+        
         // Explicitly instantiate the solver.
-        template class GmmxxNondeterministicLinearEquationSolver<double>;
+        template class NativeNondeterministicLinearEquationSolver<double>;
     } // namespace solver
 } // namespace storm
