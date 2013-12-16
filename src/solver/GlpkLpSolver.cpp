@@ -40,6 +40,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        GlpkLpSolver::GlpkLpSolver() : GlpkLpSolver("", MINIMIZE) {
+            // Intentionally left empty.
+        }
+        
         GlpkLpSolver::~GlpkLpSolver() {
             // Dispose of all objects allocated dynamically by glpk.
             glp_delete_prob(this->lp);

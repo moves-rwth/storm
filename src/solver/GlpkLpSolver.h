@@ -38,6 +38,12 @@ namespace storm {
             GlpkLpSolver(std::string const& name);
             
             /*!
+             * Constructs a solver without a name. By default the objective function is assumed to be minimized,
+             * but this may be altered later using a call to setModelSense.
+             */
+            GlpkLpSolver();
+            
+            /*!
              * Destructs a solver by freeing the pointers to glpk's structures.
              */
             virtual ~GlpkLpSolver();
@@ -83,6 +89,10 @@ namespace storm {
             }
             
             GlpkLpSolver(std::string const& name) : LpSolver(MINIMIZE) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            GlpkLpSolver() : LpSolver(MINIMIZE) {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
