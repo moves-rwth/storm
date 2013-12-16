@@ -152,6 +152,7 @@ namespace storm {
              *
              * @param variableIndex The index of the integer variable whose value to query. If this index does not
              * belong to a previously declared integer variable, the behaviour is undefined.
+             * @return The value of the integer variable in the optimal solution.
              */
             virtual int_fast64_t getIntegerValue(uint_fast64_t variableIndex) const = 0;
             
@@ -161,6 +162,7 @@ namespace storm {
              *
              * @param variableIndex The index of the binary variable whose value to query. If this index does not
              * belong to a previously declared binary variable, the behaviour is undefined.
+             * @return The value of the binary variable in the optimal solution.
              */
             virtual bool getBinaryValue(uint_fast64_t variableIndex) const = 0;
             
@@ -170,9 +172,18 @@ namespace storm {
              *
              * @param variableIndex The index of the continuous variable whose value to query. If this index does not
              * belong to a previously declared continuous variable, the behaviour is undefined.
+             * @return The value of the continuous variable in the optimal solution.
              */
             virtual double getContinuousValue(uint_fast64_t variableIndex) const = 0;
 
+            /*!
+             * Retrieves the value of the objective function. Note that this may only be called, if the model was found
+             * to be optimal,  i.e. iff isOptimal() returns true.
+             *
+             * @return The value of the objective function in the optimal solution.
+             */
+            virtual double getObjectiveValue() const = 0;
+            
             /*!
              * Writes the current LP problem to the given file.
              *

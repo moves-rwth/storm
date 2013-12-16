@@ -38,6 +38,14 @@ namespace storm {
             GlpkLpSolver(std::string const& name);
             
             /*!
+             * Constructs a solver without a name and the given model sense.
+             *
+             * @param modelSense A value indicating whether the value of the objective function is to be minimized or
+             * maximized.
+             */
+            GlpkLpSolver(ModelSense const& modelSense);
+
+            /*!
              * Constructs a solver without a name. By default the objective function is assumed to be minimized,
              * but this may be altered later using a call to setModelSense.
              */
@@ -62,7 +70,8 @@ namespace storm {
             virtual int_fast64_t getIntegerValue(uint_fast64_t variableIndex) const override;
             virtual bool getBinaryValue(uint_fast64_t variableIndex) const override;
             virtual double getContinuousValue(uint_fast64_t variableIndex) const override;
-            
+            virtual double getObjectiveValue() const override;
+
             virtual void writeModelToFile(std::string const& filename) const override;
             
         private:
@@ -74,6 +83,13 @@ namespace storm {
             
             // A counter that keeps track of the next free constraint index.
             uint_fast64_t nextConstraintIndex;
+            
+            // A flag storing whether the model is an LP or an MILP.
+            bool modelContainsIntegerVariables;
+            
+            // Flags that store whether the MILP was found to be infeasible or unbounded.
+            mutable bool isInfeasibleFlag;
+            mutable bool isUnboundedFlag;
             
             // The arrays that store the coefficient matrix of the problem.
             std::vector<int> rowIndices;
@@ -89,6 +105,10 @@ namespace storm {
             }
             
             GlpkLpSolver(std::string const& name) : LpSolver(MINIMIZE) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            GlpkLpSolver(ModelSense const& modelSense) : LpSolver(modelSense) {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
@@ -141,6 +161,10 @@ namespace storm {
             }
             
             virtual double getContinuousValue(uint_fast64_t variableIndex) const override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual double getObjectiveValue() const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             

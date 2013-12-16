@@ -15,12 +15,14 @@ extern log4cplus::Logger logger;
 bool GlpkLpSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
 	instance->addOption(storm::settings::OptionBuilder("GlpkLpSolver", "glpkoutput", "", "If set, the glpk output will be printed to the command line.").build());
     
+    instance->addOption(storm::settings::OptionBuilder("GurobiLpSolver", "glpkinttol", "", "Sets glpk's precision for integer variables.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+
     return true;
 });
 
 namespace storm {
     namespace solver {
-        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), nextVariableIndex(1), nextConstraintIndex(1), rowIndices(), columnIndices(), coefficientValues() {
+        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
             // Create the LP problem for glpk.
             lp = glp_create_prob();
             
@@ -41,6 +43,10 @@ namespace storm {
         }
         
         GlpkLpSolver::GlpkLpSolver() : GlpkLpSolver("", MINIMIZE) {
+            // Intentionally left empty.
+        }
+        
+        GlpkLpSolver::GlpkLpSolver(ModelSense const& modelSense) : GlpkLpSolver("", modelSense) {
             // Intentionally left empty.
         }
         
@@ -78,12 +84,14 @@ namespace storm {
         uint_fast64_t GlpkLpSolver::createIntegerVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
             uint_fast64_t index = this->createContinuousVariable(name, variableType, lowerBound, upperBound, objectiveFunctionCoefficient);
             glp_set_col_kind(this->lp, index, GLP_IV);
+            this->modelContainsIntegerVariables = true;
             return index;
         }
         
         uint_fast64_t GlpkLpSolver::createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
             uint_fast64_t index = this->createContinuousVariable(name, UNBOUNDED, 0, 1, objectiveFunctionCoefficient);
             glp_set_col_kind(this->lp, index, GLP_BV);
+            this->modelContainsIntegerVariables = true;
             return index;
         }
         
@@ -128,11 +136,36 @@ namespace storm {
         }
         
         void GlpkLpSolver::optimize() const {
+            // First, reset the flags.
+            this->isInfeasibleFlag = false;
+            this->isUnboundedFlag = false;
+            
             // Start by setting the model sense.
             glp_set_obj_dir(this->lp, this->getModelSense() == MINIMIZE ? GLP_MIN : GLP_MAX);
             
             glp_load_matrix(this->lp, rowIndices.size() - 1, rowIndices.data(), columnIndices.data(), coefficientValues.data());
-            int error = glp_simplex(this->lp, nullptr);
+            
+            int error = 0;
+            if (this->modelContainsIntegerVariables) {
+                glp_iocp* parameters = new glp_iocp;
+                glp_init_iocp(parameters);
+                parameters->presolve = GLP_ON;
+                parameters->tol_int = storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble();
+                error = glp_intopt(this->lp, parameters);
+                delete parameters;
+                
+                // In case the error is caused by an infeasible problem, we do not want to view this as an error and
+                // reset the error code.
+                if (error == GLP_ENOPFS) {
+                    this->isInfeasibleFlag = true;
+                    error = 0;
+                } else if (error == GLP_ENODFS) {
+                    this->isUnboundedFlag = true;
+                    error = 0;
+                }
+            } else {
+                error = glp_simplex(this->lp, nullptr);
+            }
             
             if (error != 0) {
                 LOG4CPLUS_ERROR(logger, "Unable to optimize glpk model (" << error << ").");
@@ -143,26 +176,64 @@ namespace storm {
         }
         
         bool GlpkLpSolver::isInfeasible() const {
-            int status = glp_get_status(this->lp);
-            return status == GLP_INFEAS;
+            if (!this->currentModelHasBeenOptimized) {
+                throw storm::exceptions::InvalidStateException() << "Illegal call to GlpkLpSolver::isInfeasible: model has not been optimized.";
+            }
+
+            if (this->modelContainsIntegerVariables) {
+                return isInfeasibleFlag;
+            } else {
+                return glp_get_status(this->lp) == GLP_INFEAS;
+            }
         }
         
         bool GlpkLpSolver::isUnbounded() const {
-            int status = glp_get_status(this->lp);
-            return status == GLP_UNBND;
+            if (!this->currentModelHasBeenOptimized) {
+                throw storm::exceptions::InvalidStateException() << "Illegal call to GlpkLpSolver::isUnbounded: model has not been optimized.";
+            }
+
+            if (this->modelContainsIntegerVariables) {
+                return isUnboundedFlag;
+            } else {
+                return glp_get_status(this->lp) == GLP_UNBND;
+            }
         }
         
         bool GlpkLpSolver::isOptimal() const {
             if (!this->currentModelHasBeenOptimized) {
                 return false;
             }
-            int status = glp_get_status(this->lp);
+            
+            int status = 0;
+            if (this->modelContainsIntegerVariables) {
+                status = glp_mip_status(this->lp);
+            } else {
+                status = glp_get_status(this->lp);
+            }
             return status == GLP_OPT;
         }
         
         int_fast64_t GlpkLpSolver::getIntegerValue(uint_fast64_t variableIndex) const {
-            double value = glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
-            
+            if (!this->isOptimal()) {
+                if (this->isInfeasible()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from infeasible model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model.";
+                } else if (this->isUnbounded()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unbounded model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model.";
+                } else {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unoptimized model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model.";
+                }
+            }
+           
+            double value = 0;
+            if (this->modelContainsIntegerVariables) {
+                value = glp_mip_col_val(this->lp, static_cast<int>(variableIndex));
+            } else {
+                value = glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
+            }
+
             if (std::abs(value - static_cast<int>(value)) <= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
                 // Nothing to do in this case.
             } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
@@ -174,7 +245,25 @@ namespace storm {
         }
         
         bool GlpkLpSolver::getBinaryValue(uint_fast64_t variableIndex) const {
-            double value = glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
+            if (!this->isOptimal()) {
+                if (this->isInfeasible()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from infeasible model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model.";
+                } else if (this->isUnbounded()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unbounded model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model.";
+                } else {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unoptimized model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model.";
+                }
+            }
+
+            double value = 0;
+            if (this->modelContainsIntegerVariables) {
+                value = glp_mip_col_val(this->lp, static_cast<int>(variableIndex));
+            } else {
+                value = glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
+            }
 
             if (std::abs(value - 1) <= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
                 // Nothing to do in this case.
@@ -187,7 +276,50 @@ namespace storm {
         }
         
         double GlpkLpSolver::getContinuousValue(uint_fast64_t variableIndex) const {
-            return glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
+            if (!this->isOptimal()) {
+                if (this->isInfeasible()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from infeasible model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model.";
+                } else if (this->isUnbounded()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unbounded model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model.";
+                } else {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unoptimized model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model.";
+                }
+            }
+
+            double value = 0;
+            if (this->modelContainsIntegerVariables) {
+                value = glp_mip_col_val(this->lp, static_cast<int>(variableIndex));
+            } else {
+                value = glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
+            }
+            return value;
+        }
+        
+        double GlpkLpSolver::getObjectiveValue() const {
+            if (!this->isOptimal()) {
+                if (this->isInfeasible()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from infeasible model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model.";
+                } else if (this->isUnbounded()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unbounded model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model.";
+                } else {
+                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unoptimized model.");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model.";
+                }
+            }
+
+            double value = 0;
+            if (this->modelContainsIntegerVariables) {
+                value = glp_mip_obj_val(this->lp);
+            } else {
+                value = glp_get_obj_val(this->lp);
+            }
+
+            return value;
         }
         
         void GlpkLpSolver::writeModelToFile(std::string const& filename) const {
