@@ -1,5 +1,5 @@
-#ifndef STORM_SOLVER_ABSTRACTNONDETERMINISTICLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_ABSTRACTNONDETERMINISTICLINEAREQUATIONSOLVER_H_
+#ifndef STORM_SOLVER_NONDETERMINISTICLINEAREQUATIONSOLVER_H_
+#define STORM_SOLVER_NONDETERMINISTICLINEAREQUATIONSOLVER_H_
 
 #include <vector>
 
@@ -9,18 +9,19 @@ namespace storm {
     namespace solver {
         
         /*!
-         * A class that represents an abstract nondeterministic linear equation solver. In addition to solving linear
-         * equation systems involving min/max operators, .
+         * A interface that represents an abstract nondeterministic linear equation solver. In addition to solving
+         * linear equation systems involving min/max operators, repeated matrix-vector multiplication functionality is
+         * provided.
          */
         template<class ValueType>
-        class AbstractNondeterministicLinearEquationSolver {
+        class NondeterministicLinearEquationSolver {
         public:
             /*!
              * Makes a copy of the nondeterministic linear equation solver.
              *
              * @return A pointer to a copy of the nondeterministic linear equation solver.
              */
-            virtual AbstractNondeterministicLinearEquationSolver<ValueType>* clone() const = 0;
+            virtual NondeterministicLinearEquationSolver<ValueType>* clone() const = 0;
             
             /*!
              * Solves the equation system x = min/max(A*x + b) given by the parameters.
@@ -64,4 +65,4 @@ namespace storm {
     } // namespace solver
 } // namespace storm
 
-#endif /* STORM_SOLVER_ABSTRACTNONDETERMINISTICLINEAREQUATIONSOLVER_H_ */
+#endif /* STORM_SOLVER_NONDETERMINISTICLINEAREQUATIONSOLVER_H_ */

@@ -34,7 +34,7 @@ namespace storm {
 
         
         template<typename ValueType>
-        AbstractNondeterministicLinearEquationSolver<ValueType>* GmmxxNondeterministicLinearEquationSolver<ValueType>::clone() const {
+        NondeterministicLinearEquationSolver<ValueType>* GmmxxNondeterministicLinearEquationSolver<ValueType>::clone() const {
             return new GmmxxNondeterministicLinearEquationSolver<ValueType>(*this);
         }
         

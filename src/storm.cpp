@@ -466,10 +466,10 @@ int main(const int argc, const char* argv[]) {
                     storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton);
 //                    std::cout << mc.checkExpectedTime(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
 //                    std::cout << mc.checkExpectedTime(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
-//                    std::cout << mc.checkLongRunAverage(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
-//                    std::cout << mc.checkLongRunAverage(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
-                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 0, 1) << std::endl;
-                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 1, 2) << std::endl;
+                    std::cout << mc.checkLongRunAverage(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
+                    std::cout << mc.checkLongRunAverage(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
+//                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 0, 1) << std::endl;
+//                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 1, 2) << std::endl;
                     break;
                 }
 				case storm::models::Unknown:

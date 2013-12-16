@@ -85,7 +85,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AbstractLinearEquationSolver<ValueType>* GmmxxLinearEquationSolver<ValueType>::clone() const {
+        LinearEquationSolver<ValueType>* GmmxxLinearEquationSolver<ValueType>::clone() const {
             return new GmmxxLinearEquationSolver<ValueType>(*this);
         }
         

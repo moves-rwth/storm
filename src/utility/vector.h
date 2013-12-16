@@ -151,7 +151,7 @@ namespace storm {
                                       std::transform(target.begin() + range.begin(), target.begin() + range.end(), secondOperand.begin() + range.begin(), target.begin() + range.begin(), function);
                                   });
 #else
-                std::transform(target.begin(), target.end(), secondOperand.begin(), secondOperand.begin(), function);
+                std::transform(target.begin(), target.end(), secondOperand.begin(), target.begin(), function);
 #endif
             }
             

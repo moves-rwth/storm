@@ -10,13 +10,23 @@
 
 extern log4cplus::Logger logger;
 
+bool GurobiLpSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
+    instance->addOption(storm::settings::OptionBuilder("GurobiLpSolver", "gurobithreads", "", "The number of threads that may be used by Gurobi.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of threads.").setDefaultValueUnsignedInteger(1).build()).build());
+    
+	instance->addOption(storm::settings::OptionBuilder("GurobiLpSolver", "gurobioutput", "", "If set, the Gurobi output will be printed to the command line.").build());
+    
+	instance->addOption(storm::settings::OptionBuilder("GurobiLpSolver", "gurobiinttol", "", "Sets Gurobi's precision for integer variables.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+    
+    return true;
+});
+
 namespace storm {
     namespace solver {
         
-        GurobiLpSolver::GurobiLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), env(nullptr), model(nullptr), nextVariableIndex(0), isOptimal(false) {
+        GurobiLpSolver::GurobiLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), env(nullptr), model(nullptr), nextVariableIndex(0) {
             // Create the environment.
             int error = GRBloadenv(&env, "");
-            if (error || env == NULL) {
+            if (error || env == nullptr) {
                 LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi (" << GRBgeterrormsg(env) << ").");
                 throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ").";
             }
@@ -30,27 +40,28 @@ namespace storm {
                 LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi model (" << GRBgeterrormsg(env) << ").");
                 throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi model (" << GRBgeterrormsg(env) << ").";
             }
-            
-            // Set the required sense of the model.
-            this->setModelSense(modelSense);
         }
         
         GurobiLpSolver::GurobiLpSolver(std::string const& name) : GurobiLpSolver(name, MINIMIZE) {
             // Intentionally left empty.
         }
         
+        GurobiLpSolver::GurobiLpSolver() : GurobiLpSolver("", MINIMIZE) {
+            // Intentionally left empty.
+        }
+        
         GurobiLpSolver::~GurobiLpSolver() {
+            // Dispose of the objects allocated inside Gurobi.
             GRBfreemodel(model);
             GRBfreeenv(env);
         }
         
         void GurobiLpSolver::setGurobiEnvironmentProperties() const {
             // Enable the following line to only print the output of Gurobi if the debug flag is set.
-            // int error = error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->isSet("debug") ? 1 : 0);
-            int error = error = GRBsetintparam(env, "OutputFlag", 1);
+            int error = error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->isSet("debug") || storm::settings::Settings::getInstance()->isSet("gurobioutput") ? 1 : 0);
             
             // Enable the following line to restrict Gurobi to one thread only.
-            error = GRBsetintparam(env, "Threads", 1);
+            error = GRBsetintparam(env, "Threads", storm::settings::Settings::getInstance()->getOptionByLongName("gurobithreads").getArgument(0).getValueAsUnsignedInteger());
             
             // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
             error = GRBsetdblparam(env, "IntFeasTol", storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
@@ -64,7 +75,7 @@ namespace storm {
             }
             
             // Since the model changed, we erase the optimality flag.
-            this->isOptimal = false;
+            this->currentModelHasBeenOptimized = false;
         }
         
         uint_fast64_t GurobiLpSolver::createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
@@ -165,43 +176,78 @@ namespace storm {
             this->updateModel();
         }
         
-        void GurobiLpSolver::setModelSense(ModelSense const& newModelSense) {
-            LpSolver::setModelSense(newModelSense);
-            int error = GRBsetintattr(model, "ModelSense", newModelSense == MINIMIZE ? 1 : -1);
+        void GurobiLpSolver::optimize() const {
+            // First incorporate all recent changes.
+            this->updateModel();
+         
+            // Set the most recently set model sense.
+            int error = GRBsetintattr(model, "ModelSense", this->getModelSense() == MINIMIZE ? 1 : -1);
             if (error) {
                 LOG4CPLUS_ERROR(logger, "Unable to set Gurobi model sense (" << GRBgeterrormsg(env) << ").");
                 throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi model sense (" << GRBgeterrormsg(env) << ").";
             }
-        }
-        
-        void GurobiLpSolver::optimize() const {
-            // First incorporate all recent changes.
-            this->updateModel();
             
             // Then we actually optimize the model.
-            int error = GRBoptimize(model);
+            error = GRBoptimize(model);
             if (error) {
                 LOG4CPLUS_ERROR(logger, "Unable to optimize Gurobi model (" << GRBgeterrormsg(env) << ").");
                 throw storm::exceptions::InvalidStateException() << "Unable to optimize Gurobi model (" << GRBgeterrormsg(env) << ").";
             }
-
-            // Finally, we check whether the solution is legal (i.e. bounded, so we can extract values).
+            
+            this->currentModelHasBeenOptimized = true;
+        }
+        
+        bool GurobiLpSolver::isInfeasible() const {
             int optimalityStatus = 0;
-            error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimalityStatus);
-            if (optimalityStatus == GRB_INF_OR_UNBD) {
-                LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from infeasible or unbounded model (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible or unbounded MILP (" << GRBgeterrormsg(env) << ").";
-            } else if (optimalityStatus != GRB_OPTIMAL) {
-                LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").";
+            
+            int error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimalityStatus);
+            if (error) {
+                LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").");
+                throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").";
             }
             
-            this->isOptimal = true;
+            return optimalityStatus == GRB_INFEASIBLE;
+        }
+        
+        bool GurobiLpSolver::isUnbounded() const {
+            int optimalityStatus = 0;
+            
+            int error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimalityStatus);
+            if (error) {
+                LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").");
+                throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").";
+            }
+            
+            return optimalityStatus == GRB_UNBOUNDED;
+        }
+        
+        bool GurobiLpSolver::isOptimal() const {
+            if (!this->currentModelHasBeenOptimized) {
+                return false;
+            }
+            int optimalityStatus = 0;
+            
+            int error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimalityStatus);
+            if (error) {
+                LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").");
+                throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").";
+            }
+            
+            return optimalityStatus == GRB_OPTIMAL;
         }
         
         int_fast64_t GurobiLpSolver::getIntegerValue(uint_fast64_t variableIndex) const {
-            if (!isOptimal) {
-                throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").";
+            if (!this->isOptimal()) {
+                if (this->isInfeasible()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(env) << ").";
+                } else if (this->isUnbounded()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(env) << ").";
+                } else {
+                    LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").";
+                }
             }
             
             double value = 0;
@@ -222,8 +268,17 @@ namespace storm {
         }
         
         bool GurobiLpSolver::getBinaryValue(uint_fast64_t variableIndex) const {
-            if (!isOptimal) {
-                throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").";
+            if (!this->isOptimal()) {
+                if (this->isInfeasible()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(env) << ").";
+                } else if (this->isUnbounded()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(env) << ").";
+                } else {
+                    LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").";
+                }
             }
 
             double value = 0;
@@ -244,8 +299,17 @@ namespace storm {
         }
         
         double GurobiLpSolver::getContinuousValue(uint_fast64_t variableIndex) const {
-            if (!isOptimal) {
-                throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").";
+            if (!this->isOptimal()) {
+                if (this->isInfeasible()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(env) << ").";
+                } else if (this->isUnbounded()) {
+                    LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(env) << ").";
+                } else {
+                    LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").");
+                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").";
+                }
             }
 
             double value = 0;

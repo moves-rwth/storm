@@ -12,15 +12,23 @@
 
 extern log4cplus::Logger logger;
 
+bool GlpkLpSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
+	instance->addOption(storm::settings::OptionBuilder("GlpkLpSolver", "glpkoutput", "", "If set, the glpk output will be printed to the command line.").build());
+    
+    return true;
+});
+
 namespace storm {
     namespace solver {
-        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), nextVariableIndex(1), nextConstraintIndex(1), isOptimal(false), rowIndices(), columnIndices(), coefficientValues() {
+        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), nextVariableIndex(1), nextConstraintIndex(1), rowIndices(), columnIndices(), coefficientValues() {
             // Create the LP problem for glpk.
             lp = glp_create_prob();
             
             // Set its name and model sense.
             glp_set_prob_name(lp, name.c_str());
-            this->setModelSense(modelSense);
+            
+            // Set whether the glpk output shall be printed to the command line.
+            glp_term_out(storm::settings::Settings::getInstance()->isSet("debug") || storm::settings::Settings::getInstance()->isSet("glpkoutput") ? GLP_ON : GLP_OFF);
             
             // Because glpk uses 1-based indexing (wtf!?), we need to put dummy elements into the matrix vectors.
             rowIndices.push_back(0);
@@ -33,6 +41,7 @@ namespace storm {
         }
         
         GlpkLpSolver::~GlpkLpSolver() {
+            // Dispose of all objects allocated dynamically by glpk.
             glp_delete_prob(this->lp);
             glp_free_env();
         }
@@ -58,8 +67,7 @@ namespace storm {
             glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
             ++nextVariableIndex;
             
-            this->isOptimal = false;
-            
+            this->currentModelHasBeenOptimized = false;
             return nextVariableIndex - 1;
         }
         
@@ -112,15 +120,13 @@ namespace storm {
             coefficientValues.insert(coefficientValues.end(), coefficients.begin(), coefficients.end());
             
             ++nextConstraintIndex;
-            this->isOptimal = false;
-        }
-        
-        void GlpkLpSolver::setModelSense(ModelSense const& newModelSense) {
-            glp_set_obj_dir(this->lp, newModelSense == MINIMIZE ? GLP_MIN : GLP_MAX);
-            this->isOptimal = false;
+            this->currentModelHasBeenOptimized = false;
         }
         
         void GlpkLpSolver::optimize() const {
+            // Start by setting the model sense.
+            glp_set_obj_dir(this->lp, this->getModelSense() == MINIMIZE ? GLP_MIN : GLP_MAX);
+            
             glp_load_matrix(this->lp, rowIndices.size() - 1, rowIndices.data(), columnIndices.data(), coefficientValues.data());
             int error = glp_simplex(this->lp, nullptr);
             
@@ -129,7 +135,25 @@ namespace storm {
                 throw storm::exceptions::InvalidStateException() << "Unable to optimize glpk model (" << error << ").";
             }
             
-            this->isOptimal = true;
+            this->currentModelHasBeenOptimized = true;
+        }
+        
+        bool GlpkLpSolver::isInfeasible() const {
+            int status = glp_get_status(this->lp);
+            return status == GLP_INFEAS;
+        }
+        
+        bool GlpkLpSolver::isUnbounded() const {
+            int status = glp_get_status(this->lp);
+            return status == GLP_UNBND;
+        }
+        
+        bool GlpkLpSolver::isOptimal() const {
+            if (!this->currentModelHasBeenOptimized) {
+                return false;
+            }
+            int status = glp_get_status(this->lp);
+            return status == GLP_OPT;
         }
         
         int_fast64_t GlpkLpSolver::getIntegerValue(uint_fast64_t variableIndex) const {

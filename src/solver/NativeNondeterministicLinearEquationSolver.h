@@ -1,16 +1,16 @@
 #ifndef STORM_SOLVER_NATIVENONDETERMINISTICLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_NATIVENONDETERMINISTICLINEAREQUATIONSOLVER_H_
 
-#include "src/solver/AbstractNondeterministicLinearEquationSolver.h"
+#include "src/solver/NondeterministicLinearEquationSolver.h"
 
 namespace storm {
     namespace solver {
         
         /*!
-         * A class that uses the gmm++ library to implement the AbstractNondeterminsticLinearEquationSolver interface.
+         * A class that uses the gmm++ library to implement the NondeterminsticLinearEquationSolver interface.
          */
         template<class ValueType>
-        class NativeNondeterministicLinearEquationSolver : public AbstractNondeterministicLinearEquationSolver<ValueType> {
+        class NativeNondeterministicLinearEquationSolver : public NondeterministicLinearEquationSolver<ValueType> {
         public:
             /*!
              * Constructs a nondeterministic linear equation solver with parameters being set according to the settings
@@ -28,7 +28,7 @@ namespace storm {
              */
             NativeNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
             
-            virtual AbstractNondeterministicLinearEquationSolver<ValueType>* clone() const override;
+            virtual NondeterministicLinearEquationSolver<ValueType>* clone() const override;
             
             virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* newX = nullptr) const override;
             

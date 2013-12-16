@@ -13,8 +13,8 @@
 #include <fstream>
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
-#include "src/solver/AbstractNondeterministicLinearEquationSolver.h"
-#include "src/solver/AbstractLinearEquationSolver.h"
+#include "src/solver/NondeterministicLinearEquationSolver.h"
+#include "src/solver/LinearEquationSolver.h"
 #include "src/models/Mdp.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
@@ -42,7 +42,7 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
-				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
 					// Intentionally left empty.
 				}
 
@@ -282,7 +282,7 @@ namespace storm {
                  * @return The probabilities for the satisfying phi until psi for each state of the model. If the
                  * qualitative flag is set, exact probabilities might not be computed.
                  */
-                static std::pair<std::vector<Type>, storm::storage::TotalScheduler> computeUnboundedUntilProbabilities(bool minimize, storm::storage::SparseMatrix<Type> const& transitionMatrix, std::vector<uint_fast64_t> nondeterministicChoiceIndices, storm::storage::SparseMatrix<Type> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver, bool qualitative) {
+                static std::pair<std::vector<Type>, storm::storage::TotalScheduler> computeUnboundedUntilProbabilities(bool minimize, storm::storage::SparseMatrix<Type> const& transitionMatrix, std::vector<uint_fast64_t> nondeterministicChoiceIndices, storm::storage::SparseMatrix<Type> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver, bool qualitative) {
                     size_t numberOfStates = phiStates.size();
                     
                     // We need to identify the states which have to be taken out of the matrix, i.e.
@@ -590,7 +590,7 @@ namespace storm {
                 /*!
                  * A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
                  */
-                std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver;
+                std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver;
             };
         } // namespace prctl
     } // namespace modelchecker

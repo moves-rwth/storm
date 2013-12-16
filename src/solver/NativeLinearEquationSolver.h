@@ -1,16 +1,16 @@
 #ifndef STORM_SOLVER_NATIVELINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_NATIVELINEAREQUATIONSOLVER_H_
 
-#include "AbstractLinearEquationSolver.h"
+#include "LinearEquationSolver.h"
 
 namespace storm {
     namespace solver {
         
         /*!
-         * A class that uses StoRM's native matrix operations to implement the AbstractLinearEquationSolver interface.
+         * A class that uses StoRM's native matrix operations to implement the LinearEquationSolver interface.
          */
         template<typename ValueType>
-        class NativeLinearEquationSolver : public AbstractLinearEquationSolver<ValueType> {
+        class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
             // An enumeration specifying the available solution methods.
             enum SolutionMethod {
@@ -33,7 +33,7 @@ namespace storm {
              */
             NativeLinearEquationSolver(SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
             
-            virtual AbstractLinearEquationSolver<ValueType>* clone() const override;
+            virtual LinearEquationSolver<ValueType>* clone() const override;
             
             virtual void solveEquationSystem(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
             

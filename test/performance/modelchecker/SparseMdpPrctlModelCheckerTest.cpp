@@ -166,7 +166,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[31168] - 2183.1424220082612919213715), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 2186.97175), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
 
 }

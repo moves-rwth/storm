@@ -44,7 +44,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AbstractLinearEquationSolver<ValueType>* NativeLinearEquationSolver<ValueType>::clone() const {
+        LinearEquationSolver<ValueType>* NativeLinearEquationSolver<ValueType>::clone() const {
             return new NativeLinearEquationSolver<ValueType>(*this);
         }
         

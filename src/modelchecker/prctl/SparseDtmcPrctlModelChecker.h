@@ -10,7 +10,7 @@
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
 #include "src/models/Dtmc.h"
-#include "src/solver/AbstractLinearEquationSolver.h"
+#include "src/solver/LinearEquationSolver.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
@@ -33,7 +33,7 @@ public:
 	 *
 	 * @param model The DTMC to be checked.
 	 */
-	explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model, storm::solver::AbstractLinearEquationSolver<Type>* linearEquationSolver) : AbstractModelChecker<Type>(model), linearEquationSolver(linearEquationSolver) {
+	explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model, storm::solver::LinearEquationSolver<Type>* linearEquationSolver) : AbstractModelChecker<Type>(model), linearEquationSolver(linearEquationSolver) {
 		// Intentionally left empty.
 	}
     
@@ -499,7 +499,7 @@ public:
 
 private:
     // An object that is used for solving linear equations and performing matrix-vector multiplication.
-    std::unique_ptr<storm::solver::AbstractLinearEquationSolver<Type>> linearEquationSolver;
+    std::unique_ptr<storm::solver::LinearEquationSolver<Type>> linearEquationSolver;
 };
 
 } // namespace prctl

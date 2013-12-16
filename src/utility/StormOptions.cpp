@@ -42,7 +42,7 @@ bool storm::utility::StormOptions::optionsRegistered = storm::settings::Settings
     std::vector<std::string> nondeterministicLinearEquationSolver;
 	nondeterministicLinearEquationSolver.push_back("gmm++");
 	nondeterministicLinearEquationSolver.push_back("native");
-	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "linsolver", "", "Sets which solver is preferred for solving systems of linear equations arising from nondeterministic systems.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nondeterministicLinearEquationSolver)).setDefaultValueString("native").build()).build());
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "ndsolver", "", "Sets which solver is preferred for solving systems of linear equations arising from nondeterministic systems.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nondeterministicLinearEquationSolver)).setDefaultValueString("native").build()).build());
 
     std::vector<std::string> lpSolvers;
 	lpSolvers.push_back("gurobi");

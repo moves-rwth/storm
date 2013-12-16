@@ -1,16 +1,16 @@
 #ifndef STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
 
-#include "AbstractLinearEquationSolver.h"
+#include "LinearEquationSolver.h"
 
 namespace storm {
     namespace solver {
 
         /*!
-         * A class that uses the gmm++ library to implement the AbstractLinearEquationSolver interface.
+         * A class that uses the gmm++ library to implement the LinearEquationSolver interface.
          */
         template<typename ValueType>
-        class GmmxxLinearEquationSolver : public AbstractLinearEquationSolver<ValueType> {
+        class GmmxxLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
             // An enumeration specifying the available preconditioners.
             enum Preconditioner {
@@ -41,7 +41,7 @@ namespace storm {
              */
             GmmxxLinearEquationSolver();
             
-            virtual AbstractLinearEquationSolver<ValueType>* clone() const override;
+            virtual LinearEquationSolver<ValueType>* clone() const override;
             
             virtual void solveEquationSystem(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
             

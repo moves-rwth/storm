@@ -8,7 +8,7 @@
 #include "src/models/MarkovAutomaton.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/MaximalEndComponentDecomposition.h"
-#include "src/solver/AbstractNondeterministicLinearEquationSolver.h"
+#include "src/solver/NondeterministicLinearEquationSolver.h"
 #include "src/solver/LpSolver.h"
 #include "src/utility/solver.h"
 #include "src/utility/graph.h"
@@ -21,7 +21,7 @@ namespace storm {
             template<typename ValueType>
             class SparseMarkovAutomatonCslModelChecker : public AbstractModelChecker<ValueType> {
             public:
-                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) : AbstractModelChecker<ValueType>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) : AbstractModelChecker<ValueType>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
                     // Intentionally left empty.
                 }
                 
@@ -132,7 +132,7 @@ namespace storm {
                         }
                     }
                     
-                    std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
+                    std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
                     
                     // Perform the actual value iteration
                     // * loop until the step bound has been reached
@@ -565,7 +565,7 @@ namespace storm {
                     storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, this->getModel().getNondeterministicChoiceIndices(), rewardValues);
                     
                     // Solve the corresponding system of equations.
-                    std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
+                    std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
                     nondeterministiclinearEquationSolver->solveEquationSystem(min, submatrix, x, b, subNondeterministicChoiceIndices);
                     
                     // Create resulting vector.
@@ -588,7 +588,7 @@ namespace storm {
                 /*!
                  * A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
                  */
-                std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver;
+                std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver;
             };
         }
     }

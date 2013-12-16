@@ -26,32 +26,32 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::shared_ptr<storm::solver::AbstractLinearEquationSolver<ValueType>> getLinearEquationSolver() {
+            std::shared_ptr<storm::solver::LinearEquationSolver<ValueType>> getLinearEquationSolver() {
                 std::string const& linearEquationSolver = storm::settings::Settings::getInstance()->getOptionByLongName("linsolver").getArgument(0).getValueAsString();
                 if (linearEquationSolver == "gmm++") {
-                    return std::shared_ptr<storm::solver::AbstractLinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>());
+                    return std::shared_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>());
                 } else if (linearEquationSolver == "native") {
-                    return std::shared_ptr<storm::solver::AbstractLinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>());
+                    return std::shared_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>());
                 }
                 
                 throw storm::exceptions::InvalidSettingsException() << "No suitable linear equation solver selected.";
             }
             
             template<typename ValueType>
-            std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>> getNondeterministicLinearEquationSolver() {
+            std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> getNondeterministicLinearEquationSolver() {
                 std::string const& nondeterministicLinearEquationSolver = storm::settings::Settings::getInstance()->getOptionByLongName("ndsolver").getArgument(0).getValueAsString();
                 if (nondeterministicLinearEquationSolver == "gmm++") {
-                    return std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>>(new storm::solver::GmmxxNondeterministicLinearEquationSolver<ValueType>());
+                    return std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>>(new storm::solver::GmmxxNondeterministicLinearEquationSolver<ValueType>());
                 } else if (nondeterministicLinearEquationSolver == "native") {
-                    return std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<ValueType>>(new storm::solver::NativeNondeterministicLinearEquationSolver<ValueType>());
+                    return std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>>(new storm::solver::NativeNondeterministicLinearEquationSolver<ValueType>());
                 }
                 
                 throw storm::exceptions::InvalidSettingsException() << "No suitable nondeterministic linear equation solver selected.";
             }
             
-            template std::shared_ptr<storm::solver::AbstractLinearEquationSolver<double>> getLinearEquationSolver();
+            template std::shared_ptr<storm::solver::LinearEquationSolver<double>> getLinearEquationSolver();
 
-            template std::shared_ptr<storm::solver::AbstractNondeterministicLinearEquationSolver<double>> getNondeterministicLinearEquationSolver();
+            template std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<double>> getNondeterministicLinearEquationSolver();
         }
     }
 }

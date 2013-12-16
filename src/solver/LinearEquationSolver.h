@@ -1,5 +1,5 @@
-#ifndef STORM_SOLVER_ABSTRACTLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_ABSTRACTLINEAREQUATIONSOLVER_H_
+#ifndef STORM_SOLVER_LINEAREQUATIONSOLVER_H_
+#define STORM_SOLVER_LINEAREQUATIONSOLVER_H_
 
 #include <vector>
 
@@ -9,18 +9,18 @@ namespace storm {
     namespace solver {
         
         /*!
-         * A class that represents an abstract linear equation solver. In addition to solving a system of linear
+         * An interface that represents an abstract linear equation solver. In addition to solving a system of linear
          * equations, the functionality to repeatedly multiply a matrix with a given vector is provided.
          */
         template<class Type>
-        class AbstractLinearEquationSolver {
+        class LinearEquationSolver {
         public:
             /*!
              * Makes a copy of the linear equation solver.
              *
              * @return A pointer to a copy of the linear equation solver.
              */
-            virtual AbstractLinearEquationSolver<Type>* clone() const = 0;
+            virtual LinearEquationSolver<Type>* clone() const = 0;
             
             /*!
              * Solves the equation system A*x = b. The matrix A is required to be square and have a unique solution.
@@ -52,4 +52,4 @@ namespace storm {
     } // namespace solver
 } // namespace storm
 
-#endif /* STORM_SOLVER_ABSTRACTLINEAREQUATIONSOLVER_H_ */
+#endif /* STORM_SOLVER_LINEAREQUATIONSOLVER_H_ */

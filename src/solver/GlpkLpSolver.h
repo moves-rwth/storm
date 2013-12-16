@@ -14,10 +14,32 @@
 namespace storm {
     namespace solver {
 #ifdef STORM_HAVE_GLPK
+        
+        /*!
+         * A class that implements the LpSolver interface using glpk as the background solver.
+         */
         class GlpkLpSolver : public LpSolver {
         public:
+            /*!
+             * Constructs a solver with the given name and model sense.
+             *
+             * @param name The name of the LP problem.
+             * @param modelSense A value indicating whether the value of the objective function is to be minimized or
+             * maximized.
+             */
             GlpkLpSolver(std::string const& name, ModelSense const& modelSense);
+            
+            /*!
+             * Constructs a solver with the given name. By default the objective function is assumed to be minimized,
+             * but this may be altered later using a call to setModelSense.
+             *
+             * @param name The name of the LP problem.
+             */
             GlpkLpSolver(std::string const& name);
+            
+            /*!
+             * Destructs a solver by freeing the pointers to glpk's structures.
+             */
             virtual ~GlpkLpSolver();
             
             virtual uint_fast64_t createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override;
@@ -26,9 +48,11 @@ namespace storm {
             
             virtual void addConstraint(std::string const& name, std::vector<uint_fast64_t> const& variables, std::vector<double> const& coefficients, BoundType const& boundType, double rightHandSideValue) override;
             
-            virtual void setModelSense(ModelSense const& newModelSense) override;
             virtual void optimize() const override;
-            
+            virtual bool isInfeasible() const override;
+            virtual bool isUnbounded() const override;
+            virtual bool isOptimal() const override;
+
             virtual int_fast64_t getIntegerValue(uint_fast64_t variableIndex) const override;
             virtual bool getBinaryValue(uint_fast64_t variableIndex) const override;
             virtual double getContinuousValue(uint_fast64_t variableIndex) const override;
@@ -45,9 +69,6 @@ namespace storm {
             // A counter that keeps track of the next free constraint index.
             uint_fast64_t nextConstraintIndex;
             
-            // A flag that stores whether the model was optimized properly.
-            mutable bool isOptimal;
-            
             // The arrays that store the coefficient matrix of the problem.
             std::vector<int> rowIndices;
             std::vector<int> columnIndices;
@@ -57,6 +78,9 @@ namespace storm {
         // If glpk is not available, we provide a stub implementation that emits an error if any of its methods is called.
         class GlpkLpSolver : public LpSolver {
         public:
+            GlpkLpSolver(std::string const& name, ModelSense const& modelSense) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
             
             GlpkLpSolver(std::string const& name) : LpSolver(MINIMIZE) {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
@@ -81,12 +105,20 @@ namespace storm {
             virtual void addConstraint(std::string const& name, std::vector<uint_fast64_t> const& variables, std::vector<double> const& coefficients, BoundType const& boundType, double rightHandSideValue) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
-            
-            virtual void setModelSense(ModelSense const& newModelSense) {
+                        
+            virtual void optimize() const override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+
+            virtual bool isInfeasible() const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual void optimize() const override {
+            virtual bool isUnbounded() const override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual bool isOptimal() const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
