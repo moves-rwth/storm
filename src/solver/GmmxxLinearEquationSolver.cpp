@@ -58,7 +58,7 @@ namespace storm {
             // Get appropriate settings.
             maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
             precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-            relative = settings->isSet("absolute");
+            relative = !settings->isSet("absolute");
             restart = settings->getOptionByLongName("gmmrestart").getArgument(0).getValueAsUnsignedInteger();
             
             // Determine the method to be used.

@@ -162,6 +162,8 @@ namespace storm {
                 } else if (error == GLP_ENODFS) {
                     this->isUnboundedFlag = true;
                     error = 0;
+                } else if (error == GLP_EBOUND) {
+                    throw storm::exceptions::InvalidStateException() << "The bounds of some variables are illegal. Note that glpk only accepts integer bounds for integer variables.";
                 }
             } else {
                 error = glp_simplex(this->lp, nullptr);
@@ -183,7 +185,7 @@ namespace storm {
             if (this->modelContainsIntegerVariables) {
                 return isInfeasibleFlag;
             } else {
-                return glp_get_status(this->lp) == GLP_INFEAS;
+                return glp_get_status(this->lp) == GLP_INFEAS || glp_get_status(this->lp) == GLP_NOFEAS;
             }
         }
         

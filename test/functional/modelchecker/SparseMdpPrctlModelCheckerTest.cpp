@@ -85,7 +85,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - 7.3333323), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
@@ -94,7 +94,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);;
     
-	ASSERT_LT(std::abs(result[0] - 7.3333323), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	storm::parser::AutoParser<double> stateRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "");
@@ -111,7 +111,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - 7.3333323), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
@@ -120,7 +120,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - 7.3333323), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	storm::parser::AutoParser<double> stateAndTransitionRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
@@ -137,7 +137,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - 14.66666611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 14.666658998), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
@@ -146,7 +146,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[0] - 14.66666611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 14.666658998), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
 }
 
@@ -209,7 +209,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.checkNoBoundOperator(*rewardFormula);;
 
-	ASSERT_LT(std::abs(result[0] - 4.285709145), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 4.285689611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
@@ -218,6 +218,6 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.checkNoBoundOperator(*rewardFormula);;
 
-	ASSERT_LT(std::abs(result[0] - 4.285709145), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 4.285689611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
 }
