@@ -36,7 +36,7 @@ TEST(GurobiLpSolver, LPOptimizeMax) {
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
     ASSERT_LT(std::abs(objectiveValue - 14.75), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 #else
-    ASSERT_TRUE(false, "StoRM built without Gurobi support.");
+    ASSERT_TRUE(false) << "StoRM built without Gurobi support.";
 #endif
 }
 
@@ -71,7 +71,7 @@ TEST(GurobiLpSolver, LPOptimizeMin) {
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
     ASSERT_LT(std::abs(objectiveValue - (-6.7)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 #else
-    ASSERT_TRUE(false, "StoRM built without Gurobi support.");
+    ASSERT_TRUE(false) << "StoRM built without Gurobi support.";
 #endif
 }
 
@@ -106,7 +106,7 @@ TEST(GurobiLpSolver, MILPOptimizeMax) {
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
     ASSERT_LT(std::abs(objectiveValue - 14), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 #else
-    ASSERT_TRUE(false, "StoRM built without Gurobi support.");
+    ASSERT_TRUE(false) << "StoRM built without Gurobi support.";
 #endif
 }
 
@@ -141,7 +141,7 @@ TEST(GurobiLpSolver, MILPOptimizeMin) {
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
     ASSERT_LT(std::abs(objectiveValue - (-6)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 #else
-    ASSERT_TRUE(false, "StoRM built without Gurobi support.");
+    ASSERT_TRUE(false) << "StoRM built without Gurobi support.";
 #endif
 }
 
@@ -173,7 +173,7 @@ TEST(GurobiLpSolver, LPInfeasible) {
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidStateException);
 #else
-    ASSERT_TRUE(false, "StoRM built without Gurobi support.");
+    ASSERT_TRUE(false) << "StoRM built without Gurobi support.";
 #endif
 }
 
@@ -205,7 +205,7 @@ TEST(GurobiLpSolver, MILPInfeasible) {
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidStateException);
 #else
-    ASSERT_TRUE(false, "StoRM built without Gurobi support.");
+    ASSERT_TRUE(false) << "StoRM built without Gurobi support.";
 #endif
 }
 
@@ -235,7 +235,7 @@ TEST(GurobiLpSolver, LPUnbounded) {
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidStateException);
 #else
-    ASSERT_TRUE(false, "StoRM built without Gurobi support.");
+    ASSERT_TRUE(false) << "StoRM built without Gurobi support.";
 #endif
 }
 
@@ -265,6 +265,6 @@ TEST(GurobiLpSolver, MILPUnbounded) {
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidStateException);
 #else
-    ASSERT_TRUE(false, "StoRM built without Gurobi support.");
+    ASSERT_TRUE(false) << "StoRM built without Gurobi support.";
 #endif
 }
