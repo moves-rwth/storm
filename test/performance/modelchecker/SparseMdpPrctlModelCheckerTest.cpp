@@ -61,7 +61,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.checkNoBoundOperator(*rewardFormula);
 
-	ASSERT_LT(std::abs(result[0] - 6.172489569), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 6.172433512), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
@@ -70,7 +70,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.checkNoBoundOperator(*rewardFormula);
 
-	ASSERT_LT(std::abs(result[0] - 6.17248915), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 6.1724344), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
 }
 
@@ -106,8 +106,8 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
 	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
     
 	result = mc.checkNoBoundOperator(*probFormula);
-    
-	ASSERT_LT(std::abs(result[31168] - 0.4372725189), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+
+	ASSERT_LT(std::abs(result[31168] - 0.4374282832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     delete probFormula;
     
     apFormula = new storm::property::prctl::Ap<double>("finished");
@@ -118,7 +118,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	result = mc.checkNoBoundOperator(*probFormula);
     
-	ASSERT_LT(std::abs(result[31168] - 0.5291510935), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 0.5293286369), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     delete probFormula;
     
     apFormula = new storm::property::prctl::Ap<double>("finished");
@@ -130,7 +130,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	result = mc.checkNoBoundOperator(*probFormula);
     
-	ASSERT_LT(std::abs(result[31168] - 0.1039268793), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 0.10414097), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     delete probFormula;
     
     apFormula = new storm::property::prctl::Ap<double>("finished");
@@ -157,7 +157,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[31168] - 1727.998607), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 1725.593313), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("finished");
@@ -166,7 +166,6 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	result = mc.checkNoBoundOperator(*rewardFormula);
     
-	ASSERT_LT(std::abs(result[31168] - 2186.97175), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 2183.142422), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
-
 }
