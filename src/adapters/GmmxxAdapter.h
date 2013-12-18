@@ -62,46 +62,6 @@ public:
 
 		return result;
 	}
-
-	/*!
-	 * Converts a sparse matrix into a sparse matrix in the gmm++ format.
-	 * @return A pointer to a row-major sparse matrix in gmm++ format.
-	 */
-	template<class T>
-	static std::unique_ptr<gmm::csr_matrix<T>> toGmmxxSparseMatrix(storm::storage::SparseMatrix<T>&& matrix) {
-		uint_fast64_t realNonZeros = matrix.getEntryCount();
-		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
-
-		// Prepare the resulting matrix.
-        std::unique_ptr<gmm::csr_matrix<T>> result(new gmm::csr_matrix<T>(matrix.getRowCount(), matrix.getColumnCount()));
-
-		typedef unsigned long long IND_TYPE;
-        typedef std::vector<IND_TYPE> vectorType_ull_t;
-        typedef std::vector<T> vectorType_T_t; 
-
-        // Copy columns and values. It is absolutely necessary to do so before moving the row indications vector.
-        std::vector<T> values;
-        values.reserve(matrix.getEntryCount());
-        
-        // To match the correct vector type for gmm, we create the vector with the exact same type.
-        decltype(result->ir) columns;
-        columns.reserve(matrix.getEntryCount());
-        
-        for (auto const& entry : matrix) {
-            columns.emplace_back(entry.first);
-            values.emplace_back(entry.second);
-        }
-
-        // Move Row Indications
-        result->jc = std::move(matrix.rowIndications);
-        
-        std::swap(result->ir, columns);
-        std::swap(result->pr, values);
-
-		LOG4CPLUS_DEBUG(logger, "Done converting matrix to gmm++ format.");
-
-		return result;
-	}
 };
 
 } //namespace adapters
