@@ -2,6 +2,7 @@
 #define STORM_MODELCHECKER_CSL_SPARSEMARKOVAUTOMATONCSLMODELCHECKER_H_
 
 #include <stack>
+#include <utility>
 
 #include "src/modelchecker/csl/AbstractModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"

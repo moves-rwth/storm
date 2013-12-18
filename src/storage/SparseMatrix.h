@@ -144,7 +144,7 @@ namespace storm {
             friend class storm::adapters::StormAdapter;
             
             typedef typename std::vector<std::pair<uint_fast64_t, T>>::iterator iterator;
-            typedef typename std::vector<std::pair<uint_fast64_t, T> const>::const_iterator const_iterator;
+            typedef typename std::vector<std::pair<uint_fast64_t, T>>::const_iterator const_iterator;
             
             /*!
              * This class represents a number of consecutive rows of the matrix.

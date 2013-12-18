@@ -9,6 +9,7 @@
 #define STORM_UTILITY_COUNTEREXAMPLE_H_
 
 #include <queue>
+#include <utility>
 
 namespace storm {
     namespace utility {

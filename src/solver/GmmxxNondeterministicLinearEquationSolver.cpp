@@ -1,4 +1,7 @@
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
+
+#include <utility>
+
 #include "src/settings/Settings.h"
 #include "src/adapters/GmmxxAdapter.h"
 #include "src/utility/vector.h"

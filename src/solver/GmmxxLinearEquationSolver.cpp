@@ -1,8 +1,7 @@
 #include "GmmxxLinearEquationSolver.h"
 
-#include <vector>
-#include <string>
 #include <cmath>
+#include <utility>
 
 #include "src/adapters/GmmxxAdapter.h"
 #include "src/settings/Settings.h"

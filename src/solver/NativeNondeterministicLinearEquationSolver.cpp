@@ -1,4 +1,7 @@
 #include "src/solver/NativeNondeterministicLinearEquationSolver.h"
+
+#include <utility>
+
 #include "src/settings/Settings.h"
 #include "src/utility/vector.h"
 

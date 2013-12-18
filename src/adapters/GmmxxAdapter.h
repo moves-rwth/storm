@@ -9,6 +9,7 @@
 #define STORM_ADAPTERS_GMMXXADAPTER_H_
 
 #include <new>
+#include <utility>
 
 #include "gmm/gmm_matrix.h"
 

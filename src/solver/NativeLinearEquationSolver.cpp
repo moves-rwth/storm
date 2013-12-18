@@ -1,4 +1,7 @@
 #include "src/solver/NativeLinearEquationSolver.h"
+
+#include <utility>
+
 #include "src/settings/Settings.h"
 #include "src/utility/vector.h"
 #include "src/exceptions/InvalidStateException.h"
