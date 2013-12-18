@@ -45,7 +45,9 @@ public:
         // Copy columns and values.
         std::vector<T> values;
         values.reserve(matrix.getEntryCount());
-        std::vector<uint_fast64_t> columns;
+        
+        // To match the correct vector type for gmm, we create the vector with the exact same type.
+        decltype(result->ir) columns;
         columns.reserve(matrix.getEntryCount());
         
         for (auto const& entry : matrix) {
@@ -80,7 +82,9 @@ public:
         // Copy columns and values. It is absolutely necessary to do so before moving the row indications vector.
         std::vector<T> values;
         values.reserve(matrix.getEntryCount());
-        std::vector<uint_fast64_t> columns;
+        
+        // To match the correct vector type for gmm, we create the vector with the exact same type.
+        decltype(result->ir) columns;
         columns.reserve(matrix.getEntryCount());
         
         for (auto const& entry : matrix) {
