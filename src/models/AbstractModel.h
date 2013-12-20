@@ -3,14 +3,13 @@
 
 #include <memory>
 #include <vector>
-
+#include <boost/container/flat_set.hpp>
 #include <boost/optional.hpp>
 
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/Scheduler.h"
-#include "src/storage/VectorSet.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/utility/Hash.h"
 
@@ -74,7 +73,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
 				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> const& optionalChoiceLabeling)
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
 				: transitionMatrix(transitionMatrix), stateLabeling(stateLabeling) {
 					
 			if (optionalStateRewardVector) {
@@ -99,7 +98,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 */
 		AbstractModel(storm::storage::SparseMatrix<T>&& transitionMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
 				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>&& optionalChoiceLabeling) :
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling) :
 				transitionMatrix(std::move(transitionMatrix)), choiceLabeling(std::move(optionalChoiceLabeling)),
                 stateLabeling(std::move(stateLabeling)), stateRewardVector(std::move(optionalStateRewardVector)),
                 transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)) {
@@ -160,19 +159,17 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             }
             
             // The resulting sparse matrix will have as many rows/columns as there are blocks in the partition.
-            storm::storage::SparseMatrix<T> dependencyGraph(numberOfStates);
-            dependencyGraph.initialize();
+            storm::storage::SparseMatrixBuilder<T> dependencyGraphBuilder(numberOfStates, numberOfStates);
             
             for (uint_fast64_t currentBlockIndex = 0; currentBlockIndex < decomposition.size(); ++currentBlockIndex) {
                 // Get the next block.
                 typename storm::storage::StateBlock const& block = decomposition[currentBlockIndex];
                 
                 // Now, we determine the blocks which are reachable (in one step) from the current block.
-                storm::storage::VectorSet<uint_fast64_t> allTargetBlocks;
+                boost::container::flat_set<uint_fast64_t> allTargetBlocks;
                 for (auto state : block) {
-                    typename storm::storage::SparseMatrix<T>::Rows rows = this->getRows(state);
-                    for (auto& transition : rows) {
-                        uint_fast64_t targetBlock = stateToBlockMap[transition.column()];
+                    for (auto const& transitionEntry : this->getRows(state)) {
+                        uint_fast64_t targetBlock = stateToBlockMap[transitionEntry.first];
                         
                         // We only need to consider transitions that are actually leaving the SCC.
                         if (targetBlock != currentBlockIndex) {
@@ -183,13 +180,11 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 
                 // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
                 for (auto targetBlock : allTargetBlocks) {
-                    dependencyGraph.insertNextValue(currentBlockIndex, targetBlock, true);
+                    dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::constantOne<T>());
                 }
             }
             
-            // Finalize the matrix and return result.
-            dependencyGraph.finalize(true);
-            return dependencyGraph;
+            return dependencyGraphBuilder.build();
         }
 
         /*!
@@ -208,23 +203,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param state The state for which to retrieve the rows.
          * @return An object representing the matrix rows associated with the given state.
          */
-        virtual typename storm::storage::SparseMatrix<T>::Rows getRows(uint_fast64_t state) const = 0;
-    
-        /*!
-         * Returns an iterator to the successors of the given state.
-         *
-         * @param state The state for which to return the iterator.
-         * @return An iterator to the successors of the given state.
-         */
-        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorBegin(uint_fast64_t state) const = 0;
-    
-        /*!
-         * Returns an iterator pointing to the element past the successors of the given state.
-         *
-         * @param state The state for which to return the iterator.
-         * @return An iterator pointing to the element past the successors of the given state.
-         */
-        virtual typename storm::storage::SparseMatrix<T>::ConstRowIterator rowIteratorEnd(uint_fast64_t state) const = 0;
+        virtual typename storm::storage::SparseMatrix<T>::const_rows getRows(uint_fast64_t state) const = 0;
         
 		/*!
 		 * Returns the state space size of the model.
@@ -239,7 +218,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return The number of (non-zero) transitions of the model.
 		 */
 		virtual uint_fast64_t getNumberOfTransitions() const {
-			return this->getTransitionMatrix().getNonZeroEntryCount();
+			return this->getTransitionMatrix().getEntryCount();
 		}
 
         /*!
@@ -301,7 +280,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * Returns the labels for the choices of the model, if there are any.
          * @return The labels for the choices of the model.
          */
-        std::vector<storm::storage::VectorSet<uint_fast64_t>> const& getChoiceLabeling() const {
+        std::vector<boost::container::flat_set<uint_fast64_t>> const& getChoiceLabeling() const {
             return choiceLabeling.get();
         }
 
@@ -383,13 +362,13 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 */
 		virtual size_t getHash() const {
 			std::size_t result = 0;
-			boost::hash_combine(result, transitionMatrix.getHash());
+			boost::hash_combine(result, transitionMatrix.hash());
 			boost::hash_combine(result, stateLabeling.getHash());
 			if (stateRewardVector) {
 				boost::hash_combine(result, storm::utility::Hash<T>::getHash(stateRewardVector.get()));
 			}
 			if (transitionRewardMatrix) {
-				boost::hash_combine(result, transitionRewardMatrix.get().getHash());
+				boost::hash_combine(result, transitionRewardMatrix.get().hash());
 			}
 			return result;
 		}
@@ -489,7 +468,7 @@ protected:
 		storm::storage::SparseMatrix<T> transitionMatrix;
 
 		/*! The labeling that is associated with the choices for each state. */
-        boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>> choiceLabeling;
+        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
 private:
 		/*! The labeling of the states of the model. */
 		storm::models::AtomicPropositionsLabeling stateLabeling;

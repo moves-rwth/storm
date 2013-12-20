@@ -12,8 +12,8 @@
 #include <vector>
 #include <memory>
 #include <set>
+#include <boost/container/flat_set.hpp>
 
-#include "src/storage/VectorSet.h"
 #include "expressions/BaseExpression.h"
 #include "expressions/BooleanConstantExpression.h"
 #include "expressions/IntegerConstantExpression.h"
@@ -267,7 +267,7 @@ namespace storm {
              *
              * @param indexSet The set of indices for which to keep the commands.
              */
-            void restrictCommands(storm::storage::VectorSet<uint_fast64_t> const& indexSet);
+            void restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet);
         private:
             // The type of the model.
             ModelType modelType;

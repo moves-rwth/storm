@@ -1,6 +1,6 @@
 #include "src/parser/PrctlParser.h"
 #include "src/utility/OsDetection.h"
-#include "src/utility/ConstTemplates.h"
+#include "src/utility/constants.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"

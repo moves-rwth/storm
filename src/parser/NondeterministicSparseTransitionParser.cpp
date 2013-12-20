@@ -264,13 +264,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 	 *	Those two values, as well as the number of nonzero elements, was been calculated in the first run.
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << choices << " x " << (maxnode+1) << " with " << nonzero << " entries.");
-	storm::storage::SparseMatrix<double> matrix(choices, maxnode + 1);
-	matrix.initialize(nonzero);
-	if (!matrix.isInitialized()) {
-		LOG4CPLUS_ERROR(logger, "Could not create matrix of size " << choices << " x " << (maxnode+1) << ".");
-		throw std::bad_alloc();
-	}
-	
+	storm::storage::SparseMatrixBuilder<double> matrixBuilder(choices, maxnode + 1, nonzero);
 
 	/*
 	 *	Create row mapping.
@@ -331,7 +325,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 				hadDeadlocks = true;
 				if (fixDeadlocks) {
 					rowMapping.at(node) = curRow;
-					matrix.addNextValue(curRow, node, 1);
+					matrixBuilder.addNextValue(curRow, node, 1);
 					++curRow;
 					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
 				} else {
@@ -349,7 +343,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 		// Read target and value and write it to the matrix.
 		target = checked_strtol(buf, &buf);
 		val = checked_strtod(buf, &buf);
-		matrix.addNextValue(curRow, target, val);
+		matrixBuilder.addNextValue(curRow, target, val);
 
 		lastsource = source;
 		lastchoice = choice;
@@ -385,12 +379,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 
 	if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
 
-	/*
-	 * Finalize matrix.
-	 */	
-	matrix.finalize();
-
-	return std::make_pair(std::move(matrix), std::move(rowMapping));
+	return std::make_pair(matrixBuilder.build(), std::move(rowMapping));
 }
 
 }  // namespace parser

@@ -57,8 +57,8 @@ namespace storm {
             struct ChoiceInformation {
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> problematicChoicesForProblematicStates;
-                storm::storage::VectorSet<uint_fast64_t> allRelevantLabels;
-                storm::storage::VectorSet<uint_fast64_t> knownLabels;
+                boost::container::flat_set<uint_fast64_t> allRelevantLabels;
+                boost::container::flat_set<uint_fast64_t> knownLabels;
             };
 
             /*!
@@ -90,10 +90,9 @@ namespace storm {
              */
             static struct StateInformation determineRelevantAndProblematicStates(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 StateInformation result;
-                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
-                result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.relevantStates &= ~psiStates;
-                result.problematicStates = storm::utility::graph::performProbGreater0E(labeledMdp, backwardTransitions, phiStates, psiStates);
+                result.problematicStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.problematicStates.complement();
                 result.problematicStates &= result.relevantStates;
                 LOG4CPLUS_DEBUG(logger, "Found " << phiStates.getNumberOfSetBits() << " filter states.");
@@ -117,7 +116,7 @@ namespace storm {
                 ChoiceInformation result;
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 
                 // Now traverse all choices of all relevant states and check whether there is a relevant target state.
                 // If so, the associated labels become relevant. Also, if a choice of relevant state has at least one
@@ -130,9 +129,9 @@ namespace storm {
                     for (uint_fast64_t row = nondeterministicChoiceIndices[state]; row < nondeterministicChoiceIndices[state + 1]; ++row) {
                         bool currentChoiceRelevant = false;
                         bool allSuccessorsProblematic = true;
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = transitionMatrix.constColumnIteratorBegin(row); successorIt != transitionMatrix.constColumnIteratorEnd(row); ++successorIt) {
+                        for (auto const& successorEntry : transitionMatrix.getRow(row)) {
                             // If there is a relevant successor, we need to add the labels of the current choice.
-                            if (stateInformation.relevantStates.get(*successorIt) || psiStates.get(*successorIt)) {
+                            if (stateInformation.relevantStates.get(successorEntry.first) || psiStates.get(successorEntry.first)) {
                                 for (auto const& label : choiceLabeling[row]) {
                                     result.allRelevantLabels.insert(label);
                                 }
@@ -141,7 +140,7 @@ namespace storm {
                                     result.relevantChoicesForRelevantStates[state].push_back(row);
                                 }
                             }
-                            if (!stateInformation.problematicStates.get(*successorIt)) {
+                            if (!stateInformation.problematicStates.get(successorEntry.first)) {
                                 allSuccessorsProblematic = false;
                             }
                         }
@@ -169,7 +168,7 @@ namespace storm {
              * @param relevantLabels The set of relevant labels of the model.
              * @return A mapping from labels to variable indices.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver& solver, storm::storage::VectorSet<uint_fast64_t> const& relevantLabels) {
+            static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver& solver, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
                 int error = 0;
                 std::stringstream variableNameBuffer;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
@@ -304,12 +303,12 @@ namespace storm {
                     
                     std::list<uint_fast64_t> const& relevantChoicesForState = choiceInformation.relevantChoicesForRelevantStates.at(state);
                     for (uint_fast64_t row : relevantChoicesForState) {
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(row); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(row); ++successorIt) {
-                            if (stateInformation.relevantStates.get(*successorIt)) {
-                                if (resultingMap.find(*successorIt) == resultingMap.end()) {
+                        for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(row)) {
+                            if (stateInformation.relevantStates.get(successorEntry.first)) {
+                                if (resultingMap.find(successorEntry.first) == resultingMap.end()) {
                                     variableNameBuffer.str("");
                                     variableNameBuffer.clear();
-                                    variableNameBuffer << "r" << *successorIt;
+                                    variableNameBuffer << "r" << successorEntry.first;
                                     resultingMap[state] = solver.createContinuousVariable(variableNameBuffer.str(), storm::solver::LpSolver::BOUNDED, 0, 1, 0);
                                     ++numberOfVariablesCreated;
                                 }
@@ -338,12 +337,12 @@ namespace storm {
                 for (auto state : stateInformation.problematicStates) {
                     std::list<uint_fast64_t> const& relevantChoicesForState = choiceInformation.relevantChoicesForRelevantStates.at(state);
                     for (uint_fast64_t row : relevantChoicesForState) {
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(row); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(row); ++successorIt) {
-                            if (stateInformation.relevantStates.get(*successorIt)) {
+                        for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(row)) {
+                            if (stateInformation.relevantStates.get(successorEntry.first)) {
                                 variableNameBuffer.str("");
                                 variableNameBuffer.clear();
-                                variableNameBuffer << "t" << state << "to" << *successorIt;
-                                resultingMap[std::make_pair(state, *successorIt)] = solver.createBinaryVariable(variableNameBuffer.str(), 0);
+                                variableNameBuffer << "t" << state << "to" << successorEntry.first;
+                                resultingMap[std::make_pair(state, successorEntry.first)] = solver.createBinaryVariable(variableNameBuffer.str(), 0);
                                 ++numberOfVariablesCreated;
                             }
                         }
@@ -483,7 +482,7 @@ namespace storm {
             static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
+                std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 for (auto state : stateInformation.relevantStates) {
                     std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(state).begin();
                     for (auto choice : choiceInformation.relevantChoicesForRelevantStates.at(state)) {
@@ -551,13 +550,12 @@ namespace storm {
                         coefficients.push_back(1.0);
                         
                         double rightHandSide = 1;
-                        typename storm::storage::SparseMatrix<T>::Rows rows = labeledMdp.getTransitionMatrix().getRows(choice, choice);
-                        for (typename storm::storage::SparseMatrix<T>::ConstIterator successorIt = rows.begin(), successorIte = rows.end(); successorIt != successorIte; ++successorIt) {
-                            if (stateInformation.relevantStates.get(successorIt.column())) {
-                                variables.push_back(static_cast<int>(variableInformation.stateToProbabilityVariableIndexMap.at(successorIt.column())));
-                                coefficients.push_back(-successorIt.value());
-                            } else if (psiStates.get(successorIt.column())) {
-                                rightHandSide += successorIt.value();
+                        for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(choice)) {
+                            if (stateInformation.relevantStates.get(successorEntry.first)) {
+                                variables.push_back(static_cast<int>(variableInformation.stateToProbabilityVariableIndexMap.at(successorEntry.first)));
+                                coefficients.push_back(-successorEntry.second);
+                            } else if (psiStates.get(successorEntry.first)) {
+                                rightHandSide += successorEntry.second;
                             }
                         }
                         
@@ -610,8 +608,8 @@ namespace storm {
                         variables.push_back(*choiceVariableIndicesIterator);
                         coefficients.push_back(1);
                         
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(problematicChoice); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(problematicChoice); ++successorIt) {
-                            variables.push_back(variableInformation.problematicTransitionToVariableIndexMap.at(std::make_pair(stateListPair.first, *successorIt)));
+                        for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(problematicChoice)) {
+                            variables.push_back(variableInformation.problematicTransitionToVariableIndexMap.at(std::make_pair(stateListPair.first, successorEntry.first)));
                             coefficients.push_back(-1);
                         }
                         
@@ -622,15 +620,15 @@ namespace storm {
                 
                 for (auto state : stateInformation.problematicStates) {
                     for (auto problematicChoice : choiceInformation.problematicChoicesForProblematicStates.at(state)) {
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(problematicChoice); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(problematicChoice); ++successorIt) {
+                        for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(state)) {
                             std::vector<uint_fast64_t> variables;
                             std::vector<double> coefficients;
                             
                             variables.push_back(variableInformation.problematicStateToVariableIndexMap.at(state));
                             coefficients.push_back(1);
-                            variables.push_back(variableInformation.problematicStateToVariableIndexMap.at(*successorIt));
+                            variables.push_back(variableInformation.problematicStateToVariableIndexMap.at(successorEntry.first));
                             coefficients.push_back(-1);
-                            variables.push_back(variableInformation.problematicTransitionToVariableIndexMap.at(std::make_pair(state, *successorIt)));
+                            variables.push_back(variableInformation.problematicTransitionToVariableIndexMap.at(std::make_pair(state, successorEntry.first)));
                             coefficients.push_back(1);
                             
                             solver.addConstraint("UnproblematicStateReachable" + std::to_string(numberOfConstraintsCreated), variables, coefficients, storm::solver::LpSolver::LESS, 1);
@@ -685,8 +683,8 @@ namespace storm {
                     std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(state).begin();
                     for (auto choice : choiceInformation.relevantChoicesForRelevantStates.at(state)) {
                         bool psiStateReachableInOneStep = false;
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(choice); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(choice); ++successorIt) {
-                            if (psiStates.get(*successorIt)) {
+                        for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(choice)) {
+                            if (psiStates.get(successorEntry.first)) {
                                 psiStateReachableInOneStep = true;
                             }
                         }
@@ -698,9 +696,9 @@ namespace storm {
                             variables.push_back(static_cast<int>(*choiceVariableIndicesIterator));
                             coefficients.push_back(1);
                             
-                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(choice); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(choice); ++successorIt) {
-                                if (state != *successorIt && stateInformation.relevantStates.get(*successorIt)) {
-                                    std::list<uint_fast64_t> const& successorChoiceVariableIndices = variableInformation.stateToChoiceVariablesIndexMap.at(*successorIt);
+                            for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(choice)) {
+                                if (state != successorEntry.first && stateInformation.relevantStates.get(successorEntry.first)) {
+                                    std::list<uint_fast64_t> const& successorChoiceVariableIndices = variableInformation.stateToChoiceVariablesIndexMap.at(successorEntry.first);
                                     
                                     for (auto choiceVariableIndex : successorChoiceVariableIndices) {
                                         variables.push_back(choiceVariableIndex);
@@ -728,9 +726,9 @@ namespace storm {
                     
                     // Compute the set of predecessors.
                     std::unordered_set<uint_fast64_t> predecessors;
-                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(state); predecessorIt != backwardTransitions.constColumnIteratorEnd(state); ++predecessorIt) {
-                        if (state != *predecessorIt) {
-                            predecessors.insert(*predecessorIt);
+                    for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
+                        if (state != predecessorEntry.first) {
+                            predecessors.insert(predecessorEntry.first);
                         }
                     }
                     
@@ -745,8 +743,8 @@ namespace storm {
                             bool choiceTargetsCurrentState = false;
                             
                             // Check if the current choice targets the current state.
-                            for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(relevantChoice); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(relevantChoice); ++successorIt) {
-                                if (state == *successorIt) {
+                            for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(relevantChoice)) {
+                                if (state == successorEntry.first) {
                                     choiceTargetsCurrentState = true;
                                     break;
                                 }
@@ -790,9 +788,9 @@ namespace storm {
                 std::unordered_set<uint_fast64_t> predecessors;
                 for (auto psiState : psiStates) {
                     // Compute the set of predecessors.
-                    for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator predecessorIt = backwardTransitions.constColumnIteratorBegin(psiState); predecessorIt != backwardTransitions.constColumnIteratorEnd(psiState); ++predecessorIt) {
-                        if (psiState != *predecessorIt) {
-                            predecessors.insert(*predecessorIt);
+                    for (auto const& predecessorEntry : backwardTransitions.getRow(psiState)) {
+                        if (psiState != predecessorEntry.first) {
+                            predecessors.insert(predecessorEntry.first);
                         }
                     }
                 }
@@ -808,8 +806,8 @@ namespace storm {
                         bool choiceTargetsPsiState = false;
                         
                         // Check if the current choice targets the current state.
-                        for (typename storm::storage::SparseMatrix<T>::ConstIndexIterator successorIt = labeledMdp.getTransitionMatrix().constColumnIteratorBegin(relevantChoice); successorIt != labeledMdp.getTransitionMatrix().constColumnIteratorEnd(relevantChoice); ++successorIt) {
-                            if (psiStates.get(*successorIt)) {
+                        for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(relevantChoice)) {
+                            if (psiStates.get(successorEntry.first)) {
                                 choiceTargetsPsiState = true;
                                 break;
                             }
@@ -890,8 +888,8 @@ namespace storm {
              * @param solver The MILP solver.
              * @param variableInformation A struct with information about the variables of the model.
              */
-            static storm::storage::VectorSet<uint_fast64_t> getUsedLabelsInSolution(storm::solver::LpSolver const& solver, VariableInformation const& variableInformation) {
-                storm::storage::VectorSet<uint_fast64_t> result;
+            static boost::container::flat_set<uint_fast64_t> getUsedLabelsInSolution(storm::solver::LpSolver const& solver, VariableInformation const& variableInformation) {
+                boost::container::flat_set<uint_fast64_t> result;
 
                 for (auto labelVariablePair : variableInformation.labelToVariableIndexMap) {
                     bool labelTaken = solver.getBinaryValue(labelVariablePair.second);
@@ -953,7 +951,7 @@ namespace storm {
                 
         public:
             
-            static storm::storage::VectorSet<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabeling()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal label set generation is impossible for unlabeled model.";
@@ -961,7 +959,7 @@ namespace storm {
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
-                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
                 std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
                 for (auto state : labeledMdp.getInitialStates()) {
                     maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
@@ -977,7 +975,7 @@ namespace storm {
                 ChoiceInformation choiceInformation = determineRelevantAndProblematicChoices(labeledMdp, stateInformation, psiStates);
                 
                 // (4) Encode resulting system as MILP problem.
-                std::unique_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("MinimalCommandSetCounterexample");
+                std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("MinimalCommandSetCounterexample");
                 
                 //  (4.1) Create variables.
                 VariableInformation variableInformation = createVariables(*solver, labeledMdp, stateInformation, choiceInformation);
@@ -989,8 +987,8 @@ namespace storm {
                 solver->optimize();
                 
                 // (4.4) Read off result from variables.
-                storm::storage::VectorSet<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(*solver, variableInformation);
-                usedLabelSet.insert(choiceInformation.knownLabels);
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(*solver, variableInformation);
+                usedLabelSet.insert(choiceInformation.knownLabels.begin(), choiceInformation.knownLabels.end());
                 
                 // Display achieved probability.
                 std::pair<uint_fast64_t, double> initialStateProbabilityPair = getReachabilityProbability(*solver, labeledMdp, variableInformation);
@@ -1025,7 +1023,7 @@ namespace storm {
                 storm::property::prctl::AbstractPathFormula<double> const& pathFormula = probBoundFormula->getPathFormula();
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
-                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<T>());
+                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
                 try {
                     storm::property::prctl::Until<double> const& untilFormula = dynamic_cast<storm::property::prctl::Until<double> const&>(pathFormula);
                     
@@ -1046,7 +1044,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                storm::storage::VectorSet<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, strictBound, true, true);
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, strictBound, true, true);
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 

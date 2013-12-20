@@ -1,116 +1,49 @@
 #ifndef STORM_SOLVER_GMMXXNONDETERMINISTICLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_GMMXXNONDETERMINISTICLINEAREQUATIONSOLVER_H_
 
-#include "AbstractLinearEquationSolver.h"
-#include "src/adapters/GmmxxAdapter.h"
-#include "src/storage/SparseMatrix.h"
-
-#include "gmm/gmm_matrix.h"
-
-#include <vector>
+#include "src/solver/NondeterministicLinearEquationSolver.h"
 
 namespace storm {
     namespace solver {
         
+        /*!
+         * A class that uses the gmm++ library to implement the NondeterministicLinearEquationSolver interface.
+         */
         template<class Type>
-        class GmmxxNondeterministicLinearEquationSolver : public AbstractNondeterministicLinearEquationSolver<Type> {
+        class GmmxxNondeterministicLinearEquationSolver : public NondeterministicLinearEquationSolver<Type> {
         public:
+            /*!
+             * Constructs a nondeterministic linear equation solver with parameters being set according to the settings
+             * object.
+             */
+            GmmxxNondeterministicLinearEquationSolver();
             
-            virtual AbstractNondeterministicLinearEquationSolver<Type>* clone() const {
-                return new GmmxxNondeterministicLinearEquationSolver<Type>();
-            }
+            /*!
+             * Constructs a nondeterminstic linear equation solver with the given parameters.
+             *
+             * @param precision The precision to use for convergence detection.
+             * @param maximalNumberOfIterations The maximal number of iterations do perform before iteration is aborted.
+             * @param relative If set, the relative error rather than the absolute error is considered for convergence
+             * detection.
+             */
+            GmmxxNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+
+            virtual NondeterministicLinearEquationSolver<Type>* clone() const;
             
-            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* b = nullptr, uint_fast64_t n = 1) const override {
-                // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-                gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
-                
-                // Create vector for result of multiplication, which is reduced to the result vector after
-                // each multiplication.
-                std::vector<Type> multiplyResult(A.getRowCount());
-                
-                // Now perform matrix-vector multiplication as long as we meet the bound of the formula.
-                for (uint_fast64_t i = 0; i < n; ++i) {
-                    gmm::mult(*gmmxxMatrix, x, multiplyResult);
-                    
-                    if (b != nullptr) {
-                        gmm::add(*b, multiplyResult);
-                    }
-                    
-                    if (minimize) {
-                        storm::utility::vector::reduceVectorMin(multiplyResult, x, nondeterministicChoiceIndices);
-                    } else {
-                        storm::utility::vector::reduceVectorMax(multiplyResult, x, nondeterministicChoiceIndices);
-                    }
-                }
-                
-                // Delete intermediate results and return result.
-                delete gmmxxMatrix;
-            }
+            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* b = nullptr, uint_fast64_t n = 1, std::vector<Type>* multiplyResult = nullptr) const override;
             
-            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const override {
-                // Get the settings object to customize solving.
-                storm::settings::Settings* s = storm::settings::Settings::getInstance();
-                
-                // Get relevant user-defined settings for solving the equations.
-                double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-                uint_fast64_t maxIterations = s->getOptionByLongName("maxIterations").getArgument(0).getValueAsUnsignedInteger();
-				bool relative = s->getOptionByLongName("relative").getArgument(0).getValueAsBoolean();
-                
-                // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-                gmm::csr_matrix<Type>* gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<Type>(A);
-                
-                // Set up the environment for the power method.
-                std::vector<Type> multiplyResult(A.getRowCount());
-                std::vector<Type>* currentX = &x;
-                std::vector<Type>* newX = new std::vector<Type>(x.size());
-                std::vector<Type>* swap = nullptr;
-                uint_fast64_t iterations = 0;
-                bool converged = false;
-                
-                // Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
-                // of iterations.
-                while (!converged && iterations < maxIterations) {
-                    // Compute x' = A*x + b.
-                    gmm::mult(*gmmxxMatrix, *currentX, multiplyResult);
-                    gmm::add(b, multiplyResult);
-                    
-                    // Reduce the vector x' by applying min/max for all non-deterministic choices.
-                    if (minimize) {
-                        storm::utility::vector::reduceVectorMin(multiplyResult, *newX, nondeterministicChoiceIndices);
-                    } else {
-                        storm::utility::vector::reduceVectorMax(multiplyResult, *newX, nondeterministicChoiceIndices);
-                    }
-                    
-                    // Determine whether the method converged.
-                    converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, precision, relative);
-                    
-                    // Update environment variables.
-                    swap = currentX;
-                    currentX = newX;
-                    newX = swap;
-                    ++iterations;
-                }
-                
-                // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
-                // is currently stored in currentX, but x is the output vector.
-                if (iterations % 2 == 1) {
-                    std::swap(x, *currentX);
-                    delete currentX;
-                } else {
-                    delete newX;
-                }
-                delete gmmxxMatrix;
-                
-                // Check if the solver converged and issue a warning otherwise.
-                if (converged) {
-                    LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
-                } else {
-                    LOG4CPLUS_WARN(logger, "Iterative solver did not converge after " << iterations << " iterations.");
-                }
-            }
+            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* multiplyResult = nullptr, std::vector<Type>* newX = nullptr) const override;
             
+        private:
+            // The required precision for the iterative methods.
+            double precision;
+            
+            // Sets whether the relative or absolute error is to be considered for convergence detection.
+            bool relative;
+            
+            // The maximal number of iterations to do before iteration is aborted.
+            uint_fast64_t maximalNumberOfIterations;
         };
-        
     } // namespace solver
 } // namespace storm
 

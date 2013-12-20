@@ -38,7 +38,7 @@
 #ifndef GMM_BLAS_H__
 #define GMM_BLAS_H__
 
-// This Version of GMM was modified for StoRM
+// This Version of GMM was modified for StoRM.
 // To detect whether the usage of TBB is possible, this include is neccessary
 #include "storm-config.h"
 
@@ -404,64 +404,6 @@ namespace gmm {
     for (; it != ite; ++it, ++it2) res += (*it) * (*it2);
     return res;
   }
-  
-#ifdef STORM_HAVE_INTELTBB
-	/* Official Intel Hint on blocked_range vs. linear iterators: http://software.intel.com/en-us/forums/topic/289505
-
-	 */
-	template <typename IT1>
-class forward_range {
-    IT1 my_begin;
-    IT1 my_end;
-    size_t my_size;
-public:
-    IT1 begin() const {return my_begin;}
-    IT1 end() const {return my_end;}
-    bool empty() const {return my_begin==my_end;}
-    bool is_divisible() const {return my_size>1;}
-    forward_range( IT1 first, IT1 last, size_t size ) : my_begin(first), my_end(last), my_size(size) {
-        assert( size==size_t(std::distance( first,last )));
-    }
-	forward_range( IT1 first, IT1 last) : my_begin(first), my_end(last) {
-		my_size = std::distance( first,last );
-    }
-    forward_range( forward_range& r, tbb::split ) {
-        size_t h = r.my_size/2;
-        my_end = r.my_end;
-        my_begin = r.my_begin;
-        std::advance( my_begin, h ); // Might be scaling issue
-        my_size = r.my_size-h;
-        r.my_end = my_begin;
-        r.my_size = h;
-    }
-};
-
-	template <typename IT1, typename V>
-	class tbbHelper_vect_sp_sparse {
-		V const* my_v;
-		public:
-			 typename strongest_numeric_type<typename std::iterator_traits<IT1>::value_type,
-				typename linalg_traits<V>::value_type>::T my_sum; 
-			void operator()( const forward_range<IT1>& r ) {
-				V const* v = my_v;
-				typename strongest_numeric_type<typename std::iterator_traits<IT1>::value_type,
-				typename linalg_traits<V>::value_type>::T sum = my_sum;
-				IT1 end = r.end();
-				for( IT1 i=r.begin(); i!=end; ++i) { 
-					sum += (*i) * v->at(i.index());
-				}
-				my_sum = sum;    
-			}
- 
-			tbbHelper_vect_sp_sparse( tbbHelper_vect_sp_sparse& x, tbb::split ) : my_v(x.my_v), my_sum(0) {}
- 
-			void join( const tbbHelper_vect_sp_sparse& y ) {my_sum+=y.my_sum;}
-             
-			tbbHelper_vect_sp_sparse(V const* v) :
-				my_v(v), my_sum(0)
-			{}
-	};
-#endif
 
   template <typename IT1, typename V> inline
     typename strongest_numeric_type<typename std::iterator_traits<IT1>::value_type,
@@ -469,14 +411,7 @@ public:
     vect_sp_sparse_(IT1 it, IT1 ite, const V &v) {
       typename strongest_numeric_type<typename std::iterator_traits<IT1>::value_type,
 	typename linalg_traits<V>::value_type>::T res(0);
-#if defined(STORM_HAVE_INTELTBB) && defined(STORM_USE_TBB_FOR_INNER)
-	  // This is almost never an efficent way, only if there are _many_ states
-	  tbbHelper_vect_sp_sparse<IT1, V> tbbHelper(&v);
-	  tbb::parallel_reduce(forward_range<IT1>(it, ite), tbbHelper);
-	  res = tbbHelper.my_sum;
-#else
     for (; it != ite; ++it) res += (*it) * v[it.index()];
-#endif
     return res;
   }
 

@@ -290,7 +290,7 @@ namespace storm {
             return this->globalIntegerVariableToIndexMap.at(variableName);
         }
         
-        void Program::restrictCommands(storm::storage::VectorSet<uint_fast64_t> const& indexSet) {
+        void Program::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
             for (auto& module : modules) {
                 module.restrictCommands(indexSet);
             }

@@ -4,6 +4,8 @@
 namespace storm {
     namespace storage {
         
+        std::ostream& operator<<(std::ostream& out, boost::container::flat_set<uint_fast64_t> const& block);
+        
         MaximalEndComponent::MaximalEndComponent() : stateToChoicesMapping() {
             // Intentionally left empty.
         }
@@ -26,19 +28,29 @@ namespace storm {
             return *this;
         }
         
-        void MaximalEndComponent::addState(uint_fast64_t state, std::vector<uint_fast64_t> const& choices) {
+        void MaximalEndComponent::addState(uint_fast64_t state, set_type const& choices) {
             stateToChoicesMapping[state] = choices;
         }
         
-        void MaximalEndComponent::addState(uint_fast64_t state, std::vector<uint_fast64_t>&& choices) {
-            stateToChoicesMapping.emplace(state, choices);
+        void MaximalEndComponent::addState(uint_fast64_t state, set_type&& choices) {
+            stateToChoicesMapping.emplace(state, std::move(choices));
         }
         
-        storm::storage::VectorSet<uint_fast64_t> const& MaximalEndComponent::getChoicesForState(uint_fast64_t state) const {
+        MaximalEndComponent::set_type const& MaximalEndComponent::getChoicesForState(uint_fast64_t state) const {
             auto stateChoicePair = stateToChoicesMapping.find(state);
             
             if (stateChoicePair == stateToChoicesMapping.end()) {
-                throw storm::exceptions::InvalidStateException() << "Cannot retrieve choices for state not contained in MEC.";
+                throw storm::exceptions::InvalidStateException() << "Invalid call to MaximalEndComponent::getChoicesForState: cannot retrieve choices for state not contained in MEC.";
+            }
+            
+            return stateChoicePair->second;
+        }
+        
+        MaximalEndComponent::set_type& MaximalEndComponent::getChoicesForState(uint_fast64_t state) {
+            auto stateChoicePair = stateToChoicesMapping.find(state);
+            
+            if (stateChoicePair == stateToChoicesMapping.end()) {
+                throw storm::exceptions::InvalidStateException() << "Invalid call to MaximalEndComponent::getChoicesForState: cannot retrieve choices for state not contained in MEC.";
             }
             
             return stateChoicePair->second;
@@ -53,21 +65,11 @@ namespace storm {
             return true;
         }
         
-        void MaximalEndComponent::removeChoice(uint_fast64_t state, uint_fast64_t choice) {
-            auto stateChoicePair = stateToChoicesMapping.find(state);
-            
-            if (stateChoicePair == stateToChoicesMapping.end()) {
-                throw storm::exceptions::InvalidStateException() << "Cannot delete choice for state not contained in MEC.";
-            }
-
-            stateChoicePair->second.erase(choice);
-        }
-        
         void MaximalEndComponent::removeState(uint_fast64_t state) {
             auto stateChoicePair = stateToChoicesMapping.find(state);
             
             if (stateChoicePair == stateToChoicesMapping.end()) {
-                throw storm::exceptions::InvalidStateException() << "Cannot delete choice for state not contained in MEC.";
+                throw storm::exceptions::InvalidStateException() << "Invalid call to MaximalEndComponent::removeState: cannot remove state not contained in MEC.";
             }
             
             stateToChoicesMapping.erase(stateChoicePair);
@@ -77,21 +79,21 @@ namespace storm {
             auto stateChoicePair = stateToChoicesMapping.find(state);
             
             if (stateChoicePair == stateToChoicesMapping.end()) {
-                throw storm::exceptions::InvalidStateException() << "Cannot delete choice for state not contained in MEC.";
+                throw storm::exceptions::InvalidStateException() << "Invalid call to MaximalEndComponent::containsChoice: cannot obtain choices for state not contained in MEC.";
             }
             
-            return stateChoicePair->second.contains(choice);
+            return stateChoicePair->second.find(choice) != stateChoicePair->second.end();
         }
         
-        storm::storage::VectorSet<uint_fast64_t> MaximalEndComponent::getStateSet() const {
-            std::vector<uint_fast64_t> states;
+        MaximalEndComponent::set_type MaximalEndComponent::getStateSet() const {
+            set_type states;
             states.reserve(stateToChoicesMapping.size());
             
             for (auto const& stateChoicesPair : stateToChoicesMapping) {
-                states.push_back(stateChoicesPair.first);
+                states.insert(stateChoicesPair.first);
             }
             
-            return storm::storage::VectorSet<uint_fast64_t>(states);
+            return states;
         }
         
         std::ostream& operator<<(std::ostream& out, MaximalEndComponent const& component) {

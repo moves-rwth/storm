@@ -12,6 +12,7 @@ TEST(GraphTest, PerformProb01) {
 	storm::storage::BitVector trueStates(dtmc->getNumberOfStates(), true);
 
     LOG4CPLUS_WARN(logger, "Computing prob01 (3 times) for crowds/crowds20_5...");
+    
     std::pair<storm::storage::BitVector, storm::storage::BitVector> prob01(storm::utility::graph::performProb01(*dtmc, trueStates, storm::storage::BitVector(dtmc->getLabeledStates("observe0Greater1"))));
     
     ASSERT_EQ(prob01.first.getNumberOfSetBits(), 1724414ull);
@@ -21,7 +22,7 @@ TEST(GraphTest, PerformProb01) {
 
     ASSERT_EQ(prob01.first.getNumberOfSetBits(), 574016ull);
     ASSERT_EQ(prob01.second.getNumberOfSetBits(), 825797ull);
-    
+        
     prob01 = storm::utility::graph::performProb01(*dtmc, trueStates, storm::storage::BitVector(dtmc->getLabeledStates("observeOnlyTrueSender")));
 
     ASSERT_EQ(prob01.first.getNumberOfSetBits(), 1785309ull);
@@ -84,75 +85,5 @@ TEST(GraphTest, PerformProb01MinMax) {
     ASSERT_EQ(prob01.first.getNumberOfSetBits(), 0ull);
     ASSERT_EQ(prob01.second.getNumberOfSetBits(), 63616ull);
     
-    mdp2 = nullptr;
-}
-
-TEST(GraphTest, PerformSCCDecompositionAndGetDependencyGraph) {
-    storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
-    
-    LOG4CPLUS_WARN(logger, "Computing SCC decomposition of crowds/crowds20_5...");
-    storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition(*dtmc);
-    LOG4CPLUS_WARN(logger, "Done.");
-    
-    ASSERT_EQ(sccDecomposition.size(), 1290297ull);
-    
-    LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of crowds/crowds20_5...");
-    storm::storage::SparseMatrix<double> sccDependencyGraph(std::move(dtmc->extractPartitionDependencyGraph(sccDecomposition)));
-    LOG4CPLUS_WARN(logger, "Done.");
-    
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1371253ull);
-    
-    dtmc = nullptr;
-    
-    storm::parser::AutoParser<double> parser2(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.lab", "", "");
-    std::shared_ptr<storm::models::Dtmc<double>> dtmc2 = parser2.getModel<storm::models::Dtmc<double>>();
-
-    LOG4CPLUS_WARN(logger, "Computing SCC decomposition of synchronous_leader/leader6_8...");
-    sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc2);
-    LOG4CPLUS_WARN(logger, "Done.");
-
-    ASSERT_EQ(sccDecomposition.size(), 1279673ull);
-    
-    LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of synchronous_leader/leader6_8...");
-    sccDependencyGraph = std::move(dtmc2->extractPartitionDependencyGraph(sccDecomposition));
-    LOG4CPLUS_WARN(logger, "Done.");
-    
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 1535367ull);
-    
-    dtmc2 = nullptr;
-    
-    storm::parser::AutoParser<double> parser3(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader6.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader6.lab", "", "");
-	std::shared_ptr<storm::models::Mdp<double>> mdp = parser3.getModel<storm::models::Mdp<double>>();
-    
-    LOG4CPLUS_WARN(logger, "Computing SCC decomposition of asynchronous_leader/leader6...");
-    sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp);
-    LOG4CPLUS_WARN(logger, "Done.");
-
-    ASSERT_EQ(sccDecomposition.size(), 146844ull);
-    
-    LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of asynchronous_leader/leader6...");
-    sccDependencyGraph = std::move(mdp->extractPartitionDependencyGraph(sccDecomposition));
-    LOG4CPLUS_WARN(logger, "Done.");
-    
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 489918ull);
-    
-    mdp = nullptr;
-    
-    storm::parser::AutoParser<double> parser4(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", "", "");
-	std::shared_ptr<storm::models::Mdp<double>> mdp2 = parser4.getModel<storm::models::Mdp<double>>();
-
-    LOG4CPLUS_WARN(logger, "Computing SCC decomposition of consensus/coin4_6...");
-    sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp2);
-    LOG4CPLUS_WARN(logger, "Done.");
-
-    ASSERT_EQ(sccDecomposition.size(), 2611ull);
-    
-    LOG4CPLUS_WARN(logger, "Extracting SCC dependency graph of consensus/coin4_6...");
-    sccDependencyGraph = std::move(mdp2->extractPartitionDependencyGraph(sccDecomposition));
-    LOG4CPLUS_WARN(logger, "Done.");
-    
-    ASSERT_EQ(sccDependencyGraph.getNonZeroEntryCount(), 7888ull);
-
     mdp2 = nullptr;
 }

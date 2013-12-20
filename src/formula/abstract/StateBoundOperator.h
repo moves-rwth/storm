@@ -12,7 +12,7 @@
 #include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/formula/ComparisonType.h"
-#include "src/utility/ConstTemplates.h"
+#include "src/utility/constants.h"
 
 namespace storm {
 namespace property {

@@ -34,7 +34,7 @@ void setUpLogging() {
  * Creates an empty settings object as the standard instance of the Settings class.
  */
 void createEmptyOptions() {
-    const char* newArgv[] = {"storm-performance-tests", "--maxIterations", "20000"};
+    const char* newArgv[] = {"storm-performance-tests", "--maxiter", "20000"};
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	try {
 		storm::settings::Settings::parse(3, newArgv);

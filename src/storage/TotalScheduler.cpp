@@ -1,4 +1,5 @@
 #include "src/storage/TotalScheduler.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {
@@ -11,14 +12,21 @@ namespace storm {
         }
         
         void TotalScheduler::setChoice(uint_fast64_t state, uint_fast64_t choice) {
+            if (state > choices.size()) {
+                throw storm::exceptions::InvalidArgumentException() << "Invalid call to TotalScheduler::setChoice: scheduler cannot not define a choice for state " << state << ".";
+            }
             choices[state] = choice;
         }
         
         bool TotalScheduler::isChoiceDefined(uint_fast64_t state) const {
-            return true;
+            return state < choices.size();
         }
         
         uint_fast64_t TotalScheduler::getChoice(uint_fast64_t state) const {
+            if (state >= choices.size()) {
+                throw storm::exceptions::InvalidArgumentException() << "Invalid call to TotalScheduler::getChoice: scheduler does not define a choice for state " << state << ".";
+            }
+
             return choices[state];
         }
         

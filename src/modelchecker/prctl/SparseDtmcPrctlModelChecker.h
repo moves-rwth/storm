@@ -10,7 +10,7 @@
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
 #include "src/models/Dtmc.h"
-#include "src/solver/AbstractLinearEquationSolver.h"
+#include "src/solver/LinearEquationSolver.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
@@ -33,7 +33,7 @@ public:
 	 *
 	 * @param model The DTMC to be checked.
 	 */
-	explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model, storm::solver::AbstractLinearEquationSolver<Type>* linearEquationSolver) : AbstractModelChecker<Type>(model), linearEquationSolver(linearEquationSolver) {
+	explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model, storm::solver::LinearEquationSolver<Type>* linearEquationSolver) : AbstractModelChecker<Type>(model), linearEquationSolver(linearEquationSolver) {
 		// Intentionally left empty.
 	}
     
@@ -90,7 +90,6 @@ public:
 		return this->checkBoundedUntil(formula.getLeft().check(*this), formula.getRight().check(*this), formula.getBound(), qualitative);
 	}
 
-
 	/*!
 	 * Computes the probability to satisfy phi until psi inside a given bound for each state in the model.
 	 *
@@ -104,12 +103,11 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type> checkBoundedUntil(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, bool qualitative) const {
-
         std::vector<Type> result(this->getModel().getNumberOfStates());
         
         // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the
         // further analysis.
-        storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel(), phiStates, psiStates, true, stepBound);
+        storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
         LOG4CPLUS_INFO(logger, "Found " << statesWithProbabilityGreater0.getNumberOfSetBits() << " 'maybe' states.");
         
         // Check if we already know the result (i.e. probability 0) for all initial states and
@@ -122,19 +120,19 @@ public:
             storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, Type(0.5));
         } else {
             // In this case we have have to compute the probabilities.
-            
+
             // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
             storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0);
             
             // Compute the new set of target states in the reduced system.
-            storm::storage::BitVector rightStatesInReducedSystem = statesWithProbabilityGreater0 % psiStates;
+            storm::storage::BitVector rightStatesInReducedSystem = psiStates % statesWithProbabilityGreater0;
             
             // Make all rows absorbing that satisfy the second sub-formula.
             submatrix.makeRowsAbsorbing(rightStatesInReducedSystem);
             
             // Create the vector with which to multiply.
             std::vector<Type> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
-            storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constGetOne<Type>());
+            storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::constantOne<Type>());
             
             // Perform the matrix vector multiplication as often as required by the formula bound.
             if (linearEquationSolver != nullptr) {
@@ -145,7 +143,7 @@ public:
             
             // Set the values of the resulting vector accordingly.
             storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
-            storm::utility::vector::setVectorValues<Type>(result, ~statesWithProbabilityGreater0, storm::utility::constGetZero<Type>());
+            storm::utility::vector::setVectorValues<Type>(result, ~statesWithProbabilityGreater0, storm::utility::constantZero<Type>());
         }
         
 		return result;
@@ -168,7 +166,7 @@ public:
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> result(this->getModel().getNumberOfStates());
-		storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constGetOne<Type>());
+		storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constantOne<Type>());
 
 		// Perform one single matrix-vector multiplication.
         if (linearEquationSolver != nullptr) {
@@ -192,9 +190,7 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type> checkBoundedEventually(storm::property::prctl::BoundedEventually<Type> const& formula, bool qualitative) const {
-		// Create equivalent temporary bounded until formula and check it.
-		storm::property::prctl::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
-		return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
+        return this->checkBoundedUntil(storm::storage::BitVector(this->getModel().getNumberOfStates(), true), formula.getChild().check(*this), formula.getBound(), qualitative);
 	}
 
 	/*!
@@ -321,8 +317,8 @@ public:
         }
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constGetZero<Type>());
-		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constGetOne<Type>());
+		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability0, storm::utility::constantZero<Type>());
+		storm::utility::vector::setVectorValues<Type>(result, statesWithProbability1, storm::utility::constantOne<Type>());
 
 		return result;
 	}
@@ -428,7 +424,7 @@ public:
 
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-		storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel(), trueStates, targetStates);
+		storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel(), this->getModel().getBackwardTransitions(), trueStates, targetStates);
 		infinityStates.complement();
 		storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
 		LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
@@ -444,7 +440,7 @@ public:
                             << " No exact rewards were computed.");
             // Set the values for all maybe-states to 1 to indicate that their reward values
             // are neither 0 nor infinity.
-            storm::utility::vector::setVectorValues<Type>(result, maybeStates, storm::utility::constGetOne<Type>());
+            storm::utility::vector::setVectorValues<Type>(result, maybeStates, storm::utility::constantOne<Type>());
         } else {
             // In this case we have to compute the reward values for the remaining states.
             // We can eliminate the rows and columns from the original transition probability matrix.
@@ -455,7 +451,7 @@ public:
             
             // Initialize the x vector with 1 for each element. This is the initial guess for
             // the iterative solvers.
-            std::vector<Type> x(submatrix.getColumnCount(), storm::utility::constGetOne<Type>());
+            std::vector<Type> x(submatrix.getColumnCount(), storm::utility::constantOne<Type>());
             
             // Prepare the right-hand side of the equation system.
             std::vector<Type> b(submatrix.getRowCount());
@@ -495,15 +491,15 @@ public:
         }
 
 		// Set values of resulting vector that are known exactly.
-		storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constGetZero<Type>());
-		storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constGetInfinity<Type>());
+		storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constantZero<Type>());
+		storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constantInfinity<Type>());
 
 		return result;
 	}
 
 private:
     // An object that is used for solving linear equations and performing matrix-vector multiplication.
-    std::unique_ptr<storm::solver::AbstractLinearEquationSolver<Type>> linearEquationSolver;
+    std::unique_ptr<storm::solver::LinearEquationSolver<Type>> linearEquationSolver;
 };
 
 } // namespace prctl

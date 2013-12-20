@@ -10,9 +10,11 @@
 
 #include "src/storage/BitVector.h"
 #include "src/exceptions/OutOfRangeException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 #include <ostream>
 #include <stdexcept>
 #include <set>
+#include <map>
 
 #include "src/utility/Hash.h"
 
@@ -70,7 +72,7 @@ public:
         // Now we need to copy the fraction of the single labelings given by the substates.
         singleLabelings.reserve(apCountMax);
         for (auto const& labeling : atomicPropositionsLabeling.singleLabelings) {
-            singleLabelings.emplace_back(labeling, substates);
+            singleLabelings.emplace_back(labeling % substates);
         }
     }
 
@@ -289,7 +291,7 @@ public:
 	 */
 	void addState() {
 		for(uint_fast64_t i = 0; i < apsCurrent; i++) {
-			singleLabelings[i].resize(singleLabelings[i].getSize() + 1);
+			singleLabelings[i].resize(singleLabelings[i].size() + 1);
 		}
 		stateCount++;
 	}
@@ -311,7 +313,7 @@ public:
 		}
 
 		for (auto it = singleLabelings.begin(); it != singleLabelings.end(); ++it) {
-			boost::hash_combine(result, it->getHash());
+			boost::hash_combine(result, it->hash());
 		}
 
 		return result;

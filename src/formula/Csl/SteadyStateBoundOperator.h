@@ -62,7 +62,7 @@ public:
 	 * Empty constructor
 	 */
 	SteadyStateBoundOperator() : storm::property::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>
-		(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+		(LESS_EQUAL, storm::utility::constantZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 

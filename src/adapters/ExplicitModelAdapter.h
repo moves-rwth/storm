@@ -14,6 +14,7 @@
 #include <vector>
 #include <queue>
 #include <boost/functional/hash.hpp>
+#include <boost/container/flat_set.hpp>
 
 #include "src/ir/Program.h"
 #include "src/ir/RewardModel.h"
@@ -77,7 +78,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> transitionRewardMatrix;
                 
                 // A vector that stores a labeling for each choice.
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> choiceLabeling;
+                std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabeling;
             };
             
             /*!
@@ -294,10 +295,9 @@ namespace storm {
                             // Update the choice by adding the probability/target state to it.
                             double probabilityToAdd = update.getLikelihoodExpression()->getValueAsDouble(currentState);
                             probabilitySum += probabilityToAdd;
-							std::set<uint_fast64_t> lables;
-							lables.insert(update.getGlobalIndex());
-                            //addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, {update.getGlobalIndex()});
-							addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, lables);
+                            boost::container::flat_set<uint_fast64_t> labels;
+							labels.insert(update.getGlobalIndex());
+							addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityToAdd, labels);
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
@@ -351,7 +351,7 @@ namespace storm {
                                         double updateProbability = update.getLikelihoodExpression()->getValueAsDouble(currentState);
                                         for (auto const& valueLabelSetPair : stateProbabilityPair.second) {
                                             // Copy the label set, so we can modify it.
-                                            storm::storage::VectorSet<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
+                                            boost::container::flat_set<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
                                             newLabelSet.insert(update.getGlobalIndex());
                                             
                                             newProbability.addValue(valueLabelSetPair.first * updateProbability, newLabelSet);
@@ -455,9 +455,9 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::SparseMatrix<ValueType>& transitionRewardMatrix) {
+            static std::pair<std::vector<uint_fast64_t>, std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
                 std::vector<uint_fast64_t> nondeterministicChoiceIndices;
-                std::vector<storm::storage::VectorSet<uint_fast64_t>> choiceLabels;
+                std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabels;
                 
                 // Initialize a queue and insert the initial state.
                 std::queue<uint_fast64_t> stateQueue;
@@ -480,10 +480,7 @@ namespace storm {
                     // requested and issue an error otherwise.
                     if (totalNumberOfChoices == 0) {
                         if (storm::settings::Settings::getInstance()->isSet("fixDeadlocks")) {
-                            transitionMatrix.insertNextValue(currentRow, currentState, storm::utility::constGetOne<ValueType>(), true);
-                            if (transitionRewards.size() > 0) {
-                                transitionRewardMatrix.insertEmptyRow(true);
-                            }
+                            transitionMatrixBuilder.addNextValue(currentRow, currentState, storm::utility::constantOne<ValueType>());
                             ++currentRow;
                         } else {
                             LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
@@ -495,7 +492,7 @@ namespace storm {
                         if (deterministicModel) {
                             Choice<ValueType> globalChoice("");
                             std::map<uint_fast64_t, ValueType> stateToRewardMap;
-                            storm::storage::VectorSet<uint_fast64_t> allChoiceLabels;
+                            boost::container::flat_set<uint_fast64_t> allChoiceLabels;
                             
                             // Combine all the choices and scale them with the total number of choices of the current state.
                             for (auto const& choice : allUnlabeledChoices) {
@@ -531,16 +528,14 @@ namespace storm {
                             choiceLabels.push_back(globalChoice.getChoiceLabels());
                             
                             for (auto const& stateProbabilityPair : globalChoice) {
-                                transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second, true);
+                                transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                             }
                             
                             // Add all transition rewards to the matrix and add dummy entry if there is none.
                             if (stateToRewardMap.size() > 0) {
                                 for (auto const& stateRewardPair : stateToRewardMap) {
-                                    transitionRewardMatrix.insertNextValue(currentRow, stateRewardPair.first, stateRewardPair.second, true);
+                                    transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
                                 }
-                            } else if (transitionRewards.size() > 0) {
-                                transitionRewardMatrix.insertEmptyRow(true);
                             }
                             
                             ++currentRow;
@@ -554,7 +549,7 @@ namespace storm {
                                 choiceLabels.emplace_back(std::move(choice.getChoiceLabels()));
                                 
                                 for (auto const& stateProbabilityPair : choice) {
-                                    transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second, true);
+                                    transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
@@ -568,10 +563,8 @@ namespace storm {
                                 // Add all transition rewards to the matrix and add dummy entry if there is none.
                                 if (stateToRewardMap.size() > 0) {
                                     for (auto const& stateRewardPair : stateToRewardMap) {
-                                        transitionRewardMatrix.insertNextValue(currentRow, stateRewardPair.first, stateRewardPair.second, true);
+                                        transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
                                     }
-                                } else if (transitionRewards.size() > 0) {
-                                    transitionRewardMatrix.insertEmptyRow(true);
                                 }
                                 
                                 ++currentRow;
@@ -583,7 +576,7 @@ namespace storm {
                                 choiceLabels.emplace_back(std::move(choice.getChoiceLabels()));
 
                                 for (auto const& stateProbabilityPair : choice) {
-                                    transitionMatrix.insertNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second, true);
+                                    transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
@@ -597,10 +590,8 @@ namespace storm {
                                 // Add all transition rewards to the matrix and add dummy entry if there is none.
                                 if (stateToRewardMap.size() > 0) {
                                     for (auto const& stateRewardPair : stateToRewardMap) {
-                                        transitionRewardMatrix.insertNextValue(currentRow, stateRewardPair.first, stateRewardPair.second, true);
+                                        transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
                                     }
-                                } else if (transitionRewards.size() > 0) {
-                                    transitionRewardMatrix.insertEmptyRow(true);
                                 }
 
                                 ++currentRow;
@@ -629,10 +620,6 @@ namespace storm {
                 
                 VariableInformation variableInformation = createVariableInformation(program);
                 
-                // Initialize the matrices.
-                modelComponents.transitionMatrix.initialize();
-                modelComponents.transitionRewardMatrix.initialize();
-                
                 // Create the structure for storing the reachable state space.
                 StateInformation stateInformation;
                 
@@ -644,13 +631,15 @@ namespace storm {
                 bool deterministicModel = program.getModelType() == storm::ir::Program::DTMC || program.getModelType() == storm::ir::Program::CTMC;
 
                 // Build the transition and reward matrices.
-                std::pair<std::vector<uint_fast64_t>, std::vector<storm::storage::VectorSet<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, modelComponents.transitionMatrix, modelComponents.transitionRewardMatrix);
+                storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder;
+                storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder;
+                std::pair<std::vector<uint_fast64_t>, std::vector<boost::container::flat_set<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
                 modelComponents.nondeterministicChoiceIndices = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.first);
                 modelComponents.choiceLabeling = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.second);
                 
                 // Finalize the resulting matrices.
-                modelComponents.transitionMatrix.finalize(true);
-                modelComponents.transitionRewardMatrix.finalize(true);
+                modelComponents.transitionMatrix = transitionMatrixBuilder.build();
+                modelComponents.transitionRewardMatrix = transitionRewardMatrixBuilder.build(modelComponents.transitionMatrix.getRowCount());
                 
                 // Now build the state labeling.
                 modelComponents.stateLabeling = buildStateLabeling(program, variableInformation, stateInformation);

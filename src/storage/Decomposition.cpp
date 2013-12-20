@@ -62,20 +62,39 @@ namespace storm {
         }
         
         template <typename BlockType>
+        BlockType& Decomposition<BlockType>::getBlock(uint_fast64_t index) {
+            return blocks.at(index);
+        }
+        
+        template <typename BlockType>
         BlockType const& Decomposition<BlockType>::operator[](uint_fast64_t index) const {
             return blocks[index];
         }
         
         template <typename BlockType>
-        std::ostream& operator<<(std::ostream& out, Decomposition<BlockType> const& decomposition) {
+        BlockType& Decomposition<BlockType>::operator[](uint_fast64_t index) {
+            return blocks[index];
+        }
+        
+        std::ostream& operator<<(std::ostream& out, StateBlock const& block) {
             out << "{";
+            for (auto const& element : block) {
+                out << element << ", ";
+            }
+            out << "}";
+            return out;
+        }
+        
+        template <typename BlockType>
+        std::ostream& operator<<(std::ostream& out, Decomposition<BlockType> const& decomposition) {
+            out << "[";
             if (decomposition.size() > 0) {
                 for (uint_fast64_t blockIndex = 0; blockIndex < decomposition.size() - 1; ++blockIndex) {
                     out << decomposition.blocks[blockIndex] << ", ";
                 }
-                out << decomposition.blocks[decomposition.size() - 1];
+                out << decomposition.blocks.back();
             }
-            out << "}";
+            out << "]";
             return out;
         }
         

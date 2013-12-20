@@ -2,30 +2,52 @@
 #define STORM_STORAGE_MAXIMALENDCOMPONENT_H_
 
 #include <unordered_map>
-
-#include "src/storage/VectorSet.h"
+#include <boost/container/flat_set.hpp>
 
 namespace storm {
     namespace storage {
+        
         /*!
          * This class represents a maximal end-component of a nondeterministic model.
          */
         class MaximalEndComponent {
         public:
-            typedef std::unordered_map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>>::iterator iterator;
-            typedef std::unordered_map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>>::const_iterator const_iterator;
+            typedef boost::container::flat_set<uint_fast64_t> set_type;
+            typedef std::unordered_map<uint_fast64_t, set_type> map_type;
+            typedef map_type::iterator iterator;
+            typedef map_type::const_iterator const_iterator;
             
             /*!
              * Creates an empty MEC.
              */
             MaximalEndComponent();
             
+            /*!
+             * Creates an MEC by copying the given one.
+             *
+             * @param other The MEC to copy.
+             */
             MaximalEndComponent(MaximalEndComponent const& other);
             
+            /*!
+             * Assigns the contents of the given MEC to the current one via copying.
+             *
+             * @param other The MEC whose contents to copy.
+             */
             MaximalEndComponent& operator=(MaximalEndComponent const& other);
             
+            /*!
+             * Creates an MEC by moving the given one.
+             *
+             * @param other The MEC to move.
+             */
             MaximalEndComponent(MaximalEndComponent&& other);
             
+            /*!
+             * Assigns the contents of the given MEC to the current one via moving.
+             *
+             * @param other The MEC whose contents to move.
+             */
             MaximalEndComponent& operator=(MaximalEndComponent&& other);
             
             /*!
@@ -34,7 +56,7 @@ namespace storm {
              * @param state The state for which to add the choices.
              * @param choices The choices to add for the state.
              */
-            void addState(uint_fast64_t state, std::vector<uint_fast64_t> const& choices);
+            void addState(uint_fast64_t state, set_type const& choices);
 
             /*!
              * Adds the given state and the given choices to the MEC.
@@ -42,24 +64,25 @@ namespace storm {
              * @param state The state for which to add the choices.
              * @param choices The choices to add for the state.
              */
-            void addState(uint_fast64_t state, std::vector<uint_fast64_t>&& choices);
+            void addState(uint_fast64_t state, set_type&& choices);
             
             /*!
-             * Retrieves the choices for the given state that are contained in this MEC under the
-             * assumption that the state is in the MEC.
+             * Retrieves the choices for the given state that are contained in this MEC under the assumption that the
+             * state is in the MEC.
              *
              * @param state The state for which to retrieve the choices.
-             * @return A list of choices of the state in the MEC.
+             * @return A set of choices of the state in the MEC.
              */
-            storm::storage::VectorSet<uint_fast64_t> const& getChoicesForState(uint_fast64_t state) const;
+            set_type const& getChoicesForState(uint_fast64_t state) const;
             
             /*!
-             * Removes the given choice from the list of choices of the named state.
+             * Retrieves the choices for the given state that are contained in this MEC under the assumption that the
+             * state is in the MEC.
              *
-             * @param state The state for which to remove the choice.
-             * @param choice The choice to remove from the state's choices.
+             * @param state The state for which to retrieve the choices.
+             * @return A set of choices of the state in the MEC.
              */
-            void removeChoice(uint_fast64_t state, uint_fast64_t choice);
+            set_type& getChoicesForState(uint_fast64_t state);
             
             /*!
              * Removes the given state and all of its choices from the MEC.
@@ -77,7 +100,7 @@ namespace storm {
             bool containsState(uint_fast64_t state) const;
             
             /*!
-             * Retrievs whether the given choice for the given state is contained in the MEC.
+             * Retrieves whether the given choice for the given state is contained in the MEC.
              *
              * @param state The state for which to check whether the given choice is contained in the MEC.
              * @param choice The choice for which to check whether it is contained in the MEC.
@@ -90,21 +113,42 @@ namespace storm {
              *
              * @return The set of states contained in the MEC.
              */
-            storm::storage::VectorSet<uint_fast64_t> getStateSet() const;
+            set_type getStateSet() const;
             
+            /*!
+             * Retrieves an iterator that points to the first state and its choices in the MEC.
+             *
+             * @return An iterator that points to the first state and its choices in the MEC.
+             */
             iterator begin();
             
+            /*!
+             * Retrieves an iterator that points past the last state and its choices in the MEC.
+             *
+             * @return An iterator that points past the last state and its choices in the MEC.
+             */
             iterator end();
             
+            /*!
+             * Retrieves an iterator that points to the first state and its choices in the MEC.
+             *
+             * @return An iterator that points to the first state and its choices in the MEC.
+             */
             const_iterator begin() const;
             
+            /*!
+             * Retrieves an iterator that points past the last state and its choices in the MEC.
+             *
+             * @return An iterator that points past the last state and its choices in the MEC.
+             */
             const_iterator end() const;
             
+            // Declare the streaming operator as a friend function.
             friend std::ostream& operator<<(std::ostream& out, MaximalEndComponent const& component);
             
         private:
             // This stores the mapping from states contained in the MEC to the choices in this MEC.
-            std::unordered_map<uint_fast64_t, storm::storage::VectorSet<uint_fast64_t>> stateToChoicesMapping;
+            map_type stateToChoicesMapping;
         };
     }
 }

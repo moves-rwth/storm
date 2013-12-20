@@ -28,10 +28,11 @@ include_directories(${GMMXX_INCLUDE_DIR})
 option(DEBUG "Sets whether the DEBUG mode is used" ON)
 option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
-option(USE_INTELTBB "Sets whether the Intel TBB Extensions should be used." OFF)
+option(ENABLE_INTELTBB "Sets whether the Intel TBB is available." OFF)
 option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
+option(ENABLE_GLPK "Sets whether StoRM is built with support for glpk." OFF)
 set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
 set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
@@ -43,15 +44,6 @@ set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory
 ##	Inclusion of required libraries
 ##
 #############################################################
-
-set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb41_20130314_merged-win-lin-mac/")
-if(MSVC)
-	set(ENV{TBB_ARCH_PLATFORM} "intel64/vc11")
-elseif(CMAKE_COMPILER_IS_GNUCC)
-	set(ENV{TBB_ARCH_PLATFORM} "intel64/gcc4.4")
-else(CLANG)
-	set(ENV{TBB_ARCH_PLATFORM} "intel64/clang3.2")
-endif()
 
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
@@ -184,6 +176,13 @@ else()
 	set(STORM_CPP_GUROBI_DEF "undef")
 endif()
 
+# glpk defines
+if (ENABLE_GLPK)
+	set(STORM_CPP_GLPK_DEF "define")
+else()
+	set(STORM_CPP_GLPK_DEF "undef")
+endif()
+
 # Z3 Defines
 if (ENABLE_Z3)
 	set(STORM_CPP_Z3_DEF "define")
@@ -192,7 +191,7 @@ else()
 endif()
 
 # Intel TBB Defines
-if (TBB_FOUND AND USE_INTELTBB)
+if (TBB_FOUND AND ENABLE_INTELTBB)
 	set(STORM_CPP_INTELTBB_DEF "define")
 else()
 	set(STORM_CPP_INTELTBB_DEF "undef")
@@ -291,7 +290,7 @@ if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
 	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 link_directories(${Boost_LIBRARY_DIRS})
-if (TBB_FOUND AND USE_INTELTBB)
+if (TBB_FOUND AND ENABLE_INTELTBB)
 	link_directories(${TBB_LIBRARY_DIRS})
 endif()
 
@@ -361,6 +360,18 @@ endif(ENABLE_GUROBI)
 
 #############################################################
 ##
+##	glpk (optional)
+##
+#############################################################
+if (ENABLE_GLPK)
+    message (STATUS "StoRM - Linking with glpk")
+    target_link_libraries(storm "glpk")
+    target_link_libraries(storm-functional-tests "glpk")
+    target_link_libraries(storm-performance-tests "glpk")
+endif(ENABLE_GLPK)
+
+#############################################################
+##
 ##	Z3 (optional)
 ##
 #############################################################
@@ -415,14 +426,14 @@ endif(UNIX AND NOT APPLE)
 ##
 #############################################################
 if (TBB_FOUND)
-	message(STATUS "StoRM - Found Intel TBB with Interface Version ${TBB_INTERFACE_VERSION}")
-	if (USE_INTELTBB)
-		message(STATUS "StoRM - Linking with Intel TBB for activated Matrix/Vector MT")
+	message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
+	if (ENABLE_INTELTBB)
+		message(STATUS "StoRM - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
 		include_directories(${TBB_INCLUDE_DIRS})
 		target_link_libraries(storm tbb tbbmalloc)
 		target_link_libraries(storm-functional-tests tbb tbbmalloc)
 		target_link_libraries(storm-performance-tests tbb tbbmalloc)
-	endif(USE_INTELTBB)
+	endif(ENABLE_INTELTBB)
 endif(TBB_FOUND)
 
 #############################################################

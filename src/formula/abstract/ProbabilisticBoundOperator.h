@@ -11,7 +11,7 @@
 #include "src/formula/abstract/AbstractFormula.h"
 #include "src/formula/abstract/PathBoundOperator.h"
 #include "src/formula/abstract/OptimizingOperator.h"
-#include "utility/ConstTemplates.h"
+#include "utility/constants.h"
 
 namespace storm {
 namespace property {
@@ -53,7 +53,7 @@ public:
 	 * Empty constructor
 	 */
 	ProbabilisticBoundOperator() : PathBoundOperator<T, FormulaType>
-		(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+		(LESS_EQUAL, storm::utility::constantZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 

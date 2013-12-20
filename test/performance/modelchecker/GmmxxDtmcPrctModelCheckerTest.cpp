@@ -67,6 +67,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_EQ(parser.getType(), storm::models::DTMC);
 
+
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
 
 	ASSERT_EQ(dtmc->getNumberOfStates(), 1312334ull);

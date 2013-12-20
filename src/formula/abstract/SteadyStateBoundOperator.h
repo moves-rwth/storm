@@ -41,7 +41,7 @@ public:
 	 * Empty constructor
 	 */
 	SteadyStateBoundOperator() : StateBoundOperator<T, FormulaType>
-		(LESS_EQUAL, storm::utility::constGetZero<T>(), nullptr) {
+		(LESS_EQUAL, storm::utility::constantZero<T>(), nullptr) {
 		// Intentionally left empty
 	}
 

@@ -160,7 +160,7 @@ namespace storm {
                  *
                  * @param labelSet The label set to associate with this choice.
                  */
-                void addChoiceLabels(storm::storage::VectorSet<uint_fast64_t> const& labelSet) {
+                void addChoiceLabels(boost::container::flat_set<uint_fast64_t> const& labelSet) {
                     for (uint_fast64_t label : labelSet) {
                         addChoiceLabel(label);
                     }
@@ -171,7 +171,7 @@ namespace storm {
                  *
                  * @return The set of labels associated with this choice.
                  */
-                storm::storage::VectorSet<uint_fast64_t> const& getChoiceLabels() const {
+                boost::container::flat_set<uint_fast64_t> const& getChoiceLabels() const {
                     return choiceLabels;
                 }
                 
@@ -224,7 +224,7 @@ namespace storm {
                 std::string actionLabel;
                 
                 // The labels that are associated with this choice.
-                storm::storage::VectorSet<uint_fast64_t> choiceLabels;
+                boost::container::flat_set<uint_fast64_t> choiceLabels;
             };
             
             /*!
@@ -238,7 +238,7 @@ namespace storm {
              * is ignored by this particular function but not by the overloaded functions.
              */
             template<typename ValueType>
-            void addProbabilityToChoice(Choice<ValueType>& choice, uint_fast64_t state, ValueType probability, storm::storage::VectorSet<uint_fast64_t> const& labels) {
+            void addProbabilityToChoice(Choice<ValueType>& choice, uint_fast64_t state, ValueType probability, boost::container::flat_set<uint_fast64_t> const& labels) {
                 choice.getOrAddEntry(state) += probability;
             }
             
@@ -252,7 +252,7 @@ namespace storm {
              * @param labels A set of labels that is supposed to be associated with this state and probability.
              */
             template<typename ValueType>
-            void addProbabilityToChoice(Choice<storm::storage::LabeledValues<ValueType>>& choice, uint_fast64_t state, ValueType probability, storm::storage::VectorSet<uint_fast64_t> const& labels) {
+            void addProbabilityToChoice(Choice<storm::storage::LabeledValues<ValueType>>& choice, uint_fast64_t state, ValueType probability, boost::container::flat_set<uint_fast64_t> const& labels) {
                 auto& labeledEntry = choice.getOrAddEntry(state);
                 labeledEntry.addValue(probability, labels);
             }

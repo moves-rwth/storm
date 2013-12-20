@@ -20,7 +20,7 @@ namespace storm {
              */
             template <typename T>
             storm::storage::SparseMatrix<T> applyScheduler(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::Scheduler const& scheduler) {
-                storm::storage::SparseMatrix<T> result(nondeterministicChoiceIndices.size() - 1, transitionMatrix.getColumnCount());
+                storm::storage::SparseMatrixBuilder<T> matrixBuilder(nondeterministicChoiceIndices.size() - 1, transitionMatrix.getColumnCount());
                 
                 for (uint_fast64_t state = 0; state < nondeterministicChoiceIndices.size() - 1; ++state) {
                     if (scheduler.isChoiceDefined(state)) {
@@ -31,19 +31,17 @@ namespace storm {
                         }
                         
                         // If a valid choice for this state is defined, we copy over the corresponding entries.
-                        typename storm::storage::SparseMatrix<T>::Rows selectedRow = transitionMatrix.getRow(choice);
-                        for (auto entry : selectedRow) {
-                            result.insertNextValue(state, entry.column(), entry.value());
+                        typename storm::storage::SparseMatrix<T>::const_rows selectedRow = transitionMatrix.getRow(choice);
+                        for (auto const& entry : selectedRow) {
+                            matrixBuilder.addNextValue(state, entry.first, entry.second);
                         }
                     } else {
                         // If no valid choice for the state is defined, we insert a self-loop.
-                        result.insertNextValue(state, state, storm::utility::constGetOne<T>());
+                        matrixBuilder.addNextValue(state, state, storm::utility::constantOne<T>());
                     }
                 }
                 
-                // Finalize the matrix creation and return result.
-                result.finalize();
-                return result;
+                return matrixBuilder.build();
             }
         }
     }

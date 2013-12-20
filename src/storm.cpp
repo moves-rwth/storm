@@ -40,6 +40,7 @@
 #include "src/parser/PrctlParser.h"
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
+#include "src/utility/vector.h"
 
 #include "src/settings/Settings.h"
 // Registers all standard options
@@ -231,18 +232,7 @@ storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecke
  */
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
     // Create the appropriate model checker.
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	std::string const chosenMatrixLibrary = s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString();
-	if (chosenMatrixLibrary == "gmm++") {
-		return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp, new storm::solver::GmmxxNondeterministicLinearEquationSolver<double>());
-	} else if (chosenMatrixLibrary == "native") {
-        return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
-    }
-    
-	// The control flow should never reach this point, as there is a default setting for matrixlib.
-	std::string message = "No matrix library suitable for MDP model checking has been set.";
-	throw storm::exceptions::InvalidSettingsException() << message;
-	return nullptr;
+    return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp);
 }
 
 /*!
@@ -473,11 +463,13 @@ int main(const int argc, const char* argv[]) {
                     LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
                     std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = parser.getModel<storm::models::MarkovAutomaton<double>>();
                     markovAutomaton->close();
-                    storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton, new storm::solver::AbstractNondeterministicLinearEquationSolver<double>());
-                    std::cout << mc.checkExpectedTime(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
-                    std::cout << mc.checkExpectedTime(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
+                    storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton);
+//                    std::cout << mc.checkExpectedTime(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
+//                    std::cout << mc.checkExpectedTime(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
                     std::cout << mc.checkLongRunAverage(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
                     std::cout << mc.checkLongRunAverage(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
+//                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 0, 1) << std::endl;
+//                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 1, 2) << std::endl;
                     break;
                 }
 				case storm::models::Unknown:
