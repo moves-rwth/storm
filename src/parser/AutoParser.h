@@ -48,11 +48,11 @@ class AutoParser {
 			// Do actual parsing
 			switch (type) {
 				case storm::models::DTMC: {
-					this->model.reset(new storm::models::Dtmc<double>(std::move(DeterministicModelParserAsDtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
+					this->model.reset(new storm::models::Dtmc<double>(std::move(DeterministicModelParser::parseDtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
 					break;
 				}
 				case storm::models::CTMC: {
-					this->model.reset(new storm::models::Ctmc<double>(std::move(DeterministicModelParserAsCtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
+					this->model.reset(new storm::models::Ctmc<double>(std::move(DeterministicModelParser::parseCtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
 					break;
 				}
 				case storm::models::MDP: {

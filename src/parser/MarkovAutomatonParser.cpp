@@ -1,6 +1,7 @@
 #include "MarkovAutomatonParser.h"
 #include "AtomicPropositionLabelingParser.h"
 #include "SparseStateRewardParser.h"
+#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
 

@@ -11,17 +11,8 @@
 #include "src/utility/OsDetection.h"
 
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <iostream>
-#include <fstream>
-#include <memory>
 #include <vector>
 #include <string>
-
-#include <boost/integer/integer_mask.hpp>
-#include "src/exceptions/FileIoException.h"
-#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
 

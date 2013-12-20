@@ -1,6 +1,7 @@
 #include "MarkovAutomatonSparseTransitionParser.h"
 
 #include "src/settings/Settings.h"
+#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
 
@@ -18,8 +19,8 @@ MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTran
 	}
 
 	// Now read the transitions.
-	int_fast64_t source, target = -1;
-	int_fast64_t lastsource = -1;
+	uint_fast64_t source, target = 0;
+	uint_fast64_t lastsource = 0;
 	bool encounteredEOF = false;
 	bool stateHasMarkovianChoice = false;
 	bool stateHasProbabilisticChoice = false;
@@ -150,8 +151,8 @@ MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitio
 	buf = storm::parser::forwardToNextLine(buf, lineEndings);
 
 	// Now read the transitions.
-	int_fast64_t source, target = -1;
-	int_fast64_t lastsource = -1;
+	uint_fast64_t source, target = 0;
+	uint_fast64_t lastsource = 0;
 	bool encounteredEOF = false;
 	uint_fast64_t currentChoice = 0;
 	while (buf[0] != '\0' && !encounteredEOF) {

@@ -2,11 +2,7 @@
 #define STORM_PARSER_TRAPARSER_H_
 
 #include "src/storage/SparseMatrix.h"
-
 #include "src/parser/Parser.h"
-#include "src/utility/OsDetection.h"
-
-#include <memory>
 
 namespace storm {
 

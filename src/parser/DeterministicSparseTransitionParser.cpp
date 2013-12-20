@@ -7,22 +7,15 @@
 
 #include "src/parser/DeterministicSparseTransitionParser.h"
 
-#include <errno.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <locale.h>
-
-#include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <cstdint>
 #include <clocale>
 #include <iostream>
 #include <string>
 
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
-#include <cstdint>
 #include "src/settings/Settings.h"
 
 #include "log4cplus/logger.h"

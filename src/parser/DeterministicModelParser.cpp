@@ -26,8 +26,7 @@ namespace parser {
  * @param stateRewardFile String containing the location of the state reward file (...srew)
  * @param transitionRewardFile String containing the location of the transition reward file (...trew)
  */
-DeterministicModelParserResultContainer<double> parseDeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
-																		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
+DeterministicModelParser::ResultContainer DeterministicModelParser::parseDeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile, std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 
 	storm::storage::SparseMatrix<double> resultTransitionSystem(std::move(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(transitionSystemFile)));
 
@@ -36,11 +35,14 @@ DeterministicModelParserResultContainer<double> parseDeterministicModel(std::str
 
 	storm::models::AtomicPropositionsLabeling resultLabeling(std::move(storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile)));
 
-	DeterministicModelParserResultContainer<double> result(std::move(resultTransitionSystem), std::move(resultLabeling));
+	DeterministicModelParser::ResultContainer result(std::move(resultTransitionSystem), std::move(resultLabeling));
 
+	// Only parse state rewards of a file is given.
 	if (stateRewardFile != "") {
 		result.stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile));
 	}
+
+	// Only parse transition rewards of a file is given.
 	if (transitionRewardFile != "") {
 		RewardMatrixInformationStruct rewardMatrixInfo(rowCount, stateCount, nullptr);
 		result.transitionRewards.reset(std::move(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(transitionRewardFile, rewardMatrixInfo)));
@@ -50,24 +52,24 @@ DeterministicModelParserResultContainer<double> parseDeterministicModel(std::str
 }
 
 /*!
- * Uses the Function parseDeterministicModel internally to parse the given input files.
- * @note This is a Short-Hand for Constructing a Dtmc directly from the data returned by @parseDeterministicModel
+ * Uses the parseDeterministicModel function internally to parse the given input files.
+ * @note This is a short-hand for constructing a Dtmc directly from the data returned by @parseDeterministicModel
  * @return A Dtmc Model
  */
-storm::models::Dtmc<double> DeterministicModelParserAsDtmc(std::string const & transitionSystemFile, std::string const & labelingFile,
-														   std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	DeterministicModelParserResultContainer<double> parserResult(std::move(parseDeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
+storm::models::Dtmc<double> DeterministicModelParser::parseDtmc(std::string const & transitionSystemFile, std::string const & labelingFile, std::string const & stateRewardFile, std::string const & transitionRewardFile) {
+
+	DeterministicModelParser::ResultContainer parserResult(std::move(parseDeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
 	return storm::models::Dtmc<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>());
 }
 
 /*!
- * Uses the Function parseDeterministicModel internally to parse the given input files.
- * @note This is a Short-Hand for Constructing a Ctmc directly from the data returned by @parseDeterministicModel
+ * Uses the parseDeterministicModel function internally to parse the given input files.
+ * @note This is a short-hand for constructing a Ctmc directly from the data returned by @parseDeterministicModel
  * @return A Ctmc Model
  */
-storm::models::Ctmc<double> DeterministicModelParserAsCtmc(std::string const & transitionSystemFile, std::string const & labelingFile,
-				std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	DeterministicModelParserResultContainer<double> parserResult(std::move(parseDeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
+storm::models::Ctmc<double> DeterministicModelParser::parseCtmc(std::string const & transitionSystemFile, std::string const & labelingFile, std::string const & stateRewardFile, std::string const & transitionRewardFile) {
+
+	DeterministicModelParser::ResultContainer parserResult(std::move(parseDeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
 	return storm::models::Ctmc<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>());
 }
 

@@ -18,44 +18,77 @@ namespace storm {
 namespace parser {
 
 /*!
- *	@brief Load label and transition file and returns an initialized dtmc or ctmc object.
+ *	@brief Loads a deterministic model (Dtmc or Ctmc) from files.
+ *
+ *	Given the file paths of the files holding the transitions, the atomic propositions and optionally the state- and transition rewards
+ *	it loads the files, parses them and returns the desired model.
  *
  *	@note This class creates a new Dtmc or Ctmc object
  *
  *	@note The labeling representation in the file may use at most as much nodes as are specified in the transition system.
  */
 
+class DeterministicModelParser {
 
-storm::models::Dtmc<double> DeterministicModelParserAsDtmc(std::string const & transitionSystemFile, std::string const & labelingFile,
-				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
-storm::models::Ctmc<double> DeterministicModelParserAsCtmc(std::string const & transitionSystemFile, std::string const & labelingFile,
-				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
-
-/*!
- * @brief This Class acts as a container much like std::pair for the four return values of the DeterministicModelParser
- */
-template <class T>
-class DeterministicModelParserResultContainer {
 public:
-	storm::storage::SparseMatrix<T> transitionSystem;
-	storm::models::AtomicPropositionsLabeling labeling;
-	boost::optional<std::vector<T>> stateRewards;
-	boost::optional<storm::storage::SparseMatrix<T>> transitionRewards;
-	DeterministicModelParserResultContainer(storm::storage::SparseMatrix<T>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) { }
-	DeterministicModelParserResultContainer(storm::storage::SparseMatrix<T>&& transitionSystem, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) { }
 
-	DeterministicModelParserResultContainer(const DeterministicModelParserResultContainer & other) : transitionSystem(other.transitionSystem), 
-		labeling(other.labeling), stateRewards(other.stateRewards), transitionRewards(other.transitionRewards) {}
-	DeterministicModelParserResultContainer(DeterministicModelParserResultContainer && other) : transitionSystem(std::move(other.transitionSystem)), 
-		labeling(std::move(other.labeling)), stateRewards(std::move(other.stateRewards)), transitionRewards(std::move(other.transitionRewards)) {}
+	/*!
+	 * @brief A struct containing the parsed components of a deterministic model.
+	 */
+	struct ResultContainer {
+
+		ResultContainer(storm::storage::SparseMatrix<double>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) {
+			// Intentionally left empty.
+		}
+
+		ResultContainer(storm::storage::SparseMatrix<double>&& transitionSystem, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) {
+			// Intentionally left empty.
+		}
+
+		// A matrix representing the transitions of the model
+		storm::storage::SparseMatrix<double> transitionSystem;
+
+		// The labels of each state.
+		storm::models::AtomicPropositionsLabeling labeling;
+
+		// Optional rewards for each state.
+		boost::optional<std::vector<double>> stateRewards;
+
+		// Optional rewards for each transition.
+		boost::optional<storm::storage::SparseMatrix<double>> transitionRewards;
+	};
+
+
+	/*!
+	 * @brief Parse a Dtmc.
+	 */
+	static storm::models::Dtmc<double> parseDtmc(std::string const & transitionSystemFile,
+												 std::string const & labelingFile,
+												 std::string const & stateRewardFile = "",
+												 std::string const & transitionRewardFile = "");
+
+	/*!
+	 * @brief Parse a Ctmc.
+	 */
+	static storm::models::Ctmc<double> parseCtmc(std::string const & transitionSystemFile,
+										  	     std::string const & labelingFile,
+										  	     std::string const & stateRewardFile = "",
+										  	     std::string const & transitionRewardFile = "");
+
 private:
-	DeterministicModelParserResultContainer() {}
+
+	/*!
+	 * @brief Call sub-parsers on the given files and fill the container with the results.
+	 */
+	static ResultContainer parseDeterministicModel(std::string const & transitionSystemFile,
+												   std::string const & labelingFile,
+												   std::string const & stateRewardFile = "",
+												   std::string const & transitionRewardFile = "");
+
 };
 
-
-DeterministicModelParserResultContainer<double> parseDeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
-				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
-
 } /* namespace parser */
+
 } /* namespace storm */
+
 #endif /* STORM_PARSER_DETERMINISTICMODELPARSER_H_ */

@@ -1,10 +1,13 @@
 #include "src/parser/Parser.h"
 
+#include <fcntl.h>
 #include <iostream>
+#include <fstream>
 #include <cstring>
 #include <string>
 #include <cerrno>
 
+#include <boost/integer/integer_mask.hpp>
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/utility/OsDetection.h"
