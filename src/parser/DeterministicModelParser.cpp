@@ -59,7 +59,7 @@ DeterministicModelParser::ResultContainer DeterministicModelParser::parseDetermi
 storm::models::Dtmc<double> DeterministicModelParser::parseDtmc(std::string const & transitionSystemFile, std::string const & labelingFile, std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 
 	DeterministicModelParser::ResultContainer parserResult(std::move(parseDeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
-	return storm::models::Dtmc<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>());
+	return storm::models::Dtmc<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 }
 
 /*!
@@ -70,7 +70,7 @@ storm::models::Dtmc<double> DeterministicModelParser::parseDtmc(std::string cons
 storm::models::Ctmc<double> DeterministicModelParser::parseCtmc(std::string const & transitionSystemFile, std::string const & labelingFile, std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 
 	DeterministicModelParser::ResultContainer parserResult(std::move(parseDeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
-	return storm::models::Ctmc<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>());
+	return storm::models::Ctmc<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 }
 
 } /* namespace parser */

@@ -164,7 +164,7 @@ MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitio
 			if (fixDeadlocks) {
 				for (uint_fast64_t index = lastsource + 1; index < source; ++index) {
 					result.nondeterministicChoiceIndices[index] = currentChoice;
-					result.transitionMatrix.addNextValue(currentChoice, index, 1);
+					result.transitionMatrixBuilder.addNextValue(currentChoice, index, 1);
 					++currentChoice;
 				}
 			} else {
@@ -220,7 +220,7 @@ MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitio
 				double val = checked_strtod(buf, &buf);
 
 				// Record the value as well as the exit rate in case of a Markovian choice.
-				result.transitionMatrix.addNextValue(currentChoice, target, val);
+				result.transitionMatrixBuilder.addNextValue(currentChoice, target, val);
 				if (isMarkovianChoice) {
 					result.exitRates[source] += val;
 				}
@@ -235,9 +235,6 @@ MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitio
 
 		++currentChoice;
 	}
-
-	// As we have added all entries at this point, we need to finalize the matrix.
-	result.transitionMatrix.finalize();
 
 	// Put a sentinel element at the end.
 	result.nondeterministicChoiceIndices[firstPassResult.highestStateIndex + 1] = currentChoice;

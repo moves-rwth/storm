@@ -25,14 +25,18 @@ TEST(MarkovAutomatonSparseTransitionParserTest, BasicParseTest) {
 	// The file that will be used for the test.
 	std::string filename = STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_general_input_01.tra";
 
+	// Execute the parser.
 	storm::parser::MarkovAutomatonSparseTransitionParser::ResultType result = storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(filename);
 
+	// Build the actual transition matrix.
+	storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build(0,0));
+
 	// Test all sizes and counts.
-	ASSERT_EQ(result.transitionMatrix.getColumnCount(), STATE_COUNT);
-	ASSERT_EQ(result.transitionMatrix.getRowCount(), CHOICE_COUNT);
-	ASSERT_EQ(result.transitionMatrix.getNonZeroEntryCount(), 12);
-	ASSERT_EQ(result.markovianChoices.getSize(), CHOICE_COUNT);
-	ASSERT_EQ(result.markovianStates.getSize(), STATE_COUNT);
+	ASSERT_EQ(transitionMatrix.getColumnCount(), STATE_COUNT);
+	ASSERT_EQ(transitionMatrix.getRowCount(), CHOICE_COUNT);
+	ASSERT_EQ(transitionMatrix.getEntryCount(), 12);
+	ASSERT_EQ(result.markovianChoices.size(), CHOICE_COUNT);
+	ASSERT_EQ(result.markovianStates.size(), STATE_COUNT);
 	ASSERT_EQ(result.markovianStates.getNumberOfSetBits(), 2);
 	ASSERT_EQ(result.exitRates.size(), STATE_COUNT);
 	ASSERT_EQ(result.nondeterministicChoiceIndices.size(), 7);
@@ -65,32 +69,51 @@ TEST(MarkovAutomatonSparseTransitionParserTest, BasicParseTest) {
 	ASSERT_EQ(result.exitRates[5], 0);
 
 	// Finally, test the transition matrix itself.
-	ASSERT_EQ(result.transitionMatrix.getValue(0,1), 2);
-	ASSERT_EQ(result.transitionMatrix.getValue(1,2), 1);
-	ASSERT_EQ(result.transitionMatrix.getValue(2,0), 1);
-	ASSERT_EQ(result.transitionMatrix.getValue(2,1), 2);
-	ASSERT_EQ(result.transitionMatrix.getValue(2,3), 4);
-	ASSERT_EQ(result.transitionMatrix.getValue(2,4), 8);
-	ASSERT_EQ(result.transitionMatrix.getValue(3,2), 0.5);
-	ASSERT_EQ(result.transitionMatrix.getValue(3,3), 0.5);
-	ASSERT_EQ(result.transitionMatrix.getValue(4,3), 1);
-	ASSERT_EQ(result.transitionMatrix.getValue(5,1), 0.5);
-	ASSERT_EQ(result.transitionMatrix.getValue(5,5), 0.5);
-	ASSERT_EQ(result.transitionMatrix.getValue(6,5), 1);
+	storm::storage::SparseMatrix<double>::const_iterator cIter = transitionMatrix.begin(0);
+
+	ASSERT_EQ(cIter->second, 2);
+	cIter++;
+	ASSERT_EQ(cIter->second, 1);
+	cIter++;
+	ASSERT_EQ(cIter->second, 1);
+	cIter++;
+	ASSERT_EQ(cIter->second, 2);
+	cIter++;
+	ASSERT_EQ(cIter->second, 4);
+	cIter++;
+	ASSERT_EQ(cIter->second, 8);
+	cIter++;
+	ASSERT_EQ(cIter->second, 0.5);
+	cIter++;
+	ASSERT_EQ(cIter->second, 0.5);
+	cIter++;
+	ASSERT_EQ(cIter->second, 1);
+	cIter++;
+	ASSERT_EQ(cIter->second, 0.5);
+	cIter++;
+	ASSERT_EQ(cIter->second, 0.5);
+	cIter++;
+	ASSERT_EQ(cIter->second, 1);
+	cIter++;
+	ASSERT_EQ(transitionMatrix.end(), cIter);
 }
 
 TEST(MarkovAutomatonSparseTransitionParserTest, WhiteSpaceTest) {
 	// The file that will be used for the test.
 	std::string filename = STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_whitespace_input_01.tra";
 
+	// Execute the parser.
 	storm::parser::MarkovAutomatonSparseTransitionParser::ResultType result = storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(filename);
 
+	// Build the actual transition matrix.
+	storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build(0,0));
+
 	// Test all sizes and counts.
-	ASSERT_EQ(result.transitionMatrix.getColumnCount(), STATE_COUNT);
-	ASSERT_EQ(result.transitionMatrix.getRowCount(), CHOICE_COUNT);
-	ASSERT_EQ(result.transitionMatrix.getNonZeroEntryCount(), 12);
-	ASSERT_EQ(result.markovianChoices.getSize(), CHOICE_COUNT);
-	ASSERT_EQ(result.markovianStates.getSize(), STATE_COUNT);
+	ASSERT_EQ(transitionMatrix.getColumnCount(), STATE_COUNT);
+	ASSERT_EQ(transitionMatrix.getRowCount(), CHOICE_COUNT);
+	ASSERT_EQ(transitionMatrix.getEntryCount(), 12);
+	ASSERT_EQ(result.markovianChoices.size(), CHOICE_COUNT);
+	ASSERT_EQ(result.markovianStates.size(), STATE_COUNT);
 	ASSERT_EQ(result.markovianStates.getNumberOfSetBits(), 2);
 	ASSERT_EQ(result.exitRates.size(), STATE_COUNT);
 	ASSERT_EQ(result.nondeterministicChoiceIndices.size(), 7);
@@ -123,18 +146,33 @@ TEST(MarkovAutomatonSparseTransitionParserTest, WhiteSpaceTest) {
 	ASSERT_EQ(result.exitRates[5], 0);
 
 	// Finally, test the transition matrix itself.
-	ASSERT_EQ(result.transitionMatrix.getValue(0,1), 2);
-	ASSERT_EQ(result.transitionMatrix.getValue(1,2), 1);
-	ASSERT_EQ(result.transitionMatrix.getValue(2,0), 1);
-	ASSERT_EQ(result.transitionMatrix.getValue(2,1), 2);
-	ASSERT_EQ(result.transitionMatrix.getValue(2,3), 4);
-	ASSERT_EQ(result.transitionMatrix.getValue(2,4), 8);
-	ASSERT_EQ(result.transitionMatrix.getValue(3,2), 0.5);
-	ASSERT_EQ(result.transitionMatrix.getValue(3,3), 0.5);
-	ASSERT_EQ(result.transitionMatrix.getValue(4,3), 1);
-	ASSERT_EQ(result.transitionMatrix.getValue(5,1), 0.5);
-	ASSERT_EQ(result.transitionMatrix.getValue(5,5), 0.5);
-	ASSERT_EQ(result.transitionMatrix.getValue(6,5), 1);
+	storm::storage::SparseMatrix<double>::const_iterator cIter = transitionMatrix.begin(0);
+
+	ASSERT_EQ(cIter->second, 2);
+	cIter++;
+	ASSERT_EQ(cIter->second, 1);
+	cIter++;
+	ASSERT_EQ(cIter->second, 1);
+	cIter++;
+	ASSERT_EQ(cIter->second, 2);
+	cIter++;
+	ASSERT_EQ(cIter->second, 4);
+	cIter++;
+	ASSERT_EQ(cIter->second, 8);
+	cIter++;
+	ASSERT_EQ(cIter->second, 0.5);
+	cIter++;
+	ASSERT_EQ(cIter->second, 0.5);
+	cIter++;
+	ASSERT_EQ(cIter->second, 1);
+	cIter++;
+	ASSERT_EQ(cIter->second, 0.5);
+	cIter++;
+	ASSERT_EQ(cIter->second, 0.5);
+	cIter++;
+	ASSERT_EQ(cIter->second, 1);
+	cIter++;
+	ASSERT_EQ(transitionMatrix.end(), cIter);
 }
 
 //TODO: Deadlock Test. I am quite sure that the deadlock state handling does not behave quite right.

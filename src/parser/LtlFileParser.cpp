@@ -5,8 +5,12 @@
  *      Author: thomas
  */
 
+#include <fstream>
+
 #include "LtlFileParser.h"
 #include "LtlParser.h"
+
+#include "src/exceptions/FileIoException.h"
 
 namespace storm {
 namespace parser {

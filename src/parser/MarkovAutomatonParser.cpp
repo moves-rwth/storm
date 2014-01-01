@@ -8,12 +8,19 @@ namespace storm {
 namespace parser {
 
 storm::models::MarkovAutomaton<double> MarkovAutomatonParser::parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename) {
+
+	// Parse the transitions of the Markov Automaton.
 	storm::parser::MarkovAutomatonSparseTransitionParser::ResultType transitionResult(storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(transitionsFilename));
-	storm::models::AtomicPropositionsLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser(transitionResult.transitionMatrix.getColumnCount(), labelingFilename));
+
+	// Build the actual transition matrix using the MatrixBuilder provided by the transitionResult.
+	storm::storage::SparseMatrix<double> transitionMatrix(transitionResult.transitionMatrixBuilder.build(0,0));
+
+	// Parse the state labeling.
+	storm::models::AtomicPropositionsLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser(transitionMatrix.getColumnCount(), labelingFilename));
 
 	boost::optional<std::vector<double>> stateRewards;
 	if (stateRewardFilename != "") {
-		stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(transitionResult.transitionMatrix.getColumnCount(), stateRewardFilename));
+		stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(transitionMatrix.getColumnCount(), stateRewardFilename));
 	}
 
 	if (transitionRewardFilename != "") {
@@ -21,7 +28,7 @@ storm::models::MarkovAutomaton<double> MarkovAutomatonParser::parseMarkovAutomat
 		throw storm::exceptions::WrongFormatException() << "Transition rewards are unsupported for Markov automata.";
 	}
 
-	storm::models::MarkovAutomaton<double> resultingAutomaton(std::move(transitionResult.transitionMatrix), std::move(resultLabeling), std::move(transitionResult.nondeterministicChoiceIndices), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<storm::storage::VectorSet<uint_fast64_t>>>());
+	storm::models::MarkovAutomaton<double> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.nondeterministicChoiceIndices), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 
 	return resultingAutomaton;
 }

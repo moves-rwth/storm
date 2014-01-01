@@ -44,13 +44,12 @@ public:
 		 * Creates a new instance of the struct using the result of the first pass to correctly initialize the container.
 		 * @param firstPassResult A reference to the result of the first pass.
 		 */
-		ResultType(FirstPassResult const& firstPassResult) : transitionMatrix(firstPassResult.numberOfChoices, firstPassResult.highestStateIndex + 1), nondeterministicChoiceIndices(firstPassResult.highestStateIndex + 2), markovianChoices(firstPassResult.numberOfChoices), markovianStates(firstPassResult.highestStateIndex + 1), exitRates(firstPassResult.highestStateIndex + 1) {
-			transitionMatrix.initialize(firstPassResult.numberOfNonzeroEntries);
+		ResultType(FirstPassResult const& firstPassResult) : transitionMatrixBuilder(firstPassResult.numberOfChoices, firstPassResult.highestStateIndex + 1, firstPassResult.numberOfNonzeroEntries), nondeterministicChoiceIndices(firstPassResult.highestStateIndex + 2), markovianChoices(firstPassResult.numberOfChoices), markovianStates(firstPassResult.highestStateIndex + 1), exitRates(firstPassResult.highestStateIndex + 1) {
 			// Intentionally left empty.
 		}
 
 		// A matrix representing the transitions of the model.
-		storm::storage::SparseMatrix<double> transitionMatrix;
+		storm::storage::SparseMatrixBuilder<double> transitionMatrixBuilder;
 
 		// A vector indicating which rows of the matrix represent the choices of a given state.
 		std::vector<uint_fast64_t> nondeterministicChoiceIndices;
