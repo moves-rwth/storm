@@ -18,16 +18,19 @@ storm::models::MarkovAutomaton<double> MarkovAutomatonParser::parseMarkovAutomat
 	// Parse the state labeling.
 	storm::models::AtomicPropositionsLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser(transitionMatrix.getColumnCount(), labelingFilename));
 
+	// If given, parse the state rewards file.
 	boost::optional<std::vector<double>> stateRewards;
 	if (stateRewardFilename != "") {
 		stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(transitionMatrix.getColumnCount(), stateRewardFilename));
 	}
 
+	// Since Markov Automata do not support transition rewards no path should be given here.
 	if (transitionRewardFilename != "") {
 		LOG4CPLUS_ERROR(logger, "Transition rewards are unsupported for Markov automata.");
 		throw storm::exceptions::WrongFormatException() << "Transition rewards are unsupported for Markov automata.";
 	}
 
+	// Put the pieces together to generate the Markov Automaton.
 	storm::models::MarkovAutomaton<double> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.nondeterministicChoiceIndices), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 
 	return resultingAutomaton;

@@ -30,7 +30,7 @@ public:
 		// The highest state index that appears in the model.
 		uint_fast64_t highestStateIndex;
 
-		// The total number of choices in the model.
+		// The total number of nondeterministic choices in the model.
 		uint_fast64_t numberOfChoices;
 	};
 
