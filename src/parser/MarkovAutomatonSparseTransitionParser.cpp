@@ -14,7 +14,7 @@ MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTran
 
 	// Skip the format hint if it is there.
 	buf = trimWhitespaces(buf);
-	if(buf[0] != '0') {
+	if(buf[0] < '0' || buf[0] > '9') {
 		buf = storm::parser::forwardToNextLine(buf, lineEndings);
 	}
 

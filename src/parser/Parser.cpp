@@ -118,6 +118,29 @@ SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName, bool t
 }
 
 /*!
+ * @brief Encapsulates the usage of function @strcspn to forward to the end of the line (next char is the newline character).
+ */
+char* forwardToLineEnd(char* buffer, SupportedLineEndingsEnum lineEndings) {
+	switch (lineEndings) {
+		case SupportedLineEndingsEnum::SlashN:
+			return buffer + strcspn(buffer, "\n\0");
+			break;
+		case SupportedLineEndingsEnum::SlashR:
+			return buffer + strcspn(buffer, "\r\0");
+			break;
+		case SupportedLineEndingsEnum::SlashRN:
+			return buffer + strcspn(buffer, "\r\0");
+			break;
+		default:
+		case SupportedLineEndingsEnum::Unsupported:
+			// This Line will never be reached as the Parser would have thrown already.
+			throw;
+			break;
+	}
+	return nullptr;
+}
+
+/*!
  * @brief Encapsulates the usage of function @strchr to forward to the next line
  */
 char* forwardToNextLine(char* buffer, SupportedLineEndingsEnum lineEndings) {

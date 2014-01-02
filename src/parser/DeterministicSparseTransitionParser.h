@@ -59,7 +59,7 @@ private:
 	 *
 	 * @param buffer The buffer that cointains the input.
 	 * @param lineEndings The line endings that are to be used while parsing.
-	 * @param insertDiagonalEntriesIfMissing Flag determining whether
+	 * @param insertDiagonalEntriesIfMissing A flag set iff entries on the primary diagonal of the matrix should be added in case they are missing in the parsed file.
 	 * @return A structure representing the result of the first pass.
 	 */
 	static FirstPassResult firstPass(char* buffer, SupportedLineEndingsEnum lineEndings, bool insertDiagonalEntriesIfMissing = true);
@@ -74,7 +74,7 @@ private:
 	 * @param rewardMatrixInformation A struct containing information that is used to check if the transition reward matrix fits to the rest of the model.
 	 * @return A SparseMatrix containing the parsed file contents.
 	 */
-	static storm::storage::SparseMatrix<double> parse(std::string const& filename, bool rewardFile, bool insertDiagonalEntriesIfMissing = false, RewardMatrixInformationStruct const& rewardMatrixInformation = nullptr);
+	static storm::storage::SparseMatrix<double> parse(std::string const& filename, bool isRewardFile, RewardMatrixInformationStruct const& rewardMatrixInformation, bool insertDiagonalEntriesIfMissing = false);
 
 };
 

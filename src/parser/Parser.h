@@ -147,6 +147,11 @@ enum class SupportedLineEndingsEnum : unsigned short {
 storm::parser::SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName, bool throwOnUnsupported = false);
 
 /*!
+ * @brief Encapsulates the usage of function @strcspn to forward to the end of the line (next char is the newline character).
+ */
+char* forwardToLineEnd(char* buffer, storm::parser::SupportedLineEndingsEnum lineEndings);
+
+/*!
  * @brief Encapsulates the usage of function @strchr to forward to the next line
  */
 char* forwardToNextLine(char* buffer, storm::parser::SupportedLineEndingsEnum lineEndings);

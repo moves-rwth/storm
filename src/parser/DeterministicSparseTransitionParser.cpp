@@ -30,12 +30,14 @@ namespace parser {
 
 storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parseDeterministicTransitions(std::string const& filename, bool insertDiagonalEntriesIfMissing) {
 
-	return DeterministicSparseTransitionParser::parse(filename, false, insertDiagonalEntriesIfMissing);
+	RewardMatrixInformationStruct nullInformation;
+
+	return DeterministicSparseTransitionParser::parse(filename, false, nullInformation, insertDiagonalEntriesIfMissing);
 }
 
 storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(std::string const& filename, RewardMatrixInformationStruct const& rewardMatrixInformation) {
 
-	return DeterministicSparseTransitionParser::parse(filename, true, false, rewardMatrixInformation);
+	return DeterministicSparseTransitionParser::parse(filename, true, rewardMatrixInformation);
 }
 
 DeterministicSparseTransitionParser::FirstPassResult DeterministicSparseTransitionParser::firstPass(char* buf, SupportedLineEndingsEnum lineEndings, bool insertDiagonalEntriesIfMissing) {
@@ -44,7 +46,7 @@ DeterministicSparseTransitionParser::FirstPassResult DeterministicSparseTransiti
 
 	// Skip the format hint if it is there.
 	buf = trimWhitespaces(buf);
-	if(buf[0] != '0') {
+	if(buf[0] < '0' || buf[0] > '9') {
 		buf = storm::parser::forwardToNextLine(buf, lineEndings);
 	}
 
@@ -53,7 +55,7 @@ DeterministicSparseTransitionParser::FirstPassResult DeterministicSparseTransiti
 	bool rowHadDiagonalEntry = false;
 	while (buf[0] != '\0') {
 
-		// Read the transition..
+		// Read the transition.
 		row = checked_strtol(buf, &buf);
 		col = checked_strtol(buf, &buf);
 		// The actual read value is not needed here.
@@ -106,7 +108,7 @@ DeterministicSparseTransitionParser::FirstPassResult DeterministicSparseTransiti
 	return result;
 }
 
-storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parse(std::string const& filename, bool rewardFile, bool insertDiagonalEntriesIfMissing, RewardMatrixInformationStruct const& rewardMatrixInformation) {
+storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parse(std::string const& filename, bool isRewardFile, RewardMatrixInformationStruct const& rewardMatrixInformation, bool insertDiagonalEntriesIfMissing) {
 	// Enforce locale where decimal point is '.'.
 		setlocale(LC_NUMERIC, "C");
 
@@ -138,11 +140,11 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parse(
 
 		// Skip the format hint if it is there.
 		buf = trimWhitespaces(buf);
-		if(buf[0] != '0') {
+		if(buf[0] < '0' || buf[0] > '9') {
 			buf = storm::parser::forwardToNextLine(buf, lineEndings);
 		}
 
-		if(rewardFile) {
+		if(isRewardFile) {
 			// The reward matrix should match the size of the transition matrix.
 			if (firstPass.highestStateIndex + 1 > rewardMatrixInformation.rowCount || firstPass.highestStateIndex + 1 > rewardMatrixInformation.columnCount) {
 				LOG4CPLUS_ERROR(logger, "Reward matrix has more rows or columns than transition matrix.");
@@ -169,7 +171,7 @@ storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parse(
 		// work, i.e. the values in the matrix will be at wrong places.
 
 		// Different parsing routines for transition systems and transition rewards.
-		if(rewardFile) {
+		if(isRewardFile) {
 			while (buf[0] != '\0') {
 
 				// Read next transition.
