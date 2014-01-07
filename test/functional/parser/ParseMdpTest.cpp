@@ -11,7 +11,7 @@
 #include "src/parser/NondeterministicModelParser.h"
 
 TEST(ParseMdpTest, parseAndOutput) {
-	storm::models::Mdp<double> mdp = storm::parser::NondeterministicModelParserAsMdp(
+	storm::models::Mdp<double> mdp = storm::parser::NondeterministicModelParser::parseMdp(
 		STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general_input_01.tra",
 		STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general_input_01.lab");
 	storm::storage::SparseMatrix<double> const& matrix = mdp.getTransitionMatrix();

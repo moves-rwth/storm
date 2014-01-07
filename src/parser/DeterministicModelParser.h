@@ -35,13 +35,13 @@ public:
 	/*!
 	 * @brief A struct containing the parsed components of a deterministic model.
 	 */
-	struct ResultContainer {
+	struct Result {
 
-		ResultContainer(storm::storage::SparseMatrix<double>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) {
+		Result(storm::storage::SparseMatrix<double>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) {
 			// Intentionally left empty.
 		}
 
-		ResultContainer(storm::storage::SparseMatrix<double>&& transitionSystem, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) {
+		Result(storm::storage::SparseMatrix<double>&& transitionSystem, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) {
 			// Intentionally left empty.
 		}
 
@@ -80,7 +80,7 @@ private:
 	/*!
 	 * @brief Call sub-parsers on the given files and fill the container with the results.
 	 */
-	static ResultContainer parseDeterministicModel(std::string const & transitionSystemFile,
+	static Result parseDeterministicModel(std::string const & transitionSystemFile,
 												   std::string const & labelingFile,
 												   std::string const & stateRewardFile = "",
 												   std::string const & transitionRewardFile = "");

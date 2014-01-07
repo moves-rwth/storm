@@ -15,63 +15,64 @@
 #include "src/parser/SparseStateRewardParser.h"
 
 namespace storm {
-namespace parser {
+	namespace parser {
 
-/*!
- * Parses a transition file and a labeling file and produces an intermediate Result Container
- * Note that the labeling file may have at most as many nodes as the transition file!
- *
- * @param transitionSystemFile String containing the location of the transition file (....tra)
- * @param labelingFile String containing the location of the labeling file (....lab)
- * @param stateRewardFile String containing the location of the state reward file (...srew)
- * @param transitionRewardFile String containing the location of the transition reward file (...trew)
- */
-NondeterministicModelParserResultContainer<double> parseNondeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
-		std::string const & stateRewardFile, std::string const & transitionRewardFile) {
+		/*!
+		 * Parses a transition file and a labeling file and produces an intermediate Result Container
+		 * Note that the labeling file may have at most as many nodes as the transition file!
+		 *
+		 * @param transitionSystemFile String containing the location of the transition file (....tra)
+		 * @param labelingFile String containing the location of the labeling file (....lab)
+		 * @param stateRewardFile String containing the location of the state reward file (...srew)
+		 * @param transitionRewardFile String containing the location of the transition reward file (...trew)
+		 */
+		NondeterministicModelParser::Result NondeterministicModelParser::parseNondeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
+				std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 
-	NondeterministicSparseTransitionParser::Result transitionParserResult(std::move(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitions(transitionSystemFile)));
-	storm::storage::SparseMatrix<double> transitions(std::move(transitionParserResult.transitionMatrix));
+			NondeterministicSparseTransitionParser::Result transitionParserResult(std::move(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitions(transitionSystemFile)));
+			storm::storage::SparseMatrix<double> transitions(std::move(transitionParserResult.transitionMatrix));
 
-	uint_fast64_t stateCount = transitions.getColumnCount();
-	uint_fast64_t rowCount = transitions.getRowCount();
+			uint_fast64_t stateCount = transitions.getColumnCount();
+			uint_fast64_t rowCount = transitions.getRowCount();
 
-	storm::models::AtomicPropositionsLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile)));
+			storm::models::AtomicPropositionsLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile)));
 
-	NondeterministicModelParserResultContainer<double> result(std::move(transitions), std::move(transitionParserResult.rowMapping), std::move(labeling));
-	
-	if (stateRewardFile != "") {
-		result.stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile));
-	}
+			Result result(std::move(transitions), std::move(transitionParserResult.rowMapping), std::move(labeling));
 
-	if (transitionRewardFile != "") {
-		RewardMatrixInformationStruct rewardMatrixInfo(rowCount, stateCount, &result.rowMapping);
-		result.transitionRewards.reset(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitionRewards(transitionRewardFile, rewardMatrixInfo).transitionMatrix);
-	}
-	return result;
-}
+			// Only parse state rewards of a file is given.
+			if (stateRewardFile != "") {
+				result.stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile));
+			}
 
-/*!
- * Uses the Function parseNondeterministicModel internally to parse the given input files.
- * @note This is a Short-Hand for Constructing a Mdp directly from the data returned by @parseNondeterministicModel
- * @return A Mdp Model
- */
-storm::models::Mdp<double> NondeterministicModelParserAsMdp(std::string const & transitionSystemFile, std::string const & labelingFile,
-														 std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	NondeterministicModelParserResultContainer<double> parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-	return storm::models::Mdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
-}
+			// Only parse transition rewards of a file is given.
+			if (transitionRewardFile != "") {
+				RewardMatrixInformationStruct rewardMatrixInfo(rowCount, stateCount, &result.rowMapping);
+				result.transitionRewards.reset(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitionRewards(transitionRewardFile, rewardMatrixInfo).transitionMatrix);
+			}
+			return result;
+		}
 
-/*!
- * Uses the Function parseNondeterministicModel internally to parse the given input files.
- * @note This is a Short-Hand for Constructing a Ctmdp directly from the data returned by @parseNondeterministicModel
- * @return A Ctmdp Model
- */
-storm::models::Ctmdp<double> NondeterministicModelParserAsCtmdp(std::string const & transitionSystemFile, std::string const & labelingFile,
-															 std::string const & stateRewardFile, std::string const & transitionRewardFile) {
-	NondeterministicModelParserResultContainer<double> parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-	return storm::models::Ctmdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
-}
+		/*!
+		 * Uses the Function parseNondeterministicModel internally to parse the given input files.
+		 * @note This is a Short-Hand for Constructing a Mdp directly from the data returned by @parseNondeterministicModel
+		 * @return A Mdp Model
+		 */
+		storm::models::Mdp<double> NondeterministicModelParser::parseMdp(std::string const & transitionSystemFile, std::string const & labelingFile, std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 
-} /* namespace parser */
+			Result parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+			return storm::models::Mdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+		}
 
+		/*!
+		 * Uses the Function parseNondeterministicModel internally to parse the given input files.
+		 * @note This is a Short-Hand for Constructing a Ctmdp directly from the data returned by @parseNondeterministicModel
+		 * @return A Ctmdp Model
+		 */
+		storm::models::Ctmdp<double> NondeterministicModelParser::parseCtmdp(std::string const & transitionSystemFile, std::string const & labelingFile, std::string const & stateRewardFile, std::string const & transitionRewardFile) {
+
+			Result parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
+			return storm::models::Ctmdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+		}
+
+	} /* namespace parser */
 } /* namespace storm */

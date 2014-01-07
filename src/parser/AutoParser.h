@@ -56,11 +56,11 @@ class AutoParser {
 					break;
 				}
 				case storm::models::MDP: {
-					this->model.reset(new storm::models::Mdp<double>(std::move(NondeterministicModelParserAsMdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
+					this->model.reset(new storm::models::Mdp<double>(std::move(NondeterministicModelParser::parseMdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
 					break;
 				}
 				case storm::models::CTMDP: {
-					this->model.reset(new storm::models::Ctmdp<double>(std::move(NondeterministicModelParserAsCtmdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
+					this->model.reset(new storm::models::Ctmdp<double>(std::move(NondeterministicModelParser::parseCtmdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
 					break;
 				}
                 case storm::models::MA: {
