@@ -16,7 +16,7 @@ storm::models::MarkovAutomaton<double> MarkovAutomatonParser::parseMarkovAutomat
 	storm::storage::SparseMatrix<double> transitionMatrix(transitionResult.transitionMatrixBuilder.build(0,0));
 
 	// Parse the state labeling.
-	storm::models::AtomicPropositionsLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser(transitionMatrix.getColumnCount(), labelingFilename));
+	storm::models::AtomicPropositionsLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(transitionMatrix.getColumnCount(), labelingFilename));
 
 	// If given, parse the state rewards file.
 	boost::optional<std::vector<double>> stateRewards;

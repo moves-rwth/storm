@@ -35,7 +35,7 @@ namespace storm {
 			uint_fast64_t stateCount = transitions.getColumnCount();
 			uint_fast64_t rowCount = transitions.getRowCount();
 
-			storm::models::AtomicPropositionsLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile)));
+			storm::models::AtomicPropositionsLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFile)));
 
 			Result result(std::move(transitions), std::move(transitionParserResult.rowMapping), std::move(labeling));
 

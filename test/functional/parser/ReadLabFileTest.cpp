@@ -16,14 +16,14 @@
 
 TEST(ReadLabFileTest, NonExistingFileTest) {
    // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(0,STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(0,STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(ReadLabFileTest, ParseTest) {
 	// This test is based on a test case from the original MRMC.
 	
 	// Parsing the file
-	storm::models::AtomicPropositionsLabeling labeling = storm::parser::AtomicPropositionLabelingParser(12, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general_input_01.lab");
+	storm::models::AtomicPropositionsLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(12, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general_input_01.lab");
 
 	// Checking whether all propositions are in the labelling
 
@@ -79,14 +79,14 @@ TEST(ReadLabFileTest, ParseTest) {
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest1) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/wrong_format_header1.lab"), storm::exceptions::WrongFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/wrong_format_header1.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadLabFileTest, WrongHeaderTest2) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/wrong_format_header2.lab"), storm::exceptions::WrongFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/wrong_format_header2.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(ReadLabFileTest, WrongPropositionTest) {
-   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/wrong_format_proposition.lab"), storm::exceptions::WrongFormatException);
+   ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/wrong_format_proposition.lab"), storm::exceptions::WrongFormatException);
 }
 

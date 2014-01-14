@@ -33,7 +33,7 @@ DeterministicModelParser::Result DeterministicModelParser::parseDeterministicMod
 	uint_fast64_t stateCount = resultTransitionSystem.getColumnCount();
 	uint_fast64_t rowCount = resultTransitionSystem.getRowCount();
 
-	storm::models::AtomicPropositionsLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile)));
+	storm::models::AtomicPropositionsLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFile)));
 
 	DeterministicModelParser::Result result(std::move(resultTransitionSystem), std::move(labeling));
 
