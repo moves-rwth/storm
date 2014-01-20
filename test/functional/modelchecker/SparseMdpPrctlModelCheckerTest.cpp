@@ -8,11 +8,11 @@
 
 TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
     
-	ASSERT_EQ(parser.getType(), storm::models::MDP);
+	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
     
-	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
+	std::shared_ptr<storm::models::Mdp<double>> mdp = abstractModel->as<storm::models::Mdp<double>>();
     
 	ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
@@ -97,11 +97,11 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
-	storm::parser::AutoParser<double> stateRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "");
+	abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "");
     
-	ASSERT_EQ(stateRewardParser.getType(), storm::models::MDP);
+	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
     
-	std::shared_ptr<storm::models::Mdp<double>> stateRewardMdp = stateRewardParser.getModel<storm::models::Mdp<double>>();
+	std::shared_ptr<storm::models::Mdp<double>> stateRewardMdp = abstractModel->as<storm::models::Mdp<double>>();
     
     storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
 
@@ -123,11 +123,11 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 	delete rewardFormula;
     
-	storm::parser::AutoParser<double> stateAndTransitionRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
+	abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
     
-	ASSERT_EQ(stateAndTransitionRewardParser.getType(), storm::models::MDP);
+	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
     
-	std::shared_ptr<storm::models::Mdp<double>> stateAndTransitionRewardMdp = stateAndTransitionRewardParser.getModel<storm::models::Mdp<double>>();
+	std::shared_ptr<storm::models::Mdp<double>> stateAndTransitionRewardMdp = abstractModel->as<storm::models::Mdp<double>>();
     
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
     
@@ -152,11 +152,11 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 
 TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew");
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew");
 
-	ASSERT_EQ(parser.getType(), storm::models::MDP);
+	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
 
-	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
+	std::shared_ptr<storm::models::Mdp<double>> mdp = abstractModel->as<storm::models::Mdp<double>>();
 
 	ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);

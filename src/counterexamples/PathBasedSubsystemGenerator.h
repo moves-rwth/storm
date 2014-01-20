@@ -507,7 +507,7 @@ public:
 	/*!
 	 *
 	 */
-	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T>& model, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
+	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T> & model, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
 
 		//-------------------------------------------------------------
 		// 1. Strip and handle formulas

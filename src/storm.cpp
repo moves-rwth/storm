@@ -210,7 +210,7 @@ void cleanUp() {
  * @param dtmc A reference to the DTMC for which the model checker is to be created.
  * @return A pointer to the resulting model checker.
  */
-storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double>& dtmc) {
+storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double> const & dtmc) {
     // Create the appropriate model checker.
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	std::string const chosenMatrixLibrary = s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString();
@@ -230,7 +230,7 @@ storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecke
  * @param mdp The Dtmc that the model checker will check
  * @return
  */
-storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
+storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double> const & mdp) {
     // Create the appropriate model checker.
     return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp);
 }
@@ -259,13 +259,13 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
  *
  * @param parser An AutoParser to get the model from.
  */
- void generateCounterExample(storm::parser::AutoParser<double> parser) {
+ void generateCounterExample(std::shared_ptr<storm::models::AbstractModel<double>> model) {
 	LOG4CPLUS_INFO(logger, "Starting counterexample generation.");
 	LOG4CPLUS_INFO(logger, "Testing inputs...");
 
 	storm::settings::Settings* s  = storm::settings::Settings::getInstance();
 
-	//First test output directory.
+	// First test output directory.
 	std::string outPath = s->getOptionByLongName("counterExample").getArgument(0).getValueAsString();
 	if(outPath.back() != '/' && outPath.back() != '\\') {
 		LOG4CPLUS_ERROR(logger, "The output path is not valid.");
@@ -279,13 +279,16 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	testFile.close();
 	std::remove((outPath + "test.dot").c_str());
 
- 	//Differentiate between model types.
-	if(parser.getType() != storm::models::DTMC) {
+ 	// Differentiate between model types.
+	if(model->getType() != storm::models::DTMC) {
 		LOG4CPLUS_ERROR(logger, "Counterexample generation for the selected model type is not supported.");
 		return;
 	}
 
-	storm::models::Dtmc<double> model = *parser.getModel<storm::models::Dtmc<double>>();
+	// Get the Dtmc back from the AbstractModel
+	// Note that the ownership of the object referenced by dtmc lies at the main function.
+	// Thus, it must not be deleted.
+	storm::models::Dtmc<double> dtmc = *(model->as<storm::models::Dtmc<double>>());
 	LOG4CPLUS_INFO(logger, "Model is a DTMC.");
 
 	// Get specified PRCTL formulas.
@@ -346,10 +349,10 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		// Also raise the logger threshold for the log file, so that the model check infos aren't logged (useless and there are lots of them)
 		// Lower it again after the model check.
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);
-		storm::storage::BitVector result = stateForm.check(*createPrctlModelChecker(model));
+		storm::storage::BitVector result = stateForm.check(*createPrctlModelChecker(dtmc));
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 
-		if((result & model.getInitialStates()).getNumberOfSetBits() == model.getInitialStates().getNumberOfSetBits()) {
+		if((result & dtmc.getInitialStates()).getNumberOfSetBits() == dtmc.getInitialStates().getNumberOfSetBits()) {
 			std::cout << "Formula is satisfied. Can not generate counterexample.\n\n" << std::endl;
 			LOG4CPLUS_INFO(logger, "Formula is satisfied. Can not generate counterexample.");
 			delete formula;
@@ -357,7 +360,7 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		}
 
 		// Generate counterexample
-		storm::models::Dtmc<double> counterExample = storm::counterexamples::PathBasedSubsystemGenerator<double>::computeCriticalSubsystem(*parser.getModel<storm::models::Dtmc<double>>(), stateForm);
+		storm::models::Dtmc<double> counterExample = storm::counterexamples::PathBasedSubsystemGenerator<double>::computeCriticalSubsystem(dtmc, stateForm);
 
 		LOG4CPLUS_INFO(logger, "Found counterexample.");
 
@@ -418,19 +421,19 @@ int main(const int argc, const char* argv[]) {
 				chosenTransitionRewardsFile = s->getOptionByLongName("transitionRewards").getArgument(0).getValueAsString();
 			}
 
-			storm::parser::AutoParser<double> parser(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
+			std::shared_ptr<storm::models::AbstractModel<double>> model = storm::parser::AutoParser::parseModel(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
 
             if (s->isSet("exportdot")) {
                 std::ofstream outputFileStream;
                 outputFileStream.open(s->getOptionByLongName("exportdot").getArgument(0).getValueAsString(), std::ofstream::out);
-                parser.getModel<storm::models::AbstractModel<double>>()->writeDotToStream(outputFileStream);
+                model->writeDotToStream(outputFileStream);
                 outputFileStream.close();
             }
             
 			//Should there be a counterexample generated in case the formula is not satisfied?
 			if(s->isSet("counterexample")) {
 
-				generateCounterExample(parser);
+				generateCounterExample(model);
 			
 			} else {
 				// Determine which engine is to be used to choose the right model checker.
@@ -438,17 +441,17 @@ int main(const int argc, const char* argv[]) {
 
 				// Depending on the model type, the appropriate model checking procedure is chosen.
 				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
-				parser.getModel<storm::models::AbstractModel<double>>()->printModelInformationToStream(std::cout);
+				model->printModelInformationToStream(std::cout);
                 
-				switch (parser.getType()) {
+				switch (model->getType()) {
 				case storm::models::DTMC:
 					LOG4CPLUS_INFO(logger, "Model is a DTMC.");
-					modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Dtmc<double>>());
+					modelchecker = createPrctlModelChecker(*model->as<storm::models::Dtmc<double>>());
 					checkPrctlFormulae(*modelchecker);
 					break;
 				case storm::models::MDP:
 					LOG4CPLUS_INFO(logger, "Model is an MDP.");
-					modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Mdp<double>>());
+					modelchecker = createPrctlModelChecker(*model->as<storm::models::Mdp<double>>());
 					checkPrctlFormulae(*modelchecker);
 					break;
 				case storm::models::CTMC:
@@ -461,13 +464,13 @@ int main(const int argc, const char* argv[]) {
 					break;
                 case storm::models::MA: {
                     LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
-                    std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = parser.getModel<storm::models::MarkovAutomaton<double>>();
-                    markovAutomaton->close();
-                    storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton);
+                    storm::models::MarkovAutomaton<double> markovAutomaton = *model->as<storm::models::MarkovAutomaton<double>>();
+                    markovAutomaton.close();
+                    storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(markovAutomaton);
 //                    std::cout << mc.checkExpectedTime(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
 //                    std::cout << mc.checkExpectedTime(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
-                    std::cout << mc.checkLongRunAverage(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
-                    std::cout << mc.checkLongRunAverage(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
+                    std::cout << mc.checkLongRunAverage(true, markovAutomaton.getLabeledStates("goal")) << std::endl;
+                    std::cout << mc.checkLongRunAverage(false, markovAutomaton.getLabeledStates("goal")) << std::endl;
 //                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 0, 1) << std::endl;
 //                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 1, 2) << std::endl;
                     break;
