@@ -1,5 +1,5 @@
-#ifndef STORM_PARSER_TRAPARSER_H_
-#define STORM_PARSER_TRAPARSER_H_
+#ifndef STORM_PARSER_DETERMINISTICSPARSETRANSITIONPARSER_H_
+#define STORM_PARSER_DETERMINISTICSPARSETRANSITIONPARSER_H_
 
 #include "src/storage/SparseMatrix.h"
 #include "src/parser/Parser.h"
@@ -82,4 +82,4 @@ private:
 
 } // namespace storm
 
-#endif /* STORM_PARSER_TRAPARSER_H_ */
+#endif /* STORM_PARSER_DETERMINISTICSPARSETRANSITIONPARSER_H_ */
