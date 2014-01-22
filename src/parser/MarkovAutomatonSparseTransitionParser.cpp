@@ -2,12 +2,13 @@
 
 #include "src/settings/Settings.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "MappedFile.h"
 
 namespace storm {
 
 namespace parser {
 
-MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char* buf, SupportedLineEndingsEnum lineEndings) {
+MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char* buf, SupportedLineEndings lineEndings) {
 	MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
 	bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
@@ -142,7 +143,7 @@ MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTran
 	return result;
 }
 
-MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitionParser::secondPass(char* buf, SupportedLineEndingsEnum lineEndings, FirstPassResult const& firstPassResult) {
+MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitionParser::secondPass(char* buf, SupportedLineEndings lineEndings, FirstPassResult const& firstPassResult) {
 	ResultType result(firstPassResult);
 
 	bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
@@ -252,7 +253,7 @@ MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitio
 	}
 
 	// Determine used line endings.
-	SupportedLineEndingsEnum lineEndings = findUsedLineEndings(filename, true);
+	SupportedLineEndings lineEndings = findUsedLineEndings(filename, true);
 
 	// Open file and prepare pointer to buffer.
 	MappedFile file(filename.c_str());

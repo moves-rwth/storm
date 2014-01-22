@@ -16,161 +16,78 @@
 
 namespace storm {
 
-/*!
- *	@brief Contains all file parser and helper classes.
- *
- *	This namespace contains everything needed to load data files (like
- *	atomic propositions, transition systems, formulas, ...) including
- *	methods for efficient file access (see MappedFile).
- */
-namespace parser {
-
-struct RewardMatrixInformationStruct {
-	RewardMatrixInformationStruct() : rowCount(0), columnCount(0), nondeterministicChoiceIndices(nullptr) {
-		// Intentionally left empty.
-	}
-
-	RewardMatrixInformationStruct(uint_fast64_t rowCount, uint_fast64_t columnCount, std::vector<uint_fast64_t> const * const nondeterministicChoiceIndices)
-	: rowCount(rowCount), columnCount(columnCount), nondeterministicChoiceIndices(nondeterministicChoiceIndices) {
-		// Intentionally left empty.
-	}
-
-	uint_fast64_t rowCount;
-	uint_fast64_t columnCount;
-	std::vector<uint_fast64_t> const * const nondeterministicChoiceIndices;
-};
-
-/*!
- *	@brief Opens a file and maps it to memory providing a char*
- *	containing the file content.
- *
- *	This class is a very simple interface to read files efficiently.
- *	The given file is opened and mapped to memory using mmap().
- *	The public member data is a pointer to the actual file content.
- *	Using this method, the kernel will take care of all buffering. This is
- *	most probably much more efficient than doing this manually.
- */
-
-#if !defined LINUX && !defined MACOSX && !defined WINDOWS
-#error Platform not supported
-#endif
-
-class MappedFile {
-	private:
-#if defined LINUX || defined MACOSX
-		/*!
-		 *	@brief file descriptor obtained by open().
-		 */
-		int file;
-#elif defined WINDOWS
-		HANDLE file;
-		HANDLE mapping;
-#endif
-
-#if defined LINUX
-		/*!
-		 *	@brief stat information about the file.
-		 */
-		struct stat64 st;
-#elif defined MACOSX
-		/*!
-		 *	@brief stat information about the file.
-		 */
-		struct stat st;
-#elif defined WINDOWS
-		/*!
-		 *	@brief stat information about the file.
-		 */
-		struct __stat64 st;
-#endif
-
-	public:
-		/*!
-		 *	@brief pointer to actual file content.
-		 */
-		char* data;
-		
-		/*!
-		 *	@brief pointer to end of file content.
-		 */
-		char* dataend;
+	/*!
+	 *	@brief Contains all file parsers and helper classes.
+	 *
+	 *	This namespace contains everything needed to load data files (like
+	 *	atomic propositions, transition systems, formulas, etc.) including
+	 *	methods for efficient file access (see MappedFile).
+	 */
+	namespace parser {
 
 	/*!
-	 *	@brief Constructor of MappedFile.
+	 *	@brief Parses integer and checks, if something has been parsed.
 	 */
-	MappedFile(const char* filename);
+	uint_fast64_t checked_strtol(const char* str, char** end);
+
+	/*!
+	 *	@brief Parses floating point and checks, if something has been parsed.
+	 */
+	double checked_strtod(const char* str, char** end);
+
+	/*!
+	 * @brief Skips all non whitespace characters until the next whitespace.
+	 */
+	char* skipWord(char* buf);
+
+	/*!
+	 *	@brief Skips common whitespaces in a string.
+	 */
+	char* trimWhitespaces(char* buf);
+
+	/*!
+	 *  @brief Tests whether the given file exists and is readable.
+	 */
+	bool fileExistsAndIsReadable(const char* fileName);
+
+	/*!
+	 * @brief Enum Class Type containing all supported file endings.
+	 */
+	enum class SupportedLineEndings : unsigned short {
+		Unsupported = 0,
+		SlashR,
+		SlashN,
+		SlashRN
+	};
+
+	/*!
+	 * @briefs Analyzes the given file and tries to find out the used line endings.
+	 */
+	storm::parser::SupportedLineEndings findUsedLineEndings(std::string const& fileName, bool throwOnUnsupported = false);
+
+	/*!
+	 * @brief Encapsulates the usage of function @strcspn to forward to the end of the line (next char is the newline character).
+	 */
+	char* forwardToLineEnd(char* buffer, storm::parser::SupportedLineEndings lineEndings);
+
+	/*!
+	 * @brief Encapsulates the usage of function @strchr to forward to the next line
+	 */
+	char* forwardToNextLine(char* buffer, storm::parser::SupportedLineEndings lineEndings);
+
+	/*!
+	 * @brief Encapsulates the usage of function @sscanf to scan for the model type hint
+	 * @param targetBuffer The Target for the hint, should be at least 64 bytes long
+	 * @param buffer The Source Buffer from which the Model Hint will be read
+	 */
+	void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char const* buffer, storm::parser::SupportedLineEndings lineEndings);
 	
 	/*!
-	 *	@brief Destructor of MappedFile.
+	 * @brief Returns the matching Separator-String in the format of "BLANK\t\NEWLINESYMBOL(S)\0
 	 */
-	~MappedFile();
-};
+	void getMatchingSeparatorString(char* targetBuffer, uint_fast64_t targetBufferSize, storm::parser::SupportedLineEndings lineEndings);
 
-/*!
- *	@brief Parses integer and checks, if something has been parsed.
- */
-uint_fast64_t checked_strtol(const char* str, char** end);
-
-/*!
- *	@brief Parses floating point and checks, if something has been parsed.
- */
-double checked_strtod(const char* str, char** end);
-
-/*!
- * @brief Skips all non whitespace characters until the next whitespace.
- */
-char* skipWord(char* buf);
-
-/*!
- *	@brief Skips common whitespaces in a string.
- */
-char* trimWhitespaces(char* buf);
-
-/*!
- *  @brief Tests whether the given file exists and is readable.
- */
-bool fileExistsAndIsReadable(const char* fileName);
-
-/*!
- * @brief Enum Class Type containing all supported file endings.
- */
-enum class SupportedLineEndingsEnum : unsigned short {
-	Unsupported = 0,
-	SlashR,
-	SlashN,
-	SlashRN
-};
-
-/*!
- * @briefs Analyzes the given file and tries to find out the used line endings.
- */
-storm::parser::SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName, bool throwOnUnsupported = false);
-
-/*!
- * @brief Encapsulates the usage of function @strcspn to forward to the end of the line (next char is the newline character).
- */
-char* forwardToLineEnd(char* buffer, storm::parser::SupportedLineEndingsEnum lineEndings);
-
-/*!
- * @brief Encapsulates the usage of function @strchr to forward to the next line
- */
-char* forwardToNextLine(char* buffer, storm::parser::SupportedLineEndingsEnum lineEndings);
-
-/*!
- * @brief Encapsulates the usage of function @sscanf to scan for the model type hint
- * @param targetBuffer The Target for the hint, should be at least 64 bytes long
- * @param buffer The Source Buffer from which the Model Hint will be read
-
- */
-void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char const* buffer, storm::parser::SupportedLineEndingsEnum lineEndings);
-
-/*!
- * @brief Returns the matching Separator-String in the format of "BLANK\t\NEWLINESYMBOL(S)\0
- */
-void getMatchingSeparatorString(char* targetBuffer, uint_fast64_t targetBufferSize, storm::parser::SupportedLineEndingsEnum lineEndings);
-
-} // namespace parser
-
+	} // namespace parser
 } // namespace storm
 
 #endif /* STORM_PARSER_PARSER_H_ */

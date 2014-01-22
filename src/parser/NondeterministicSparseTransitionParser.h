@@ -39,6 +39,12 @@ namespace storm {
 			 */
 			struct Result {
 
+				// Constructs an empty Result.
+				Result() : transitionMatrix(), rowMapping() {
+					// Intentionally left empty.
+				}
+
+				// Constructs a Result, initializing its members with the given values.
 				Result(storm::storage::SparseMatrix<double> transitionMatrix, std::vector<uint_fast64_t> rowMapping) : transitionMatrix(transitionMatrix), rowMapping(rowMapping) {
 					// Intentionally left empty.
 				}
@@ -52,16 +58,22 @@ namespace storm {
 			};
 
 			/*!
-			 *	@brief	Load a nondeterministic transition system from file and create a
-			 *	sparse adjacency matrix whose entries represent the weights of the edges
+			 * @brief Load a nondeterministic transition system from file and create a
+			 *        sparse adjacency matrix whose entries represent the weights of the edges
+			 *
+			 * @param filename The path of file to be parsed.
 			 */
-			static Result parseNondeterministicTransitions(std::string const &filename);
+			static Result parseNondeterministicTransitions(std::string const & filename);
 
 			/*!
 			 *	@brief	Load a nondeterministic transition system from file and create a
 			 *	sparse adjacency matrix whose entries represent the weights of the edges
+			 *
+			 * @param filename The path of file to be parsed.
+			 * @param modelInformation The information about the transition structure of nondeterministic model in which the transition rewards shall be used.
+			 * @return A struct containing the parsed file contents, i.e. the transition reward matrix and the mapping between its rows and the states of the model.
 			 */
-			static Result parseNondeterministicTransitionRewards(std::string const &filename, RewardMatrixInformationStruct const& rewardMatrixInformation);
+			static Result parseNondeterministicTransitionRewards(std::string const & filename, Result const & modelInformation);
 
 		private:
 
@@ -79,7 +91,7 @@ namespace storm {
 			 * @param insertDiagonalEntriesIfMissing A flag set iff entries on the primary diagonal of the matrix should be added in case they are missing in the parsed file.
 			 * @return A structure representing the result of the first pass.
 			 */
-			static FirstPassResult firstPass(char* buffer, SupportedLineEndingsEnum lineEndings, bool isRewardFile, RewardMatrixInformationStruct const& rewardMatrixInformation);
+			static FirstPassResult firstPass(char* buffer, SupportedLineEndings lineEndings, bool isRewardFile, Result const & modelInformation);
 
 			/*!
 			 * The main parsing routine.
@@ -88,10 +100,10 @@ namespace storm {
 			 * @param filename The path of file to be parsed.
 			 * @param rewardFile A flag set iff the file to be parsed contains transition rewards.
 			 * @param insertDiagonalEntriesIfMissing A flag set iff entries on the primary diagonal of the matrix should be added in case they are missing in the parsed file.
-			 * @param rewardMatrixInformation A struct containing information that is used to check if the transition reward matrix fits to the rest of the model.
+			 * @param modelInformation A struct containing information that is used to check if the transition reward matrix fits to the rest of the model.
 			 * @return A SparseMatrix containing the parsed file contents.
 			 */
-			static Result parse(std::string const& filename, bool isRewardFile, RewardMatrixInformationStruct const& rewardMatrixInformation);
+			static Result parse(std::string const& filename, bool isRewardFile, Result const & modelInformation);
 
 		};
 	

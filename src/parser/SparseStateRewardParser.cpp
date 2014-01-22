@@ -12,6 +12,7 @@
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/parser/Parser.h"
+#include "src/parser/MappedFile.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;

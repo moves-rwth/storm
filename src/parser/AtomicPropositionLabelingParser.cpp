@@ -6,12 +6,13 @@
  */
 
 #include "src/parser/AtomicPropositionLabelingParser.h"
-#include "src/parser/Parser.h"
 
 #include <cstring>
 #include <string>
 #include <iostream>
 
+#include "src/parser/Parser.h"
+#include "src/parser/MappedFile.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 
@@ -31,7 +32,7 @@ namespace storm {
 			}
 
 			// Find out about the used line endings.
-			SupportedLineEndingsEnum lineEndings = findUsedLineEndings(filename, true);
+			SupportedLineEndings lineEndings = findUsedLineEndings(filename, true);
 
 			MappedFile file(filename.c_str());
 			char* buf = file.data;

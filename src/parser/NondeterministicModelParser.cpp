@@ -29,26 +29,31 @@ namespace storm {
 		NondeterministicModelParser::Result NondeterministicModelParser::parseNondeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
 				std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 
-			NondeterministicSparseTransitionParser::Result transitionParserResult(std::move(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitions(transitionSystemFile)));
-			storm::storage::SparseMatrix<double> transitions(std::move(transitionParserResult.transitionMatrix));
+			// Parse the transitions.
+			NondeterministicSparseTransitionParser::Result transitions(std::move(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitions(transitionSystemFile)));
 
-			uint_fast64_t stateCount = transitions.getColumnCount();
-			uint_fast64_t rowCount = transitions.getRowCount();
+			uint_fast64_t stateCount = transitions.transitionMatrix.getColumnCount();
 
+			// Parse the state labeling.
 			storm::models::AtomicPropositionsLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFile)));
 
-			Result result(std::move(transitions), std::move(transitionParserResult.rowMapping), std::move(labeling));
-
-			// Only parse state rewards of a file is given.
+			// Only parse state rewards if a file is given.
+			boost::optional<std::vector<double>> stateRewards;
 			if (stateRewardFile != "") {
-				result.stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile));
+				stateRewards = storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile);
 			}
 
-			// Only parse transition rewards of a file is given.
+			// Only parse transition rewards if a file is given.
+			boost::optional<storm::storage::SparseMatrix<double>> transitionRewards;
 			if (transitionRewardFile != "") {
-				RewardMatrixInformationStruct rewardMatrixInfo(rowCount, stateCount, &result.rowMapping);
-				result.transitionRewards.reset(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitionRewards(transitionRewardFile, rewardMatrixInfo).transitionMatrix);
+				transitionRewards = storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitionRewards(transitionRewardFile, transitions).transitionMatrix;
 			}
+
+			// Construct the result.
+			Result result(std::move(transitions.transitionMatrix), std::move(transitions.rowMapping), std::move(labeling));
+			result.stateRewards = stateRewards;
+			result.transitionRewards = transitionRewards;
+
 			return result;
 		}
 

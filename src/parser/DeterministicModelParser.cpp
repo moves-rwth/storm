@@ -28,24 +28,25 @@ namespace parser {
  */
 DeterministicModelParser::Result DeterministicModelParser::parseDeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile, std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 
-	storm::storage::SparseMatrix<double> resultTransitionSystem(std::move(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(transitionSystemFile)));
+	// Parse the transitions.
+	storm::storage::SparseMatrix<double> transitions(std::move(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(transitionSystemFile)));
 
-	uint_fast64_t stateCount = resultTransitionSystem.getColumnCount();
-	uint_fast64_t rowCount = resultTransitionSystem.getRowCount();
+	uint_fast64_t stateCount = transitions.getColumnCount();
 
+	// Parse the state labeling.
 	storm::models::AtomicPropositionsLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFile)));
 
-	DeterministicModelParser::Result result(std::move(resultTransitionSystem), std::move(labeling));
+	// Construct the result.
+	DeterministicModelParser::Result result(std::move(transitions), std::move(labeling));
 
-	// Only parse state rewards of a file is given.
+	// Only parse state rewards if a file is given.
 	if (stateRewardFile != "") {
-		result.stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile));
+		result.stateRewards = storm::parser::SparseStateRewardParser::parseSparseStateReward(stateCount, stateRewardFile);
 	}
 
-	// Only parse transition rewards of a file is given.
+	// Only parse transition rewards if a file is given.
 	if (transitionRewardFile != "") {
-		RewardMatrixInformationStruct rewardMatrixInfo(rowCount, stateCount, nullptr);
-		result.transitionRewards.reset(std::move(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(transitionRewardFile, rewardMatrixInfo)));
+		result.transitionRewards = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(transitionRewardFile, result.transitionSystem);
 	}
 
 	return result;

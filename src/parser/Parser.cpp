@@ -11,6 +11,7 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/utility/OsDetection.h"
+#include "src/parser/MappedFile.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -91,7 +92,7 @@ char* trimWhitespaces(char* buf) {
 /*!
  * @briefs Analyzes the given file and tries to find out the used file endings.
  */
-SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName, bool throwOnUnsupported) {
+SupportedLineEndings findUsedLineEndings(std::string const& fileName, bool throwOnUnsupported) {
 	MappedFile fileMap(fileName.c_str());
 	char* buf = nullptr;
 	char* const bufferEnd = fileMap.dataend;
@@ -100,11 +101,11 @@ SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName, bool t
 		if (*buf == '\r') {
 			// check for following \n
 			if (((buf + sizeof(char)) < bufferEnd) && (*(buf + sizeof(char)) == '\n')) {
-				return SupportedLineEndingsEnum::SlashRN;
+				return SupportedLineEndings::SlashRN;
 			}
-			return SupportedLineEndingsEnum::SlashR;
+			return SupportedLineEndings::SlashR;
 		} else if (*buf == '\n') {
-			return SupportedLineEndingsEnum::SlashN;
+			return SupportedLineEndings::SlashN;
 		}
 	}
 
@@ -114,25 +115,25 @@ SupportedLineEndingsEnum findUsedLineEndings(std::string const& fileName, bool t
 	}
 	LOG4CPLUS_WARN(logger, "Error while parsing \"" << fileName << "\": Unsupported or unknown line-endings. Please use either of \\r, \\n or \\r\\n");
 
-	return SupportedLineEndingsEnum::Unsupported;
+	return SupportedLineEndings::Unsupported;
 }
 
 /*!
  * @brief Encapsulates the usage of function @strcspn to forward to the end of the line (next char is the newline character).
  */
-char* forwardToLineEnd(char* buffer, SupportedLineEndingsEnum lineEndings) {
+char* forwardToLineEnd(char* buffer, SupportedLineEndings lineEndings) {
 	switch (lineEndings) {
-		case SupportedLineEndingsEnum::SlashN:
+		case SupportedLineEndings::SlashN:
 			return buffer + strcspn(buffer, "\n\0");
 			break;
-		case SupportedLineEndingsEnum::SlashR:
+		case SupportedLineEndings::SlashR:
 			return buffer + strcspn(buffer, "\r\0");
 			break;
-		case SupportedLineEndingsEnum::SlashRN:
+		case SupportedLineEndings::SlashRN:
 			return buffer + strcspn(buffer, "\r\0");
 			break;
 		default:
-		case SupportedLineEndingsEnum::Unsupported:
+		case SupportedLineEndings::Unsupported:
 			// This Line will never be reached as the Parser would have thrown already.
 			throw;
 			break;
@@ -143,19 +144,19 @@ char* forwardToLineEnd(char* buffer, SupportedLineEndingsEnum lineEndings) {
 /*!
  * @brief Encapsulates the usage of function @strchr to forward to the next line
  */
-char* forwardToNextLine(char* buffer, SupportedLineEndingsEnum lineEndings) {
+char* forwardToNextLine(char* buffer, SupportedLineEndings lineEndings) {
 	switch (lineEndings) {
-		case SupportedLineEndingsEnum::SlashN:
+		case SupportedLineEndings::SlashN:
 			return strchr(buffer, '\n') + 1;  
 			break;
-		case SupportedLineEndingsEnum::SlashR:
+		case SupportedLineEndings::SlashR:
 			return strchr(buffer, '\r') + 1;  
 			break;
-		case SupportedLineEndingsEnum::SlashRN:
+		case SupportedLineEndings::SlashRN:
 			return strchr(buffer, '\r') + 2;
 			break;
 		default:
-		case SupportedLineEndingsEnum::Unsupported:
+		case SupportedLineEndings::Unsupported:
 			// This Line will never be reached as the Parser would have thrown already.
 			throw;
 			break;
@@ -168,26 +169,26 @@ char* forwardToNextLine(char* buffer, SupportedLineEndingsEnum lineEndings) {
  * @param targetBuffer The Target for the hint, must be at least 64 bytes long
  * @param buffer The Source Buffer from which the Model Hint will be read
  */
-void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char const* buffer, SupportedLineEndingsEnum lineEndings) {
+void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char const* buffer, SupportedLineEndings lineEndings) {
 	if (targetBufferSize <= 4) {
 		throw;
 	}
 	switch (lineEndings) {
-		case SupportedLineEndingsEnum::SlashN:
+		case SupportedLineEndings::SlashN:
 #ifdef WINDOWS					
 			sscanf_s(buffer, "%60s\n", targetBuffer, targetBufferSize);
 #else
 			sscanf(buffer, "%60s\n", targetBuffer);
 #endif
 			break;
-		case SupportedLineEndingsEnum::SlashR:
+		case SupportedLineEndings::SlashR:
 #ifdef WINDOWS					
 			sscanf_s(buffer, "%60s\r", targetBuffer, sizeof(targetBufferSize));
 #else
 			sscanf(buffer, "%60s\r", targetBuffer);
 #endif
 			break;
-		case SupportedLineEndingsEnum::SlashRN:
+		case SupportedLineEndings::SlashRN:
 #ifdef WINDOWS					
 			sscanf_s(buffer, "%60s\r\n", targetBuffer, sizeof(targetBufferSize));
 #else
@@ -195,7 +196,7 @@ void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char c
 #endif
 			break;
 		default:
-		case SupportedLineEndingsEnum::Unsupported:
+		case SupportedLineEndings::Unsupported:
 			// This Line will never be reached as the Parser would have thrown already.
 			throw;
 			break;
@@ -205,13 +206,13 @@ void scanForModelHint(char* targetBuffer, uint_fast64_t targetBufferSize, char c
 /*!
  * @brief Returns the matching Separator-String in the format of "BLANK\t\NEWLINESYMBOL(S)\0
  */
-void getMatchingSeparatorString(char* targetBuffer, uint_fast64_t targetBufferSize, SupportedLineEndingsEnum lineEndings) {
+void getMatchingSeparatorString(char* targetBuffer, uint_fast64_t targetBufferSize, SupportedLineEndings lineEndings) {
 	if (targetBufferSize < 5) {
 		LOG4CPLUS_ERROR(logger, "getMatchingSeparatorString: The passed Target Buffer is too small.");
 		throw;
 	}
 	switch (lineEndings) {
-		case SupportedLineEndingsEnum::SlashN: {
+		case SupportedLineEndings::SlashN: {
 			char source[] = " \n\t";
 #ifdef WINDOWS			
 			strncpy(targetBuffer, targetBufferSize, source, sizeof(source));
@@ -220,7 +221,7 @@ void getMatchingSeparatorString(char* targetBuffer, uint_fast64_t targetBufferSi
 #endif
 			break;
 											   }
-		case SupportedLineEndingsEnum::SlashR: {
+		case SupportedLineEndings::SlashR: {
 			char source[] = " \r\t";
 #ifdef WINDOWS			
 			strncpy(targetBuffer, targetBufferSize, source, sizeof(source));
@@ -229,7 +230,7 @@ void getMatchingSeparatorString(char* targetBuffer, uint_fast64_t targetBufferSi
 #endif
 			break;
 											   }
-		case SupportedLineEndingsEnum::SlashRN: {
+		case SupportedLineEndings::SlashRN: {
 			char source[] = " \r\n\t";
 #ifdef WINDOWS			
 			strncpy(targetBuffer, targetBufferSize, source, sizeof(source));
@@ -239,93 +240,12 @@ void getMatchingSeparatorString(char* targetBuffer, uint_fast64_t targetBufferSi
 			break;
 												}
 		default:
-		case SupportedLineEndingsEnum::Unsupported:
+		case SupportedLineEndings::Unsupported:
 			// This Line will never be reached as the Parser would have thrown already.
 			LOG4CPLUS_ERROR(logger, "getMatchingSeparatorString: The passed lineEndings were Unsupported. Check your input file.");
 			throw;
 			break;
 	}
-}
-
-/*!
- *	Will stat the given file, open it and map it to memory.
- *	If anything of this fails, an appropriate exception is raised
- *	and a log entry is written.
- *	@param filename file to be opened
- */
-MappedFile::MappedFile(const char* filename) {
-#if defined LINUX || defined MACOSX
-	/*
-	 *	Do file mapping for reasonable systems.
-	 *	stat64(), open(), mmap()
-	 */
-#ifdef MACOSX
-	if (stat(filename, &(this->st)) != 0) {
-#else
-	if (stat64(filename, &(this->st)) != 0) {
-#endif
-		LOG4CPLUS_ERROR(logger, "Error in stat(" << filename << "): Probably, this file does not exist.");
-		throw exceptions::FileIoException() << "MappedFile Error in stat(): Probably, this file does not exist.";
-	}
-	this->file = open(filename, O_RDONLY);
-
-	if (this->file < 0) {
-		LOG4CPLUS_ERROR(logger, "Error in open(" << filename << "): Probably, we may not read this file.");
-		throw exceptions::FileIoException() << "MappedFile Error in open(): Probably, we may not read this file.";
-	}
-
-	this->data = reinterpret_cast<char*>(mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0));
-	if (this->data == reinterpret_cast<char*>(-1)) {
-		close(this->file);
-		LOG4CPLUS_ERROR(logger, "Error in mmap(" << filename << "): " << std::strerror(errno));
-		throw exceptions::FileIoException() << "MappedFile Error in mmap(): " << std::strerror(errno);
-	}
-	this->dataend = this->data + this->st.st_size;
-#elif defined WINDOWS
-	/*
-	 *	Do file mapping for windows.
-	 *	_stat64(), CreateFile(), CreateFileMapping(), MapViewOfFile()
-	 */
-	if (_stat64(filename, &(this->st)) != 0) {
-		LOG4CPLUS_ERROR(logger, "Error in _stat(" << filename << "): Probably, this file does not exist.");
-		throw exceptions::FileIoException("MappedFile Error in stat(): Probably, this file does not exist.");
-	}
-
-	this->file = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (this->file == INVALID_HANDLE_VALUE) {
-		LOG4CPLUS_ERROR(logger, "Error in CreateFileA(" << filename << "): Probably, we may not read this file.");
-		throw exceptions::FileIoException("MappedFile Error in CreateFileA(): Probably, we may not read this file.");
-	}
-
-	this->mapping = CreateFileMappingA(this->file, NULL, PAGE_READONLY, (DWORD)(st.st_size >> 32), (DWORD)st.st_size, NULL);
-	if (this->mapping == NULL) {
-		CloseHandle(this->file);
-		LOG4CPLUS_ERROR(logger, "Error in CreateFileMappingA(" << filename << ").");
-		throw exceptions::FileIoException("MappedFile Error in CreateFileMappingA().");
-	}
-
-	this->data = static_cast<char*>(MapViewOfFile(this->mapping, FILE_MAP_READ, 0, 0, this->st.st_size));
-	if (this->data == NULL) {
-		CloseHandle(this->mapping);
-		CloseHandle(this->file);
-		LOG4CPLUS_ERROR(logger, "Error in MapViewOfFile(" << filename << ").");
-		throw exceptions::FileIoException("MappedFile Error in MapViewOfFile().");
-	}
-	this->dataend = this->data + this->st.st_size;
-#endif
-}
-
-/*!
- *	Will unmap the data and close the file.
- */
-MappedFile::~MappedFile() {
-#if defined LINUX || defined MACOSX
-	munmap(this->data, this->st.st_size);
-	close(this->file);
-#elif defined WINDOWS
-	CloseHandle(this->mapping);
-	CloseHandle(this->file);
-#endif
 }
 
 } // namespace parser

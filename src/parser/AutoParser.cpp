@@ -8,6 +8,7 @@
 #include "src/parser/AutoParser.h"
 
 #include "src/parser/Parser.h"
+#include "src/parser/MappedFile.h"
 
 #include "src/parser/DeterministicModelParser.h"
 #include "src/parser/NondeterministicModelParser.h"
@@ -68,7 +69,7 @@ namespace storm {
 			storm::models::ModelType hintType = storm::models::Unknown;
 
 			// Find out the line endings used within the file.
-			storm::parser::SupportedLineEndingsEnum lineEndings = storm::parser::findUsedLineEndings(filename);
+			storm::parser::SupportedLineEndings lineEndings = storm::parser::findUsedLineEndings(filename);
 
 			// Open the file.
 			MappedFile file(filename.c_str());
@@ -90,5 +91,5 @@ namespace storm {
 
 			return hintType;
 		}
-	}
-}
+	} // namespace parser
+} // namespace storm
