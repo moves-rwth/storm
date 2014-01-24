@@ -22,9 +22,9 @@ const int SIFS = 1; // due to scaling can be either 0 or 1 which is modelled by 
 const int TIME_MAX = max(ACK_TO,TRANS_TIME_MAX)+1;
 
 // CONTENTION WINDOW
-// CWMIN =15 & CWMAX =16
+// CWMIN =15 & CWMAX =31
 // this means that MAX_BACKOFF IS 2
-const int MAX_BACKOFF = 0;
+const int MAX_BACKOFF = 1;
 
 //-----------------------------------------------------------------//
 // THE MEDIUM/CHANNEL
@@ -89,7 +89,7 @@ module station1
 	backoff1 : [0..15];
 	
 	// BACKOFF COUNTER
-	bc1 : [0..1];
+	bc1 : [0..MAX_BACKOFF];
 	// SENSE
 	// let time pass
 	[time] s1=1 & x1<DIFS & free -> (x1'=min(x1+1,TIME_MAX));
@@ -110,6 +110,9 @@ module station1
 	// start backoff  first uniformly choose slot
 	// backoff counter 0
 	[] s1=3 & (x1=DIFS | x1=DIFS-1) & bc1=0 -> (s1'=4) & (x1'=0) & (slot1'=0) & (bc1'=min(bc1+1,MAX_BACKOFF));
+	// backoff counter 1
+	[] s1=3 & (x1=DIFS | x1=DIFS-1) & bc1=1 -> 1/2 : (s1'=4) & (x1'=0) & (slot1'=0) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/2 : (s1'=4) & (x1'=0) & (slot1'=1) & (bc1'=min(bc1+1,MAX_BACKOFF));
 	// SET BACKOFF (no time can pass)
 	// chosen slot now set backoff
 	[] s1=4 -> 1/16 : (s1'=5) & (backoff1'=0 )
@@ -169,7 +172,7 @@ module station1
 	// WAIT FOR SIFS i.e. c1=0
 	// check channel and busy: go into backoff
 	[] s1=10 & c1=0 & x1=0 & busy -> (s1'=2);
-	// check channel and free: let time pass
+	// chEck channel and free: let time pass
 	[time] s1=10 & c1=0 & x1=0 & free -> (x1'=min(x1+1,TIME_MAX));
 	// let time pass
 	// following guard is always false as SIFS=1
@@ -195,7 +198,6 @@ module station1
 		
 	// DONE
 	[time] s1=12 -> (s1'=12);
-
 endmodule	
 
 // ---------------------------------------------------------------------------- //

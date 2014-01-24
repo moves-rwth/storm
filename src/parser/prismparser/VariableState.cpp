@@ -175,6 +175,12 @@ namespace storm {
                 booleanConstants_.clear();
                 doubleConstants_.clear();
                 allConstantNames_.clear();
+                constantBooleanFormulas_.clear();
+                booleanFormulas_.clear();
+                constantIntegerFormulas_.clear();
+                integerFormulas_.clear();
+                constantDoubleFormulas_.clear();
+                doubleFormulas_.clear();
                 this->firstRun = false;
                 nextGlobalCommandIndex = 0;
                 nextGlobalUpdateIndex = 0;

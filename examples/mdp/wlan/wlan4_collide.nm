@@ -22,9 +22,9 @@ const int SIFS = 1; // due to scaling can be either 0 or 1 which is modelled by 
 const int TIME_MAX = max(ACK_TO,TRANS_TIME_MAX)+1;
 
 // CONTENTION WINDOW
-// CWMIN =15 & CWMAX =16
-// this means that MAX_BACKOFF IS 2
-const int MAX_BACKOFF = 0;
+// CWMIN =15 & CWMAX =255
+// this means that MAX_BACKOFF IS 4
+const int MAX_BACKOFF = 4;
 
 //-----------------------------------------------------------------//
 // THE MEDIUM/CHANNEL
@@ -85,11 +85,11 @@ module station1
 	// 12 done
 	// BACKOFF
 	// separate into slots
-	slot1 : [0..1]; 
+	slot1 : [0..15]; 
 	backoff1 : [0..15];
 	
 	// BACKOFF COUNTER
-	bc1 : [0..1];
+	bc1 : [0..MAX_BACKOFF];
 	// SENSE
 	// let time pass
 	[time] s1=1 & x1<DIFS & free -> (x1'=min(x1+1,TIME_MAX));
@@ -110,6 +110,40 @@ module station1
 	// start backoff  first uniformly choose slot
 	// backoff counter 0
 	[] s1=3 & (x1=DIFS | x1=DIFS-1) & bc1=0 -> (s1'=4) & (x1'=0) & (slot1'=0) & (bc1'=min(bc1+1,MAX_BACKOFF));
+	// backoff counter 1
+	[] s1=3 & (x1=DIFS | x1=DIFS-1) & bc1=1 -> 1/2 : (s1'=4) & (x1'=0) & (slot1'=0) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/2 : (s1'=4) & (x1'=0) & (slot1'=1) & (bc1'=min(bc1+1,MAX_BACKOFF));
+	// backoff counter 2
+	[] s1=3 & (x1=DIFS | x1=DIFS-1) & bc1=2 -> 1/4 : (s1'=4) & (x1'=0) & (slot1'=0) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/4 : (s1'=4) & (x1'=0) & (slot1'=1) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/4 : (s1'=4) & (x1'=0) & (slot1'=2) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/4 : (s1'=4) & (x1'=0) & (slot1'=3) & (bc1'=min(bc1+1,MAX_BACKOFF));
+	// backoff counter 3
+	[] s1=3 & (x1=DIFS | x1=DIFS-1) & bc1=3 -> 1/8 : (s1'=4) & (x1'=0) & (slot1'=0) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/8 : (s1'=4) & (x1'=0) & (slot1'=1) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/8 : (s1'=4) & (x1'=0) & (slot1'=2) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/8 : (s1'=4) & (x1'=0) & (slot1'=3) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/8 : (s1'=4) & (x1'=0) & (slot1'=4) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/8 : (s1'=4) & (x1'=0) & (slot1'=5) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/8 : (s1'=4) & (x1'=0) & (slot1'=6) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/8 : (s1'=4) & (x1'=0) & (slot1'=7) & (bc1'=min(bc1+1,MAX_BACKOFF));
+	// backoff counter 4
+	[] s1=3 & (x1=DIFS | x1=DIFS-1) & bc1=4 -> 1/16 : (s1'=4) & (x1'=0) & (slot1'=0 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=1 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=2 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=3 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=4 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=5 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=6 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=7 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=8 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=9 ) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=10) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=11) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=12) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=13) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=14) & (bc1'=min(bc1+1,MAX_BACKOFF))
+	                                         + 1/16 : (s1'=4) & (x1'=0) & (slot1'=15) & (bc1'=min(bc1+1,MAX_BACKOFF));
 	// SET BACKOFF (no time can pass)
 	// chosen slot now set backoff
 	[] s1=4 -> 1/16 : (s1'=5) & (backoff1'=0 )
@@ -195,7 +229,6 @@ module station1
 		
 	// DONE
 	[time] s1=12 -> (s1'=12);
-
 endmodule	
 
 // ---------------------------------------------------------------------------- //
