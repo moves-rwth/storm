@@ -80,6 +80,8 @@ std::string demangle(char const* symbol) {
 	return symbol;
 }
 
+void printUsage();
+
 /*
  * Handles the given signal. This will display the received signal and a backtrace.
  *
@@ -87,7 +89,7 @@ std::string demangle(char const* symbol) {
  */
 void signalHandler(int sig) {
 	LOG4CPLUS_FATAL(logger, "The program received signal " << sig << ". The following backtrace shows the status upon reception of the signal.");
-
+    printUsage();
 #ifndef WINDOWS
 #	define SIZE 128
 	void *buffer[SIZE];
@@ -120,6 +122,9 @@ void signalHandler(int sig) {
  */
 void installSignalHandler() {
 	signal(SIGSEGV, signalHandler);
+    signal(SIGABRT, signalHandler);
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
 }
 
 #endif	/* ERRORHANDLING_H */

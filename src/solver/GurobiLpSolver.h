@@ -63,7 +63,8 @@ namespace storm {
             virtual uint_fast64_t createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override;
             virtual uint_fast64_t createIntegerVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override;
             virtual uint_fast64_t createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override;
-            
+            virtual void update() const override;
+
             virtual void addConstraint(std::string const& name, std::vector<uint_fast64_t> const& variables, std::vector<double> const& coefficients, BoundType const& boundType, double rightHandSideValue) override;
             
             virtual void optimize() const override;
@@ -83,11 +84,6 @@ namespace storm {
              * Sets some properties of the Gurobi environment according to parameters given by the options.
              */
             void setGurobiEnvironmentProperties() const;
-            
-            /*!
-             * Calls Gurobi to incorporate the latest changes to the model.
-             */
-            void updateModel() const;
             
             // The Gurobi environment.
             GRBenv* env;
@@ -127,6 +123,10 @@ namespace storm {
             }
             
             virtual uint_fast64_t createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            virtual void update() const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             

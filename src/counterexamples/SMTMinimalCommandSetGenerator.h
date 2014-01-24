@@ -1428,8 +1428,11 @@ namespace storm {
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
                 storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getTransitionMatrix(), subMdp.getNondeterministicChoiceIndices(), subMdp.getBackwardTransitions(), phiStates, psiStates);
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
                 
+                boost::container::flat_set<uint_fast64_t> locallyRelevantLabels;
+                std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
+                
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, locallyRelevantLabels);
                 LOG4CPLUS_DEBUG(logger, "Found " << reachableLabels.size() << " reachable labels and " << reachableStates.getNumberOfSetBits() << " reachable states.");
                 
                 // Search for states on the border of the reachable state space, i.e. states that are still reachable
@@ -1548,7 +1551,11 @@ namespace storm {
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
                 storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getTransitionMatrix(), subMdp.getNondeterministicChoiceIndices(), subMdp.getBackwardTransitions(), phiStates, psiStates);
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, relevancyInformation.relevantLabels);
+                
+                boost::container::flat_set<uint_fast64_t> locallyRelevantLabels;
+                std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
+                
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, locallyRelevantLabels);
                 
                 // Search for states for which we could enable another option and possibly improve the reachability probability.
                 std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = originalMdp.getChoiceLabeling();
@@ -1565,7 +1572,6 @@ namespace storm {
                             std::set_difference(guaranteedLabelSets[state].begin(), guaranteedLabelSets[state].end(), commandSet.begin(), commandSet.end(), std::inserter(currentLabelSet, currentLabelSet.end()));
                             
                             cutLabels.insert(currentLabelSet);
-
                         }
                     }
                 }
@@ -1635,13 +1641,16 @@ namespace storm {
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
-                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
-                std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
-                for (auto state : labeledMdp.getInitialStates()) {
-                    maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
-                }
-                if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
-                    throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
+                if (checkThresholdFeasible) {
+                    storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
+                    std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
+                    for (auto state : labeledMdp.getInitialStates()) {
+                        maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
+                    }
+                    if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
+                        throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
+                    }
+                    std::cout << "Maximal reachability in model determined to be " << maximalReachabilityProbability << "." << std::endl;
                 }
                 
                 // (2) Identify all states and commands that are relevant, because only these need to be considered later.
@@ -1706,7 +1715,7 @@ namespace storm {
                     std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
                     LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
                     totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
-                    
+
                     // Now determine the maximal reachability probability by checking all initial states.
                     maximalReachabilityProbability = 0;
                     for (auto state : labeledMdp.getInitialStates()) {

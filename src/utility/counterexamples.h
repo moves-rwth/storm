@@ -30,36 +30,94 @@ namespace storm {
 
                 // Now we compute the set of labels that is present on all paths from the initial to the target states.
                 std::vector<boost::container::flat_set<uint_fast64_t>> analysisInformation(labeledMdp.getNumberOfStates(), relevantLabels);
-                std::queue<std::pair<uint_fast64_t, uint_fast64_t>> worklist;
+//                std::queue<std::pair<uint_fast64_t, uint_fast64_t>> worklist;
+//                
+//                // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
+//                for (auto state : psiStates) {
+//                    analysisInformation[state] = boost::container::flat_set<uint_fast64_t>();
+//                    for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
+//                        if (predecessorEntry.first != state && !psiStates.get(predecessorEntry.first)) {
+//                            worklist.push(std::make_pair(predecessorEntry.first, state));
+//                        }
+//                    }
+//                }
+//
+//                // Iterate as long as the worklist is non-empty.
+//                uint_fast64_t iters = 0;
+//                while (!worklist.empty()) {
+//                    ++iters;
+//                    std::pair<uint_fast64_t, uint_fast64_t> const& currentStateTargetStatePair = worklist.front();
+//                    uint_fast64_t currentState = currentStateTargetStatePair.first;
+//                    uint_fast64_t targetState = currentStateTargetStatePair.second;
+//                    
+//                    size_t analysisInformationSizeBefore = analysisInformation[currentState].size();
+//                    
+//                    // Iterate over the successor states for all choices and compute new analysis information.
+//                    for (uint_fast64_t currentChoice = nondeterministicChoiceIndices[currentState]; currentChoice < nondeterministicChoiceIndices[currentState + 1]; ++currentChoice) {
+//                        bool choiceTargetsTargetState = false;
+//                        
+//                        for (auto& entry : transitionMatrix.getRow(currentChoice)) {
+//                            if (entry.first == targetState) {
+//                                choiceTargetsTargetState = true;
+//                                break;
+//                            }
+//                        }
+//                        
+//                        // If we can reach the target state with this choice, we need to intersect the current
+//                        // analysis information with the union of the new analysis information of the target state
+//                        // and the choice labels.
+//                        if (choiceTargetsTargetState) {
+//                            boost::container::flat_set<uint_fast64_t> tmpIntersection;
+//                            std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[targetState].begin(), analysisInformation[targetState].end(), std::inserter(tmpIntersection, tmpIntersection.end()));
+//                            std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(tmpIntersection, tmpIntersection.end()));
+//                            analysisInformation[currentState] = std::move(tmpIntersection);
+//                        }
+//                    }
+//                    
+//                    // If the analysis information changed, we need to update it and put all the predecessors of this
+//                    // state in the worklist.
+//                    if (analysisInformation[currentState].size() != analysisInformationSizeBefore) {
+//                        for (auto& predecessorEntry : backwardTransitions.getRow(currentState)) {
+//                            // Only put the predecessor in the worklist if it's not already a target state.
+//                            if (!psiStates.get(predecessorEntry.first)) {
+//                                worklist.push(std::make_pair(predecessorEntry.first, currentState));
+//                            }
+//                        }
+//                    }
+//                    
+//                    worklist.pop();
+//                }
+                
+                std::queue<uint_fast64_t> worklist;
+                storm::storage::BitVector statesInWorkList(labeledMdp.getNumberOfStates());
+                storm::storage::BitVector markedStates(labeledMdp.getNumberOfStates());
                 
                 // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
                 for (auto state : psiStates) {
                     analysisInformation[state] = boost::container::flat_set<uint_fast64_t>();
-                    for (auto& predecessorEntry : backwardTransitions.getRow(state)) {
-                        if (predecessorEntry.first != state) {
-                            worklist.push(std::make_pair(predecessorEntry.first, state));
+                    for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
+                        if (predecessorEntry.first != state && !statesInWorkList.get(predecessorEntry.first) && !psiStates.get(predecessorEntry.first)) {
+                            worklist.push(predecessorEntry.first);
+                            statesInWorkList.set(predecessorEntry.first);
+                            markedStates.set(state);
                         }
                     }
                 }
 
-                // Iterate as long as the worklist is non-empty.
                 uint_fast64_t iters = 0;
                 while (!worklist.empty()) {
                     ++iters;
-                    std::pair<uint_fast64_t, uint_fast64_t> const& currentStateTargetStatePair = worklist.front();
-                    uint_fast64_t currentState = currentStateTargetStatePair.first;
-                    uint_fast64_t targetState = currentStateTargetStatePair.second;
+                    uint_fast64_t const& currentState = worklist.front();
                     
                     size_t analysisInformationSizeBefore = analysisInformation[currentState].size();
                     
                     // Iterate over the successor states for all choices and compute new analysis information.
                     for (uint_fast64_t currentChoice = nondeterministicChoiceIndices[currentState]; currentChoice < nondeterministicChoiceIndices[currentState + 1]; ++currentChoice) {
-                        boost::container::flat_set<uint_fast64_t> tmpIntersection;
-                        bool choiceTargetsTargetState = false;
+                        bool modifiedChoice = false;
                         
-                        for (auto& entry : transitionMatrix.getRow(currentChoice)) {
-                            if (entry.first == targetState) {
-                                choiceTargetsTargetState = true;
+                        for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
+                            if (markedStates.get(entry.first)) {
+                                modifiedChoice = true;
                                 break;
                             }
                         }
@@ -67,25 +125,35 @@ namespace storm {
                         // If we can reach the target state with this choice, we need to intersect the current
                         // analysis information with the union of the new analysis information of the target state
                         // and the choice labels.
-                        if (choiceTargetsTargetState) {
-                            std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[targetState].begin(), analysisInformation[targetState].end(), std::inserter(tmpIntersection, tmpIntersection.end()));
-                            std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(tmpIntersection, tmpIntersection.end()));
-                            analysisInformation[currentState] = std::move(tmpIntersection);
+                        if (modifiedChoice) {
+                            for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
+                                if (markedStates.get(entry.first)) {
+                                    boost::container::flat_set<uint_fast64_t> tmpIntersection;
+                                    std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[entry.first].begin(), analysisInformation[entry.first].end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
+                                    std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
+                                    analysisInformation[currentState] = std::move(tmpIntersection);
+                                }
+                            }
                         }
                     }
                     
                     // If the analysis information changed, we need to update it and put all the predecessors of this
                     // state in the worklist.
                     if (analysisInformation[currentState].size() != analysisInformationSizeBefore) {
-                        for (auto& predecessorEntry : backwardTransitions.getRow(currentState)) {
+                        for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
                             // Only put the predecessor in the worklist if it's not already a target state.
-                            if (!psiStates.get(predecessorEntry.first)) {
-                                worklist.push(std::make_pair(predecessorEntry.first, currentState));
+                            if (!psiStates.get(predecessorEntry.first) && !statesInWorkList.get(predecessorEntry.first)) {
+                                worklist.push(predecessorEntry.first);
+                                statesInWorkList.set(predecessorEntry.first);
                             }
                         }
+                        markedStates.set(currentState, true);
+                    } else {
+                        markedStates.set(currentState, false);
                     }
                     
                     worklist.pop();
+                    statesInWorkList.set(currentState, false);
                 }
                 
                 return analysisInformation;

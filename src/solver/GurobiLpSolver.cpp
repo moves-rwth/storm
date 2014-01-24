@@ -71,7 +71,7 @@ namespace storm {
             error = GRBsetdblparam(env, "IntFeasTol", storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble());
         }
         
-        void GurobiLpSolver::updateModel() const {
+        void GurobiLpSolver::update() const {
             int error = GRBupdatemodel(model);
             if (error) {
                 LOG4CPLUS_ERROR(logger, "Unable to update Gurobi model (" << GRBgeterrormsg(env) << ").");
@@ -104,7 +104,6 @@ namespace storm {
                 throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").";
             }
             ++nextVariableIndex;
-            this->updateModel();
             return nextVariableIndex - 1;
         }
         
@@ -130,7 +129,6 @@ namespace storm {
                 throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").";
             }
             ++nextVariableIndex;
-            this->updateModel();
             return nextVariableIndex - 1;
         }
         
@@ -141,7 +139,6 @@ namespace storm {
                 throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").";
             }
             ++nextVariableIndex;
-            this->updateModel();
             return nextVariableIndex - 1;
         }
         
@@ -176,13 +173,11 @@ namespace storm {
                 LOG4CPLUS_ERROR(logger, "Unable to assert Gurobi constraint (" << GRBgeterrormsg(env) << ").");
                 throw storm::exceptions::InvalidStateException() << "Unable to assert Gurobi constraint (" << GRBgeterrormsg(env) << ").";
             }
-            
-            this->updateModel();
         }
         
         void GurobiLpSolver::optimize() const {
             // First incorporate all recent changes.
-            this->updateModel();
+            this->update();
          
             // Set the most recently set model sense.
             int error = GRBsetintattr(model, "ModelSense", this->getModelSense() == MINIMIZE ? 1 : -1);
@@ -318,9 +313,9 @@ namespace storm {
                 throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
             }
             
-            if (std::abs(value - static_cast<int>(value)) <= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
+            if (std::abs(value - static_cast<int>(value)) <= storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble()) {
                 // Nothing to do in this case.
-            } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
+            } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble()) {
                 LOG4CPLUS_ERROR(logger, "Illegal value for integer variable in Gurobi solution (" << value << ").");
                 throw storm::exceptions::InvalidStateException() << "Illegal value for integer variable in Gurobi solution (" << value << ").";
             }
@@ -349,9 +344,9 @@ namespace storm {
                 throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
             }
             
-            if (std::abs(value - 1) <= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
+            if (std::abs(value - 1) <= storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble()) {
                 // Nothing to do in this case.
-            } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
+            } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble()) {
                 LOG4CPLUS_ERROR(logger, "Illegal value for binary variable in Gurobi solution (" << value << ").");
                 throw storm::exceptions::InvalidStateException() << "Illegal value for binary variable in Gurobi solution (" << value << ").";
             }

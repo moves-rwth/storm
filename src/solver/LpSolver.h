@@ -102,6 +102,12 @@ namespace storm {
             virtual uint_fast64_t createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) = 0;
             
             /*!
+             * Updates the model to make the variables that have been declared since the last call to <code>update</code>
+             * usable.
+             */
+            virtual void update() const = 0;
+            
+            /*!
              * Adds a constraint of the form
              *      a_1*x_1 + ... + a_n*x_n  op  c
              * to the LP problem.

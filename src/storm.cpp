@@ -69,8 +69,10 @@ void printUsage() {
 	struct rusage ru;
 	getrusage(RUSAGE_SELF, &ru);
 
-	std::cout << "Memory Usage: " << ru.ru_maxrss << "kB" << std::endl;
-	std::cout << "CPU Time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
+    std::cout << "===== Statistics ==============================" << std::endl;
+	std::cout << "peak memory usage: " << ru.ru_maxrss/1024/1024 << "MB" << std::endl;
+	std::cout << "CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
+    std::cout << "===============================================" << std::endl;
 #else
 	HANDLE hProcess = GetCurrentProcess ();
     FILETIME ftCreation, ftExit, ftUser, ftKernel;
@@ -559,6 +561,7 @@ int main(const int argc, const char* argv[]) {
         
         // Perform clean-up and terminate.
 		cleanUp();
+        printUsage();
 		LOG4CPLUS_INFO(logger, "StoRM terminating.");
 		return 0;
 	} catch (std::exception& e) {

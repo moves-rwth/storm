@@ -436,6 +436,7 @@ namespace storm {
                         stateToVariableIndexMap[stateChoicesPair.first] = solver->createContinuousVariable("x" + std::to_string(stateChoicesPair.first), storm::solver::LpSolver::UNBOUNDED, 0, 0, 0);
                     }
                     uint_fast64_t lraValueVariableIndex = solver->createContinuousVariable("k", storm::solver::LpSolver::UNBOUNDED, 0, 0, 1);
+                    solver->update();
                     
                     // Now we encode the problem as constraints.
                     std::vector<uint_fast64_t> variables;

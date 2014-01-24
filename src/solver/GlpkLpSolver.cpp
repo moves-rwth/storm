@@ -95,6 +95,10 @@ namespace storm {
             return index;
         }
         
+        void GlpkLpSolver::update() const {
+            // Intentionally left empty.
+        }
+        
         void GlpkLpSolver::addConstraint(std::string const& name, std::vector<uint_fast64_t> const& variables, std::vector<double> const& coefficients, BoundType const& boundType, double rightHandSideValue) {
             if (variables.size() != coefficients.size()) {
                 LOG4CPLUS_ERROR(logger, "Sizes of variable indices vector and coefficients vector do not match.");

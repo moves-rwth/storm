@@ -97,7 +97,7 @@ namespace storm {
                 result.problematicStates &= result.relevantStates;
                 LOG4CPLUS_DEBUG(logger, "Found " << phiStates.getNumberOfSetBits() << " filter states.");
                 LOG4CPLUS_DEBUG(logger, "Found " << psiStates.getNumberOfSetBits() << " target states.");
-                LOG4CPLUS_DEBUG(logger, "Found " << result.relevantStates.getNumberOfSetBits() << " relevant states .");
+                LOG4CPLUS_DEBUG(logger, "Found " << result.relevantStates.getNumberOfSetBits() << " relevant states.");
                 LOG4CPLUS_DEBUG(logger, "Found " << result.problematicStates.getNumberOfSetBits() << " problematic states.");
                 return result;
             }
@@ -407,7 +407,9 @@ namespace storm {
                 result.numberOfVariables += problematicTransitionVariableResult.second;
                 LOG4CPLUS_DEBUG(logger, "Created variables for the problematic choices.");
 
-                LOG4CPLUS_INFO(logger, "Successfully created " << result.numberOfVariables << " Gurobi variables.");
+                // Finally, we need to update the model to make the new variables usable.
+                solver.update();
+                LOG4CPLUS_INFO(logger, "Successfully created " << result.numberOfVariables << " MILP variables.");
                 
                 // Finally, return variable information struct.
                 return result;
@@ -879,7 +881,7 @@ namespace storm {
                     LOG4CPLUS_DEBUG(logger, "Asserted scheduler cuts.");
                 }
                 
-                LOG4CPLUS_INFO(logger, "Successfully created " << numberOfConstraints << " Gurobi constraints.");
+                LOG4CPLUS_INFO(logger, "Successfully created " << numberOfConstraints << " MILP constraints.");
             }
             
             /*!
@@ -929,7 +931,7 @@ namespace storm {
             }
             
             /*!
-             * Computes the reachability probability and the selected initial state in the given optimized Gurobi model.
+             * Computes the reachability probability and the selected initial state in the given optimized MILP model.
              *
              * @param solver The MILP solver.
              * @param labeledMdp The labeled MDP.
@@ -959,13 +961,16 @@ namespace storm {
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
-                storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
-                std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
-                for (auto state : labeledMdp.getInitialStates()) {
-                    maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
-                }
-                if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
-                    throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
+                if (checkThresholdFeasible) {
+                    storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
+                    std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
+                    for (auto state : labeledMdp.getInitialStates()) {
+                        maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
+                    }
+                    if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
+                        throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
+                    }
+                    std::cout << "Maximal reachability in model determined to be " << maximalReachabilityProbability << "." << std::endl;
                 }
 
                 // (2) Identify relevant and problematic states.
@@ -1044,7 +1049,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, strictBound, true, true);
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, strictBound, true, storm::settings::Settings::getInstance()->isSet("schedcuts"));
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 
