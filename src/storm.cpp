@@ -385,9 +385,9 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
  * Main entry point.
  */
 int main(const int argc, const char* argv[]) {
-	// Register a signal handler to catch segfaults and display a backtrace.
+    // Register a signal handler to catch signals and display a backtrace.
 	installSignalHandler();
-
+    
     // Print an information header.
 	printHeader(argc, argv);
 

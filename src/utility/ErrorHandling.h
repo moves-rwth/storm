@@ -121,10 +121,30 @@ void signalHandler(int sig) {
  * Registers some signal handlers so that we can display a backtrace upon erroneuous termination.
  */
 void installSignalHandler() {
+#ifndef WINDOWS
+    struct sigaction sa;
+    sa.sa_handler = signalHandler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    
+    if (sigaction(SIGSEGV, &sa, nullptr) == -1) {
+        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+    }
+    if (sigaction(SIGABRT, &sa, nullptr) == -1) {
+        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+    }
+    if (sigaction(SIGINT, &sa, nullptr) == -1) {
+        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+    }
+    if (sigaction(SIGTERM, &sa, nullptr) == -1) {
+        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+    }
+#else
 	signal(SIGSEGV, signalHandler);
     signal(SIGABRT, signalHandler);
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
+#endif
 }
 
 #endif	/* ERRORHANDLING_H */
