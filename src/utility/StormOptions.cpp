@@ -34,6 +34,8 @@ bool storm::utility::StormOptions::optionsRegistered = storm::settings::Settings
     
 	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "fixDeadlocks", "", "If the model contains deadlock states, setting this option will insert self-loops for these states.").build());
     
+    settings->addOption(storm::settings::OptionBuilder("StoRM Main", "timeout", "t", "If specified, computation will abort after the given number of seconds.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("seconds", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
+    
 	std::vector<std::string> linearEquationSolver;
 	linearEquationSolver.push_back("gmm++");
 	linearEquationSolver.push_back("native");

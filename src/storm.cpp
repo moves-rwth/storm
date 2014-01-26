@@ -404,9 +404,15 @@ int main(const int argc, const char* argv[]) {
 			return 0;
 		}
         
+        // If requested by the user, we install a timeout signal to abort computation.
+		storm::settings::Settings* s = storm::settings::Settings::getInstance();
+        uint_fast64_t timeout = s->getOptionByLongName("timeout").getArgument(0).getValueAsUnsignedInteger();
+        if (timeout != 0) {
+            alarm(timeout);
+        }
+        
 		// Now, the settings are received and the specified model is parsed. The actual actions taken depend on whether
         // the model was provided in explicit or symbolic format.
-		storm::settings::Settings* s = storm::settings::Settings::getInstance();
 		if (s->isSet("explicit")) {
 			std::string const chosenTransitionSystemFile = s->getOptionByLongName("explicit").getArgument(0).getValueAsString();
 			std::string const chosenLabelingFile = s->getOptionByLongName("explicit").getArgument(1).getValueAsString();

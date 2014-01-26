@@ -139,6 +139,9 @@ void installSignalHandler() {
     if (sigaction(SIGTERM, &sa, nullptr) == -1) {
         std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
     }
+    if (sigaction(SIGALRM, &sa, nullptr) == -1) {
+        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+    }
 #else
 	signal(SIGSEGV, signalHandler);
     signal(SIGABRT, signalHandler);
