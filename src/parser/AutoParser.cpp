@@ -7,7 +7,6 @@
 
 #include "src/parser/AutoParser.h"
 
-#include "src/parser/Parser.h"
 #include "src/parser/MappedFile.h"
 
 #include "src/parser/DeterministicModelParser.h"
@@ -15,8 +14,13 @@
 #include "src/parser/MarkovAutomatonParser.h"
 #include "src/exceptions/WrongFormatException.h"
 
+#include "src/utility/cstring.h"
+#include "src/utility/OsDetection.h"
+
 namespace storm {
 	namespace parser {
+
+		using namespace storm::utility::cstring;
 
 		std::shared_ptr<storm::models::AbstractModel<double>> AutoParser::parseModel(std::string const & transitionSystemFile,
 																					 std::string const & labelingFile,
@@ -68,17 +72,18 @@ namespace storm {
 		storm::models::ModelType AutoParser::analyzeHint(const std::string& filename) {
 			storm::models::ModelType hintType = storm::models::Unknown;
 
-			// Find out the line endings used within the file.
-			storm::parser::SupportedLineEndings lineEndings = storm::parser::findUsedLineEndings(filename);
-
 			// Open the file.
 			MappedFile file(filename.c_str());
 			char* buf = file.data;
 
 			// Find and read in the hint.
-			char hint[128];
-			// %20s => The input hint can be AT MOST 120 chars long.
-			storm::parser::scanForModelHint(hint, sizeof(hint), buf, lineEndings);
+			char hint[65];
+			// %60s => The input hint can be AT MOST 60 chars long.
+		#ifdef WINDOWS
+			sscanf_s(buf, "%60s", hint, sizeof(hint));
+		#else
+			sscanf(buf, "%60s", hint);
+		#endif
 
 			for (char* c = hint; *c != '\0'; c++) *c = toupper(*c);
 

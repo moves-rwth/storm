@@ -8,8 +8,6 @@
 #ifndef STORM_PARSER_CSLPARSER_H_
 #define STORM_PARSER_CSLPARSER_H_
 
-#include "Parser.h"
-
 #include "src/formula/Csl.h"
 #include <functional>
 

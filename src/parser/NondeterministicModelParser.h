@@ -8,7 +8,6 @@
 #ifndef STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
 #define STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
 
-#include "src/parser/Parser.h"
 #include "src/models/Mdp.h"
 #include "src/models/Ctmdp.h"
 

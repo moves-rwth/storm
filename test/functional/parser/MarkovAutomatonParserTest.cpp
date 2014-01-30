@@ -14,7 +14,7 @@
 
 #include "src/parser/MarkovAutomatonSparseTransitionParser.h"
 #include "src/parser/SparseStateRewardParser.h"
-#include "src/parser/Parser.h"
+#include "src/utility/cstring.h"
 #include "src/parser/MarkovAutomatonParser.h"
 
 #define STATE_COUNT 6

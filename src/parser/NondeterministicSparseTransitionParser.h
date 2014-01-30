@@ -1,7 +1,6 @@
 #ifndef STORM_PARSER_NONDETERMINISTICSPARSETRANSITIONPARSER_H_
 #define STORM_PARSER_NONDETERMINISTICSPARSETRANSITIONPARSER_H_
 
-#include "src/parser/Parser.h"
 #include "src/storage/SparseMatrix.h"
 
 #include <vector>
@@ -87,11 +86,10 @@ namespace storm {
 			 * number of columns of the matrix.
 			 *
 			 * @param buffer Buffer containing the data to scan. This is expected to be some char array.
-			 * @param lineEndings The line endings that are to be used while parsing.
 			 * @param insertDiagonalEntriesIfMissing A flag set iff entries on the primary diagonal of the matrix should be added in case they are missing in the parsed file.
 			 * @return A structure representing the result of the first pass.
 			 */
-			static FirstPassResult firstPass(char* buffer, SupportedLineEndings lineEndings, bool isRewardFile, Result const & modelInformation);
+			static FirstPassResult firstPass(char* buffer, bool isRewardFile, Result const & modelInformation);
 
 			/*!
 			 * The main parsing routine.

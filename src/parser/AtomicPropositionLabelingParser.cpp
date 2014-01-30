@@ -11,7 +11,7 @@
 #include <string>
 #include <iostream>
 
-#include "src/parser/Parser.h"
+#include "src/utility/cstring.h"
 #include "src/parser/MappedFile.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
@@ -23,25 +23,20 @@ extern log4cplus::Logger logger;
 namespace storm {
 	namespace parser {
 
+		using namespace storm::utility::cstring;
+
 		storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(uint_fast64_t node_count, std::string const & filename) {
 
 			// Open the given file.
-			if (!storm::parser::fileExistsAndIsReadable(filename.c_str())) {
+			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
 				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
 				throw storm::exceptions::FileIoException() << "The supplied Labeling input file \"" << filename << "\" does not exist or is not readable by this process.";
 			}
-
-			// Find out about the used line endings.
-			SupportedLineEndings lineEndings = findUsedLineEndings(filename, true);
 
 			MappedFile file(filename.c_str());
 			char* buf = file.data;
 
 			// First pass: Count the number of propositions.
-			// Convert the line endings into a string containing all whitespace characters, that separate words in the file.
-			char separator[5];
-			storm::parser::getMatchingSeparatorString(separator, sizeof(separator), lineEndings);
-
 			bool foundDecl = false, foundEnd = false;
 			uint_fast32_t proposition_count = 0;
 			size_t cnt = 0;
@@ -49,11 +44,12 @@ namespace storm {
 			// Iterate over tokens until we hit #END or the end of the file.
 			while(buf[0] != '\0') {
 
-				// Move the buffer pointer to the separator.
+				//Move the buffer to the beginning of the next word.
 				buf += cnt;
+				buf = trimWhitespaces(buf);
 
 				// Get the number of characters until the next separator.
-				cnt = strcspn(buf, separator);
+				cnt = skipWord(buf) - buf;
 				if (cnt > 0) {
 
 					// If the next token is #DECLARATION: Just skip it.
@@ -67,10 +63,6 @@ namespace storm {
 						break;
 					}
 					proposition_count++;
-				} else {
-
-					// If the next character is a separator, skip it.
-					buf++;
 				}
 			}
 
@@ -98,11 +90,12 @@ namespace storm {
 			// As we already checked the file header, we know that #DECLARATION and #END are tokens in the character stream.
 			while(buf[0] != '\0') {
 
-				// Move the buffer pointer to the separator.
+				//Move the buffer to the beginning of the next word.
 				buf += cnt;
+				buf = trimWhitespaces(buf);
 
-				// The number of characters until the next separator.
-				cnt = strcspn(buf, separator);
+				// Get the number of characters until the next separator.
+				cnt = skipWord(buf) - buf;
 
 				if (cnt >= sizeof(proposition)) {
 
@@ -122,10 +115,6 @@ namespace storm {
 					strncpy(proposition, buf, cnt);
 					proposition[cnt] = '\0';
 					labeling.addAtomicProposition(proposition);
-				} else {
-
-					// The next character is a separator, thus move one step forward.
-					buf++;
 				}
 			}
 
@@ -143,7 +132,7 @@ namespace storm {
 				// Stop at the end of the line.
 				node = checked_strtol(buf, &buf);
 				while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
-					cnt = strcspn(buf, separator);
+					cnt = skipWord(buf) - buf;
 					if (cnt == 0) {
 
 						// The next character is a separator.

@@ -11,9 +11,6 @@
 #include <cstring>
 #include <fcntl.h>
 
-#include <iostream>
-#include <string>
-
 #include <boost/integer/integer_mask.hpp>
 
 #include "src/exceptions/FileIoException.h"
@@ -95,6 +92,11 @@ namespace storm {
 			CloseHandle(this->mapping);
 			CloseHandle(this->file);
 		#endif
+		}
+
+		bool MappedFile::fileExistsAndIsReadable(const char* fileName) {
+			std::ifstream fin(fileName);
+			return fin.good();
 		}
 	} // namespace parser
 } // namespace storm

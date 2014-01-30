@@ -15,6 +15,7 @@
 #include <string>
 
 #include "src/utility/constants.h"
+#include "src/utility/cstring.h"
 #include "src/parser/MappedFile.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -26,6 +27,8 @@ extern log4cplus::Logger logger;
 
 namespace storm {
 	namespace parser {
+
+		using namespace storm::utility::cstring;
 
 		storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parseDeterministicTransitions(std::string const& filename) {
 
@@ -43,13 +46,10 @@ namespace storm {
 			// Enforce locale where decimal point is '.'.
 				setlocale(LC_NUMERIC, "C");
 
-				if (!fileExistsAndIsReadable(filename.c_str())) {
+				if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
 					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
 					throw storm::exceptions::FileIoException() << "The supplied Transition input file \"" << filename << "\" does not exist or is not readable by this process.";
 				}
-
-				// Find out about the used line endings.
-				SupportedLineEndings lineEndings = findUsedLineEndings(filename, true);
 
 				// Open file.
 				MappedFile file(filename.c_str());
@@ -57,7 +57,7 @@ namespace storm {
 
 				// Perform first pass, i.e. count entries that are not zero.
 				bool insertDiagonalEntriesIfMissing = !isRewardFile;
-				DeterministicSparseTransitionParser::FirstPassResult firstPass = DeterministicSparseTransitionParser::firstPass(file.data, lineEndings, insertDiagonalEntriesIfMissing);
+				DeterministicSparseTransitionParser::FirstPassResult firstPass = DeterministicSparseTransitionParser::firstPass(file.data, insertDiagonalEntriesIfMissing);
 
 				LOG4CPLUS_INFO(logger, "First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " NonZeros.");
 
@@ -72,7 +72,8 @@ namespace storm {
 				// Skip the format hint if it is there.
 				buf = trimWhitespaces(buf);
 				if(buf[0] < '0' || buf[0] > '9') {
-					buf = storm::parser::forwardToNextLine(buf, lineEndings);
+					buf = forwardToLineEnd(buf);
+					buf = trimWhitespaces(buf);
 				}
 
 				if(isRewardFile) {
@@ -191,14 +192,15 @@ namespace storm {
 				return resultMatrix.build();
 		}
 
-		DeterministicSparseTransitionParser::FirstPassResult DeterministicSparseTransitionParser::firstPass(char* buf, SupportedLineEndings lineEndings, bool insertDiagonalEntriesIfMissing) {
+		DeterministicSparseTransitionParser::FirstPassResult DeterministicSparseTransitionParser::firstPass(char* buf, bool insertDiagonalEntriesIfMissing) {
 
 			DeterministicSparseTransitionParser::FirstPassResult result;
 
 			// Skip the format hint if it is there.
 			buf = trimWhitespaces(buf);
 			if(buf[0] < '0' || buf[0] > '9') {
-				buf = storm::parser::forwardToNextLine(buf, lineEndings);
+				buf = forwardToLineEnd(buf);
+				buf = trimWhitespaces(buf);
 			}
 
 			 // Check all transitions for non-zero diagonal entries and deadlock states.

@@ -2,13 +2,17 @@
 
 #include "src/settings/Settings.h"
 #include "src/exceptions/WrongFormatException.h"
-#include "MappedFile.h"
+#include "src/parser/MappedFile.h"
+#include "src/utility/cstring.h"
+
 
 namespace storm {
 
 namespace parser {
 
-MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char* buf, SupportedLineEndings lineEndings) {
+using namespace storm::utility::cstring;
+
+MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char* buf) {
 	MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
 	bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
@@ -16,7 +20,8 @@ MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTran
 	// Skip the format hint if it is there.
 	buf = trimWhitespaces(buf);
 	if(buf[0] < '0' || buf[0] > '9') {
-		buf = storm::parser::forwardToNextLine(buf, lineEndings);
+		buf = forwardToLineEnd(buf);
+		buf = trimWhitespaces(buf);
 	}
 
 	// Now read the transitions.
@@ -84,7 +89,8 @@ MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTran
 			stateHasProbabilisticChoice = true;
 		}
 
-		buf = forwardToNextLine(buf, lineEndings);
+		// Go to the next line where the transitions start.
+		buf = forwardToNextLine(buf);
 
 		// Now that we have the source state and the information whether or not the current choice is probabilistic or Markovian, we need to read the list of successors and the probabilities/rates.
 		bool hasSuccessorState = false;
@@ -131,7 +137,7 @@ MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTran
 				// As we found a new successor, we need to increase the number of nonzero entries.
 				++result.numberOfNonzeroEntries;
 
-				buf = forwardToNextLine(buf, lineEndings);
+				buf = forwardToNextLine(buf);
 			} else {
 				// If it was not a "*", we have to assume that we encountered the beginning of a new choice definition. In this case, we don't move the pointer
 				// to the buffer, because we still need to read the new source state.
@@ -143,13 +149,17 @@ MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTran
 	return result;
 }
 
-MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitionParser::secondPass(char* buf, SupportedLineEndings lineEndings, FirstPassResult const& firstPassResult) {
+MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitionParser::secondPass(char* buf, FirstPassResult const& firstPassResult) {
 	ResultType result(firstPassResult);
 
 	bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
 
-	// Skip the format hint.
-	buf = storm::parser::forwardToNextLine(buf, lineEndings);
+	// Skip the format hint if it is there.
+	buf = trimWhitespaces(buf);
+	if(buf[0] < '0' || buf[0] > '9') {
+		buf = forwardToLineEnd(buf);
+		buf = trimWhitespaces(buf);
+	}
 
 	// Now read the transitions.
 	uint_fast64_t source, target = 0;
@@ -195,7 +205,8 @@ MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitio
 			isMarkovianChoice = false;
 		}
 
-		buf = forwardToNextLine(buf, lineEndings);
+		// Go to the next line where the transitions start.
+		buf = forwardToNextLine(buf);
 
 		// Now that we have the source state and the information whether or not the current choice is probabilistic or Markovian, we need to read the list of successors and the probabilities/rates.
 		bool encounteredNewDistribution = false;
@@ -226,7 +237,7 @@ MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitio
 					result.exitRates[source] += val;
 				}
 
-				buf = forwardToNextLine(buf, lineEndings);
+				buf = forwardToNextLine(buf);
 			} else {
 				// If it was not a "*", we have to assume that we encountered the beginning of a new choice definition. In this case, we don't move the pointer
 				// to the buffer, because we still need to read the new source state.
@@ -247,19 +258,16 @@ MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitio
 	// Set the locale to correctly recognize floating point numbers.
 	setlocale(LC_NUMERIC, "C");
 
-	if (!fileExistsAndIsReadable(filename.c_str())) {
+	if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
 		throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
 	}
-
-	// Determine used line endings.
-	SupportedLineEndings lineEndings = findUsedLineEndings(filename, true);
 
 	// Open file and prepare pointer to buffer.
 	MappedFile file(filename.c_str());
 	char* buf = file.data;
 
-	return secondPass(buf, lineEndings, firstPass(buf, lineEndings));
+	return secondPass(buf, firstPass(buf));
 }
 
 } // namespace parser

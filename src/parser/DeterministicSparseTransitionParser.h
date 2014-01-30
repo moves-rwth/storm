@@ -2,7 +2,6 @@
 #define STORM_PARSER_DETERMINISTICSPARSETRANSITIONPARSER_H_
 
 #include "src/storage/SparseMatrix.h"
-#include "src/parser/Parser.h"
 
 namespace storm {
 
@@ -59,11 +58,10 @@ private:
 	 * transitions and the maximum node id.
 	 *
 	 * @param buffer The buffer that cointains the input.
-	 * @param lineEndings The line endings that are to be used while parsing.
 	 * @param insertDiagonalEntriesIfMissing A flag set iff entries on the primary diagonal of the matrix should be added in case they are missing in the parsed file.
 	 * @return A structure representing the result of the first pass.
 	 */
-	static FirstPassResult firstPass(char* buffer, SupportedLineEndings lineEndings, bool insertDiagonalEntriesIfMissing = true);
+	static FirstPassResult firstPass(char* buffer, bool insertDiagonalEntriesIfMissing = true);
 
 	/*
 	 * The main parsing routine.

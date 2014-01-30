@@ -49,6 +49,12 @@ namespace storm {
 			~MappedFile();
 
 			/*!
+			 *  @brief Tests whether the given file exists and is readable.
+			 *  @return True iff the file exists and is readable.
+			 */
+			static bool fileExistsAndIsReadable(const char* fileName);
+
+			/*!
 			 *	@brief pointer to actual file content.
 			 */
 			char* data;

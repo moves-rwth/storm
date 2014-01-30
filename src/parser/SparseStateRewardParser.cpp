@@ -11,7 +11,7 @@
 
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
-#include "src/parser/Parser.h"
+#include "src/utility/cstring.h"
 #include "src/parser/MappedFile.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -20,6 +20,8 @@ extern log4cplus::Logger logger;
 namespace storm {
 
 namespace parser {
+
+using namespace storm::utility::cstring;
 
 /*!
  *	Reads a state reward file and puts the result in a state reward vector.
@@ -30,7 +32,7 @@ namespace parser {
  */
 std::vector<double> SparseStateRewardParser::parseSparseStateReward(uint_fast64_t stateCount, std::string const & filename) {
 	// Open file.
-	if (!fileExistsAndIsReadable(filename.c_str())) {
+	if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
 		throw storm::exceptions::WrongFormatException();
 	}

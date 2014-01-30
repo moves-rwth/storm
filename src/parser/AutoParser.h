@@ -6,6 +6,14 @@
 #include <string>
 
 namespace storm {
+
+	/*!
+	 *	@brief Contains all file parsers and helper classes.
+	 *
+	 *	This namespace contains everything needed to load data files (like
+	 *	atomic propositions, transition systems, formulas, etc.) including
+	 *	methods for efficient file access (see MappedFile).
+	 */
 	namespace parser {
 
 		class AutoParser {

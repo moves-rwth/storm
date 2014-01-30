@@ -8,7 +8,6 @@
 #ifndef STORM_PARSER_DETERMINISTICMODELPARSER_H_
 #define STORM_PARSER_DETERMINISTICMODELPARSER_H_
 
-#include "src/parser/Parser.h"
 #include "src/models/Dtmc.h"
 #include "src/models/Ctmc.h"
 

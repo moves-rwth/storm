@@ -14,12 +14,16 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 
+#include "src/utility/cstring.h"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
 namespace storm {
 	namespace parser {
+
+		using namespace storm::utility::cstring;
 
 		NondeterministicSparseTransitionParser::Result NondeterministicSparseTransitionParser::parseNondeterministicTransitions(std::string const& filename) {
 
@@ -38,20 +42,17 @@ namespace storm {
 			// Enforce locale where decimal point is '.'.
 			setlocale(LC_NUMERIC, "C");
 
-			if (!fileExistsAndIsReadable(filename.c_str())) {
+			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
 				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
 				throw storm::exceptions::WrongFormatException();
 			}
-
-			// Find out about the used line endings.
-			SupportedLineEndings lineEndings = findUsedLineEndings(filename, true);
 
 			// Open file.
 			MappedFile file(filename.c_str());
 			char* buf = file.data;
 
 			// Perform first pass, i.e. obtain number of columns, rows and non-zero elements.
-			NondeterministicSparseTransitionParser::FirstPassResult firstPass = NondeterministicSparseTransitionParser::firstPass(file.data, lineEndings, isRewardFile, modelInformation);
+			NondeterministicSparseTransitionParser::FirstPassResult firstPass = NondeterministicSparseTransitionParser::firstPass(file.data, isRewardFile, modelInformation);
 
 			// If first pass returned zero, the file format was wrong.
 			if (firstPass.numberOfNonzeroEntries == 0) {
@@ -64,7 +65,8 @@ namespace storm {
 			// Skip the format hint if it is there.
 			buf = trimWhitespaces(buf);
 			if(buf[0] < '0' || buf[0] > '9') {
-				buf = storm::parser::forwardToNextLine(buf, lineEndings);
+				buf = forwardToLineEnd(buf);
+				buf = trimWhitespaces(buf);
 			}
 
 			if (isRewardFile) {
@@ -158,7 +160,7 @@ namespace storm {
 				lastchoice = choice;
 
 				// Proceed to beginning of next line in file and next row in matrix.
-				buf = forwardToLineEnd(buf, lineEndings);
+				buf = forwardToLineEnd(buf);
 
 				buf = trimWhitespaces(buf);
 			}
@@ -172,14 +174,15 @@ namespace storm {
 			return NondeterministicSparseTransitionParser::Result(matrixBuilder.build(), rowMapping);
 		}
 
-		NondeterministicSparseTransitionParser::FirstPassResult NondeterministicSparseTransitionParser::firstPass(char* buf, SupportedLineEndings lineEndings, bool isRewardFile, Result const & modelInformation) {
+		NondeterministicSparseTransitionParser::FirstPassResult NondeterministicSparseTransitionParser::firstPass(char* buf, bool isRewardFile, Result const & modelInformation) {
 
 			// Check file header and extract number of transitions.
 
 			// Skip the format hint if it is there.
 			buf = trimWhitespaces(buf);
 			if(buf[0] < '0' || buf[0] > '9') {
-				buf = storm::parser::forwardToNextLine(buf, lineEndings);
+				buf = forwardToLineEnd(buf);
+				buf = trimWhitespaces(buf);
 			}
 
 			// Read all transitions.
@@ -261,7 +264,7 @@ namespace storm {
 
 				// The PRISM output format lists the name of the transition in the fourth column,
 				// but omits the fourth column if it is an internal action. In either case we can skip to the end of the line.
-				buf = forwardToLineEnd(buf, lineEndings);
+				buf = forwardToLineEnd(buf);
 
 				buf = trimWhitespaces(buf);
 			}

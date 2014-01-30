@@ -8,7 +8,6 @@
 #ifndef STORM_PARSER_LTLPARSER_H_
 #define STORM_PARSER_LTLPARSER_H_
 
-#include "Parser.h"
 #include "src/formula/Ltl.h"
 
 namespace storm {
