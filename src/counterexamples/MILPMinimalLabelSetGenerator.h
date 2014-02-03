@@ -1021,7 +1021,7 @@ namespace storm {
                     LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.";
                 }
-                bool strictBound = probBoundFormula->getComparisonOperator() == storm::property::ComparisonType::LESS;
+                bool strictBound = !probBoundFormula->getComparisonOperator() == storm::property::ComparisonType::LESS;
 
                 // Now derive the probability threshold we need to exceed as well as the phi and psi states. Simultaneously, check whether the formula is of a valid shape.
                 double bound = probBoundFormula->getBound();
