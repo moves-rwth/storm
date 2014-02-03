@@ -408,7 +408,7 @@ int main(const int argc, const char* argv[]) {
 		storm::settings::Settings* s = storm::settings::Settings::getInstance();
         uint_fast64_t timeout = s->getOptionByLongName("timeout").getArgument(0).getValueAsUnsignedInteger();
         if (timeout != 0) {
-            alarm(timeout);
+			stormSetAlarm(timeout);
         }
         
 		// Now, the settings are received and the specified model is parsed. The actual actions taken depend on whether

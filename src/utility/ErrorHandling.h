@@ -17,9 +17,7 @@
  *
  * @param symbol The name of the symbol that is to be demangled.
  */
-std::string demangle(char const* symbol) {
-	int status;
-    
+std::string demangle(char const* symbol) {    
 	// Attention: sscanf format strings rely on the size being 128.
 	char temp[128];
     
@@ -28,6 +26,7 @@ std::string demangle(char const* symbol) {
 #ifdef WINDOWS
 	scanResult = sscanf_s(symbol, "%*[^(]%*[^_]%127[^)+]", temp, sizeof(temp));
 #else
+	int status;
 	scanResult = sscanf(symbol, "%*[^(]%*[^_]%127[^)+]", temp);
 #endif
 	
@@ -147,6 +146,28 @@ void installSignalHandler() {
     signal(SIGABRT, signalHandler);
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
+#endif
+}
+
+#ifdef WINDOWS
+// This defines a placeholder-function to be called from SetTimer() which in turn calls the Signal Handler
+VOID CALLBACK stormWindowsSetTimerCallBack(
+	HWND hwnd,        // handle to window for timer messages 
+	UINT message,     // WM_TIMER message 
+	UINT_PTR idEvent,
+	DWORD dwTime)     // current system time 
+{
+	// I believe that SIGALRM translates to 14, but it could be wrong!
+	signalHandler(14);
+}
+#endif
+
+void stormSetAlarm(uint_fast64_t timeoutSeconds) {
+#ifndef WINDOWS
+	alarm(timeout);
+#else
+	// This needs more research (http://msdn.microsoft.com/en-us/library/windows/desktop/ms644906(v=vs.85).aspx)
+	UINT_PTR retVal = SetTimer(NULL, 0, static_cast<UINT>(timeoutSeconds * 1000), static_cast<TIMERPROC>(&stormWindowsSetTimerCallBack));
 #endif
 }
 
