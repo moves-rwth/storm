@@ -37,7 +37,7 @@ public:
 	 * Copy constructs a SparseMdpPrctlModelChecker from the given model checker. In particular, this means that the newly
 	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	explicit TopologicalValueIterationMdpPrctlModelChecker(storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<Type> const& modelchecker)
+	explicit TopologicalValueIterationMdpPrctlModelChecker(storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<Type> const& modelchecker)
 		: SparseMdpPrctlModelChecker<Type>(modelchecker),  minimumOperatorStack() {
 		// Intentionally left empty.
 	}

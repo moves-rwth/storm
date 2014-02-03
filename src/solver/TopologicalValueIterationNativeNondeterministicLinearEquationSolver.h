@@ -1,22 +1,23 @@
-#ifndef STORM_SOLVER_NATIVENONDETERMINISTICLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_NATIVENONDETERMINISTICLINEAREQUATIONSOLVER_H_
+#ifndef STORM_SOLVER_TOPOLOGICALVALUEITERATIONNONDETERMINISTICLINEAREQUATIONSOLVER_H_
+#define STORM_SOLVER_TOPOLOGICALVALUEITERATIONNONDETERMINISTICLINEAREQUATIONSOLVER_H_
 
 #include "src/solver/NondeterministicLinearEquationSolver.h"
+#include "src/solver/NativeNondeterministicLinearEquationSolver.h"
 
 namespace storm {
     namespace solver {
         
         /*!
-         * A class that uses the gmm++ library to implement the NondeterminsticLinearEquationSolver interface.
+         * A class that uses SCC Decompositions to solve a linear equation system
          */
         template<class ValueType>
-        class NativeNondeterministicLinearEquationSolver : public NondeterministicLinearEquationSolver<ValueType> {
+		class TopologicalValueIterationNondeterministicLinearEquationSolver : public NondeterministicLinearEquationSolver<ValueType> {
         public:
             /*!
              * Constructs a nondeterministic linear equation solver with parameters being set according to the settings
              * object.
              */
-            NativeNondeterministicLinearEquationSolver();
+			TopologicalValueIterationNondeterministicLinearEquationSolver();
             
             /*!
              * Constructs a nondeterminstic linear equation solver with the given parameters.
@@ -26,23 +27,11 @@ namespace storm {
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-            NativeNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+			TopologicalValueIterationNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
             
             virtual NondeterministicLinearEquationSolver<ValueType>* clone() const override;
             
-            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* newX = nullptr) const override;
-            
             virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
-
-        protected:
-            // The required precision for the iterative methods.
-            double precision;
-            
-            // Sets whether the relative or absolute error is to be considered for convergence detection.
-            bool relative;
-            
-            // The maximal number of iterations to do before iteration is aborted.
-            uint_fast64_t maximalNumberOfIterations;
         };
     } // namespace solver
 } // namespace storm
