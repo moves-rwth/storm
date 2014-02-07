@@ -24,10 +24,10 @@ namespace storm {
 
 		MappedFile::MappedFile(const char* filename) {
 		#if defined LINUX || defined MACOSX
-			/*
-			 *	Do file mapping for reasonable systems.
-			 *	stat64(), open(), mmap()
-			 */
+
+			// Do file mapping for reasonable systems.
+			// stat64(), open(), mmap()
+
 		#ifdef MACOSX
 			if (stat(filename, &(this->st)) != 0) {
 		#else
@@ -49,12 +49,12 @@ namespace storm {
 				LOG4CPLUS_ERROR(logger, "Error in mmap(" << filename << "): " << std::strerror(errno));
 				throw exceptions::FileIoException() << "MappedFile Error in mmap(): " << std::strerror(errno);
 			}
-			this->dataend = this->data + this->st.st_size;
+			this->dataEnd = this->data + this->st.st_size;
 		#elif defined WINDOWS
-			/*
-			 *	Do file mapping for windows.
-			 *	_stat64(), CreateFile(), CreateFileMapping(), MapViewOfFile()
-			 */
+
+			// Do file mapping for windows.
+			// _stat64(), CreateFile(), CreateFileMapping(), MapViewOfFile()
+
 			if (_stat64(filename, &(this->st)) != 0) {
 				LOG4CPLUS_ERROR(logger, "Error in _stat(" << filename << "): Probably, this file does not exist.");
 				throw exceptions::FileIoException("MappedFile Error in stat(): Probably, this file does not exist.");
@@ -80,7 +80,7 @@ namespace storm {
 				LOG4CPLUS_ERROR(logger, "Error in MapViewOfFile(" << filename << ").");
 				throw exceptions::FileIoException("MappedFile Error in MapViewOfFile().");
 			}
-			this->dataend = this->data + this->st.st_size;
+			this->dataEnd = this->data + this->st.st_size;
 		#endif
 		}
 
@@ -94,10 +94,19 @@ namespace storm {
 		#endif
 		}
 
-		bool MappedFile::fileExistsAndIsReadable(const char* fileName) {
-			std::ifstream fin(fileName);
+		bool MappedFile::fileExistsAndIsReadable(const char* filename) {
+			// Test by opening an input file stream and testing the stream flags.
+			std::ifstream fin(filename);
 			return fin.good();
 		}
+
+		char* MappedFile::getData() {
+			return data;
+		}
+
+		char* MappedFile::getDataEnd() {
+			return dataEnd;
+		}
+
 	} // namespace parser
 } // namespace storm
-

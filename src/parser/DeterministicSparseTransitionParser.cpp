@@ -53,11 +53,11 @@ namespace storm {
 
 				// Open file.
 				MappedFile file(filename.c_str());
-				char* buf = file.data;
+				char* buf = file.getData();
 
 				// Perform first pass, i.e. count entries that are not zero.
 				bool insertDiagonalEntriesIfMissing = !isRewardFile;
-				DeterministicSparseTransitionParser::FirstPassResult firstPass = DeterministicSparseTransitionParser::firstPass(file.data, insertDiagonalEntriesIfMissing);
+				DeterministicSparseTransitionParser::FirstPassResult firstPass = DeterministicSparseTransitionParser::firstPass(file.getData(), insertDiagonalEntriesIfMissing);
 
 				LOG4CPLUS_INFO(logger, "First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " NonZeros.");
 

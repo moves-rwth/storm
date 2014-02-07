@@ -26,7 +26,7 @@ TEST(MarkovAutomatonSparseTransitionParserTest, BasicParseTest) {
 	std::string filename = STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_general_input_01.tra";
 
 	// Execute the parser.
-	storm::parser::MarkovAutomatonSparseTransitionParser::ResultType result = storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(filename);
+	storm::parser::MarkovAutomatonSparseTransitionParser::Result result = storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(filename);
 
 	// Build the actual transition matrix.
 	storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build(0,0));
@@ -103,7 +103,7 @@ TEST(MarkovAutomatonSparseTransitionParserTest, WhiteSpaceTest) {
 	std::string filename = STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_whitespace_input_01.tra";
 
 	// Execute the parser.
-	storm::parser::MarkovAutomatonSparseTransitionParser::ResultType result = storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(filename);
+	storm::parser::MarkovAutomatonSparseTransitionParser::Result result = storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(filename);
 
 	// Build the actual transition matrix.
 	storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build(0,0));

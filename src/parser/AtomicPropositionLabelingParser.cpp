@@ -25,7 +25,7 @@ namespace storm {
 
 		using namespace storm::utility::cstring;
 
-		storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(uint_fast64_t node_count, std::string const & filename) {
+		storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(uint_fast64_t stateCount, std::string const & filename) {
 
 			// Open the given file.
 			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
@@ -34,7 +34,7 @@ namespace storm {
 			}
 
 			MappedFile file(filename.c_str());
-			char* buf = file.data;
+			char* buf = file.getData();
 
 			// First pass: Count the number of propositions.
 			bool foundDecl = false, foundEnd = false;
@@ -76,11 +76,11 @@ namespace storm {
 
 
 			// Create labeling object with given node and proposition count.
-			storm::models::AtomicPropositionsLabeling labeling(node_count, proposition_count);
+			storm::models::AtomicPropositionsLabeling labeling(stateCount, proposition_count);
 
 			// Second pass: Add propositions and node labels to labeling.
 			// First thing to do: Reset the file pointer.
-			buf = file.data;
+			buf = file.getData();
 
 			// Prepare a buffer for proposition names.
 			char proposition[128];

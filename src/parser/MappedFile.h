@@ -14,88 +14,98 @@
 
 namespace storm {
 	namespace parser {
-		/*!
-		 *	@brief Opens a file and maps it to memory providing a char*
-		 *	containing the file content.
-		 *
-		 *	This class is a very simple interface to read files efficiently.
-		 *	The given file is opened and mapped to memory using mmap().
-		 *	The public member data is a pointer to the actual file content.
-		 *	Using this method, the kernel will take care of all buffering. This is
-		 *	most probably much more efficient than doing this manually.
-		 */
 
 		#if !defined LINUX && !defined MACOSX && !defined WINDOWS
 		#error Platform not supported
 		#endif
 
+		/*!
+		 * Opens a file and maps it to memory providing a char*
+		 * containing the file content.
+		 *
+		 * This class is a very simple interface to read files efficiently.
+		 * The given file is opened and mapped to memory using mmap().
+		 * The public member data is a pointer to the actual file content.
+		 * Using this method, the kernel will take care of all buffering.
+		 * This is most probably much more efficient than doing this manually.
+		 */
 		class MappedFile {
 
 		public:
 
 			/*!
-			 * Constructor of MappedFile.
-			 * Will stat the given file, open it and map it to memory.
-			 * If anything of this fails, an appropriate exception is raised
-			 * and a log entry is written.
-			 * @param filename file to be opened
+			 * Constructs a MappedFile.
+			 * This will stat the given file, open it and map it to memory.
+			 * If anything of this fails, an appropriate exception is raised and a log entry is written.
+			 *
+			 * @param filename Path and name of the file to be opened.
 			 */
 			MappedFile(const char* filename);
 
 			/*!
-			 * Destructor of MappedFile.
-			 * Will unmap the data and close the file.
+			 * Destructs a MappedFile.
+			 * This will unmap the data and close the file.
 			 */
 			~MappedFile();
 
 			/*!
-			 *  @brief Tests whether the given file exists and is readable.
-			 *  @return True iff the file exists and is readable.
+			 * Tests whether the given file exists and is readable.
+			 *
+			 * @param filename Path and name of the file to be tested.
+			 * @return True iff the file exists and is readable.
 			 */
-			static bool fileExistsAndIsReadable(const char* fileName);
+			static bool fileExistsAndIsReadable(const char* filename);
 
 			/*!
-			 *	@brief pointer to actual file content.
+			 * Returns a pointer to the beginning of the mapped file data.
+			 *
+			 * @return A pointer to the first character of the mapped file data.
 			 */
-			char* data;
+			char* getData();
 
 			/*!
-			 *	@brief pointer to end of file content.
+			 * Returns a pointer to the end of the mapped file data.
+			 *
+			 * @return A pointer to the first position after the last character of the mapped file data.
 			 */
-			char* dataend;
+			char* getDataEnd();
 
 		private:
 
+			//! A pointer to the mapped file content.
+			char* data;
+
+			//! A pointer to end of the mapped file content.
+			char* dataEnd;
+
 		#if defined LINUX || defined MACOSX
-			/*!
-			 *	@brief file descriptor obtained by open().
-			 */
+
+			//! The file descriptor obtained by open().
 			int file;
 		#elif defined WINDOWS
+				//! The file handle obtained by opening the file.
 				HANDLE file;
+
+				//! The handle referencing the created memory mapping.
 				HANDLE mapping;
 		#endif
 
 		#if defined LINUX
-			/*!
-			 *	@brief stat information about the file.
-			 */
+
+			//! Stat information about the file.
 			struct stat64 st;
 		#elif defined MACOSX
-			/*!
-			 *	@brief stat information about the file.
-			 */
+
+			//! Stat information about the file.
 			struct stat st;
 		#elif defined WINDOWS
-			/*!
-			 *	@brief stat information about the file.
-			 */
+
+			//! Stat information about the file.
 			struct __stat64 st;
 		#endif
 		};
+
 	} // namespace parser
 } // namespace storm
-
-
 
 #endif /* STORM_PARSER_MAPPEDFILE_H_ */

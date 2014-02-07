@@ -22,19 +22,19 @@ namespace storm {
 
 		using namespace storm::utility::cstring;
 
-		std::shared_ptr<storm::models::AbstractModel<double>> AutoParser::parseModel(std::string const & transitionSystemFile,
-																					 std::string const & labelingFile,
-																					 std::string const & stateRewardFile,
-																					 std::string const & transitionRewardFile) {
+		std::shared_ptr<storm::models::AbstractModel<double>> AutoParser::parseModel(std::string const & transitionsFilename,
+																					 std::string const & labelingFilename,
+																					 std::string const & stateRewardFilename,
+																					 std::string const & transitionRewardFilename) {
 
 			// Find and parse the model type hint.
-			storm::models::ModelType type = AutoParser::analyzeHint(transitionSystemFile);
+			storm::models::ModelType type = AutoParser::analyzeHint(transitionsFilename);
 
 			// In case the hint string is unknown or could not be found, throw an exception.
 			if (type == storm::models::Unknown) {
-				LOG4CPLUS_ERROR(logger, "Could not determine file type of " << transitionSystemFile << ".");
+				LOG4CPLUS_ERROR(logger, "Could not determine file type of " << transitionsFilename << ".");
 				LOG4CPLUS_ERROR(logger, "The first line of the file should contain a format hint. Please fix your file and try again.");
-				throw storm::exceptions::WrongFormatException() << "Could not determine type of file " << transitionSystemFile;
+				throw storm::exceptions::WrongFormatException() << "Could not determine type of file " << transitionsFilename;
 			} else {
 				LOG4CPLUS_INFO(logger, "Model type seems to be " << type);
 			}
@@ -43,23 +43,23 @@ namespace storm {
 			std::shared_ptr<storm::models::AbstractModel<double>> model;
 			switch (type) {
 				case storm::models::DTMC: {
-					model.reset(new storm::models::Dtmc<double>(std::move(DeterministicModelParser::parseDtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
+					model.reset(new storm::models::Dtmc<double>(std::move(DeterministicModelParser::parseDtmc(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename))));
 					break;
 				}
 				case storm::models::CTMC: {
-					model.reset(new storm::models::Ctmc<double>(std::move(DeterministicModelParser::parseCtmc(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
+					model.reset(new storm::models::Ctmc<double>(std::move(DeterministicModelParser::parseCtmc(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename))));
 					break;
 				}
 				case storm::models::MDP: {
-					model.reset(new storm::models::Mdp<double>(std::move(NondeterministicModelParser::parseMdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
+					model.reset(new storm::models::Mdp<double>(std::move(NondeterministicModelParser::parseMdp(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename))));
 					break;
 				}
 				case storm::models::CTMDP: {
-					model.reset(new storm::models::Ctmdp<double>(std::move(NondeterministicModelParser::parseCtmdp(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile))));
+					model.reset(new storm::models::Ctmdp<double>(std::move(NondeterministicModelParser::parseCtmdp(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename))));
 					break;
 				}
 				case storm::models::MA: {
-					model.reset(new storm::models::MarkovAutomaton<double>(storm::parser::MarkovAutomatonParser::parseMarkovAutomaton(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile)));
+					model.reset(new storm::models::MarkovAutomaton<double>(storm::parser::MarkovAutomatonParser::parseMarkovAutomaton(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename)));
 					break;
 				}
 				default:
@@ -69,12 +69,12 @@ namespace storm {
 			return model;
 		}
 
-		storm::models::ModelType AutoParser::analyzeHint(const std::string& filename) {
+		storm::models::ModelType AutoParser::analyzeHint(std::string const & filename) {
 			storm::models::ModelType hintType = storm::models::Unknown;
 
 			// Open the file.
 			MappedFile file(filename.c_str());
-			char* buf = file.data;
+			char* buf = file.getData();
 
 			// Find and read in the hint.
 			char hint[65];
@@ -96,5 +96,6 @@ namespace storm {
 
 			return hintType;
 		}
+
 	} // namespace parser
 } // namespace storm

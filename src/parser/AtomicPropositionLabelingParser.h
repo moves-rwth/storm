@@ -7,18 +7,23 @@
 namespace storm {
 	namespace parser {
 
+		/*!
+		 * This class can be used to parse a labeling file.
+		 *
+		 * Since the labeling is state based, the same label parser can be used for all models.
+		 */
 		class AtomicPropositionLabelingParser {
 
 		public:
 
-			/*
-			 *	Reads a label file and puts the result in an AtomicPropositionsLabeling object.
+			/*!
+			 * Reads a label file and puts the result in an AtomicPropositionsLabeling object.
 			 *
-			 *	@param node_count The number of states of the model to be labeled.
-			 *	@param filename The path and name of the labeling (.lab) file.
-			 *	@return The parsed labeling as an AtomicPropositionsLabeling object.
+			 * @param stateCount The number of states of the model to be labeled.
+			 * @param filename The path and name of the labeling (.lab) file.
+			 * @return The parsed labeling as an AtomicPropositionsLabeling object.
 			 */
-			static storm::models::AtomicPropositionsLabeling parseAtomicPropositionLabeling(uint_fast64_t node_count, std::string const &filename);
+			static storm::models::AtomicPropositionsLabeling parseAtomicPropositionLabeling(uint_fast64_t stateCount, std::string const &filename);
 
 		};
 

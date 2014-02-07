@@ -49,10 +49,10 @@ namespace storm {
 
 			// Open file.
 			MappedFile file(filename.c_str());
-			char* buf = file.data;
+			char* buf = file.getData();
 
 			// Perform first pass, i.e. obtain number of columns, rows and non-zero elements.
-			NondeterministicSparseTransitionParser::FirstPassResult firstPass = NondeterministicSparseTransitionParser::firstPass(file.data, isRewardFile, modelInformation);
+			NondeterministicSparseTransitionParser::FirstPassResult firstPass = NondeterministicSparseTransitionParser::firstPass(file.getData(), isRewardFile, modelInformation);
 
 			// If first pass returned zero, the file format was wrong.
 			if (firstPass.numberOfNonzeroEntries == 0) {
