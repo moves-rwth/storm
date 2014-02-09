@@ -1,7 +1,6 @@
 #ifndef STORM_SOLVER_TOPOLOGICALVALUEITERATIONNONDETERMINISTICLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_TOPOLOGICALVALUEITERATIONNONDETERMINISTICLINEAREQUATIONSOLVER_H_
 
-#include "src/solver/NondeterministicLinearEquationSolver.h"
 #include "src/solver/NativeNondeterministicLinearEquationSolver.h"
 
 namespace storm {
@@ -11,7 +10,7 @@ namespace storm {
          * A class that uses SCC Decompositions to solve a linear equation system
          */
         template<class ValueType>
-		class TopologicalValueIterationNondeterministicLinearEquationSolver : public NondeterministicLinearEquationSolver<ValueType> {
+		class TopologicalValueIterationNondeterministicLinearEquationSolver : public NativeNondeterministicLinearEquationSolver<ValueType> {
         public:
             /*!
              * Constructs a nondeterministic linear equation solver with parameters being set according to the settings

@@ -3,11 +3,15 @@
 
 #include "src/storage/Decomposition.h"
 #include "src/storage/BitVector.h"
+#include "src/storage/SparseMatrix.h"
 
 namespace storm {
     namespace models {
         // Forward declare the abstract model class.
         template <typename ValueType> class AbstractModel;
+
+		// Forward declare the abstract pseudo-model class.
+		template <typename ValueType> class AbstractPseudoModel;
     }
     
     namespace storage {
@@ -33,6 +37,17 @@ namespace storm {
              * leaving the SCC), are kept.
              */
             StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+
+			/*
+			* Creates an SCC decomposition of the given encapsulated model.
+			*
+			* @param pseudoModel The encapsulated model to decompose into SCCs.
+			* @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
+			* without a self-loop) are to be kept in the decomposition.
+			* @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
+			* leaving the SCC), are kept.
+			*/
+			StronglyConnectedComponentDecomposition(storm::models::AbstractPseudoModel<ValueType> const& pseudoModel, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
              * Creates an SCC decomposition of the given block in the given model.
@@ -45,6 +60,18 @@ namespace storm {
              * leaving the SCC), are kept.
              */
             StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+
+			/*
+			* Creates an SCC decomposition of the given block in the given encapsulated model.
+			*
+			* @param pseudoModel The encapsulated model whose block to decompose.
+			* @param block The block to decompose into SCCs.
+			* @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
+			* without a self-loop) are to be kept in the decomposition.
+			* @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
+			* leaving the SCC), are kept.
+			*/
+			StronglyConnectedComponentDecomposition(storm::models::AbstractPseudoModel<ValueType> const& pseudoModel, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
              * Creates an SCC decomposition of the given subsystem in the given model.
@@ -57,36 +84,50 @@ namespace storm {
              * leaving the SCC), are kept.
              */
             StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+
+			/*
+			* Creates an SCC decomposition of the given subsystem in the given encapsulated model.
+			*
+			* @param pseudoModel The encapsulated model that contains the block.
+			* @param subsystem A bit vector indicating which subsystem to consider for the decomposition into SCCs.
+			* @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
+			* without a self-loop) are to be kept in the decomposition.
+			* @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
+			* leaving the SCC), are kept.
+			*/
+			StronglyConnectedComponentDecomposition(storm::models::AbstractPseudoModel<ValueType> const& pseudoModel, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*!
              * Creates an SCC decomposition by copying the given SCC decomposition.
              *
-             * @oaram other The SCC decomposition to copy.
+             * @param other The SCC decomposition to copy.
              */
             StronglyConnectedComponentDecomposition(StronglyConnectedComponentDecomposition const& other);
             
             /*!
              * Assigns the contents of the given SCC decomposition to the current one by copying its contents.
              *
-             * @oaram other The SCC decomposition from which to copy-assign.
+             * @param other The SCC decomposition from which to copy-assign.
              */
             StronglyConnectedComponentDecomposition& operator=(StronglyConnectedComponentDecomposition const& other);
             
             /*!
              * Creates an SCC decomposition by moving the given SCC decomposition.
              *
-             * @oaram other The SCC decomposition to move.
+             * @param other The SCC decomposition to move.
              */
             StronglyConnectedComponentDecomposition(StronglyConnectedComponentDecomposition&& other);
             
             /*!
              * Assigns the contents of the given SCC decomposition to the current one by moving its contents.
              *
-             * @oaram other The SCC decomposition from which to copy-assign.
+             * @param other The SCC decomposition from which to copy-assign.
              */
             StronglyConnectedComponentDecomposition& operator=(StronglyConnectedComponentDecomposition&& other);
             
         private:
+			
+
             /*!
              * Performs the SCC decomposition of the given model. As a side-effect this fills the vector of
              * blocks of the decomposition.
@@ -97,7 +138,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
+			void performSccDecomposition(storm::models::AbstractPseudoModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
             
             /*
              * Performs the SCC decomposition of the given block in the given model. As a side-effect this fills
@@ -110,7 +151,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
+			void performSccDecomposition(storm::models::AbstractPseudoModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
             
             /*!
              * A helper function that performs the SCC decomposition given all auxiliary data structures. As a
@@ -130,7 +171,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            void performSccDecompositionHelper(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs, bool onlyBottomSccs);
+			void performSccDecompositionHelper(storm::models::AbstractPseudoModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs, bool onlyBottomSccs);
         };
     }
 }

@@ -40,7 +40,7 @@ namespace storm {
              * @return The solution vector x of the system of linear equations as the content of the parameter x.
              */
             virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
-            
+
             /*!
              * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
              * x[i+1] = min/max(A*x[i] + b) until x[n], where x[0] = x. After each multiplication and addition, the

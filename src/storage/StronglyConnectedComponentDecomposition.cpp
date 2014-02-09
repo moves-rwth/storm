@@ -1,5 +1,6 @@
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/models/AbstractModel.h"
+#include "src/models/PseudoModel.h"
 
 namespace storm {
     namespace storage {
@@ -10,19 +11,37 @@ namespace storm {
 
         template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) : Decomposition() {
-            performSccDecomposition(model, dropNaiveSccs, onlyBottomSccs);
+			performSccDecomposition(storm::models::ModelBasedPseudoModel<ValueType>(model), dropNaiveSccs, onlyBottomSccs);
         }
+
+		template <typename ValueType>
+		StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractPseudoModel<ValueType> const& pseudoModel, bool dropNaiveSccs, bool onlyBottomSccs) : Decomposition() {
+			performSccDecomposition(pseudoModel, dropNaiveSccs, onlyBottomSccs);
+		}
         
-        template <typename ValueType>
+		template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
-            storm::storage::BitVector subsystem(model.getNumberOfStates(), block.begin(), block.end());
-            performSccDecomposition(model, subsystem, dropNaiveSccs, onlyBottomSccs);
+			storm::models::ModelBasedPseudoModel<ValueType> encapsulatedModel(model);
+			storm::storage::BitVector subsystem(encapsulatedModel.getNumberOfStates(), block.begin(), block.end());
+			performSccDecomposition(*static_cast<storm::models::AbstractPseudoModel<ValueType>*>(&encapsulatedModel), subsystem, dropNaiveSccs, onlyBottomSccs);
         }
+
+		template <typename ValueType>
+		StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractPseudoModel<ValueType> const& pseudoModel, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
+			storm::storage::BitVector subsystem(pseudoModel.getNumberOfStates(), block.begin(), block.end());
+			performSccDecomposition(pseudoModel, subsystem, dropNaiveSccs, onlyBottomSccs);
+		}
         
         template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
-            performSccDecomposition(model, subsystem, dropNaiveSccs, onlyBottomSccs);
+			storm::models::ModelBasedPseudoModel<ValueType> encapsulatedModel(model);
+			performSccDecomposition(*static_cast<storm::models::AbstractPseudoModel<ValueType>*>(&encapsulatedModel), subsystem, dropNaiveSccs, onlyBottomSccs);
         }
+
+		template <typename ValueType>
+		StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractPseudoModel<ValueType> const& pseudoModel, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
+			performSccDecomposition(pseudoModel, subsystem, dropNaiveSccs, onlyBottomSccs);
+		}
         
         template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(StronglyConnectedComponentDecomposition const& other) : Decomposition(other) {
@@ -47,7 +66,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
+		void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractPseudoModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
             // Set up the environment of Tarjan's algorithm.
             uint_fast64_t numberOfStates = model.getNumberOfStates();
             std::vector<uint_fast64_t> tarjanStack;
@@ -68,7 +87,7 @@ namespace storm {
 
         
         template <typename ValueType>
-        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) {
+		void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractPseudoModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) {
             // Prepare a block that contains all states for a call to the other overload of this function.
             storm::storage::BitVector fullSystem(model.getNumberOfStates(), true);
             
@@ -77,7 +96,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecompositionHelper(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs, bool onlyBottomSccs) {
+		void StronglyConnectedComponentDecomposition<ValueType>::performSccDecompositionHelper(storm::models::AbstractPseudoModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs, bool onlyBottomSccs) {
             // Create the stacks needed for turning the recursive formulation of Tarjan's algorithm into an iterative
             // version. In particular, we keep one stack for states and one stack for the iterators. The last one is not
             // strictly needed, but reduces iteration work when all successors of a particular state are considered.
@@ -201,7 +220,7 @@ namespace storm {
                 }
             }
         }
-        
+
         // Explicitly instantiate the SCC decomposition.
         template class StronglyConnectedComponentDecomposition<double>;
     } // namespace storage

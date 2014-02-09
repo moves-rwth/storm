@@ -8,7 +8,7 @@ namespace storm {
     namespace storage {
         // A typedef that specifies the type of a block consisting of states only.
         typedef boost::container::flat_set<uint_fast64_t> StateBlock;
-        
+
         /*!
          * Writes a string representation of the state block to the given output stream.
          *
@@ -129,11 +129,10 @@ namespace storm {
              * @return The block with the given index.
              */
             Block& operator[](uint_fast64_t index);
-            
+
             // Declare the streaming operator as a friend function to enable output of decompositions.
             template<typename BlockTimePrime>
             friend std::ostream& operator<<(std::ostream& out, Decomposition<BlockTimePrime> const& decomposition);
-            
         protected:
             // The blocks of the decomposition.
             std::vector<Block> blocks;
