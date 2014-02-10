@@ -122,15 +122,19 @@ namespace storm {
 			// We want to skip it.
 			buf += 4;
 
-			uint_fast64_t node;
+			// Now eliminate remaining whitespaces such as empty lines and start parsing.
+			buf = trimWhitespaces(buf);
+
+			uint_fast64_t state;
 			cnt = 0;
 
 			// Now parse the assignments of labels to nodes.
 			while (buf[0] != '\0') {
 
-				// Parse the node number and iterate over its labels (atomic propositions).
+				// Parse the state number and iterate over its labels (atomic propositions).
 				// Stop at the end of the line.
-				node = checked_strtol(buf, &buf);
+				state = checked_strtol(buf, &buf);
+
 				while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
 					cnt = skipWord(buf) - buf;
 					if (cnt == 0) {
@@ -145,7 +149,13 @@ namespace storm {
 						// Copy the label to the buffer, null terminate it and add it to labeling.
 						strncpy(proposition, buf, cnt);
 						proposition[cnt] = '\0';
-						labeling.addAtomicPropositionToState(proposition, node);
+
+						// Has the label been declared in the header?
+						if(!labeling.containsAtomicProposition(proposition)) {
+							LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition" << proposition << " was found but not declared.");
+							throw storm::exceptions::WrongFormatException();
+						}
+						labeling.addAtomicPropositionToState(proposition, state);
 						buf += cnt;
 					}
 				}
