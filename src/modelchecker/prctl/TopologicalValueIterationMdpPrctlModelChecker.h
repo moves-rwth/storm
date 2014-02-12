@@ -39,7 +39,7 @@ public:
 	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
 	explicit TopologicalValueIterationMdpPrctlModelChecker(storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<Type> const& modelchecker)
-		: SparseMdpPrctlModelChecker<Type>(modelchecker),  minimumOperatorStack() {
+    : SparseMdpPrctlModelChecker<Type>(modelchecker) {
 		// Intentionally left empty.
 	}
 

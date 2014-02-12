@@ -17,13 +17,13 @@ namespace storm {
 			storm::settings::Settings* settings = storm::settings::Settings::getInstance();
 
 			// Get appropriate settings.
-			maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-			precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-			relative = !settings->isSet("absolute");
+			this->maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
+			this->precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+			this->relative = !settings->isSet("absolute");
         }
         
         template<typename ValueType>
-		TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::TopologicalValueIterationNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeNondeterministicLinearEquationSolver(precision, maximalNumberOfIterations, relative) {
+		TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::TopologicalValueIterationNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeNondeterministicLinearEquationSolver<ValueType>(precision, maximalNumberOfIterations, relative) {
             // Intentionally left empty.
         }
         
@@ -80,7 +80,7 @@ namespace storm {
 				// For the current SCC, we need to perform value iteration until convergence.
 				localIterations = 0;
 				converged = false;
-				while (!converged && localIterations < maximalNumberOfIterations) {
+				while (!converged && localIterations < this->maximalNumberOfIterations) {
 					// Compute x' = A*x + b.
 					//A.multiplyWithVector(scc, nondeterministicChoiceIndices, *currentX, multiplyResult);
 					//storm::utility::addVectors(scc, nondeterministicChoiceIndices, multiplyResult, b);
@@ -103,7 +103,7 @@ namespace storm {
 					// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
 					// running time. In fact, it is faster. This has to be investigated.
 					// converged = storm::utility::equalModuloPrecision(*currentX, *newX, scc, precision, relative);
-					converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative);
+					converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, this->precision, this->relative);
 
 					// Update environment variables.
 					swap = currentX;
