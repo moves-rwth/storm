@@ -66,16 +66,24 @@ namespace storm {
 
 			// Iterate over all SCCs of the MDP as specified by the topological sort. This guarantees that an SCC is only
 			// solved after all SCCs it depends on have been solved.
+			int counter = 0;
+			std::cout << "Solving Equation System using the TopologicalValueIterationNon..." << std::endl;
 			for (auto sccIndexIt = topologicalSort.begin(); sccIndexIt != topologicalSort.end() && converged; ++sccIndexIt) {
-				std::vector<uint_fast64_t> const& scc = sccDecomposition[*sccIndexIt];
+				storm::storage::StateBlock const& scc = sccDecomposition[*sccIndexIt];
+
+				std::cout << "SCC " << counter << " contains:" << std::endl;
+				for (auto sccIt = scc.cbegin(); sccIt != scc.cend(); ++sccIt) {
+					std::cout << *sccIt << ", ";
+				}
+				std::cout << std::endl;
 
 				// For the current SCC, we need to perform value iteration until convergence.
 				localIterations = 0;
 				converged = false;
 				while (!converged && localIterations < maximalNumberOfIterations) {
 					// Compute x' = A*x + b.
-					A.multiplyWithVector(scc, nondeterministicChoiceIndices, *currentX, multiplyResult);
-					storm::utility::addVectors(scc, nondeterministicChoiceIndices, multiplyResult, b);
+					//A.multiplyWithVector(scc, nondeterministicChoiceIndices, *currentX, multiplyResult);
+					//storm::utility::addVectors(scc, nondeterministicChoiceIndices, multiplyResult, b);
 
 					/*
 					Versus:
@@ -85,17 +93,17 @@ namespace storm {
 
 					// Reduce the vector x' by applying min/max for all non-deterministic choices.
 					if (minimize) {
-						storm::utility::reduceVectorMin(*multiplyResult, *newX, scc, nondeterministicChoiceIndices);
+						//storm::utility::reduceVectorMin(*multiplyResult, *newX, scc, nondeterministicChoiceIndices);
 					}
 					else {
-						storm::utility::reduceVectorMax(*multiplyResult, *newX, scc, nondeterministicChoiceIndices);
+						//storm::utility::reduceVectorMax(*multiplyResult, *newX, scc, nondeterministicChoiceIndices);
 					}
 
 					// Determine whether the method converged.
 					// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
 					// running time. In fact, it is faster. This has to be investigated.
 					// converged = storm::utility::equalModuloPrecision(*currentX, *newX, scc, precision, relative);
-					converged = storm::utility::equalModuloPrecision(*currentX, *newX, precision, relative);
+					converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative);
 
 					// Update environment variables.
 					swap = currentX;
@@ -120,7 +128,7 @@ namespace storm {
 			}
 			
 			if (!xMemoryProvided) {
-				delete copyX;
+				delete newX;
 			}
 
 			if (!multiplyResultMemoryProvided) {
