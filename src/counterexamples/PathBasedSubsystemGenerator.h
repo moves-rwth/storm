@@ -567,7 +567,7 @@ public:
 			allowedStates = storm::storage::BitVector(targetStates.size(), true);
 		}
 		else if(globally != nullptr){
-			//eventually reaching a state without property visiting only states with property
+			// eventually reaching a state without property visiting only states with property
 			allowedStates = globally->getChild().check(modelCheck);
 			targetStates = storm::storage::BitVector(allowedStates);
 			targetStates.complement();
@@ -588,9 +588,9 @@ public:
 		// estimate the path count using the models state count as well as the probability bound
 		uint_fast8_t const minPrec = 10;
 		uint_fast64_t const stateCount = model.getNumberOfStates();
-		uint_fast64_t const stateEstimate = ((T) stateCount) * bound;
+		uint_fast64_t const stateEstimate = static_cast<uint_fast64_t>((static_cast<T>(stateCount)) * bound);
 
-		//since this only has a good effect on big models -> use only if model has at least 10^5 states
+		// since this only has a good effect on big models -> use only if model has at least 10^5 states
 		uint_fast64_t precision = stateEstimate > 100000 ? stateEstimate/1000 : minPrec;
 
 
@@ -683,12 +683,12 @@ public:
 				//std::cout << "Diff: " << diff << std::endl;
 				//std::cout << "Path count: " << pathCount << std::endl;
 
-				//Are we critical?
+				// Are we critical?
 				if(subSysProb >= bound){
 					break;
 				}
 				else if (stateEstimate > 100000){
-					precision = (stateEstimate/1000) - ((stateEstimate/1000) - minPrec)*(subSysProb/bound);
+					precision = static_cast<uint_fast64_t>((stateEstimate / 1000.0) - ((stateEstimate / 1000.0) - minPrec) * (subSysProb/bound));
 				}
 			}
 		}
