@@ -56,10 +56,7 @@ namespace storm {
 				std::cout << std::endl;
 			}
 
-            std::cout << A << std::endl;
-            std::cout << nondeterministicChoiceIndices << std::endl;
-            std::cout << b << std::endl;
-            
+
 			storm::models::NonDeterministicMatrixBasedPseudoModel<ValueType> pseudoModel(A, nondeterministicChoiceIndices);
 			//storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(*static_cast<storm::models::AbstractPseudoModel<ValueType>*>(&pseudoModel), false, false);
 			storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(pseudoModel, false, false);
@@ -123,7 +120,6 @@ namespace storm {
 				std::vector<uint_fast64_t> sccSubNondeterministicChoiceIndices(sccSubmatrix.getColumnCount() + 1);
 				sccSubNondeterministicChoiceIndices.at(0) = 0;
 
-                std::cout << "subb: " << sccSubB << std::endl;
 				// Preprocess all dependant states
 				// Remove outgoing transitions and create the ChoiceIndices
 				uint_fast64_t innerIndex = 0;
@@ -145,10 +141,6 @@ namespace storm {
 					}
                     ++outerIndex;
 				}
-                
-                std::cout << sccSubmatrix << std::endl;
-                std::cout << sccSubNondeterministicChoiceIndices << std::endl;
-                std::cout << sccSubB << std::endl;
 
 				// For the current SCC, we need to perform value iteration until convergence.
 				localIterations = 0;
@@ -191,11 +183,9 @@ namespace storm {
 				// The Result of this SCC has to be taken back into the main result vector
 				innerIndex = 0;
 				for (uint_fast64_t state: scc) {
-                    std::cout << state << " = " << currentX->at(innerIndex) << std::endl;
 					x.at(state) = currentX->at(innerIndex);
 					++innerIndex;
 				}
-                std::cout << x << std::endl;
 
 				// Since the pointers for swapping in the calculation point to temps they should not be valide anymore
 				currentX = nullptr;
