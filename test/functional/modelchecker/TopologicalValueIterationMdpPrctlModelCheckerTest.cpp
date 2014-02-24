@@ -7,6 +7,36 @@
 #include "src/modelchecker/prctl/TopologicalValueIterationMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
+TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, SmallLinEqSystem) {
+	storm::storage::SparseMatrixBuilder<double> matrixBuilder(3, 3);
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 2, 1.0));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 0, 4.0));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 1, 7.0));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(2, 1, 7.0));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(2, 2, -1.0));
+
+	storm::storage::SparseMatrix<double> matrix;
+	ASSERT_NO_THROW(matrix = matrixBuilder.build());
+
+	ASSERT_EQ(3, matrix.getRowCount());
+	ASSERT_EQ(3, matrix.getColumnCount());
+	ASSERT_EQ(5, matrix.getEntryCount());
+	
+	// Solve the Linear Equation System
+	storm::solver::TopologicalValueIterationNondeterministicLinearEquationSolver<double> topoSolver;
+
+	std::vector<double> x(3);
+	std::vector<double> b = { 5, 8, 2 };
+	std::vector<uint_fast64_t> choices = { 0, 1, 2, 3 };
+
+	ASSERT_NO_THROW(topoSolver.solveEquationSystem(true, matrix, x, b, choices));
+
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	ASSERT_LT(std::abs(x.at(0) - 0.25), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(x.at(1) - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(x.at(2) - 5.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+}
+
 TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	//storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
@@ -17,7 +47,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
     
 	ASSERT_EQ(mdp->getNumberOfStates(), 11ull);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 17ull);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 18ull);
     
 	storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double> mc(*mdp);
     

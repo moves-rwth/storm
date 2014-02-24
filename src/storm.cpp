@@ -17,6 +17,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
+#include <climits>
 #include <sstream>
 #include <vector>
 
@@ -29,6 +30,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/modelchecker/prctl/TopologicalValueIterationMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/solver/GurobiLpSolver.h"
@@ -133,6 +135,16 @@ void setUpFileLogging() {
 }
 
 /*!
+* Gives the current working directory
+*
+* @return std::string The path of the current working directory
+*/
+std::string getCurrentWorkingDirectory() {
+	char temp[512];
+	return (getcwd(temp, 512 - 1) ? std::string(temp) : std::string(""));
+}
+
+/*!
  * Prints the header.
  */
 void printHeader(const int argc, const char* argv[]) {
@@ -146,7 +158,8 @@ void printHeader(const int argc, const char* argv[]) {
 	for (int i = 0; i < argc; ++i) {
 		commandStream << argv[i] << " ";
 	}
-	std::cout << "Command line: " << commandStream.str() << std::endl << std::endl;
+	std::cout << "Command line: " << commandStream.str() << std::endl;
+	std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
 }
 
 /*!
@@ -234,7 +247,8 @@ storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecke
  */
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
     // Create the appropriate model checker.
-    return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp);
+    //return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp);
+	return new storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double>(mdp);
 }
 
 /*!

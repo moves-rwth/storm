@@ -7,6 +7,11 @@
 #include "src/utility/graph.h"
 #include "src/models/PseudoModel.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/exceptions/IllegalArgumentException.h"
+
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
 
 namespace storm {
     namespace solver {
@@ -39,11 +44,29 @@ namespace storm {
 			//std::vector<std::vector<uint_fast64_t>> stronglyConnectedComponents = storm::utility::graph::performSccDecomposition(this->getModel(), stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
 			//storm::storage::SparseMatrix<T> stronglyConnectedComponentsDependencyGraph = this->getModel().extractSccDependencyGraph(stronglyConnectedComponents);
 
-			storm::models::NonDeterministicMatrixBasedPseudoModel<ValueType> pseudoModel(A, nondeterministicChoiceIndices);
-			storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(*static_cast<storm::models::AbstractPseudoModel<ValueType>*>(&pseudoModel), false, false);
-			storm::storage::SparseMatrix<ValueType> stronglyConnectedComponentsDependencyGraph = pseudoModel.extractPartitionDependencyGraph(sccDecomposition);
-			
+			std::cout << "TopoSolver Input Matrix: " << A.getRowCount() << " x " << A.getColumnCount() << " with " << A.getEntryCount() << " Entries:" << std::endl;
 
+			uint_fast64_t const rowCount = A.getRowCount();
+			for (uint_fast64_t row = 0; row < rowCount; ++row) {
+				std::cout << "Row " << row << ": ";
+				auto const& rowElement = A.getRow(row);
+				for (auto rowIt = rowElement.begin(); rowIt != rowElement.end(); ++rowIt) {
+					std::cout << rowIt->first << " [" << rowIt->second << "], ";
+				}
+				std::cout << std::endl;
+			}
+
+
+			storm::models::NonDeterministicMatrixBasedPseudoModel<ValueType> pseudoModel(A, nondeterministicChoiceIndices);
+			//storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(*static_cast<storm::models::AbstractPseudoModel<ValueType>*>(&pseudoModel), false, false);
+			storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(pseudoModel, false, false);
+
+			if (sccDecomposition.size() == 0) {
+				LOG4CPLUS_ERROR(logger, "Can not solve given Equation System as the SCC Decomposition returned no SCCs.");
+				throw storm::exceptions::IllegalArgumentException() << "Can not solve given Equation System as the SCC Decomposition returned no SCCs.";
+			}
+
+			storm::storage::SparseMatrix<ValueType> stronglyConnectedComponentsDependencyGraph = pseudoModel.extractPartitionDependencyGraph(sccDecomposition);
 			std::vector<uint_fast64_t> topologicalSort = storm::utility::graph::getTopologicalSort(stronglyConnectedComponentsDependencyGraph);
 
 			// Set up the environment for the power method.
@@ -52,12 +75,12 @@ namespace storm {
 				multiplyResult = new std::vector<ValueType>(A.getRowCount());
 				multiplyResultMemoryProvided = false;
 			}
-			std::vector<ValueType>* currentX = &x;
-			bool xMemoryProvided = true;
-			if (newX == nullptr) {
-				newX = new std::vector<ValueType>(x.size());
-				xMemoryProvided = false;
-			}
+			std::vector<ValueType>* currentX = nullptr;
+			//bool xMemoryProvided = true;
+			//if (newX == nullptr) {
+			//	newX = new std::vector<ValueType>(x.size());
+			//	xMemoryProvided = false;
+			//}
 			std::vector<ValueType>* swap = nullptr;
 			uint_fast64_t currentMaxLocalIterations = 0;
 			uint_fast64_t localIterations = 0;
@@ -68,20 +91,62 @@ namespace storm {
 			// solved after all SCCs it depends on have been solved.
 			int counter = 0;
 			std::cout << "Solving Equation System using the TopologicalValueIterationNon..." << std::endl;
+			std::cout << "Found " << sccDecomposition.size() << " SCCs." << std::endl;
+
 			for (auto sccIndexIt = topologicalSort.begin(); sccIndexIt != topologicalSort.end() && converged; ++sccIndexIt) {
 				storm::storage::StateBlock const& scc = sccDecomposition[*sccIndexIt];
 
-				std::cout << "SCC " << counter << " contains:" << std::endl;
-				for (auto sccIt = scc.cbegin(); sccIt != scc.cend(); ++sccIt) {
-					std::cout << *sccIt << ", ";
+				std::cout << "SCC " << counter << " from Index " << *sccIndexIt << " contains:" << std::endl;
+				++counter;
+				for (auto state : scc) {
+					std::cout << state << ", ";
 				}
 				std::cout << std::endl;
+
+				// Generate a submatrix
+				storm::storage::BitVector subMatrixIndices(rowCount, scc.cbegin(), scc.cend());
+				storm::storage::SparseMatrix<ValueType> sccSubmatrix = A.getSubmatrix(subMatrixIndices, nondeterministicChoiceIndices, true);
+				std::vector<ValueType> sccSubB(sccSubmatrix.getRowCount());
+				storm::utility::vector::selectVectorValues<ValueType>(sccSubB, subMatrixIndices, nondeterministicChoiceIndices, b);
+				std::vector<ValueType> sccSubX(sccSubmatrix.getColumnCount());
+				std::vector<ValueType> sccSubXSwap(sccSubmatrix.getColumnCount());
+
+				// Prepare the pointers for swapping in the calculation
+				currentX = &sccSubX;
+				swap = &sccSubXSwap;
+
+				storm::utility::vector::selectVectorValues<ValueType>(sccSubX, subMatrixIndices, x); // x is getCols() large, where as b and multiplyResult are getRows() (nondet. choices times states)
+				std::vector<uint_fast64_t> sccSubNondeterministicChoiceIndices(sccSubmatrix.getColumnCount() + 1);
+				sccSubNondeterministicChoiceIndices.at(0) = 0;
+
+				// Preprocess all dependant states
+				// Remove outgoing transitions and create the ChoiceIndices
+				uint_fast64_t innerIndex = 0;
+				for (uint_fast64_t state: scc) {
+					// Choice Indices
+					sccSubNondeterministicChoiceIndices.at(innerIndex + 1) = sccSubNondeterministicChoiceIndices.at(innerIndex) + (nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state]);
+
+					for (auto rowGroupIt = nondeterministicChoiceIndices[state]; rowGroupIt != nondeterministicChoiceIndices[state + 1]; ++rowGroupIt) {
+						storm::storage::SparseMatrix<ValueType>::const_rows row = A.getRow(rowGroupIt);
+						for (auto rowIt = row.begin(); rowIt != row.end(); ++rowIt) {
+							if (!subMatrixIndices.get(rowIt->first)) {
+								// This is an outgoing transition of a state in the SCC to a state not included in the SCC
+								// Subtracting Pr(tau) * x_other from b fixes that
+								sccSubB.at(innerIndex) = sccSubB.at(innerIndex) - (rowIt->second * x.at(rowIt->first));
+							}
+						}
+					}
+					++innerIndex;
+				}
 
 				// For the current SCC, we need to perform value iteration until convergence.
 				localIterations = 0;
 				converged = false;
 				while (!converged && localIterations < this->maximalNumberOfIterations) {
 					// Compute x' = A*x + b.
+					sccSubmatrix.multiplyWithVector(*currentX, *multiplyResult);
+					storm::utility::vector::addVectorsInPlace<ValueType>(*multiplyResult, sccSubB);
+
 					//A.multiplyWithVector(scc, nondeterministicChoiceIndices, *currentX, multiplyResult);
 					//storm::utility::addVectors(scc, nondeterministicChoiceIndices, multiplyResult, b);
 
@@ -93,25 +158,35 @@ namespace storm {
 
 					// Reduce the vector x' by applying min/max for all non-deterministic choices.
 					if (minimize) {
-						//storm::utility::reduceVectorMin(*multiplyResult, *newX, scc, nondeterministicChoiceIndices);
+						storm::utility::vector::reduceVectorMin<ValueType>(*multiplyResult, *swap, sccSubNondeterministicChoiceIndices);
 					}
 					else {
-						//storm::utility::reduceVectorMax(*multiplyResult, *newX, scc, nondeterministicChoiceIndices);
+						storm::utility::vector::reduceVectorMax<ValueType>(*multiplyResult, *swap, sccSubNondeterministicChoiceIndices);
 					}
 
 					// Determine whether the method converged.
 					// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
 					// running time. In fact, it is faster. This has to be investigated.
 					// converged = storm::utility::equalModuloPrecision(*currentX, *newX, scc, precision, relative);
-					converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, this->precision, this->relative);
+					converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *swap, this->precision, this->relative);
 
 					// Update environment variables.
-					swap = currentX;
-					currentX = newX;
-					newX = swap;
+					std::swap(currentX, swap);
+
 					++localIterations;
 					++globalIterations;
 				}
+
+				// The Result of this SCC has to be taken back into the main result vector
+				innerIndex = 0;
+				for (uint_fast64_t state: scc) {
+					x.at(state) = currentX->at(innerIndex);
+					++innerIndex;
+				}
+
+				// Since the pointers for swapping in the calculation point to temps they should not be valide anymore
+				currentX = nullptr;
+				swap = nullptr;
 
 				// As the "number of iterations" of the full method is the maximum of the local iterations, we need to keep
 				// track of the maximum.
@@ -119,17 +194,10 @@ namespace storm {
 					currentMaxLocalIterations = localIterations;
 				}
 			}
-
-			// If we performed an odd number of global iterations, we need to swap the x and currentX, because the newest
-			// result is currently stored in currentX, but x is the output vector.
-			// TODO: Check whether this is correct or should be put into the for-loop over SCCs.
-			if (globalIterations % 2 == 1) {
-				std::swap(x, *currentX);
-			}
 			
-			if (!xMemoryProvided) {
-				delete newX;
-			}
+			//if (!xMemoryProvided) {
+			//	delete newX;
+			//}
 
 			if (!multiplyResultMemoryProvided) {
 				delete multiplyResult;

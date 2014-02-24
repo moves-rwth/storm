@@ -35,7 +35,7 @@ namespace storm {
         template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
 			storm::models::ModelBasedPseudoModel<ValueType> encapsulatedModel(model);
-			performSccDecomposition(*static_cast<storm::models::AbstractPseudoModel<ValueType>*>(&encapsulatedModel), subsystem, dropNaiveSccs, onlyBottomSccs);
+			performSccDecomposition(encapsulatedModel, subsystem, dropNaiveSccs, onlyBottomSccs);
         }
 
 		template <typename ValueType>

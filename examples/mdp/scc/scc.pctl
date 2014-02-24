@@ -1,2 +1,2 @@
-Pmin=? [ F end ]
-Pmax=? [ F end ]
+Pmin=? [ (!statetwo) U end ]
+Pmax=? [ (!statetwo) U end ]
