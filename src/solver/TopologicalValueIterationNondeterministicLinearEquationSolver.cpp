@@ -56,7 +56,10 @@ namespace storm {
 				std::cout << std::endl;
 			}
 
-
+            std::cout << A << std::endl;
+            std::cout << nondeterministicChoiceIndices << std::endl;
+            std::cout << b << std::endl;
+            
 			storm::models::NonDeterministicMatrixBasedPseudoModel<ValueType> pseudoModel(A, nondeterministicChoiceIndices);
 			//storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(*static_cast<storm::models::AbstractPseudoModel<ValueType>*>(&pseudoModel), false, false);
 			storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(pseudoModel, false, false);
@@ -70,11 +73,11 @@ namespace storm {
 			std::vector<uint_fast64_t> topologicalSort = storm::utility::graph::getTopologicalSort(stronglyConnectedComponentsDependencyGraph);
 
 			// Set up the environment for the power method.
-			bool multiplyResultMemoryProvided = true;
-			if (multiplyResult == nullptr) {
-				multiplyResult = new std::vector<ValueType>(A.getRowCount());
-				multiplyResultMemoryProvided = false;
-			}
+//			bool multiplyResultMemoryProvided = true;
+//			if (multiplyResult == nullptr) {
+//				multiplyResult = new std::vector<ValueType>(A.getRowCount());
+//				multiplyResultMemoryProvided = false;
+//			}
 			std::vector<ValueType>* currentX = nullptr;
 			//bool xMemoryProvided = true;
 			//if (newX == nullptr) {
@@ -104,13 +107,14 @@ namespace storm {
 				std::cout << std::endl;
 
 				// Generate a submatrix
-				storm::storage::BitVector subMatrixIndices(rowCount, scc.cbegin(), scc.cend());
-				storm::storage::SparseMatrix<ValueType> sccSubmatrix = A.getSubmatrix(subMatrixIndices, nondeterministicChoiceIndices, true);
+				storm::storage::BitVector subMatrixIndices(A.getColumnCount(), scc.cbegin(), scc.cend());
+				storm::storage::SparseMatrix<ValueType> sccSubmatrix = A.getSubmatrix(subMatrixIndices, nondeterministicChoiceIndices);
 				std::vector<ValueType> sccSubB(sccSubmatrix.getRowCount());
 				storm::utility::vector::selectVectorValues<ValueType>(sccSubB, subMatrixIndices, nondeterministicChoiceIndices, b);
 				std::vector<ValueType> sccSubX(sccSubmatrix.getColumnCount());
 				std::vector<ValueType> sccSubXSwap(sccSubmatrix.getColumnCount());
-
+                std::vector<ValueType> sccMultiplyResult(sccSubmatrix.getRowCount());
+                
 				// Prepare the pointers for swapping in the calculation
 				currentX = &sccSubX;
 				swap = &sccSubXSwap;
@@ -119,33 +123,40 @@ namespace storm {
 				std::vector<uint_fast64_t> sccSubNondeterministicChoiceIndices(sccSubmatrix.getColumnCount() + 1);
 				sccSubNondeterministicChoiceIndices.at(0) = 0;
 
+                std::cout << "subb: " << sccSubB << std::endl;
 				// Preprocess all dependant states
 				// Remove outgoing transitions and create the ChoiceIndices
 				uint_fast64_t innerIndex = 0;
+                uint_fast64_t outerIndex = 0;
 				for (uint_fast64_t state: scc) {
 					// Choice Indices
-					sccSubNondeterministicChoiceIndices.at(innerIndex + 1) = sccSubNondeterministicChoiceIndices.at(innerIndex) + (nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state]);
+					sccSubNondeterministicChoiceIndices.at(outerIndex + 1) = sccSubNondeterministicChoiceIndices.at(outerIndex) + (nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state]);
 
 					for (auto rowGroupIt = nondeterministicChoiceIndices[state]; rowGroupIt != nondeterministicChoiceIndices[state + 1]; ++rowGroupIt) {
-						storm::storage::SparseMatrix<ValueType>::const_rows row = A.getRow(rowGroupIt);
+						typename storm::storage::SparseMatrix<ValueType>::const_rows row = A.getRow(rowGroupIt);
 						for (auto rowIt = row.begin(); rowIt != row.end(); ++rowIt) {
 							if (!subMatrixIndices.get(rowIt->first)) {
 								// This is an outgoing transition of a state in the SCC to a state not included in the SCC
 								// Subtracting Pr(tau) * x_other from b fixes that
-								sccSubB.at(innerIndex) = sccSubB.at(innerIndex) - (rowIt->second * x.at(rowIt->first));
+								sccSubB.at(innerIndex) = sccSubB.at(innerIndex) + (rowIt->second * x.at(rowIt->first));
 							}
 						}
+                        ++innerIndex;
 					}
-					++innerIndex;
+                    ++outerIndex;
 				}
+                
+                std::cout << sccSubmatrix << std::endl;
+                std::cout << sccSubNondeterministicChoiceIndices << std::endl;
+                std::cout << sccSubB << std::endl;
 
 				// For the current SCC, we need to perform value iteration until convergence.
 				localIterations = 0;
 				converged = false;
 				while (!converged && localIterations < this->maximalNumberOfIterations) {
 					// Compute x' = A*x + b.
-					sccSubmatrix.multiplyWithVector(*currentX, *multiplyResult);
-					storm::utility::vector::addVectorsInPlace<ValueType>(*multiplyResult, sccSubB);
+					sccSubmatrix.multiplyWithVector(*currentX, sccMultiplyResult);
+					storm::utility::vector::addVectorsInPlace<ValueType>(sccMultiplyResult, sccSubB);
 
 					//A.multiplyWithVector(scc, nondeterministicChoiceIndices, *currentX, multiplyResult);
 					//storm::utility::addVectors(scc, nondeterministicChoiceIndices, multiplyResult, b);
@@ -158,10 +169,10 @@ namespace storm {
 
 					// Reduce the vector x' by applying min/max for all non-deterministic choices.
 					if (minimize) {
-						storm::utility::vector::reduceVectorMin<ValueType>(*multiplyResult, *swap, sccSubNondeterministicChoiceIndices);
+						storm::utility::vector::reduceVectorMin<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
 					}
 					else {
-						storm::utility::vector::reduceVectorMax<ValueType>(*multiplyResult, *swap, sccSubNondeterministicChoiceIndices);
+						storm::utility::vector::reduceVectorMax<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
 					}
 
 					// Determine whether the method converged.
@@ -180,9 +191,11 @@ namespace storm {
 				// The Result of this SCC has to be taken back into the main result vector
 				innerIndex = 0;
 				for (uint_fast64_t state: scc) {
+                    std::cout << state << " = " << currentX->at(innerIndex) << std::endl;
 					x.at(state) = currentX->at(innerIndex);
 					++innerIndex;
 				}
+                std::cout << x << std::endl;
 
 				// Since the pointers for swapping in the calculation point to temps they should not be valide anymore
 				currentX = nullptr;
@@ -199,9 +212,9 @@ namespace storm {
 			//	delete newX;
 			//}
 
-			if (!multiplyResultMemoryProvided) {
-				delete multiplyResult;
-			}
+//			if (!multiplyResultMemoryProvided) {
+//				delete multiplyResult;
+//			}
 
 			// Check if the solver converged and issue a warning otherwise.
 			if (converged) {

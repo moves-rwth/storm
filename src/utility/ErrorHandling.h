@@ -164,7 +164,7 @@ VOID CALLBACK stormWindowsSetTimerCallBack(
 
 void stormSetAlarm(uint_fast64_t timeoutSeconds) {
 #ifndef WINDOWS
-	alarm(timeout);
+	alarm(timeoutSeconds);
 #else
 	// This needs more research (http://msdn.microsoft.com/en-us/library/windows/desktop/ms644906(v=vs.85).aspx)
 	UINT_PTR retVal = SetTimer(NULL, 0, static_cast<UINT>(timeoutSeconds * 1000), static_cast<TIMERPROC>(&stormWindowsSetTimerCallBack));
