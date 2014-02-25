@@ -44,19 +44,6 @@ namespace storm {
 			//std::vector<std::vector<uint_fast64_t>> stronglyConnectedComponents = storm::utility::graph::performSccDecomposition(this->getModel(), stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
 			//storm::storage::SparseMatrix<T> stronglyConnectedComponentsDependencyGraph = this->getModel().extractSccDependencyGraph(stronglyConnectedComponents);
 
-			std::cout << "TopoSolver Input Matrix: " << A.getRowCount() << " x " << A.getColumnCount() << " with " << A.getEntryCount() << " Entries:" << std::endl;
-
-			uint_fast64_t const rowCount = A.getRowCount();
-			for (uint_fast64_t row = 0; row < rowCount; ++row) {
-				std::cout << "Row " << row << ": ";
-				auto const& rowElement = A.getRow(row);
-				for (auto rowIt = rowElement.begin(); rowIt != rowElement.end(); ++rowIt) {
-					std::cout << rowIt->first << " [" << rowIt->second << "], ";
-				}
-				std::cout << std::endl;
-			}
-
-
 			storm::models::NonDeterministicMatrixBasedPseudoModel<ValueType> pseudoModel(A, nondeterministicChoiceIndices);
 			//storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(*static_cast<storm::models::AbstractPseudoModel<ValueType>*>(&pseudoModel), false, false);
 			storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(pseudoModel, false, false);
@@ -90,18 +77,9 @@ namespace storm {
 			// Iterate over all SCCs of the MDP as specified by the topological sort. This guarantees that an SCC is only
 			// solved after all SCCs it depends on have been solved.
 			int counter = 0;
-			std::cout << "Solving Equation System using the TopologicalValueIterationNon..." << std::endl;
-			std::cout << "Found " << sccDecomposition.size() << " SCCs." << std::endl;
 
 			for (auto sccIndexIt = topologicalSort.begin(); sccIndexIt != topologicalSort.end() && converged; ++sccIndexIt) {
 				storm::storage::StateBlock const& scc = sccDecomposition[*sccIndexIt];
-
-				std::cout << "SCC " << counter << " from Index " << *sccIndexIt << " contains:" << std::endl;
-				++counter;
-				for (auto state : scc) {
-					std::cout << state << ", ";
-				}
-				std::cout << std::endl;
 
 				// Generate a submatrix
 				storm::storage::BitVector subMatrixIndices(A.getColumnCount(), scc.cbegin(), scc.cend());
