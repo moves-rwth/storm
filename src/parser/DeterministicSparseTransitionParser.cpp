@@ -122,13 +122,6 @@ namespace storm {
 						col = checked_strtol(buf, &buf);
 						val = checked_strtod(buf, &buf);
 
-						// Read probability of this transition.
-						// Check, if the value is a probability, i.e. if it is between 0 and 1.
-						if ((val < 0.0) || (val > 1.0)) {
-							LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << val << "\".");
-							throw storm::exceptions::WrongFormatException();
-						}
-
 						// Test if we moved to a new row.
 						// Handle all incomplete or skipped rows.
 						if (lastRow != row) {
