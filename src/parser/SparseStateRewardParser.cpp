@@ -8,6 +8,7 @@
 #include "src/parser/SparseStateRewardParser.h"
 
 #include "src/exceptions/WrongFormatException.h"
+#include "src/exceptions/OutOfRangeException.h"
 #include "src/utility/cstring.h"
 #include "src/parser/MappedFile.h"
 #include "log4cplus/logger.h"
@@ -23,7 +24,7 @@ namespace storm {
 			// Open file.
 			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
 				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
-				throw storm::exceptions::WrongFormatException();
+				throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
 			}
 
 			MappedFile file(filename.c_str());
@@ -40,6 +41,10 @@ namespace storm {
 			while (buf[0] != '\0') {
 				// Parse state number and reward value.
 				state = checked_strtol(buf, &buf);
+				if(stateCount <= state) {
+					LOG4CPLUS_ERROR(logger, "Found reward for a state of an invalid index \"" << state << "\". The model has only " << stateCount << " states.");
+					throw storm::exceptions::OutOfRangeException() << "Found reward for a state of an invalid index \"" << state << "\"";
+				}
 				reward = checked_strtod(buf, &buf);
 				if (reward < 0.0) {
 					LOG4CPLUS_ERROR(logger, "Expected positive reward value but got \"" << reward << "\".");

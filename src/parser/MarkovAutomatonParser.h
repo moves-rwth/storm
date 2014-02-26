@@ -28,7 +28,7 @@ namespace storm {
 			 * @param transitionRewardFilename The name of the file that contains the transition rewards of the Markov automaton. This should be empty as transition rewards are not supported by Markov Automata.
 			 * @return The parsed MarkovAutomaton.
 			 */
-			static storm::models::MarkovAutomaton<double> parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename);
+			static storm::models::MarkovAutomaton<double> parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "", std::string const& transitionRewardFilename = "");
 		};
 
 	} // namespace parser

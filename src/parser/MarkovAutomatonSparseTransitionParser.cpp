@@ -2,6 +2,7 @@
 
 #include "src/settings/Settings.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/exceptions/FileIoException.h"
 #include "src/parser/MappedFile.h"
 #include "src/utility/cstring.h"
 
@@ -263,7 +264,7 @@ namespace storm {
 
 			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
 				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
-				throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
+				throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
 			}
 
 			// Open file and prepare pointer to buffer.
