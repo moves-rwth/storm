@@ -118,6 +118,14 @@ TEST(LabFileParserTest, LabelForNonExistentState) {
 	ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/labelForNonexistentState.lab"), storm::exceptions::OutOfRangeException);
 }
 
+// Note: As implemented at the moment, each label given for a state in any line is set to true for that state (logical or over all lines for that state).
+// This behavior might not be ideal as multiple lines for one state are not necessary and might indicate a corrupt or wrong file.
+TEST(LabFileParserTest, DoubledLines) {
+	// There are multiple lines attributing labels to the same state.
+	storm::models::AtomicPropositionsLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(6, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/doubledLines.lab");
+	ASSERT_EQ(labeling.getPropositionsForState(1).size(), 3);
+}
+
 TEST(LabFileParserTest, WrongProposition) {
    // Swapped the state index and the label at one entry.
    ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(3, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/swappedStateAndProposition.lab"), storm::exceptions::WrongFormatException);

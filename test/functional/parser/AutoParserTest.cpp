@@ -73,6 +73,19 @@ TEST(AutoParserTest, Decision) {
 	ASSERT_EQ(modelPtr->getNumberOfTransitions(), 36);
 
 	// Ctmdp
+	// Note: For now we use the Mdp from above just given the ctmdp hint, since the implementation of the Ctmdp model seems not Quite right yet.
+	//       We still do this test so that the code responsible for Ctmdps is executed at least once during testing.
+	// TODO: Fix the Ctmdp implementation and use an actual Ctmdp for testing.
+	modelPtr.reset();
+	modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/ctmdp.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
+	ASSERT_EQ(modelPtr->getType(), storm::models::CTMDP);
+	ASSERT_EQ(modelPtr->getNumberOfStates(), 12);
+	ASSERT_EQ(modelPtr->getNumberOfTransitions(), 36);
 
 	// MA
+	modelPtr.reset();
+	modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/ma.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
+	ASSERT_EQ(modelPtr->getType(), storm::models::MA);
+	ASSERT_EQ(modelPtr->getNumberOfStates(), 12);
+	ASSERT_EQ(modelPtr->getNumberOfTransitions(), 35);
 }

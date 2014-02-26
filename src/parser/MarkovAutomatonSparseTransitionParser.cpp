@@ -124,9 +124,13 @@ namespace storm {
 
 						// And the corresponding probability/rate.
 						double val = checked_strtod(buf, &buf);
-						if (val <= 0.0) {
-							LOG4CPLUS_ERROR(logger, "Illegal probability/rate value for transition from " << source << " to " << target << ": " << val << ".");
-							throw storm::exceptions::WrongFormatException() << "Illegal probability/rate value for transition from " << source << " to " << target << ": " << val << ".";
+						if (val < 0.0) {
+							LOG4CPLUS_ERROR(logger, "Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".");
+							throw storm::exceptions::WrongFormatException() << "Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".";
+						}
+						if (!isMarkovianChoice && val > 1.0) {
+							LOG4CPLUS_ERROR(logger, "Illegal probability value for transition from " << source << " to " << target << ": " << val << ".");
+							throw storm::exceptions::WrongFormatException() << "Illegal probability value for transition from " << source << " to " << target << ": " << val << ".";
 						}
 
 						// We need to record that we found at least one successor state for the current choice.
