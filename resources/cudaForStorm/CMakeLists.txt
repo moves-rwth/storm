@@ -76,6 +76,11 @@ set(BUILD_SHARED_LIBS OFF)
 set(CUDA_SEPARABLE_COMPILATION ON)
 #set(CUDA_NVCC_FLAGS "-arch=sm_30")
 
+# Because the FindCUDA.cmake file has a path related bug, two folders have to be present
+file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles/cudaLibrary.dir/Debug")
+file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/CMakeFiles/cudaLibrary.dir/Release")
+
+
 #############################################################
 ##
 ##	Compiler specific settings and definitions
