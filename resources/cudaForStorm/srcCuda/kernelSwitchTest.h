@@ -1,0 +1,1 @@
+void kernelSwitchTest(size_t N);
