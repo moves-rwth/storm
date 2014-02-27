@@ -27,6 +27,7 @@ set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
 set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
+set(STORM_LIB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/../../build/cudaForStorm" CACHE STRING "The Build directory of storm, where the library files should be installed to (if available).")
 
 #############################################################
 ##
@@ -258,11 +259,11 @@ endif()
 # Since this will be a library
 include (GenerateExportHeader)
 
-add_library(cudaForStorm STATIC ${CUDAFORSTORM_HEADERS} ${CUDAFORSTORM_SOURCES})
+add_library(cudaForStorm SHARED ${CUDAFORSTORM_HEADERS} ${CUDAFORSTORM_SOURCES})
 GENERATE_EXPORT_HEADER( cudaForStorm
              BASE_NAME cudaForStorm
              EXPORT_MACRO_NAME cudaForStorm_EXPORT
-             EXPORT_FILE_NAME cudaForStorm_Export.h
+             EXPORT_FILE_NAME include/cudaForStorm_Export.h
              STATIC_DEFINE cudaForStorm_BUILT_AS_STATIC
 )
 
@@ -333,7 +334,9 @@ endif(MSVC)
 # Link against libc++abi if requested. May be needed to build on Linux systems using clang.
 if (LINK_LIBCXXABI)
 	message (STATUS "StoRM - Linking against libc++abi.")
-	target_link_libraries(storm "c++abi")
-	target_link_libraries(storm-functional-tests "c++abi")
-	target_link_libraries(storm-performance-tests "c++abi")
+	target_link_libraries(cudaForStorm "c++abi")
 endif(LINK_LIBCXXABI)
+
+# Install Directive
+install(TARGETS cudaForStorm DESTINATION "${STORM_LIB_INSTALL_DIR}/lib")
+install(FILES "${PROJECT_SOURCE_DIR}/src/cudaForStorm.h" "${PROJECT_BINARY_DIR}/cudaForStorm_Export.h" DESTINATION "${STORM_LIB_INSTALL_DIR}/include")

@@ -1,3 +1,5 @@
+#include "cudaForStorm.h"
+
 #include <stdio.h>  
 #include <stdlib.h>
 
@@ -7,7 +9,12 @@
 
 #include "cudaTests.h"
 
-int main(int argc, char **argv){
+int cudaForStormTest(int value) {
+	return value + 42;
+}
+
+
+int main_Test12345(int argc, char **argv){
 	resetCudaDevice();
 
 	int testNumber = 0;
