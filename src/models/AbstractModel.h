@@ -194,7 +194,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @return A sparse matrix that represents the backward transitions of this model.
          */
         storm::storage::SparseMatrix<T> getBackwardTransitions() const {
-            return this->transitionMatrix.transpose();
+            return this->transitionMatrix.transpose(true);
         }
 
         /*!

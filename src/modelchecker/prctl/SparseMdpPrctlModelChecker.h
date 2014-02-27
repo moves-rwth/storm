@@ -284,23 +284,23 @@ namespace storm {
                  */
                 static std::pair<std::vector<Type>, storm::storage::TotalScheduler> computeUnboundedUntilProbabilities(bool minimize, storm::storage::SparseMatrix<Type> const& transitionMatrix, std::vector<uint_fast64_t> nondeterministicChoiceIndices, storm::storage::SparseMatrix<Type> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver, bool qualitative) {
                     size_t numberOfStates = phiStates.size();
-                    
+
                     // We need to identify the states which have to be taken out of the matrix, i.e.
                     // all states that have probability 0 and 1 of satisfying the until-formula.
                     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
                     if (minimize) {
                         statesWithProbability01 = storm::utility::graph::performProb01Min(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
+
                     } else {
                         statesWithProbability01 = storm::utility::graph::performProb01Max(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
                     }
                     storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
                     storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
-                    
                     storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
                     LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
                     LOG4CPLUS_INFO(logger, "Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
                     LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
-                    
+
                     // Create resulting vector.
                     std::vector<Type> result(numberOfStates);
                     
@@ -317,7 +317,7 @@ namespace storm {
                         storm::utility::vector::setVectorValues<Type>(result, maybeStates, Type(0.5));
                     } else {
                         // In this case we have have to compute the probabilities.
-                        
+
                         // First, we can eliminate the rows and columns from the original transition probability matrix for states
                         // whose probabilities are already known.
                         storm::storage::SparseMatrix<Type> submatrix = transitionMatrix.getSubmatrix(maybeStates, nondeterministicChoiceIndices);

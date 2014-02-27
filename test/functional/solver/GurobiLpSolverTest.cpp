@@ -14,7 +14,7 @@ TEST(GurobiLpSolver, LPOptimizeMax) {
     ASSERT_NO_THROW(yIndex = solver.createContinuousVariable("y", storm::solver::LpSolver::VariableType::LOWER_BOUND, 0, 0, 2));
     uint_fast64_t zIndex;
     ASSERT_NO_THROW(zIndex = solver.createContinuousVariable("z", storm::solver::LpSolver::VariableType::LOWER_BOUND, 0, 0, 1));
-    
+        
     ASSERT_NO_THROW(solver.addConstraint("", {xIndex, yIndex, zIndex}, {1, 1, 1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, zIndex, xIndex}, {0.5, 1, -1}, storm::solver::LpSolver::BoundType::EQUAL, 5));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));

@@ -39,8 +39,12 @@ namespace storm {
              * @param rows The number of rows of the resulting matrix.
              * @param columns The number of columns of the resulting matrix.
              * @param entries The number of entries of the resulting matrix.
+             * @param hasCustomRowGrouping A flag indicating whether the builder is used to create a non-canonical
+             * grouping of rows for this matrix.
+             * @param rowGroups The number of row groups of the resulting matrix. This is only relevant if the matrix
+             * has a custom row grouping.
              */
-            SparseMatrixBuilder(uint_fast64_t rows = 0, uint_fast64_t columns = 0, uint_fast64_t entries = 0);
+            SparseMatrixBuilder(uint_fast64_t rows = 0, uint_fast64_t columns = 0, uint_fast64_t entries = 0, bool hasCustomRowGrouping = false, uint_fast64_t rowGroups = 0);
             
             /*!
              * Sets the matrix entry at the given row and column to the given value. After all entries have been added,
@@ -57,6 +61,12 @@ namespace storm {
              */
             void addNextValue(uint_fast64_t row, uint_fast64_t column, T const& value);
             
+            /*!
+             * Adds a new row group to the matrix. Note that this needs to be called before any entries in the new row
+             * group are added.
+             */
+            void addRowGroup();
+            
             /*
              * Finalizes the sparse matrix to indicate that initialization process has been completed and the matrix
              * may now be used. This must be called after all entries have been added to the matrix via addNextValue.
@@ -70,8 +80,13 @@ namespace storm {
              * *not* override the column count that has been given upon construction (if any), but will only take effect
              * if the matrix has been created without the number of columns given. By construction, the matrix will have
              * no entries in the columns that have been added this way.
+             * @param overriddenRowGroupCount If this is set to a value that is greater than the current number of row
+             * groups, this will cause the method to set the number of row groups to the given value. Note that this will
+             * *not* override the row group count that has been given upon construction (if any), but will only take
+             * effect if the matrix has been created without the number of row groups given. By construction, the row
+             * groups added this way will be empty.
              */
-            SparseMatrix<T> build(uint_fast64_t overriddenRowCount = 0, uint_fast64_t overriddenColumnCount = 0);
+            SparseMatrix<T> build(uint_fast64_t overriddenRowCount = 0, uint_fast64_t overriddenColumnCount = 0, uint_fast64_t overriddenRowGroupCount = 0);
             
         private:
             /*!
@@ -96,6 +111,17 @@ namespace storm {
             // The number of entries in the matrix.
             uint_fast64_t entryCount;
             
+            // A flag indicating whether the builder is to construct a custom row grouping for the matrix.
+            bool hasCustomRowGrouping;
+            
+            // A flag indicating whether the number of row groups was set upon construction.
+            bool rowGroupCountSet;
+            
+            // The number of row groups in the matrix.
+            uint_fast64_t rowGroupCount;
+            
+            std::vector<uint_fast64_t> rowGroupIndices;
+            
             // Stores whether the storage of the matrix was preallocated or not.
             bool storagePreallocated;
             
@@ -119,6 +145,10 @@ namespace storm {
             // Stores the column of the currently last entry in the matrix. This is used for correctly inserting an
             // entry into a matrix.
             uint_fast64_t lastColumn;
+            
+            // Stores the currently active row group. This is used for correctly constructing the row grouping of the
+            // matrix.
+            uint_fast64_t currentRowGroup;
         };
         
         /*!
@@ -250,8 +280,9 @@ namespace storm {
              * @param columnCount The number of columns of the matrix.
              * @param rowIndications The row indications vector of the matrix to be constructed.
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
+             * @param rowGroupIndices The vector representing the row groups in the matrix.
              */
-            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<std::pair<uint_fast64_t, T>> const& columnsAndValues);
+            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<std::pair<uint_fast64_t, T>> const& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupIndices);
             
             /*!
              * Constructs a sparse matrix by moving the given contents.
@@ -259,8 +290,9 @@ namespace storm {
              * @param columnCount The number of columns of the matrix.
              * @param rowIndications The row indications vector of the matrix to be constructed.
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
+             * @param rowGroupIndices The vector representing the row groups in the matrix.
              */
-            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<std::pair<uint_fast64_t, T>>&& columnsAndValues);
+            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<std::pair<uint_fast64_t, T>>&& columnsAndValues, std::vector<uint_fast64_t>&& rowGroupIndices);
 
             /*!
              * Assigns the contents of the given matrix to the current one by deep-copying its contents.
@@ -304,6 +336,13 @@ namespace storm {
              * @return The number of entries in the matrix.
              */
             uint_fast64_t getEntryCount() const;
+            
+            /*!
+             * Returns the number of row groups in the matrix.
+             *
+             * @return The number of row groups in the matrix.
+             */
+            uint_fast64_t getRowGroupCount() const;
             
             /*!
              * This function makes the given rows absorbing.
@@ -411,9 +450,11 @@ namespace storm {
             /*!
              * Transposes the matrix.
              *
+             * @param joinGroups A flag indicating whether the row groups are supposed to be treated as single rows.
+             *
              * @return A sparse matrix that represents the transpose of this matrix.
              */
-            storm::storage::SparseMatrix<T> transpose() const;
+            storm::storage::SparseMatrix<T> transpose(bool joinGroups = false) const;
             
             /*!
              * Transforms the matrix into an equation system. That is, it transforms the matrix A into a matrix (1-A).
@@ -497,6 +538,22 @@ namespace storm {
              * @return An object representing the given row.
              */
             rows getRow(uint_fast64_t row);
+            
+            /*!
+             * Returns an object representing the given row group.
+             *
+             * @param rowGroup The row group to get.
+             * @return An object representing the given row group.
+             */
+            const_rows getRowGroup(uint_fast64_t rowGroup) const;
+            
+            /*!
+             * Returns an object representing the given row group.
+             *
+             * @param rowGroup The row group to get.
+             * @return An object representing the given row group.
+             */
+            rows getRowGroup(uint_fast64_t rowGroup);
             
             /*!
              * Retrieves an iterator that points to the beginning of the given row.
@@ -596,6 +653,9 @@ namespace storm {
             // in row i are valueStorage[rowIndications[i]] to valueStorage[rowIndications[i + 1]] where the last
             // entry is not included anymore.
             std::vector<uint_fast64_t> rowIndications;
+            
+            // A vector indicating the row groups of the matrix.
+            std::vector<uint_fast64_t> rowGroupIndices;
         };
 
     } // namespace storage

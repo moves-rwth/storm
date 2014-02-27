@@ -177,7 +177,7 @@ public:
 			result = this->checkNoBoundOperator(noBoundFormula);
 			LOG4CPLUS_INFO(logger, "Result for initial states:");
 			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getInitialStates()) {
+            for (auto initialState : model.getInitialStates()) {
 				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result[initialState]);
 				std::cout << "\t" << initialState << ": " << result[initialState] << std::endl;
 			}

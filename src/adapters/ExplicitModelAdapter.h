@@ -542,6 +542,7 @@ namespace storm {
                         } else {
                             // If the model is nondeterministic, we add all choices individually.
                             nondeterministicChoiceIndices.push_back(currentRow);
+                            transitionMatrixBuilder.addRowGroup();
                             
                             // First, process all unlabeled choices.
                             for (auto const& choice : allUnlabeledChoices) {
@@ -631,8 +632,8 @@ namespace storm {
                 bool deterministicModel = program.getModelType() == storm::ir::Program::DTMC || program.getModelType() == storm::ir::Program::CTMC;
 
                 // Build the transition and reward matrices.
-                storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder;
-                storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder;
+                storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, !deterministicModel, 0);
+                storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder(0, 0, 0, !deterministicModel, 0);
                 std::pair<std::vector<uint_fast64_t>, std::vector<boost::container::flat_set<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
                 modelComponents.nondeterministicChoiceIndices = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.first);
                 modelComponents.choiceLabeling = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.second);

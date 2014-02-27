@@ -123,46 +123,7 @@ namespace storm {
              * @return A sparse matrix that represents the backward transitions of this model.
              */
             storm::storage::SparseMatrix<T> getBackwardTransitions() const {
-                uint_fast64_t numberOfStates = this->getNumberOfStates();
-                uint_fast64_t numberOfTransitions = this->getTransitionMatrix().getEntryCount();
-
-                std::vector<uint_fast64_t> rowIndications(numberOfStates + 1);
-                std::vector<std::pair<uint_fast64_t, T>> columnsAndValues(numberOfTransitions, std::make_pair(0, storm::utility::constantZero<T>()));
-
-                // First, we need to count how many backward transitions each state has.
-                for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                    typename storm::storage::SparseMatrix<T>::const_rows rows = this->getRows(i);
-                    for (auto const& transition : rows) {
-                        if (transition.second > 0) {
-                            ++rowIndications[transition.first + 1];
-                        }
-                    }
-                }
-
-                // Now compute the accumulated offsets.
-                for (uint_fast64_t i = 1; i < numberOfStates + 1; ++i) {
-                    rowIndications[i] = rowIndications[i - 1] + rowIndications[i];
-                }
-
-                // Create an array that stores the next index for each state. Initially
-                // this corresponds to the previously computed accumulated offsets.
-                std::vector<uint_fast64_t> nextIndices = rowIndications;
-
-                // Now we are ready to actually fill in the list of predecessors for
-                // every state. Again, we start by considering all but the last row.
-                for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                    typename storm::storage::SparseMatrix<T>::const_rows rows = this->getRows(i);
-                    for (auto const& transition : rows) {
-                        if (transition.second > 0) {
-                            columnsAndValues[nextIndices[transition.first]] = std::make_pair(i, transition.second);
-                            ++nextIndices[transition.first];
-                        }
-                    }
-                }
-
-                storm::storage::SparseMatrix<T> backwardTransitionMatrix(numberOfStates, std::move(rowIndications), std::move(columnsAndValues));
-
-                return backwardTransitionMatrix;
+                return this->getTransitionMatrix().transpose(true);
             }
 
             /*!
