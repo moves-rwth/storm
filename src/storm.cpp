@@ -141,7 +141,7 @@ void setUpFileLogging() {
 */
 std::string getCurrentWorkingDirectory() {
 	char temp[512];
-	return (getcwd(temp, 512 - 1) ? std::string(temp) : std::string(""));
+	return (_getcwd(temp, 512 - 1) ? std::string(temp) : std::string(""));
 }
 
 /*!
