@@ -27,8 +27,8 @@ namespace storm {
             // Create the environment.
             int error = GRBloadenv(&env, "");
             if (error || env == nullptr) {
-                LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             // Set some general properties of the environment.
@@ -37,8 +37,8 @@ namespace storm {
             // Create the model.
             error = GRBnewmodel(env, &model, name.c_str(), 0, nullptr, nullptr, nullptr, nullptr, nullptr);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi model (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi model (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
         }
         
@@ -74,8 +74,8 @@ namespace storm {
         void GurobiLpSolver::update() const {
             int error = GRBupdatemodel(model);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to update Gurobi model (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to update Gurobi model (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to update Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to update Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             // Since the model changed, we erase the optimality flag.
@@ -100,8 +100,8 @@ namespace storm {
             }
             
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             ++nextVariableIndex;
             return nextVariableIndex - 1;
@@ -125,8 +125,8 @@ namespace storm {
             }
 
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             ++nextVariableIndex;
             return nextVariableIndex - 1;
@@ -135,8 +135,8 @@ namespace storm {
         uint_fast64_t GurobiLpSolver::createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
             int error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, 0.0, 1.0, GRB_BINARY, name.c_str());
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             ++nextVariableIndex;
             return nextVariableIndex - 1;
@@ -170,8 +170,8 @@ namespace storm {
             int error = GRBaddconstr(model, variablesCopy.size(), variablesCopy.data(), coefficientsCopy.data(), sense, rightHandSideValue, name == "" ? nullptr : name.c_str());
             
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to assert Gurobi constraint (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to assert Gurobi constraint (" << GRBgeterrormsg(env) << ").";
+                LOG4CPLUS_ERROR(logger, "Unable to assert Gurobi constraint (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to assert Gurobi constraint (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
         }
         
@@ -182,15 +182,15 @@ namespace storm {
             // Set the most recently set model sense.
             int error = GRBsetintattr(model, "ModelSense", this->getModelSense() == MINIMIZE ? 1 : -1);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to set Gurobi model sense (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi model sense (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to set Gurobi model sense (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi model sense (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             // Then we actually optimize the model.
             error = GRBoptimize(model);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to optimize Gurobi model (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to optimize Gurobi model (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to optimize Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to optimize Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             this->currentModelHasBeenOptimized = true;
@@ -205,8 +205,8 @@ namespace storm {
             
             int error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimalityStatus);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             // By default, Gurobi may tell us only that the model is either infeasible or unbounded. To decide which one
@@ -215,22 +215,22 @@ namespace storm {
                 std::cout << "here" << std::endl;
                 error = GRBsetintparam(GRBgetenv(model), GRB_INT_PAR_DUALREDUCTIONS, 0);
                 if (error) {
-                    LOG4CPLUS_ERROR(logger, "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ").");
-                    throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ").";
+					LOG4CPLUS_ERROR(logger, "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+					throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ", error code " << error << ").";
                 }
                 
                 this->optimize();
                 
                 error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimalityStatus);
                 if (error) {
-                    LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").");
-                    throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").";
+					LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+					throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").";
                 }
                 
                 error = GRBsetintparam(GRBgetenv(model), GRB_INT_PAR_DUALREDUCTIONS, 1);
                 if (error) {
-                    LOG4CPLUS_ERROR(logger, "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ").");
-                    throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ").";
+					LOG4CPLUS_ERROR(logger, "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+					throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ", error code " << error << ").";
                 }
             }
             
@@ -246,8 +246,8 @@ namespace storm {
             
             int error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimalityStatus);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             // By default, Gurobi may tell us only that the model is either infeasible or unbounded. To decide which one
@@ -255,22 +255,22 @@ namespace storm {
             if (optimalityStatus == GRB_INF_OR_UNBD) {
                 error = GRBsetintparam(GRBgetenv(model), GRB_INT_PAR_DUALREDUCTIONS, 0);
                 if (error) {
-                    LOG4CPLUS_ERROR(logger, "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ").");
-                    throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ").";
+					LOG4CPLUS_ERROR(logger, "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+					throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ", error code " << error << ").";
                 }
                 
                 this->optimize();
 
                 error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimalityStatus);
                 if (error) {
-                    LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").");
-                    throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").";
+					LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+					throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").";
                 }
 
                 error = GRBsetintparam(GRBgetenv(model), GRB_INT_PAR_DUALREDUCTIONS, 1);
                 if (error) {
-                    LOG4CPLUS_ERROR(logger, "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ").");
-                    throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ").";
+					LOG4CPLUS_ERROR(logger, "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+					throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi parameter (" << GRBgeterrormsg(env) << ", error code " << error << ").";
                 }
             }
             
@@ -285,8 +285,8 @@ namespace storm {
             
             int error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &optimalityStatus);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             return optimalityStatus == GRB_OPTIMAL;
@@ -309,8 +309,8 @@ namespace storm {
             double value = 0;
             int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableIndex, &value);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             if (std::abs(value - static_cast<int>(value)) <= storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble()) {
@@ -340,8 +340,8 @@ namespace storm {
             double value = 0;
             int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableIndex, &value);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             if (std::abs(value - 1) <= storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble()) {
@@ -371,8 +371,8 @@ namespace storm {
             double value = 0;
             int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableIndex, &value);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             return value;
@@ -395,8 +395,8 @@ namespace storm {
             double value = 0;
             int error = GRBgetdblattr(model, GRB_DBL_ATTR_OBJVAL, &value);
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ").";
+				LOG4CPLUS_ERROR(logger, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
             return value;
@@ -405,8 +405,8 @@ namespace storm {
         void GurobiLpSolver::writeModelToFile(std::string const& filename) const {
             int error = GRBwrite(model, filename.c_str());
             if (error) {
-                LOG4CPLUS_ERROR(logger, "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ") to file.");
-                throw storm::exceptions::InvalidStateException() << "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ") to file.";
+				LOG4CPLUS_ERROR(logger, "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ") to file.");
+				throw storm::exceptions::InvalidStateException() << "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ") to file.";
             }
         }
     }
