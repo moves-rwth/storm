@@ -264,22 +264,22 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 	 *	Those two values, as well as the number of nonzero elements, was been calculated in the first run.
 	 */
 	LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << choices << " x " << (maxnode+1) << " with " << nonzero << " entries.");
-	storm::storage::SparseMatrixBuilder<double> matrixBuilder(choices, maxnode + 1, nonzero);
-
+	storm::storage::SparseMatrixBuilder<double> matrixBuilder(choices, maxnode + 1, nonzero, true);
+    
 	/*
 	 *	Create row mapping.
 	 */
 	std::vector<uint_fast64_t> rowMapping(maxnode + 2, 0);
-
+    
 	/*
 	 *	Parse file content.
 	 */
 	int_fast64_t source, target, lastsource = -1, choice, lastchoice = -1;
-	uint_fast64_t curRow = -1;
+	int_fast64_t curRow = -1;
 	double val;
 	bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
 	bool hadDeadlocks = false;
-
+    
 	/*
 	 *	Read all transitions from file.
 	 */
@@ -300,12 +300,14 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 			// If we skipped some states, we need to reserve empty rows for all their nondeterministic
 			// choices.
 			for (int_fast64_t i = lastsource + 1; i < source; ++i) {
+                matrixBuilder.newRowGroup(curRow + 1);
 				curRow += ((*rewardMatrixInformation->nondeterministicChoiceIndices)[i + 1] - (*rewardMatrixInformation->nondeterministicChoiceIndices)[i]);
 			}
 
 			// If we advanced to the next state, but skipped some choices, we have to reserve rows
 			// for them
 			if (source != lastsource) {
+                matrixBuilder.newRowGroup(curRow + 1);
 				curRow += choice + 1;
 			} else if (choice != lastchoice) {
 				curRow += choice - lastchoice;
@@ -325,6 +327,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 				hadDeadlocks = true;
 				if (fixDeadlocks) {
 					rowMapping.at(node) = curRow;
+                    matrixBuilder.newRowGroup(curRow);
 					matrixBuilder.addNextValue(curRow, node, 1);
 					++curRow;
 					LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
@@ -337,6 +340,7 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 				 *	Add this source to rowMapping, if this is the first choice we encounter for this state.
 				 */
 				rowMapping.at(source) = curRow;
+                matrixBuilder.newRowGroup(curRow);
 			}
 		}
 
@@ -373,9 +377,21 @@ NondeterministicSparseTransitionParserResult_t NondeterministicSparseTransitionP
 		buf = trimWhitespaces(buf);
 	}
 
-	for (int_fast64_t node = lastsource + 1; node <= maxnode + 1; node++) {
-		rowMapping.at(node) = curRow + 1;
-	}
+    if (isRewardFile) {
+        for (int_fast64_t node = lastsource + 1; node <= maxnode + 1; ++node) {
+            rowMapping.at(node) = curRow + 1;
+            if (node <= maxnode) {
+                matrixBuilder.newRowGroup((*rewardMatrixInformation->nondeterministicChoiceIndices)[node]);
+            }
+        }
+    } else {
+        for (int_fast64_t node = lastsource + 1; node <= maxnode + 1; ++node) {
+            rowMapping.at(node) = curRow + 1;
+            if (node <= maxnode) {
+                matrixBuilder.newRowGroup(curRow + 1);
+            }
+        }
+    }
 
 	if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
 

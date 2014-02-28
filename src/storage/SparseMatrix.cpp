@@ -99,7 +99,9 @@ namespace storm {
         template<typename T>
         void SparseMatrixBuilder<T>::newRowGroup(uint_fast64_t startingRow) {
             if (!hasCustomRowGrouping) {
-                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::addRowGroup: matrix was not created to have a custom row grouping.";
+                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::newRowGroup: matrix was not created to have a custom row grouping.";
+            } else if (rowGroupIndices.size() > 0 && startingRow < rowGroupIndices.back()) {
+                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::newRowGroup: illegal row group with negative size.";
             }
             if (rowGroupCountSet) {
                 rowGroupIndices[currentRowGroup] = startingRow;
@@ -837,9 +839,8 @@ namespace storm {
             // Check for matching sizes.
             if (this->getRowCount() != matrix.getRowCount()) return false;
             if (this->getColumnCount() != matrix.getColumnCount()) return false;
-            
             if (this->getRowGroupIndices() != matrix.getRowGroupIndices()) return false;
-            
+
             // Check the subset property for all rows individually.
             for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
                 for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = matrix.begin(row), ite2 = matrix.end(row); it1 != ite1; ++it1) {
@@ -866,7 +867,7 @@ namespace storm {
             
             // Iterate over all row groups.
             for (uint_fast64_t group = 0; group < matrix.getRowGroupCount(); ++group) {
-                out << "\t---- group " << group << " ----" << std::endl;
+                out << "\t---- group " << group << " ---- out of " << (matrix.getRowGroupCount() - 1) << " ---- " << std::endl;
                 for (uint_fast64_t i = matrix.getRowGroupIndices()[group]; i < matrix.getRowGroupIndices()[group + 1]; ++i) {
                     uint_fast64_t nextIndex = matrix.rowIndications[i];
                     
