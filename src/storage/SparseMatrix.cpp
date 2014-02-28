@@ -71,7 +71,7 @@ namespace storm {
                 
                 if (!hasCustomRowGrouping) {
                     for (uint_fast64_t i = lastRow + 1; i <= row; ++i) {
-                        rowGroupIndices.push_back(row);
+                        rowGroupIndices.push_back(i);
                         ++currentRowGroup;
                     }
                 }
@@ -97,15 +97,15 @@ namespace storm {
         }
         
         template<typename T>
-        void SparseMatrixBuilder<T>::addRowGroup() {
+        void SparseMatrixBuilder<T>::newRowGroup(uint_fast64_t startingRow) {
             if (!hasCustomRowGrouping) {
                 throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::addRowGroup: matrix was not created to have a custom row grouping.";
             }
             if (rowGroupCountSet) {
-                rowGroupIndices[currentRowGroup] = lastRow + 1;
+                rowGroupIndices[currentRowGroup] = startingRow;
                 ++currentRowGroup;
             } else {
-                rowGroupIndices.push_back(lastRow + 1);
+                rowGroupIndices.push_back(startingRow);
             }
         }
         
@@ -282,10 +282,10 @@ namespace storm {
             }
             
             bool equalityResult = true;
-            
-            equalityResult &= rowCount == other.rowCount;
-            equalityResult &= columnCount == other.columnCount;
-            equalityResult &= rowGroupIndices == other.rowGroupIndices;
+
+            equalityResult &= this->getRowCount() == other.getRowCount();
+            equalityResult &= this->getColumnCount() == other.getColumnCount();
+            equalityResult &= this->getRowGroupIndices() == other.getRowGroupIndices();
             
             // For the actual contents, we need to do a little bit more work, because we want to ignore elements that
             // are set to zero, please they may be represented implicitly in the other matrix.
@@ -334,27 +334,28 @@ namespace storm {
         }
         
         template<typename T>
+        std::vector<uint_fast64_t> const& SparseMatrix<T>::getRowGroupIndices() const {
+            return rowGroupIndices;
+        }
+
+        template<typename T>
         void SparseMatrix<T>::makeRowsAbsorbing(storm::storage::BitVector const& rows) {
             for (auto row : rows) {
-                makeRowAbsorbing(row, row);
+                makeRowDirac(row, row);
             }
         }
         
         template<typename T>
-        void SparseMatrix<T>::makeRowsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices) {
+        void SparseMatrix<T>::makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices) {
             for (auto rowGroup : rowGroupConstraint) {
-                for (uint_fast64_t row = rowGroupIndices[rowGroup]; row < rowGroupIndices[rowGroup + 1]; ++row) {
-                    makeRowAbsorbing(row, rowGroup);
+                for (uint_fast64_t row = this->getRowGroupIndices()[rowGroup]; row < this->getRowGroupIndices()[rowGroup + 1]; ++row) {
+                    makeRowDirac(row, rowGroup);
                 }
             }
         }
         
         template<typename T>
-        void SparseMatrix<T>::makeRowAbsorbing(uint_fast64_t row, uint_fast64_t column) {
-            if (row > rowCount) {
-                throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrix::makeRowAbsorbing: access to row " << row << " is out of bounds.";
-            }
-            
+        void SparseMatrix<T>::makeRowDirac(uint_fast64_t row, uint_fast64_t column) {
             iterator columnValuePtr = this->begin(row);
             iterator columnValuePtrEnd = this->end(row);
             
@@ -397,11 +398,11 @@ namespace storm {
         }
         
         template<typename T>
-        std::vector<T> SparseMatrix<T>::getConstrainedRowSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint) const {
+        std::vector<T> SparseMatrix<T>::getConstrainedRowGroupSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint) const {
             std::vector<T> result;
             result.reserve(rowGroupConstraint.getNumberOfSetBits());
             for (auto rowGroup : rowGroupConstraint) {
-                for (uint_fast64_t row = rowGroupIndices[rowGroup]; row < rowGroupIndices[rowGroup + 1]; ++row) {
+                for (uint_fast64_t row = this->getRowGroupIndices()[rowGroup]; row < this->getRowGroupIndices()[rowGroup + 1]; ++row) {
                     result.push_back(getConstrainedRowSum(row, columnConstraint));
                 }
             }
@@ -409,21 +410,20 @@ namespace storm {
         }
         
         template<typename T>
-        SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& constraint) const {
-            // Create a fake row grouping to reduce this to a call to a more general method.
-            std::vector<uint_fast64_t> rowGroupIndices(rowCount + 1);
-            uint_fast64_t i = 0;
-            for (std::vector<uint_fast64_t>::iterator it = rowGroupIndices.begin(); it != rowGroupIndices.end(); ++it, ++i) {
-                *it = i;
+        SparseMatrix<T> SparseMatrix<T>::getSubmatrix(bool useGroups, storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint, bool insertDiagonalElements) const {
+            if (useGroups) {
+                return getSubmatrix(rowConstraint, columnConstraint, this->getRowGroupIndices(), insertDiagonalElements);
+            } else {
+                // Create a fake row grouping to reduce this to a call to a more general method.
+                std::vector<uint_fast64_t> fakeRowGroupIndices(rowCount + 1);
+                uint_fast64_t i = 0;
+                for (std::vector<uint_fast64_t>::iterator it = fakeRowGroupIndices.begin(); it != fakeRowGroupIndices.end(); ++it, ++i) {
+                    *it = i;
+                }
+                return getSubmatrix(rowConstraint, columnConstraint, fakeRowGroupIndices, insertDiagonalElements);
             }
-            return getSubmatrix(constraint, constraint, rowGroupIndices);
         }
-        
-        template<typename T>
-        SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
-            return getSubmatrix(rowGroupConstraint, rowGroupConstraint, rowGroupIndices, insertDiagonalEntries);
-        }
-        
+                
         template<typename T>
         SparseMatrix<T> SparseMatrix<T>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
             // First, we need to determine the number of entries and the number of rows of the submatrix.
@@ -452,7 +452,7 @@ namespace storm {
             }
             
             // Create and initialize resulting matrix.
-            SparseMatrixBuilder<T> matrixBuilder(subRows, columnConstraint.getNumberOfSetBits(), subEntries);
+            SparseMatrixBuilder<T> matrixBuilder(subRows, columnConstraint.getNumberOfSetBits(), subEntries, true);
             
             // Create a temporary vector that stores for each index whose bit is set to true the number of bits that
             // were set before that particular index.
@@ -480,6 +480,7 @@ namespace storm {
             // Copy over selected entries.
             uint_fast64_t rowCount = 0;
             for (auto index : rowGroupConstraint) {
+                matrixBuilder.newRowGroup(rowCount);
                 for (uint_fast64_t i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
                     bool insertedDiagonalElement = false;
                     
@@ -506,7 +507,7 @@ namespace storm {
         }
         
         template<typename T>
-        SparseMatrix<T> SparseMatrix<T>::getSubmatrix(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
+        SparseMatrix<T> SparseMatrix<T>::selectRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
             // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
             // diagonal entries if requested.
             uint_fast64_t subEntries = 0;
@@ -612,20 +613,14 @@ namespace storm {
         
         template<typename T>
         void SparseMatrix<T>::invertDiagonal() {
-            // Check if the matrix is square, because only then it makes sense to perform this
-            // transformation.
-            if (this->getRowCount() != this->getColumnCount()) {
-                throw storm::exceptions::InvalidArgumentException() << "SparseMatrix::invertDiagonal requires the Matrix to be square!";
-            }
-            
-            // Now iterate over all rows and set the diagonal elements to the inverted value.
+            // Now iterate over all row groups and set the diagonal elements to the inverted value.
             // If there is a row without the diagonal element, an exception is thrown.
             T one = storm::utility::constantOne<T>();
             bool foundDiagonalElement = false;
-            for (uint_fast64_t row = 0; row < rowCount; ++row) {
-                for (iterator it = this->begin(row), ite = this->end(row); it != ite; ++it) {
-                    if (it->first == row) {
-                        it->second = one - it->second;
+            for (uint_fast64_t group = 0; group < this->getRowGroupCount(); ++group) {
+                for (auto& entry : this->getRowGroup(group)) {
+                    if (entry.first == group) {
+                        entry.second = one - entry.second;
                         foundDiagonalElement = true;
                     }
                 }
@@ -639,16 +634,11 @@ namespace storm {
         
         template<typename T>
         void SparseMatrix<T>::negateAllNonDiagonalEntries() {
-            // Check if the matrix is square, because only then it makes sense to perform this transformation.
-            if (this->getRowCount() != this->getColumnCount()) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::invertDiagonal: matrix is non-square.";
-            }
-            
-            // Iterate over all rows and negate all the elements that are not on the diagonal.
-            for (uint_fast64_t row = 0; row < rowCount; ++row) {
-                for (iterator it = this->begin(row), ite = this->end(row); it != ite; ++it) {
-                    if (it->first != row) {
-                        it->second = -it->second;
+            // Iterate over all row groups and negate all the elements that are not on the diagonal.
+            for (uint_fast64_t group = 0; group < this->getRowGroupCount(); ++group) {
+                for (auto& entry : this->getRowGroup(group)) {
+                    if (entry.first != group) {
+                        entry.second = -entry.second;
                     }
                 }
             }
@@ -656,16 +646,11 @@ namespace storm {
         
         template<typename T>
         void SparseMatrix<T>::deleteDiagonalEntries() {
-            // Check if the matrix is square, because only then it makes sense to perform this transformation.
-            if (this->getRowCount() != this->getColumnCount()) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::deleteDiagonalEntries: matrix is non-square.";
-            }
-            
             // Iterate over all rows and negate all the elements that are not on the diagonal.
-            for (uint_fast64_t row = 0; row < rowCount; ++row) {
-                for (iterator it = this->begin(row), ite = this->end(row); it != ite; ++it) {
-                    if (it->first == row) {
-                        it->second = storm::utility::constantZero<T>();
+            for (uint_fast64_t group = 0; group < this->getRowGroupCount(); ++group) {
+                for (auto& entry : this->getRowGroup(group)) {
+                    if (entry.first == group) {
+                        entry.second = storm::utility::constantZero<T>();
                     }
                 }
             }
@@ -853,6 +838,8 @@ namespace storm {
             if (this->getRowCount() != matrix.getRowCount()) return false;
             if (this->getColumnCount() != matrix.getColumnCount()) return false;
             
+            if (this->getRowGroupIndices() != matrix.getRowGroupIndices()) return false;
+            
             // Check the subset property for all rows individually.
             for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
                 for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = matrix.begin(row), ite2 = matrix.end(row); it1 != ite1; ++it1) {
@@ -872,33 +859,36 @@ namespace storm {
         std::ostream& operator<<(std::ostream& out, SparseMatrix<T> const& matrix) {
             // Print column numbers in header.
             out << "\t\t";
-            for (uint_fast64_t i = 0; i < matrix.columnCount; ++i) {
+            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 out << i << "\t";
             }
             out << std::endl;
             
-            // Iterate over all rows.
-            for (uint_fast64_t i = 0; i < matrix.rowCount; ++i) {
-                uint_fast64_t nextIndex = matrix.rowIndications[i];
-                
-                // Print the actual row.
-                out << i << "\t(\t";
-                uint_fast64_t currentRealIndex = 0;
-                while (currentRealIndex < matrix.columnCount) {
-                    if (nextIndex < matrix.rowIndications[i + 1] && currentRealIndex == matrix.columnsAndValues[nextIndex].first) {
-                        out << matrix.columnsAndValues[nextIndex].second << "\t";
-                        ++nextIndex;
-                    } else {
-                        out << "0\t";
+            // Iterate over all row groups.
+            for (uint_fast64_t group = 0; group < matrix.getRowGroupCount(); ++group) {
+                out << "\t---- group " << group << " ----" << std::endl;
+                for (uint_fast64_t i = matrix.getRowGroupIndices()[group]; i < matrix.getRowGroupIndices()[group + 1]; ++i) {
+                    uint_fast64_t nextIndex = matrix.rowIndications[i];
+                    
+                    // Print the actual row.
+                    out << i << "\t(\t";
+                    uint_fast64_t currentRealIndex = 0;
+                    while (currentRealIndex < matrix.columnCount) {
+                        if (nextIndex < matrix.rowIndications[i + 1] && currentRealIndex == matrix.columnsAndValues[nextIndex].first) {
+                            out << matrix.columnsAndValues[nextIndex].second << "\t";
+                            ++nextIndex;
+                        } else {
+                            out << "0\t";
+                        }
+                        ++currentRealIndex;
                     }
-                    ++currentRealIndex;
+                    out << "\t)\t" << i << std::endl;
                 }
-                out << "\t)\t" << i << std::endl;
             }
             
             // Print column numbers in footer.
             out << "\t\t";
-            for (uint_fast64_t i = 0; i < matrix.columnCount; ++i) {
+            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 out << i << "\t";
             }
             out << std::endl;
@@ -910,11 +900,12 @@ namespace storm {
         std::size_t SparseMatrix<T>::hash() const {
             std::size_t result = 0;
             
-            boost::hash_combine(result, rowCount);
-            boost::hash_combine(result, columnCount);
-            boost::hash_combine(result, entryCount);
+            boost::hash_combine(result, this->getRowCount());
+            boost::hash_combine(result, this->getColumnCount());
+            boost::hash_combine(result, this->getEntryCount());
             boost::hash_combine(result, boost::hash_range(columnsAndValues.begin(), columnsAndValues.end()));
             boost::hash_combine(result, boost::hash_range(rowIndications.begin(), rowIndications.end()));
+            boost::hash_combine(result, boost::hash_range(rowGroupIndices.begin(), rowGroupIndices.end()));
             
             return result;
         }

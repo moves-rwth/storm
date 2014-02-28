@@ -542,7 +542,7 @@ namespace storm {
                         } else {
                             // If the model is nondeterministic, we add all choices individually.
                             nondeterministicChoiceIndices.push_back(currentRow);
-                            transitionMatrixBuilder.addRowGroup();
+                            transitionMatrixBuilder.newRowGroup(currentRow);
                             
                             // First, process all unlabeled choices.
                             for (auto const& choice : allUnlabeledChoices) {

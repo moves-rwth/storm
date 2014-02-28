@@ -117,7 +117,7 @@ namespace storm {
                         // In this case we have have to compute the probabilities.
                         
                         // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-                        storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0, this->getModel().getNondeterministicChoiceIndices());
+                        storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, statesWithProbabilityGreater0, statesWithProbabilityGreater0, false);
                         
                         // Get the "new" nondeterministic choice indices for the submatrix.
                         std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(this->getModel().getNondeterministicChoiceIndices(), statesWithProbabilityGreater0);
@@ -126,7 +126,7 @@ namespace storm {
                         storm::storage::BitVector rightStatesInReducedSystem = psiStates % statesWithProbabilityGreater0;
                         
                         // Make all rows absorbing that satisfy the second sub-formula.
-                        submatrix.makeRowsAbsorbing(rightStatesInReducedSystem, subNondeterministicChoiceIndices);
+                        submatrix.makeRowGroupsAbsorbing(rightStatesInReducedSystem, subNondeterministicChoiceIndices);
                         
                         // Create the vector with which to multiply.
                         std::vector<Type> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
@@ -320,14 +320,14 @@ namespace storm {
 
                         // First, we can eliminate the rows and columns from the original transition probability matrix for states
                         // whose probabilities are already known.
-                        storm::storage::SparseMatrix<Type> submatrix = transitionMatrix.getSubmatrix(maybeStates, nondeterministicChoiceIndices);
+                        storm::storage::SparseMatrix<Type> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
                         
                         // Get the "new" nondeterministic choice indices for the submatrix.
                         std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(nondeterministicChoiceIndices, maybeStates);
                         
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
-                        std::vector<Type> b = transitionMatrix.getConstrainedRowSumVector(maybeStates, nondeterministicChoiceIndices, statesWithProbability1);
+                        std::vector<Type> b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, nondeterministicChoiceIndices, statesWithProbability1);
                         
                         // Create vector for results for maybe states.
                         std::vector<Type> x(maybeStates.getNumberOfSetBits());
@@ -487,7 +487,7 @@ namespace storm {
                         
                         // We can eliminate the rows and columns from the original transition probability matrix for states
                         // whose reward values are already known.
-                        storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates, this->getModel().getNondeterministicChoiceIndices());
+                        storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates, false);
                         
                         // Get the "new" nondeterministic choice indices for the submatrix.
                         std::vector<uint_fast64_t> subNondeterministicChoiceIndices = storm::utility::vector::getConstrainedOffsetVector(this->getModel().getNondeterministicChoiceIndices(), maybeStates);

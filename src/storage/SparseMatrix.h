@@ -62,10 +62,12 @@ namespace storm {
             void addNextValue(uint_fast64_t row, uint_fast64_t column, T const& value);
             
             /*!
-             * Adds a new row group to the matrix. Note that this needs to be called before any entries in the new row
+             * Starts a new row group in the matrix. Note that this needs to be called before any entries in the new row
              * group are added.
+             *
+             * @param startingRow The starting row of the new row group.
              */
-            void addRowGroup();
+            void newRowGroup(uint_fast64_t startingRow);
             
             /*
              * Finalizes the sparse matrix to indicate that initialization process has been completed and the matrix
@@ -345,6 +347,13 @@ namespace storm {
             uint_fast64_t getRowGroupCount() const;
             
             /*!
+             * Returns the grouping of rows of this matrix.
+             *
+             * @return The grouping of rows of this matrix.
+             */
+            std::vector<uint_fast64_t> const& getRowGroupIndices() const;
+            
+            /*!
              * This function makes the given rows absorbing.
              *
              * @param rows A bit vector indicating which rows are to be made absorbing.
@@ -357,16 +366,16 @@ namespace storm {
              * @param rowGroupConstraint A bit vector indicating which row groups to make absorbing.
              * @param rowGroupIndices A vector indicating which rows belong to a given row group.
              */
-            void makeRowsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices);
+            void makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices);
             
             /*!
-             * This function makes the given row absorbing. This means that all entries will be set to 0 except the one
+             * This function makes the given row Dirac. This means that all entries will be set to 0 except the one
              * at the specified column, which is set to 1 instead.
              *
-             * @param row The row to be made absorbing.
+             * @param row The row to be made Dirac.
              * @param column The index of the column whose value is to be set to 1.
              */
-            void makeRowAbsorbing(const uint_fast64_t row, const uint_fast64_t column);
+            void makeRowDirac(const uint_fast64_t row, const uint_fast64_t column);
             
             /*
              * Sums the entries in the given row and columns.
@@ -398,54 +407,32 @@ namespace storm {
              * @return A vector whose entries represent the sums of selected columns for all rows in selected row
              * groups.
              */
-            std::vector<T> getConstrainedRowSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint) const;
+            std::vector<T> getConstrainedRowGroupSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint) const;
             
             /*!
              * Creates a submatrix of the current matrix by dropping all rows and columns whose bits are not
              * set to one in the given bit vector.
              *
-             * @param constraint A bit vector indicating which rows and columns to keep.
-             * @return A matrix corresponding to a submatrix of the current matrix in which only rows and columns given
-             * by the constraint are kept and all others are dropped.
-             */
-            SparseMatrix getSubmatrix(storm::storage::BitVector const& constraint) const;
-            
-            /*!
-             * Creates a submatrix of the current matrix by keeping only certain row groups and columns.
-             *
-             * @param rowGroupConstraint A bit vector indicating which row groups and columns to keep.
-             * @param rowGroupIndices A vector indicating which rows belong to a given row group.
-             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
-             * each row in row group i. This can then be used for inserting other values later.
-             * @return A matrix corresponding to a submatrix of the current matrix in which only row groups and columns
-             * given by the row group constraint are kept and all others are dropped.
-             */
-            SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = false) const;
-            
-            /*!
-             * Creates a submatrix of the current matrix by keeping only row groups and columns in the given row group
-             * and column constraint, respectively.
-             *
-             * @param rowGroupConstraint A bit vector indicating which row groups to keep.
+             * @param useGroups If set to true, the constraint for the rows is interpreted as selecting whole row groups.
+             * @param constraint A bit vector indicating which rows to keep.
              * @param columnConstraint A bit vector indicating which columns to keep.
-             * @param rowGroupIndices A vector indicating which rows belong to a given row group.
              * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
-             * each row in row group i. This can then be used for inserting other values later.
-             * @return A matrix corresponding to a submatrix of the current matrix in which only row groups and columns
-             * given by the row group constraint are kept and all others are dropped.
+             * each row i, if there is no value yet. This can then be used for inserting other values later.
+             * @return A matrix corresponding to a submatrix of the current matrix in which only rows and columns given
+             * by the constraints are kept and all others are dropped.
              */
-            SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = false) const;
+            SparseMatrix getSubmatrix(bool useGroups, storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint, bool insertDiagonalEntries = false) const;
             
             /*!
-             * Creates a submatrix of the current matrix by selecting one row out of each row group.
+             * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
              *
-             * @param rowGroupdToRowIndexMapping A mapping from each row group index to a selected row in this group.
+             * @param rowGroupToRowIndexMapping A mapping from each row group index to a selected row in this group.
              * @param rowGroupIndices A vector indicating which rows belong to a given row group.
              * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
              * each row in row group i. This can then be used for inserting other values later.
              * @return A submatrix of the current matrix by selecting one row out of each row group.
              */
-            SparseMatrix getSubmatrix(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = true) const;
+            SparseMatrix selectRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = true) const;
             
             /*!
              * Transposes the matrix.
@@ -504,6 +491,40 @@ namespace storm {
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
             void multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const;
+            
+            /*!
+             * Computes the sum of the entries in a given row.
+             *
+             * @param row The row that is to be summed.
+             * @return The sum of the selected row.
+             */
+            T getRowSum(uint_fast64_t row) const;
+            
+            /*!
+             * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
+             * of B if B has no entries in position where A has none. Additionally, the matrices must be of equal size.
+             *
+             * @param matrix The matrix that possibly is a supermatrix of the current matrix.
+             * @return True iff the current matrix is a submatrix of the given matrix.
+             */
+            bool isSubmatrixOf(SparseMatrix<T> const& matrix) const;
+            
+            template<typename TPrime>
+            friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
+            
+            /*!
+             * Returns the size of the matrix in memory measured in bytes.
+             *
+             * @return The size of the matrix in memory measured in bytes.
+             */
+            uint_fast64_t getSizeInMemory() const;
+            
+            /*!
+             * Calculates a hash value over all values contained in the matrix.
+             *
+             * @return size_t A hash value for this matrix.
+             */
+            std::size_t hash() const;
             
             /*!
              * Returns an object representing the consecutive rows given by the parameters.
@@ -600,42 +621,22 @@ namespace storm {
              * @return An iterator that points past the end of the last row of the matrix.
              */
             iterator end();
-
-            /*!
-             * Computes the sum of the entries in a given row.
-             *
-             * @param row The row that is to be summed.
-             * @return The sum of the selected row.
-             */
-            T getRowSum(uint_fast64_t row) const;
-            
-            /*!
-             * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
-             * of B if B has no entries in position where A has none. Additionally, the matrices must be of equal size.
-             *
-             * @param matrix The matrix that possibly is a supermatrix of the current matrix.
-             * @return True iff the current matrix is a submatrix of the given matrix.
-             */
-            bool isSubmatrixOf(SparseMatrix<T> const& matrix) const;
-            
-            template<typename TPrime>
-            friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
-            
-            /*!
-             * Returns the size of the matrix in memory measured in bytes.
-             *
-             * @return The size of the matrix in memory measured in bytes.
-             */
-            uint_fast64_t getSizeInMemory() const;
-            
-            /*!
-             * Calculates a hash value over all values contained in the matrix.
-             *
-             * @return size_t A hash value for this matrix.
-             */
-            std::size_t hash() const;
             
         private:
+            /*!
+             * Creates a submatrix of the current matrix by keeping only row groups and columns in the given row group
+             * and column constraint, respectively.
+             *
+             * @param rowGroupConstraint A bit vector indicating which row groups to keep.
+             * @param columnConstraint A bit vector indicating which columns to keep.
+             * @param rowGroupIndices A vector indicating which rows belong to a given row group.
+             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
+             * each row in row group i. This can then be used for inserting other values later.
+             * @return A matrix corresponding to a submatrix of the current matrix in which only row groups and columns
+             * given by the row group constraint are kept and all others are dropped.
+             */
+            SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = false) const;
+            
             // The number of rows of the matrix.
             uint_fast64_t rowCount;
             

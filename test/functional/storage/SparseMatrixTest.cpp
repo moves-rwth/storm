@@ -221,13 +221,16 @@ TEST(SparseMatrix, MakeAbsorbing) {
 }
 
 TEST(SparseMatrix, MakeRowGroupAbsorbing) {
-    storm::storage::SparseMatrixBuilder<double> matrixBuilder(5, 4, 9);
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder(5, 4, 9, true);
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(0));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 2, 1.2));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 0, 0.5));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(2));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(2, 0, 0.5));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(3, 2, 1.1));
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(4));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 0, 0.1));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 1, 0.2));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 3, 0.3));
@@ -239,15 +242,18 @@ TEST(SparseMatrix, MakeRowGroupAbsorbing) {
     storm::storage::BitVector absorbingRowGroups(3);
     absorbingRowGroups.set(1);
     
-    ASSERT_NO_THROW(matrix.makeRowsAbsorbing(absorbingRowGroups, rowGroupIndices));
+    ASSERT_NO_THROW(matrix.makeRowGroupsAbsorbing(absorbingRowGroups, rowGroupIndices));
 
-    storm::storage::SparseMatrixBuilder<double> matrixBuilder2;
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder2(0, 0, 0, true);
+    ASSERT_NO_THROW(matrixBuilder2.newRowGroup(0));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(0, 1, 1.0));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(0, 2, 1.2));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(1, 0, 0.5));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(1, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder2.newRowGroup(2));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(2, 1, 1));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(3, 1, 1));
+    ASSERT_NO_THROW(matrixBuilder2.newRowGroup(4));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(4, 0, 0.1));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(4, 1, 0.2));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(4, 3, 0.3));
@@ -279,14 +285,17 @@ TEST(SparseMatrix, ConstrainedRowSumVector) {
     std::vector<double> constrainedRowSum = matrix.getConstrainedRowSumVector(storm::storage::BitVector(5, true), columnConstraint);
     ASSERT_TRUE(constrainedRowSum == std::vector<double>({1.0, 0.7, 0, 0, 0.5}));
     
-    storm::storage::SparseMatrixBuilder<double> matrixBuilder2(5, 4, 9);
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder2(5, 4, 9, true);
+    ASSERT_NO_THROW(matrixBuilder2.newRowGroup(0));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(0, 1, 1.0));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(0, 2, 1.2));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(1, 0, 0.5));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(1, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder2.newRowGroup(2));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(2, 0, 0.5));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(3, 2, 1.1));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(3, 3, 1.2));
+    ASSERT_NO_THROW(matrixBuilder2.newRowGroup(4));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(4, 0, 0.1));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(4, 3, 0.3));
     storm::storage::SparseMatrix<double> matrix2;
@@ -301,19 +310,23 @@ TEST(SparseMatrix, ConstrainedRowSumVector) {
     columnConstraint2.set(2);
     columnConstraint2.set(3);
     
-    ASSERT_NO_THROW(std::vector<double> constrainedRowSum2 = matrix2.getConstrainedRowSumVector(rowGroupConstraint, rowGroupIndices, columnConstraint2));
-    std::vector<double> constrainedRowSum2 = matrix2.getConstrainedRowSumVector(rowGroupConstraint, rowGroupIndices, columnConstraint2);
+    ASSERT_NO_THROW(std::vector<double> constrainedRowSum2 = matrix2.getConstrainedRowGroupSumVector(rowGroupConstraint, rowGroupIndices, columnConstraint2));
+    std::vector<double> constrainedRowSum2 = matrix2.getConstrainedRowGroupSumVector(rowGroupConstraint, rowGroupIndices, columnConstraint2);
     ASSERT_TRUE(constrainedRowSum2 == std::vector<double>({0, 2.3}));
 }
 
 TEST(SparseMatrix, Submatrix) {
-    storm::storage::SparseMatrixBuilder<double> matrixBuilder(5, 4, 9);
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder(5, 4, 9, true);
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(0));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 2, 1.2));
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(1));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 0, 0.5));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(2));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(2, 0, 0.5));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(3, 2, 1.1));
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(4));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 0, 0.1));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 1, 0.2));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 3, 0.3));
@@ -330,11 +343,13 @@ TEST(SparseMatrix, Submatrix) {
     columnConstraint.set(0);
     columnConstraint.set(3);
     
-    ASSERT_NO_THROW(storm::storage::SparseMatrix<double> matrix2 = matrix.getSubmatrix(rowGroupConstraint, columnConstraint, rowGroupIndices, false));
-    storm::storage::SparseMatrix<double> matrix2 = matrix.getSubmatrix(rowGroupConstraint, columnConstraint, rowGroupIndices, false);
+    ASSERT_NO_THROW(storm::storage::SparseMatrix<double> matrix2 = matrix.getSubmatrix(true, rowGroupConstraint, columnConstraint, false));
+    storm::storage::SparseMatrix<double> matrix2 = matrix.getSubmatrix(true, rowGroupConstraint, columnConstraint, false);
     
-    storm::storage::SparseMatrixBuilder<double> matrixBuilder3(3, 2, 3);
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder3(3, 2, 3, true);
+    ASSERT_NO_THROW(matrixBuilder3.newRowGroup(0));
     ASSERT_NO_THROW(matrixBuilder3.addNextValue(0, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder3.newRowGroup(2));
     ASSERT_NO_THROW(matrixBuilder3.addNextValue(2, 0, 0.1));
     ASSERT_NO_THROW(matrixBuilder3.addNextValue(2, 1, 0.3));
     storm::storage::SparseMatrix<double> matrix3;
@@ -344,8 +359,8 @@ TEST(SparseMatrix, Submatrix) {
     
     std::vector<uint_fast64_t> rowGroupToIndexMapping = {0, 0, 1, 0};
 
-    ASSERT_NO_THROW(storm::storage::SparseMatrix<double> matrix4 = matrix.getSubmatrix(rowGroupToIndexMapping, rowGroupIndices));
-    storm::storage::SparseMatrix<double> matrix4 = matrix.getSubmatrix(rowGroupToIndexMapping, rowGroupIndices);
+    ASSERT_NO_THROW(storm::storage::SparseMatrix<double> matrix4 = matrix.selectRowsFromRowGroups(rowGroupToIndexMapping, rowGroupIndices));
+    storm::storage::SparseMatrix<double> matrix4 = matrix.selectRowsFromRowGroups(rowGroupToIndexMapping, rowGroupIndices);
     
     storm::storage::SparseMatrixBuilder<double> matrixBuilder5(4, 4, 8);
     ASSERT_NO_THROW(matrixBuilder5.addNextValue(0, 1, 1.0));
