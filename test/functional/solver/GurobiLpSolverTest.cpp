@@ -15,9 +15,11 @@ TEST(GurobiLpSolver, LPOptimizeMax) {
     uint_fast64_t zIndex;
     ASSERT_NO_THROW(zIndex = solver.createContinuousVariable("z", storm::solver::LpSolver::VariableType::LOWER_BOUND, 0, 0, 1));
     
-    ASSERT_NO_THROW(solver.addConstraint("", {xIndex, yIndex, zIndex}, {1, 1, 1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
-    ASSERT_NO_THROW(solver.addConstraint("", {yIndex, zIndex, xIndex}, {0.5, 1, -1}, storm::solver::LpSolver::BoundType::EQUAL, 5));
-    ASSERT_NO_THROW(solver.addConstraint("", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));
+	ASSERT_NO_THROW(solver.update());
+
+    ASSERT_NO_THROW(solver.addConstraint("a", {xIndex, yIndex, zIndex}, {1, 1, 1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
+    ASSERT_NO_THROW(solver.addConstraint("b", {yIndex, zIndex, xIndex}, {0.5, 1, -1}, storm::solver::LpSolver::BoundType::EQUAL, 5));
+    ASSERT_NO_THROW(solver.addConstraint("c", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));
     
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
@@ -50,6 +52,8 @@ TEST(GurobiLpSolver, LPOptimizeMin) {
     uint_fast64_t zIndex;
     ASSERT_NO_THROW(zIndex = solver.createContinuousVariable("z", storm::solver::LpSolver::VariableType::BOUNDED, 1, 5.7, -1));
     
+	ASSERT_NO_THROW(solver.update());
+
     ASSERT_NO_THROW(solver.addConstraint("", {xIndex, yIndex, zIndex}, {1, 1, 1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, zIndex, xIndex}, {0.5, 1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));
@@ -85,6 +89,8 @@ TEST(GurobiLpSolver, MILPOptimizeMax) {
     uint_fast64_t zIndex;
     ASSERT_NO_THROW(zIndex = solver.createContinuousVariable("z", storm::solver::LpSolver::VariableType::LOWER_BOUND, 0, 0, 1));
     
+	ASSERT_NO_THROW(solver.update());
+
     ASSERT_NO_THROW(solver.addConstraint("", {xIndex, yIndex, zIndex}, {1, 1, 1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, zIndex, xIndex}, {0.5, 1, -1}, storm::solver::LpSolver::BoundType::EQUAL, 5));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));
@@ -120,6 +126,8 @@ TEST(GurobiLpSolver, MILPOptimizeMin) {
     uint_fast64_t zIndex;
     ASSERT_NO_THROW(zIndex = solver.createIntegerVariable("z", storm::solver::LpSolver::VariableType::BOUNDED, 0, 5.7, -1));
     
+	ASSERT_NO_THROW(solver.update());
+
     ASSERT_NO_THROW(solver.addConstraint("", {xIndex, yIndex, zIndex}, {1, 1, 1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, zIndex, xIndex}, {0.5, 1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));
@@ -155,6 +163,8 @@ TEST(GurobiLpSolver, LPInfeasible) {
     uint_fast64_t zIndex;
     ASSERT_NO_THROW(zIndex = solver.createContinuousVariable("z", storm::solver::LpSolver::VariableType::LOWER_BOUND, 0, 0, 1));
     
+	ASSERT_NO_THROW(solver.update());
+
     ASSERT_NO_THROW(solver.addConstraint("", {xIndex, yIndex, zIndex}, {1, 1, 1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, zIndex, xIndex}, {0.5, 1, -1}, storm::solver::LpSolver::BoundType::EQUAL, 5));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));
@@ -187,6 +197,8 @@ TEST(GurobiLpSolver, MILPInfeasible) {
     uint_fast64_t zIndex;
     ASSERT_NO_THROW(zIndex = solver.createContinuousVariable("z", storm::solver::LpSolver::VariableType::LOWER_BOUND, 0, 0, 1));
     
+	ASSERT_NO_THROW(solver.update());
+
     ASSERT_NO_THROW(solver.addConstraint("", {xIndex, yIndex, zIndex}, {1, 1, 1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, zIndex, xIndex}, {0.5, 1, -1}, storm::solver::LpSolver::BoundType::EQUAL, 5));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));
@@ -219,6 +231,8 @@ TEST(GurobiLpSolver, LPUnbounded) {
     uint_fast64_t zIndex;
     ASSERT_NO_THROW(zIndex = solver.createContinuousVariable("z", storm::solver::LpSolver::VariableType::LOWER_BOUND, 0, 0, 1));
     
+	ASSERT_NO_THROW(solver.update());
+
     ASSERT_NO_THROW(solver.addConstraint("", {xIndex, yIndex, zIndex}, {1, 1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));
     
@@ -249,6 +263,8 @@ TEST(GurobiLpSolver, MILPUnbounded) {
     uint_fast64_t zIndex;
     ASSERT_NO_THROW(zIndex = solver.createContinuousVariable("z", storm::solver::LpSolver::VariableType::LOWER_BOUND, 0, 0, 1));
     
+	ASSERT_NO_THROW(solver.update());
+
     ASSERT_NO_THROW(solver.addConstraint("", {xIndex, yIndex, zIndex}, {1, 1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 12));
     ASSERT_NO_THROW(solver.addConstraint("", {yIndex, xIndex}, {1, -1}, storm::solver::LpSolver::BoundType::LESS_EQUAL, 5.5));
     
