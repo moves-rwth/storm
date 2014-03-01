@@ -145,7 +145,7 @@ namespace storm {
                             this->markovianStates.set(state, false);
                         }
 
-                        for (uint_fast64_t row = this->getNondeterminsticChoiceIndices()[state] + (this->isHybridState(state) ? 1 : 0); row < this->getNondeterminsticChoiceIndices()[state + 1]; ++row) {
+                        for (uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state] + (this->isHybridState(state) ? 1 : 0); row < this->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
                             for (auto const& entry : this->transitionMatrix.getRow(row)) {
                                 newTransitionMatrixBuilder.addNextValue(currentChoice, entry.first, entry.second);
                             }
