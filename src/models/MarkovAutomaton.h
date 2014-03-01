@@ -187,14 +187,18 @@ namespace storm {
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
         AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
         
+        for (uint_fast64_t i = 0; i < this->getNondeterministicChoiceIndices().size(); ++i) {
+            std::cout << i << ": " << this->getNondeterministicChoiceIndices()[i] << " ";
+        }
+        
         // Write the probability distributions for all the states.
-        for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
+        for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
             uint_fast64_t rowCount = this->getNondeterministicChoiceIndices()[state + 1] - this->getNondeterministicChoiceIndices()[state];
             bool highlightChoice = true;
             
             // For this, we need to iterate over all available nondeterministic choices in the current state.
             for (uint_fast64_t choice = 0; choice < rowCount; ++choice) {
-                typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(choice);
+                typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(this->getNondeterministicChoiceIndices()[state] + choice);
                 
                 if (scheduler != nullptr) {
                     // If the scheduler picked the current choice, we will not make it dotted, but highlight it.

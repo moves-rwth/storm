@@ -61,14 +61,28 @@ namespace storm {
         }
         
         void GurobiLpSolver::setGurobiEnvironmentProperties() const {
-            // Enable the following line to only print the output of Gurobi if the debug flag is set.
-            int error = error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->isSet("debug") || storm::settings::Settings::getInstance()->isSet("gurobioutput") ? 1 : 0);
+			int error = 0;
+
+			// Enable the following line to only print the output of Gurobi if the debug flag is set.
+            error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->isSet("debug") || storm::settings::Settings::getInstance()->isSet("gurobioutput") ? 1 : 0);
+			if (error) {
+				LOG4CPLUS_ERROR(logger, "Unable to set Gurobi Parameter OutputFlag (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi Parameter OutputFlag (" << GRBgeterrormsg(env) << ", error code " << error << ").";
+			}
             
             // Enable the following line to restrict Gurobi to one thread only.
             error = GRBsetintparam(env, "Threads", storm::settings::Settings::getInstance()->getOptionByLongName("gurobithreads").getArgument(0).getValueAsUnsignedInteger());
-            
+			if (error) {
+				LOG4CPLUS_ERROR(logger, "Unable to set Gurobi Parameter Threads (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi Parameter Threads (" << GRBgeterrormsg(env) << ", error code " << error << ").";
+			}
+
             // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
             error = GRBsetdblparam(env, "IntFeasTol", storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble());
+			if (error) {
+				LOG4CPLUS_ERROR(logger, "Unable to set Gurobi Parameter IntFeasTol (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				throw storm::exceptions::InvalidStateException() << "Unable to set Gurobi Parameter IntFeasTol (" << GRBgeterrormsg(env) << ", error code " << error << ").";
+			}
         }
         
         void GurobiLpSolver::update() const {
