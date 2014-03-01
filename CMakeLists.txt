@@ -32,7 +32,6 @@ option(ENABLE_INTELTBB "Sets whether the Intel TBB is available." OFF)
 option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
-option(ENABLE_GLPK "Sets whether StoRM is built with support for glpk." OFF)
 option(ENABLE_CUDAFORSTORM "Sets whether StoRM is built with its CUDA extension." OFF)
 set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
 set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
@@ -178,11 +177,7 @@ else()
 endif()
 
 # glpk defines
-if (ENABLE_GLPK)
-	set(STORM_CPP_GLPK_DEF "define")
-else()
-	set(STORM_CPP_GLPK_DEF "undef")
-endif()
+set(STORM_CPP_GLPK_DEF "define")
 
 # CUDA Defines
 if (ENABLE_CUDAFORSTORM)
@@ -384,15 +379,15 @@ endif(ENABLE_GUROBI)
 
 #############################################################
 ##
-##	glpk (optional)
+##	glpk
 ##
 #############################################################
-if (ENABLE_GLPK)
-    message (STATUS "StoRM - Linking with glpk")
-    target_link_libraries(storm "glpk")
-    target_link_libraries(storm-functional-tests "glpk")
-    target_link_libraries(storm-performance-tests "glpk")
-endif(ENABLE_GLPK)
+message (STATUS "StoRM - Linking with glpk")
+add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/glpk-4.53")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/glpk-4.53/src")
+target_link_libraries(storm "glpk")
+target_link_libraries(storm-functional-tests "glpk")
+target_link_libraries(storm-performance-tests "glpk")
 
 #############################################################
 ##
