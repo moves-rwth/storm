@@ -32,14 +32,13 @@ namespace storm {
              * @param x The solution vector x. The initial values of x represent a guess of the real values to the
              * solver, but may be ignored.
              * @param b The vector to add after matrix-vector multiplication.
-             * @param rowGroupIndices A vector indicating which rows of the matrix belong to one group.
              * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
              * vector must be equal to the number of rows of A.
              * @param newX If non-null, this memory is used as a scratch memory. If given, the length of this
              * vector must be equal to the length of the vector x (and thus to the number of columns of A).
              * @return The solution vector x of the system of linear equations as the content of the parameter x.
              */
-            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
+            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
             
             /*!
              * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
@@ -52,14 +51,13 @@ namespace storm {
              * @param A The matrix that is to be multiplied with the vector.
              * @param x The initial vector that is to be multiplied with the matrix. This is also the output parameter,
              * i.e. after the method returns, this vector will contain the computed values.
-             * @param rowGroupIndices A vector indicating which rows of the matrix belong to one group.
              * @param b If not null, this vector is added after each multiplication.
              * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
              * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
              * vector must be equal to the number of rows of A.
              * @return The result of the repeated matrix-vector multiplication as the content of the vector x.
              */
-            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
+            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
         };
         
     } // namespace solver

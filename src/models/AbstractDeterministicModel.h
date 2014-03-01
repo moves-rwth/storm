@@ -70,11 +70,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		AbstractDeterministicModel(AbstractDeterministicModel && other) : AbstractModel<T>(std::move(other)) {
 			// Intentionally left empty.
 		}
-    
-        virtual typename storm::storage::SparseMatrix<T>::const_rows getRows(uint_fast64_t state) const override {
-            return this->transitionMatrix.getRows(state, state);
-        }
-    
+        
 		/*!
 		 * Calculates a hash over all values contained in this Model.
 		 * @return size_t A Hash Value

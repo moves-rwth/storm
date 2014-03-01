@@ -7,7 +7,7 @@ TEST(MaximalEndComponentDecomposition, FullSystem1) {
     storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
 
     std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = parser.getModel<storm::models::MarkovAutomaton<double>>();
-
+    
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition;
     ASSERT_NO_THROW(mecDecomposition = storm::storage::MaximalEndComponentDecomposition<double>(*markovAutomaton));
     

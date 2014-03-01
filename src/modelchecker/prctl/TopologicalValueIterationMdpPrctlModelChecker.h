@@ -58,7 +58,7 @@ private:
 	 * @return The solution of the system of linear equations in form of the elements of the vector
 	 * x.
 	 */
-	void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+	void solveEquationSystem(storm::storage::SparseMatrix<Type> const& matrix, std::vector<Type>& x, std::vector<Type> const& b) const {
 		// Get the settings object to customize solving.
 		storm::settings::Settings* s = storm::settings::Settings::getInstance();
 
@@ -92,14 +92,14 @@ private:
 			converged = false;
 			while (!converged && localIterations < maxIterations) {
 				// Compute x' = A*x + b.
-				matrix.multiplyWithVector(scc, nondeterministicChoiceIndices, *currentX, multiplyResult);
-				storm::utility::addVectors(scc, nondeterministicChoiceIndices, multiplyResult, b);
+				matrix.multiplyWithVector(scc, *currentX, multiplyResult);
+				storm::utility::addVectors(scc, matrix.getRowGroupIndices(), multiplyResult, b);
 
 				// Reduce the vector x' by applying min/max for all non-deterministic choices.
 				if (this->minimumOperatorStack.top()) {
-					storm::utility::reduceVectorMin(multiplyResult, newX, scc, nondeterministicChoiceIndices);
+					storm::utility::reduceVectorMin(multiplyResult, newX, scc, matrix.getRowGroupIndices());
 				} else {
-					storm::utility::reduceVectorMax(multiplyResult, newX, scc, nondeterministicChoiceIndices);
+					storm::utility::reduceVectorMax(multiplyResult, newX, scc, matrix.getRowGroupIndices());
 				}
 
 				// Determine whether the method converged.

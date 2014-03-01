@@ -30,9 +30,9 @@ namespace storm {
 
             virtual NondeterministicLinearEquationSolver<Type>* clone() const;
             
-            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* b = nullptr, uint_fast64_t n = 1, std::vector<Type>* multiplyResult = nullptr) const override;
+            virtual void performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type>* b = nullptr, uint_fast64_t n = 1, std::vector<Type>* multiplyResult = nullptr) const override;
             
-            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<Type>* multiplyResult = nullptr, std::vector<Type>* newX = nullptr) const override;
+            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<Type> const& A, std::vector<Type>& x, std::vector<Type> const& b, std::vector<Type>* multiplyResult = nullptr, std::vector<Type>* newX = nullptr) const override;
             
         private:
             // The required precision for the iterative methods.

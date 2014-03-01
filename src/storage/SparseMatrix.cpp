@@ -336,6 +336,11 @@ namespace storm {
         }
         
         template<typename T>
+        uint_fast64_t SparseMatrix<T>::getRowGroupSize(uint_fast64_t group) const {
+            return this->getRowGroupIndices()[group + 1] - this->getRowGroupIndices()[group];
+        }
+        
+        template<typename T>
         std::vector<uint_fast64_t> const& SparseMatrix<T>::getRowGroupIndices() const {
             return rowGroupIndices;
         }
@@ -348,7 +353,7 @@ namespace storm {
         }
         
         template<typename T>
-        void SparseMatrix<T>::makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices) {
+        void SparseMatrix<T>::makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint) {
             for (auto rowGroup : rowGroupConstraint) {
                 for (uint_fast64_t row = this->getRowGroupIndices()[rowGroup]; row < this->getRowGroupIndices()[rowGroup + 1]; ++row) {
                     makeRowDirac(row, rowGroup);
@@ -364,7 +369,7 @@ namespace storm {
             // If the row has no elements in it, we cannot make it absorbing, because we would need to move all elements
             // in the vector of nonzeros otherwise.
             if (columnValuePtr >= columnValuePtrEnd) {
-                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::makeRowAbsorbing: cannot make row " << row << " absorbing, but there is no entry in this row.";
+                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::makeRowDirac: cannot make row " << row << " absorbing, but there is no entry in this row.";
             }
             
             // If there is at least one entry in this row, we can just set it to one, modify its column value to the
@@ -400,7 +405,7 @@ namespace storm {
         }
         
         template<typename T>
-        std::vector<T> SparseMatrix<T>::getConstrainedRowGroupSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint) const {
+        std::vector<T> SparseMatrix<T>::getConstrainedRowGroupSumVector(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint) const {
             std::vector<T> result;
             result.reserve(rowGroupConstraint.getNumberOfSetBits());
             for (auto rowGroup : rowGroupConstraint) {
@@ -509,7 +514,7 @@ namespace storm {
         }
         
         template<typename T>
-        SparseMatrix<T> SparseMatrix<T>::selectRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries) const {
+        SparseMatrix<T> SparseMatrix<T>::selectRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, bool insertDiagonalEntries) const {
             // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
             // diagonal entries if requested.
             uint_fast64_t subEntries = 0;
@@ -867,7 +872,7 @@ namespace storm {
             
             // Iterate over all row groups.
             for (uint_fast64_t group = 0; group < matrix.getRowGroupCount(); ++group) {
-                out << "\t---- group " << group << " ---- out of " << (matrix.getRowGroupCount() - 1) << " ---- " << std::endl;
+                out << "\t---- group " << group << "/" << (matrix.getRowGroupCount() - 1) << " ---- " << std::endl;
                 for (uint_fast64_t i = matrix.getRowGroupIndices()[group]; i < matrix.getRowGroupIndices()[group + 1]; ++i) {
                     uint_fast64_t nextIndex = matrix.rowIndications[i];
                     

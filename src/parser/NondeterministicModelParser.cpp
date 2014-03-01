@@ -37,13 +37,13 @@ NondeterministicModelParserResultContainer<double> parseNondeterministicModel(st
 
 	storm::models::AtomicPropositionsLabeling resultLabeling(std::move(storm::parser::AtomicPropositionLabelingParser(stateCount, labelingFile)));
 
-	NondeterministicModelParserResultContainer<double> result(std::move(resultTransitionSystem), std::move(nondeterministicSparseTransitionParserResult.second), std::move(resultLabeling));
+	NondeterministicModelParserResultContainer<double> result(std::move(resultTransitionSystem), std::move(resultLabeling));
 	
 	if (stateRewardFile != "") {
 		result.stateRewards.reset(storm::parser::SparseStateRewardParser(stateCount, stateRewardFile));
 	}
 	if (transitionRewardFile != "") {
-		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(rowCount, stateCount, &result.rowMapping);
+		RewardMatrixInformationStruct* rewardMatrixInfo = new RewardMatrixInformationStruct(rowCount, stateCount, &result.transitionSystem.getRowGroupIndices());
 		result.transitionRewards.reset(storm::parser::NondeterministicSparseTransitionParser(transitionRewardFile, rewardMatrixInfo).first);
 		delete rewardMatrixInfo;
 	}
@@ -58,7 +58,7 @@ NondeterministicModelParserResultContainer<double> parseNondeterministicModel(st
 storm::models::Mdp<double> NondeterministicModelParserAsMdp(std::string const & transitionSystemFile, std::string const & labelingFile,
 														 std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	NondeterministicModelParserResultContainer<double> parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-	return storm::models::Mdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+	return storm::models::Mdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 }
 
 /*!
@@ -69,7 +69,7 @@ storm::models::Mdp<double> NondeterministicModelParserAsMdp(std::string const & 
 storm::models::Ctmdp<double> NondeterministicModelParserAsCtmdp(std::string const & transitionSystemFile, std::string const & labelingFile,
 															 std::string const & stateRewardFile, std::string const & transitionRewardFile) {
 	NondeterministicModelParserResultContainer<double> parserResult = parseNondeterministicModel(transitionSystemFile, labelingFile, stateRewardFile, transitionRewardFile);
-	return storm::models::Ctmdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.rowMapping), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+	return storm::models::Ctmdp<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(parserResult.stateRewards), std::move(parserResult.transitionRewards), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 }
 
 } /* namespace parser */

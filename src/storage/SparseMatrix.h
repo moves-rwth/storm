@@ -347,6 +347,14 @@ namespace storm {
             uint_fast64_t getRowGroupCount() const;
             
             /*!
+             * Returns the size of the given row group.
+             *
+             * @param group The group whose size to retrieve.
+             * @return The number of rows that belong to the given row group.
+             */
+            uint_fast64_t getRowGroupSize(uint_fast64_t group) const;
+            
+            /*!
              * Returns the grouping of rows of this matrix.
              *
              * @return The grouping of rows of this matrix.
@@ -364,9 +372,8 @@ namespace storm {
              * This function makes the groups of rows given by the bit vector absorbing.
              *
              * @param rowGroupConstraint A bit vector indicating which row groups to make absorbing.
-             * @param rowGroupIndices A vector indicating which rows belong to a given row group.
              */
-            void makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices);
+            void makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint);
             
             /*!
              * This function makes the given row Dirac. This means that all entries will be set to 0 except the one
@@ -402,12 +409,11 @@ namespace storm {
              * groups.
              *
              * @param rowGroupConstraint A bit vector that indicates which row groups are to be considered.
-             * @param rowGroupIndices A vector indicating which rows belong to a given row group.
              * @param columnConstraint A bit vector that indicates which columns to sum.
              * @return A vector whose entries represent the sums of selected columns for all rows in selected row
              * groups.
              */
-            std::vector<T> getConstrainedRowGroupSumVector(storm::storage::BitVector const& rowGroupConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& columnConstraint) const;
+            std::vector<T> getConstrainedRowGroupSumVector(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint) const;
             
             /*!
              * Creates a submatrix of the current matrix by dropping all rows and columns whose bits are not
@@ -427,12 +433,11 @@ namespace storm {
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
              *
              * @param rowGroupToRowIndexMapping A mapping from each row group index to a selected row in this group.
-             * @param rowGroupIndices A vector indicating which rows belong to a given row group.
              * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
              * each row in row group i. This can then be used for inserting other values later.
              * @return A submatrix of the current matrix by selecting one row out of each row group.
              */
-            SparseMatrix selectRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = true) const;
+            SparseMatrix selectRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, bool insertDiagonalEntries = true) const;
             
             /*!
              * Transposes the matrix.

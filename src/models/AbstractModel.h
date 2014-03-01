@@ -203,8 +203,10 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param state The state for which to retrieve the rows.
          * @return An object representing the matrix rows associated with the given state.
          */
-        virtual typename storm::storage::SparseMatrix<T>::const_rows getRows(uint_fast64_t state) const = 0;
-        
+        virtual typename storm::storage::SparseMatrix<T>::const_rows getRows(uint_fast64_t state) const {
+            return this->transitionMatrix.getRowGroup(state);
+        }
+    
 		/*!
 		 * Returns the state space size of the model.
 		 * @return The size of the state space of the model.
