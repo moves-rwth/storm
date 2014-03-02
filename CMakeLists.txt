@@ -103,7 +103,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
     message(STATUS "StoRM - Using Compiler Configuration: GCC")
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic -DBOOST_RESULT_OF_USE_TR1")
     # -Werror is atm removed as this gave some problems with existing code
     # May be re-set later
     # (Thomas Heinemann, 2012-12-21)
