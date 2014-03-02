@@ -140,6 +140,28 @@ void printHeader(const int argc, const char* argv[]) {
 	std::cout << "-----" << std::endl << std::endl;
 
 	std::cout << "Version: 1.0 Alpha" << std::endl;
+	
+#ifdef STORM_HAVE_INTELTBB
+#	include "tbb/tbb_stddef.h"
+	std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
+#endif
+
+#ifdef STORM_HAVE_GLPK
+#	include "glpk.h"
+	std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
+#endif
+
+#ifdef STORM_HAVE_GUROBI
+#	include "gurobi_c.h"
+	std::cout << "Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl;
+#endif
+
+#ifdef STORM_HAVE_Z3
+#	include "z3.h"
+	unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
+	Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
+	std::cout << "Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "." << std::endl;
+#endif
     
 	// "Compute" the command line argument string with which STORM was invoked.
 	std::stringstream commandStream;

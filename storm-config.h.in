@@ -28,5 +28,4 @@
 // Whether Intel Threading Building Blocks are available and to be used (define/undef)
 #@STORM_CPP_INTELTBB_DEF@ STORM_HAVE_INTELTBB
 
-
 #endif // STORM_GENERATED_STORMCONFIG_H_
