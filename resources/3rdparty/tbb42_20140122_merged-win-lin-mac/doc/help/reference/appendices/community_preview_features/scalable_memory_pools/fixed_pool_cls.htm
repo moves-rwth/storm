@@ -1,0 +1,144 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="fixed_pool Class">
+<meta name="DC.subject" content="fixed_pool Class">
+<meta name="keywords" content="fixed_pool Class">
+<meta name="DC.Relation" scheme="URI" content="../../../../reference/appendices/community_preview_features/scalable_memory_pools.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="fixed_pool">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../../intel_css_styles.css">
+<title>fixed_pool Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="fixed_pool">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(4);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="fixed_pool"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">fixed_pool Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Template class for scalable memory allocation from
+		  a buffer of fixed size. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>class fixed_pool;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#define TBB_PREVIEW_MEMORY_POOL 1
+ #include "tbb/memory_pool.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">fixed_pool</samp> allocates
+		  and frees memory in a way that scales with the number of processors. All the
+		  memory available for the allocation is initially passed through arguments of
+		  the constructor. A 
+		  <samp class="codeph">fixed_pool</samp> models the
+		  Memory Pool concept described in Table 52. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<pre>#define TBB_PREVIEW_MEMORY_POOL 1
+ #include "tbb/memory_pool.h"
+ ...
+ char buf[1024*1024];
+ tbb::fixed_pool my_pool(buf, 1024*1024);
+ void* my_ptr = my_pool.malloc(10);
+ my_pool.free(my_ptr);}</pre> 
+		<p>The code above provides a simple example of
+		  allocation from a fixed pool. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+ class fixed_pool : no_copy {
+ public:
+ fixed_pool(void *buffer, size_t size) throw(std::bad_alloc);
+ ~fixed_pool();
+ void recycle();
+ void *malloc(size_t size);
+ void free(void* ptr);
+ void *realloc(void* ptr, size_t size);
+ };
+ }</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the member
+			 of this class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d22425e133">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d22425e136">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d22425e133 "><span class="keyword">fixed_pool(void *buffer, size_t
+						size)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d22425e136 "> 
+					 <p>Constructs memory pool to manage the
+						memory pointed by buffer and of size. 
+					 </p>
+ 
+					 <p>Throws 
+						<samp class="codeph">bad_alloc</samp>
+						exception if runtime fails to construct an instance of the class. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../../reference/appendices/community_preview_features/scalable_memory_pools.htm">Scalable Memory Pools</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Lambda Expressions">
+<meta name="DC.subject" content="Lambda Expressions">
+<meta name="keywords" content="Lambda Expressions">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/parallel_for.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Lambda_Expressions">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Lambda Expressions</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Lambda_Expressions">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Lambda_Expressions"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Lambda Expressions</h1>
+ 
+   
+  <div> 
+	 <p>Version 11.0 and later of the Intel&reg; C++ Compiler implements C++11
+		lambda expressions, which make the Intel&reg; Threading Building Blocks (Intel&reg;
+		TBB) 
+		<samp class="codeph">parallel_for</samp> much easier to use. A lambda expression
+		lets the compiler do the tedious work of creating a function object. 
+	 </p>
+ 
+	 <p>Below is the example from the previous section, rewritten with a lambda
+		expression. The lambda expression, shown in 
+		<samp class="codeph"><span style="color:blue"><strong>bold font</strong></span></samp>,
+		replaces both the declaration and construction of function object 
+		<samp class="codeph">ApplyFoo</samp> in the example of the previous section. 
+	 </p>
+ 
+	 <pre>#include "tbb/tbb.h"
+&nbsp;
+using namespace tbb;
+&nbsp;
+void ParallelApplyFoo( float* a, size_t n ) {
+   parallel_for( blocked_range&lt;size_t&gt;(0,n), 
+      <strong>[=](const blocked_range&lt;size_t&gt;&amp; r) {</strong>
+                     <span style="color:blue"> <strong>for(size_t i=r.begin(); i!=r.end(); ++i)</strong> </span>
+                         <span style="color:blue"> <strong>Foo(a[i]);</strong> </span>
+                  <span style="color:blue"><strong>}</strong></span>
+    );
+}</pre> 
+	 <p>The [=] introduces the lambda expression. The expression creates a
+		function object very similar to 
+		<samp class="codeph">ApplyFoo</samp>. When local variables like 
+		<samp class="codeph">a</samp> and 
+		<samp class="codeph">n</samp> are declared outside the lambda expression, but used
+		inside it, they are "captured" as fields inside the function object. The [=]
+		specifies that capture is by value. Writing [&amp;] instead would capture the
+		values by reference. After the [=] is the parameter list and definition for the
+		
+		<samp class="codeph">operator()</samp> of the generated function object. The
+		compiler documentation says more about lambda expressions and other implemented
+		C++11 features. It is worth reading more complete descriptions of lambda
+		expressions than can fit here, because lambda expressions are a powerful
+		feature for using template libraries in general. 
+	 </p>
+ 
+	 <p>C++11 support is off by default in the compiler. The following table
+		shows the option for turning it on. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl9"><!-- --></a><table cellpadding="4" summary="" id="tbl9" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Sample Compilation Commands for Using Lambda Expressions</span></caption> 
+		<thead align="left"> 
+		  <tr> 
+			 <th class="cellrowborder" valign="top" width="30.959752321981426%" id="d138701e94"> 
+				<p>Environment 
+				</p>
+ 
+			 </th>
+ 
+			 <th class="cellrowborder" valign="top" width="69.04024767801857%" id="d138701e100"> 
+				<p>Intel&reg; C++ Compiler (Version 11.0) 
+				</p>
+ 
+				<p>Compilation Command and Option 
+				</p>
+ 
+			 </th>
+ 
+		  </tr>
+</thead>
+ 
+		<tbody> 
+		  <tr> 
+			 <td class="cellrowborder" valign="top" width="30.959752321981426%" headers="d138701e94 "> 
+				<p>Windows* OS systems 
+				</p>
+ 
+			 </td>
+ 
+			 <td class="cellrowborder" valign="top" width="69.04024767801857%" headers="d138701e100 "> 
+				<p><samp class="codeph">icl /Qstd:c++0x foo.cpp</samp> 
+				</p>
+ 
+			 </td>
+ 
+		  </tr>
+ 
+		  <tr> 
+			 <td class="cellrowborder" valign="top" width="30.959752321981426%" headers="d138701e94 "> 
+				<p>Linux* OS systems 
+				</p>
+ 
+				<p>OS X* systems 
+				</p>
+ 
+			 </td>
+ 
+			 <td class="cellrowborder" valign="top" width="69.04024767801857%" headers="d138701e100 "> 
+				<p><samp class="codeph">icc -std=c++0x foo.cpp</samp> 
+				</p>
+ 
+			 </td>
+ 
+		  </tr>
+ 
+		</tbody>
+ 
+	 </table>
+</div>
+ 
+	 <p>For further compactness, Intel&reg; TBB has a form of 
+		<samp class="codeph">parallel_for</samp> expressly for parallel looping over a
+		consecutive range of integers. The expression 
+		<samp class="codeph">parallel_for(<var>first</var>,<var>last</var>,<var>step</var>,<var>f</var>)</samp>
+		is like writing 
+		<samp class="codeph">for(auto i=<var>first</var>;
+		  i&lt;<var>last</var>;
+		  i+=<var>step</var>)<var>f</var>(i)</samp> except that each
+		f(i) can be evaluated in parallel if resources permit. The 
+		<var>step</var> parameter is optional. Here is the previous
+		example rewritten in the compact form: 
+	 </p>
+ 
+	 <pre>#include "tbb/tbb.h"
+&nbsp;
+using namespace tbb;
+&nbsp;
+#pragma warning(disable: 588)
+&nbsp;
+void ParallelApplyFoo(float a[], size_t n) {
+    parallel_for(size_t(0), n, [=](size_t i) {Foo(a[i]);});
+}</pre> 
+	 <p>The compact form supports only unidimensional iteration spaces of
+		integers and the automatic chunking feature detailed on the following section. 
+	 </p>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/parallel_for.htm">parallel_for</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

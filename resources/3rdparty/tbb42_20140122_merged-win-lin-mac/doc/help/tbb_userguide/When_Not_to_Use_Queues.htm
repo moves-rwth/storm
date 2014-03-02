@@ -1,0 +1,96 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="When Not to Use Queues">
+<meta name="DC.subject" content="When Not to Use Queues">
+<meta name="keywords" content="When Not to Use Queues">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Concurrent_Queue_Classes.htm">
+<meta name="DC.Relation" scheme="URI" content="Cook_Until_Done_parallel_do.htm#tutorial_Cook_Until_Done_parallel_do">
+<meta name="DC.Relation" scheme="URI" content="Working_on_the_Assembly_Line_pipeline.htm#tutorial_Working_on_the_Assembly_Line_pipeline">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_When_Not_to_Use_Queues">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>When Not to Use Queues</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_When_Not_to_Use_Queues">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_When_Not_to_Use_Queues"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">When Not to Use Queues</h1>
+ 
+   
+  <div> 
+	 <p>Queues are widely used in parallel programs to buffer consumers from
+		producers. Before using an explicit queue, however, consider using 
+		<samp class="codeph">parallel_do</samp> or 
+		<samp class="codeph">pipeline</samp> instead. These options are often more efficient
+		than queues for the following reasons: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p>A queue is inherently a bottle neck, because it must maintain
+			 first-in first-out order. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>A thread that is popping a value may have to wait idly until the
+			 value is pushed. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>A queue is a passive data structure. If a thread pushes a value, it
+			 could take time until it pops the value, and in the meantime the value (and
+			 whatever it references) becomes "cold" in cache. Or worse yet, another thread
+			 pops the value, and the value (and whatever it references) must be moved to the
+			 other processor. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>In contrast, 
+		<samp class="codeph">parallel_do</samp> and 
+		<samp class="codeph">pipeline</samp> avoid these bottlenecks. Because their
+		threading is implicit, they optimize use of worker threads so that they do
+		other work until a value shows up. They also try to keep items hot in cache.
+		For example, when another work item is added to a 
+		<samp class="codeph">parallel_do</samp>, it is kept local to the thread that added
+		it unless another idle thread can steal it before the "hot" thread processes
+		it. This way, items are more often processed by the hot thread. 
+	 </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Concurrent_Queue_Classes.htm">Concurrent Queue Classes</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Cook_Until_Done_parallel_do.htm#tutorial_Cook_Until_Done_parallel_do">Cook Until Done: parallel_do 
+		  </a></div>
+<div><a href="Working_on_the_Assembly_Line_pipeline.htm#tutorial_Working_on_the_Assembly_Line_pipeline">Working on the Assembly Line: pipeline 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

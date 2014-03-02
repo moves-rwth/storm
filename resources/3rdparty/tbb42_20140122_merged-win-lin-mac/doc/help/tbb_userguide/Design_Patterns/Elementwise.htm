@@ -1,0 +1,158 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Elementwise">
+<meta name="DC.subject" content="Elementwise">
+<meta name="keywords" content="Elementwise">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="Agglomeration.htm#Agglomeration">
+<meta name="DC.Relation" scheme="URI" content="Reduction.htm#Reduction">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Elementwise">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Elementwise</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Elementwise">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Elementwise"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Elementwise</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		 
+		<p>Initiate similar independent computations across items in a data set,
+		  and wait until all complete. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>Many serial algorithms sweep over a set of items and do an independent
+		  computation on each item. However, if some kind of summary information is
+		  collected, use the Reduction pattern instead. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<p>No information is carried or merged between the computations. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		 
+		<p>If the number of items is known in advance, use 
+		  <samp class="codeph">tbb::parallel_for</samp>. If not, consider using 
+		  <samp class="codeph">tbb::parallel_do</samp>. 
+		</p>
+ 
+		<p>Use agglomeration if the individual computations are small relative to
+		  scheduler overheads. 
+		</p>
+ 
+		<p>If the pattern is followed by a reduction on the same data, consider
+		  doing the element-wise operation as part of the reduction, so that the
+		  combination of the two patterns is accomplished in a single sweep instead of
+		  two sweeps. Doing so may improve performance by reducing traffic through the
+		  memory hierarchy. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>Convolution is often used in signal processing. The convolution of a
+		  filter 
+		  <var>c</var> and signal 
+		  <var>x</var> is computed as: 
+		</p>
+<br><img width="99" height="29" src="Images/image004.jpg"><br> 
+		<p>Serial code for this computation might look like: 
+		</p>
+ 
+		<pre>// Assumes c[0..clen-1] and x[1-clen..xlen-1] are defined
+for( int i=0; i&lt;xlen+clen-1; ++i ) {
+   float tmp = 0;
+   for( int j=0; j&lt;clen; ++j )
+       tmp += c[j]*x[i-j];
+   y[i] = tmp;
+}</pre> 
+		<p>For simplicity, the fragment assumes that 
+		  <samp class="codeph">x</samp> is a pointer into an array padded with zeros such
+		  that 
+		  <samp class="codeph">x[k]</samp>returns zero when 
+		  <samp class="codeph">k&lt;0</samp> or 
+		  <samp class="codeph">k≥xlen</samp>. 
+		</p>
+ 
+		<p>The inner loop does not fit the elementwise pattern, because each
+		  iteration depends on the previous iteration. However, the outer loop fits the
+		  elementwise pattern. It is straightforward to render it using 
+		  <samp class="codeph">tbb::parallel_for</samp> as shown: 
+		</p>
+ 
+		<pre>tbb::parallel_for( 0, xlen+clen-1, [=]( int i ) { 
+   float tmp = 0;
+   for( int j=0; j&lt;clen; ++j )
+       tmp += c[j]*x[i-j];
+   y[i] = tmp;
+});</pre> 
+		<p><samp class="codeph">tbb::parallel_for</samp> does automatic agglomeration by
+		  implicitly using <samp class="codeph">tbb::auto_partitioner</samp> in its underlying
+		  implementation. If there is reason to agglomerate explicitly, use the overload
+		  of 
+		  <samp class="codeph">tbb::parallel_for</samp> that takes an explicit range
+		  argument. The following shows the example transformed to use the overload. 
+		</p>
+ 
+		<pre>tbb::parallel_for(
+   tbb::blocked_range&lt;int&gt;(0,xlen+clen-1,1000),
+   [=]( tbb::blocked_range&lt;int&gt; r ) { 
+		 int end = r.end();
+       for( int i=r.begin(); i!=end; ++i ) {
+           float tmp = 0;
+           for( int j=0; j&lt;clen; ++j )
+               tmp += c[j]*x[i-j];
+           y[i] = tmp;
+       }
+   }
+);</pre> 
+		<p>&nbsp; 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Agglomeration.htm#Agglomeration">Agglomeration 
+		  </a></div>
+<div><a href="Reduction.htm#Reduction">Reduction 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="tick_count Class Members">
+<meta name="DC.subject" content="TestMetaData">
+<meta name="keywords" content="TestMetaData">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/timing/tick_count_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="thread_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>tick_count Class Members</title>
+</head>
+<body id="thread_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="thread_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">tick_count Class Members</h1>
+ 
+   
+  <div> 
+      <div class="section">
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the members
+		  of this template class. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="33.89830508474576%" id="d125237e31">Member 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="66.10169491525423%" id="d125237e34">Description 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d125237e31 "><span class="keyword">static tick_count now()</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d125237e34 "> 
+				  <p>
+                                    Current wall clock timestamp.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d125237e31 "><span class="keyword">static double resolution()</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d125237e34 "> 
+				  <p>
+                                     The resolution of the clock in seconds.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d125237e31 "><span class="keyword">tick_count::interval_t operator-( const tick_count&amp; t1,
+                                     const tick_count&amp; t0 )</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d125237e34 "> 
+				  <p>
+                                     Relative time that t1 occurred after t0.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+         <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+	        <p> 
+                On Microsoft Windows* operating systems, the current implementation
+                uses the function <samp class="codeph">QueryPerformanceCounter</samp>. Some 
+                systems may have bugs in their basic input/output system (BIOS) or
+                hardware abstraction layer (HAL) that cause different processors to
+                return different time results.
+		</p>
+ 
+         </div> 
+        </div>
+
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/timing/tick_count_cls.htm">tick_count Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

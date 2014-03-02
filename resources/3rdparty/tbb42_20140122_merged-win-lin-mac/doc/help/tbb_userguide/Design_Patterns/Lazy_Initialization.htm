@@ -1,0 +1,283 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Lazy Initialization">
+<meta name="DC.subject" content="Lazy Initialization">
+<meta name="keywords" content="Lazy Initialization">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="Fenced_Data_Transfer.htm#Fenced_Data_Transfer">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Lazy_Initialization">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Lazy Initialization</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Lazy_Initialization">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Lazy_Initialization"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Lazy Initialization</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		 
+		<p>Perform an initialization the first time it is needed. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>Initializing data structures lazily is a common technique. Not only
+		  does it avoid the cost of initializing unused data structures, it is often a
+		  more convenient way to structure a program. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Threads share access to an object. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The object should not be created until the first access. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>The second force covers several possible motivations: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>The object is expensive to create and creating it early would slow
+				down program startup. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>It is not used in every run of the program. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Early initialization would require adding code where it is
+				undesirable for readability or structural reasons. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Related</h2> 
+		 
+		<ul type="disc"> 
+		  <li>Fenced Data Transfer 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solutions</h2> 
+		 
+		<p>A parallel solution is substantially trickier, because it must deal
+		  with several concurrency issues. 
+		</p>
+ 
+		<div class="nobullet"> 
+		   
+			 <p class="nobullet"><strong>Races:</strong> If two threads attempt to simultaneously access to
+				the object for the first time, and thus cause creation of the object, the race
+				must be resolved in a way that both threads end up with a reference to the same
+				object of type 
+				<samp class="codeph">T</samp>. 
+			 </p>
+ 
+		   
+		   
+			 <p class="nobullet"><strong>Memory leaks:</strong> In the event of a race, the implementation
+				must ensure that any extra transient 
+				<samp class="codeph">T</samp> objects are cleaned up. 
+			 </p>
+ 
+		   
+		   
+			 <p class="nobullet"><strong>Memory consistency:</strong> If thread X executes 
+				<samp class="codeph">value=new T()</samp>, all other threads must see stores
+				by 
+				<samp class="codeph">new T()</samp> occur before the assignment 
+				<samp class="codeph">value=</samp>. 
+			 </p>
+ 
+		   
+		   
+			 <p class="nobullet"><strong>Deadlock:</strong> What if the constructor of 
+				<samp class="codeph">T()</samp> requires acquiring a lock, but the current
+				holder of that lock is also racing to access the object for the first time? 
+			 </p>
+ 
+		   
+		</div>
+ 
+		<p>There are two solutions. One is based on double-check locking. The
+		  other relies on compare-and-swap. Because the tradeoffs and issues are subtle,
+		  most of the discussion is in the following examples section. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Examples</h2> 
+		 
+		<p>An Intel&reg; Threading Building Blocks (Intel&reg; TBB) implementation of the "double-check" pattern is shown
+		  below. 
+		</p>
+ 
+		<pre>template&lt;typename T, typename Mutex=tbb::mutex&gt;
+class lazy {
+   tbb::atomic&lt;T*&gt; value;
+   Mutex mut;
+public:
+   lazy() : value() {}                    // Initializes value to NULL
+   ~lazy() {delete value;}
+   T&amp; get() {
+       if( !value ) {                     // Read of value has <em>acquire</em> semantics. 
+           Mutex::scoped_lock lock(mut);
+           if( !value ) value = new T();. // Write of value has <em>release</em> semantics 
+       }
+       return *value;
+   }
+};</pre> 
+		<p>The name comes from the way that the pattern deals with races. There
+		  is one check done without locking and one check done after locking. The first
+		  check handles the presumably common case that the initialization has already
+		  been done, without any locking. The second check deals with cases where two
+		  threads both see an uninitialized value, and both try to acquire the lock. In
+		  that case, the second thread to acquire the lock will see that the
+		  initialization has already occurred. 
+		</p>
+ 
+		<p>If 
+		  <samp class="codeph">T()</samp> throws an exception, the solution is correct
+		  because 
+		  <samp class="codeph">value</samp> will still be NULL and the mutex unlocked when
+		  object 
+		  <samp class="codeph">lock</samp> is destroyed. 
+		</p>
+ 
+		<p>The solution correctly addresses memory consistency issues. A write to
+		  a 
+		<samp class="codeph">tbb::atomic</samp> value has 
+		<em>release</em> semantics, which means that all of its prior writes will
+		be seen before the releasing write. A read from 
+		<samp class="codeph">tbb::atomic</samp> value has 
+		<em>acquire</em> semantics, which means that all of its subsequent reads
+		will happen after the acquiring read. Both of these properties are critical to
+		the solution. The releasing write ensures that the construction of 
+		<samp class="codeph">T()</samp> is seen to occur before the assignment to value. The
+		acquiring read ensures that when the caller reads from 
+		<samp class="codeph">*value</samp>, the reads occur after the
+		"<samp class="codeph">if(!value)</samp>" check. The release/acquire is
+		essentially the Fenced Data Transfer pattern, where the
+		"message" is the fully constructed instance 
+		<samp class="codeph">T()</samp>, and the "ready" flag is the pointer 
+		<samp class="codeph">value</samp>. 
+		</p>
+ 
+		<p>The solution described involves blocking threads while initialization
+		  occurs. Hence it can suffer the usual pathologies associated with blocking. For
+		  example, if the thread first acquires the lock is suspended by the OS, all
+		  other threads will have to wait until that thread resumes. A lock-free
+		  variation avoids this problem by making all contending threads attempt
+		  initialization, and atomically deciding which attempt succeeds. 
+		</p>
+ 
+		<p>An Intel&reg; TBB implementation of the non-blocking variant follows. It
+		  also uses double-check, but without a lock. 
+		</p>
+ 
+		<pre>template&lt;typename T&gt;
+class lazy {
+   tbb::atomic&lt;T*&gt; value;
+public:
+   lazy() : value() {}                    // Initializes value to NULL
+   ~lazy() {delete value;}
+   T&amp; get() {
+       if( !value ) {
+           T* tmp = new T();
+           if( value.compare_and_swap(tmp,NULL)!=NULL )
+               // Another thread installed the value, so throw away mine.
+               delete tmp;
+       }
+       return *value;
+   }
+};</pre> 
+		<p>The second check is performed by the expression<samp class="codeph">
+			 value.compare_and_swap(tmp,NULL)!=NULL</samp>, which conditionally assigns 
+		  <samp class="codeph">value=tmp</samp> if 
+		  <samp class="codeph">value==NULL</samp>, and returns true if the old 
+		  <samp class="codeph">value</samp> was NULL. Thus if multiple threads attempt
+		  simultaneous initialization, the first thread to execute the 
+		  <samp class="codeph">compare_and_swap</samp> will set value to point to its T
+		  object. Other contenders that execute the 
+		  <samp class="codeph">compare_and_swap</samp> will get back a non-NULL pointer,
+		  and know that they should delete their transient T objects. 
+		</p>
+ 
+		<p>As with the locking solution, memory consistency issues are addressed
+		  by the semantics of 
+		<samp class="codeph">tbb::atomic</samp>. The first check has 
+		<em>acquire</em> semantics and the 
+		<samp class="codeph">compare_and_swap</samp> has both 
+		<em>acquire</em> and 
+		<em>release</em> semantics. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">References</h2> 
+		 
+		<p>Lawrence Crowl, "Dynamic Initialization and Destruction with Concurrency",
+		  http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2660.htm 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Fenced_Data_Transfer.htm#Fenced_Data_Transfer">Fenced Data Transfer 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

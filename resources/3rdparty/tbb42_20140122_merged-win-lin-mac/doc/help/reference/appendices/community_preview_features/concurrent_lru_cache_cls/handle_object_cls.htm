@@ -1,0 +1,215 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="handle_object class">
+<meta name="DC.subject" content="handle_object class">
+<meta name="keywords" content="handle_object class">
+<meta name="DC.Relation" scheme="URI" content="../../../../reference/appendices/community_preview_features/concurrent_lru_cache_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="handle_object_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../../intel_css_styles.css">
+<title>handle_object class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="handle_object_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(4);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="handle_object_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">handle_object class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Class that provides read and write access to value
+		  in a 
+		  <samp class="codeph">concurrent_lru_cache</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template &lt;typename key_type,
+ typename value_type,
+ typename value_functor_type = value_type (*)(key_type) &gt;
+ class concurrent_lru_cache::handle_object {</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/concurrent_lru_cache.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">handle_object</samp> is a
+		  (smart handle) proxy object returned by the cache container allowing getting
+		  reference to the value. 
+		</p>
+ 
+		<p>Live object of this type prevents the container
+		  from erasing values while they are being used. 
+		</p>
+ 
+		<p>The 
+		  <samp class="codeph">handle_object</samp> does not
+		  have copy semantics; instead it only allows transfer of ownership i.e. it
+		  semantics is similar to one of 
+		  <samp class="codeph">std::auto_ptr</samp> or move
+		  semantics from C++11. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members and free standing functions</h2> 
+		
+		
+		<pre>namespace tbb {
+ template &lt;typename key_type,
+ typename value_type,
+ typename value_functor_type = value_type (*)(key_type) &gt;
+ class concurrent_lru_cache::handle_object {
+ public:
+ handle_object(handle_move_t m);
+ operator handle_move_t();
+ value_type&amp; value();
+ ~handle_object();
+ private:
+ void operator=(handle_object&amp;);
+ handle_object(handle_object &amp;);
+ };
+<u>};</u>
+ handle_move_t move(handle_object&amp; h);
+ }</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d19211e139">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d19211e142">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19211e139 "><span class="keyword">handle_object(handle_move_t
+						m)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19211e142 "> 
+					 <p>Constructs an 
+						<samp class="codeph">handle_object</samp> object from a pointer or
+						from another 
+						<samp class="codeph">handle_object</samp> (through implicit
+						conversion to 
+						<samp class="codeph">handle_move_t</samp> object). 
+					 </p>
+ 
+					 <p>Since 
+						<samp class="codeph">handle_object</samp> objects owns a reference
+						to a value object of LRU cache, when a new 
+						<samp class="codeph">handle_object</samp> is constructed from
+						another 
+						<samp class="codeph">handle_object</samp>, the former owner
+						releases the reference ownership (i.e. no longer refers to any value) . 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19211e139 "><span class="keyword">operator handle_move_t()</span>
+					 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19211e142 "> 
+					 <p>This method should not be called
+						directly, instead use free standing 
+						<samp class="codeph">move</samp>
+						function. 
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Transfer reference
+						ownership from 
+						<samp class="codeph">handle_object</samp> objects to temporary 
+						<samp class="codeph">handle_move_t</samp> object. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">handle_move_t</samp> object pointing to the
+						same value object of LRU cache 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19211e139 "><span class="keyword">value_type&amp; value()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19211e142 "> 
+					 <p>Return a reference to value object of LRU
+						cache container. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Reference to 
+						<samp class="codeph">value_type</samp>
+						object inside the LRU cache container. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19211e139 "><span class="keyword">~handle_object()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19211e142 "> 
+					 <p>Release a reference to value object of
+						LRU cache container. It it was the last reference to the value object the
+						container is allowed to evict the value. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../../reference/appendices/community_preview_features/concurrent_lru_cache_cls.htm">concurrent_lru_cache Template Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

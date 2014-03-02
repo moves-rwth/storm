@@ -1,0 +1,436 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="C Interface to Scalable Allocator">
+<meta name="DC.subject" content="C Interface to Scalable Allocator">
+<meta name="keywords" content="C Interface to Scalable Allocator">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/memory_allocation/scalable_allocator_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="c_interface_to_scalable_allocator">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>C Interface to Scalable Allocator</title>
+</head>
+<body id="c_interface_to_scalable_allocator">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="c_interface_to_scalable_allocator"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">C Interface to Scalable Allocator</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Low level interface for scalable memory allocation.
+		  
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>        extern "C" {
+            // Scalable analogs of C memory allocator
+            void* scalable_malloc( size_t size );
+            void  scalable_free( void* ptr );
+            void* scalable_calloc( size_t nobj, size_t size );
+            void* scalable_realloc( void* ptr, size_t size );
+         
+            // Analog of _msize/malloc_size/malloc_usable_size.
+            size_t scalable_msize( void* ptr );
+         
+            // Scalable analog of posix_memalign
+            int scalable_posix_memalign( void** memptr, size_t alignment, 
+                                         size_t size );
+         
+            // Aligned allocation
+            void* scalable_aligned_malloc( size_t size, 
+                                           size_t alignment);
+            void scalable_aligned_free( void* ptr ); 
+            void* scalable_aligned_realloc( void* ptr, size_t size, 
+                                            size_t alignment );
+
+            // Return values for scalable_allocation_* functions
+            typedef enum {
+                TBBMALLOC_OK,
+                TBBMALLOC_INVALID_PARAM,
+                TBBMALLOC_UNSUPPORTED,
+                TBBMALLOC_NO_MEMORY,
+                TBBMALLOC_NO_EFFECT
+            } ScalableAllocationResult;
+
+            typedef enum {
+                // to turn on/off the use of huge memory pages
+                TBBMALLOC_USE_HUGE_PAGES,
+                // to set a threshold for the allocator memory usage;
+                // exceeding it will forcefully clean internal memory buffers
+                TBBMALLOC_SET_SOFT_HEAP_LIMIT
+            } AllocationModeParam;
+
+            // Set allocator-specific allocation modes.
+            int scalable_allocation_mode(int param, intptr_t value);
+
+            typedef enum {
+                // Clean internal allocator buffers for all threads.
+                TBBMALLOC_CLEAN_ALL_BUFFERS,
+                // Clean internal allocator buffer for current thread only.
+                TBBMALLOC_CLEAN_THREAD_BUFFERS
+            } ScalableAllocationCmd;
+
+            // Call allocator-specific commands.
+            int scalable_allocation_command(int cmd, void *param);
+
+
+        }</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/scalable_allocator.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>These functions provide a C level interface to the
+		  scalable allocator. With the exception of scalable_allocation_mode and
+		  scalable_allocation_command, each routine scalable_<samp class="codeph"><em>x</em></samp>
+		  behaves analogously to library function 
+		  <samp class="codeph"><em>x</em></samp>. The routines form the two families shown in
+		  the table below, "C Interface to Scalable Allocator" . Storage allocated by a
+		  scalable_<samp class="codeph"><em>x</em></samp> function in one family must be freed or
+		  resized by a scalable_<samp class="codeph"><em>x</em></samp> function in the same family,
+		  not by a C standard library function. Likewise storage allocated by a C
+		  standard library function should not be freed or resized by a
+		  scalable_<samp class="codeph"><em>x</em></samp> function. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl23"><!-- --></a><table cellpadding="4" summary="" id="tbl23" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">C Interface to Scalable Allocator</span></caption> 
+		   
+		   
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="10.256410256410255%" id="d93669e91"> 
+				  <p>Family 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="30.76923076923077%" id="d93669e97"> 
+				  <p>Allocation Routine 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="33.94871794871795%" id="d93669e103"> 
+				  <p>Deallocation Routine 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="25.025641025641026%" id="d93669e109"> 
+				  <p>Analogous Library 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+ 
+		  </thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" rowspan="4" valign="top" width="10.256410256410255%" headers="d93669e91 "> 
+				  <p>1 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="30.76923076923077%" headers="d93669e97 "> 
+				  <p>scalable_malloc 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" rowspan="4" valign="top" width="33.94871794871795%" headers="d93669e103 "> 
+				  <p>scalable_free 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" rowspan="3" valign="top" width="25.025641025641026%" headers="d93669e109 "> 
+				  <p>C standard library 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="row-nocellborder" valign="top" width="30.76923076923077%" headers="d93669e97 "> 
+				  <p>scalable_calloc 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="row-nocellborder" valign="top" width="30.76923076923077%" headers="d93669e97 "> 
+				  <p>scalable_realloc 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="30.76923076923077%" headers="d93669e97 "> 
+				  <p>scalable_posix_memalign 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="30.76923076923077%" headers="d93669e97 "> 
+				  <p>POSIX* 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" rowspan="2" valign="top" width="10.256410256410255%" headers="d93669e91 "> 
+				  <p>2 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="30.76923076923077%" headers="d93669e97 "> 
+				  <p>scalable_aligned_malloc 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" rowspan="2" valign="top" width="33.94871794871795%" headers="d93669e103 "> 
+				  <p>scalable_aligned_free 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" rowspan="2" valign="top" width="25.025641025641026%" headers="d93669e109 "> 
+				  <p>Microsoft* C run-time library 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="row-nocellborder" valign="top" width="30.76923076923077%" headers="d93669e97 "> 
+				  <p>scalable_aligned_realloc 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> size_t scalable_msize( void* ptr )</h2> 
+		
+		
+		<p><strong>Returns</strong> 
+		</p>
+ 
+		<p>The usable size of the memory block pointed to by 
+		  <em>ptr</em> if it was allocated by the scalable allocator. Returns zero
+		  if 
+		  <em>ptr</em> does not point to such a block. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">int scalable_allocation_mode(int mode,
+		  intptr_t value)</h2> 
+		 
+		<p> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">
+                    <p>
+                      This function may be used to adjust behavior of the scalable memory allocator.
+                    </p>
+
+                    <p>
+                      <strong>Returns</strong>: TBBMALLOC_OK if the operation succeeded, TBBMALLOC_INVALID_PARAM if
+                      <samp class="codeph">mode</samp> is not one of the described below, or if <samp class="codeph">value</samp>
+                      is not valid for the given mode. Other return values are possible, as described below.
+                    </p>
+
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d93669e276">Parameter 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d93669e279">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d93669e276 "><span class="keyword">TBBMALLOC_USE_HUGE_PAGES</span>
+					 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d93669e279 "> 
+                                    <p>
+                                      <samp class="codeph">scalable_allocation_mode(TBBMALLOC_USE_HUGE_PAGES, 1)</samp>
+                                      enables the use of huge pages by the allocator if supported for the
+                                      operating system,
+                                      <samp class="codeph">scalable_allocation_mode(TBBMALLOC_USE_HUGE_PAGES, 0)</samp>
+                                      disables it. Setting <samp class="codeph">TBB_MALLOC_USE_HUGE_PAGES</samp>
+                                      environment variable to 1 has the same effect as
+                                      <samp class="codeph">scalable_allocation_mode(TBBMALLOC_USE_HUGE_PAGES, 1)</samp>.
+                                      The mode set with <samp class="codeph">scalable_allocation_mode()</samp> takes
+                                      priority over the environment variable.
+                                    </p>
+
+                                    <p>
+                                      <strong>May return</strong>: TBBMALLOC_NO_EFFECT if huge pages are not supported
+                                      on the platform.
+                                    </p>
+
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d93669e276 "><span class="keyword">TBBMALLOC_SET_SOFT_HEAP_LIMIT</span>
+					 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d93669e279 ">
+                                    <p>
+                                      <samp class="codeph">scalable_allocation_mode(TBBMALLOC_SET_SOFT_HEAP_LIMIT, size)</samp>
+                                      sets a threshold of <samp class="codeph">size</samp> bytes on the amount
+                                      of memory the allocator takes from OS. Exceeding the threshold
+                                      will urge the allocator to release memory from its internal buffers;
+                                      however it does not prevent from requesting more memory if needed.
+                                    </p>
+
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">int scalable_allocation_command(int cmd,
+		  void *reserved)</h2> 
+		 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">
+                    <p>
+                      This function may be used to command the scalable memory allocator to perform an
+                      action specified by the first parameter. The second parameter is reserved and
+                      must be set to 0.
+                    </p>
+
+                    <p>
+                      <strong>Returns</strong>: TBBMALLOC_OK if the operation succeeded, TBBMALLOC_INVALID_PARAM if
+                      <samp class="codeph">cmd</samp> is not one of the described below, or if <samp class="codeph">reserved</samp>
+                      is not equal to 0.
+                    </p>
+
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d93669e377">Parameter 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d93669e380">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d93669e377 "><span class="keyword">TBBMALLOC_CLEAN_ALL_BUFFERS</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d93669e380 "> 
+                                    <p>
+                                      <samp class="codeph">scalable_allocation_command(TBBMALLOC_CLEAN_ALL_BUFFERS, 0)</samp>
+                                      cleans internal memory buffers of the allocator, and possibly reduces memory
+                                      footprint. It may result in increased time for subsequent memory allocation
+                                      requests. The command is not designed for frequent use, and careful
+                                      evaluation of the performance impact is recommended.
+                                    </p>
+
+                                    <p>
+                                      <strong>May return</strong>: TBBMALLOC_NO_EFFECT if no buffers were released.
+                                    </p>
+
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d93669e377 "><span class="keyword">TBBMALLOC_CLEAN_THREAD_BUFFERS</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d93669e380 "> 
+                                    <p>
+                                      <samp class="codeph">scalable_allocation_command(TBBMALLOC_CLEAN_THREAD_BUFFERS, 0)</samp>
+                                      cleans internal memory buffers but only for the calling thread. It may result
+                                      in increased time for subsequent memory allocation requests; careful evaluation
+                                      of the performance impact is recommended.
+                                    </p>
+
+                                    <p>
+                                      <strong>May return</strong>: TBBMALLOC_NO_EFFECT if no buffers were released.
+                                    </p>
+
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/memory_allocation/scalable_allocator_cls.htm">scalable_allocator Template Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

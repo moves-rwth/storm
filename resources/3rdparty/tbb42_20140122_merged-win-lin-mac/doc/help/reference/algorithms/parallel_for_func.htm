@@ -1,0 +1,296 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="parallel_for Template Function">
+<meta name="DC.subject" content="parallel_for Template Function">
+<meta name="keywords" content="parallel_for Template Function">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../task_scheduler/task_scheduler_init_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../task_scheduler/task_group_context/task_group_context.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_for_func">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>parallel_for Template Function</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="parallel_for_func">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_for_func"><!-- --></a>
+
+
+<h1 class="topictitle1">parallel_for Template Function</h1>
+
+     
+<div>
+    <div class="section"><h2 class="sectiontitle">Summary</h2> 
+         
+        <p>Template function that performs parallel iteration over a range of values.</p>
+
+    </div>
+
+    
+    <div class="section"><h2 class="sectiontitle">Header</h2> 
+         
+        <pre> #include "tbb/parallel_for.h"</pre>
+    </div>
+
+    <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+         
+<pre>template&lt;typename Index, typename Func&gt;
+Func parallel_for( Index first, Index_type last, const Func&amp; f
+                   [, partitioner[, task_group_context&amp; group]] );
+
+template&lt;typename Index, typename Func&gt;
+Func parallel_for( Index first, Index_type last, 
+                   Index step, const Func&amp; f
+                   [, partitioner[, task_group_context&amp; group]] );
+
+template&lt;typename Range, typename Body&gt; 
+void parallel_for( const Range&amp; range, const Body&amp; body, 
+                   [, partitioner[, task_group_context&amp; group]] );
+</pre></div>
+
+    <div class="section"><h2 class="sectiontitle">Description</h2> 
+         <p>A <samp class="codeph">parallel_for(first,last,step,f)</samp> represents parallel execution of the
+                loop:</p>
+<pre>for( auto i=first; i&lt;last; i+=step ) f(i);</pre><p>The index type must be an integral type. The loop must not wrap around. The step value must be
+                positive. If omitted, it is implicitly 1. There is no guarantee that the iterations
+                run in parallel. Deadlock may occur if a lesser iteration waits for a greater
+                iteration. The partitioning strategy is
+                <samp class="codeph">auto_partitioner</samp> when the parameter is not specified.</p>
+<p>A <samp class="codeph">parallel_for(range,body,partitioner)</samp> provides a more general form of parallel
+                iteration. It represents parallel execution of <samp class="codeph">body</samp> over each value
+                in range. The optional <samp class="codeph">partitioner</samp> specifies a partitioning
+                strategy. Type <samp class="codeph">Range</samp> must model the Range concept . The body must
+                model the requirements in the following table. </p>
+
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Requirements for parallel_for Body</span></caption> 
+			 <thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" id="d3575e97"> 
+					 <p>Pseudo-Signature 
+					 </p>
+ 
+				  </th>
+ 
+				  <th class="row-nocellborder" valign="top" id="d3575e103"> 
+					 <p>Semantics 
+					 </p>
+ 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr valign="top"> 
+				  <td class="cellrowborder" valign="top" headers="d3575e97 "> 
+					 <p><samp class="codeph"> Body::Body( const Body&amp; )</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				  <td class="row-nocellborder" valign="top" headers="d3575e103 "> 
+					 <p> Copy constructor. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr valign="top"> 
+				  <td class="cellrowborder" valign="top" headers="d3575e97 "> 
+					 <p><samp class="codeph"> Body::~Body()</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				  <td class="row-nocellborder" valign="top" headers="d3575e103 "> 
+					 <p> Destructor. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr valign="top"> 
+				  <td class="cellrowborder" valign="top" headers="d3575e97 "> 
+					 <p><samp class="codeph">    void Body::operator()( Range&amp; range ) const</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				  <td class="row-nocellborder" valign="top" headers="d3575e103 "> 
+					   <p> Apply body to range.</p>
+
+ 
+				  </td>
+ 
+				</tr>
+ 
+	
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+<p>A <samp class="codeph">parallel_for</samp> recursively splits the range into subranges to the point such
+                that <samp class="codeph">is_divisible()</samp> is false for each subrange, and makes copies of
+                the body for each of these subranges. For each such body/subrange pair, it invokes
+                    <samp class="codeph">Body::operator()</samp>. The invocations are interleaved with the
+                recursive splitting, in order to minimize space overhead and efficiently use cache. </p>
+<p>Some of the copies of the range and body may be destroyed after <samp class="codeph">parallel_for</samp>
+                returns. This late destruction is not an issue in typical usage, but is something to
+                be aware of when looking at execution traces or writing range or body objects with
+                complex side effects.</p>
+<p>When worker threads are available, <samp class="codeph">parallel_for</samp> executes iterations is
+                non-deterministic order. Do not rely upon any particular execution order for
+                correctness. However, for efficiency, do expect <samp class="codeph">parallel_for</samp> to
+                tend towards operating on consecutive runs of values. </p>
+<p>When no worker threads are available, <samp class="codeph">parallel_for</samp> executes iterations from left
+                to right in the following sense. Imagine drawing a binary tree that represents the
+                recursive splitting. Each non-leaf node represents splitting a subrange r by
+                invoking the splitting constructor <samp class="codeph">Range(r,split())</samp>. The left child
+                represents the updated value of <samp class="codeph">r</samp>. The right child represents the
+                newly constructed object. Each leaf in the tree represents an indivisible subrange.
+                The method <samp class="codeph">Body::operator()</samp> is invoked on each leaf subrange, from
+                left to right.</p>
+<p>All overloads can be passed a <samp class="codeph">task_group_context</samp> object so that the algorithm’s
+                tasks are executed in this group. By default the algorithm is executed in a bound
+                group of its own.</p>
+<p><strong>Complexity</strong></p>
+<p>If the range and body take O(1) space, and the range splits into nearly equal pieces, then the space complexity is O(P log(N)), where N is the size of the range and P is the number of threads.</p>
+
+        </div>
+
+
+    <div class="section"><h2 class="sectiontitle">Example</h2> 
+         
+<p>This example defines a routine <samp class="codeph">ParallelAverage</samp> that sets
+                    <samp class="codeph">output[i]</samp> to the average of<samp class="codeph"> input[i-1]</samp>,
+    <samp class="codeph">input[i]</samp>, and<samp class="codeph"> input[i+1]</samp>, for 1 &lt;= i&lt; n.</p>
+<p><pre>#include "tbb/parallel_for.h"
+#include "tbb/blocked_range.h"
+
+using namespace tbb;
+
+struct Average {
+    const float* input;
+    float* output;
+    void operator()( const blocked_range&lt;int&gt;&amp; range ) const {
+        for( int i=range.begin(); i!=range.end(); ++i )
+            output[i] = (input[i-1]+input[i]+input[i+1])*(1/3.f);
+    }
+};
+
+// Note: Reads input[0..n] and writes output[1..n-1]. 
+void ParallelAverage( float* output, const float* input, size_t n ) {
+    Average avg;
+    avg.input = input;
+    avg.output = output;
+    parallel_for( blocked_range&lt;int&gt;( 1, n ), avg );
+    }</pre></p>
+
+    </div>
+
+    <div class="section"><h2 class="sectiontitle">Example</h2> 
+         
+         <p>This example is more complex and requires familiarity with STL. It shows the power of
+                <samp class="codeph">parallel_for</samp> beyond flat iteration spaces. The code performs a parallel
+                merge of two sorted sequences. It works for any sequence with a random-access
+                iterator. The algorithm (Akl 1987) works recursively as follows:</p>
+<ol><li>If the sequences are too short for effective use of parallelism, do a sequential merge. Otherwise perform steps 2-6.</li>
+<li>Swap the sequences if necessary, so that the first sequence [begin1,end1) is at least as long as the second sequence [begin2,end2).</li>
+<li>Set m1 to the middle position in [begin1,end1). Call the item at that location key. </li>
+<li>Set m2 to where <em>key</em> would fall in [begin2,end2).</li>
+<li>	Merge [begin1,m1) and [begin2,m2) to create the first part of the merged sequence.</li>
+<li>Merge [m1,end1) and [m2,end2) to create the second part of the merged sequence.</li>
+</ol>
+<p>The Intel&reg; Threading Building Blocks implementation of this algorithm uses the range object to
+                perform most of the steps. Predicate <samp class="codeph">is_divisible</samp> performs the test
+                in step 1, and step 2. The splitting constructor does steps 3-6. The body object
+                does the sequential merges.</p>
+<p><pre>#include "tbb/parallel_for.h"
+#include &lt;algorithm&gt;
+
+using namespace tbb;
+
+template&lt;typename Iterator&gt;
+struct ParallelMergeRange {
+    static size_t grainsize;
+    Iterator begin1, end1; // [begin1,end1) is 1st sequence to be merged
+    Iterator begin2, end2; // [begin2,end2) is 2nd sequence to be merged
+    Iterator out;               // where to put merged sequence    
+    bool empty()   const {return (end1-begin1)+(end2-begin2)==0;}
+    bool is_divisible() const {
+        return std::min( end1-begin1, end2-begin2 ) &gt; grainsize;
+    }
+    ParallelMergeRange( ParallelMergeRange&amp; r, split ) {
+        if( r.end1-r.begin1 &lt; r.end2-r.begin2 ) {
+            std::swap(r.begin1,r.begin2);
+            std::swap(r.end1,r.end2);
+        }
+        Iterator m1 = r.begin1 + (r.end1-r.begin1)/2;
+        Iterator m2 = std::lower_bound( r.begin2, r.end2, *m1 );
+        begin1 = m1;
+        begin2 = m2;
+        end1 = r.end1;
+        end2 = r.end2;
+        out = r.out + (m1-r.begin1) + (m2-r.begin2);
+        r.end1 = m1;
+        r.end2 = m2;
+    }
+    ParallelMergeRange( Iterator begin1_, Iterator end1_, 
+                        Iterator begin2_, Iterator end2_, 
+                        Iterator out_ ) :
+        begin1(begin1_), end1(end1_), 
+        begin2(begin2_), end2(end2_), out(out_)
+    {}
+};
+
+template&lt;typename Iterator&gt;
+size_t ParallelMergeRange&lt;Iterator&gt;::grainsize = 1000;
+
+template&lt;typename Iterator&gt;
+struct ParallelMergeBody {
+    void operator()( ParallelMergeRange&lt;Iterator&gt;&amp; r ) const {
+        std::merge( r.begin1, r.end1, r.begin2, r.end2, r.out );
+    }
+};
+
+template&lt;typename Iterator&gt;
+void ParallelMerge( Iterator begin1, Iterator end1, Iterator begin2, Iterator end2, Iterator out ) {
+    parallel_for(     
+       ParallelMergeRange&lt;Iterator&gt;(begin1,end1,begin2,end2,out),
+       ParallelMergeBody&lt;Iterator&gt;(),
+       simple_partitioner() 
+    );
+}
+</pre></p>
+<p>Because the algorithm moves many locations, it tends to be bandwidth limited. Speedup varies, depending upon the system.</p>
+</div>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../task_scheduler/task_scheduler_init_cls.htm">task_scheduler_init Class</a></div>
+<div><a href="../task_scheduler/task_group_context/task_group_context.htm">Bound groups (task_group_context Class)</a></div></div>
+</div>
+ 
+</body>
+</html>

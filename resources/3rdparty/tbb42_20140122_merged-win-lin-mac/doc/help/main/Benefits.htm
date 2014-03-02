@@ -1,0 +1,164 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Intel&reg; Threading Building Blocks Benefits">
+<meta name="DC.subject" content="Benefits">
+<meta name="keywords" content="Benefits">
+<meta name="DC.Relation" scheme="URI" content="../main/title.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Benefits">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Intel&reg; Threading Building Blocks Benefits</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Benefits">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Benefits"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Intel&reg; Threading Building Blocks Benefits</h1>
+ 
+   
+  <div> 
+	 <p> Intel&reg; Threading Building Blocks (Intel&reg; TBB) is a library that helps
+		you leverage multi-core performance without having to be a threading expert.
+		Typically you can improve performance for multi-core processors by implementing
+		the key points explained in the early sections of the User Guide. As your
+		expertise grows, you may want to dive into more complex subjects that are
+		covered in advanced sections. 
+	 </p>
+ 
+	 <p>There are a variety of approaches to parallel programming, ranging from
+		using platform-dependent threading primitives to exotic new languages. The
+		advantage of Intel&reg; Threading Building Blocks is that it works at a higher
+		level than raw threads, yet does not require exotic languages or compilers. You
+		can use it with any compiler supporting ISO C++. The library differs from
+		typical threading packages in the following ways: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p><strong>Intel&reg; Threading Building Blocks enables you to specify 
+				<em>logical paralleism</em> instead of threads</strong>. Most threading
+			 packages require you to specify threads. Programming directly in terms of
+			 threads can be tedious and lead to inefficient programs, because threads are
+			 low-level, heavy constructs that are close to the hardware. Direct programming
+			 with threads forces you to efficiently map logical tasks onto threads. In
+			 contrast, the Intel&reg; Threading Building Blocks run-time library automatically
+			 maps logical parallelism onto threads in a way that makes efficient use of
+			 processor resources. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Intel&reg; Threading Building Blocks targets 
+				<em>threading for performance</em></strong>. Most general-purpose
+			 threading packages support many different kinds of threading, such as threading
+			 for asynchronous events in graphical user interfaces. As a result,
+			 general-purpose packages tend to be low-level tools that provide a foundation,
+			 not a solution. Instead, Intel&reg; Threading Building Blocks focuses on the
+			 particular goal of parallelizing computationally intensive work, delivering
+			 higher-level, simpler solutions. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Intel&reg; Threading Building Blocks is 
+				<em>compatible</em> with other threading packages.</strong> Because the
+			 library is not designed to address all threading problems, it can coexist
+			 seamlessly with other threading packages. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Intel&reg; Threading Building Blocks emphasizes 
+				<em>scalable, data parallel programming</em></strong>. Breaking a program
+			 up into separate functional blocks, and assigning a separate thread to each
+			 block is a solution that typically does not scale well since typically the
+			 number of functional blocks is fixed. In contrast, Intel&reg; Threading Building
+			 Blocks emphasizes 
+			 <em>data-parallel</em> programming, enabling multiple threads to work
+			 on different parts of a collection. Data-parallel programming scales well to
+			 larger numbers of processors by dividing the collection into smaller pieces.
+			 With data-parallel programming, program performance increases as you add
+			 processors. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Intel&reg; Threading Building Blocks relies on 
+				<em>generic programming</em></strong>. Traditional libraries specify
+			 interfaces in terms of specific types or base classes. Instead, Intel&reg;
+			 Threading Building Blocks uses generic programming. The essence of generic
+			 programming is writing the best possible algorithms with the fewest
+			 constraints. The C++ Standard Template Library (STL) is a good example of
+			 generic programming in which the interfaces are specified by 
+			 <em>requirements</em> on types. For example, C++ STL has a template
+			 function 
+			 <samp class="codeph">sort</samp> that sorts a sequence abstractly defined in
+			 terms of iterators on the sequence. The requirements on the iterators are: 
+		  </p>
+ 
+		  <ul type="disc"> 
+			 <li> 
+				<p>Provide random access 
+				</p>
+ 
+			 </li>
+ 
+			 <li> 
+				<p>The expression 
+				  <samp class="codeph">*i&lt;*j</samp> is true if the item pointed to by
+				  iterator 
+				  <samp class="codeph">i</samp> should precede the item pointed to by iterator
+				  
+				  <samp class="codeph">j</samp>, and false otherwise. 
+				</p>
+ 
+			 </li>
+ 
+			 <li> 
+				<p>The expression 
+				  <samp class="codeph">swap(*i,*j)</samp> swaps two elements. 
+				</p>
+ 
+			 </li>
+ 
+		  </ul>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>Specification in terms of requirements on types enables the template to
+		sort many different representations of sequences, such as vectors and deques.
+		Similarly, the Intel&reg; Threading Building Blocks templates specify requirements
+		on types, not particular types, and thus adapt to different data
+		representations. Generic programming enables Intel&reg; Threading Building Blocks
+		to deliver high performance algorithms with broad applicability. 
+	 </p>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../main/title.htm">Intel&reg; Threading Building Blocks Documentation</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

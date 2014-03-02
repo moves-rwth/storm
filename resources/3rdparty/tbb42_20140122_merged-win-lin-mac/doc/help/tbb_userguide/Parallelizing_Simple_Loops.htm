@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Parallelizing Simple Loops">
+<meta name="DC.subject" content="Parallelizing Simple Loops">
+<meta name="keywords" content="Parallelizing Simple Loops">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/title.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Initializing_and_Terminating_the_Library.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/parallel_for.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/parallel_reduce.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Advanced_Example.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Advanced_Topic_Other_Kinds_of_Iteration_Spaces.htm">
+<meta name="DC.Relation" scheme="URI" content="Debug_Versus_Release_Libraries.htm#tutorial_Debug_Versus_Release_Libraries">
+<meta name="DC.Relation" scheme="URI" content="Which_Dynamic_Libraries_to_Use.htm#tutorial_Which_Dynamic_Libraries_to_Use">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Parallelizing_Simple_Loops">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Parallelizing Simple Loops</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Parallelizing_Simple_Loops">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Parallelizing_Simple_Loops"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Parallelizing Simple Loops</h1>
+ 
+   
+  <div> 
+	 <p>The simplest form of scalable parallelism is a loop of iterations that
+		can each run simultaneously without interfering with each other. The following
+		sections demonstrate how to parallelize simple loops. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		<p>Intel&reg; Threading Building Blocks (Intel&reg; TBB) components are defined
+		  in namespace 
+		  <samp class="codeph">tbb</samp>. For brevity’s sake, the namespace is explicit in
+		  the first mention of a component, but implicit afterwards. 
+		</p>
+ 
+	 </div> 
+	 <p>When compiling Intel&reg; TBB programs, be sure to link in the Intel&reg; TBB
+		shared library, otherwise undefined references will occur. The following table
+		shows compilation commands that use the debug version of the library. Remove
+		the "<samp class="codeph">_debug</samp>" portion to link against the production version of
+		the library. See 
+		<samp class="codeph">doc/Getting_Started.pdf</samp> for other command line
+		possibilities. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl8"><!-- --></a><table cellpadding="4" summary="" id="tbl8" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Sample command lines for simple debug builds</span></caption><thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" valign="top" width="50%" id="d148147e56">Operating System 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="50%" id="d148147e59">Command line 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="50%" headers="d148147e56 "> 
+			 <p>Windows* OS 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="50%" headers="d148147e59 "> 
+			 <p> 
+				<samp class="codeph">icl /MD example.cpp tbb_debug.lib 
+				</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="50%" headers="d148147e56 "> 
+			 <p>Linux* OS 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="50%" headers="d148147e59 "> 
+			 <p> 
+				<samp class="codeph">icc example.cpp -ltbb_debug</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="50%" headers="d148147e56 "> 
+			 <p>OS X* Systems 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="50%" headers="d148147e59 "> 
+			 <p> 
+				<samp class="codeph">icc example.cpp -ltbb_debug</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/title.htm">Intel&reg; Threading Building Blocks (Intel&reg; TBB) User Guide</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../tbb_userguide/Initializing_and_Terminating_the_Library.htm">Initializing and Terminating the Library</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/parallel_for.htm">parallel_for</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/parallel_reduce.htm">parallel_reduce</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Advanced_Example.htm">Advanced Example</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Advanced_Topic_Other_Kinds_of_Iteration_Spaces.htm">Advanced Topic: Other Kinds of Iteration Spaces</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Debug_Versus_Release_Libraries.htm#tutorial_Debug_Versus_Release_Libraries">Debug Versus Release Libraries 
+		  </a></div>
+<div><a href="Which_Dynamic_Libraries_to_Use.htm#tutorial_Which_Dynamic_Libraries_to_Use">Which Dynamic Libraries to Use 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

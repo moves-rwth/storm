@@ -1,0 +1,187 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Mutual Exclusion">
+<meta name="DC.subject" content="Mutual Exclusion">
+<meta name="keywords" content="Mutual Exclusion">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/title.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Mutex_Flavors.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Reader_Writer_Mutexes.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/UpgradeDowngrade.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Lock_Pathologies.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Mutual_Exclusion">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Mutual Exclusion</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Mutual_Exclusion">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Mutual_Exclusion"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Mutual Exclusion</h1>
+ 
+   
+  <div> 
+	 <p>Mutual exclusion controls how many threads can simultaneously run a
+		region of code. In Intel&reg; Threading Building Blocks (Intel&reg; TBB), mutual
+		exclusion is implemented by 
+		<em>mutexes</em> and 
+		<em>locks.</em> A mutex is an object on which a thread can acquire a lock.
+		Only one thread at a time can have a lock on a mutex; other threads have to
+		wait their turn. 
+	 </p>
+ 
+	 <p>The simplest mutex is 
+		<samp class="codeph">spin_mutex</samp>. A thread trying to acquire a lock on a 
+		<samp class="codeph">spin_mutex</samp> busy waits until it can acquire the lock. A 
+		<samp class="codeph">spin_mutex</samp> is appropriate when the lock is held for only
+		a few instructions. For example, the following code uses a mutex 
+		<samp class="codeph">FreeListMutex</samp> to protect a shared variable 
+		<samp class="codeph">FreeList</samp>. It checks that only a single thread has access
+		to 
+		<samp class="codeph">FreeList</samp> at a time. The black font shows the usual
+		sequential code. Insertions added to make the code thread-safe, are shown in 
+		<samp class="codeph"><span style="color:blue"><strong>bold font</strong></span></samp>. 
+	 </p>
+ 
+	 <pre>Node* FreeList;
+<span style="color:blue"><strong>typedef spin_mutex FreeListMutexType;</strong></span>
+<span style="color:blue"><strong>FreeListMutexType FreeListMutex;</strong></span>
+&nbsp;
+Node* AllocateNode() {
+    Node* n;
+    <span style="color:blue"><strong>{</strong></span>
+        <span style="color:blue"><strong>FreeListMutexType::scoped_lock lock(FreeListMutex);</strong></span>
+        n = FreeList;
+        if( n )
+            FreeList = n-&gt;next;
+    <span style="color:blue"><strong>}</strong></span>
+    if( !n ) 
+        n = new Node();
+    return n;
+}
+&nbsp;
+void FreeNode( Node* n ) {
+    <span style="color:blue"><strong>FreeListMutexType::scoped_lock lock(FreeListMutex);</strong></span>
+    n-&gt;next = FreeList;
+    FreeList = n;
+}</pre> 
+	 <p>The constructor for 
+		<samp class="codeph">scoped_lock</samp> waits until there are no other locks on 
+		<samp class="codeph">FreeListMutex</samp>. The destructor releases the lock. The
+		braces inside routine 
+		<samp class="codeph">AllocateNode</samp> may look unusual. Their role is to keep the
+		lifetime of the lock as short as possible, so that other waiting threads can
+		get their chance as soon as possible. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		<p>Be sure to name the lock object, otherwise it will be destroyed too
+		  soon. For example, if the creation of the 
+		  <samp class="codeph">scoped_lock</samp> object in the example is changed to 
+		</p>
+ 
+		<pre>FreeListMutexType::scoped_lock (FreeListMutex);</pre> 
+		<p>then the 
+		  <samp class="codeph">scoped_lock</samp> is destroyed when execution reaches the
+		  semicolon, which releases the lock 
+		  <em>before</em> 
+		  <samp class="codeph">FreeList</samp> is accessed. 
+		</p>
+ 
+	 </div> 
+	 <p>The following shows an alternative way to write 
+		<samp class="codeph">AllocateNode</samp>: 
+	 </p>
+ 
+	 <pre>Node* AllocateNode() {
+    Node* n;
+    FreeListMutexType::scoped_lock lock;
+    lock.acquire(FreeListMutex);
+    n = FreeList;
+    if( n )
+        FreeList = n-&gt;next;
+    lock.release();
+    if( !n ) 
+        n = new Node();
+    return n;
+}</pre> 
+	 <p>Method 
+		<samp class="codeph">acquire</samp> waits until it can acquire a lock on the mutex;
+		method 
+		<samp class="codeph">release</samp> releases the lock. 
+	 </p>
+ 
+	 <p>It is recommended that you add extra braces where possible, to clarify
+		to maintainers which code is protected by the lock. 
+	 </p>
+ 
+	 <p>If you are familiar with C interfaces for locks, you may be wondering
+		why there are not simply acquire and release methods on the mutex object
+		itself. The reason is that the C interface would not be exception safe, because
+		if the protected region threw an exception, control would skip over the
+		release. With the object-oriented interface, destruction of the 
+		<samp class="codeph">scoped_lock</samp> object causes the lock to be released, no
+		matter whether the protected region was exited by normal control flow or an
+		exception. This is true even for our version of 
+		<samp class="codeph">AllocateNode</samp> that used methods 
+		<samp class="codeph">acquire</samp> and 
+		<samp class="codeph">release –</samp> the explicit release causes the lock to be
+		released earlier, and the destructor then sees that the lock was released and
+		does nothing. 
+	 </p>
+ 
+	 <p>All mutexes in Intel&reg; TBB have a similar interface, which not only makes
+		them easier to learn, but enables generic programming. For example, all of the
+		mutexes have a nested 
+		<samp class="codeph">scoped_lock</samp> type, so given a mutex of type 
+		<samp class="codeph"><var>M</var></samp>, the corresponding lock type is 
+		<samp class="codeph"><var>M</var>::scoped_lock</samp>. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		<p>It is recommended that you always use a 
+		  <samp class="codeph">typedef</samp> for the mutex type, as shown in the previous
+		  examples. That way, you can change the type of the lock later without having to
+		  edit the rest of the code. In the examples, you could replace the 
+		  <samp class="codeph">typedef</samp> with 
+		  <samp class="codeph">typedef queuing_mutex FreeListMutexType</samp>, and the code
+		  would still be correct. 
+		</p>
+ 
+	 </div> 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/title.htm">Intel&reg; Threading Building Blocks (Intel&reg; TBB) User Guide</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../tbb_userguide/Mutex_Flavors.htm">Mutex Flavors</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Reader_Writer_Mutexes.htm">Reader Writer Mutexes</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/UpgradeDowngrade.htm">Upgrade/Downgrade</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Lock_Pathologies.htm">Lock Pathologies</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

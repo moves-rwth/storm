@@ -1,0 +1,292 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="split_node Template Class">
+<meta name="DC.subject" content="split_node Template Class">
+<meta name="keywords" content="split_node Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Relation" scheme="URI" content="flow_tuple.htm#flow_tuple">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="split_node_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>split_node Template Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="split_node_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="split_node_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">split_node Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>A template class that is a 
+		  <samp class="codeph">receiver&lt;TupleType&gt;</samp> and has a
+		  tuple of 
+		  <samp class="codeph">sender&lt; tuple_element&lt; i,
+			 TupleType &gt;::type &gt;</samp> output ports; where i is the index in the
+		  tuple. A 
+		  <samp class="codeph">split_node</samp> sends each
+		  element of the incoming tuple to the output port that matches the element's
+		  index in the incoming tuple. This node has unlimited concurrency. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template &lt; typename TupleType &gt;
+ class split_node;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/flow_graph.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>This node receives a tuple at its single input port
+		  and generates a message from each element of the tuple, passing each to the
+		  corresponding output port. 
+		</p>
+ 
+		<p>A 
+		  <samp class="codeph">split_node</samp> has
+		  unlimited concurrency, no buffering, and behaves as a 
+		  <samp class="codeph">broadcast_node</samp> with
+		  multiple output ports. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>The example below shows a 
+		  <samp class="codeph">split_node</samp> that
+		  separates a stream of tuples of integers, placing each element of the tuple in
+		  the appropriate output queue. 
+		</p>
+ 
+		<p>The output ports of the 
+		  <samp class="codeph">split_node</samp> can be
+		  connected to other graph nodes using the 
+		  <samp class="codeph">make_edge</samp> method or by
+		  using 
+		  <samp class="codeph">register_successor</samp>: 
+		</p>
+ 
+		<pre>#include "tbb/flow_graph.h"
+using namespace tbb::flow;
+
+int main() {
+  graph g;
+
+  queue_node&lt;int&gt; first_queue(g);
+  queue_node&lt;int&gt; second_queue(g);
+  split_node&lt; flow::tuple&lt;int,int&gt; &gt; my_split_node(g);
+  output_port&lt;0&gt;(my_split_node).register_successor(first_queue);
+  make_edge(output_port&lt;1&gt;(my_split_node), second_queue);
+
+  for(int i = 0; i &lt; 1000; ++i) {
+    node1.try_put(int_tuple_type(2*i,2*i+1));
+  }
+  g.wait_for_all();
+ }</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+  template &lt; typename TupleType &gt;
+    class split_node : public graph_node, public receiver&lt;TupleType&gt;
+  {
+  public:
+
+    split_node( graph &amp;g );
+    split_node( const split_node &amp;other);
+    ~split_node();
+
+    // receiver&lt; TupleType &gt;
+    typedef TupleType input_type;
+    typedef sender&lt;input_type&gt; predecessor_type;
+    bool try_put( const input_type &amp;v );
+    bool register_predecessor( predecessor_type &amp;p );
+    bool remove_predecessor( predecessor_type &amp;p );
+
+    typedef <em>implementation-dependent</em> output_ports_type;
+    output_ports_type&amp; output_ports();
+  };
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d86984e129">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d86984e132">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d86984e129 "> 
+					 <span class="keyword">split_node( graph &amp;g )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d86984e132 "> 
+					 <p>Constructs a 
+						<span class="keyword">split_node</span> registered with graph 
+						<span class="keyword">g</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d86984e129 "> 
+					 <span class="keyword">split_node( const split_node &amp;other)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d86984e132 "> 
+					 <p>Constructs a 
+						<span class="keyword">split_node</span> that has the same initial state
+						that 
+						<span class="keyword">other</span> had when it was constructed. The 
+						<span class="keyword">split_node</span> that is constructed will have a
+						reference to the same 
+						<span class="keyword">graph</span> object as 
+						<span class="keyword">other</span>. The predecessors and successors of 
+						<span class="keyword">other</span> will not be copied. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d86984e129 "> 
+					 <span class="keyword">~split_node()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d86984e132 "> 
+					 <p>Destructor 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d86984e129 "> 
+					 <span class="keyword">bool try_put( const input_type &amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d86984e132 "> 
+					 <p>Broadcasts each element of the incoming tuple to the nodes
+						connected to the 
+						<span class="keyword">split_node</span>'s output ports. The element at
+						index 
+						<span class="keyword">i</span> of 
+						<span class="keyword">v</span>i will be broadcast through the 
+						<span class="keyword">i</span>th output port.
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d86984e129 "><span class="keyword">bool register_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d86984e132 "> 
+					 <p>Adds 
+						<span class="keyword">p</span> to the set of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d86984e129 "><span class="keyword">bool remove_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d86984e132 "> 
+					 <p>Removes 
+						<span class="keyword">p</span> from the set of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d86984e129 "><span class="keyword">output_ports_type&amp;
+						output_ports();</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d86984e132 "> 
+					 <p><strong>Returns</strong>: a tuple of output ports. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="flow_tuple.htm#flow_tuple">flow::tuple Template Class
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

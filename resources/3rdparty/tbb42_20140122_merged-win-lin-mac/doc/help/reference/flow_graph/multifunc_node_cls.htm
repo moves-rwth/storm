@@ -1,0 +1,576 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="multifunction_node Template Class">
+<meta name="DC.subject" content="multifunction_node Template Class">
+<meta name="keywords" content="multifunction_node Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Relation" scheme="URI" content="make_edge_func.htm">
+<meta name="DC.Relation" scheme="URI" content="remove_edge_func.htm">
+<meta name="DC.Relation" scheme="URI" content="copy_body_func.htm">
+<meta name="DC.Relation" scheme="URI" content="message_passing_protocol.htm#message_passing_protocol">
+<meta name="DC.Relation" scheme="URI" content="../task_scheduler/task_group_context.htm">
+<meta name="DC.Relation" scheme="URI" content="flow_tuple.htm#flow_tuple">
+<meta name="DC.Relation" scheme="URI" content="../exceptions.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="multifunc_node_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>multifunction_node Template Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="multifunc_node_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="multifunc_node_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">multifunction_node Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>A template class that is a
+		  receiver&lt;InputType&gt; and has a tuple of sender&lt;T&gt; outputs. This node
+		  may have concurrency limits as set by the user. When the concurrency limit
+		  allows, it executes the user-provided body on incoming messages. The body may
+		  create one or more output messages and broadcast them to successors. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template &lt;typename Input, typename Output, 
+    graph_buffer_policy = queueing, typename Allocator=cache_aligned_allocator&lt;Input&gt; &gt;
+    class multifunction_node;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/flow_graph.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>This type is used for nodes that receive messages
+		  at a single input port and may generate one or more messages that are broadcast
+		  to successors. 
+		</p>
+ 
+		<p>A 
+		  <samp class="codeph">multifunction_node</samp>
+		  maintains an internal constant threshold T and an internal counter C. At
+		  construction, C=0 and T is set the value passed in to the constructor. The
+		  behavior of a call to 
+		  <samp class="codeph">try_put</samp> is determined
+		  by the value of T and C as shown in the table below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl50"><!-- --></a><table cellpadding="4" summary="" id="tbl50" frame="border" border="1" cellspacing="0" rules="rows"><caption><span class="tablecap">Behavior of a call to a
+		  multifunction_node's try_put</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" align="left" valign="top" width="40%" id="d76994e82"> 
+				  <p>Value of threshold T 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" align="left" valign="top" width="20%" id="d76994e88"> 
+				  <p>Value of counter C 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" align="left" valign="top" width="40%" id="d76994e94"> 
+				  <p>bool try_put( input_type v ) 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d76994e82 "> 
+				  <p><samp class="codeph">T
+						== graph::unlimited</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="20%" headers="d76994e88 "> 
+				  <p>NA 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d76994e94 "> 
+				  <p>A task is spawned that executes body(v).
+					 Returns 
+					 <samp class="codeph">true</samp>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d76994e82 "> 
+				  <p><samp class="codeph">T
+						!= flow::unlimited</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="20%" headers="d76994e88 "> 
+				  <p>C &lt; T 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d76994e94 "> 
+				  <p>Increments C. A task is spawned that
+					 executes body(v) and then decrements C. Returns 
+					 <samp class="codeph">true</samp>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d76994e82 "> 
+				  <p><samp class="codeph">T
+						!= flow::unlimited</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="20%" headers="d76994e88 "> 
+				  <p>C &gt;= T 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d76994e94 "> 
+				  <p>Returns 
+					 <samp class="codeph">false</samp>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>A<samp class="codeph">
+			 multifunction_node</samp> has a user-settable concurrency limit. It can have 
+		  <samp class="codeph">flow::unlimited
+			 concurrency</samp>, which allows an unlimited number of copies of the node to
+		  execute concurrently. It can have 
+		  <samp class="codeph">flow::serial
+			 concurrency</samp>, which allows only a single copy of the node to execute
+		  concurrently. The user can also provide a value of type size_t to limit
+		  concurrency to a value between 1 and unlimited. 
+		</p>
+ 
+		<p>The Body concept for 
+		  <samp class="codeph">multifunction_node</samp> is
+		  shown in the table below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl51"><!-- --></a><table cellpadding="4" summary="" id="tbl51" frame="border" border="1" cellspacing="0" rules="rows"><caption><span class="tablecap">multifunction_node Body Concept</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" align="center" valign="top" width="50%" id="d76994e216"> 
+				  <p>Pseudo-Signature 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" align="center" valign="top" width="50%" id="d76994e222"> 
+				  <p>Semantics 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d76994e216 "> 
+				  <p><samp class="codeph">B::B( const B&amp; )</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d76994e222 "> 
+				  <p>Copy constructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d76994e216 "> 
+				  <p><samp class="codeph">B::~B()</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d76994e222 "> 
+				  <p>Destructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d76994e216 "> 
+				  <p><samp class="codeph">void operator=( const B&amp; )</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d76994e222 "> 
+				  <p>Assignment 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d76994e216 "> 
+				  <p><samp class="codeph">void B::operator()(const input_type &amp;v,
+						output_ports_type &amp;p)</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d76994e222 "> 
+				  <p>Perform operation on 
+					 <samp class="codeph">v</samp>. May call 
+					 <samp class="codeph">try_put</samp> on
+					 zero or more of the output ports. May call 
+					 <samp class="codeph">try_put</samp> on any
+					 output port multiple times. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p> The body object passed to a 
+			 <span class="keyword">multifunction_node</span> is copied. Therefore updates to
+			 member variables will not affect the original object used to construct the
+			 node. If the state held within a body object must be inspected from outside of
+			 the node, the 
+			 <span class="keyword">copy_body</span> function can be used to obtain an
+			 updated copy. 
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p> The body object may throw or cancel its enclosing graph. See
+			 task_group_context and Exceptions sections for a description. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>The example below shows a 
+		  <samp class="codeph">multifunction_node</samp>
+		  that separates a stream of integers into odd and even, placing each in the
+		  appropriate output queue. 
+		</p>
+ 
+		<p>The Body method will receive as parameters a
+		  read-only reference to the input value and a reference to the tuple of output
+		  ports. The Body method may put items to one or more output ports. 
+		</p>
+ 
+		<p>The output ports of the 
+		  <samp class="codeph">multifunction_node</samp> can
+		  be connected to other graph nodes using the 
+		  <samp class="codeph">make_edge</samp> method or by
+		  using 
+		  <samp class="codeph">register_successor</samp>: 
+		</p>
+ 
+		<pre>#include "tbb/flow_graph.h"
+using namespace tbb::flow;
+typedef multifunction_node&lt;int, flow::tuple&lt;int,int&gt; &gt; multi_node;
+
+struct MultiBody {
+
+  void operator()(const int &amp;i, multi_node::output_ports_type &amp;op) {
+    if(i % 2) 
+      std::get&lt;1&gt;(op).try_put(i); // put to odd queue
+    else 
+      std::get&lt;0&gt;(op).try_put(i); // put to even queue
+  }
+};
+
+int main() {
+  graph g;
+
+  queue_node&lt;int&gt; even_queue(g);
+  queue_node&lt;int&gt; odd_queue(g);
+
+  multi_node node1(g,unlimited,MultiBody());
+
+  output_port&lt;0&gt;(node1).register_successor(even_queue);
+  make_edge(output_port&lt;1&gt;(node1), odd_queue);
+
+  for(int i = 0; i &lt; 1000; ++i) {
+    node1.try_put(i);
+  }
+  g.wait_for_all();
+}</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+  template &lt;typename Input, typename Output, 
+    graph_buffer_policy = queueing, typename Allocator=cache_aligned_allocator&lt;Input&gt; &gt;
+    class multifunction_node : public graph_node, public receiver&lt;Input&gt;
+  {
+  public:
+
+    template &lt; typename Body &gt;
+    multifunction_node( graph &amp;g, size_t concurrency, Body body );
+    multifunction_node( const multifunction_node &amp;other);
+    ~multifunction_node();
+
+    // receiver&lt; Input &gt;
+    typedef Input input_type;
+    typedef sender&lt;input_type&gt; predecessor_type;
+    bool try_put( const input_type &amp;v );
+    bool register_predecessor( predecessor_type &amp;p );
+    bool remove_predecessor( predecessor_type &amp;p );
+
+    typedef <em>implementation-dependent</em> output_ports_type;
+    output_ports_type&amp; output_ports();
+  };
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d76994e384">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d76994e387">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d76994e384 "> 
+					 <span class="keyword">template &lt; typename Body &gt; multifunction_node(
+						graph &amp;g, size_t concurrency, Body body ) 
+					 </span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d76994e387 "> 
+					 <p>Constructs a 
+						<span class="keyword">multifunction_node</span> with 
+						<span class="keyword">body</span> as its Body. At most 
+						<span class="keyword">concurrency</span> calls to the body may be made
+						concurrently. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d76994e384 "> 
+					 <span class="keyword">multifunction_node( const multifunction_node
+						&amp;other)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d76994e387 "> 
+					 <p>Constructs a 
+						<span class="keyword">multifunction_node</span> that has the same
+						initial state that 
+						<span class="keyword">other</span> had when it was constructed. The 
+						<span class="keyword">multifunction_node</span> that is constructed
+						will have a reference to the same 
+						<span class="keyword">graph</span> object as 
+						<span class="keyword">other</span>, will have a copy of the initial 
+						<span class="keyword">body</span> used by 
+						<span class="keyword">other</span>, and have the same concurrency
+						threshold as 
+						<span class="keyword">other</span>. The predecessors and successors of 
+						<span class="keyword">other</span> will not be copied. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+						<p> The new body object is copy constructed from a copy of
+						  the original body provided to 
+						  <span class="keyword">other</span> at its construction. Therefore
+						  changes made to member variables in 
+						  <span class="keyword">other</span>'s body after the construction of 
+						  <span class="keyword">other</span> will not affect the body of the
+						  new 
+						  <span class="keyword">multifunction_node.</span> 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d76994e384 "> 
+					 <span class="keyword">~multifunction_node()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d76994e387 "> 
+					 <p>Destructor 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d76994e384 "> 
+					 <span class="keyword">bool try_put( const input_type &amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d76994e387 "> 
+					 <p>See the table above describing the behavior of try_put for a
+						
+						<samp class="codeph">multifunction_node</samp> for more information. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d76994e384 "><span class="keyword">bool register_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d76994e387 "> 
+					 <p>Adds 
+						<span class="keyword">p</span> to the set of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d76994e384 "><span class="keyword">bool remove_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d76994e387 "> 
+					 <p>Removes 
+						<span class="keyword">p</span> from the set of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d76994e384 "><span class="keyword">output_ports_type&amp;
+						output_ports();</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d76994e387 "> 
+					 <p><strong>Returns</strong>: a tuple of output ports. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="make_edge_func.htm">make_edge Template Function 
+		  </a></div>
+<div><a href="remove_edge_func.htm">remove_edge Template Function 
+		  </a></div>
+<div><a href="copy_body_func.htm">copy_body Template Function 
+		  </a></div>
+<div><a href="message_passing_protocol.htm#message_passing_protocol">Message Passing Protocol
+		  </a></div>
+<div><a href="../task_scheduler/task_group_context.htm">task_group_context 
+		  </a></div>
+<div><a href="flow_tuple.htm#flow_tuple">flow::tuple Template Class
+		  </a></div>
+<div><a href="../exceptions.htm">Exceptions 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

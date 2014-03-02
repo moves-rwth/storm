@@ -1,0 +1,186 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Threads">
+<meta name="DC.subject" content="Threads">
+<meta name="keywords" content="Threads">
+<meta name="DC.Relation" scheme="URI" content="../reference/reference.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/threads/thread_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/threads/thread_id.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/threads/this_thread_namespace.htm">
+<meta name="DC.Relation" scheme="URI" content="general_conventions/namespaces.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="threads">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Threads</title>
+</head>
+<body id="threads">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="threads"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Threads</h1>
+ 
+  
+  <div> 
+	 <div class="section"> 
+		<p>Intel&reg; Threading Building Blocks (Intel&reg; TBB)
+		  provides a wrapper around the platform's native threads, based upon the N3000
+		  working draft for C++11. Using this wrapper has two benefits:
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>It makes threaded code portable across
+				platforms.
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>It eases later migration to ISO C++11
+				threads.
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>The library defines the wrapper in namespace 
+		  <samp class="codeph">std</samp>, not namespace 
+		  <samp class="codeph">tbb</samp>, as explained in Section Namespace.
+		</p>
+ 
+		<p>The significant departures from N3000 are shown in
+		  the table below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl36"><!-- --></a><table cellpadding="4" summary="" id="tbl36" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Differences Between N3000 and Intel&reg; TBB
+		  Thread Class</span></caption> 
+		   
+		   
+		  <thead align="left">
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d123197e64"> 
+				  <p>N3000
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d123197e70"> 
+				  <p>Intel&reg; TBB
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d123197e64 "> 
+				  <p><samp class="codeph">template&lt;class Rep, class
+						Period&gt; std::this_thread::sleep_for(</samp>
+				  </p>
+ 
+				  <p><samp class="codeph">const chrono::duration&lt;Rep,
+						Period&gt;&amp; rel_time)</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d123197e70 "> 
+				  <p><samp class="codeph">std::this_thread::sleep_for(
+						tick_count::interval_t )</samp>
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d123197e64 "> 
+				  <p>rvalue reference parameters
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d123197e70 "> 
+				  <p>Parameter changed to plain value, or
+					 function removed, as appropriate.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d123197e64 "> 
+				  <p>constructor for 
+					 <samp class="codeph">std::thread</samp> takes arbitrary number of
+					 arguments.
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d123197e70 "> 
+				  <p>constructor for 
+					 <samp class="codeph">std::thread</samp> takes 0-3 arguments.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>The other changes are for compatibility with the
+		  current C++ standard or Intel&reg; TBB. For example, constructors that have an
+		  arbitrary number of arguments require the variadic template features of C++11.
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>Threads are heavy weight entities on most
+			 systems, and running too many threads on a system can seriously degrade
+			 performance. Consider using a task based solution instead if practical. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../reference/reference.htm">Intel&reg; Threading Building Blocks Reference Manual</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../reference/threads/thread_cls.htm">thread Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/threads/thread_id.htm">thread::id</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/threads/this_thread_namespace.htm">this_thread Namespace</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="general_conventions/namespaces.htm">Namespaces, std Namespace 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

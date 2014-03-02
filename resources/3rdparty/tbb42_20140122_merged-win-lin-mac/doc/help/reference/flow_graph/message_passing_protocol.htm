@@ -1,0 +1,64 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Message Passing Protocol">
+<meta name="DC.subject" content="Message Passing Protocol">
+<meta name="keywords" content="Message Passing Protocol">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="message_passing_protocol">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Message Passing Protocol</title>
+</head>
+<body id="message_passing_protocol">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="message_passing_protocol"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Message Passing Protocol</h1>
+ 
+   
+  <div> 
+	 <p>In an Intel&reg; Threading Building Blocks (Intel&reg; TBB) flow graph, edges dynamically switch between a push and
+		pull protocol for passing messages. An Intel&reg; TBB flow graph G = ( V, S, L ),
+		where V is the set of nodes, S is the set of edges that are currently using a
+		push protocol, and L is the set of edges that are currently using a pull
+		protocol. For each edge (Vi, Vj), Vi is the predecessor / sender and Vj is the
+		successor / receiver. When in the push set S, messages over an edge are
+		initiated by the sender, which tries to 
+		<em>put</em> to the receiver. When in the pull set, messages are initiated
+		by the receiver, which tries to 
+		<em>get</em> from the sender.
+	 </p>
+ 
+	 <p>If a message attempt across an edge fails, the edge is moved to the
+		other set. For example, if a put across the edge (Vi, Vj) fails, the edge is
+		removed from the push set S and placed in the pull set L. This dynamic
+		push/pull protocol is the key to performance in a non-preemptive tasking
+		library such as Intel&reg; TBB, where simply repeating failed sends or receives is
+		not an efficient option. The following graphic summarizes this dynamic
+		protocol.
+	 </p>
+ 
+	 <div class="fignone" id="fig4_flow_graph"><a name="fig4_flow_graph"><!-- --></a><span class="figcap">The dynamic push / pull protocol.</span> 
+		 
+		<br><div class="imagecenter"><img src="../Resources/flow-graph.jpg" height="196" width="442" alt="The dynamic push / pull protocol." align="center"></div><br> 
+	 </div>
+ 
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Concurrent Queue Classes">
+<meta name="DC.subject" content="Concurrent Queue Classes">
+<meta name="keywords" content="Concurrent Queue Classes">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Containers.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Iterating_Over_a_Concurrent_Queue_for_Debugging.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/When_Not_to_Use_Queues.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Concurrent_Queue_Classes">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Concurrent Queue Classes</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Concurrent_Queue_Classes">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Concurrent_Queue_Classes"><!-- --></a>
+
+
+<h1 class="topictitle1">Concurrent Queue Classes</h1>
+
+<div><p>Template class <samp class="codeph">concurrent_queue&lt;<em>T,Alloc</em>&gt;</samp> implements a concurrent queue with values of type <samp class="codeph">T</samp>. Multiple threads may simultaneously push and pop elements from the queue. The queue is unbounded and has no blocking operations.  The fundamental operations on it are <samp class="codeph">push</samp> and <samp class="codeph">try_pop</samp>. The <samp class="codeph">push</samp> operation works just like <samp class="codeph">push</samp> for a <span class="option">std::queue</span>. The operation <samp class="codeph">try_pop</samp> pops an item if it is available. The check and popping have to be done in a single operation for sake of thread safety.</p>
+<p>For example, consider the following serial code:</p>
+
+<pre>        extern std::queue&lt;T&gt; MySerialQueue;
+        T item;
+        if( !MySerialQueue.empty() ) {
+            item = MySerialQueue.front(); 
+            MySerialQueue.pop_front();
+            ... <em>process item</em>...
+        }</pre>
+<p>Even if each <span class="option">std::queue</span> method were implemented in a thread-safe manner, the composition of those methods as shown in the example would not be thread safe if there were other threads also popping from the same queue. For example, <samp class="codeph">MySerialQueue.empty()</samp> might return true just before another thread snatches the last item from <samp class="codeph">MySerialQueue</samp>. </p>
+<p>The equivalent thread-safe Intel&reg; Threading Building Blocks (Intel&reg; TBB) code is:</p>
+
+<pre>        extern concurrent_queue&lt;T&gt; MyQueue;
+        T item;
+        if( MyQueue.try_pop(item) ) {
+            ...<em>process item</em>...
+        }            </pre>
+<p>In a single-threaded program, a queue is a first-in first-out structure. But if multiple threads are pushing and popping concurrently, the definition of "first" is uncertain. Use of <samp class="codeph">concurrent_queue</samp> guarantees that if a thread pushes two values, and another thread pops those two values, they will be popped in the same order that they were pushed.</p>
+<p>Template class <samp class="codeph">concurrent_queue</samp> is unbounded and has no methods that wait. It is up to the user to provide synchronization to avoid overflow, or to wait for the queue to become non-empty. Typically this is appropriate when the synchronization has to be done at a higher level.  </p>
+<p>Template class <samp class="codeph">concurrent_bounded_queue&lt;<em>T,Alloc</em>&gt;</samp> is a variant that adds blocking operations and the ability to specify a capacity. The methods of particular interest on it are: </p>
+
+<ul type="disc"><li><p><samp class="codeph">pop(<em>item</em>)</samp> waits until it can succeed. </p>
+</li>
+<li><p><samp class="codeph">push(<em>item</em>)</samp> waits until it can succeed without exceeding the queue's capacity.</p>
+</li>
+<li><p><samp class="codeph">try_push(<em>item</em>)</samp> pushes <var>item</var> only if it would not exceed the queue's capacity.</p>
+</li>
+<li><p>size() returns a <em>signed</em> integer.</p>
+</li>
+</ul>
+<p>The value of <span class="option">concurrent_queue::size()</span> is defined as the number of push operations started minus the number of pop operations started. If pops outnumber pushes, <samp class="codeph">size()</samp> becomes negative. For example, if a <samp class="codeph">concurrent_queue</samp> is empty, and there are <var>n</var> pending pop operations, <samp class="codeph">size()</samp> returns <span class="eqsymbol">-</span><var>n</var>. This provides an easy way for producers to know how many consumers are waiting on the queue. Method <samp class="codeph">empty()</samp> is defined to be true if and only if <samp class="codeph">size()</samp> is not positive. </p>
+<p>By default, a <samp class="codeph">concurrent_bounded_queue</samp> is unbounded. It may hold any number of values, until memory runs out. It can be bounded by setting the queue capacity with method <samp class="codeph">set_capacity</samp>.Setting the capacity causes <samp class="codeph">push</samp> to block until there is room in the queue. Bounded queues are slower than unbounded queues, so if there is a constraint elsewhere in your program that prevents the queue from becoming too large, it is better not to set the capacity. If you do not need the bounds or the blocking pop, consider using <samp class="codeph">concurrent_queue</samp> instead.</p>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Containers.htm">Containers</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../tbb_userguide/Iterating_Over_a_Concurrent_Queue_for_Debugging.htm">Iterating Over a Concurrent Queue for Debugging</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/When_Not_to_Use_Queues.htm">When Not to Use Queues</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,365 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="blocked_range2d Template Class">
+<meta name="DC.subject" content="blocked_range2d Template Class">
+<meta name="keywords" content="blocked_range2d Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/algorithms/range_concept.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="blocked_range2d_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>blocked_range2d Template Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="blocked_range2d_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="blocked_range2d_cls"><!-- --></a>
+
+
+  <h1 class="topictitle1">blocked_range2d Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2>
+		 Template class that represents recursively
+		divisible two-dimensional half-open interval. 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Header</h2> 
+		 
+		<p>
+		  <pre>#include "tbb/blocked_range2d.h"</pre>
+		</p>
+
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle"> Syntax</h2> 
+		 
+		<pre>template&lt;typename RowValue, typename ColValue&gt; class blocked_range2d;</pre>
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">blocked_range2d&lt;<em>RowValue</em> ,<em>ColValue</em>
+			 &gt;</samp> represents a half-open two dimensional range<samp class="codeph"> [<em>i</em> 
+			 <sub>0</sub>,<em>j</em> 
+			 <sub>0</sub>)×[<em>i</em> 
+			 <sub>1</sub>,<em>j</em> 
+			 <sub>1</sub>)</samp>. Each axis of the range has its own splitting
+		  threshold. The 
+		  <em>RowValue</em> and 
+		  <em>ColValue</em> must meet the requirements in the table in the
+		  blocked_range Template Class section. A 
+		  <samp class="codeph">blocked_range</samp> is splittable if either axis is
+		  splittable. A<samp class="codeph"> blocked_range</samp> models the Range concept.
+		</p>
+
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Members</h2> 
+		 
+		<pre> 
+namespace tbb {
+template&lt;typename RowValue, typename ColValue=RowValue&gt;
+    class blocked_range2d {
+    public:
+        // Types
+        typedef blocked_range&lt;RowValue&gt; row_range_type;
+        typedef blocked_range&lt;ColValue&gt; col_range_type;
+
+        // Constructors
+        blocked_range2d( 
+            RowValue row_begin, RowValue row_end, 
+            typename row_range_type::size_type row_grainsize,
+            ColValue col_begin, ColValue col_end, 
+            typename col_range_type::size_type col_grainsize);
+        blocked_range2d( RowValue row_begin, RowValue row_end, 
+                         ColValue col_begin, ColValue col_end);
+        blocked_range2d( blocked_range2d&amp; r, split );
+
+        // Capacity
+        bool empty() const;
+
+        // Access
+        bool is_divisible() const;
+        const row_range_type&amp; rows() const;
+        const col_range_type&amp; cols() const;
+    };
+}
+</pre> 
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle"> Example</h2> 
+		 
+		<p>The code that follows shows a serial matrix
+		  multiply, and the corresponding parallel matrix multiply that uses a 
+		  <samp class="codeph">blocked_range2d</samp> to specify the iteration space.
+		</p>
+ 
+		<pre>
+const size_t L = 150;
+const size_t M = 225;
+const size_t N = 300;
+
+void SerialMatrixMultiply( float c[M][N], float a[M][L], float b[L][N] ) {
+    for( size_t i=0; i&lt;M; ++i ) {
+        for( size_t j=0; j&lt;N; ++j ) {
+            float sum = 0;
+            for( size_t k=0; k&lt;L; ++k )
+                sum += a[i][k]*b[k][j];
+            c[i][j] = sum;
+        }
+    }
+}
+</pre> 
+		<pre>
+#include "tbb/parallel_for.h"
+#include "tbb/blocked_range2d.h"
+
+using namespace tbb;
+
+const size_t L = 150;
+const size_t M = 225;
+const size_t N = 300;
+
+class MatrixMultiplyBody2D {
+    float (*my_a)[L];
+    float (*my_b)[N];
+    float (*my_c)[N];
+public:
+    void operator()( const blocked_range2d&lt;size_t&gt;&amp; r ) const {
+        float (*a)[L] = my_a;
+        float (*b)[N] = my_b;
+        float (*c)[N] = my_c;
+        for( size_t i=r.rows().begin(); i!=r.rows().end(); ++i ){
+            for( size_t j=r.cols().begin(); j!=r.cols().end(); ++j ) {
+                float sum = 0;
+                for( size_t k=0; k&lt;L; ++k )
+                    sum += a[i][k]*b[k][j];
+                c[i][j] = sum;
+            }
+        }
+    }
+    MatrixMultiplyBody2D( float c[M][N], float a[M][L], float b[L][N] ) :
+        my_a(a), my_b(b), my_c(c)
+    {}
+};
+
+void ParallelMatrixMultiply(float c[M][N], float a[M][L], float b[L][N]){
+    parallel_for( blocked_range2d&lt;size_t&gt;(0, M, 16, 0, N, 32),     
+                  MatrixMultiplyBody2D(c,a,b) );
+}
+</pre> 
+		<p>The<samp class="codeph"> blocked_range2d</samp> enables the
+		  two outermost loops of the serial version to become parallel loops. The<samp class="codeph">
+			 parallel_for</samp> recursively splits the 
+		  <samp class="codeph">blocked_range2d 
+		  </samp>until the pieces are no larger than 16x32. It invokes 
+		  <samp class="codeph">MatrixMultiplyBody2D::operator(</samp>) on each piece.
+		</p>
+
+		<p>
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d13569e170">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d13569e173">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d13569e170 "><span class="keyword">row_range_type</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d13569e173 "> 
+					 <p> A 
+						<samp class="codeph">blocked_range&lt;RowValue&gt;</samp>. That is, the
+						type of the row values. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d13569e170 "><span class="keyword">col_range_type</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d13569e173 "> 
+					 <p>A<samp class="codeph">
+						  blocked_range&lt;ColValue&gt;</samp>. That is, the type of the column values.
+						
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d13569e170 "><span class="keyword">blocked_range2d&lt;RowValue,ColValue&gt;( RowValue
+						row_begin, RowValue row_end, typename row_range_type::size_type row_grainsize,
+						ColValue col_begin, ColValue col_end, typename col_range_type::size_type
+						col_grainsize )</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d13569e173 ">
+					 <p><strong>Effects: 
+						</strong> Constructs a 
+						<samp class="codeph">blocked_range2d</samp> representing a two
+						dimensional space of values. The space is the half-open Cartesian
+						product<samp class="codeph"> [ row_begin, row_end) x [ col_begin, col_end)</samp>, with
+						the given grain sizes for the rows and columns.
+					 </p>
+ 
+					 <p> 
+						<strong>Example: 
+						</strong> The statement 
+						<samp class="codeph">" blocked_range2d&lt;char,int&gt; r('a', 'z'+1, 3, 0,
+						  10, 2 );"</samp> constructs a two-dimensional space that contains all value
+						pairs of the form 
+						<samp class="codeph">(i, j)</samp>, where<samp class="codeph"> i 
+						</samp>ranges from 
+						<samp class="codeph">'a</samp>' to 
+						<samp class="codeph">'z</samp>' with a grain size of 3, and<samp class="codeph">
+						  j</samp> ranges from 0 to 9 with a grain size of 2.
+					 </p>
+
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d13569e170 "><span class="keyword">blocked_range2d&lt;RowValue,ColValue&gt;( RowValue
+						row_begin, RowValue row_end, ColValue col_begin, ColValue col_end )</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d13569e173 ">Same as 
+					 <samp class="codeph">blocked_range2d(row_begin,row_end,1,col_begin,col_end,1)</samp>.
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d13569e170 "><span class="keyword">blocked_range2d&lt;RowValue,ColValue&gt; (
+						blocked_range2d&amp; range, split )</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d13569e173 ">Partitions range into two subranges. The
+					 newly constructed 
+					 <samp class="codeph">blocked_range2d</samp> is approximately the second
+					 half of the original 
+					 <samp class="codeph">range</samp>, and 
+					 <samp class="codeph">range</samp> is updated to be the remainder. Each
+					 subrange has the same grain size as the original 
+					 <samp class="codeph">range</samp>. The split is either by rows or columns.
+					 The choice of which axis to split is intended to cause, after repeated
+					 splitting, the subranges to approach the aspect ratio of the respective row and
+					 column grain sizes. For example, if the 
+					 <samp class="codeph">row_grainsize</samp> is twice 
+					 <samp class="codeph">col_grainsize</samp>, the subranges will tend towards
+					 having twice as many rows as columns.
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d13569e170 "><span class="keyword">bool empty() const</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d13569e173 ">
+					 <p> Determines if range is empty. 
+					 </p>
+
+					 <p><strong>Returns: 
+						</strong> 
+						<samp class="codeph"> rows().empty()||cols().empty()</samp>
+					 </p>
+
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d13569e170 "><span class="keyword">bool is_divisible()
+						const</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d13569e173 ">
+					 <p> Determines if range can be split into subranges..
+					 </p>
+
+					 <p><strong>Returns:</strong> 
+						<samp class="codeph">
+						  rows().is_divisible()||cols().is_divisible()</samp>
+					 </p>
+
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d13569e170 "><span class="keyword">const row_range_type&amp; rows()
+						const</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d13569e173 ">
+					 <p><strong>Returns: 
+						</strong> Range containing the rows of the value space.
+					 </p>
+
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d13569e170 "><span class="keyword">const col_range_type&amp; cols()
+						const</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d13569e173 ">
+					 <p><strong>Returns: 
+						</strong> Range containing the columns of the value space.
+					 </p>
+
+				  </td>
+
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+		</p>
+ 
+	 </div>
+ 
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/algorithms/range_concept.htm">Range Concept</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

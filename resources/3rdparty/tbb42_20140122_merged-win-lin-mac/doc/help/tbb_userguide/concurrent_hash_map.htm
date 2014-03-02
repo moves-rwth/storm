@@ -1,0 +1,112 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="concurrent_hash_map">
+<meta name="DC.subject" content="concurrent_hash_map">
+<meta name="keywords" content="concurrent_hash_map">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Containers.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/More_on_HashCompare.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_concurrent_hash_map">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>concurrent_hash_map</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_concurrent_hash_map">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_concurrent_hash_map"><!-- --></a>
+
+
+<h1 class="topictitle1">concurrent_hash_map</h1>
+
+<div><p>A <samp class="codeph">concurrent_hash_map&lt;<var>Key</var>, <var>T</var>, <var>HashCompare</var> &gt;</samp> is a hash table that permits concurrent accesses. The table is a map from a key to a type <var>T</var>. The traits type <span class="keyword">HashCompare</span> defines how to hash a key and how to compare two keys. </p>
+<p>The following example builds a <samp class="codeph">concurrent_hash_map</samp> where the keys are strings and the corresponding data is the number of times each string occurs in the array <samp class="codeph">Data</samp>. </p>
+
+<pre>#include "tbb/concurrent_hash_map.h"
+#include "tbb/blocked_range.h"
+#include "tbb/parallel_for.h"
+#include &lt;string&gt;
+&nbsp;
+using namespace tbb;
+using namespace std;
+&nbsp;
+// Structure that defines hashing and comparison operations for user's type.
+struct MyHashCompare {
+    static size_t hash( const string&amp; x ) {
+        size_t h = 0;
+        for( const char* s = x.c_str(); *s; ++s )
+            h = (h*17)^*s;
+        return h;
+    }
+    //! True if strings are equal
+    static bool equal( const string&amp; x, const string&amp; y ) {
+        return x==y;
+    }
+};
+&nbsp;
+// A concurrent hash table that maps strings to ints.
+typedef concurrent_hash_map&lt;string,int,MyHashCompare&gt; StringTable;
+&nbsp;
+// Function object for counting occurrences of strings.
+struct Tally {
+    StringTable&amp; table;
+    Tally( StringTable&amp; table_ ) : table(table_) {}
+    void operator()( const blocked_range&lt;string*&gt; range ) const {
+        for( string* p=range.begin(); p!=range.end(); ++p ) {
+            StringTable::accessor a;
+            table.insert( a, *p );
+            a-&gt;second += 1;
+        }
+    }
+};
+&nbsp;
+const size_t N = 1000000;
+&nbsp;
+string Data[N];
+&nbsp;
+void CountOccurrences() {
+    // Construct empty table.
+    StringTable table;
+&nbsp;
+    // Put occurrences into the table
+    parallel_for( blocked_range&lt;string*&gt;( Data, Data+N, 1000 ),
+                  Tally(table) );
+&nbsp;
+    // Display the occurrences
+    for( StringTable::iterator i=table.begin(); i!=table.end(); ++i )
+        printf("%s %d\n",i-&gt;first.c_str(),i-&gt;second);
+}</pre>
+<p>A <samp class="codeph">concurrent_hash_map</samp> acts as a container of elements of type <span class="option">std::pair</span><samp class="codeph">&lt;const <var>Key</var>,<var>T</var>&gt;</samp>. Typically, when accessing a container element, you are interested in either updating it or reading it. The template class <samp class="codeph">concurrent_hash_map</samp> supports these two purposes respectively with the classes <samp class="codeph">accessor</samp> and <samp class="codeph">const_accessor</samp> that act as smart pointers. An <em>accessor</em> represents <em>update</em> (<em>write</em>) access. As long as it points to an element, all other attempts to look up that key in the table block until the <samp class="codeph">accessor</samp> is done. A <samp class="codeph">const_accessor</samp> is similar, except that is represents <em>read-only</em> access. Multiple <samp class="codeph">const_accessors</samp> can point to the same element at the same time. This feature can greatly improve concurrency in situations where elements are frequently read and infrequently updated.</p>
+<p>The methods <samp class="codeph">find</samp> and <samp class="codeph">insert</samp> take an <samp class="codeph">accessor</samp> or <samp class="codeph">const_accessor</samp> as an argument. The choice tells <samp class="codeph">concurrent_hash_map</samp> whether you are asking for <em>update</em> or <em>read-only</em> access. Once the method returns, the access lasts until the <samp class="codeph">accessor</samp> or <samp class="codeph">const_accessor</samp> is destroyed. Because having access to an element can block other threads, try to shorten the lifetime of the <samp class="codeph">accessor</samp> or <samp class="codeph">const_accessor</samp>. To do so, declare it in the innermost block possible. To release access even sooner than the end of the block, use method <samp class="codeph">release</samp>. The following example is a rework of the loop body that uses <samp class="codeph">release</samp> instead of depending upon destruction to end thread lifetime: </p>
+
+<pre>        StringTable accessor a;
+        for( string* p=range.begin(); p!=range.end(); ++p ) {
+            table.insert( a, *p );
+            a-&gt;second += 1;
+            a.release();
+        }</pre>
+<p>The method <samp class="codeph">remove(key)</samp> can also operate concurrently. It implicitly requests write access. Therefore before removing the key, it waits on any other extant accesses on <samp class="codeph">key</samp>.</p>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Containers.htm">Containers</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../tbb_userguide/More_on_HashCompare.htm">More on HashCompare</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

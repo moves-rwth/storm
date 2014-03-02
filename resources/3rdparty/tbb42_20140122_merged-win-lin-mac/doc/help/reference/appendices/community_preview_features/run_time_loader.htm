@@ -1,0 +1,133 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Run-time loader">
+<meta name="DC.subject" content="Run-time loader">
+<meta name="keywords" content="Run-time loader">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/community_preview_features.htm">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/community_preview_features/run_time_loader/runtime_loader_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="run_time_loader">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Run-time loader</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="run_time_loader">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="run_time_loader"><!-- --></a>
+
+
+<h1 class="topictitle1">Run-time loader</h1>
+
+
+<div>
+<div class="section"><h2 class="sectiontitle">Summary</h2>
+
+<p>The run-time loader is a mechanism that provides additional run-time control over the version of the Intel&reg; Threading Building Blocks (Intel&reg; TBB) dynamic library used by an application, plug-in, or another library.</p>
+</div>
+
+<div class="section"><h2 class="sectiontitle">Header</h2>
+<pre>#define TBB_PREVIEW_RUNTIME_LOADER 1
+ #include "tbb/runtime_loader.h"</pre></div>
+
+<div class="section"><h2 class="sectiontitle">Library</h2>
+
+
+<div class="tablenoborder"><a name="tbl_library"><!-- --></a><table cellpadding="4" summary="" id="tbl_library" frame="border" border="1" cellspacing="0" rules="all">
+<thead align="left">
+<tr>
+<th class="cellrowborder" align="left" valign="top" width="20%" id="d20923e56">
+<p>OS</p>
+</th>
+
+<th class="cellrowborder" align="left" valign="top" width="40%" id="d20923e61">
+<p>Release build</p>
+</th>
+
+<th class="cellrowborder" align="left" valign="top" width="40%" id="d20923e66">
+<p>Debug build</p>
+</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td class="cellrowborder" align="left" valign="top" width="20%" headers="d20923e56 ">
+<p>Windows</p>
+</td>
+
+<td class="cellrowborder" align="left" valign="top" width="40%" headers="d20923e61 ">
+<p>tbbproxy.lib</p>
+</td>
+
+<td class="cellrowborder" align="left" valign="top" width="40%" headers="d20923e66 ">
+<p>tbbproxy_debug.lib</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="section"><h2 class="sectiontitle">Description</h2>
+
+<p>The run-time loader consists of a class and a static library that can be linked with an application, library, or plug-in to provide better run-time control over the version of Intel&reg; TBB used. The class allows loading a desired version of the dynamic library at run time with explicit list of directories for library search. The static library provides stubs for functions and methods to resolve link-time dependencies, which are then dynamically substituted with the proper functions and methods from a loaded Intel&reg; TBB library.</p>
+
+<p>All instances of <samp class="codeph">class runtime loader</samp> in the same module (i.e. exe or dll) share certain global state. The most noticeable piece of this state is the loaded Intel&reg; TBB library. The implications of that are:</p>
+
+<p>Only one Intel&reg; TBB library per module can be loaded.</p>
+
+<p>If one <samp class="codeph">runtime_loader</samp> instance has already loaded a library, another one created by the same module will not load another one. If the loaded library is suitable for the second instance, both will use it cooperatively, otherwise an error will be reported (details below).</p>
+
+<p>If different versions of the library are requested by different modules, those can be loaded, but may result in processor oversubscription.</p>
+
+<p><samp class="codeph">runtime_loader</samp> objects are not thread-safe and may work incorrectly if used concurrently.</p>
+
+<ul type="disc">
+<li>
+<p>If an application or a library uses <samp class="codeph">runtime_loader</samp>, it should be linked with one of the above specified libraries instead of a normal Intel&reg; TBB library.</p>
+</li>
+</ul>
+</div>
+
+<div class="section"><h2 class="sectiontitle">Example</h2>
+<pre>#define TBB_PREVIEW_RUNTIME_LOADER 1
+ #include "tbb/runtime_loader.h"
+ #include "tbb/parallel_for.h"
+ #include &lt;iostream&gt;
+ char const * path[] = { "c:\\myapp\\lib\\ia32", NULL };
+ int main() {
+ tbb::runtime_loader loader( path );
+ if( loader.status()!=tbb::runtime_loader::ec_ok )
+ return -1;
+ // The loader does not impact how the library is used
+ tbb::parallel_for(0, 10, ParallelForBody());
+ return 0;
+ }</pre>
+<p>In this example, the Intel&reg; Threading Building Blocks (Intel&reg;) library will be loaded from the c:\myapp\lib\ia32 directory. No explicit requirements for a version are specified, so the minimal suitable version is the version used to compile the example, and any higher version is suitable as well. If the library is successfully loaded, it can be used in the normal way.</p>
+</div>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/appendices/community_preview_features.htm">Community Preview Features</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../../reference/appendices/community_preview_features/run_time_loader/runtime_loader_cls.htm">runtime_loader Class</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

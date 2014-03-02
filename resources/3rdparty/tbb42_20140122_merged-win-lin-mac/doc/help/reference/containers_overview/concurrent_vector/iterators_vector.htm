@@ -1,0 +1,185 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Iterators">
+<meta name="DC.subject" content="Iterators">
+<meta name="keywords" content="Iterators">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_vector.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="iterators_vector">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Iterators</title>
+</head>
+<body id="iterators_vector">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="iterators_vector"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Iterators</h1>
+ 
+  
+  <div> 
+	 <div class="section"> 
+		<p>Template class 
+		  <samp class="codeph">concurrent_vector&lt;T&gt;</samp> supports random access
+		  iterators as defined in Section 24.1.4 of the&nbsp; ISO C++ Standard. Unlike a 
+		  <samp class="codeph">std::vector</samp>, the iterators are not raw pointers. A 
+		  <samp class="codeph">concurrent_vector&lt;T&gt;</samp> meets the reversible
+		  container requirements in Table 66 of the ISO C++ Standard.
+		</p>
+
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d57688e43">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d57688e46">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d57688e43 "><span class="keyword"> iterator begin()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d57688e46 ">
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">iterator</samp> pointing to beginning of the
+						vector.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d57688e43 "><span class="keyword"> const_iterator begin()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d57688e46 ">
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_iterator</samp> pointing to beginning of the
+						vector.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d57688e43 "><span class="keyword"> iterator end()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d57688e46 ">
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">iterator</samp> pointing to end of the vector.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d57688e43 "><span class="keyword"> const_iterator end()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d57688e46 ">
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_iterator</samp> pointing to end of the
+						vector.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d57688e43 "><span class="keyword"> reverse_iterator
+						rbegin()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d57688e46 ">
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">reverse iterator 
+						</samp>pointing to beginning of reversed vector.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d57688e43 "><span class="keyword">const_reverse_iterator rbegin()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d57688e46 ">
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_reverse_iterator</samp> pointing to beginning
+						of reversed vector.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d57688e43 "><span class="keyword"> iterator rend()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d57688e46 ">
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_reverse_iterator</samp> pointing to end of
+						reversed vector.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d57688e43 "><span class="keyword"> const_reverse_iterator
+						rend()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d57688e46 ">
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_reverse_iterator</samp> pointing to end of
+						reversed vector.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_vector.htm">concurrent_vector</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

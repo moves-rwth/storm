@@ -1,0 +1,203 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Priorities">
+<meta name="DC.subject" content="Priority">
+<meta name="keywords" content="Priority">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="task_group_context.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="priorities">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Priorities</title>
+</head>
+<body id="priorities">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="priorities"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Priorities</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Priority levels can be assigned to individual tasks or task groups.
+		  The library supports three levels {low, normal, high} and two kinds of
+		  priority: 
+		</p>
+ 
+		<p> 
+		<ul type="disc"> 
+		  <li>Static priority for enqueued tasks. 
+		  </li>
+ 
+		  <li>Dynamic priority for task groups. 
+		  </li>
+ 
+		</ul>
+ 
+		</p>
+ 
+		<p> The former is specified by an optional argument of the 
+		  <samp class="codeph">task::enqueue()</samp> method, affects a specific task only,
+		  and cannot be changed afterwards. Tasks with higher priority are dequeued
+		  before tasks with lower priorities. The latter affects all the tasks in a group
+		  and can be changed at any time either via the associated 
+		  <samp class="codeph">task_group_context</samp> object or via any task belonging to
+		  the group. The priority-related methods in 
+		  <samp class="codeph">task_group_context</samp> are described in Section
+		  task_group_context. The task scheduler tracks the highest priority of ready
+		  tasks (both enqueued and spawned), and postpones execution of tasks with lower
+		  priority until all higher priority task are executed. By default, all tasks and
+		  task groups are created with normal priority. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p> Priority changes may not come into effect
+			 immediately in all threads. So it is possible that lower priority tasks are
+			 still being executed for some time even in the presence of higher priority
+			 ones. 
+		  </p>
+ 
+		</div> 
+		<p>When several user threads (masters) concurrently execute parallel
+		  algorithms, the pool of worker threads is partitioned between them
+		  proportionally to the requested concurrency levels. In the presence of tasks
+		  with different priorities, the pool of worker threads is proportionally divided
+		  among the masters with the highest priority first. Only after fully satisfying
+		  the requests of these higher priority masters, will the remaining threads be
+		  provided to the other masters. 
+		</p>
+ 
+		<p>Though masters with lower priority tasks may be left without workers,
+		  the master threads are never stalled themselves. Task priorities also do not
+		  affect and are not affected by OS thread priority settings. 
+		  <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+			 <p> Worker thread migration from one master thread
+				to another may not happen immediately. 
+			 </p>
+ 
+		  </div> 
+		</p>
+ 
+		<p><strong>Related Constants and Methods</strong> 
+		</p>
+ 
+		<p> 
+		  <pre>namespace tbb {
+    enum priority_t {
+        priority_normal = implementation-defined,
+        priority_low = implementation-defined,
+        priority_high = implementation-defined
+    };
+
+    class task {
+        // . . .
+        static void enqueue( task&amp;, priority_t );
+        void set_group_priority ( priority_t );
+        priority_t group_priority () const;        
+        // . . .
+    };
+}
+</pre> 
+		</p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d109329e88">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d109329e91">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d109329e88 "><span class="keyword">void enqueue ( task&amp; t,
+						priority_t p ) const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d109329e91 "> 
+					 <p>Enqueues task 
+						<samp class="codeph">t</samp> at the priority level 
+						<samp class="codeph">p</samp>. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p>The priority of an enqueued task does
+						  not affect priority of the task group, from the scope of which 
+						  <samp class="codeph">task::enqueue()</samp> is invoked. That is, the
+						  group, which the task returned by 
+						  <samp class="codeph">task::self()</samp> method belongs to. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d109329e88 "><span class="keyword">void set_group_priority (
+						priority_t )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d109329e91 "> 
+					 <p>Changes priority of the task group, which this task belongs
+						to. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d109329e88 "><span class="keyword">priority_t group_priority ()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d109329e91 "> 
+					 <p><strong>Returns</strong>: Priority of the task group, which this task
+						belongs to. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="task_group_context.htm">task_group_context 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

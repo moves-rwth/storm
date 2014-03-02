@@ -1,0 +1,171 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="parallel_sort Template Function">
+<meta name="DC.subject" content="parallel_sort Template Function">
+<meta name="keywords" content="parallel_sort Template Function">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../task_scheduler/task_scheduler_init_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_sort_func">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>parallel_sort Template Function</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="parallel_sort_func">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_sort_func"><!-- --></a>
+
+
+<h1 class="topictitle1">parallel_sort Template Function</h1>
+
+  
+
+<div>
+ <div class="section"><h2 class="sectiontitle">Summary</h2> Sort a sequence. </div>
+
+ <div class="section"><h2 class="sectiontitle">Header</h2> 
+<pre>#include "tbb/parallel_sort.h"</pre>
+ </div>
+
+ <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+<pre>template&lt;typename RandomAccessIterator&gt; 
+void parallel_sort(RandomAccessIterator begin, RandomAccessIterator end);
+
+template&lt;typename RandomAccessIterator, typename Compare&gt;
+void parallel_sort(RandomAccessIterator begin, 
+                   RandomAccessIterator end, 
+                   const Compare&amp; comp );
+</pre></div>
+
+ <div class="section"><h2 class="sectiontitle">Description</h2> <p> Performs an <em>unstable</em> sort of sequence [<em>begin1</em>, <em>end1</em>). An unstable sort
+    might not preserve the relative ordering of elements with equal keys. The sort is deterministic;
+    sorting the same sequence will produce the same result each time. The requirements on the
+    iterator and sequence are the same as for<samp class="codeph"> std::sort</samp> . Specifically,
+     <samp class="codeph">RandomAccessIterator</samp> must be a random access iterator, and its value type
+     <em>T</em> must model the requirements in the table below.</p>
+
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Requirements on Value Type T of RandomAccessIterator
+     for parallel_sort</span></caption> 
+			 <thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" id="d8660e85"> 
+					 <p>Pseudo-Signature 
+					 </p>
+ 
+				  </th>
+ 
+				  <th class="row-nocellborder" valign="top" id="d8660e91"> 
+					 <p>Semantics 
+					 </p>
+ 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr valign="top"> 
+				  <td class="cellrowborder" valign="top" headers="d8660e85 "> 
+					 <p><samp class="codeph">  void swap( T&amp; x, T&amp; y )</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				  <td class="row-nocellborder" valign="top" headers="d8660e91 "> 
+					 <p> Swap <samp class="codeph">x</samp> and <samp class="codeph">y</samp> .</p>
+
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr valign="top"> 
+				  <td class="cellrowborder" valign="top" headers="d8660e85 "> 
+					 <p><samp class="codeph">  bool Compare::operator()(
+const T&amp; x, const T&amp; y
+)</samp> 
+					  </p>
+
+ 
+				  </td>
+ 
+				  <td class="row-nocellborder" valign="top" headers="d8660e91 "> 
+					 <p> True if <samp class="codeph">x</samp> comes before <samp class="codeph">y</samp> ; false
+         otherwise.</p>
+
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+<p>A call <samp class="codeph">parallel_sort(i,j,comp)</samp> sorts the <samp class="codeph">sequence [i,j)</samp> using
+    the argument <samp class="codeph">comp</samp> to determine relative orderings. If
+     <samp class="codeph">comp(x,y)</samp> returns <samp class="codeph">true</samp> then <samp class="codeph">x</samp> appears before <samp class="codeph">y</samp> in the sorted
+    sequence.</p>
+
+<p>A call <samp class="codeph">parallel_sort(i,j)</samp> is equivalent to
+     <samp class="codeph">parallel_sort(i,j,std::less&lt;T&gt;)</samp>.</p>
+
+<p> <strong>Complexity</strong></p>
+
+<p><samp class="codeph"> parallel_sort</samp> is comparison sort with an average time complexity of <em>O(N
+     log (N))</em>, where <em>N</em> is the number of elements in the sequence. When
+    worker threads are available, <samp class="codeph">parallel_sort</samp> creates subtasks that may be
+    executed concurrently, leading to improved execution times.</p>
+
+<p><strong>Example</strong></p>
+<p>The following example shows two sorts. The sort of array <samp class="codeph">a</samp> uses the default
+    comparison, which sorts in ascending order. The sort of array <samp class="codeph">b</samp> sorts in descending order by
+    using <samp class="codeph">std::greater&lt;float&gt;</samp> for comparison.</p>
+<pre>#include "tbb/parallel_sort.h"
+#include &lt;math.h&gt;
+
+using namespace tbb;
+
+const int N = 100000;
+float a[N];
+float b[N];
+
+void SortExample() {
+    for( int i = 0; i &lt; N; i++ ) {
+       a[i] = sin((double)i);
+       b[i] = cos((double)i);
+    }
+    parallel_sort(a, a + N);
+    parallel_sort(b, b + N, std::greater&lt;float&gt;());
+}
+</pre></div>
+
+
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../task_scheduler/task_scheduler_init_cls.htm">task_scheduler_init 
+		  class</a></div></div>
+</div>
+ 
+</body>
+</html>

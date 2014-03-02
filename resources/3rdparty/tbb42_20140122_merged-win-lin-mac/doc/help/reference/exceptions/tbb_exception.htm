@@ -1,0 +1,80 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="tbb_exception">
+<meta name="DC.subject" content="tbb_exception">
+<meta name="keywords" content="tbb_exception">
+<meta name="DC.Relation" scheme="URI" content="../../reference/exceptions.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tbb_exception">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>tbb_exception</title>
+</head>
+<body id="tbb_exception">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tbb_exception"><!-- --></a>
+
+
+    <h1 class="topictitle1">tbb_exception</h1>
+
+    
+<div><div class="section"><h2 class="sectiontitle">Summary</h2>
+        <p>Exception that can be moved to another thread.</p>
+
+        </div>
+<div class="section"><h2 class="sectiontitle">Syntax</h2>
+        <pre>class tbb_exception;</pre>
+        </div>
+<div class="section"><h2 class="sectiontitle">Header</h2>
+        <pre>#include "tbb/tbb_exception.h"</pre>
+        </div>
+<div class="section"><h2 class="sectiontitle">Description</h2>
+        <p>In a parallel environment, exceptions sometimes have to be propagated across threads. Class <samp class="codeph">tbb_exception</samp> subclasses <samp class="codeph">std::exception</samp> to add support for such propagation. </p>
+
+        </div>
+<div class="section"><h2 class="sectiontitle">Members</h2>
+<pre>        namespace tbb {
+        &nbsp;&nbsp;&nbsp; class tbb_exception: public std::exception {
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual tbb_exception* move() = 0;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual void destroy() throw() = 0;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual void throw_self() = 0;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual const char* name() throw() = 0;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual const char* what() throw() = 0;
+        &nbsp;&nbsp;&nbsp; };&nbsp; 
+        }</pre>
+        <p>Derived classes should define the abstract virtual methods as follows:</p>
+
+        <ul type="disc">
+            <li><p><samp class="codeph">move()</samp> should create a pointer to a copy of the exception that can outlive the original. It may move the contents of the original.</p>
+</li>
+
+            <li><p><samp class="codeph">destroy()</samp> should destroy a copy created by <samp class="codeph">move()</samp>.</p>
+</li>
+
+            <li><p><samp class="codeph">throw_self()</samp> should throw <samp class="codeph">*this</samp>. </p>
+</li>
+
+            <li><p><samp class="codeph">name()</samp> typically returns the RTTI name of the originally intercepted exception.</p>
+</li>
+
+            <li><p><samp class="codeph">what()</samp> returns a null-terminated string describing the exception.</p>
+</li>
+
+        </ul>
+</div>
+</div>
+ 
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/exceptions.htm">Exceptions</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

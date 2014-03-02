@@ -1,0 +1,120 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Odd-Even Communication">
+<meta name="DC.subject" content="Odd-Even Communication">
+<meta name="keywords" content="Odd-Even Communication">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="General_References.htm#General_References">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Odd-Even_Communication">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Odd-Even Communication</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Odd-Even_Communication">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Odd-Even_Communication"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Odd-Even Communication</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		 
+		<p>Operations on data cannot be done entirely independently, but data can
+		  be partitioned into two subsets such that all operations on a subset can run in
+		  parallel. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>Solvers for partial differential equations can often be modified to
+		  follow this pattern. For example, for a 2D grid with only nearest-neighbor
+		  communication, it may be possible to treat the grid as a checkerboard, and
+		  alternate between updating red squares and black squares. 
+		</p>
+ 
+		<p>Another context is staggered grid ("leap frog") Finite
+		  Difference Time Domain (FDTD. solvers, which naturally fit the pattern. The
+		  code 
+		  <samp class="codeph">examples/parallel_for/seismic/</samp> uses such a solver. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Dependencies between items form a bipartite graph. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		 
+		<p>Alternate between updating one subset and then the other subset. Apply
+		  the elementwise pattern to each subset. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>The example in 
+		  <samp class="codeph">examples/parallel_for/seismic</samp> demonstrates the
+		  principle. In it, two physical fields 
+		  <em>velocity</em> and 
+		  <em>stress</em> each depend upon each other, and so cannot all be updated
+		  simultaneously. However, the 
+		  <em>velocity</em> calculations can be done independently as long as the 
+		  <em>stress</em> values remain fixed, and vice-versa. So the code
+		  alternates updates of the 
+		  <em>velocity</em> and 
+		  <em>stress</em> fields. Each update is done using 
+		  <samp class="codeph">tbb::parallel_for</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">References</h2> 
+		 
+		<p>Eun-Gyu Kim and Mark Snir, "Odd-Even Communication Group",
+		  http://www.cs.uiuc.edu/homes/snir/PPP/patterns/oddeven.pdf
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="General_References.htm#General_References">General References 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

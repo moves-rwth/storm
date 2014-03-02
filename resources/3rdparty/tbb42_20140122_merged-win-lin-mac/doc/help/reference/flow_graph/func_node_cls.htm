@@ -1,0 +1,671 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="function_node Template Class">
+<meta name="DC.subject" content="function_node Template Class">
+<meta name="keywords" content="function_node Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Relation" scheme="URI" content="copy_body_func.htm">
+<meta name="DC.Relation" scheme="URI" content="../task_scheduler/task_group_context.htm">
+<meta name="DC.Relation" scheme="URI" content="../exceptions.htm">
+<meta name="DC.Relation" scheme="URI" content="message_passing_protocol.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="func_node_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>function_node Template Class</title>
+</head>
+<body id="func_node_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="func_node_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">function_node Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>A template class that is a 
+		  <span class="keyword">graph_node</span>, 
+		  <span class="keyword">receiver&lt;Input&gt;</span> and a 
+		  <span class="keyword">sender&lt;Output&gt;</span>. This node may have concurrency
+		  limits as set by the user. By default, a 
+		  <span class="keyword">function_node</span> has an internal FIFO buffer at its
+		  input. Messages that cannot be immediately processed due to concurrency limits
+		  are temporarily stored in this FIFO buffer. A template argument can be used to
+		  disable this internal buffer. If the FIFO buffer is disabled, incoming messages
+		  will be rejected if they cannot be processed immediately while respecting the
+		  concurrency limits of the node. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template &lt; typename Input,
+           typename Output = continue_msg,
+           graph_buffer_policy = queueing,
+           typename A = cache_aligned_allocator&lt;Input&gt; &gt;
+class function_node;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/flow_graph.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <span class="keyword">function_node</span> receives messages of type 
+		  <span class="keyword">Input</span> at a single input port and generates a single
+		  output message of type 
+		  <span class="keyword">Output</span> that is broadcast to all successors.
+		  Rejection of messages by successors is handled using the protocol in Message
+		  Passing Protocol, see link below. 
+		</p>
+ 
+		<p>If 
+		  <span class="keyword">graph_buffer_policy == queueing</span>, an internal
+		  unbounded input buffer is maintained using memory obtained through an allocator
+		  of type 
+		  <span class="keyword">A</span>. 
+		</p>
+ 
+		<p>A 
+		  <span class="keyword">function_node</span> maintains an internal constant
+		  threshold T and an internal counter C. At construction, C = 0 and T is set the
+		  value passed in to the constructor. The behavior of a call to 
+		  <span class="keyword">try_put</span> is determined by the value of T and C as
+		  shown below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl23"><!-- --></a><table cellpadding="4" summary="" id="tbl23" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Behavior of a call to a function_node's try_put</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" align="center" valign="top" width="25%" id="d69978e115"> 
+				  <p>Value of threshold T 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" align="center" valign="top" width="25%" id="d69978e121"> 
+				  <p>Value of counter C 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" align="center" valign="top" width="50%" id="d69978e127"> 
+				  <p><span class="keyword">bool try_put( const input_type &amp;v )</span> 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="25%" headers="d69978e115 "> 
+				  <p> 
+					 <pre>T == flow::unlimited</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="25%" headers="d69978e121 "> 
+				  <p>NA 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e127 "> 
+				  <p>A task is spawned that broadcasts the result of 
+					 <span class="keyword">body(v)</span> to all successors. Returns 
+					 <span class="keyword">true</span>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="25%" headers="d69978e115 "> 
+				  <p> 
+					 <pre>T != flow::unlimited</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="25%" headers="d69978e121 "> 
+				  <p>C &lt; T 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e127 "> 
+				  <p>Increments C. A task is spawned that broadcasts the result of
+					 
+					 <span class="keyword">body(v)</span> to all successors and then
+					 decrements C. Returns 
+					 <span class="keyword">true</span>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="25%" headers="d69978e115 "> 
+				  <p> 
+					 <pre>T != flow::unlimited</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="25%" headers="d69978e121 "> 
+				  <p>C &gt;= T 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e127 "> 
+				  <p>If the template argument 
+					 <span class="keyword">graph_buffer_policy==queueing</span>, 
+					 <span class="keyword">v</span> is stored in an internal FIFO buffer until
+					 C &lt; T. When T becomes less than C, C is incremented and a task is spawned
+					 that broadcasts the result of 
+					 <span class="keyword">body(v)</span> to all successors and then
+					 decrements C. Returns 
+					 <span class="keyword">true</span>. 
+				  </p>
+ 
+				  <p>If the template argument 
+					 <span class="keyword">graph_buffer_policy==rejecting</span> and C &gt;=
+					 T, returns 
+					 <span class="keyword">false</span>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>A 
+		  <span class="keyword">function_node</span> has a user-settable concurrency limit.
+		  It can have 
+		  <span class="keyword">flow::unlimited</span> concurrency, which allows an
+		  unlimited number of invocations of the body to execute concurrently. It can
+		  have 
+		  <span class="keyword">flow::serial</span> concurrency, which allows only a single
+		  call of body to execute concurrently. The user can also provide a value of type
+		  
+		  <span class="keyword">size_t</span> to limit concurrency to a value between 1 and
+		  
+		  <span class="keyword">unlimited</span>. 
+		</p>
+ 
+		<p>A 
+		  <span class="keyword">function_node</span> with 
+		  <span class="keyword">graph_buffer_policy==rejecting</span> will maintain a
+		  predecessor set as described in the Message Passing Protocol, see link below.
+		  If the 
+		  <span class="keyword">function_node</span> transitions from a state where C &gt;=
+		  T to a state where C &lt; T, it will try to get new messages from its set of
+		  predecessors until C &gt;= T or there are no valid predecessors left in the
+		  set. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p>A 
+			 <span class="keyword">function_node</span> can serve as a terminal node in the
+			 graph. The convention is to use an 
+			 <span class="keyword">Output</span> of 
+			 <span class="keyword">continue_msg</span> and attach no successor. 
+		  </p>
+ 
+		</div> 
+		<p>The Body concept for 
+		  <span class="keyword">function_node</span> is shown in below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl24"><!-- --></a><table cellpadding="4" summary="" id="tbl24" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">function_node&lt;Input, Output&gt; Body Concept</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" align="center" valign="top" width="50%" id="d69978e311"> 
+				  <p>Pseudo-Signature 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" align="center" valign="top" width="50%" id="d69978e317"> 
+				  <p>Semantics 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e311 "> 
+				  <p> 
+					 <pre>B::B( const B&amp; )</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e317 "> 
+				  <p>Copy constructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e311 "> 
+				  <p> 
+					 <pre>B::~B()</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e317 "> 
+				  <p>Destructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e311 "> 
+				  <p> 
+					 <pre>void operator=( const B&amp; )</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e317 "> 
+				  <p>Assignment. The return type 
+					 <samp class="codeph">void</samp> in the pseudo-signature denotes that 
+					 <samp class="codeph">operator=</samp> is not required to return a value.
+					 The actual 
+					 <samp class="codeph">operator=</samp> can return a value, which will be
+					 ignored. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e311 "> 
+				  <p> 
+					 <pre>Output B::operator() (const Input &amp;v) const</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d69978e317 "> 
+				  <p>Perform operation on 
+					 <span class="keyword">v</span> and return value of type 
+					 <span class="keyword">Output</span>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p> The body object passed to a 
+			 <span class="keyword">function_node</span> is copied. Therefore updates to
+			 member variables will not affect the original object used to construct the
+			 node. If the state held within a body object must be inspected from outside of
+			 the node, the 
+			 <span class="keyword">copy_body</span> function can be used to obtain an
+			 updated copy. 
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p><span class="keyword">Input</span> and 
+			 <span class="keyword">Output</span> must be copy-constructible and assignable. 
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p> The body object may throw or cancel its enclosing graph.
+                      See task_group_context and Exceptions sections for a description.
+		  </p>
+ 
+                </div>
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+namespace flow {
+ 
+enum graph_buffer_policy {
+   rejecting, reserving, queueing, tag_matching };
+ 
+template &lt; typename Input, typename Output = continue_msg, 
+           graph_buffer_policy = queueing, 
+           typename A = cache_aligned_allocator&lt;Input&gt; &gt;
+class function_node :
+  public graph_node, public receiver&lt;Input&gt;,
+  public sender&lt;Output&gt; {
+public:
+    template&lt;typename Body&gt;
+    function_node( graph &amp;g, size_t concurrency, Body body );
+    function_node( const function_node &amp;src );
+ 
+    // receiver&lt;Input&gt;
+    typedef Input input_type;
+    typedef sender&lt;input_type&gt; predecessor_type;
+    bool try_put( const input_type &amp;v );
+    bool register_predecessor( predecessor_type &amp;p );
+    bool remove_predecessor( predecessor_type &amp;p );
+ 
+    // sender&lt;Output&gt;
+    typedef Output output_type;
+    typedef receiver&lt;output_type&gt; successor_type;
+    bool register_successor( successor_type &amp;r );
+    bool remove_successor( successor_type &amp;r );
+    bool try_get( output_type &amp;v );
+    bool try_reserve( output_type &amp;v );
+    bool try_release( );
+    bool try_consume( );
+};
+ 
+}
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d69978e467">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d69978e470">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">template&lt; typename Body&gt;
+						function_node(graph &amp;g, size_t concurrency, Body body)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>Constructs a 
+						<span class="keyword">function_node</span> that will invoke a copy of 
+						<span class="keyword">body</span>. At most 
+						<span class="keyword">concurrency</span> calls to 
+						<span class="keyword">body</span> may be made concurrently. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">function_node( const function_node
+						&amp;src )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>Constructs a 
+						<span class="keyword">function_node</span> that has the same initial
+						state that 
+						<span class="keyword">src</span> had when it was constructed. The 
+						<span class="keyword">function_node</span> that is constructed will
+						have a reference to the same 
+						<span class="keyword">graph</span> object as 
+						<span class="keyword">src</span>, will have a copy of the initial body
+						used by 
+						<span class="keyword">src</span>, and have the same concurrency
+						threshold as 
+						<span class="keyword">src</span>. The predecessors and successors of 
+						<span class="keyword">src</span> will not be copied. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+						<p> The new body object is copy constructed from a copy of
+						  the original body provided to 
+						  <span class="keyword">src</span> at its construction. Therefore
+						  changes made to member variables in 
+						  <span class="keyword">src</span>'s body after the construction of 
+						  <span class="keyword">src</span> will not affect the body of the new 
+						  <span class="keyword">function_node.</span> 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">bool try_put( const input_type
+						&amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>See the table above, "Behavior of a call to a 
+						<samp class="codeph">function_node</samp>'s <samp class="codeph">try_put</samp>," for more
+						information. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if the input was accepted; and 
+						<span class="keyword">false</span> otherwise. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">bool register_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>Adds 
+						<span class="keyword">p</span> to the set of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">bool remove_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>Removes 
+						<span class="keyword">p</span> from the set of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">bool register_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>Adds 
+						<span class="keyword">r</span> to the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">bool remove_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>Removes 
+						<span class="keyword">r</span> from the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">bool try_get( output_type &amp;v
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>A 
+						<span class="keyword">function_node</span> does not contain buffering
+						of its output. Therefore it always rejects 
+						<span class="keyword">try_get</span> calls. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">bool try_reserve( output_type
+						&amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>A 
+						<span class="keyword">function_node</span> does not contain buffering
+						of its output. Therefore it cannot be reserved. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">bool try_release( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>A 
+						<span class="keyword">function_node</span> does not contain buffering
+						of its output. Therefore it cannot be reserved. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d69978e467 "><span class="keyword">bool try_consume( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d69978e470 "> 
+					 <p>A 
+						<span class="keyword">function_node</span> does not contain buffering
+						of its output. Therefore it cannot be reserved. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="copy_body_func.htm">copy_body Template Function 
+		  </a></div>
+<div><a href="../task_scheduler/task_group_context.htm">task_group_context
+		  </a></div>
+<div><a href="../exceptions.htm">Exceptions
+		  </a></div>
+<div><a href="message_passing_protocol.htm">Message Passing Protocol 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="concurrent_vector">
+<meta name="DC.subject" content="concurrent_vector">
+<meta name="keywords" content="concurrent_vector">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_vector/construction_copy_and_assignment.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_vector/whole_vector_operations.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_vector/concurrent_growth.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_vector/access.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_vector/parallel_iteration.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_vector/capacity_vector.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_vector/iterators_vector.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="concurrent_vector">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>concurrent_vector</title>
+</head>
+<body id="concurrent_vector">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="concurrent_vector"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">concurrent_vector</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Template class for vector that can be concurrently
+		  grown and accessed. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename T, class Alloc=cache_aligned_allocator&lt;T&gt; &gt; 
+class concurrent_vector;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre> #include "tbb/concurrent_vector.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">concurrent_vector</samp> is a container with the following
+		  features: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Random access by index. The index of the first
+				element is zero. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Multiple threads can grow the container and
+				append new elements concurrently. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Growing the container does not invalidate
+				existing iterators or indices. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>A 
+		  <samp class="codeph">concurrent_vector</samp> meets all requirements for a
+		  Container and a Reversible Container as specified in the ISO C++ standard. It
+		  does not meet the Sequence requirements due to absence of methods 
+		  <samp class="codeph">insert()</samp> and 
+		  <samp class="codeph">erase()</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+        template&lt;typename T, typename Alloc=cache_aligned_allocator&lt;T&gt; &gt;
+        class concurrent_vector {
+        public:
+            typedef size_t size_type;
+            typedef <em>allocator-A-rebound-for-T</em> allocator_type;
+            typedef T value_type;
+            typedef ptrdiff_t difference_type;
+            typedef T&amp; reference;
+            typedef const T&amp; const_reference;
+            typedef T* pointer;
+            typedef const T *const_pointer;
+            typedef <em>implementation-defined</em> iterator;
+            typedef <em>implementation-defined</em> const_iterator;
+            typedef <em>implementation-defined</em> reverse_iterator;
+            typedef <em>implementation-defined</em> const_reverse_iterator;
+     
+            // Parallel ranges
+            typedef <em>implementation-defined</em> range_type;
+            typedef <em>implementation-defined</em> const_range_type;
+            range_type range( size_t grainsize );
+            const_range_type range( size_t grainsize ) const;
+     
+            // Constructors
+            explicit concurrent_vector( const allocator_type&amp; a =
+                                        allocator_type() );
+            concurrent_vector( const concurrent_vector&amp; x );
+            template&lt;typename M&gt;
+                concurrent_vector( const concurrent_vector&lt;T, M&gt;&amp; x );
+     
+            explicit concurrent_vector( size_type n, 
+                const T&amp; t=T(), 
+                const allocator_type&amp; a = allocator_type() );
+            template&lt;typename InputIterator&gt;
+                concurrent_vector(InputIterator first, InputIterator last,
+               const allocator_type&amp; a=allocator_type());
+            
+            //C++11 specific 
+            concurrent_vector(std::initializer_list&lt;T&gt; il, const allocator_type &amp;a = allocator_type())
+     
+            // Assignment
+            concurrent_vector&amp; operator=( const concurrent_vector&amp; x );
+            template&lt;class M&gt;
+                concurrent_vector&amp; operator=( const concurrent_vector&lt;T, M&gt;&amp; x );
+            void assign( size_type n, const T&amp; t );
+            template&lt;class InputIterator &gt;
+                void assign( InputIterator first, InputIterator last );
+     
+            //C++11 specific
+            concurrent_vector&amp; operator=( const std::initializer_list&lt;T&gt; &amp;il);
+            void assign(std::initializer_list&lt;T&gt; il);
+            
+            // Concurrent growth operations
+            iterator grow_by( size_type delta );
+            iterator grow_by( size_type delta, const T&amp; t );
+            iterator grow_to_at_least( size_type n );
+            iterator push_back( const T&amp; item );
+     
+            // Items access
+            reference operator[]( size_type index );
+            const_reference operator[]( size_type index ) const;
+            reference at( size_type index );
+            const_reference at( size_type index ) const;
+            reference front();
+            const_reference front() const;
+            reference back();
+            const_reference back() const;
+     
+            // Storage
+            bool empty() const;
+            size_type capacity() const;
+            size_type max_size() const;
+            size_type size() const;
+            allocator_type get_allocator() const;
+     
+            // Non-concurrent operations on whole container
+            void reserve( size_type n );
+            void compact();
+            void swap( concurrent_vector&amp; vector );
+            void clear();
+            ~concurrent_vector();
+     
+            // Iterators
+            iterator begin();
+            iterator end();
+            const_iterator begin() const;
+            const_iterator end() const;
+            reverse_iterator rbegin();
+            reverse_iterator rend();
+            const_reverse_iterator rbegin() const;
+            const_reverse_iterator rend() const;
+     
+            // C++11 extensions
+            const_iterator cbegin() const;
+            const_iterator cend() const;
+            const_reverse_iterator crbegin() const;
+            const_reverse_iterator crend() const;      
+        };
+     
+        // Template functions
+        template&lt;typename T, class A1, class A2&gt;
+            bool operator==( const concurrent_vector&lt;T, A1&gt;&amp; a, 
+                             const concurrent_vector&lt;T, A2&gt;&amp; b );
+     
+       template&lt;typename T, class A1, class A2&gt;
+           bool operator!=( const concurrent_vector&lt;T, A1&gt;&amp; a, 
+                            const concurrent_vector&lt;T, A2&gt;&amp; b );
+     
+       template&lt;typename T, class A1, class A2&gt;
+       bool operator&lt;( const concurrent_vector&lt;T, A1&gt;&amp; a, 
+                       const concurrent_vector&lt;T, A2&gt;&amp; b );
+     
+       template&lt;typename T, class A1, class A2&gt;
+           bool operator&gt;( const concurrent_vector&lt;T, A1&gt;&amp; a, 
+                           const concurrent_vector&lt;T, A2&gt;&amp; b );
+     
+       template&lt;typename T, class A1, class A2&gt;
+           bool operator&lt;=( const concurrent_vector&lt;T, A1&gt;&amp; a, 
+                            const concurrent_vector&lt;T, A2&gt;&amp; b );
+     
+       template&lt;typename T, class A1, class A2&gt;
+           bool operator&gt;=(const concurrent_vector&lt;T, A1&gt;&amp; a, 
+                           const concurrent_vector&lt;T, A2&gt;&amp; b );
+     
+       template&lt;typename T, class A&gt;
+           void swap(concurrent_vector&lt;T, A&gt;&amp; a, concurrent_vector&lt;T, A&gt;&amp; b);
+     
+    }</pre> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p> The rebinding of 
+			 <samp class="codeph">allocator_type</samp> follows practice established by both
+			 the Microsoft and GNU implementations of 
+			 <samp class="codeph">std::vector</samp>. 
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p> The return types of the growth methods are
+			 different in Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.2 than in prior
+			 versions. See footnotes in the descriptions of the individual methods for
+			 details. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Exception Safety</h2> 
+		 
+		<p>Concurrent growing is fundamentally incompatible
+		  with ideal exception safety. &nbsp; Nonetheless, 
+		  <samp class="codeph">concurrent_vector</samp> offers a practical level of
+		  exception safety. 
+		</p>
+ 
+		<p>Element type T must meet the following
+		  requirements: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Its destructor must not throw an exception. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>If its default constructor can throw an
+				exception, its destructor must be non-virtual and work correctly on zero-filled
+				memory. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>Otherwise the program's behavior is undefined. 
+		</p>
+ 
+		<p>Growth and vector assignment append a sequence of
+		  elements to a vector. If an exception occurs, the impact on the vector&nbsp; depends
+		  upon the cause of the exception: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>If the exception is thrown by the constructor
+				of an element, then all subsequent elements in the appended sequence will be
+				zero-filled. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Otherwise, the exception was thrown by the
+				vector's allocator. The vector becomes broken. Each element in the appended
+				sequence will be in one of three states: 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<ul type="disc" class="ul_2"> 
+		  <li class="li_2">constructed 
+		  </li>
+ 
+		  <li class="li_2">zero-filled&gt; 
+		  </li>
+ 
+		  <li class="li_2">unallocated in memory&nbsp; 
+		  </li>
+ 
+		</ul>
+ 
+		<p>Once a vector becomes broken, care must be taken
+		  when accessing it: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Accessing an unallocated element with method at
+				causes an exception 
+				<samp class="codeph">std::range_error</samp>. Any other way of accessing an
+				unallocated element has undefined behavior. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The values of 
+				<samp class="codeph">capacity()</samp> and 
+				<samp class="codeph">size()</samp> may be less than expected. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Access to a broken vector via<samp class="codeph">
+				  back()</samp> has undefined behavior. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>However, the following guarantees hold for broken
+		  or unbroken vectors: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Let 
+				<samp class="codeph"><em>k</em></samp> be an index of an unallocated element.
+				Then<samp class="codeph"> size()&lt;= capacity()&lt;=<em>k</em> 
+				</samp> 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Growth operations never cause 
+				<samp class="codeph">size()</samp> or 
+				<samp class="codeph">capacity()</samp> to decrease. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>If a concurrent growth operation successfully
+		  completes, the appended sequence remains valid and accessible even if a
+		  subsequent growth operations fails. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Fragmentation</h2> 
+		 
+		<p>Unlike a 
+		  <samp class="codeph">std::vector</samp>, a 
+		  <samp class="codeph">concurrent_vector</samp> never moves existing elements when
+		  it grows. The container allocates a series of contiguous arrays. The first
+		  reservation, growth, or assignment operation determines the size of the first
+		  array. Using a small number of elements as initial size incurs fragmentation
+		  across cache lines that may increase element access time. The method 
+		  <samp class="codeph">shrink_to_fit()</samp>merges several smaller arrays into a
+		  single contiguous array, which may improve access time. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/containers_overview.htm">Containers Overview</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_vector/construction_copy_and_assignment.htm">Construction, Copy, and Assignment</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_vector/whole_vector_operations.htm">Whole Vector Operations</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_vector/concurrent_growth.htm">Concurrent Growth</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_vector/access.htm">Access</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_vector/parallel_iteration.htm">Parallel Iteration</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_vector/capacity_vector.htm">Capacity</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_vector/iterators_vector.htm">Iterators</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

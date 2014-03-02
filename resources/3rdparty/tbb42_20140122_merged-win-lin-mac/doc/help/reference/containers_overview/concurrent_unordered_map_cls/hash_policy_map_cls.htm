@@ -1,0 +1,123 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Hash Policy">
+<meta name="DC.subject" content="Hash policy">
+<meta name="keywords" content="Hash policy">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_unordered_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="hash_policy_map_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Hash Policy</title>
+</head>
+<body id="hash_policy_map_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="hash_policy_map_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Hash Policy</h1>
+ 
+   
+  <div> 
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the members
+		  of this template class. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="33.89830508474576%" id="d45200e29">Member 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="66.10169491525423%" id="d45200e32">Description 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d45200e29 "><span class="keyword">float load_factor() const</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d45200e32 "> 
+				  <p><strong>Returns</strong>: Average number of elements per bucket. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d45200e29 "><span class="keyword">float max_load_factor()
+					 const</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d45200e32 "> 
+				  <p><strong>Returns</strong>: Maximum size of a bucket. If insertion of an
+					 item causes a bucket to be bigger, the implementation may repartition or
+					 increase the number of buckets. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d45200e29 "><span class="keyword">void max_load_factor(float
+					 z)</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d45200e32 "> 
+				  <p>Set maximum size for a bucket to 
+					 <samp class="codeph"><em>z</em></samp>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d45200e29 "><span class="keyword">void rehash(size_type n)</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d45200e32 "> 
+				  <p><strong>Requirements</strong>: 
+					 <samp class="codeph"><em>n</em></samp> must be a power of two. 
+				  </p>
+ 
+				  <p><strong>Effects</strong>: No effect if current number of buckets is at
+					 least 
+					 <samp class="codeph"><em>n</em></samp>. Otherwise increases number of
+					 buckets to 
+					 <samp class="codeph"><em>n</em></samp>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 <div class="section"> 
+		 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_unordered_map_cls.htm">concurrent_unordered_map and concurrent_unordered_multimap Template Classes</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

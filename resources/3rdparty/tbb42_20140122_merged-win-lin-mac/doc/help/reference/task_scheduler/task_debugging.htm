@@ -1,0 +1,202 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="task Debugging">
+<meta name="DC.subject" content="task Debugging">
+<meta name="keywords" content="task Debugging">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_debugging">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>task Debugging</title>
+</head>
+<body id="task_debugging">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_debugging"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">task Debugging</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Methods in this subsection are useful for
+		  debugging. They may change in future implementations. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">state_type state() const</h2> 
+		 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>This method is intended for debugging only. Its
+			 behavior or performance may change in future implementations. The definition
+			 of<samp class="codeph"> task::state_type</samp> may change in future implementations. This
+			 information is being provided because it can be useful for diagnosing problems
+			 during debugging. 
+		  </p>
+ 
+		</div> 
+		<p><strong>Returns</strong> 
+		</p>
+ 
+		<p>Current state of the task. The table below
+		  describes valid states. Any other value is the result of memory corruption,
+		  such as using a task whose memory has been deallocated. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl34"><!-- --></a><table cellpadding="4" summary="" id="tbl34" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Values Returned by task::state()</span></caption> 
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d114348e60"> 
+				  <p>Value 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d114348e66"> 
+				  <p>Description 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d114348e60 "> 
+				  <p>allocated 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d114348e66 "> 
+				  <p>Task is freshly allocated or recycled. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d114348e60 "> 
+				  <p>ready 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d114348e66 "> 
+				  <p>Task is in ready pool, or is in process of
+					 being transferred to/from there. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d114348e60 "> 
+				  <p>executing 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d114348e66 "> 
+				  <p>Task is running, and will be destroyed
+					 after method execute() returns. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d114348e60 "> 
+				  <p>freed 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d114348e66 "> 
+				  <p>Task is on internal free list, or is in
+					 process of being transferred to/from there. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d114348e60 "> 
+				  <p>reexecute 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d114348e66 "> 
+				  <p>Task is running, and will be respawned
+					 after method execute() returns. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>The figure below summarizes possible state
+		  transitions for a 
+		  <samp class="codeph">task</samp>. 
+		</p>
+ 
+		<div class="fignone" id="fig14"><a name="fig14"><!-- --></a><span class="figcap">Typical task::state() Transitions</span> 
+		  
+		  
+		  <br><img src="../Resources/0600000F.png"><br> 
+		</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">int ref_count() const</h2> 
+		 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>This method is intended for debugging only. Its
+			 behavior or performance may change in future implementations. 
+		  </p>
+ 
+		</div> 
+		<p><strong>Returns</strong> 
+		</p>
+ 
+		<p>The value of the attribute 
+		  <em>refcount</em>. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

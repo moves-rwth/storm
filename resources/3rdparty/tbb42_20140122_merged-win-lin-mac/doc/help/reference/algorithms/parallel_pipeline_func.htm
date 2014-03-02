@@ -1,0 +1,139 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="parallel_pipeline Function">
+<meta name="DC.subject" content="Range Concept">
+<meta name="keywords" content="Range Concept">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/parallel_pipeline_func/filter_t_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/parallel_pipeline_func/flow_control_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="pipeline_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../task_scheduler/task_group_context.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_pipeline_func">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>parallel_pipeline Function</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="parallel_pipeline_func">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_pipeline_func"><!-- --></a>
+
+
+<h1 class="topictitle1">parallel_pipeline Function</h1>
+
+     
+
+<div>
+    <div class="section"><h2 class="sectiontitle">Summary</h2> Strongly typed interface for pipelined execution. </div>
+
+    <div class="section"><h2 class="sectiontitle">Header</h2> 
+<pre>#include "tbb/pipeline.h"</pre>
+ </div>
+
+ <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+<pre>void parallel_pipeline( size_t max_number_of_live_tokens, 
+                        const filter_t&lt;void,void&gt;&amp; filter_chain
+                        [, task_group_context&amp; group] );
+</pre></div>
+
+ <div class="section"><h2 class="sectiontitle">Description</h2>
+            <p> Function <samp class="codeph">parallel_pipeline</samp> is a strongly typed lambda-friendly
+                interface for building and running pipelines. The pipeline has characteristics
+                similar to class <samp class="codeph">pipeline</samp>, except that the stages of the pipeline
+                are specified via functors instead of class derivation.</p>
+
+            <p>To build and run a pipeline from functors <em>g</em><sub>0</sub>, <em>g</em><sub>1</sub>, 
+	    <em>g</em><sub>2</sub>, ..., <em>g</em><sub>n</sub>, write:</p>
+
+            <pre>parallel_pipeline( max_number_of_live_tokens, 
+                   make_filter&lt;void,I1&gt;(mode0,g0) &amp;
+                   make_filter&lt;I1,I2&gt;(mode1,g1) &amp;
+                   make_filter&lt;I2,I3&gt;(mode2,g2) &amp;
+                   ... 
+                   make_filter&lt;In,void&gt;(moden,gn) );
+</pre><p>In
+                general, functor <em>g</em><sub>i</sub> should define its <samp class="codeph">operator()</samp> to map objects of type
+                    <em>I</em><sub>i</sub> to objects of type <em>I</em><sub>i+1</sub>. Functor <em>g</em><sub>0</sub> is a special case, because it notifies the pipeline when the end of the
+                input stream is reached. Functor <em>g</em><sub>0</sub> must be defined such that for a flow_control object <em>fc</em>, the
+                expression <em>g</em><sub>0</sub> (<em>fc</em> ) either returns the next value in the input stream, or if
+                at the end of the input stream, invokes <em>fc.</em>stop() and returns a dummy
+                value.</p>
+ The value <em>max_number_of_live_tokens</em> has the same meaning as it
+            does for <samp class="codeph">pipeline::run</samp>. <p> If the group argument is specified,
+                pipeline's tasks are executed in this group. By default the algorithm is executed in
+                a bound group of its own. </p>
+</div>
+
+    <div class="section"><h2 class="sectiontitle">Example</h2>
+     <p> The following example uses <samp class="codeph">parallel_pipeline</samp> compute
+                the root-mean-square of a sequence defined by [ <em>first</em> , <em>last</em> ). The
+                example is only for demonstrating syntactic mechanics. It is not as a practical way
+                to do the calculation because parallel overhead would be vastly higher than useful
+                work. Operator &amp; requires that the output type of its first
+                    <samp class="codeph">filter_t</samp> argument matches the input type of its second
+                    <samp class="codeph">filter_t</samp> argument.</p>
+<pre>float RootMeanSquare( float* first, float* last ) {
+    float sum=0;
+    parallel_pipeline( /*max_number_of_live_token=*/16,       
+        make_filter&lt;void,float*&gt;(
+            filter::serial,
+            [&amp;](flow_control&amp; fc)-&gt; float*{
+                if( first&lt;last ) {
+                    return first++;
+                 } else {
+                    fc.stop();
+                    return NULL;
+                }
+            }    
+        ) &amp;
+        make_filter&lt;float*,float&gt;(
+            filter::parallel,
+            [](float* p){return (*p)*(*p);} 
+        ) &amp;
+        make_filter&lt;float,void&gt;(
+            filter::serial,
+            [&amp;](float x) {sum+=x;}
+        )
+    );
+    return sqrt(sum);
+}
+     </pre><p>See the Intel&reg; Threading Building Blocks Tutorial for a non-trivial example
+                of <samp class="codeph">parallel_pipeline</samp>.</p>
+
+     </div>
+
+
+</div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/algorithms/parallel_pipeline_func/filter_t_cls.htm">filter_t Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/algorithms/parallel_pipeline_func/flow_control_cls.htm">flow_control Class</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="pipeline_cls.htm">pipeline Class 
+		  </a></div>
+<div><a href="../task_scheduler/task_group_context.htm">task_group_context</a></div></div>
+</div>
+</body>
+</html>

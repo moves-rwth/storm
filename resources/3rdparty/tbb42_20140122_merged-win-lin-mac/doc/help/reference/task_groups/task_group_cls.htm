@@ -1,0 +1,111 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="task_group Class">
+<meta name="DC.subject" content="task_group Class">
+<meta name="keywords" content="task_group Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_groups.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_groups/task_group_cls/task_group_cls_members.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_group_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>task_group Class</title>
+</head>
+<body id="task_group_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_group_cls"><!-- --></a>
+
+
+           <h1 class="topictitle1">task_group Class</h1>
+
+           
+           <div>
+                      <div class="section"><h2 class="sectiontitle">Description</h2>
+                                 
+                                 <p>A <samp class="codeph">task_group</samp> represents
+                                            concurrent execution of a group of tasks. Tasks may be
+                                            dynamically added to the group as it is executing. </p>
+
+                      </div>
+
+                      <div class="section"><h2 class="sectiontitle">Example with Lambda Expressions</h2>
+                                 
+                                 <pre>#include "tbb/task_group.h"
+    &nbsp;
+    using namespace tbb;
+    &nbsp;
+    int Fib(int n) {
+    &nbsp;&nbsp;&nbsp; if( n&lt;2 ) {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return n;
+    &nbsp;&nbsp;&nbsp; } else {
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; int x, y;
+    &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;  task_group g;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; g.run([&amp;]{x=Fib(n-1);}); // spawn a task
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; g.run([&amp;]{y=Fib(n-2);}); // spawn another task
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; g.wait();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // wait for both tasks to complete
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return x+y;
+    &nbsp;&nbsp;&nbsp; }
+    }</pre>
+                                 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+                                            <p>Creating a large number of tasks
+                                                  for a single task_group is not scalable, because
+                                                  task creation becomes a serial bottleneck. If
+                                                  creating more than a small number of concurrent
+                                                  tasks, consider using
+                                                  <samp class="codeph">parallel_for</samp> or
+                                                  <samp class="codeph">parallel_invoke</samp> instead, or
+                                                  structure the spawning as a recursive tree.</p>
+
+                                 </div>
+                      </div>
+
+                      <div class="section"><h2 class="sectiontitle">Members</h2>
+                                 
+                                 <pre>namespace tbb {
+    &nbsp;&nbsp;&nbsp; class task_group {
+    &nbsp;&nbsp;&nbsp; public:
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; task_group();
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; ~task_group();
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; template&lt;typename Func&gt;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; void run( const Func&amp; f );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; template&lt;typename Func&gt; 
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; void run( task_handle&lt;Func&gt;&amp; handle );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; template&lt;typename Func&gt;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; void run_and_wait( const Func&amp; f );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; template&lt;typename Func&gt; 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void run_and_wait( task_handle&lt;Func&gt;&amp; handle );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; task_group_status wait(); 
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; bool is_canceling();
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; void cancel();
+    &nbsp;&nbsp;&nbsp; }
+    }</pre>
+                      </div>
+
+           </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_groups.htm">Task Groups</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/task_groups/task_group_cls/task_group_cls_members.htm">task_group Class Members</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

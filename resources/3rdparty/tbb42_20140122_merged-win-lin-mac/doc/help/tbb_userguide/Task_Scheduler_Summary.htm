@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Task Scheduler Summary">
+<meta name="DC.subject" content="Task Scheduler Summary">
+<meta name="keywords" content="Task Scheduler Summary">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/The_Task_Scheduler.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Task_Scheduler_Summary">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Task Scheduler Summary</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Task_Scheduler_Summary">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Task_Scheduler_Summary"><!-- --></a>
+
+
+<h1 class="topictitle1">Task Scheduler Summary</h1>
+
+<div><p>The task scheduler works most efficiently for fork-join parallelism with lots of forks, so that the task-stealing can cause sufficient breadth-first behavior to occupy threads, which then conduct themselves in a depth-first manner until they need to steal more work. </p>
+<p>The task scheduler is not the simplest possible scheduler because it is designed for speed. If you need to use it directly, it may be best to hide it behind a higher-level interface, as the templates <samp class="codeph">parallel_for</samp>, <samp class="codeph">parallel_reduce</samp>, etc. do. Some of the details to remember are:</p>
+
+<ul type="disc"><li><p>Always use <samp class="codeph">new(<var>allocation_method</var>) <var>T</var></samp> to allocate a <samp class="codeph">task</samp>, where <em>allocation_method</em> is one of the allocation methods of class <samp class="codeph">task</samp>. Do not create local or file-scope instances of a <samp class="codeph">task</samp>.</p>
+</li>
+<li><p>All siblings should be allocated before any start running, unless you are using <samp class="codeph">allocate_additional_child_of</samp>.</p>
+</li>
+<li><p>Exploit continuation passing, scheduler bypass, and task recycling to squeeze out maximum performance.</p>
+</li>
+<li><p>If a task completes, and was not marked for re-execution, it is automatically destroyed. Also, its successor’s reference count is decremented, and if it hits zero, the successor is automatically spawned. </p>
+</li>
+</ul>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/The_Task_Scheduler.htm">The Task Scheduler</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

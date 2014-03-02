@@ -1,0 +1,300 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Whole Table Operations">
+<meta name="DC.subject" content="Whole Table Operations">
+<meta name="keywords" content="Whole Table Operations">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_hash_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="whole_table_operations">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Whole Table Operations</title>
+</head>
+<body id="whole_table_operations">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="whole_table_operations"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Whole Table Operations</h1>
+ 
+  
+  <div> 
+	 <div class="section">
+		<p>These operations affect an entire table. Do not
+		  concurrently invoke them on the same table.
+		</p>
+
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d36398e34">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d36398e37">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">concurrent_hash_map( const
+						allocator_type&amp; a = allocator_type()&nbsp; )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p>Constructs empty table.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">concurrent_hash_map( size_type n,
+						const allocator_type&amp; a = allocator_type() )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p>Constructs empty table with preallocated
+						buckets for at least 
+						<samp class="codeph"><em>n</em></samp> items.
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3>
+						<p>In general, thread contention for
+						  buckets is inversely related to the number of buckets. If memory consumption is
+						  not an issue and 
+						  <em>P</em> threads will be accessing the 
+						  <samp class="codeph">concurrent_hash_map</samp>, set 
+						  <samp class="codeph"><em>n</em>&gt;=4P</samp>. 
+						</p>
+
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">concurrent_hash_map( const
+						concurrent_hash_map&amp; table, const allocator_type&amp; a = allocator_type()
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p>Copies a table. The table being copied
+						may have 
+						<samp class="codeph">const</samp> operations running on it concurrently.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">template&lt;typename&nbsp;
+						InputIterator&gt; concurrent_hash_map( InputIterator first, InputIterator
+						last,&nbsp; const allocator_type&amp; a = allocator_type() )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p>Constructs table containing copies of
+						elements in the iterator half-open interval [<em>first,last</em>).
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+
+                <tr> 
+                  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">concurrent_hash_map(
+                        const std::initializer_list&lt;value_type&gt; &amp;il
+                        , const allocator_type &amp;a = allocator_type() )</span> 
+                  </td>
+ 
+                  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+                     <p>C++11 specific; Equivalent to 
+                        <samp class="codeph">concurrent_hash_map(<em>il</em>.begin(), 
+                          <em>il</em>.end(), 
+                          <em>a</em>)</samp>.
+                     </p>
+ 
+                  </td>
+ 
+                </tr>
+ 
+				 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">~concurrent_hash_map()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p>Invokes 
+						<samp class="codeph">clear()</samp>. This method is not safe to execute
+						concurrently with other methods on the same 
+						<samp class="codeph">concurrent_hash_map</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">concurrent_hash_map&amp; operator=
+						( concurrent_hash_map&amp; source )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p>If source and destination
+						(<samp class="codeph">this</samp>) table are distinct, clears the destination table and
+						copies all key-value pairs from the source table to the destination table.
+						Otherwise, does nothing.
+					 </p>
+ 
+					 <p><strong>Returns</strong>
+					 </p>
+ 
+					 <p>Reference to the destination table.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+
+                <tr> 
+                  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">concurrent_hash_map&amp; operator=
+                        ( const std::initializer_list&lt;value_type&gt; &amp;il )</span> 
+                  </td>
+ 
+                  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+                     <p>C++11 specific; Sets 
+                        <samp class="codeph">*<em>this</em></samp> 
+                        to contain data from
+                        <samp class="codeph">il</samp>.
+                     </p>
+ 
+                     <p><strong>Returns</strong>
+                     </p>
+ 
+                     <p>Reference to the destination table.
+                     </p>
+ 
+                  </td>
+ 
+                </tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">void swap(
+						concurrent_hash_map&amp; table )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p>Swaps contents and allocators of 
+						<samp class="codeph">this</samp> and 
+						<samp class="codeph">table</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">void rehash( size_type n=0
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p>Internally, the table is partitioned into
+						buckets. Method 
+						<samp class="codeph">rehash</samp> reorgnizes these internal buckets in
+						a way that may improve performance of future lookups. Raises number of internal
+						buckets to 
+						<samp class="codeph"><em>n</em></samp> if 
+						<samp class="codeph"><em>n</em>&gt;0</samp> and 
+						<samp class="codeph"><em>n</em></samp> exceeds the current number of
+						buckets.
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+						<p>The current implementation never
+						  reduces the number of buckets. A future implementation might reduce the number
+						  of buckets if 
+						  <samp class="codeph"><em>n</em></samp> is less than the current number
+						  of buckets.
+						</p>
+
+					 </div> 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3>
+						<p>The ratio of items to buckets affects
+						  time and space usage by a table. A high ratio saves space at the expense of
+						  time. A low ratio does the opposite. The default ratio is 0.5 to 1 items per
+						  bucket on average.
+						</p>
+
+					 </div> 
+				  </td>
+ 
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">void clear()</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p>Erases all key-value pairs from the
+						table. Does not hash or compare any keys.
+					 </p>
+
+					 <p>If 
+						<samp class="codeph">TBB_USE_PERFORMANCE_WARNINGS</samp> is nonzero,
+						issues a performance warning if the randomness of the hashing is poor enough to
+						significantly impact performance. 
+					 </p>
+ 
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d36398e34 "><span class="keyword">allocator_type get_allocator()
+						const</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d36398e37 ">
+					 <p><strong>Returns</strong>: Copy of allocator used to
+						construct table.
+					 </p>
+
+				  </td>
+
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_hash_map_cls.htm">concurrent_hash_map Template Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

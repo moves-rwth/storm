@@ -1,0 +1,169 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Iterators">
+<meta name="DC.subject" content="Iterators">
+<meta name="keywords" content="Iterators">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_unordered_set_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="container_iterators_set_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Iterators</title>
+</head>
+<body id="container_iterators_set_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="container_iterators_set_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Iterators</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Template classes
+		  <samp class="codeph">concurrent_unordered_set</samp> and
+		  <samp class="codeph">concurrent_unordered_multiset</samp>
+                  support forward iterators;
+		  that is, iterators that can advance only forwards across a table. Reverse
+		  iterators are not supported. Concurrent operations (<samp class="codeph">count, find,
+			 insert</samp>) do 
+		  <em>not</em> invalidate any existing iterators that point into the table.
+		  Note that an iterator obtained via 
+		  <samp class="codeph">begin()</samp> will no longer point to the first item if 
+		  <samp class="codeph">insert</samp> inserts an item before it. 
+		  Erasure (<samp class="codeph">unsafe_erase</samp>) does <em>not</em> invalidate iterators
+		  other than those pointing to erased elements.
+		</p>
+ 
+		<p>Methods 
+		  <samp class="codeph">cbegin</samp> and 
+		  <samp class="codeph">cend</samp> follow C++11 conventions. They return 
+		  <samp class="codeph">const_iterator</samp> even if the object is non-const. 
+		</p>
+ 
+	 </div>
+ 
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the members
+		  of this template class. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="33.89830508474576%" id="d51575e72">Member 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="66.10169491525423%" id="d51575e75">Description 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d51575e72 "><span class="keyword">iterator begin()</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d51575e75 "> 
+				  <p><strong>Returns</strong>: 
+					 <samp class="codeph">iterator</samp> pointing to first item in the set. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d51575e72 "><span class="keyword">const_iterator begin()
+					 const</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d51575e75 "> 
+				  <p><strong>Returns</strong>: 
+					 <samp class="codeph">const_iterator</samp> pointing to first item in the
+					 set. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d51575e72 "><span class="keyword">iterator end()</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d51575e75 "> 
+				  <p><strong>Returns</strong>: 
+					 <samp class="codeph">iterator</samp> pointing to immediately past last
+					 item in the set. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d51575e72 "><span class="keyword">const_iterator end() const</span>
+				  
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d51575e75 "> 
+				  <p><strong>Returns</strong>: 
+					 <samp class="codeph">const_iterator</samp> pointing to immediately past
+					 last item in the set. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d51575e72 "><span class="keyword">const_iterator cbegin()
+					 const</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d51575e75 "> 
+				  <p><strong>Returns</strong>: 
+					 <samp class="codeph">const_iterator</samp> pointing to the first item in
+					 the set. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d51575e72 "><span class="keyword">const_iterator cend()
+					 const</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d51575e75 "> 
+				  <p><strong>Returns</strong>: 
+					 <samp class="codeph">const_iterator</samp> pointing to immediately after
+					 the last item in the set. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_unordered_set_cls.htm">concurrent_unordered_set and concurrent_unordered_multiset Template Classes</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

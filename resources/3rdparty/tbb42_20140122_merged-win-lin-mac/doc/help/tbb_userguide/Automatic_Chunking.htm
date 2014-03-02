@@ -1,0 +1,73 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Automatic Chunking">
+<meta name="DC.subject" content="Automatic Chunking">
+<meta name="keywords" content="Automatic Chunking">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/parallel_for.htm">
+<meta name="DC.Relation" scheme="URI" content="Controlling_Chunking.htm#tutorial_Controlling_Chunking">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Automatic_Chunking">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Automatic Chunking</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Automatic_Chunking">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Automatic_Chunking"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Automatic Chunking</h1>
+ 
+   
+  <div> 
+	 <p>A parallel loop construct incurs overhead cost for every chunk of work
+		that it schedules. Since version 2.2, Intel&reg; Threading Building Blocks (Intel&reg; TBB) chooses chunk sizes
+		automatically, depending upon load balancing needs.<a href="#ftn1"><sup><sup>[1]</sup></sup></a>
+		The heuristic attempts to limit overheads while still providing ample
+		opportunities for load balancing. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		<p>Typically a loop needs to take at least a million clock cycles to make
+		  it worth using 
+		  <samp class="codeph">parallel_for</samp>. For example, a loop that takes at least
+		  500 microseconds on a 2 GHz processor might benefit from 
+		  <samp class="codeph">parallel_for</samp>. 
+		</p>
+ 
+	 </div> 
+	 <p>The default automatic chunking is recommended for most uses. As with
+		most heuristics, however, there are situations where controlling the chunk size
+		more precisely might yield better performance. 
+	 </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/parallel_for.htm">parallel_for</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Controlling_Chunking.htm#tutorial_Controlling_Chunking">Controlling Chunking 
+		  </a></div></div>
+</div> 
+<p class="tfootnote"><a id="ftn1"><sup>[1]</sup></a>  In Intel&reg; TBB 2.1, the default
+		  was 
+		  <em>not</em> automatic. Compile with 
+		  <samp class="codeph">TBB_DEPRECATED=1</samp> to get the old default behavior.</p>
+</body>
+</html>

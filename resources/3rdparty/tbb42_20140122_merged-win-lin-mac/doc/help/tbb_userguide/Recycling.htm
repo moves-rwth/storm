@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Recycling">
+<meta name="DC.subject" content="Recycling">
+<meta name="keywords" content="Recycling">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Useful_Task_Techniques.htm">
+<meta name="DC.Relation" scheme="URI" content="Scheduler_Bypass.htm#tutorial_Scheduler_Bypass">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Recycling">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Recycling</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Recycling">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Recycling"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Recycling</h1>
+ 
+   
+  <div> 
+	 <p>Not only can you bypass the scheduler, you might also bypass task
+		allocation and deallocation. The opportunity frequently arises for recursive
+		tasks that do scheduler bypass. Consider the example in the 
+		<strong>Scheduler Bypass</strong> section. After it creates continuation task
+		"<samp class="codeph">c</samp>", it performs the following steps: 
+	 </p>
+ 
+	 <ol> 
+		<li> 
+		  <p>Create child task "<samp class="codeph">a</samp>". 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Create and spawn child task "<samp class="codeph">b</samp>" 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Return from method 
+			 <samp class="codeph">execute()</samp> with pointer to task "<samp class="codeph">a</samp>".
+			 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Destroy parent task. 
+		  </p>
+ 
+		</li>
+ 
+	 </ol>
+ 
+	 <p>Recycling the parent as "<samp class="codeph">a</samp>" can avoid the task creation
+		destruction done by steps 1 and 4. Furthermore, in many scenarios step 1 copies
+		state from the parent. Recycling the parent as task "<samp class="codeph">a</samp>"
+		eliminates the copying overhead. 
+	 </p>
+ 
+	 <p>The following code shows the changes required to implement recycling in
+		the scheduler-bypass example. 
+	 </p>
+ 
+	 <pre>struct FibTask: public task {
+    long n;
+    long* sum;
+    ...
+    task* execute() {
+        if( n&lt;CutOff ) {
+            *sum = SerialFib(n);
+            return NULL;
+        } else {
+            FibContinuation&amp; c = 
+                *new( allocate_continuation() ) FibContinuation(sum);
+            // FibTask&amp; a = *new( c.allocate_child() ) FibTask(n-2,&amp;c.x); This line removed
+            FibTask&amp; b = *new( c.allocate_child() ) FibTask(n-1,&amp;c.y);
+            recycle_as_child_of(c);
+            n -= 2;
+            sum = &amp;c.x;
+            // Set ref_count to "two children".
+            c.set_ref_count(2);
+            spawn( b );
+            // return &amp;a; This line removed
+            return this;
+        }
+    }
+};</pre> 
+	 <p>The child that was previously called 
+		<samp class="codeph">a</samp> is now the recycled 
+		<samp class="codeph">this</samp>. The call 
+		<samp class="codeph">recycle_as_child_of(c)</samp> has several effects: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p>It marks 
+			 <samp class="codeph">this</samp> as to 
+			 <em>not</em> be automatically destroyed when 
+			 <samp class="codeph">execute()</samp> returns. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>It sets the successor of 
+			 <samp class="codeph">this</samp> to be 
+			 <samp class="codeph">c</samp>. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>To prevent reference-counting problems, 
+		<samp class="codeph">recycle_as_child_of</samp> has a prerequisite that 
+		<samp class="codeph">this</samp> must have a NULL successor. This is the case after 
+		<samp class="codeph">allocate_continuation</samp> occurs. The following figure shows
+		how 
+		<samp class="codeph">allocate_continuation</samp> and 
+		<samp class="codeph">recycle_as_child_of</samp> transform the task graph. 
+	 </p>
+ 
+	 <div class="fignone" id="fig10"><a name="fig10"><!-- --></a><span class="figcap">Action of 
+		  <samp class="codeph">allocate_continuation</samp> Followed By 
+		  <samp class="codeph">recycle_as_child_of</samp></span> 
+		<br><img src="Images/image017.jpg" width="529" height="212"><br> 
+	 </div>
+ 
+	 <p>When recycling, ensure that the original task’s fields are not used
+		after the task might start running. The example uses the scheduler bypass trick
+		to ensure this. You can spawn the recycled task instead, as long as none of its
+		fields are used after the spawning. This restriction applies even to any 
+		<samp class="codeph">const</samp> fields, because after spawning the task might run
+		and be destroyed before the parent progresses any further. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		<p>A similar method, 
+		  <samp class="codeph">task::recycle_as_continuation()</samp> recycles a task as a
+		  continuation instead of a child. 
+		</p>
+ 
+	 </div> 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Useful_Task_Techniques.htm">Useful Task Techniques</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Scheduler_Bypass.htm#tutorial_Scheduler_Bypass">Scheduler Bypass 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

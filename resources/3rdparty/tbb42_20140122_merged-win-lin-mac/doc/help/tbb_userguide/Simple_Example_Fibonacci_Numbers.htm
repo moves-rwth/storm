@@ -1,0 +1,247 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Simple Example: Fibonacci Numbers">
+<meta name="DC.subject" content="Simple Example: Fibonacci Numbers">
+<meta name="keywords" content="Simple Example: Fibonacci Numbers">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/The_Task_Scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="Scheduler_Bypass.htm#tutorial_Scheduler_Bypass">
+<meta name="DC.Relation" scheme="URI" content="How_Task_Scheduling_Works.htm#tutorial_How_Task_Scheduling_Works">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Simple_Example_Fibonacci_Numbers">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Simple Example: Fibonacci Numbers</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Simple_Example_Fibonacci_Numbers">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Simple_Example_Fibonacci_Numbers"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Simple Example: Fibonacci Numbers</h1>
+ 
+   
+  <div> 
+	 <p>This section uses computation of the 
+		<var>n</var>th Fibonacci number as an example. This example uses
+		an inefficient method to compute Fibonacci numbers, but it demonstrates the
+		basics of a task library using a simple recursive pattern. To get scalable
+		speedup out of task-based programming, you need to specify a lot of tasks. This
+		is typically done in Intel&reg; TBB with a recursive task pattern. 
+	 </p>
+ 
+	 <p>This is the serial code: 
+	 </p>
+ 
+	 <pre>long SerialFib( long n ) {
+    if( n&lt;2 )
+        return n;
+    else
+        return SerialFib(n-1)+SerialFib(n-2);
+}</pre> 
+	 <p>The top-level code for the parallel task-based version is: 
+	 </p>
+ 
+	 <pre>long ParallelFib( long n ) {
+    long sum;
+    FibTask&amp; a = *new(task::allocate_root()) FibTask(n,&amp;sum);
+    task::spawn_root_and_wait(a);
+    return sum;
+}</pre> 
+	 <p>This code uses a task of type 
+		<samp class="codeph">FibTask</samp> to do the real work. It involves the following
+		distinct steps: 
+	 </p>
+ 
+	 <ol> 
+		<li> 
+		  <p>Allocate space for the task. This is done by a special "overloaded
+			 new" and method 
+	 <span class="option">task::allocate_root</span>. The 
+	 <samp class="codeph">_root</samp> suffix in the name denotes the fact that the task
+	 created has no parent. It is the root of a task tree. Tasks must be allocated
+	 by special methods so that the space can be efficiently recycled when the task
+	 completes. 
+	 </p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>Construct the task with the constructor 
+		  <samp class="codeph">FibTask(n,&amp;sum)</samp> invoked by 
+		  <samp class="codeph">new</samp>. When the task is run in step 3, it computes the
+		  nth Fibonacci number and stores it into 
+		  <samp class="codeph">*sum</samp>. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>Run the task to completion with 
+		  <samp class="codeph">task::spawn_root_and_wait</samp>. 
+		</p>
+ 
+	 </li>
+ 
+	 </ol>
+ 
+	 <p>The real work is inside struct 
+		<samp class="codeph">FibTask</samp>. Its definition is shown below. 
+	 </p>
+ 
+	 <pre>class FibTask: public task {
+public:
+    const long n;
+    long* const sum;
+    FibTask( long n_, long* sum_ ) :
+        n(n_), sum(sum_)
+    {}
+    task* execute() {      // Overrides virtual function task::execute
+        if( n&lt;CutOff ) {
+            *sum = SerialFib(n);
+        } else {
+            long x, y;
+            FibTask&amp; a = *new( allocate_child() ) FibTask(n-1,&amp;x);
+            FibTask&amp; b = *new( allocate_child() ) FibTask(n-2,&amp;y);
+            // Set ref_count to 'two children plus one for the wait".
+            set_ref_count(3);
+            // Start b running.
+            spawn( b );
+            // Start a running and wait for all children (a and b).
+            spawn_and_wait_for_all(a);
+            // Do the sum
+            *sum = x+y;
+        }
+        return NULL;
+    }
+};</pre> 
+	 <p>It is a relatively large piece of code, compared to 
+		<samp class="codeph">SerialFib</samp>, because it expresses parallelism without the
+		help of any extensions to standard C++. 
+	 </p>
+ 
+	 <p>Like all tasks scheduled by Intel&reg; TBB, 
+		<samp class="codeph">FibTask</samp> is derived from class 
+		<samp class="codeph">task</samp>. Fields 
+		<samp class="codeph">n</samp> and 
+		<samp class="codeph">sum</samp> hold respectively the input value and pointer to the
+		output. These are copies of the arguments passed to the constructor for 
+		<samp class="codeph">FibTask</samp>. Method 
+		<samp class="codeph">execute</samp> does the actual computation. Every task must
+		provide a definition of 
+		<samp class="codeph">execute</samp> that overrides the pure virtual method 
+	 <span class="option">task::execute</span>. The definition should do the work of the
+	 task, and return either NULL, or a pointer to the next task to run. In this
+	 simple example, it returns NULL. For more information on the non-NULL case see 
+	 <strong>Scheduler Bypass</strong>. 
+	 </p>
+ 
+	 <p>Method 
+	 <span class="option">FibTask::execute()</span>does the following: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p>Checks if 
+			 <samp class="codeph">n</samp> is so small that serial execution would be faster.
+			 Finding the right value of 
+			 <samp class="codeph">CutOff</samp> requires some experimentation. A value of at
+			 least 16 works well in practice for getting most of the possible speedup out of
+			 this example. Resorting to a sequential algorithm when the problem size becomes
+			 small is characteristic of most divide-and-conquer patterns for parallelism.
+			 Finding the point at which to switch requires experimentation, so be sure to
+			 write your code in a way that allows you to experiment. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>If the 
+			 <samp class="codeph">else</samp> is taken, the code creates and runs two child
+			 tasks that compute the (<samp class="codeph">n</samp>-1)th and (<samp class="codeph">n</samp>-2)th
+			 Fibonacci numbers. Here, inherited method 
+			 <samp class="codeph">allocate_child()</samp> is used to allocate space for the
+			 task. Remember that the top-level routine 
+			 <samp class="codeph">ParallelFib</samp> used 
+			 <samp class="codeph">allocate_root()</samp> to allocate space for a task. The
+			 difference is that here the task is creating 
+			 <em>child</em> tasks. This relationship is indicated by the choice of
+			 allocation method. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Calls 
+			 <samp class="codeph">set_ref_count(3)</samp>. The number 
+			 <samp class="codeph">3</samp> represents the two children and an additional
+			 implicit reference that is required by method 
+			 <samp class="codeph">spawn_and_wait_for_all</samp>. Make sure to call 
+			 <samp class="codeph">set_reference_count(3)</samp> before spawning any children.
+			 Failure to do so results in undefined behavior. The debug version of the
+			 library usually detects and reports this type of error. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Spawns two child tasks. Spawning a task indicates to the scheduler
+			 that it can run the task whenever it chooses, possibly in parallel with other
+			 tasks. For more information on the execution policy see 
+			 <strong>How Task Scheduling Works</strong>. The first spawning, by method 
+			 <samp class="codeph">spawn</samp>, returns immediately without waiting for the
+			 child task to start executing. The second spawning, by method 
+			 <samp class="codeph">spawn_and_wait_for_all</samp>, causes the parent to wait
+			 until all currently allocated child tasks are finished. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>After the two child tasks complete, the parent computes 
+			 <samp class="codeph">x+y</samp> and stores it in 
+			 <samp class="codeph">*sum</samp>. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>At first glance, the parallelism might appear to be limited, because the
+		task creates only two child tasks. The trick here is 
+		<em>recursive parallelism.</em> The two child tasks each create two child
+		tasks, and so on, until 
+		<samp class="codeph">n&lt;Cutoff</samp>. This chain reaction creates a lot of
+		potential parallelism. The advantage of the task scheduler is that it turns
+		this potential parallelism into real parallelism in a very efficient way,
+		because it chooses tasks to run in a way that keeps physical threads busy with
+		relatively little context switching. 
+	 </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/The_Task_Scheduler.htm">The Task Scheduler</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Scheduler_Bypass.htm#tutorial_Scheduler_Bypass">Scheduler Bypass 
+		  </a></div>
+<div><a href="How_Task_Scheduling_Works.htm#tutorial_How_Task_Scheduling_Works">How Task Scheduling Works 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

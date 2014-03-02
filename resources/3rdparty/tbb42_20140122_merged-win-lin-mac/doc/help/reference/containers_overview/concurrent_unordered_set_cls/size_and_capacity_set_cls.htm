@@ -1,0 +1,117 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Size and Capacity">
+<meta name="DC.subject" content="Size and Capacity">
+<meta name="keywords" content="Size and Capacity">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_unordered_set_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="size_and_capacity_set_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Size and Capacity</title>
+</head>
+<body id="size_and_capacity_set_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="size_and_capacity_set_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Size and Capacity</h1>
+ 
+  
+  <div> 
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the members
+		  of this template class. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="33.89830508474576%" id="d54420e29">Member 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="66.10169491525423%" id="d54420e32">Description 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d54420e29 "><span class="keyword">bool empty() const</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d54420e32 "> 
+				  <p><strong>Returns</strong>: 
+					 <samp class="codeph">size()!=0.</samp> 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d54420e29 "><span class="keyword">size_type size() const</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d54420e32 "> 
+				  <p><strong>Returns</strong>: Number of items in 
+					 <samp class="codeph">*this</samp>. 
+				  </p>
+ 
+				  <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+					 <p>Though the current implementation takes
+						time 
+						<samp class="codeph">O(1)</samp>, possible future implementations might
+						take time 
+						<samp class="codeph">O(P)</samp>, where 
+						<samp class="codeph">P</samp> is the number of hardware threads. 
+					 </p>
+ 
+				  </div> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d54420e29 "><span class="keyword">size_type max_size() const</span>
+				  
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d54420e32 "> 
+				  <p><strong>Returns</strong>: Upper bound on number of
+					 items that 
+					 <samp class="codeph">*this</samp> can hold. 
+				  </p>
+ 
+				  <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+					 <p>The upper bound may be much higher than
+						what the container can actually hold. 
+					 </p>
+ 
+				  </div> 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_unordered_set_cls.htm">concurrent_unordered_set and concurrent_unordered_multiset Template Classes</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

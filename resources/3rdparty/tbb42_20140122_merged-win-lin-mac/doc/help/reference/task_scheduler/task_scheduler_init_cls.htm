@@ -1,0 +1,201 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="task_scheduler_init Class">
+<meta name="DC.subject" content="task_scheduler_init Class">
+<meta name="keywords" content="task_scheduler_init Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler/task_scheduler_init_cls/task_scheduler_init.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler/task_scheduler_init_cls/task_scheduler_init_1.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_scheduler_init_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>task_scheduler_init Class</title>
+</head>
+<body id="task_scheduler_init_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_scheduler_init_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">task_scheduler_init Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Class that explicitly represents thread's interest
+		  in task scheduling services. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<p> 
+		  <pre>class task_scheduler_init;</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<p> 
+		  <pre>#include "tbb/task_scheduler_init.h"</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>Using 
+		  <samp class="codeph">task_scheduler_init</samp> is optional in Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.2. By
+		  default, Intel&reg; TBB 2.2 automatically creates a task scheduler the first time
+		  that a thread uses task scheduling services and destroys it when the last such
+		  thread exits. 
+		</p>
+ 
+		<p>An instance of 
+		  <samp class="codeph">task_scheduler_init</samp> can be used to control the
+		  following aspects of the task scheduler: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>When the task scheduler is constructed and
+				destroyed. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The number of threads used by the task
+				scheduler. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The stack size for worker threads. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>To override the automatic defaults for task
+		  scheduling, a<samp class="codeph"> task_scheduler_init</samp> must become active before
+		  the first use of task scheduling services. 
+		</p>
+ 
+		<p>A 
+		  <samp class="codeph">task_scheduler_init</samp> is either "active" or "inactive". 
+		</p>
+ 
+		<p>The default constructor for a 
+		  <samp class="codeph">task_scheduler_init</samp> activates it, and the destructor
+		  deactivates it. To defer activation, pass the value 
+		  <samp class="codeph">task_scheduler_init::deferred</samp> to the constructor. Such
+		  a 
+		  <samp class="codeph">task_scheduler_init</samp> may be activated later by calling
+		  method 
+		  <samp class="codeph">initialize</samp>. Destruction of an active 
+		  <samp class="codeph">task_scheduler_init</samp> implicitly deactivates it. To
+		  deactivate it earlier, call method 
+		  <samp class="codeph">terminate</samp>. 
+		</p>
+ 
+		<p>An optional parameter to the constructor and method
+		  
+		  <samp class="codeph">initialize</samp> allows you to specify the number of threads
+		  to be used for 
+		  <samp class="codeph">task</samp> execution. This parameter is useful for scaling
+		  studies during development, but should not be set for production use. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		  <p>The reason for not specifying the number of
+			 threads in production code is that in a large software project, there is no way
+			 for various components to know how many threads would be optimal for other
+			 threads. Hardware threads are a shared global resource. It is best to leave the
+			 decision of how many threads to use to the task scheduler. 
+		  </p>
+ 
+		</div> 
+		<p>To minimize time overhead, it is best to rely upon
+		  automatic creation of the task scheduler, or create a single 
+		  <samp class="codeph">task_scheduler_init</samp> object whose activation spans all
+		  uses of the library's task scheduler. A 
+		  <samp class="codeph">task_scheduler_init</samp> is not assignable or
+		  copy-constructible. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<pre>// Sketch of one way to do a scaling study
+#include &lt;iostream&gt;
+#include "tbb/task_scheduler_init.h"
+&nbsp;
+int main() {
+   &nbsp; int n = task_scheduler_init::default_num_threads();
+   &nbsp; for( int p=1; p&lt;=n; ++p ) {
+       &nbsp; // Construct task scheduler with p threads
+       &nbsp; task_scheduler_init init(p);
+       &nbsp; tick_count t0 = tick_count::now();
+    &nbsp;   &nbsp; ... execute parallel algorithm using task or
+           &nbsp;  template algorithm here...
+       &nbsp; tick_count t1 = tick_count::now();
+       &nbsp; double t = (t1-t0).seconds();
+       &nbsp; cout &lt;&lt; "time = " &lt;&lt; t &lt;&lt; " with " &lt;&lt; p &lt;&lt; "threads\n";
+       &nbsp; // Implicitly destroy task scheduler.
+   &nbsp; }
+   &nbsp; return 0;
+}</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>  namespace tbb {
+      &nbsp; typedef <em>unsigned-integral-type</em> stack_size_type;
+    &nbsp;
+      &nbsp; class task_scheduler_init {
+      &nbsp; public:
+          &nbsp; static const int automatic = <em>implementation-defined</em>;
+          &nbsp; static const int deferred = <em>implementation-defined</em>;
+          &nbsp; task_scheduler_init( int max_threads=automatic, 
+                               &nbsp; stack_size_type thread_stack_size=0 );
+          &nbsp; ~task_scheduler_init();
+          &nbsp; void initialize( int max_threads=automatic );
+          &nbsp; void terminate();
+          &nbsp; static int default_num_threads();
+          &nbsp; bool is_active() const;
+      &nbsp; };
+    } // namespace tbb</pre> 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/task_scheduler/task_scheduler_init_cls/task_scheduler_init.htm">task_scheduler_init( int max_threads=automatic, stack_size_type thread_stack_size=0 )</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/task_scheduler/task_scheduler_init_cls/task_scheduler_init_1.htm">~task_scheduler_init()</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

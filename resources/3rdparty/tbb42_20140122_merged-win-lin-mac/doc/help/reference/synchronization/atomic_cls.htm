@@ -1,0 +1,458 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="atomic Template Class">
+<meta name="DC.subject" content="atomic Template Class">
+<meta name="keywords" content="atomic Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="atomic_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>atomic Template Class</title>
+</head>
+<body id="atomic_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="atomic_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">atomic Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Template class for atomic operations. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename T&gt; atomic;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/atomic.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>An 
+		  <samp class="codeph">atomic&lt;T&gt;</samp> supports atomic read, write,
+		  fetch-and-add, fetch-and-store, and compare-and-swap. Type T may be an integral
+		  type, enumeration type, or a pointer type. When T is a pointer type, arithmetic
+		  operations are interpreted as pointer arithmetic. For example, if 
+		  <samp class="codeph"><em>x</em></samp> has type 
+		  <samp class="codeph">atomic&lt;float*&gt;</samp> and a float occupies four bytes,
+		  then 
+		  <samp class="codeph"><em>++x</em></samp> advances 
+		  <samp class="codeph"><em>x</em></samp> by four bytes. Arithmetic on 
+		  <samp class="codeph">atomic&lt;T&gt;</samp> is not allowed if 
+		  <samp class="codeph">T</samp> is an enumeration type, 
+		  <samp class="codeph">void*</samp>, or 
+		  <samp class="codeph">bool</samp>. 
+		</p>
+ 
+		<p>Some of the methods have template method variants
+		  that permit more selective memory fencing. On IA-32 and Intel&reg; 64 architecture
+		  processors, they have the same effect as the non-templated variants. On
+		  processors with IA-64 architecture, they may improve performance by allowing
+		  the memory subsystem more latitude on the orders of reads and write. Using them
+		  may improve performance. The table below shows the fencing for the non-template
+		  form. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl29"><!-- --></a><table cellpadding="4" summary="" id="tbl29" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Operation Order Implied by Non-Template
+		  Methods</span></caption> 
+		   
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d95291e103"> 
+				  <p>Kind 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d95291e109"> 
+				  <p>Description 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d95291e115"> 
+				  <p>Default For 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+ 
+		  </thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d95291e103 "> 
+				  <p>acquire 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d95291e109 "> 
+				  <p>Operations after the atomic operation never
+					 move over it. 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d95291e115 "> 
+				  <p>read 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d95291e103 "> 
+				  <p>release 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d95291e109 "> 
+				  <p>Operations before the atomic operation
+					 never move over it. 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d95291e115 "> 
+				  <p>write 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d95291e103 "> 
+				  <p>sequentially consistent 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d95291e109 "> 
+				  <p>Operations on either side never move over
+					 it and furthermore, the sequentially consistent atomic operations have a global
+					 order. 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d95291e115 "><samp class="codeph"> fetch_and_store,
+					 fetch_and_add, compare_and_swap 
+				  </samp> 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>The copy constructor for class 
+			 <samp class="codeph">atomic&lt;T&gt;</samp> is not atomic. To atomically copy
+			 an<samp class="codeph"> atomic&lt;T&gt;</samp>, default-construct the copy first and
+			 assign to it. Below is an example that shows the difference. 
+		  </p>
+ 
+		</div> 
+		<pre>      
+           atomic&lt;T&gt; y(x);  // Not atomic
+           atomic&lt;T&gt; z;
+           z=x;             // Atomic assignment</pre> 
+		<p>The copy constructor is not atomic because it is
+		  compiler generated. In C++03 introducing any non-trivial constructors might
+		  remove an important property of 
+		  <samp class="codeph">atomic&lt;T&gt;</samp>: namespace scope instances are
+		  zero-initialized before namespace scope dynamic initializers run. This property
+		  can be essential for code executing early during program startup. 
+		</p>
+ 
+		<p>In C++03, to create an 
+		  <samp class="codeph">atomic&lt;T&gt;</samp> with a specific value,
+		  default-construct it first, and afterwards assign a value to it. In C++11 there
+		  is 
+		  <samp class="codeph">constexpr</samp> single argument constructor. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+                enum memory_semantics {
+                    acquire,
+                    release
+                };
+             
+                struct atomic&lt;T&gt; {
+                    typedef T value_type;
+                    
+                    //C++11 specific:
+                    atomic() = default;
+                    constexpr atomic(T arg)
+                    //end of C++11 specific
+             
+                    template&lt;memory_semantics M&gt;
+                    value_type compare_and_swap( value_type new_value, 
+                                                 value_type comparand );
+             
+                    value_type compare_and_swap( value_type new_value, 
+                                                 value_type comparand );
+             
+                    template&lt;memory_semantics M&gt;
+                    value_type fetch_and_store( value_type new_value );
+             
+                    value_type fetch_and_store( value_type new_value );
+             
+                    operator value_type() const;
+             
+                    value_type operator=( value_type new_value );
+                    atomic&lt;T&gt;&amp; operator=( const atomic&lt;T&gt;&amp; value );
+             
+                    // The following members exist only if T is an integral 
+                    // or pointer type.
+             
+                    template&lt;memory_semantics M&gt;
+                    value_type fetch_and_add( value_type addend );
+             
+                    value_type fetch_and_add( value_type addend );
+             
+                    template&lt;memory_semantics M&gt;
+                    value_type fetch_and_increment();
+             
+                    value_type fetch_and_increment();
+             
+                    template&lt;memory_semantics M&gt;
+                    value_type fetch_and_decrement();
+             
+                    value_type fetch_and_decrement();
+             
+                    value_type operator+=(value_type);
+                    value_type operator-=(value_type);
+                    value_type operator++();
+                    value_type operator++(int);
+                    value_type operator--();
+                    value_type operator--(int);
+                };
+            } </pre> 
+		<p>So that an atomic&lt;T*&gt; can be used like a
+		  pointer to T, the specialization atomic&lt;T*&gt; also defines: 
+		</p>
+ 
+		<pre>        T* operator-&gt;() const;</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d95291e248">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d95291e251">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d95291e248 "><span class="keyword">memory_semantics Enum 
+					 </span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d95291e251 "> 
+					 <p>Defines values used to select the
+						template variants that permit more selective control over visibility of
+						operations (see the table above). 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d95291e248 "><span class="keyword">atomic() = default 
+					 </span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d95291e251 "> 
+					 <p>C++11 Specific; 
+					 </p>
+ 
+					 <p>Default constructor generated by
+						compiler. This constructor behaves same as if there were no user defined
+						constrcutors declared at all. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d95291e248 "><span class="keyword">constexpr atomic(value_type arg) 
+					 </span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d95291e251 "> 
+					 <p>C++11 Specific; 
+					 </p>
+ 
+					 <p>Initialize 
+						<samp class="codeph">*this</samp> with value of arg. If the argument is
+						a translation time constant, then initialization is performed during
+						translation time, overwise initialization is performed at run time. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d95291e248 "><span class="keyword">value_type fetch_and_add(
+						value_type addend )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d95291e251 "> 
+					 <p>Let 
+						<samp class="codeph"><em>x</em></samp> be the value of 
+						<samp class="codeph">*this</samp>. Atomically updates 
+						<samp class="codeph"><em>x = x +</em></samp> addend. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Original value of 
+						<samp class="codeph"><em>x</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d95291e248 "><span class="keyword"> value_type
+						fetch_and_increment()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d95291e251 "> 
+					 <p>Let x be the value of 
+						<samp class="codeph">*this</samp>. Atomically updates 
+						<samp class="codeph"><em>x = x + 1</em>. 
+						</samp> 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Original value
+						of<samp class="codeph"><em> x</em>.</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d95291e248 "><span class="keyword">value_type
+						fetch_and_decrement()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d95291e251 "> 
+					 <p>Let 
+						<samp class="codeph"><em>x</em></samp> be the value of *this. Atomically
+						updates 
+						<samp class="codeph"><em>x = x</em> - 1. 
+						</samp> 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Original value
+						of<samp class="codeph"><em> x.</em></samp> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d95291e248 "><span class="keyword">value_type
+						compare_and_swap</span> 
+					 <p>value_type compare_and_swap( value_type
+						new_value, value_type comparand ) 
+					 </p>
+ 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d95291e251 "> 
+					 <p>Let 
+						<em>x</em> be the value of 
+						<samp class="codeph">*this</samp>. Atomically compares 
+						<samp class="codeph"><em>x</em></samp> with comparand, and if they are
+						equal, sets<samp class="codeph"><em> x</em></samp>=new_value. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Original value of 
+						<samp class="codeph">x.</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d95291e248 "><span class="keyword">value_type fetch_and_store(
+						value_type new_value )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d95291e251 "> 
+					 <p>Let 
+						<samp class="codeph">x</samp> be the value of 
+						<samp class="codeph">*this</samp>. Atomically exchanges old value of 
+						<samp class="codeph"><em>x</em></samp> with new_value. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Original value of 
+						<samp class="codeph"><em>x</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/synchronization.htm">Synchronization</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

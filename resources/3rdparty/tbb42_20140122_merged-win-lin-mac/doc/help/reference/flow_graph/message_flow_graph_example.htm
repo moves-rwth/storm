@@ -1,0 +1,157 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Message Flow Graph Example">
+<meta name="DC.subject" content="Message Flow Graph Example">
+<meta name="keywords" content="Message Flow Graph Example">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="message_flow_graph_example">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Message Flow Graph Example</title>
+</head>
+<body id="message_flow_graph_example">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="message_flow_graph_example"><!-- --></a>
+
+
+  <h1 class="topictitle1">Message Flow Graph Example</h1>
+
+  
+  <div>
+	 <p>This example calculates the sum
+		<span class="keyword">x*x + x*x*x</span> for all
+		<span class="keyword">x = 1 to 10</span>. The layout of this example is shown in
+		the figure below.
+	 </p>
+
+	 <div class="fignone" id="fig6_message_flow_graph"><a name="fig6_message_flow_graph"><!-- --></a><span class="figcap">A simple message flow graph.</span>
+		
+		<br><div class="imagecenter"><img src="../Resources/message_flow_graph.jpg" height="252" width="454" alt="A simple flow graph." align="center"></div><br>
+	 </div>
+
+	 <p>Each value enters through the
+		<span class="keyword">input_node&lt;int&gt;</span>
+		<span class="keyword">input</span>. This node broadcasts the value to both
+		<span class="keyword">squarer</span> and
+		<span class="keyword">cuber</span>, which calculate
+		<span class="keyword">x*x</span> and
+		<span class="keyword">x*x*x</span> respectively. The output of each of these nodes
+		is put to one of
+		<span class="keyword">join</span>'s ports. A tuple containing both values is
+		created by
+		<span class="keyword">join_node&lt; tuple&lt;int,int&gt; &gt; join</span> and
+		forwarded to
+		<span class="keyword">summer</span>, which adds both values to the running total.
+		Both
+		<span class="keyword">squarer</span> and
+		<span class="keyword">cuber</span> allow unlimited concurrency, that is they each
+		may process multiple values simultaneously. The final
+		<span class="keyword">summer</span>, which updates a shared total, is only allowed
+		to process a single incoming tuple at a time, eliminating the need for a lock
+		around the shared value.
+	 </p>
+
+	 <pre>#include &lt;cstdio&gt;
+#include "tbb/flow_graph.h"
+
+using namespace tbb::flow;
+
+struct square {
+  int operator()(int v) { return v*v; }
+};
+
+struct cube {
+  int operator()(int v) { return v*v*v; }
+};
+
+class sum {
+  int &amp;my_sum;
+public:
+  sum( int &amp;s ) : my_sum(s) {}
+  int operator()( tuple&lt; int, int &gt; v ) {
+    my_sum += get&lt;0&gt;(v) + get&lt;1&gt;(v);
+    return my_sum;
+  }
+};
+
+int main() {
+  int result = 0;
+
+  graph g;
+  broadcast_node&lt;int&gt; input(g);
+  function_node&lt;int,int&gt; squarer( g, unlimited, square() );
+  function_node&lt;int,int&gt; cuber( g, unlimited, cube() );
+  join_node&lt; tuple&lt;int,int&gt;, queueing &gt; join( g );
+  function_node&lt;tuple&lt;int,int&gt;,int&gt;
+      summer( g, serial, sum(result) );
+
+  make_edge( input, squarer );
+  make_edge( input, cuber );
+  make_edge( squarer, get&lt;0&gt;( join.input_ports() ) );
+  make_edge( cuber, get&lt;1&gt;( join.input_ports() ) );
+  make_edge( join, summer );
+
+  for (int i = 1; i &lt;= 10; ++i)
+      input.try_put(i);
+  g.wait_for_all();
+
+  printf("Final result is %d\n", result);
+  return 0;
+}</pre>
+	 <p>In the example code above, the classes
+		<span class="keyword">square</span>,
+		<span class="keyword">cube</span> and
+		<span class="keyword">sum</span> define the three user-defined operations. Each
+		class is used to create a
+		<span class="keyword">function_node</span>.
+	 </p>
+
+	 <p>In function
+		<span class="keyword">main</span>, the flow graph is set up and then the values
+		1-10 are put into the node
+		<span class="keyword">input</span>. All the nodes in this example pass around
+		values of type
+		<span class="keyword">int</span>. The nodes used in this example are all class
+		templates and therefore can be used with any type that supports copy
+		construction, including pointers and objects.
+	 </p>
+
+	 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+		<p> Values are copied as they pass between nodes and therefore passing
+		  around large objects should be avoided. To avoid large copy overheads, pointers
+		  to large objects can be passed instead.
+		</p>
+
+	 </div>
+	 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3>
+		<p>This is a simple syntactic example only. Since each node in a flow
+		  graph may execute as an independent task, the granularity of each node should
+		  follow the general guidelines for tasks as described in Section 3.2.3 of the
+		  Intel&reg; Threading Building Blocks Tutorial.
+		</p>
+
+	 </div>
+	 <p>The classes and functions used in this example are described in detail
+		in topics linked from the Flow Graph parent topic.
+	 </p>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

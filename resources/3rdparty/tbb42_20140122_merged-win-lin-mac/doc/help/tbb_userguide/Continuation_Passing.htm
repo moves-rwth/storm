@@ -1,0 +1,191 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Continuation Passing">
+<meta name="DC.subject" content="Continuation Passing">
+<meta name="keywords" content="Continuation Passing">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Useful_Task_Techniques.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Continuation_Passing">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Continuation Passing</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Continuation_Passing">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Continuation_Passing"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Continuation Passing</h1>
+ 
+   
+  <div> 
+	 <p>Method 
+		<samp class="codeph">spawn_and_wait_for_all</samp> enables an executing parent task
+		to wait until its child tasks complete, but can incur some inefficiency. When a
+		thread calls 
+		<samp class="codeph">spawn_and_wait_for_all</samp>, it keeps busy until all of the
+		childen complete by working on other tasks. Sometimes the parent task becomes
+		ready to continue, but cannot do so immediately because its thread is still
+		executing one of the other tasks. The solution is for the parent to not wait on
+		its children, and instead spawn both children and return. The children are
+		allocated not as children of the parent, but as children of the parent’s 
+		<em>continuation task</em>. Any idle thread can steal and run the
+		continuation task when its children complete. 
+	 </p>
+ 
+	 <p>The "continuation-passing" variant of 
+		<samp class="codeph">FibTask</samp> described in 
+		<a href="Simple_Example_Fibonacci_Numbers.htm#tutorial_Simple_Example_Fibonacci_Numbers">Simple Example</a> is shown below. 
+	 <ul type="disc">
+		<li>
+		  <p>Insertions are shown in 
+			 <samp class="codeph"><span style="color:blue"><strong>bold font</strong></span></samp>
+		  </p>
+
+		</li>
+
+		<li>
+		  <p>Deletions are commented out.
+		  </p>
+
+		</li>
+
+	 </ul>
+
+	 </p>
+
+	 <pre><span style="color:blue"><strong>struct FibContinuation: public task {
+    long* const sum;
+    long x, y;
+    FibContinuation( long* sum_ ) : sum(sum_) {}
+    task* execute() {
+        *sum = x+y;
+        return NULL;
+    }
+};</strong></span>
+&nbsp;
+struct FibTask: public task {
+    const long n;
+    long* const sum;
+    FibTask( long n_, long* sum_ ) :
+        n(n_), sum(sum_)
+    {}
+    task* execute() {
+        if( n&lt;CutOff ) {
+            *sum = SerialFib(n);
+            return NULL;
+        } else {
+            // long x, y; This line removed 
+            <span style="color:blue"><strong>FibContinuation&amp; c = 
+                *new( allocate_continuation() ) FibContinuation(sum);</strong></span>
+            FibTask&amp; a = *new( <span style="color:blue"><strong>c.</strong></span>allocate_child() ) FibTask(n-2,&amp;<span style="color:blue">c.</span>x);
+            FibTask&amp; b = *new( <span style="color:blue"><strong>c.</strong></span>allocate_child() ) FibTask(n-1,&amp;<span style="color:blue">c.</span>y);
+            // Set ref_count to "two children plus one for the wait".
+            <span style="color:blue"><strong>c.</strong></span>set_ref_count(<span style="color:blue"><strong>2</strong></span>);
+            spawn( b );
+            <span style="color:blue"><strong>spawn</strong></span>( a );
+	    // *sum = x+y; This line removed
+            return NULL;
+        }
+    }
+};</pre> 
+	 <p>The following differences between the original version and the
+		continuation version need to be understood: 
+	 </p>
+ 
+	 <p>The big difference is that in the original version 
+		<samp class="codeph">x</samp> and 
+		<samp class="codeph">y</samp> were local variables in method 
+		<samp class="codeph">execute</samp>. In the continuation-passing version, they
+		cannot be local variables, because the parent returns before its children
+		complete. Instead, they are fields of the continuation task 
+		<samp class="codeph">FibContinuation.</samp> 
+	 </p>
+ 
+	 <p>The allocation logic is changed. The continuation is allocated with 
+		<samp class="codeph">allocate_continuation</samp>. It is similar to 
+		<samp class="codeph">allocate_child</samp>, except that it forwards the 
+		<em>successor</em> of 
+		<samp class="codeph">this</samp> to 
+		<samp class="codeph">c</samp>, and sets the 
+		<em>successor</em> of 
+		<samp class="codeph">this</samp> to NULL. The following figure summarizes the
+		transformation: 
+	 </p>
+ 
+	 <div class="fignone" id="fig9"><a name="fig9"><!-- --></a><span class="figcap">Action of 
+		  <samp class="codeph">allocate_continuation</samp></span> 
+		<br><img src="Images/image016.jpg" width="432" height="128"><br> 
+	 </div>
+ 
+	 <p>A property of the transformation is that it does not change the
+		reference count of the successor, and thus avoids interfering with
+		reference-counting logic. 
+	 </p>
+ 
+	 <p>The reference count is set to 
+		<samp class="codeph">2</samp>, the number of children. In the original version, it
+		was set to 
+		<samp class="codeph">3</samp> because 
+		<samp class="codeph">spawn_and_wait_for_all</samp> required the augmented count.
+		Furthermore, the code sets the reference count of the continuation instead of
+		the parent, because it is the execution of the continuation that waits on the
+		children. 
+	 </p>
+ 
+	 <p>The pointer 
+		<samp class="codeph">sum</samp> is passed to the continuation by the constructor,
+		because it is now 
+		<samp class="codeph">FibContinuation</samp> that stores into 
+		<samp class="codeph">*sum</samp>. The children are still allocated with 
+		<samp class="codeph">allocate_child</samp>, but notice that now they are allocated
+		as children of the continuation 
+		<samp class="codeph">c</samp>, not the parent. This is so that 
+		<samp class="codeph">c</samp>, and not 
+		<samp class="codeph">this</samp>, becomes the successor of the children that is
+		automatically spawned when both children complete. If you accidentally used 
+		<samp class="codeph">this.allocate_child()</samp>, then the parent task would run
+		again after both children completed. 
+	 </p>
+ 
+	 <p>If you remember how the original top-level code, 
+		<samp class="codeph">ParallelFib</samp>, was written, you might be worried now that
+		continuation-passing style breaks the code, because now the root 
+		<samp class="codeph">FibTask</samp> completes before the children are done, and the
+		top-level code used 
+		<samp class="codeph">spawn_root_and_wait</samp> to wait on the root 
+		<samp class="codeph">FibTask</samp>. This is not a problem, because 
+		<samp class="codeph">spawn_root_and_wait</samp> is designed to work correctly with
+		continuation-passing style. An invocation 
+		<samp class="codeph">spawn_root_and_wait(<var>x</var>)</samp> does not
+		actually wait for 
+		<var>x</var> to complete. Instead, it constructs a dummy
+		successor of 
+		<var>x</var>, and waits for the successors’s reference count to
+		be decremented. Because 
+		<samp class="codeph">allocate_continuation</samp> forwards this dummy successor to
+		the continuation, the dummy successor’s reference count is not decremented
+		until the continuation completes. 
+	 </p>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Useful_Task_Techniques.htm">Useful Task Techniques</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

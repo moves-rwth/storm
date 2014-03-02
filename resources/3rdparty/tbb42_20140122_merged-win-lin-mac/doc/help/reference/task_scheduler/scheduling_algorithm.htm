@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Scheduling Algorithm">
+<meta name="DC.subject" content="Scheduling Algorithm">
+<meta name="keywords" content="Scheduling Algorithm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Non-Preemptive_Priorities.htm#Non-Preemptive_Priorities">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="scheduling_algorithm">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Scheduling Algorithm</title>
+</head>
+<body id="scheduling_algorithm">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="scheduling_algorithm"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Scheduling Algorithm</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>The scheduler employs a technique known as 
+		  <em>work stealing</em>. Each thread keeps a "ready pool" of tasks that
+		  are ready to run. The ready pool is structured as a deque (double-ended queue)
+		  of task objects that were 
+		  <em>spawned</em>. Additionally, there is a shared queue of 
+		  <samp class="codeph">task</samp> objects that were 
+		  <em>enqueued</em>. The distinction between spawning a task and enqueuing
+		  a task affects when the scheduler runs the task. 
+		</p>
+ 
+		<p>After completing a task 
+		  <samp class="codeph"><em>t</em></samp>, a thread chooses its next task according to
+		  the first applicable rule below: 
+		</p>
+ 
+		<ol class="ol_3"> 
+		  <li>The task returned by 
+			 <samp class="codeph"><em>t</em>.execute()</samp> 
+		  </li>
+ 
+		  <li>The successor of 
+			 <samp class="codeph"><em>t</em></samp> if 
+			 <samp class="codeph"><em>t</em></samp> was its last completed predecessor. 
+		  </li>
+ 
+		  <li>A task popped from the end of the thread’s own deque. 
+		  </li>
+ 
+		  <li>A task with affinity for the thread. 
+		  </li>
+ 
+		  <li>A task popped from approximately the beginning of the shared queue.
+			 
+		  </li>
+ 
+		  <li>A task popped from the beginning of another randomly chosen
+			 thread’s deque. 
+		  </li>
+ 
+		</ol>
+ 
+		<p>When a thread 
+		  <samp class="codeph"><em>spawns</em></samp> a task, it pushes it onto the end of its
+		  own deque. Hence rule (3) above gets the task most recently spawned by the
+		  thread, whereas rule (6) gets the least recently spawned task of another
+		  thread. 
+		</p>
+ 
+		<p>When a thread 
+		  <em>enqueues</em> a task, it pushes it onto the end of the shared queue.
+		  Hence rule (5) gets one of the less recently enqueued tasks, and has no
+		  preference for tasks that are enqueued. This is in contrast to spawned tasks,
+		  where by rule (3) a thread prefers its own most recently spawned task. 
+		</p>
+ 
+		<p>Note the “approximately” in rule (5). For scalability reasons, the
+		  shared queue does 
+		  <strong>not</strong> guarantee precise first-in first-out behavior. If strict
+		  first-in first-out behavior is desired, put the real work in a separate queue,
+		  and create tasks that pull work from that queue. The Non-Preemptive Priorities
+		  section in the User Guide section explains the technique. 
+		</p>
+ 
+		<p>It is important to understand the implications of spawning versus
+		  enqueuing for nested parallelism. 
+		</p>
+ 
+		<ul type="disc" class="ul_1"> 
+		  <li class="li_1">Spawned tasks emphasize locality. Enqueued tasks
+			 emphasize fairness. 
+		  </li>
+ 
+		</ul>
+ 
+		<ul type="disc" class="ul_1"> 
+		  <li class="li_1">For nested parallelism, spawned tasks tend
+			 towards depth-first execution, whereas enqueued tasks cause breadth-first
+			 execution. Because the space demands of breadth-first execution can be
+			 exponentially higher than depth-first execution, enqueued tasks should be used
+			 with care. 
+		  </li>
+ 
+		</ul>
+ 
+		<ul type="disc" class="ul_1"> 
+		  <li class="li_1">A spawned task might never be executed until a
+			 thread explicitly waits on the task to complete. An enqueued tasks will
+			 eventually run if all previously enqueued tasks complete. In the case where
+			 there would ordinarily be no other worker thread to execute an enqueued task,
+			 the scheduler creates an extra worker. 
+		  </li>
+ 
+		</ul>
+ 
+		<p>In general, use spawned tasks unless there is a clear reason to use an
+		  enqueued task. Spawned tasks yield the best balance between locality of
+		  reference, space efficiency, and parallelism. The algorithm for spawned tasks
+		  is similar to the work-stealing algorithm used by Cilk (Blumofe 1995). The
+		  notion of work-stealing dates back to the 1980s (Burton 1981). The thread
+		  affinity support is more recent (Acar 2000). 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div>
+<br clear="all">
+<div class="linklist">
+<div><a href="../../tbb_userguide/Design_Patterns/Non-Preemptive_Priorities.htm#Non-Preemptive_Priorities">Non-Preemptive Priorities
+		  </a></div></div>
+</div>
+
+</body>
+</html>

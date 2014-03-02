@@ -1,0 +1,155 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="General Acyclic Graphs of Tasks">
+<meta name="DC.subject" content="General Acyclic Graphs of Tasks">
+<meta name="keywords" content="General Acyclic Graphs of Tasks">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/The_Task_Scheduler.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_General_Acyclic_Graphs_of_Tasks">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>General Acyclic Graphs of Tasks</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_General_Acyclic_Graphs_of_Tasks">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_General_Acyclic_Graphs_of_Tasks"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">General Acyclic Graphs of Tasks</h1>
+ 
+  
+  <div>
+	 <p>The task graphs considered so far have a tree structure where each task
+		has a single successor 
+		<samp class="codeph">task::parent()</samp> waiting for it to complete. To
+		accommodate more complex graphs where a task has multiple successors, 
+        Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.2 and later has methods 
+        that allow direct manipulation of a task's reference count.
+	 </p>
+
+	 <p>For example, consider a MxN array of tasks where each task depends on
+		the tasks to the left and above it. The following figure shows such an example:
+	 </p>
+
+	 <div class="fignone" id="fig11"><a name="fig11"><!-- --></a><span class="figcap">Task graph where some tasks have more than one
+		  successor.</span> 
+		<br><img src="Images/image018.jpg" width="216" height="120"><br>
+	 </div>
+
+	 <p>The following code evaluates such a task graph, where each task computes
+		a sum of inputs from its neighbors to the left and above it. 
+	 </p>
+
+	 <pre>const int M=3, N=4;
+&nbsp;
+class DagTask: public tbb::task {
+public:
+    const int i, j;
+    // input[0] = sum from above, input[1] = sum from left
+    double input[2];
+    double sum;
+    // successor[0] = successor below, successor[1] = successor to right
+    DagTask* successor[2];
+    DagTask( int i_, int j_ ) : i(i_), j(j_) {
+        input[0] = input[1] = 0;
+    }
+    task* execute() {
+        __TBB_ASSERT( ref_count()==0, NULL );
+        sum = i==0 &amp;&amp; j==0 ? 1 : input[0]+input[1];
+        for( int k=0; k&lt;2; ++k )
+            if( DagTask* t = successor[k] ) {
+                t-&gt;input[k] = sum;
+                if( t-&gt;decrement_ref_count()==0 )
+                    spawn( *t );
+            }
+        return NULL;
+    }
+};
+&nbsp;
+double BuildAndEvaluateDAG() {
+    DagTask* x[M][N];
+    for( int i=M; --i&gt;=0; )
+        for( int j=N; --j&gt;=0; ) {
+            x[i][j] = new( tbb::task::allocate_root() ) DagTask(i,j);
+            x[i][j]-&gt;successor[0] = i+1&lt;M ? x[i+1][j] : NULL;
+            x[i][j]-&gt;successor[1] = j+1&lt;N ? x[i][j+1] : NULL;
+            x[i][j]-&gt;set_ref_count((i&gt;0)+(j&gt;0));
+        }
+    // Add extra reference to last task, because it is waited on
+    // by spawn_and_wait_for_all.
+    x[M-1][N-1]-&gt;increment_ref_count();
+    // Wait for all but last task to complete.
+    x[M-1][N-1]-&gt;spawn_and_wait_for_all(*x[0][0]);
+    // Last task is not executed implicitly, so execute it explicitly.
+    x[M-1][N-1]-&gt;execute();
+    double result = x[M-1][N-1]-&gt;sum;
+    // Destroy last task.
+    task::destroy(*x[M-1][N-1]);
+    return result;
+}</pre>
+	 <p>Function 
+		<samp class="codeph">BuildAndEvaluateDAG</samp> first builds an array of 
+		<samp class="codeph">DagTask</samp>. It allocates each task as a root task because 
+		<samp class="codeph">task::parent()</samp> is not used to record successor
+		relationships. The reference count of each task is initialized to the number of
+		its predecessors. It evaluates the graph by spawning the initial task 
+		<samp class="codeph">x[0][0]</samp> and waiting for 
+		<samp class="codeph">x[M-1][N-1]</samp> to complete. As each task completes, it
+		decrements the reference count of its successors, and spawns any successor
+		whose count becomes zero. Given a sufficient number of processors, execution
+		sweeps diagonally over the graph like a wave front from top left to bottom
+		right.
+	 </p>
+
+	 <p>The last task 
+		<samp class="codeph">x[M-1][N-1]</samp> requires special handling because of its
+		special interaction with 
+		<samp class="codeph">BuildAndEvaluateDAG</samp>:
+	 </p>
+ 
+	 <ul type="disc">
+		<li>
+		  <p>The last task is used to wait explicitly for other tasks to
+			 complete. Method 
+			 <samp class="codeph">wait_for_all</samp> requires that the last task's reference
+			 count be set to one more than the number of its predecessors. Thus the last
+			 task is not implicitly executed when its predecessors complete. 
+		  </p>
+
+		</li>
+
+		<li>
+		  <p>The value 
+			 <samp class="codeph">sum</samp> must be extracted from the last task before it
+			 is destroyed.
+		  </p>
+
+		</li>
+
+	 </ul>
+
+	 <p>Hence the example explicitly executes the last task, extracts its sum,
+		and then destroys it. 
+	 </p>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/The_Task_Scheduler.htm">The Task Scheduler</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

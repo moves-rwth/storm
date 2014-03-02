@@ -1,0 +1,168 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Affinity">
+<meta name="DC.subject" content="Affinity">
+<meta name="keywords" content="Affinity">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="affinity">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Affinity</title>
+</head>
+<body id="affinity">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="affinity"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Affinity</h1>
+ 
+  
+  <div> 
+	 <div class="section">
+		<p>These methods enable optimizing for cache affinity. They enable you to
+		  hint that a later task should run on the same thread as another task that was
+		  executed earlier. To do this:
+		</p>
+
+		<ol class="ol_3"> 
+		  <li>In the earlier task, override 
+			 <samp class="codeph">note_affinity(<em>id</em>)</samp> with a definition that
+			 records 
+			 <samp class="codeph"><em>id</em></samp>.
+		  </li>
+ 
+		  <li>Before spawning the later task, run 
+			 <samp class="codeph">set_affinity(<em>id</em>)</samp> using the 
+			 <em>id</em> recorded in step 1, 
+		  </li>
+ 
+		</ol>
+
+		<p>The 
+		  <em>id</em> is a hint and may be ignored by the scheduler.
+		</p>
+
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d107439e68">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d107439e71">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d107439e68 "><span class="keyword">affinity_id</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d107439e71 ">
+					 <p>The type 
+						<samp class="codeph">task::affinity_id</samp> is an
+						implementation-defined unsigned integral type. A value of 0 indicates no
+						affinity. Other values represent affinity to a particular thread.&nbsp;Do not assume
+						anything about non-zero values. The mapping of non-zero values to threads is
+						internal to the Intel&reg; Threading Building Blocks (Intel&reg; TBB) library implementation.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d107439e68 "><span class="keyword">virtual void note_affinity (
+						affinity_id id )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d107439e71 ">
+					 <p>The task scheduler invokes 
+						<samp class="codeph">note_affinity</samp> before invoking 
+						<samp class="codeph">execute()</samp> when:
+					 </p>
+
+					 <ul type="disc" class="ul_1"> 
+						<li class="li_1">The task has no affinity, but will
+						  execute on a thread different than the one that spawned it. 
+						</li>
+ 
+					 </ul>
+
+					 <ul type="disc" class="ul_1"> 
+						<li class="li_1">The task has affinity, but will
+						  execute on a thread different than the one specified by the affinity. 
+						</li>
+ 
+					 </ul>
+
+					 <p>You can override this method to record the id, so that it
+						can be used as the argument to 
+						<samp class="codeph">set_affinity(id)</samp> for a later task.
+					 </p>
+
+					 <p><strong>Effects</strong>: The default definition has no effect.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d107439e68 "><span class="keyword">set_affinity ( affinity_id id ) </span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d107439e71 ">
+					 <p>Sets affinity of this task to 
+						<em>id</em>. The 
+						<em>id</em> should be either 0 or obtained from 
+						<samp class="codeph">note_affinity</samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d107439e68 "><span class="keyword">affinity_id affinity()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d107439e71 ">
+					 <p><strong>Returns</strong>: Affinity of this task as set by
+						set_affinity.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

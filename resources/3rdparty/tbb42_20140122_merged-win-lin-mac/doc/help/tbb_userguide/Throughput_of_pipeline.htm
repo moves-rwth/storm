@@ -1,0 +1,70 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Throughput of pipeline">
+<meta name="DC.subject" content="Throughput of pipeline">
+<meta name="keywords" content="Throughput of pipeline">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Working_on_the_Assembly_Line_pipeline.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Throughput_of_pipeline">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Throughput of pipeline</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Throughput_of_pipeline">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Throughput_of_pipeline"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Throughput of pipeline</h1>
+ 
+  
+  <div>
+	 <p>The throughput of a pipeline is the rate at which tokens flow through
+		it, and is limited by two constraints. First, if a pipeline is run with 
+		<var>N</var> tokens, then obviously there cannot be more than 
+		<var>N</var> operations running in parallel. Selecting the right
+		value of 
+		<var>N</var> may involve some experimentation. Too low a value
+		limits parallelism; too high a value may demand too many resources (for
+		example, more buffers). Second, the throughput of a pipeline is limited by the
+		throughput of the slowest sequential filter. This is true even for a pipeline
+		with no parallel filters. No matter how fast the other filters are, the slowest
+		sequential filter is the bottleneck. So in general you should try to keep the
+		sequential filters fast, and when possible, shift work to the parallel filters.
+	 </p>
+
+	 <p>The text processing example has relatively poor speedup, because the
+		serial filters are limited by the I/O speed of the system. Indeed, even with
+		files that are on a local disk, you are unlikely to see a speedup much more
+		than 2. To really benefit from a pipeline, the parallel filters need to be
+		doing some heavy lifting compared to the serial filters. 
+	 </p>
+
+	 <p>The window size, or sub-problem size for each token, can also limit
+		throughput. Making windows too small may cause overheads to dominate the useful
+		work. Making windows too large may cause them to spill out of cache. A good
+		guideline is to try for a large window size that still fits in cache. You may
+		have to experiment a bit to find a good window size.
+	 </p>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Working_on_the_Assembly_Line_pipeline.htm">Working on the Assembly Line: pipeline</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

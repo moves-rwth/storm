@@ -1,0 +1,382 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="graph Class">
+<meta name="DC.subject" content="graph Class">
+<meta name="keywords" content="graph Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Relation" scheme="URI" content="../task_scheduler/task_group_context.htm">
+<meta name="DC.Relation" scheme="URI" content="../exceptions.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="graph_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>graph Class</title>
+</head>
+<body id="graph_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="graph_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">graph Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Class that serves as a handle to a flow graph of nodes and edges. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>class graph;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/flow_graph.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <span class="keyword">graph</span> object contains a root task that is the parent
+		  of all tasks created on behalf of the flow graph and its nodes. It provides
+		  methods that can be used to access the root task, to wait for the children of
+		  the root task to complete, to explicitly increment or decrement the root task's
+		  reference count, and to run a task as a child of the root task. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p> Destruction of flow graph nodes before calling 
+			 <span class="keyword">wait_for_all</span> on their associated 
+			 <span class="keyword">graph</span> object has undefined behavior and can lead
+			 to program failure. 
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>The flow graph now uses spawned tasks instead of enqueued tasks.  In some limited
+		     cases, when no worker threads are available, progress will not be made on 
+		     graph-related tasks until a call is made to <span class="keyword">wait_for_all</span>.  
+		     To avoid the need for explicit calls to <span class="keyword">wait_for_all</span>, the
+		     task enqueuing implementation of the flow graph can still be used as
+		     described in the Compatibility Features section of the Appendices.  However, 
+		     the task enqueuing implementation of the flow graph has been deprecated and 
+		     its use is discouraged.
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p> If a 
+			 <span class="keyword">graph</span> is cancelled or if an exception is thrown
+			 during its execution, the graph objects may be in an inconsistent state after
+			 the 
+			 <span class="keyword">wait_for_all()</span>. If the user wishes to execute the 
+			 <span class="keyword">graph</span> again, the 
+			 <span class="keyword">reset()</span> method must be called. 
+		  </p>
+ 
+		  <p> The 
+			 <span class="keyword">reset()</span> method ensures the internals of the 
+			 <span class="keyword">graph</span> are reset to their initial state. The
+			 user-supplied bodies of 
+			 <span class="keyword">function_nodes</span>, 
+			 <span class="keyword">continue_nodes</span>, 
+			 <span class="keyword">source_nodes</span> and 
+			 <span class="keyword">multifunction_nodes</span> are not changed by a 
+			 <span class="keyword">reset()</span>; if the user wishes the body to be
+			 returned to its initial state the corresponding node must be replaced, or some
+			 other provision must be made. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+namespace flow {
+
+class graph {
+public:
+
+    graph();
+    graph(task_group_context&amp; context);
+    ~graph();
+ 
+    void increment_wait_count();
+    void decrement_wait_count();
+ 
+    template&lt; typename Receiver, typename Body &gt;
+    void run( Receiver &amp;r, Body body );
+    template&lt; typename Body &gt;
+    void run( Body body );
+    void wait_for_all();
+    task *root_task();
+ 
+    bool is_cancelled();
+    bool exception_thrown();
+    void reset();
+};
+ 
+}
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d72114e145">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d72114e148">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">graph([task_group_context&amp;
+						group] )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p>Constructs a graph with no nodes. If 
+						<span class="keyword">group</span> is specified the graph tasks are
+						executed in this group. By default the graph is executed in a bound context of
+						its own. Instantiates a root task of class 
+						<span class="keyword">empty_task</span> to serve as a parent for all of
+						the tasks generated during runs of the graph. Sets 
+						<span class="keyword">ref_count</span> of the root task to 1. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">~graph()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p>Calls 
+						<span class="keyword">wait_for_all</span> on the graph, then destroys
+						the root task. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">void
+						increment_wait_count()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p>Used to register that an external entity may still interact
+						with the graph. 
+					 </p>
+ 
+					 <p>Increments the 
+						<span class="keyword">ref_count</span> of the root task. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">void
+						decrement_wait_count()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p>Used to unregister an external entity that may have
+						interacted with the graph. 
+					 </p>
+ 
+					 <p>Decrements the 
+						<span class="keyword">ref_count</span> of the root task. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">template&lt; typename Receiver,
+						typename Body &gt; void run( Receiver &amp;r, Body body )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p>Use this method to spawn a task that runs a body and puts
+						its output to a specific receiver. The task is created as a child of the
+						graph's root task and therefore 
+						<span class="keyword">wait_for_all</span> will not return until this
+						task completes. 
+					 </p>
+ 
+					 <p>Enqueues a task that invokes 
+						<span class="keyword">r.try_</span><span class="keyword">put(</span> 
+						<span class="keyword">body() )</span>. It does not wait for the task to
+						complete. The spawned task is a child of the root task. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">template&lt; typename Body &gt;
+						void run( Body body )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p>This method spawns a task that runs as a child of the
+						graph's root task. Calls to 
+						<span class="keyword">wait_for_all</span> will not return until this
+						spawned task completes. 
+					 </p>
+ 
+					 <p>Enqueues a task that invokes 
+						<span class="keyword">body(</span><span class="keyword">)</span>. It does not
+						wait for the task to complete. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">void wait_for_all()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p>Blocks until all tasks associated with the root task have
+						completed and the number of 
+						<span class="keyword">decrement_wait_count</span> calls equals the
+						number of 
+						<span class="keyword">increment_wait_count</span> calls. Because it
+						calls 
+						<span class="keyword">wait_for_all</span> on the root graph task, the
+						calling thread may participate in work-stealing while it is blocked. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">task *root_task()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p><strong>Returns</strong>: a pointer to the root task of the flow
+						graph. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">bool is_cancelled()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">true</samp> if the graph was cancelled during the
+						last call to 
+						<span class="keyword">wait_for_all</span>(), 
+						<samp class="codeph">false</samp> otherwise. 
+					 </p>
+ 
+					 <p> See 
+						<samp class="codeph">task_group_context</samp> for a description of
+						cancellation. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">bool exception_thrown()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">true</samp> if during the last call to 
+						<span class="keyword">wait_for_all</span>() an exception was thrown, 
+						<samp class="codeph">false</samp> otherwise. 
+					 </p>
+ 
+					 <p> See Section "Exceptions" for information on exception
+						handling. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d72114e145 "><span class="keyword">void reset()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d72114e148 "> 
+					 <p> Resets the internal state of the nodes of a 
+						<span class="keyword">graph</span> to their initial state. The state of
+						the bodies of 
+						<span class="keyword">function_nodes</span>, 
+						<span class="keyword">continue_nodes</span>, 
+						<span class="keyword">source_nodes</span> and 
+						<span class="keyword">multifunction_nodes</span> are not changed. 
+					 </p>
+ 
+					 <p> See 
+						<samp class="codeph">task_group_context</samp> for a description of
+						cancellation. See Section "Exceptions" for information on exception handling. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../task_scheduler/task_group_context.htm">task_group_context 
+		  </a></div>
+<div><a href="../exceptions.htm">Exceptions 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

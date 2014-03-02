@@ -58,6 +58,8 @@ if(CUSTOM_BOOST_ROOT)
 	set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
 endif(CUSTOM_BOOST_ROOT)
 
+set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_merged-win-lin-mac")
+
 find_package(Boost REQUIRED)
 find_package(Doxygen REQUIRED)
 find_package(TBB)
@@ -398,7 +400,8 @@ add_test(NAME storm-performance-tests COMMAND storm-performance-tests)
 ##
 #############################################################
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
-set(LOG4CPLUS_BUILD_TESTING NO)
+set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
+set(LOG4CPLUS_BUILD_TESTING OFF)
 set(LOG4CPLUS_USE_UNICODE OFF)
 add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")

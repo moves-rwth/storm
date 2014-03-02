@@ -1,0 +1,197 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="memory_pool_allocator Template Class">
+<meta name="DC.subject" content="memory_pool_allocator Template Class">
+<meta name="keywords" content="memory_pool_allocator Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../../../reference/appendices/community_preview_features/scalable_memory_pools.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="memory_pool_allocator_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../../intel_css_styles.css">
+<title>memory_pool_allocator Template Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="memory_pool_allocator_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(4);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="memory_pool_allocator_cls"><!-- --></a>
+
+
+  <h1 class="topictitle1">memory_pool_allocator Template Class</h1>
+
+  
+  <div>
+	 <div class="section"><h2 class="sectiontitle">Summary</h2>
+		
+		<p>Template class that provides the C++ allocator
+		  interface for memory pools.
+		</p>
+
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2>
+		
+		<pre>template&lt;typename T&gt; class memory_pool_allocator;</pre>
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Header</h2>
+		
+		<pre>#define TBB_PREVIEW_MEMORY_POOL 1
+ #include "tbb/memory_pool.h"</pre>
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Description</h2>
+		
+		<p>A 
+		  <samp class="codeph">memory_pool_allocator</samp>
+		  models the allocator requirements described in Table 29 except for default
+		  constructor which is excluded from the class. Instead, it provides a
+		  constructor, which links with an instance of 
+		  <samp class="codeph">memory_pool</samp> or 
+		  <samp class="codeph">fixed_pool</samp> classes,
+		  that actually allocates and deallocates memory. The class is mainly intended to
+		  enable memory pools within STL containers.
+		</p>
+
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Example</h2>
+		
+		<pre>#define TBB_PREVIEW_MEMORY_POOL 1
+ #include "tbb/memory_pool.h"
+ ...
+ typedef tbb::memory_pool_allocator&lt;int&gt;
+ pool_allocator_t;
+ std::list&lt;int, pool_allocator_t&gt;
+ my_list(pool_allocator_t( my_pool ));</pre>
+		<p>The code above provides a simple example of
+		  cnostruction of a container that uses a memory pool.
+		</p>
+
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Members</h2>
+		
+		<pre>namespace tbb {
+ template&lt;typename T&gt;
+ class memory_pool_allocator {
+ public:
+ typedef T value_type;
+ typedef value_type* pointer;
+ typedef const value_type* const_pointer;
+ typedef value_type&amp; reference;
+ typedef const value_type&amp; const_reference;
+ typedef size_t size_type;
+ typedef ptrdiff_t difference_type;
+ template&lt;typename U&gt; struct rebind {
+ typedef memory_pool_allocator&lt;U&gt; other;
+ };
+ memory_pool_allocator(memory_pool &amp;pool) throw();
+ memory_pool_allocator(fixed_pool &amp;pool) throw();
+ memory_pool_allocator(const memory_pool_allocator&amp; src) throw();
+ template&lt;typename U&gt;
+ memory_pool_allocator(const memory_pool_allocator&lt;U,P&gt;&amp; src) throw();
+ pointer address(reference x) const;
+ const_pointer address(const_reference x) const;
+ pointer allocate( size_type n, const void* hint=0);
+ void deallocate( pointer p, size_type );
+ size_type max_size() const throw();
+ void construct( pointer p, const T&amp; value );
+ void destroy( pointer p );
+ };
+ template&lt;&gt;
+ class memory_pool_allocator&lt;void&gt; {
+ public:
+ typedef void* pointer;
+ typedef const void* const_pointer;
+ typedef void value_type;
+ template&lt;typename U&gt; struct rebind {
+ typedef memory_pool_allocator&lt;U&gt; other;
+ };
+ memory_pool_allocator(memory_pool &amp;pool) throw();
+ memory_pool_allocator(fixed_pool &amp;pool) throw();
+ memory_pool_allocator(const memory_pool_allocator&amp; src) throw();
+ template&lt;typename U&gt;
+ memory_pool_allocator(const memory_pool_allocator&lt;U&gt;&amp; src) throw();
+ };
+ template&lt;typename T, typename U&gt;
+ inline bool operator==( const memory_pool_allocator&lt;T&gt;&amp; a,
+              const memory_pool_allocator&lt;U&gt;&amp; b);
+ template&lt;typename T, typename U&gt;
+ inline bool operator!=( const memory_pool_allocator&lt;T&gt;&amp; a,
+              const memory_pool_allocator&lt;U&gt;&amp; b);
+ }</pre>
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d22705e212">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d22705e215">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d22705e212 "><span class="keyword">memory_pool_allocator(memory_pool
+						&amp;pool)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d22705e215 ">
+					 <p>Constructs memory pool allocator serviced
+						by 
+						<samp class="codeph">memory_pool</samp>
+						instance pool.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d22705e212 "><span class="keyword">memory_pool_allocator(fixed_pool
+						&amp;pool)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d22705e215 ">
+					 <p>Constructs memory pool allocator serviced
+						by 
+						<samp class="codeph">fixed_pool</samp>
+						instance pool.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../../reference/appendices/community_preview_features/scalable_memory_pools.htm">Scalable Memory Pools</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

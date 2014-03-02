@@ -1,0 +1,501 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="sequencer_node Template Class">
+<meta name="DC.subject" content="sequencer_node Template Class">
+<meta name="keywords" content="sequencer_node Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Relation" scheme="URI" content="message_passing_protocol.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="sequencer_node_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>sequencer_node Template Class</title>
+</head>
+<body id="sequencer_node_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="sequencer_node_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">sequencer_node Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>An unbounded buffer of messages of type 
+		  <span class="keyword">T</span>. Messages are forwarded in sequence order. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt; typename T, typename A = cache_aligned_allocator&lt;T&gt; &gt;
+class sequencer_node;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/flow_graph.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <span class="keyword">sequencer_node</span> is a 
+		  <span class="keyword">graph_node</span>, 
+		  <span class="keyword">receiver&lt;T&gt;</span> and 
+		  <span class="keyword">sender&lt;T&gt;</span> that forwards messages in sequence
+		  order to a single successor in its successor set. Successors are tried in the
+		  order that they were registered with the node. If a successor rejects the
+		  message, it is removed from the successor list as described by the policy in
+		  the Message Passing Protocol, and the next successor in the set is tried. This
+		  continues until a successor accepts the message, or all successors have been
+		  attempted. Items that are successfully transferred to a successor are removed
+		  from the buffer. 
+		</p>
+ 
+		<p>Each item that passes through a 
+		  <span class="keyword">sequencer_node</span> is ordered by its sequencer order
+		  number. These sequence order numbers range from 0 to N, where N is the largest
+		  integer representable by the 
+		  <span class="keyword">size_t</span> type. An item's sequencer order number is
+		  determined by passing the item to a user-provided function object that models
+		  the Sequencer Concept shown below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl26"><!-- --></a><table cellpadding="4" summary="" id="tbl26" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">sequencer_node&lt;T&gt; Sequencer Concept</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" align="center" valign="top" width="50%" id="d83820e91"> 
+				  <p>Pseudo-Signature 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" align="center" valign="top" width="50%" id="d83820e97"> 
+				  <p>Semantics 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="50%" headers="d83820e91 "> 
+				  <p> 
+					 <pre>S::S( const S&amp; )</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d83820e97 "> 
+				  <p>Copy constructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="50%" headers="d83820e91 "> 
+				  <p> 
+					 <pre>S::~S()</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d83820e97 "> 
+				  <p>Destructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="50%" headers="d83820e91 "> 
+				  <p> 
+					 <pre>void operator=( const S&amp; )</pre> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d83820e97 "> 
+				  <p>Assignment. The return type 
+					 <samp class="codeph">void</samp> in the pseudo-signature denotes that 
+					 <samp class="codeph">operator=</samp> is not required to return a value.
+					 The actual 
+					 <samp class="codeph">operator=</samp> can return a value, which will be
+					 ignored. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="50%" headers="d83820e91 "> 
+				  <p><span class="keyword">size_t</span> 
+					 <span class="keyword">S::operator()(</span> 
+					 <span class="keyword">const</span> 
+					 <span class="keyword">T</span> 
+					 <span class="keyword">&amp;v )</span> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="50%" headers="d83820e97 "> 
+				  <p>Returns the sequence number for the provided message 
+					 <span class="keyword">v</span>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>A 
+		  <span class="keyword">sequencer_node</span> is reservable and supports a single
+		  reservation at a time. While a 
+		  <span class="keyword">sequencer_node</span> is reserved, no other items will be
+		  forwarded to successors and all 
+		  <span class="keyword">try_get</span> calls will return 
+		  <span class="keyword">false</span>. While reserved, 
+		  <span class="keyword">try_put</span> will still return 
+		  <span class="keyword">true</span> and add items to the 
+		  <span class="keyword">sequencer_node</span>. 
+		</p>
+ 
+		<p>An allocator of type 
+		  <span class="keyword">A</span> is used to allocate internal memory for the 
+		  <span class="keyword">sequencer_node.</span> 
+		</p>
+ 
+		<p><span class="keyword">T</span> must be copy-constructible and assignable. 
+		</p>
+ 
+		<p>Rejection of messages by successors is handled using the protocol in
+		  the Message Passing Protocol, see link below. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+namespace flow {
+ 
+template&lt; typename T, typename A = cache_aligned_allocator&lt;T&gt; &gt;
+class sequencer_node :
+  public queue_node&lt;T&gt; {
+public:
+    template&lt; typename Sequencer &gt;
+    sequencer_node( graph &amp;g, const Sequencer &amp;s );
+    sequencer_node( const sequencer_node &amp;src );
+ 
+    // receiver&lt;T&gt;
+    typedef T input_type;
+    typedef sender&lt;input_type&gt; predecessor_type;
+    bool try_put( const input_type &amp;v );
+    bool register_predecessor( predecessor_type &amp;p );
+    bool remove_predecessor( predecessor_type &amp;p );
+ 
+    // sender&lt;T&gt;
+    typedef T output_type;
+    typedef receiver&lt;output_type&gt; successor_type;
+    bool register_successor( successor_type &amp;r );
+    bool remove_successor( successor_type &amp;r );
+    bool try_get( output_type &amp;v );
+    bool try_reserve( output_type &amp;v );
+    bool try_release( );
+    bool try_consume( );
+};
+ 
+}
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d83820e268">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d83820e271">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">template&lt;typename Sequencer&gt;
+						sequencer_node( graph&amp; g, const Sequencer &amp;s )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>Constructs an empty 
+						<span class="keyword">sequencer_node</span> that belongs to the 
+						<span class="keyword">graph g</span> and uses 
+						<span class="keyword">s</span> to compute sequence numbers for items. 
+					 </p>
+ 
+                                         <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		                                <p> The <samp class="codeph">Sequencer</samp> function object must not throw an exception.
+		                                </p>
+ 
+                                         </div>
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">sequencer_node( const
+						sequencer_node &amp;src )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>Constructs an empty 
+						<span class="keyword">sequencer_node</span> that belongs to the same 
+						<span class="keyword">graph g</span> as 
+						<span class="keyword">src</span> and will use a copy of the 
+						<span class="keyword">Sequencer s</span> used to construct 
+						<span class="keyword">src</span>. The list of predecessors, the list of
+						successors and the messages in the buffer are NOT copied. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+						<p> The new sequencer object is copy constructed from a copy
+						  of the original sequencer object provided to 
+						  <span class="keyword">src</span> at its construction. Therefore
+						  changes made to member variables in 
+						  <span class="keyword">src</span>'s object will not affect the
+						  sequencer of the new 
+						  <span class="keyword">sequencer_node.</span> 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">bool try_put( const input_type
+						&amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>Adds 
+						<span class="keyword">v</span> to the 
+						<span class="keyword">sequencer_node</span>. If 
+						<span class="keyword">v</span>'s sequence number is the next item in
+						the sequence, a task is spawned to forward the item to a successor. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">bool register_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>Never rejects puts and therefore does not need to maintain a
+						list of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">bool remove_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>Never rejects puts and therefore does not need to maintain a
+						list of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">bool register_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>Adds 
+						<span class="keyword">r</span> to the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">bool remove_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>Removes 
+						<span class="keyword">r</span> from the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">bool try_get( output_type &amp;v
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if the next item in the sequence is
+						available in the 
+						<span class="keyword">sequencer_node</span>. If so, it is removed from
+						the node and assigned to 
+						<span class="keyword">v</span>. Returns 
+						<span class="keyword">false</span> if the next item in sequencer order
+						is not available or if the node is reserved. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">bool try_reserve( output_type
+						&amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>If the call returns 
+						<span class="keyword">true</span>, the node is reserved and will
+						forward no more messages until the reservation has been released or consumed. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if the next item in sequencer order
+						is available in the 
+						<span class="keyword">sequencer_node</span>. If so, the item is
+						assigned to 
+						<span class="keyword">v</span>, but is not removed from the 
+						<span class="keyword">sequencer_node</span>. Returns 
+						<span class="keyword">false</span> if the next item in sequencer order
+						is not available or if the node is reserved. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">bool try_release( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>Releases the reservation on the node. The item that was
+						returned in the last successful call to 
+						<span class="keyword">try_reserve</span> remains in the 
+						<span class="keyword">sequencer_node</span>. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if the buffer is currently reserved
+						and 
+						<span class="keyword">false</span> otherwise. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d83820e268 "><span class="keyword">bool try_consume( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d83820e271 "> 
+					 <p>Releases the reservation on the node. The item that was
+						returned in the last successful call to 
+						<span class="keyword">try_reserve</span> is popped from the front of
+						the queue. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if the buffer is currently reserved
+						and 
+						<span class="keyword">false</span> otherwise. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="message_passing_protocol.htm">Message Passing Protocol 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Cancellation and Nested Parallelism">
+<meta name="DC.subject" content="Cancellation and Nested Parallelism">
+<meta name="keywords" content="Cancellation and Nested Parallelism">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Exceptions_and_Cancellation.htm">
+<meta name="DC.Relation" scheme="URI" content="The_Task_Scheduler.htm#tutorial_The_Task_Scheduler">
+<meta name="DC.Relation" scheme="URI" content="Lambda_Expressions.htm#tutorial_Lambda_Expressions">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Cancellation_and_Nested_Parallelism">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Cancellation and Nested Parallelism</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Cancellation_and_Nested_Parallelism">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Cancellation_and_Nested_Parallelism"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Cancellation and Nested Parallelism</h1>
+ 
+   
+  <div> 
+	 <p>The discussion so far was simplified by assuming non-nested parallelism
+		and skipping details of 
+		<samp class="codeph">task_group_context</samp>. This topic explains both. 
+	 </p>
+ 
+	 <p>An Intel&reg; Threading Building Blocks (Intel&reg; TBB) algorithm executes by
+		creating 
+		<samp class="codeph">task</samp> objects that execute the snippets of code that you
+		supply to the algorithm template. By default, these 
+		<samp class="codeph">task</samp> objects are associated with a 
+		<samp class="codeph">task_group_context</samp> created by the algorithm. Nested
+		Intel&reg; TBB algorithms create a tree of these 
+		<samp class="codeph">task_group_context</samp> objects. Cancelling a 
+		<samp class="codeph">task_group_context</samp> cancels all of its child 
+		<samp class="codeph">task_group_context</samp> objects, and transitively all its
+		descendants. Hence an algorithm and all algorithms it called can be cancelled
+		with a single request. 
+	 </p>
+ 
+	 <p>Exceptions propagate upwards. Cancellation propagates downwards. The
+		opposition interplays to cleanly stop a nested computation when an exception
+		occurs. For example, consider the tree in the following figure. Imagine that
+		each node represents an algorithm and its 
+		<samp class="codeph">task_group_context</samp>. 
+	 </p>
+ 
+	 <div class="fignone" id="fig6"><a name="fig6"><!-- --></a><span class="figcap">Tree of 
+		  <span class="keyword">task_group_context</span></span> 
+		<br><img src="Images/image013.jpg" width="261" height="131"><br> 
+	 </div>
+ 
+	 <p>Suppose that the algorithm in C throws an exception and no node catches
+		the exception. Intel&reg; TBB propagates the exception upwards, cancelling related
+		subtrees downwards, as follows: 
+	 </p>
+ 
+	 <ol> 
+		<li> 
+		  <p>Handle exception in C: 
+		  </p>
+ 
+		  <ol class="abc" type="a"> 
+			 <li> 
+				<p>Capture exception in C. 
+				</p>
+ 
+			 </li>
+ 
+			 <li> 
+				<p>Cancel tasks in C. 
+				</p>
+ 
+			 </li>
+ 
+			 <li> 
+				<p>Throw exception from C to B. 
+				</p>
+ 
+			 </li>
+ 
+		  </ol>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Handle exception in B: 
+		  </p>
+ 
+		  <ol class="abc" type="a"> 
+			 <li> 
+				<p>Capture exception in B. 
+				</p>
+ 
+			 </li>
+ 
+			 <li> 
+				<p>Cancel tasks in B and, by downwards propagation, in D. 
+				</p>
+ 
+			 </li>
+ 
+			 <li> 
+				<p>Throw an exception out of B to A. 
+				</p>
+ 
+			 </li>
+ 
+		  </ol>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Handle exception in A: 
+		  </p>
+ 
+		  <ol class="abc" type="a"> 
+			 <li> 
+				<p>Capture exception in A. 
+				</p>
+ 
+			 </li>
+ 
+			 <li> 
+				<p>Cancel tasks in A and, by downwards propagation, in E, F, and G.
+				  
+				</p>
+ 
+			 </li>
+ 
+			 <li> 
+				<p>Throw an exception upwards out of A. 
+				</p>
+ 
+			 </li>
+ 
+		  </ol>
+ 
+		</li>
+ 
+	 </ol>
+ 
+	 <p>If your code catches the exception at any level, then Intel&reg; TBB does
+		not propagate it any further. For example, an exception that does not escape
+		outside the body of a 
+		<samp class="codeph">parallel_for</samp> does not cause cancellation of other
+		iterations. 
+	 </p>
+ 
+	 <p>To prevent downwards propagation of cancellation into an algorithm,
+		construct an 'isolated' 
+		<samp class="codeph">task_group_context</samp> on the stack and pass it to the
+		algorithm explicitly. The 
+		<samp class="codeph"><span style="color:blue"><strong>bold font</strong></span></samp> in
+		the following example shows how. The example uses C++11 lambda expressions for
+		brevity. 
+	 </p>
+ 
+	 <pre>#include "tbb/tbb.h"
+&nbsp;
+bool Data[1000][1000];
+&nbsp;
+int main() {
+    try {
+        parallel_for( 0, 1000, 1, 
+            []( int i ) {
+                task_group_context root(task_group_context::isolated);
+                parallel_for( 0, 1000, 1,
+                   []( int  ) {
+                       Data[i][j] = true;
+                   }<span style="color:blue">,</span>
+                   <span style="color:blue"><strong>root</strong></span>);
+                throw "oops";
+            });
+    } catch(...) {
+    }
+    return 0;
+}</pre> 
+	 <p>The example performs two parallel loops: an outer loop over 
+		<samp class="codeph">i</samp> and inner loop over 
+		<samp class="codeph">j</samp>. The creation of the isolated 
+		<samp class="codeph">task_group_context</samp> 
+		<samp class="codeph">root</samp> protects the inner loop from downwards propagation
+		of cancellation from the 
+		<samp class="codeph">i</samp> loop. When the exception propagates to the outer loop,
+		any pending 
+		<samp class="codeph">outer</samp> iterations are cancelled, but not inner iterations
+		for an outer iteration that started. Hence when the program completes, each row
+		of 
+		<samp class="codeph">Data</samp> may be different, depending upon whether its
+		iteration 
+		<samp class="codeph">i</samp> ran at all, but within a row, the elements will be
+		homogenously 
+		<samp class="codeph">false</samp> or 
+		<samp class="codeph">true</samp>, not a mixture. 
+	 </p>
+ 
+	 <p>Removing the blue text would permit cancellation to propagate down into
+		the inner loop. In that case, a row of 
+		<samp class="codeph">Data</samp> might end up with both 
+		<samp class="codeph">true</samp> and 
+		<samp class="codeph">false</samp> values. 
+	 </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Exceptions_and_Cancellation.htm">Exceptions and Cancellation</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="The_Task_Scheduler.htm#tutorial_The_Task_Scheduler">The Task Scheduler 
+		  </a></div>
+<div><a href="Lambda_Expressions.htm#tutorial_Lambda_Expressions">Lambda Expressions 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

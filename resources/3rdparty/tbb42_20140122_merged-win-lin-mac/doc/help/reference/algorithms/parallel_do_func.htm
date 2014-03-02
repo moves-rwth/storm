@@ -1,0 +1,244 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="parallel_do Template Function">
+<meta name="DC.subject" content="parallel_do Template Function">
+<meta name="keywords" content="parallel_do Template Function">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/parallel_do_func/parallel_do_feeder_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_do_func">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>parallel_do Template Function</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="parallel_do_func">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_do_func"><!-- --></a>
+
+
+  <h1 class="topictitle1">parallel_do Template Function</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2>
+		 Template function that processes work items in
+		parallel. 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2>
+		 
+		<p> 
+		  <pre> #include "tbb/parallel_do.h"</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2>
+		 
+		<pre>template&lt;typename InputIterator, typename Body&gt; 
+void parallel_do( InputIterator first, InputIterator last,
+                 Body body[, task_group_context&amp; group] );
+</pre>
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2>
+		 
+		<p>A 
+		  <samp class="codeph">parallel_do(<em>first,last,body</em>)</samp> applies a function
+		  object body over the half-open interval [<em>first,last</em>). Items may be
+		  processed in parallel. Additional work items can be added by body if it has a
+		  second argument of type<samp class="codeph"> parallel_do_feeder</samp>. The function
+		  terminates when<samp class="codeph"> body(x)</samp> returns for all items x that were in
+		  the input sequence or added to it by method 
+		  <samp class="codeph">parallel_do_feeder::add</samp>.
+		</p>
+
+		<p>The requirements for input iterators are specified in Section 24.1 of
+		  the ISO C++ standard. The table below shows the requirements on type Body. 
+		</p>
+
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">parallel_do Requirements for Body B and its
+		  Argument Type T</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" id="d2552e96"> 
+				  <p>Pseudo-Signature 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" id="d2552e102"> 
+				  <p>Semantics 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d2552e96 "> 
+				  <pre>B::operator()(
+<em>cv-qualifiers</em> T&amp; item,
+ parallel_do_feeder&lt;T&gt;&amp; feeder
+ ) const
+OR
+ B::operator()(<em>cv-qualifiers</em> T&amp;
+item ) const
+ </pre>
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d2552e102 "> 
+				  <p>Process item. Template<samp class="codeph"> parallel_do</samp> may
+					 concurrently invoke operator() for the same 
+					 <samp class="codeph">this</samp> but different 
+					 <samp class="codeph">item</samp>.
+				  </p>
+
+				  <p> The signature with feeder permits additional work items to be
+					 added.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d2552e96 "> 
+				  <p><samp class="codeph"> T( const T&amp; ) 
+					 </samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d2552e102 "> 
+				  <p> Copy a work item.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d2552e96 "> 
+				  <p><samp class="codeph"> ~T::T()</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d2552e102 "> 
+				  <p> Destroy a work item.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>For example, a unary function object, as defined in Section 20.3 of
+		  the C++ standard, models the requirements for B. 
+		</p>
+
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+		  <p>Defining both the one-argument and two-argument forms of 
+			 <samp class="codeph">operator()</samp> is not permitted.
+		  </p>
+
+		</div>
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3>
+		  <p>The parallelism in 
+			 <samp class="codeph">parallel_do</samp> is not scalable if all of the items come
+			 from an input stream that does not have random access. To achieve scaling, do
+			 one of the following:
+		  </p>
+
+		  <ul type="disc">
+			 <li>
+				<p>Use random access iterators to specify the input stream. 
+				</p>
+
+			 </li>
+
+			 <li>
+				<p>Design your algorithm such that the body often adds more than
+				  one piece of work.
+				</p>
+
+			 </li>
+
+			 <li>
+				<p>Use<samp class="codeph"> parallel_for</samp> instead. 
+				</p>
+
+			 </li>
+
+		  </ul>
+
+		</div>
+		<p>To achieve speedup, the grainsize of 
+		  <samp class="codeph">B::operator()</samp> needs to be on the order of at least
+		  ~100,000 clock cycles. Otherwise, the internal overheads of 
+		  <samp class="codeph">parallel_do</samp> swamp the useful work.
+		</p>
+
+		<p>The algorithm can be passed a 
+		  <samp class="codeph">task_group_context</samp> object so that its tasks are
+		  executed in this group. By default the algorithm is executed in a bound group
+		  of its own.
+		</p>
+
+		<p><strong>Example</strong>
+		</p>
+
+		<p>The following code sketches a body with the
+		  two-argument form of 
+		  <samp class="codeph">operator(</samp>).
+		</p>
+
+		<pre>struct MyBody {
+    void operator()(item_t item, 
+                    parallel_do_feeder&lt;item_t&gt;&amp; feeder ) {
+        for each new piece of work implied by item do {
+            item_t new_item = initializer;
+            feeder.add(new_item);
+        }
+    } 
+};
+</pre>
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/algorithms/parallel_do_func/parallel_do_feeder_cls.htm">parallel_do_feeder&lt;item&gt; class</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

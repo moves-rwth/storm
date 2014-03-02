@@ -1,0 +1,72 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Reader Writer Mutexes">
+<meta name="DC.subject" content="Reader Writer Mutexes">
+<meta name="keywords" content="Reader Writer Mutexes">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Mutual_Exclusion.htm">
+<meta name="DC.Relation" scheme="URI" content="UpgradeDowngrade.htm#tutorial_UpgradeDowngrade">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Reader_Writer_Mutexes">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Reader Writer Mutexes</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Reader_Writer_Mutexes">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Reader_Writer_Mutexes"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Reader Writer Mutexes</h1>
+ 
+  
+  <div>
+	 <p>Mutual exclusion is necessary when at least one thread 
+		<em>writes</em> to a shared variable. But it does no harm to permit
+		multiple readers into a protected region. The reader-writer variants of the
+		mutexes, denoted by 
+		<samp class="codeph">_rw_</samp> in the class names, enable multiple readers by
+		distinguishing 
+		<em>reader locks</em> from 
+		<em>writer locks.</em> There can be more than one reader lock on a given
+		mutex.
+	 </p>
+
+	 <p>Requests for a reader lock are distinguished from requests for a writer
+		lock via an extra boolean parameter in the constructor for 
+		<samp class="codeph">scoped_lock</samp>. The parameter is 
+		<span class="keyword">false</span> to request a reader lock and 
+		<span class="keyword">true</span> to request a writer lock. It defaults to 
+		<samp class="codeph">true</samp> so that when omitted, a 
+		<samp class="codeph">spin_rw_mutex</samp> or 
+		<samp class="codeph">queuing_rw_mutex</samp> behaves like its
+		non-<samp class="codeph">_rw_</samp> counterpart. 
+	 </p>
+
+  </div>
+
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Mutual_Exclusion.htm">Mutual Exclusion</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="UpgradeDowngrade.htm#tutorial_UpgradeDowngrade">Upgrade/Downgrade
+		  </a> example where the parameter is explicitly 
+			 false in order to obtain a reader lock.
+		  </div></div>
+</div>
+
+</body>
+</html>

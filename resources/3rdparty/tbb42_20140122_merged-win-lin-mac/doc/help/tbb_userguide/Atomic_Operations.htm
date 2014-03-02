@@ -1,0 +1,388 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Atomic Operations">
+<meta name="DC.subject" content="Atomic Operations">
+<meta name="keywords" content="Atomic Operations">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/title.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Why_atomic_T_Has_No_Constructors.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Memory_Consistency.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Atomic_Operations">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Atomic Operations</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Atomic_Operations">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Atomic_Operations"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Atomic Operations</h1>
+ 
+  
+  <div>
+	 <p>You can avoid mutual exclusion using atomic operations. When a thread
+		performs an atomic operation, the other threads see it as happening
+		instantaneously. The advantage of atomic operations is that they are relatively
+		quick compared to locks, and do not suffer from deadlock and convoying. The
+		disadvantage is that they only do a limited set of operations, and often these
+		are not enough to synthesize more complicated operations efficiently. But
+		nonetheless you should not pass up an opportunity to use an atomic operation in
+		place of mutual exclusion. Class 
+		<samp class="codeph">atomic&lt;<var>T</var>&gt;</samp> implements atomic
+		operations with C++ style.
+	 </p>
+
+	 <p>A classic use of atomic operations is for thread-safe reference
+		counting. Suppose x is a reference count of type 
+		<samp class="codeph">int</samp>, and the program needs to take some action when the
+		reference count becomes zero. In single-threaded code, you could use a plain 
+		<samp class="codeph">int</samp> for x, and write 
+		<samp class="codeph">--x; if(x==0) action().</samp> But this method might fail for
+		multithreaded code, because two threads might interleave their operations as
+		shown in the following table, where t<sub>a</sub> and t<sub>b</sub> represent
+		machine registers, and time progresses downwards:
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl12"><!-- --></a><table cellpadding="4" summary="" id="tbl12" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Interleaving of Machine Instructions</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" valign="top" width="53.92156862745098%" id="d126840e63">
+			 <p>Thread A
+			 </p>
+
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="46.07843137254902%" id="d126840e69">
+			 <p>Thread B
+			 </p>
+
+		  </th>
+
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="53.92156862745098%" headers="d126840e63 ">
+			 <pre>t<sub>a</sub>  = x</pre>
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="46.07843137254902%" headers="d126840e69 ">
+			 <pre>&nbsp;</pre>
+		  </td>
+
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="53.92156862745098%" headers="d126840e63 ">
+			 <pre>&nbsp;</pre>
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="46.07843137254902%" headers="d126840e69 ">
+			 <pre>t<sub>b</sub> = x</pre>
+		  </td>
+
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="53.92156862745098%" headers="d126840e63 ">
+			 <pre>x = t<sub>a</sub> -<sub> </sub>1</pre>
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="46.07843137254902%" headers="d126840e69 ">
+			 <pre>&nbsp;</pre>
+		  </td>
+
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="53.92156862745098%" headers="d126840e63 ">
+			 <pre>&nbsp;</pre>
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="46.07843137254902%" headers="d126840e69 ">
+			 <pre>x = t<sub>b</sub> –<sub> </sub>1</pre>
+		  </td>
+
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="53.92156862745098%" headers="d126840e63 ">
+			 <pre>if( x==0 )</pre>
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="46.07843137254902%" headers="d126840e69 ">
+			 <pre>&nbsp;</pre>
+		  </td>
+
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="53.92156862745098%" headers="d126840e63 ">
+			 <pre>&nbsp;</pre>
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="46.07843137254902%" headers="d126840e69 ">
+			 <pre>if( x==0 )</pre>
+		  </td>
+
+		</tr>
+
+	 </tbody>
+
+  </table>
+</div>
+
+  <p>Though the code intended for 
+	 <samp class="codeph">x</samp> to be decremented twice, it ends up with only one less
+	 than its original value. Also, another problem results because the test of 
+	 <var>x</var> is separate from the decrement: If 
+	 <var>x</var> starts out as two, and both threads decrement 
+	 <var>x</var> before either thread evaluates the 
+	 <samp class="codeph">if</samp> condition, 
+	 <em>both</em> threads would call 
+	 <samp class="codeph">action()</samp>. To correct this problem, you need to ensure that
+	 only one thread at a time does the decrement 
+	 <em>and</em> ensure that the value checked by the "if" is the result of the
+	 decrement. You can do this by introducing a mutex, but it is much faster and
+	 simpler to declare 
+	 <var>x</var> as 
+	 <samp class="codeph">atomic&lt;int&gt;</samp> and write
+	 "<samp class="codeph">if(--<var>x</var>==0) action()</samp>". The method 
+	 <samp class="codeph">atomic&lt;int&gt;::operator--</samp> acts atomically; no other
+	 thread can interfere.
+  </p>
+
+  <p><samp class="codeph">atomic&lt;<var>T</var>&gt;</samp> supports atomic
+	 operations on type 
+	 <var>T</var>, which must be an integral, enumeration, or pointer
+	 type. There are five fundamental operations supported, with additional
+	 interfaces in the form of overloaded operators for syntactic convenience. For
+	 example, 
+	 <samp class="codeph">++</samp>, 
+	 <samp class="codeph">--</samp>, 
+	 <samp class="codeph">-=</samp>, and 
+	 <samp class="codeph">+=</samp> operations on 
+	 <samp class="codeph">atomic&lt;<var>T</var>&gt;</samp> are all forms of the
+	 fundamental operation 
+	 <em>fetch-and-add</em>. The following are the five fundamental operations on
+	 a variable 
+	 <var>x</var> of type 
+	 <samp class="codeph">atomic&lt;<var>T</var>&gt;</samp>.
+  </p>
+ 
+  
+<div class="tablenoborder"><a name="tbl13"><!-- --></a><table cellpadding="4" summary="" id="tbl13" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Fundamental Operations on a Variable x of Type atomic&lt;T&gt;</span></caption> 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="30%">
+			 <p><samp class="codeph">= 
+				  <var>x</var></samp>
+			 </p>
+
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="70%">
+			 <p>read the value of 
+				<var>x</var>
+			 </p>
+
+		  </td>
+
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="30%">
+			 <p><samp class="codeph"><var>x</var>=</samp>
+			 </p>
+
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="70%">
+			 <p>write the value of 
+				<var>x</var>, and return it
+			 </p>
+
+		  </td>
+
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="30%">
+			 <p><samp class="codeph"><var>x</var>.fetch_and_store(y)</samp>
+			 </p>
+
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="70%">
+			 <p>do 
+				<samp class="codeph"><var>x</var>=<var>y</var></samp> and
+				return the old value of 
+				<var>x</var>
+			 </p>
+
+		  </td>
+
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="30%">
+			 <p><samp class="codeph"><var>x</var>.fetch_and_add(<var>y</var>)</samp>
+			 </p>
+
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="70%">
+			 <p>do 
+				<samp class="codeph"><var>x</var>+=<var>y</var></samp> and
+				return the old value of 
+				<var>x</var>
+			 </p>
+
+		  </td>
+
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="30%">
+			 <p><samp class="codeph"><var>x</var>.compare_and_swap(<var>y</var>,<var>z</var>)</samp>
+			 </p>
+
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="70%">
+			 <p>if 
+				<var>x</var> equals 
+				<var>z</var>, then do 
+				<samp class="codeph"><var>x</var>=<var>y</var></samp>. In
+				either case, return old value of 
+				<var>x</var>.
+			 </p>
+
+		  </td>
+
+		</tr>
+
+	 </tbody>
+
+  </table>
+</div>
+
+  <p>Because these operations happen atomically, they can be used safely
+	 without mutual exclusion. Consider the following example:
+  </p>
+
+  <pre>atomic&lt;unsigned&gt; counter;
+&nbsp;
+unsigned GetUniqueInteger() {
+    return counter.fetch_and_add(1);
+}</pre>
+  <p>The routine 
+	 <samp class="codeph">GetUniqueInteger</samp> returns a different integer each time it
+	 is called, until the counter wraps around. This is true no matter how many
+	 threads call 
+	 <samp class="codeph">GetUniqueInteger</samp> simultaneously. 
+  </p>
+
+  <p>The operation 
+	 <samp class="codeph">compare_and_swap</samp> is a fundamental operation to many
+	 non-blocking algorithms. A problem with mutual exclusion is that if a thread
+	 holding a lock is suspended, all other threads are blocked until the holding
+	 thread resumes. Non-blocking algorithms avoid this problem by using atomic
+	 operations instead of locking. They are generally complicated and require
+	 sophisticated analysis to verify. However, the following idiom is
+	 straightforward and worth knowing. It updates a shared variable 
+	 <samp class="codeph">globalx</samp> in a way that is somehow based on its old value:
+  </p>
+
+  <pre>atomic&lt;int&gt; globalx;
+&nbsp;
+int UpdateX() {      // Update x and return old value of x.
+    do {
+        // Read globalX
+        oldx = globalx;
+        // Compute new value 
+        newx = ...expression involving oldx....
+        // Store new value if another thread has not changed globalX.
+    } while( globalx.compare_and_swap(newx,oldx)!=oldx );
+    return oldx;
+}</pre>
+  <p>Worse, some threads iterate the loop until no other thread interferes.
+	 Typically, if the update takes only a few instructions, the idiom is faster
+	 than the corresponding mutual-exclusion solution. 
+  </p>
+
+  <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+	 <p>If the following sequence thwarts your intent, then the update idiom is
+		inappropriate:
+	 </p>
+ 
+	 <ol>
+		<li>
+		  <p>A thread reads a value 
+			 <var>A</var> from 
+			 <samp class="codeph">globalx</samp>
+		  </p>
+
+		</li>
+
+		<li>
+		  <p>Other threads change 
+			 <samp class="codeph">globalx</samp> from 
+			 <var>A</var> to 
+			 <var>B</var> to 
+			 <var>A</var>
+		  </p>
+
+		</li>
+
+		<li>
+		  <p>The thread in step 1 does its 
+			 <samp class="codeph">compare_and_swap</samp>, reading 
+			 <var>A</var> and thus not detecting the intervening change to
+			 
+			 <var>B</var>. 
+		  </p>
+
+		</li>
+
+	 </ol>
+
+  </div>
+  <p>The problem is called the 
+	 <em>ABA</em> 
+	 <em>problem</em>. It is frequently a problem in designing non-blocking
+	 algorithms for linked data structures. See the Internet for more information.
+  </p>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/title.htm">Intel&reg; Threading Building Blocks (Intel&reg; TBB) User Guide</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../tbb_userguide/Why_atomic_T_Has_No_Constructors.htm">Why atomic&lt;T&gt; Has No Constructors in C++03 mode</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Memory_Consistency.htm">Memory Consistency</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

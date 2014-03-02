@@ -1,0 +1,188 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Memory Consistency">
+<meta name="DC.subject" content="Memory Consistency">
+<meta name="keywords" content="Memory Consistency">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Atomic_Operations.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Memory_Consistency">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Memory Consistency</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Memory_Consistency">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Memory_Consistency"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Memory Consistency</h1>
+ 
+   
+  <div> 
+	 <p>Some architectures, such as IA-64 architecture, have "weak memory
+		consistency", in which memory operations on different addresses may be
+		reordered by the hardware for sake of efficiency. The subject is complex, and
+		it is recommended that the interested reader consult other works (Intel 2002,
+		Robison 2003) on the subject. If you are programming only for IA-32 and Intel&reg;
+		64 architecture platforms, you can skip this section. 
+	 </p>
+ 
+	 <p>Class 
+		<samp class="codeph">atomic</samp>&lt;T&gt; permits you to enforce certain ordering
+		of memory operations as described in the following table. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl14"><!-- --></a><table cellpadding="4" summary="" id="tbl14" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Ordering Constraints</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" valign="top" width="12.059369202226346%" id="d141454e46"> 
+			 <p>Kind 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="58.070500927643785%" id="d141454e52"> 
+			 <p>Description 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="29.87012987012987%" id="d141454e58"> 
+			 <p>Default For 
+			 </p>
+ 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="12.059369202226346%" headers="d141454e46 "> 
+			 <p><samp class="codeph">acquire 
+				</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="58.070500927643785%" headers="d141454e52 "> 
+			 <p>Operations after the atomic operation never move over it. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="29.87012987012987%" headers="d141454e58 "> 
+			 <p>read 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="12.059369202226346%" headers="d141454e46 "> 
+			 <p><samp class="codeph">release</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="58.070500927643785%" headers="d141454e52 "> 
+			 <p>Operations before the atomic operation never move over it. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="29.87012987012987%" headers="d141454e58 "> 
+			 <p>write 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="12.059369202226346%" headers="d141454e46 "> 
+			 <p>sequentially consistent 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="58.070500927643785%" headers="d141454e52 "> 
+			 <p>Operations on either side never move over the atomic operation and
+				the sequentially consistent atomic operations have a global order. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="29.87012987012987%" headers="d141454e58 "> 
+			 <p><samp class="codeph">fetch_and_store</samp> 
+			 </p>
+ 
+			 <p><samp class="codeph">fetch_and_add 
+				</samp> 
+			 </p>
+ 
+			 <p><samp class="codeph">compare_and_swap</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  <p>The rightmost column lists the operations that default to a particular
+	 constraint. Use these defaults to avoid unexpected surprises. For read and
+	 write, the defaults are the only constraints available. However, if you are
+	 familiar with weak memory consistency, you might want to change the default
+	 sequential consistency for the other operations to weaker constraints. To do
+	 this, use variants that take a template argument. The argument can be 
+	 <samp class="codeph">acquire</samp> or 
+	 <samp class="codeph">release</samp>, which are values of the enum type 
+	 <samp class="codeph">memory_semantics</samp>. 
+  </p>
+ 
+  <p>For example, suppose various threads are producing parts of a data
+	 structure, and you want to signal a consuming thread when the data structure is
+	 ready. One way to do this is to initialize an atomic counter with the number of
+	 busy producers, and as each producer finishes, it executes: 
+  </p>
+ 
+  <pre>refcount.fetch_and_add&lt;release&gt;(-1);</pre> 
+  <p>The argument 
+	 <samp class="codeph">release</samp> guarantees that the producer's writes to shared
+	 memory occurs before 
+	 <samp class="codeph">refcount</samp> is decremented. Similarly, when the consumer
+	 checks 
+	 <samp class="codeph">refcount</samp>, the consumer must use an 
+	 <samp class="codeph">acquire</samp> fence, which is the default for reads, so that the
+	 consumer's reads of the data structure do not happen until after the consumer
+	 sees 
+	 <samp class="codeph">refcount</samp> become 0. 
+  </p>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Atomic_Operations.htm">Atomic Operations</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

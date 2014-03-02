@@ -1,0 +1,101 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="~task_scheduler_init()">
+<meta name="DC.subject" content="~task_scheduler_init">
+<meta name="keywords" content="~task_scheduler_init">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/task_scheduler/task_scheduler_init_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="task_scheduler_init.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_scheduler_init_1">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>~task_scheduler_init()</title>
+</head>
+<body id="task_scheduler_init_1">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_scheduler_init_1"><!-- --></a>
+
+
+    <h1 class="topictitle1">~task_scheduler_init()</h1>
+
+   
+<div><div class="section"><p><strong>Effects</strong></p>
+
+        <p>If the <samp class="codeph">task_scheduler_init</samp> is inactive, nothing happens. Otherwise, the <samp class="codeph">task_scheduler_init</samp> is deactivated as follows. If the thread has no other active <samp class="codeph">task_scheduler_init</samp> objects, the thread deallocates internal thread-specific resources required for scheduling <samp class="codeph">task</samp> objects. If no existing thread has any active <samp class="codeph">task_scheduler_init</samp> objects, then the internal worker threads are terminated.</p>
+</div>
+
+        <div class="section"><h2 class="sectiontitle">void initialize( int max_threads=automatic )</h2>
+            <p><strong>Requirements</strong></p>
+
+            <p>The <samp class="codeph">task_scheduler_init</samp> shall be inactive.</p>
+
+            <p><strong>Effects</strong></p>
+
+            <p>Similar to constructor.</p>
+</div>
+
+        <div class="section"><h2 class="sectiontitle">void terminate()</h2>
+            <p><strong>Requirements</strong></p>
+
+            <p>The <samp class="codeph">task_scheduler_init</samp> shall be active.</p>
+
+            <p><strong>Effects</strong></p>
+
+            <p>Deactivates the <samp class="codeph">task_scheduler_init</samp> without destroying it. The description of the destructor specifies what deactivation entails.</p>
+</div>
+
+        <div class="section"><h2 class="sectiontitle">int default_num_threads()</h2>
+            <p><strong>Returns</strong></p>
+
+            <p>One more than the number of worker threads that <samp class="codeph">task_scheduler_init</samp> creates by default. </p>
+</div>
+
+        <div class="section"><h2 class="sectiontitle">bool is_active() const</h2>
+            <p><strong>Returns</strong></p>
+
+            <p>True if <samp class="codeph">*this</samp> is active as described in Section task_scheduler_init Class ; false otherwise. </p>
+</div>
+
+        <div class="section"><h2 class="sectiontitle">Mixing with OpenMP </h2>
+            <p>Mixing OpenMP with Intel&reg; Threading Building Blocks is supported. Performance may be less than a pure OpenMP or pure Intel&reg; Threading Building Blocks solution if the two forms of parallelism are nested.</p>
+
+            <p>An OpenMP parallel region that plans to use the
+                    <samp class="codeph">task</samp> scheduler should create a
+                    <samp class="codeph">task_scheduler_init</samp> inside the parallel region, because the
+                parallel region may create new threads unknown to Intel&reg; Threading Building
+                Blocks. Each of these new OpenMP threads, like native threads, must create a
+                    <samp class="codeph">task_scheduler_init</samp> object before using Intel&reg; Threading
+                Building Blocks algorithms. The following example demonstrates how to do this.</p>
+
+            <pre>void OpenMP_Calls_TBB( int n ) {
+#pragma omp parallel
+   &nbsp; {
+       &nbsp; task_scheduler_init init;
+#pragma omp for
+       &nbsp; for( int i=0; i&lt;n; ++i ) {
+           &nbsp; ...can use class task or 
+              &nbsp; Intel&reg; Threading Building Blocks algorithms here ...
+       &nbsp; }
+   &nbsp; }
+}</pre>
+            
+        </div>
+</div>
+ 
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/task_scheduler/task_scheduler_init_cls.htm">task_scheduler_init Class</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="task_scheduler_init.htm">task_scheduler_init int max_threads</a></div></div>
+</div>
+</body>
+</html>

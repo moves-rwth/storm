@@ -1,0 +1,172 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="task_scheduler_init( int max_threads=automatic, stack_size_type thread_stack_size=0 )">
+<meta name="DC.subject" content="task_scheduler_init">
+<meta name="keywords" content="task_scheduler_init">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/task_scheduler/task_scheduler_init_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_scheduler_init">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>task_scheduler_init( int max_threads=automatic, stack_size_type thread_stack_size=0 )</title>
+</head>
+<body id="task_scheduler_init">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_scheduler_init"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">task_scheduler_init( int max_threads=automatic,
+	 stack_size_type thread_stack_size=0 )</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p><strong>Requirements</strong> 
+		</p>
+ 
+		<p>The value 
+		  <samp class="codeph">max_threads</samp> shall be one of the values in the table
+		  below. 
+		</p>
+ 
+		<p><strong>Effects</strong> 
+		</p>
+ 
+		<p>If 
+		  <samp class="codeph">max_threads==task_scheduler_init::deferred</samp>, nothing
+		  happens, and the 
+		  <samp class="codeph">task_scheduler_init</samp> remains inactive. Otherwise, the
+		  task_scheduler_init is activated as follows. If the thread has no other active 
+		  <samp class="codeph">task_scheduler_init</samp> objects, the thread allocates
+		  internal thread-specific resources required for scheduling task objects. If
+		  there were no threads with active 
+		  <samp class="codeph">task_scheduler_init</samp> objects yet, then internal worker
+		  threads are created as described in the table below. These workers sleep until
+		  needed by the task scheduler. Each worker created by the scheduler has an
+		  implicit active 
+		  <samp class="codeph">task_scheduler_init</samp> object. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p>As of Intel&reg; Threading Building Blocks (Intel&reg; TBB) 3.0, it is meaningful for the parameter
+			 
+			 <samp class="codeph">max_threads</samp> to differ for different calling threads.
+			 For example, if thread A specifies 
+			 <samp class="codeph">max_threads=3</samp> and thread B specifies 
+			 <samp class="codeph">max_threads=7</samp>, then A is limited to having 2
+			 workers, but B can have up to 6 workers. Since workers may be shared between A
+			 and B, the total number of worker threads created by the scheduler could be 6. 
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p>Some implementations create more workers than
+			 necessary. However, the excess workers remain asleep unless needed. 
+		  </p>
+ 
+		</div> 
+		<p>The optional parameter 
+		  <samp class="codeph">thread_stack_size</samp> specifies the stack size of each
+		  worker thread. A value of 0 specifies use of a default stack size. The first
+		  active 
+		  <samp class="codeph">task_scheduler_init</samp> establishes the stack size for all
+		  worker threads. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl32"><!-- --></a><table cellpadding="4" summary="" id="tbl32" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Values for max_threads</span></caption> 
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d116671e99"> 
+				  <p>max_threads 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d116671e105"> 
+				  <p>Semantics 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d116671e99 "> 
+				  <p><samp class="codeph">task_scheduler_init::automatic</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d116671e105 "> 
+				  <p>Let library determine 
+					 <samp class="codeph">max_threads 
+					 </samp>based on hardware configuration. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d116671e99 "> 
+				  <p><samp class="codeph">task_scheduler_init::deferred</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d116671e105 "> 
+				  <p>Defer activation actions. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d116671e99 "> 
+				  <p>positive integer 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d116671e105 "> 
+				  <p>Request that up to 
+					 <samp class="codeph">max_threads</samp><span>-</span>1
+					 worker threads work on behalf of the calling thread at any one time. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/task_scheduler/task_scheduler_init_cls.htm">task_scheduler_init Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

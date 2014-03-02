@@ -1,0 +1,120 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="error_code load(char const * path[],int min_ver = TBB_INTERFACE_VERSION, int max_ver = INT_MAX)">
+<meta name="DC.subject" content="error_code load(char const * path[],int min_ver = TBB_INTERFACE_VERSION, int max_ver = INT_MAX)">
+<meta name="keywords" content="error_code load(char const * path[],int min_ver = TBB_INTERFACE_VERSION, int max_ver = INT_MAX)">
+<meta name="DC.Relation" scheme="URI" content="../../../../../reference/appendices/community_preview_features/run_time_loader/runtime_loader_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="error_code_load">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../../../intel_css_styles.css">
+<title>error_code load(char const * path[],int min_ver = TBB_INTERFACE_VERSION, int max_ver = INT_MAX)</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="error_code_load">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(5);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="error_code_load"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">error_code load(char const * path[],int min_ver
+	 = TBB_INTERFACE_VERSION, int max_ver = INT_MAX)</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Requirements</h2> 
+		 
+		<p>The last element of 
+		  <samp class="codeph">path[]</samp> must be 
+		  <samp class="codeph">NULL</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Effects</h2> 
+		 
+		<p>Load a suitable version of an Intel&reg; Threading Building Blocks (Intel&reg; TBB) dynamic
+		  library from one of the specified directories. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		  <p>The method searches for a library in directories
+			 specified in the 
+			 <samp class="codeph">path[]</samp> array. When a
+			 library is found, it is loaded and its interface version (as returned by 
+			 <samp class="codeph">TBB_runtime_interface_version())</samp> is
+			 checked. If the version does not meet the requirements specified by 
+			 <samp class="codeph">min_ver</samp> and 
+			 <samp class="codeph">max_ver</samp>, the library
+			 is unloaded. The search continues in the next specified path, until a suitable
+			 version of the Intel&reg; TBB library is found or the array of paths ends with 
+			 <samp class="codeph">NULL</samp>. It is
+			 recommended to use default values for 
+			 <samp class="codeph">min_ver</samp> and 
+			 <samp class="codeph">max_ver</samp>. 
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>For security reasons, avoid using relative
+			 directory names such as current ("."), parent ("..") or any
+			 other relative directory (like "lib") when searching for a library.
+			 Use only absolute directory names (as shown in the example above); if
+			 necessary, construct absolute names at run time. Neglecting these rules may
+			 cause your program to execute 3-rd party malicious code. (See
+			 http://www.microsoft.com/technet/security/advisory/2269637.mspx for details.) 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Returns</h2> 
+		 
+		<p><samp class="codeph">ec_ok</samp> - a suitable version was
+		  successfully loaded. 
+		</p>
+ 
+		<p><samp class="codeph">ec_bad_call</samp> - this runtime_loader
+		  instance has already been used to load a library. 
+		</p>
+ 
+		<p><samp class="codeph">ec_bad_lib</samp> - A library was found but
+		  it appears invalid. 
+		</p>
+ 
+		<p><samp class="codeph">ec_bad_arg</samp> - min_ver and/or max_ver is
+		  negative or zero, or min_ver &gt; max_ver. 
+		</p>
+ 
+		<p><samp class="codeph">ec_bad_ver</samp> - unsuitable version has
+		  already been loaded by another instance. 
+		</p>
+ 
+		<p><samp class="codeph">ec_no_lib</samp> - No suitable version was
+		  found. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../../../reference/appendices/community_preview_features/run_time_loader/runtime_loader_cls.htm">runtime_loader Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

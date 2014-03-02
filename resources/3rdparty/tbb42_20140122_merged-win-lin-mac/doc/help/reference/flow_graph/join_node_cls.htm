@@ -1,0 +1,545 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="join_node Template Class">
+<meta name="DC.subject" content="join_node Template Class">
+<meta name="keywords" content="join_node Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Relation" scheme="URI" content="input_port_func.htm#input_port_func">
+<meta name="DC.Relation" scheme="URI" content="message_passing_protocol.htm">
+<meta name="DC.Relation" scheme="URI" content="flow_tuple.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="join_node_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>join_node Template Class</title>
+</head>
+<body id="join_node_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="join_node_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">join_node Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>A node that creates a tuple&lt;T0,T1, ... &gt; from a set of messages
+		  received at its input ports and broadcasts the tuple to all of its successors.
+		  The 
+		  <span class="keyword">class</span> 
+		  <span class="keyword">join_node</span> supports three buffering policies at its
+		  input ports: 
+		  <span class="keyword">reserving</span>, 
+		  <span class="keyword">queueing</span> and 
+		  <span class="keyword">tag_matching</span>. By default, 
+		  <span class="keyword">join_node</span> input ports use the 
+		  <span class="keyword">queueing</span> policy. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>
+template&lt;typename OutputTuple, graph_buffer_policy JP = queueing&gt;
+class join_node;
+</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/flow_graph.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A join_node is a 
+		  <span class="keyword">graph_node</span> and a 
+		  <span class="keyword">sender&lt; flow::tuple&lt; T0, T1, ... &gt;&gt;</span>. It
+		  contains a tuple of input ports, each of which is a 
+		  <span class="keyword">receiver&lt;Ti&gt;</span> for each of the 
+		  <span class="keyword">T0</span> .. 
+		  <span class="keyword">TN</span> in 
+		  <span class="keyword">OutputTuple</span>. It supports multiple input receivers
+		  with distinct types and broadcasts a tuple of received messages to all of its
+		  successors. All input ports of a 
+		  <span class="keyword">join_node</span> must use the same buffering policy. The
+		  behavior of a 
+		  <span class="keyword">join_node</span> based on its buffering policy is shown in
+		  the table below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl28"><!-- --></a><table cellpadding="4" summary="" id="tbl28" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Behavior of a join_node based on the buffering policy of its input
+		  ports.</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" align="center" valign="top" width="25%" id="d73545e114"> 
+				  <p>Buffering Policy 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" align="center" valign="top" width="75%" id="d73545e120"> 
+				  <p>Behavior 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="25%" headers="d73545e114 "> 
+				  <p>queueing 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="75%" headers="d73545e120 "> 
+				  <p>As each input port is put to, the incoming message is added to
+					 an unbounded first-in first-out queue in the port. When there is at least one
+					 message at each input port, the 
+					 <span class="keyword">join_node</span> broadcasts a tuple containing the
+					 head of each queue to all successors. If at least one successor accepts the
+					 tuple, the head of each input port's queue is removed; otherwise, the messages
+					 remain in their respective input port queues. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="25%" headers="d73545e114 "> 
+				  <p>reserving 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="75%" headers="d73545e120 "> 
+				  <p>As each input port is put to, the 
+					 <span class="keyword">join_node</span> marks that an input may be
+					 available at that port and returns 
+					 <span class="keyword">false</span>. When all ports have been marked as
+					 possibly available, the 
+					 <span class="keyword">join_node</span> will try to reserve a message at
+					 each port from their known predecessors. If it is unable to reserve a message
+					 at a port, it un-marks that port, and releases all previously acquired
+					 reservations. If it is able to reserve a message at all ports, it broadcasts a
+					 tuple containing these messages to all successors. If at least one successor
+					 accepts the tuple, the reservations are consumed; otherwise, they are released.
+					 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="25%" headers="d73545e114 "> 
+				  <p>tag_matching 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="75%" headers="d73545e120 "> 
+				  <p>As each input port is put to, a user-provided function object
+					 is applied to the message to obtain its tag. The message is then added to a
+					 hash table at the input port, using the tag as the key. When there is message
+					 at each input port for a given tag, the 
+					 <span class="keyword">join_node</span> broadcasts a tuple containing the
+					 matching messages to all successors. If at least one successor accepts the
+					 tuple, the messages are removed from each input port's hash table; otherwise,
+					 the messages remain in their respective input ports. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>Rejection of messages by successors of the 
+		  <span class="keyword">join_node</span> and failed gets from predecessors of the
+		  input ports are handled using the protocol in the Message Passing Protocol, see
+		  link below. 
+		</p>
+ 
+		<p>The function template 
+		  <span class="keyword">input_port</span> simplifies the syntax for getting a
+		  reference to a specific input port. 
+		</p>
+ 
+		<p><span class="keyword">OutputTuple</span> must be a 
+		  <span class="keyword">flow::tuple&lt;T0,T1, ... &gt;</span> where each element is
+		  copy-constructible and assignable. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<pre>#include&lt;cstdio&gt;
+#include "tbb/flow_graph.h"
+ 
+using namespace tbb::flow;
+ 
+int main() {
+   graph g;
+   function_node&lt;int,int&gt;
+       f1( g, unlimited, [](const int &amp;i) { return 2*i; } );
+   function_node&lt;float,float&gt;
+       f2( g, unlimited, [](const float &amp;f) { return f/2; } );
+ 
+   join_node&lt; flow::tuple&lt;int,float&gt; &gt; j(g);
+ 
+   function_node&lt; flow::tuple&lt;int,float&gt; &gt;
+       f3( g, unlimited,
+           []( const flow::tuple&lt;int,float&gt; &amp;t ) {
+               printf( "Result is %f\n",
+                       std::get&lt;0&gt;(t) + std::get&lt;1&gt;(t));
+           } );
+ 
+   make_edge( f1, input_port&lt;0&gt;( j ) );
+   make_edge( f2, input_port&lt;1&gt;( j ) );
+   make_edge( j, f3 );
+ 
+   f1.try_put( 3 );
+   f2.try_put( 3 );
+   g.wait_for_all( );
+   return 0;
+}</pre> 
+		<p>In the example above, three 
+		  <span class="keyword">function_node</span> objects are created: 
+		  <span class="keyword">f1</span> multiplies an 
+		  <span class="keyword">int i</span> by 2, 
+		  <span class="keyword">f2</span> divides a 
+		  <span class="keyword">float f</span> by 2, and 
+		  <span class="keyword">f3</span> receives a 
+		  <span class="keyword">flow::tuple&lt;int,float&gt; t</span>, adds its elements
+		  together and prints the result. The 
+		  <span class="keyword">join_node j</span> combines the output of 
+		  <span class="keyword">f1</span> and 
+		  <span class="keyword">f2</span>, and then forwards the resulting tuple to 
+		  <span class="keyword">f3</span>. This example is purely a syntactic demonstration
+		  since there is very little work in the nodes. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+namespace flow {
+ 
+enum graph_buffer_policy {
+    rejecting, reserving, queueing, tag_matching };
+ 
+template&lt;typename OutputTuple, graph_buffer_policy JP = queueing&gt;
+class join_node :
+    public graph_node, public sender&lt; OutputTuple &gt; {
+ 
+public:
+    typedef OutputTuple output_type;
+    typedef receiver&lt;output_type&gt; successor_type;
+    typedef <em>implementation-dependent-tuple</em> input_ports_tuple_type;
+ 
+    join_node( graph &amp;g );
+    join_node( const join_node &amp;src );
+    input_ports_tuple_type &amp;inputs( );
+    bool register_successor( successor_type &amp;r );
+    bool remove_successor( successor_type &amp;r );
+    bool try_get( output_type &amp;v );
+    bool try_reserve( output_type &amp;v );
+    bool try_release( );
+    bool try_consume( );
+ 
+};
+ 
+//
+// Specialization for tag_matching
+//
+ 
+template&lt;typename OutputTuple&gt;
+class join_node&lt;OutputTuple, tag_matching&gt; :
+    public graph_node, public sender&lt; OutputTuple &gt; {
+ 
+public:
+ 
+    // Has the same methdods as previous join_node,
+    // but has constructors to specify the tag_matching
+    // function objects
+ 
+    template&lt;typename B0, typename B1&gt;
+    join_node( graph &amp;g, B0 b0, B1 b1 );
+   
+    // Constructors are defined similarly for
+    // 3 through 10 elements ...
+};
+ 
+}
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d73545e284">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d73545e287">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">join_node( graph &amp;g
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> Constructs a 
+					 <span class="keyword">join_node</span> that will spawn tasks using the
+					 root task in 
+					 <span class="keyword">g</span>. 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">template &lt; typename B0,
+						typename B1, ... &gt; join_node( graph &amp;g, B0 b0, B1 b1, ... )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p>A constructor only available in the 
+						<span class="keyword">tag_matching</span> specialization of 
+						<span class="keyword">join_node</span>. 
+					 </p>
+ 
+					 <p>Creates a 
+						<span class="keyword">join_node</span> that uses the function objects 
+						<span class="keyword">b0</span>, 
+						<span class="keyword">b1</span>, ... , 
+						<span class="keyword">bN</span> to determine that tags for the input
+						ports 0 through N. It will spawn tasks using the root task in 
+						<span class="keyword">g</span>. 
+					 </p>
+ 
+		                         <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		                           <p> Function objects passed to the join must not throw.
+		                           </p>
+ 
+                                         </div>
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">join_node( const join_node
+						&amp;src )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p>Creates a 
+						<span class="keyword">join_node</span> that has the same initial state
+						that 
+						<span class="keyword">src</span> had at its construction. The list of
+						predecessors, messages in the input ports, and successors are NOT copied. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">input_ports_tuple_type
+						&amp;inputs( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p><strong>Returns</strong>: a 
+						<span class="keyword">flow::tuple</span> of receivers. Each element
+						inherits from 
+						<span class="keyword">tbb::receiver&lt;T&gt;</span> where 
+						<span class="keyword">T</span> is the type of message expected at that
+						input. Each tuple element can be used like any other 
+						<span class="keyword">flow::receiver&lt;T&gt;</span>. The behavior of
+						the ports based on the selected 
+						<span class="keyword">join_node</span> policy is shown in the table
+						above. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">bool register_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p>Adds 
+						<span class="keyword">r</span> to the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">bool remove_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p>Removes 
+						<span class="keyword">r</span> from the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">bool try_get( output_type &amp;v
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p>Attempts to generate a tuple based on the buffering policy
+						of the 
+						<span class="keyword">join_node</span>. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: If it can successully generate a tuple, it
+						copies it to 
+						<span class="keyword">v</span> and returns 
+						<span class="keyword">true</span>. Otherwise it returns 
+						<span class="keyword">false</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">bool try_reserve( output_type
+						&amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p>Does not support reservations. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">bool try_release( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p>Does not support reservations. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">bool try_consume( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p>Does not support reservations. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d73545e284 "><span class="keyword">template&lt;size_t N, typename
+						JNT&gt; typename flow::tuple_element&lt;N, typename
+						JNT::input_ports_tuple_type&gt;::type &amp;input_port( JNT &amp;jn )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d73545e287 "> 
+					 <p>Calling 
+						<span class="keyword">input_port &lt;N&gt;( jn )</span> is equivalent
+						to calling 
+						<span class="keyword">std::get&lt;N&gt;( jn.inputs() )</span> 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: the N<sup>th</sup> input port for 
+						<span class="keyword">join_node jn</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="input_port_func.htm#input_port_func">input_port Template Function 
+		  </a></div>
+<div><a href="message_passing_protocol.htm">Message Passing Protocol 
+		  </a></div>
+<div><a href="flow_tuple.htm">flow::tuple
+		  </a></div></div>
+</div>
+
+</body>
+</html>

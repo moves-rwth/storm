@@ -1,0 +1,82 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Mutexes">
+<meta name="DC.subject" content="Mutexes">
+<meta name="keywords" content="Mutexes">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/mutex_concept.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/hardware_transactional_locking.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/mutex_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/recursive_mutex_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/spin_mutex_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/speculative_spin_mutex_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/queuing_mutex_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/readerwritermutex_concept.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/spin_rw_mutex_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/queuing_rw_mutex_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/null_mutex_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/synchronization/mutexes/null_rw_mutex_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="mutexes">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Mutexes</title>
+</head>
+<body id="mutexes">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="mutexes"><!-- --></a>
+
+
+    <h1 class="topictitle1">Mutexes</h1>
+
+    
+<div>
+        <div class="section">
+            <p>Mutexes provide MUTual EXclusion of threads from sections of code.</p>
+
+            <p>In general, strive for designs that minimize the use of explicit locking, because it can lead to serial bottlenecks. If explicitly locking is necessary, try to spread it out so that multiple threads usually do not contend to lock the same mutex.</p>
+</div>
+ 
+    </div>
+ 
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/synchronization.htm">Synchronization</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/mutex_concept.htm">Mutex Concept</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/hardware_transactional_locking.htm">Speculative locking (Transactional Lock Elision)</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/mutex_cls.htm">mutex Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/recursive_mutex_cls.htm">recursive_mutex Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/spin_mutex_cls.htm">spin_mutex Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/speculative_spin_mutex_cls.htm">speculative_spin_mutex Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/queuing_mutex_cls.htm">queuing_mutex Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/readerwritermutex_concept.htm">ReaderWriterMutex Concept</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/spin_rw_mutex_cls.htm">spin_rw_mutex Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/queuing_rw_mutex_cls.htm">queuing_rw_mutex Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/null_mutex_cls.htm">null_mutex Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/synchronization/mutexes/null_rw_mutex_cls.htm">null_rw_mutex Class</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

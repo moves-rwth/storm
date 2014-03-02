@@ -1,0 +1,259 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Divide and Conquer">
+<meta name="DC.subject" content="Divide and Conquer">
+<meta name="keywords" content="Divide and Conquer">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="Agglomeration.htm#Agglomeration">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Divide_and_Conquer">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Divide and Conquer</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Divide_and_Conquer">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Divide_and_Conquer"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Divide and Conquer</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		 
+		<p>Parallelize a divide and conquer algorithm. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>Divide and conquer is widely used in serial algorithms. Common
+		  examples are quicksort and mergesort. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Problem can be transformed into subproblems that can be solved
+				independently. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Splitting problem or merging solutions is relatively cheap
+				compared to cost of solving the subproblems. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		 
+		<p>There are several ways to implement divide and conquer in Intel&reg;
+		  Threading Building Blocks (Intel&reg; TBB). The best choice depends upon
+		  circumstances. 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>If division always yields the same number of subproblems, use
+				recursion and 
+				<samp class="codeph">tbb::parallel_invoke</samp>. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>If the number of subproblems varies, use recursion and 
+				<samp class="codeph">tbb::task_group</samp>. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>If ultimate efficiency and scalability is important, use 
+				<samp class="codeph">tbb::task</samp> and continuation passing style. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>Quicksort is a classic divide-and-conquer algorithm. It divides a
+		  sorting problem into two subsorts. A simple serial version looks
+		  like:<a name="fnsrc_1" href="#fntarg_1"><sup>1</sup></a> 
+		</p>
+ 
+		<pre>void SerialQuicksort( T* begin, T* end ) {
+   if( end-begin&gt;1  ) {
+       using namespace std;
+       T* mid = partition( begin+1, end, bind2nd(less&lt;T&gt;(),*begin) );
+       swap( *begin, mid[-1] );
+       SerialQuicksort( begin, mid-1 );
+       SerialQuicksort( mid, end );
+   }
+}</pre> 
+		<p>The number of subsorts is fixed at two, so 
+		  <samp class="codeph">tbb::parallel_invoke</samp> provides a simple way to
+		  parallelize it. The parallel code is shown below: 
+		</p>
+ 
+		<pre>void ParallelQuicksort( T* begin, T* end ) {
+   if( end-begin&gt;1 ) {
+       using namespace std;
+       T* mid = partition( begin+1, end, bind2nd(less&lt;T&gt;(),*begin) );
+       swap( *begin, mid[-1] );
+       tbb::parallel_invoke( [=]{ParallelQuicksort( begin, mid-1 );},
+                             [=]{ParallelQuicksort( mid, end );} );
+   }
+}</pre> 
+		<p>Eventually the subsorts become small enough that serial execution is
+		  more efficient. The following variation, with the change shown in 
+		  <samp class="codeph"><span style="color:blue"><strong>bold font</strong></span></samp>,
+		  does sorts of less than 500 elements using the earlier serial code. 
+		</p>
+ 
+		<pre>void ParallelQuicksort( T* begin, T* end ) {
+   if( end-begin&gt;=<span style="color:blue"><strong>500</strong></span> ) {
+       using namespace std;
+       T* mid = partition( begin+1, end, bind2nd(less&lt;T&gt;(),*begin) );
+       swap( *begin, mid[-1] );
+       tbb::parallel_invoke( [=]{ParallelQuicksort( begin, mid-1 );},
+                             [=]{ParallelQuicksort( mid, end );} );
+   } <span style="color:blue"><strong>else {
+       SerialQuicksort( begin, end );
+   }</strong></span>
+}</pre> 
+		<p>The change is an instance of the Agglomeration pattern. 
+		</p>
+ 
+		<p>The next example considers a problem where there are a variable number
+		  of subproblems. The problem involves a tree-like description of a mechanical
+		  assembly. There are two kinds of nodes: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Leaf nodes represent individual parts. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Internal nodes represent groups of parts. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>The problem is to find all nodes that collide with a target node. The
+		  following code shows a serial solution that walks the tree. It records in 
+		  <samp class="codeph">Hits</samp> any nodes that collide with 
+		  <samp class="codeph">Target</samp>. 
+		</p>
+ 
+		<pre>std::list&lt;Node*&gt; Hits;
+Node* Target;
+&nbsp;
+void SerialFindCollisions( Node&amp; x ) {
+   if( x.is_leaf() ) {
+       if( x.collides_with( *Target ) )
+           Hits.push_back(&amp;x);
+   } else {
+       for( Node::const_iterator y=x.begin();y!=x.end(); ++y )
+           SerialFindCollisions(*y);
+   }
+} </pre> 
+		<p id="ParallelFindCollisions"><a name="ParallelFindCollisions"><!-- --></a>A parallel version is shown below. 
+		</p>
+ 
+		<pre>typedef tbb::enumerable_thread_specific&lt;std::list&lt;Node*&gt; &gt; LocalList;
+LocalList LocalHits; 
+Node* Target;    // Target node    
+&nbsp;
+void ParallelWalk( Node&amp; x ) {
+   if( x.is_leaf() ) {
+       if( x.collides_with( *Target ) )
+           LocalHits.local().push_back(&amp;x);
+   } else {
+       // Recurse on each child y of x in parallel
+       tbb::task_group g;
+       for( Node::const_iterator y=x.begin(); y!=x.end(); ++y )
+           g.run( [=]{ParallelWalk(*y);} );
+       // Wait for recursive calls to complete
+       g.wait();
+   }
+}
+&nbsp;
+void ParallelFindCollisions( Node&amp; x ) {
+   ParallelWalk(x);
+   for(LocalList::iterator i=LocalHits.begin();i!=LocalHits.end(); ++i)
+       Hits.splice( Hits.end(), *i );
+} </pre> 
+		<p>The recursive walk is parallelized using class 
+		  <samp class="codeph">task_group</samp> to do recursive calls in parallel. 
+		</p>
+ 
+		<p>There is another significant change because of the parallelism that is
+		  introduced. Because it would be unsafe to update 
+		  <samp class="codeph">Hits</samp> concurrently, the parallel walk uses variable 
+		  <samp class="codeph">LocalHits</samp> to accumulate results. Because it is of type
+		  
+		  <samp class="codeph">enumerable_thread_specific</samp>, each thread accumulates
+		  its own private result. The results are spliced together into Hits after the
+		  walk completes. 
+		</p>
+ 
+		<p>The results will 
+		  <em>not</em> be in the same order as the original serial code. 
+		</p>
+ 
+		<p>If parallel overhead is high, use the agglomeration pattern. For
+		  example, use the serial walk for subtrees under a certain threshold. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Agglomeration.htm#Agglomeration">Agglomeration 
+		  </a></div></div>
+</div> 
+<p><a name="fntarg_1" href="#fnsrc_1"><sup>1</sup></a>  Production quality quicksort implementations typically use more
+			 sophisticated pivot selection, explicit stacks instead of recursion, and some
+			 other sorting algorithm for small subsorts. The simple algorithm is used here
+			 to focus on exposition of the parallel pattern.</p>
+</body>
+</html>

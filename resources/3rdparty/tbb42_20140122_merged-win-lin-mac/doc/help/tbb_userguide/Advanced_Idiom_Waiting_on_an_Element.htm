@@ -1,0 +1,125 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Advanced Idiom: Waiting on an Element">
+<meta name="DC.subject" content="Advanced Idiom: Waiting on an Element">
+<meta name="keywords" content="Advanced Idiom: Waiting on an Element">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/concurrent_vector.htm">
+<meta name="DC.Relation" scheme="URI" content="Memory_Consistency.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Advanced_Idiom_Waiting_on_an_Element">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Advanced Idiom: Waiting on an Element</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Advanced_Idiom_Waiting_on_an_Element">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Advanced_Idiom_Waiting_on_an_Element"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Advanced Idiom: Waiting on an Element</h1>
+ 
+   
+  <div> 
+	 <p>Sometimes a thread must wait for an element 
+		<samp class="codeph"><var>v</var>[<var>i</var>]</samp> that is being
+		asynchronously added by another thread. The following idiom can be used for the
+		wait: 
+	 </p>
+ 
+	 <ol> 
+		<li> 
+		  <p>Wait until 
+			 <samp class="codeph"><var>i</var>&lt;<var>v</var>.size()</samp>.
+			 Afterwards, 
+			 <samp class="codeph"><var>v</var>[<var>i</var>]</samp> is known
+			 to be allocated, but perhaps not constructed. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Wait for 
+			 <samp class="codeph"><var>v</var>[<var>i</var>]</samp> to be
+			 constructed. 
+		  </p>
+ 
+		</li>
+ 
+	 </ol>
+ 
+	 <p>A good way to do step 2 is to wait for an atomic flag in the element to
+		become non-zero. Sometimes the entire element is the flag. To ensure that the
+		flag is zero until the element is constructed, do the following: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p>Instantiate 
+			 <samp class="codeph">concurrent_vector</samp> with an allocator that allocates
+			 zeroed memory, such as 
+			 <samp class="codeph">tbb::zero_allocator</samp>. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Making the element constructor set the flag to non-zero as its last
+			 action. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>Below is an example where the vector elements are atomic pointers. It
+		assumes that pointers added to the vector are non-NULL, hence the flag is the
+		pointer itself. 
+	 </p>
+ 
+<pre>#include ″tbb/compat/thread″
+#include ″tbb/tbb_allocator.h″ // zero_allocator defined here
+#include ″tbb/atomic.h″
+#include ″tbb/concurrent_vector.h″
+&nbsp;
+using namespace tbb;
+typedef concurrent_vector&lt;atomic&lt;Foo*&gt;, zero_allocator&lt;atomic&lt;Foo*&gt; &gt; &gt; FooVector;
+&nbsp;
+Foo* FetchElement( const FooVector&amp; v, size_t i ) {
+    // Wait for ith element to be allocated
+    while( i&gt;=v.size() )
+        std::this_thread::yield();
+    // Wait for ith element to be constructed
+    while( v[i]==NULL )
+        std::this_thread::yield();
+    return v[i];
+}</pre>
+	 <p>In general, the flag must be an atomic type to ensure proper memory
+		consistency. 
+	 </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/concurrent_vector.htm">concurrent_vector</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Memory_Consistency.htm">Memory Consistency 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

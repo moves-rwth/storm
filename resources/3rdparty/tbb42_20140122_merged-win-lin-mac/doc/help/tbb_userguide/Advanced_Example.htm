@@ -1,0 +1,124 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Advanced Example">
+<meta name="DC.subject" content="Advanced Example">
+<meta name="keywords" content="Advanced Example">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Parallelizing_Simple_Loops.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Advanced_Example">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Advanced Example</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Advanced_Example">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Advanced_Example"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Advanced Example</h1>
+ 
+   
+  <div> 
+	 <p>An example of a more advanced associative operation is to find the index
+		where 
+		<samp class="codeph">Foo(i)</samp> is minimized. A serial version might look like
+		this: 
+	 </p>
+ 
+	 <pre>long SerialMinIndexFoo( const float a[], size_t n ) {
+    float value_of_min = FLT_MAX;        // FLT_MAX from &lt;climits&gt;
+    long index_of_min = -1;
+    for( size_t i=0; i&lt;n; ++i ) {
+        float value = Foo(a[i]);
+        if( value&lt;value_of_min ) {
+            value_of_min = value;
+            index_of_min = i;
+        }
+    }  
+    return index_of_min;
+}</pre> 
+	 <p>The loop works by keeping track of the minimum value found so far, and
+		the index of this value. This is the only information carried between loop
+		iterations. To convert the loop to use 
+		<samp class="codeph">parallel_reduce</samp>, the function object must keep track of
+		the carried information, and how to merge this information when iterations are
+		spread across multiple threads. Also, the function object must record a pointer
+		to 
+		<samp class="codeph">a</samp> to provide context. 
+	 </p>
+ 
+	 <p>The following code shows the complete function object. 
+	 </p>
+ 
+	 <pre>class MinIndexFoo {
+    const float *const my_a;
+public:
+    float value_of_min;
+    long index_of_min; 
+    void operator()( const blocked_range&lt;size_t&gt;&amp; r ) {
+        const float *a = my_a;
+        for( size_t i=r.begin(); i!=r.end(); ++i ) {
+           float value = Foo(a[i]);    
+           if( value&lt;value_of_min ) {
+               value_of_min = value;
+               index_of_min = i;
+           }
+        }
+    <span style="color:blue"><strong>}</strong></span>
+&nbsp;
+    MinIndexFoo( MinIndexFoo&amp; x, split ) : 
+        my_a(x.my_a), 
+        value_of_min(FLT_MAX),    // FLT_MAX from &lt;climits&gt;
+        index_of_min(-1) 
+   {}
+&nbsp;
+    void join( const SumFoo&amp; y ) {
+        if( y.value_of_min&lt;value_of_min ) {
+            value_of_min = y.value_of_min;
+            index_of_min = y.index_of_min;
+        }
+    }
+             
+    MinIndexFoo( const float a[] ) :
+        my_a(a), 
+        value_of_min(FLT_MAX),    // FLT_MAX from &lt;climits&gt;
+        index_of_min(-1),
+    {}
+};</pre> 
+	 <p>Now 
+		<samp class="codeph">SerialMinIndex</samp> can be rewritten using 
+		<samp class="codeph">parallel_reduce</samp> as shown below: 
+	 </p>
+ 
+	 <pre>long ParallelMinIndexFoo( float a[], size_t n ) {
+    MinIndexFoo mif(a);
+    parallel_reduce(blocked_range&lt;size_t&gt;(0,n), mif );
+<span style="color:blue">   </span> return <span style="color:blue"><strong>mif.</strong></span>index_of_min<span style="color:blue"><strong>;</strong></span>
+}</pre> 
+	 <p>The directory 
+		<samp class="codeph">examples/parallel_reduce/primes</samp> contains a prime number
+		finder based on 
+		<samp class="codeph">parallel_reduce</samp>. 
+	 </p>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Parallelizing_Simple_Loops.htm">Parallelizing Simple Loops</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

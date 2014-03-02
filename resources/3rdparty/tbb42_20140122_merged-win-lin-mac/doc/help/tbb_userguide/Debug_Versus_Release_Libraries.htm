@@ -1,0 +1,195 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Debug Versus Release Libraries">
+<meta name="DC.subject" content="Debug Versus Release Libraries">
+<meta name="keywords" content="Debug Versus Release Libraries">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Package_Contents.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/reference.htm#reference">
+<meta name="DC.Relation" scheme="URI" content="Initializing_and_Terminating_the_Library.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Debug_Versus_Release_Libraries">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Debug Versus Release Libraries</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Debug_Versus_Release_Libraries">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Debug_Versus_Release_Libraries"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Debug Versus Release Libraries</h1>
+ 
+   
+  <div> 
+	 <p>The following table details the Intel&reg; Threading Building
+     Blocks (Intel&reg; TBB) dynamic shared libraries that
+		come in debug and release versions. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl2"><!-- --></a><table cellpadding="4" summary="" id="tbl2" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Dynamic Shared Libraries Included in Intel&reg; Threading Building
+	 Blocks</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" valign="top" width="31.439393939393938%" id="d131082e40"> 
+			 <p>Library 
+			 </p>
+ 
+			 <p>(*.dll, lib*.so, or lib*.dylib) 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="34.84848484848485%" id="d131082e49"> 
+			 <p>Description 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="33.71212121212121%" id="d131082e55"> 
+			 <p>When to Use 
+			 </p>
+ 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="31.439393939393938%" headers="d131082e40 "> 
+			 <p><samp class="codeph">tbb_debug</samp> 
+			 </p>
+ 
+			 <p><samp class="codeph">tbbmalloc_debug</samp> 
+			 </p>
+ 
+			 <p><samp class="codeph">tbbmalloc_proxy_debug</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="34.84848484848485%" headers="d131082e49 "> 
+			 <p>These versions have extensive internal checking for correct use of
+				the library. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="33.71212121212121%" headers="d131082e55 "> 
+			 <p>Use with code that is compiled with the macro 
+				<samp class="codeph">TBB_USE_DEBUG</samp> set to 1. 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="31.439393939393938%" headers="d131082e40 "> 
+			 <p><samp class="codeph">tbb</samp> 
+			 </p>
+ 
+			 <p><samp class="codeph">tbbmalloc</samp> 
+			 </p>
+ 
+			 <p><samp class="codeph">tbbmalloc_proxy</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="34.84848484848485%" headers="d131082e49 "> 
+			 <p>These versions deliver top performance. They eliminate most
+				checking for correct use of the library. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="33.71212121212121%" headers="d131082e55 "> 
+			 <p>Use with code compiled with 
+				<samp class="codeph">TBB_USE_DEBUG</samp> undefined or set to zero. 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+	 <p>Test your programs with the debug versions of the libraries first, to
+		assure that you are using the library correctly.&nbsp; With the release versions,
+		incorrect usage may result in unpredictable program behavior. 
+	 </p>
+ 
+  </div> 
+  <p>Intel&reg; TBB supports Intel&reg; Parallel Inspector, Intel&reg; Inspector XE, Intel&reg;
+	 Parallel Amplifier, and Intel&reg; VTune&#8482; Amplifier XE. Full support of these tools
+	 requires compiling with macro 
+	 <samp class="codeph">TBB_USE_THREADING_TOOLS</samp>=1. That symbol defaults to 1 in
+	 the following conditions: 
+  </p>
+ 
+  <ul type="disc"> 
+	 <li> 
+		<p>When 
+		  <samp class="codeph">TBB_USE_DEBUG=1</samp>. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>On the Microsoft Windows* operating system, when 
+		  <samp class="codeph">_DEBUG=1</samp>. 
+		</p>
+ 
+	 </li>
+ 
+  </ul>
+ 
+  <p>The Intel&reg; Threading Building Blocks Reference section explains the
+	 default values in more detail. 
+  </p>
+ 
+  <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+	 <p>The instrumentation support for Intel&reg; Parallel Inspector and Intel&reg;
+		Inspector XE becomes live after the first initialization of the task library.
+		If the library components are used before this initialization occurs, Intel&reg;
+		Parallel Inspector and Intel&reg; Inspector XE may falsely report race conditions
+		that are not really races. 
+	 </p>
+ 
+  </div> 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Package_Contents.htm">Package Contents</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../reference/reference.htm#reference"> Intel&reg; Threading Building Blocks Reference Manual 
+		  </a></div>
+<div><a href="Initializing_and_Terminating_the_Library.htm">Initializing and Terminating the Library 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

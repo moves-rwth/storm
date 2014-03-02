@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Design Patterns">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/title.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Agglomeration.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Elementwise.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Odd-Even_Communication.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Wavefront.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Reduction.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Divide_and_Conquer.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/GUI_Thread.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Non-Preemptive_Priorities.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Local_Serializer.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Fenced_Data_Transfer.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Lazy_Initialization.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Reference_Counting.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Compare_and_Swap_Loop.htm">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/General_References.htm">
+<meta name="DC.Relation" scheme="URI" content="../Lambda_Expressions.htm#tutorial_Lambda_Expressions">
+<meta name="DC.Relation" scheme="URI" content="General_References.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Introduction">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Design Patterns</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Introduction">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Introduction"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Design Patterns</h1>
+ 
+   
+  <div> 
+	 <p>This section provides some common parallel programming patterns and how
+		to implement them in Intel&reg; Threading Building Blocks (Intel&reg; TBB). 
+	 </p>
+ 
+	 <p>The description of each pattern has the following format: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p><strong>Problem</strong> – describes the problem to be solved. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Context</strong> – describes contexts in which the problem arises. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Forces</strong> . considerations that drive use of the pattern. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Solution</strong> . describes how to implement the pattern. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Example</strong> – presents an example implementation. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>Variations and examples are sometimes discussed. The code examples are
+		intended to emphasize key points and are not full-fledged code. Examples may
+		omit obvious const overloads of non-const methods. 
+	 </p>
+ 
+	 <p>Much of the nomenclature and examples are adapted from Web pages created
+		by Eun-Gyu and Marc Snir, and the Berkeley parallel patterns wiki. See links in
+		the General References section. 
+	 </p>
+ 
+	 <p>For brevity, some of the code examples use C++11 lambda expressions. It
+		is straightforward, albeit sometimes tedious, to translate such lambda
+		expressions into equivalent C++98 code. 
+	 </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/title.htm">Intel&reg; Threading Building Blocks (Intel&reg; TBB) User Guide</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Agglomeration.htm">Agglomeration</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Elementwise.htm">Elementwise</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Odd-Even_Communication.htm">Odd-Even Communication</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Wavefront.htm">Wavefront</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Reduction.htm">Reduction</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Divide_and_Conquer.htm">Divide and Conquer</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/GUI_Thread.htm">GUI Thread</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Non-Preemptive_Priorities.htm">Non-Preemptive Priorities</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Local_Serializer.htm">Local Serializer</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Fenced_Data_Transfer.htm">Fenced Data Transfer</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Lazy_Initialization.htm">Lazy Initialization</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Reference_Counting.htm">Reference Counting</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/Compare_and_Swap_Loop.htm">Compare and Swap Loop</a><br>
+</li>
+<li class="ulchildlink"><a href="../../tbb_userguide/Design_Patterns/General_References.htm">General References</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../Lambda_Expressions.htm#tutorial_Lambda_Expressions">Lambda Expressions 
+		  </a></div>
+<div><a href="General_References.htm">General References 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

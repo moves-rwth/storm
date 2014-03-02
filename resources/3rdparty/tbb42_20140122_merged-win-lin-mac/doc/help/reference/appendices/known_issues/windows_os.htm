@@ -1,0 +1,43 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Windows* OS">
+<meta name="DC.subject" content="Windows* OS">
+<meta name="keywords" content="Windows* OS">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/known_issues.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="windows_os">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Windows* OS</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="windows_os">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="windows_os"><!-- --></a>
+
+
+<h1 class="topictitle1">Windows* OS</h1>
+
+
+<div>
+<p>Some Intel&reg; Threading Building Blocks (Intel&reg; TBB) header files necessarily include the header file &lt;windows.h&gt;, which by default defines the macros min and max, and consequently breaks the ISO C++ header files <samp class="codeph">&lt;limits&gt;</samp> and <samp class="codeph">&lt;algorithm&gt;</samp>. Defining the preprocessor symbol <samp class="codeph">NOMINMAX</samp> causes <samp class="codeph">&lt;windows.h&gt;</samp> to not define the offending macros. Thus programs using Intel&reg; TBB and either of the aforementioned ISO C++ headers should be compiled with <samp class="codeph">/DNOMINMAX</samp> as a compiler argument.</p>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/appendices/known_issues.htm">Known Issues</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="cache_aligned_allocator Template Class">
+<meta name="DC.subject" content="allocator, cache aligned allocator">
+<meta name="keywords" content="allocator, cache aligned allocator">
+<meta name="DC.Relation" scheme="URI" content="../../reference/memory_allocation.htm">
+<meta name="DC.Relation" scheme="URI" content="allocator_concept.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="cache_aligned_allocator_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>cache_aligned_allocator Template Class</title>
+</head>
+<body id="cache_aligned_allocator_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="cache_aligned_allocator_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">cache_aligned_allocator Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Template class for allocating memory in way that
+		  avoids false sharing. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename T&gt; class cache_aligned_allocator;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/cache_aligned_allocator.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">cache_aligned_allocator</samp> allocates memory on cache line
+		  boundaries, in order to avoid false sharing. False sharing is when logically
+		  distinct items occupy the same cache line, which can hurt performance if
+		  multiple threads attempt to access the different items simultaneously. Even
+		  though the items are logically separate, the processor hardware may have to
+		  transfer the cache line between the processors as if they were sharing a
+		  location. The net result can be much more memory traffic than if the logically
+		  distinct items were on different cache lines. 
+		</p>
+ 
+		<p>A 
+		  <samp class="codeph">cache_aligned_allocator</samp> models the Allocator Concept.
+		  It can be used to replace a 
+		  <samp class="codeph">std::allocator</samp>. Used judiciously, 
+		  <samp class="codeph">cache_aligned_allocator</samp> can improve performance by
+		  reducing false sharing. However, it is sometimes an inappropriate replacement,
+		  because the benefit of allocating on a cache line comes at the price that 
+		  <samp class="codeph">cache_aligned_allocator</samp> implicitly adds pad memory.
+		  The padding is typically 128 bytes. Hence allocating many small objects with 
+		  <samp class="codeph">cache_aligned_allocator</samp> may increase memory usage. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>        namespace tbb {
+         
+            template&lt;typename T&gt;
+            class cache_aligned_allocator {
+            public:
+                typedef T* pointer;
+                typedef const T* const_pointer;
+                typedef T&amp; reference;
+                typedef const T&amp; const_reference;
+                typedef T value_type;
+                typedef size_t size_type;
+                typedef ptrdiff_t difference_type;
+                template&lt;typename U&gt; struct rebind {
+                    typedef cache_aligned_allocator&lt;U&gt; other;
+                };
+         
+            #if _WIN64
+                char* _Charalloc( size_type size );
+            #endif /* _WIN64 */
+         
+                cache_aligned_allocator() throw();
+                cache_aligned_allocator( const cache_aligned_allocator&amp; ) throw();
+                template&lt;typename U&gt; 
+                cache_aligned_allocator( const cache_aligned_allocator&lt;U&gt;&amp; ) throw();
+                ~cache_aligned_allocator();
+         
+                pointer address(reference x) const;
+                const_pointer address(const_reference x) const;
+         
+                pointer allocate( size_type n, const void* hint=0 );
+                void deallocate( pointer p, size_type );
+                size_type max_size() const throw();
+         
+                void construct( pointer p, const T&amp; value );
+                void destroy( pointer p );
+            };
+         
+            template&lt;&gt;
+            class cache_aligned_allocator&lt;void&gt; {
+            public:
+                typedef void* pointer;
+                typedef const void* const_pointer;
+                typedef void value_type;
+                template&lt;typename U&gt; struct rebind {
+                    typedef cache_aligned_allocator&lt;U&gt; other;
+                };
+            };
+         
+            template&lt;typename T, typename U&gt;
+            bool operator==( const cache_aligned_allocator&lt;T&gt;&amp;, 
+                             const cache_aligned_allocator&lt;U&gt;&amp; );
+         
+            template&lt;typename T, typename U&gt;
+            bool operator!=( const cache_aligned_allocator&lt;T&gt;&amp;, 
+                             const cache_aligned_allocator&lt;U&gt;&amp; );
+         
+        } </pre> 
+		<p>For sake of brevity, the following table describes
+		  only those methods that differ significantly from the corresponding methods of 
+		  <samp class="codeph">std::allocator</samp>. 
+		</p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d92994e105">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d92994e108">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d92994e105 "><span class="keyword">pointer allocate( size_type n,
+						const void* hint=0 )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d92994e108 "> 
+					 <p>Allocates 
+						<em>size</em> bytes of memory on a cache-line boundary. The
+						allocation may include extra hidden padding. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Pointer to the allocated memory. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d92994e105 "><span class="keyword">void deallocate( pointer p,
+						size_type n )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d92994e108 "> 
+					 <p><strong>Requirements</strong>: Pointer 
+						<samp class="codeph"><em>p</em></samp> must be the result of method 
+						<samp class="codeph">allocate(n)</samp>. The memory must not have been
+						already deallocated. 
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Deallocates memory pointed to by 
+						<samp class="codeph">p</samp>. The deallocation also deallocates any
+						extra hidden padding. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d92994e105 "><span class="keyword">char* _Charalloc( size_type size
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d92994e108 "> 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p>This method is provided only on 64-bit Windows* OS
+						  platforms. It is a non-ISO method that exists for backwards compatibility with
+						  versions of Window's containers that seem to require it. Please do not use it
+						  directly. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/memory_allocation.htm">Memory Allocation</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="allocator_concept.htm">Allocator Concept 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

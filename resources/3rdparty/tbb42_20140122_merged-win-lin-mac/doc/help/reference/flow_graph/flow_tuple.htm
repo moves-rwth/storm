@@ -1,0 +1,113 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="flow::tuple Template Class">
+<meta name="DC.subject" content="flow::tuple">
+<meta name="keywords" content="flow::tuple">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Relation" scheme="URI" content="join_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="multifunc_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="split_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../appendices/community_preview_features/flow_graph/or_node_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="flow_tuple">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>flow::tuple Template Class</title>
+</head>
+<body id="flow_tuple">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="flow_tuple"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">flow::tuple Template Class</h1>
+ 
+   
+  <div> 
+	 <p> Some nodes create or use messages that are composites of other
+		messages. The 
+		<samp class="codeph">flow::tuple</samp> template class is included as part of flow
+		to support this. The nodes that send or receive tuples are 
+		<span class="keyword">join_node</span>, 
+		<span class="keyword">multifunction_node</span>, 
+		<span class="keyword">split_node</span> and 
+		<span class="keyword">or_node</span> (Community Preview Feature). 
+	 </p>
+ 
+	 <p> The 
+		<samp class="codeph">tuple</samp> class is part of the C++11 standard, and earlier
+		implementations of the Standard Library may have a 
+		<samp class="codeph">tuple</samp> class. If 
+		<samp class="codeph">std::tuple</samp> is part of the Standard Library, then 
+		<samp class="codeph">flow::tuple</samp> is typedefed to 
+		<samp class="codeph">std::tuple</samp>. 
+	 </p>
+ 
+	 <p> If the Standard Library does not contain 
+		<samp class="codeph">tuple</samp>, an implementation is used that supports a subset
+		of 
+		<samp class="codeph">std::tuple</samp>'s functionality: 
+	 <ul type="disc"> 
+		<li>construction, copy construction and destruction,
+		</li>
+ 
+		<li>assignment
+		</li>
+ 
+		<li><samp class="codeph">get&lt;I&gt;(tuple)</samp> (the i-th element of 
+		  <samp class="codeph">tuple</samp>, starting from zero),
+		</li>
+ 
+		<li><samp class="codeph">tuple_element&lt;I,T&gt;::type</samp> (the type of the i-th
+		  element of tuple type 
+		  <samp class="codeph">T</samp>),
+		</li>
+ 
+		<li><samp class="codeph">tuple_size&lt;T&gt;::value</samp> (the number of elements
+		  of the tuple type 
+		  <samp class="codeph">T</samp>),
+		</li>
+ 
+	 </ul>
+ 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		<p> Prior releases of <samp class="codeph">flow</samp> injected 
+                  <samp class="codeph">flow</samp>'s implementation of <samp class="codeph">tuple</samp> into
+                  the <samp class="codeph">std::</samp> namespace. Users should change
+                  <samp class="codeph">flow</samp>-specific references to <samp class="codeph">std::tuple</samp>
+                  to <samp class="codeph">flow::tuple</samp> to ensure compatibility with compilers
+		  that do not implement 
+		  <samp class="codeph">std::tuple</samp> as part of the Standard Library. 
+		</p>
+ 
+	 </div> 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="join_node_cls.htm">join node 
+		  </a></div>
+<div><a href="multifunc_node_cls.htm">multifunction node 
+		  </a></div>
+<div><a href="split_node_cls.htm">split node 
+		  </a></div>
+<div><a href="../appendices/community_preview_features/flow_graph/or_node_cls.htm">or node (Community Preview Feature)
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

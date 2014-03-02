@@ -1,0 +1,413 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Concurrent Access">
+<meta name="DC.subject" content="Concurrent Access">
+<meta name="keywords" content="Concurrent Access">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_hash_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="concurrent_access">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Concurrent Access</title>
+</head>
+<body id="concurrent_access">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="concurrent_access"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Concurrent Access</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Member classes 
+		  <samp class="codeph">const_accessor</samp> and 
+		  <samp class="codeph">accessor</samp> are called 
+		  <em>accessors</em>. Accessors allow multiple threads to concurrently
+		  access pairs in a shared 
+		  <samp class="codeph">concurrent_hash_map</samp>. An 
+		  <em>accessor</em> acts as a smart pointer to a pair in a 
+		  <samp class="codeph">concurrent_hash_map</samp>. It holds an implicit lock on a
+		  pair until the instance is destroyed or method 
+		  <samp class="codeph">release</samp> is called on the accessor. 
+		</p>
+ 
+		<p>Classes 
+		  <samp class="codeph">const_accessor</samp> and 
+		  <samp class="codeph">accessor</samp> differ in the kind of access that they
+		  permit. 
+		</p>
+ 
+		<p></p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Differences Between const_accessor and
+		  accessor</span></caption> 
+		   
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d32112e72"> 
+				  <p>Class 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d32112e78"> 
+				  <p><samp class="codeph">value_type</samp> 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d32112e86"> 
+				  <p>Implied Lock on 
+					 <samp class="codeph">pair</samp> 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+ 
+		  </thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d32112e72 "> 
+				  <p><samp class="codeph">const_accessor</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d32112e78 "> 
+				  <p><samp class="codeph">const std::pair&lt;const
+						Key,T&gt;</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d32112e86 "> 
+				  <p>Reader lock – permits shared access with
+					 other readers. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d32112e72 "> 
+				  <p><samp class="codeph">accessor</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d32112e78 "> 
+				  <p><samp class="codeph">std::pair&lt;const
+						Key,T&gt;</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d32112e86 "> 
+				  <p>Writer lock – permits exclusive access by a
+					 thread. Blocks access by other threads. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>Accessors cannot be assigned or copy-constructed,
+		  because allowing such would greatly complicate the locking semantics. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"><samp class="codeph">const_accessor</samp></h2> 
+		 
+		<p><strong>Summary</strong> 
+		</p>
+ 
+		<p>Provides read-only access to a pair in a 
+		  <samp class="codeph">concurrent_hash_map</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename Key, typename T, typename HashCompare, typename A&gt; 
+class concurrent_hash_map&lt;Key,T,HashCompare,A&gt;::const_accessor;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/concurrent_hash_map.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">const_accessor</samp> permits read-only access to a key-value
+		  pair in a 
+		  <samp class="codeph">concurrent_hash_map</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+    &nbsp;&nbsp;&nbsp; template&lt;typename Key, typename T, typename HashCompare, typename A&gt;
+    &nbsp;&nbsp;&nbsp; class concurrent_hash_map&lt;Key,T,HashCompare,A&gt;::const_accessor {
+    &nbsp;&nbsp;&nbsp; public:
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // types
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef const std::pair&lt;const Key,T&gt; value_type;
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // construction and destruction
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const_accessor();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ~const_accessor();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // inspection
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool empty() const;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const value_type&amp; operator*() const;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const value_type* operator-&gt;() const;
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // early release
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void release();
+    &nbsp;&nbsp;&nbsp; }; 
+    }</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d32112e228">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d32112e231">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d32112e228 "><span class="keyword">bool empty() const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d32112e231 "> 
+					 <p><strong>Returns</strong>: True if instance points
+						to nothing; false if instance points to a key-value pair. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d32112e228 "><span class="keyword">void release()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d32112e231 "> 
+					 <p>If 
+						<samp class="codeph">!empty()</samp>, releases the implied lock on the
+						pair, and sets instance to point to nothing. Otherwise does nothing. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d32112e228 "><span class="keyword">const value_type&amp; operator*()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d32112e231 "> 
+					 <p>Raises assertion failure if 
+						<samp class="codeph">empty()</samp> and 
+						<samp class="codeph">TBB_USE_ASSERT</samp> is defined as nonzero. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Const reference to
+						key-value pair. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d32112e228 "><span class="keyword">const value_type* operator-&gt;()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d32112e231 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">&amp;operator*()</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d32112e228 "><span class="keyword">const_accessor()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d32112e231 "> 
+					 <p>Constructs 
+						<samp class="codeph">const_accessor</samp> that points to nothing. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d32112e228 "><span class="keyword">~const_accessor</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d32112e231 "> 
+					 <p>If pointing to key-value pair, releases
+						the implied lock on the pair. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"><samp class="codeph">accessor</samp></h2> 
+		 
+		<p><strong>Summary</strong> 
+		</p>
+ 
+		<p> Class that provides read and write access to a
+		  pair in a 
+		  <samp class="codeph">concurrent_hash_map</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2>
+		
+		<pre> template&lt;typename Key, typename T, typename HashCompare,
+    typename Alloc&gt;
+ class concurrent_hash_map&lt;Key,T,HashCompare,A&gt;::accessor;</pre>
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/concurrent_hash_map.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>An 
+		  <samp class="codeph">accessor</samp> permits read and write access to a key-value
+		  pair in a 
+		  <samp class="codeph">concurrent_hash_map</samp>. It is derived from a 
+		  <samp class="codeph">const_accessor</samp>, and thus can be implicitly cast to a 
+		  <samp class="codeph">const_accessor</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+    &nbsp;&nbsp;&nbsp; template&lt;typename Key, typename T, typename HashCompare, typename Alloc&gt;
+    &nbsp;&nbsp;&nbsp; class concurrent_hash_map&lt;Key,T,HashCompare,Alloc&gt;::accessor:
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; concurrent_hash_map&lt;Key,T,HashCompare,Alloc&gt;::const_accessor {
+    &nbsp;&nbsp;&nbsp; public:
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef std::pair&lt;const Key,T&gt; value_type;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; value_type&amp; operator*() const;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; value_type* operator-&gt;() const;
+    &nbsp;&nbsp;&nbsp; };
+    }</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d32112e427">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d32112e430">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d32112e427 "><span class="keyword">value_type&amp; operator*()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d32112e430 "> 
+					 <p>Raises assertion failure if 
+						<samp class="codeph">empty()</samp> and 
+						<samp class="codeph">TBB_USE_ASSERT</samp> is defined as non-zero. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Reference to key-value
+						pair. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d32112e427 "><span class="keyword">value_type* operator-&gt;()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d32112e430 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">&amp;operator*()</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_hash_map_cls.htm">concurrent_hash_map Template Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

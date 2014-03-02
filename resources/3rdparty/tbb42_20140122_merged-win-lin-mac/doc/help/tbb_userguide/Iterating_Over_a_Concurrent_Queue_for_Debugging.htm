@@ -1,0 +1,48 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Iterating Over a Concurrent Queue for Debugging">
+<meta name="DC.subject" content="Iterating Over a Concurrent Queue for Debugging">
+<meta name="keywords" content="Iterating Over a Concurrent Queue for Debugging">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Concurrent_Queue_Classes.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Iterating_Over_a_Concurrent_Queue_for_Debugging">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Iterating Over a Concurrent Queue for Debugging</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Iterating_Over_a_Concurrent_Queue_for_Debugging">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Iterating_Over_a_Concurrent_Queue_for_Debugging"><!-- --></a>
+
+
+<h1 class="topictitle1">Iterating Over a Concurrent Queue for Debugging</h1>
+
+<div><p>The template classes <samp class="codeph">concurrent_queue</samp> and <samp class="codeph">concurrent_bounded_queue</samp> support STL-style iteration. This support is intended only for debugging, when you need to dump a queue. The iterators go forwards only, and are too slow to be very useful in production code. If a queue is modified, all iterators pointing to it become invalid and unsafe to use. The following snippet dumps a queue. The <samp class="codeph">operator&lt;&lt;</samp> is defined for a <samp class="codeph">Foo</samp>.</p>
+
+<pre>concurrent_queue&lt;Foo&gt; q;
+...
+typedef concurrent_queue&lt;Foo&gt;::const_iterator iter;
+for(iter i(q.unsafe_begin()); i!=q.unsafe_end(); ++i ) {
+    cout &lt;&lt; *i;
+}</pre>
+<p>The prefix <samp class="codeph">unsafe_</samp> on the methods is a reminder that they are not concurrency safe.</p>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Concurrent_Queue_Classes.htm">Concurrent Queue Classes</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

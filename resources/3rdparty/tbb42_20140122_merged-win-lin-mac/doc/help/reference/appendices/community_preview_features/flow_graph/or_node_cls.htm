@@ -1,0 +1,382 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="or_node Template Class">
+<meta name="DC.subject" content="or_node Template Class">
+<meta name="keywords" content="or_node Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../../../reference/appendices/community_preview_features/flow_graph_features.htm">
+<meta name="DC.Relation" scheme="URI" content="../../../flow_graph/message_passing_protocol.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="or_node_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../../intel_css_styles.css">
+<title>or_node Template Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="or_node_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(4);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="or_node_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">or_node Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>A node that broadcasts messages received at its
+		  input ports to all of its successors. Each input port p<sub>i</sub> is a 
+		  <samp class="codeph">receiver&lt;T<sub>i</sub>&gt;</samp>. The messages are broadcast
+		  individually as they are received at each port. The output message type is a
+		  struct that contains an index number that identifies the port on which the
+		  message arrived and a tuple of the input types where the value is stored. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename InputTuple&gt;
+ class or_node;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#define TBB_PREVIEW_GRAPH_NODES 1
+ #include "tbb/flow_graph.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>An or_node is a 
+		  <samp class="codeph">graph_node</samp> and 
+		  <samp class="codeph">sender&lt;
+			 or_node&lt;InputTyple&gt;::output_type &gt;</samp>. It contains a tuple of
+		  input ports, each of which is a 
+		  <samp class="codeph">receiver&lt;Ti&gt;</samp> for
+		  each of the 
+		  <samp class="codeph">T0 .. TN in
+			 InputTuple</samp>. It supports multiple input receivers with distinct types
+		  and broadcasts each received message to all of its successors. Unlike a 
+		  <samp class="codeph">join_node</samp>, each
+		  message is broadcast individually to all successors of the 
+		  <samp class="codeph">or_node</samp> as it arrives
+		  at an input port. The incoming messages are wrapped in a struct that contains
+		  the index of the port number on which the message arrived and a tuple of the
+		  input types where the received value is stored. 
+		</p>
+ 
+		<p>The function template 
+		  <samp class="codeph">input_port</samp> described
+		  in 6.19 simplifies the syntax for getting a reference to a specific input port.
+		  
+		</p>
+ 
+		<p>Rejection of messages by successors of the 
+		  <samp class="codeph">or_node</samp> is handled
+		  using the protocol in the Message Passing Protocol, see link below. The input
+		  ports never reject incoming messages. 
+		</p>
+ 
+		<p><samp class="codeph">InputTuple</samp> must be a 
+		  <samp class="codeph">flow::tuple&lt;T0,T1,...&gt;</samp> where each
+		  element is copy-constructible and assignable. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<pre>#include&lt;cstdio&gt;
+#define TBB_PREVIEW_GRAPH_NODES 1
+#include "tbb/flow_graph.h"
+
+using namespace tbb::flow;
+
+int main() {
+  graph g;
+  function_node&lt;int,int&gt; f1( g, unlimited,
+                               [](const int &amp;i) { return 2*i; } );
+  function_node&lt;float,float&gt; f2( g, unlimited,
+                               [](const float &amp;f) { return f/2; } );
+
+  or_node&lt; flow::tuple&lt;int,float&gt; &gt; my_or_type;
+  my_or_type o(g);
+
+  function_node&lt; my_or_type::output_type &gt;
+    f3( g, unlimited,
+        []( const my_or_type::output_type &amp;v ) {
+            if (v.indx == 0) {
+              printf("Received an int %d\n", 
+                     std::get&lt;0&gt;(v.result));
+            } else {
+              printf("Received a float %f\n", 
+                     std::get&lt;1&gt;(v.result));
+           }
+        }
+    );
+  make_edge( f1, input_port&lt;0&gt;(o) );
+  make_edge( f2, input_port&lt;1&gt;(o) );
+  make_edge( o, f3 );
+
+  f1.try_put( 3 );
+  f2.try_put( 3 );
+  g.wait_for_all();
+  return 0;
+ }</pre> 
+		<p>In the example above, three 
+		  <samp class="codeph">function_node</samp> objects
+		  are created: 
+		  <samp class="codeph">f1</samp> multiplies an int i
+		  by 2, 
+		  <samp class="codeph">f2</samp> divides a 
+		  <samp class="codeph">float f</samp> by 2, and 
+		  <samp class="codeph">f3</samp> prints the values
+		  from 
+		  <samp class="codeph">f1</samp> and 
+		  <samp class="codeph">f2</samp> as they arrive. The
+		  
+		  <samp class="codeph">or_node j</samp> wraps the
+		  output of 
+		  <samp class="codeph">f1</samp> and 
+		  <samp class="codeph">f2</samp> and forwards each
+		  result to 
+		  <samp class="codeph">f3</samp>. This example is
+		  purely a syntactic demonstration since there is very little work in the nodes. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+namespace flow {
+  template&lt;typename InputTuple&gt;
+  class or_node : public graph_node,
+  public sender&lt;<var>impl-dependent-output-type</var> &gt; {
+  public:
+    typedef struct { size_t indx; InputTuple result; } output_type;
+    typedef receiver&lt;output_type&gt; successor_type;
+    implementation-dependent-tuple input_ports_tuple_type;
+
+    or_node(graph &amp;g);
+    or_node(const or_node &amp;src);
+    input_ports_type &amp;input_ports();
+    bool register_successor( successor_type &amp;r );
+    bool remove_successor( successor_type &amp;r );
+    bool try_get( output_type &amp;v );
+    bool try_reserve( output_type &amp; );
+    bool try_release( );
+    bool try_consume( );
+  };
+}
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d19826e178">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d19826e181">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19826e178 "><span class="keyword">or_node(graph &amp;g)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19826e181 ">
+					 <p>Constructs an 
+						<samp class="codeph">or_node</samp> that
+						belongs to the 
+						<samp class="codeph">graph g</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19826e178 "><span class="keyword">or_node( const or_node &amp;src
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19826e181 ">
+					 <p>Constructs an 
+						<samp class="codeph">or_node</samp>. The
+						list of predecessors, messages in the input ports, and successors are NOT
+						copied.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19826e178 "><span class="keyword">input_ports_type&amp;
+						input_ports()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19826e181 ">
+					 <p><strong>Returns</strong>: A 
+						<samp class="codeph">flow::tuple</samp>
+						of receivers. Each element inherits from 
+						<samp class="codeph">tbb::receiver&lt;T&gt;</samp> where T is the
+						type of message expected at that input. Each tuple element can be used like any
+						other 
+						<samp class="codeph">flow::receiver&lt;T&gt;</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19826e178 "><span class="keyword">bool register_successor(
+						successor_type &amp; r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19826e181 ">
+					 <p>Adds 
+						<samp class="codeph">r</samp> to the set
+						of successors.
+					 </p>
+
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">true</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19826e178 "><span class="keyword">bool remove_successor(
+						successor_type &amp; r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19826e181 ">
+					 <p>Removes 
+						<samp class="codeph">r</samp> from the
+						set of successors.
+					 </p>
+
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">true</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19826e178 "><span class="keyword">bool try_get( output_type &amp;v
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19826e181 ">
+					 <p>An 
+						<samp class="codeph">or_node</samp>
+						contains no buffering and therefore does not support gets.
+					 </p>
+
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">false</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19826e178 "><span class="keyword">bool try_reserve( output_type &amp;
+						)</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19826e181 ">
+					 <p>An 
+						<samp class="codeph">or_node</samp>
+						contains no buffering and therefore cannot be reserved.
+					 </p>
+
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">false</samp>.
+					 </p>
+
+				  </td>
+
+				</tr>
+
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19826e178 "><span class="keyword">bool try_release( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19826e181 ">
+					 <p>An 
+						<samp class="codeph">or_node</samp>
+						contains no buffering and therefore cannot be reserved.
+					 </p>
+
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">false</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d19826e178 "><span class="keyword">bool try_consume( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d19826e181 ">
+					 <p>An 
+						<samp class="codeph">or_node</samp>
+						contains no buffering and therefore cannot be reserved.
+					 </p>
+
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">false</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../../reference/appendices/community_preview_features/flow_graph_features.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../../../flow_graph/message_passing_protocol.htm">Message Passing Protocol 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

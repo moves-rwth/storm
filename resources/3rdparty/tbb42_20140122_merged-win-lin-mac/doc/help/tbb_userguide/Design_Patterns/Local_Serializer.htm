@@ -1,0 +1,410 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Local Serializer">
+<meta name="DC.subject" content="Local Serializer">
+<meta name="keywords" content="Local Serializer">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="Non-Preemptive_Priorities.htm#Non-Preemptive_Priorities">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Local_Serializer">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Local Serializer</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Local_Serializer">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Local_Serializer"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Local Serializer</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>Consider an interactive program. To maximize concurrency and
+		  responsiveness, operations requested by the user can be implemented as tasks.
+		  The order of operations can be important. For example, suppose the program
+		  presents editable text to the user. There might be operations to select text
+		  and delete selected text. Reversing the order of "select" and "delete"
+		  operations on the same buffer would be bad. However, commuting operations on
+		  different buffers might be okay. Hence the goal is to establish serial ordering
+		  of tasks associated with a given object, but not constrain ordering of tasks
+		  between different objects. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Operations associated with a certain object must be performed in
+				serial order. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Serializing with a lock would be wasteful because threads would be
+				waiting at the lock when they could be doing useful work elsewhere. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		 
+		<p>Sequence the work items using a FIFO (first-in first-out structure).
+		  Always keep an item in flight if possible. If no item is in flight when a work
+		  item appears, put the item in flight. Otherwise, push the item onto the FIFO.
+		  When the current item in flight completes, pop another item from the FIFO and
+		  put it in flight. 
+		</p>
+ 
+		<p>The logic can be implemented without mutexes, by using 
+		  <samp class="codeph">concurrent_queue</samp> for the FIFO and 
+		  <samp class="codeph">atomic&lt;int&gt;</samp> to count the number of items waiting
+		  and in flight. The example explains the accounting in detail. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>The following example builds on the Non-Preemptive Priorities example
+		  to implement local serialization in addition to priorities. It implements three
+		  priority levels and local serializers. The user interface for it follows: 
+		</p>
+ 
+		<pre>enum Priority {
+   P_High,
+   P_Medium,
+   P_Low
+};
+&nbsp;
+template&lt;typename Func&gt;
+void EnqueueWork( Priority p, Func f, Serializer* s=NULL );</pre> 
+		<p>Template function 
+		  <samp class="codeph">EnqueueWork</samp> causes functor 
+		  <var>f</var> to run when the three constraints in the following
+		  table are met. 
+		</p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Implementation of Constraints</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="66.39676113360325%" id="d134980e118"> 
+				  <p>Constraint 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="33.603238866396765%" id="d134980e124"> 
+				  <p>Resolved by class... 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="66.39676113360325%" headers="d134980e118 "> 
+				  <p>Any prior work for the 
+					 <samp class="codeph">Serializer</samp> has completed. 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="33.603238866396765%" headers="d134980e124 "> 
+				  <p><samp class="codeph">Serializer</samp> 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="66.39676113360325%" headers="d134980e118 "> 
+				  <p>A thread is available. 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="33.603238866396765%" headers="d134980e124 "> 
+				  <p><samp class="codeph">RunWorkItem</samp> 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="66.39676113360325%" headers="d134980e118 "> 
+				  <p>No higher priority work is ready to run. 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="33.603238866396765%" headers="d134980e124 "> 
+				  <p><samp class="codeph">ReadyPileType</samp> 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>Constraints on a given functor are resolved from top to bottom in the
+		  table. The first constraint does not exist when s is NULL. The implementation
+		  of 
+		  <samp class="codeph">EnqueueWork</samp> packages the functor in a 
+		  <samp class="codeph">SerializedWorkItem</samp> and routes it to the class that
+		  enforces the first relevant constraint between pieces of work. 
+		</p>
+ 
+		<pre>template&lt;typename Func&gt;
+void EnqueueWork( Priority p, Func f, Serializer* s=NULL ) {
+   WorkItem* item = new SerializedWorkItem&lt;Func&gt;( p, f, s );
+   if( s )
+       s-&gt;add(item);
+   else
+       ReadyPile.add(item);
+}</pre> 
+		<p>A 
+		  <samp class="codeph">SerializedWorkItem</samp> is derived from a 
+		  <samp class="codeph">WorkItem</samp>, which serves as a way to pass around a
+		  prioritized piece of work without knowing further details of the work. 
+		</p>
+ 
+		<pre>// Abstract base class for a prioritized piece of work.
+class WorkItem {
+public:
+   WorkItem( Priority p ) : priority(p) {}
+   // Derived class defines the actual work.
+   virtual void run() = 0;
+   const Priority priority;
+};
+&nbsp;
+template&lt;typename Func&gt;
+class SerializedWorkItem: public WorkItem {
+<span xml:lang="PT-BR">   Serializer* serializer;</span>
+<span xml:lang="PT-BR">   Func f;</span>
+<span xml:lang="PT-BR">   /*override*/ void run() {</span>
+<span xml:lang="PT-BR">       f();</span>
+<span xml:lang="PT-BR">       Serializer* s = serializer;</span>
+<span xml:lang="PT-BR">       // Destroy f before running Serializer’s next functor.</span>
+       delete this;
+       if( s )
+           s-&gt;noteCompletion();
+   }
+public:
+   SerializedWorkItem( Priority p, const Func&amp; f_, Serializer* s ) :
+       WorkItem(p), serializer(s), f(f_) 
+   {}
+};</pre> 
+		<p>Base class 
+		  <samp class="codeph">WorkItem</samp> is the same as class WorkItem in the example
+		  for Non-Preemptive Priorities. The notion of serial constraints is completely
+		  hidden from the base class, thus permitting the framework to extend other kinds
+		  of constraints or lack of constraints. Class 
+		  <samp class="codeph">SerializedWorkItem</samp> is essentially 
+		  <samp class="codeph">ConcreteWorkItem</samp> from the example for Non-Preemptive
+		  Priorities, extended with a 
+		  <samp class="codeph">Serializer</samp> aspect. 
+		</p>
+ 
+		<p>Virtual method 
+		  <samp class="codeph">run()</samp> is invoked when it becomes time to run the
+		  functor. It performs three steps: 
+		</p>
+ 
+		<ol> 
+		  <li> 
+			 <p>Run the functor 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Destroy the functor. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Notify the 
+				<samp class="codeph">Serializer</samp> that the functor completed, and thus
+				unconstraining the next waiting functor. 
+			 </p>
+ 
+		  </li>
+ 
+		</ol>
+ 
+		<p>Step 3 is the difference from the operation of ConcreteWorkItem::run.
+		  Step 2 could be done after step 3 in some contexts to increase concurrency
+		  slightly. However, the presented order is recommended because if step 2 takes
+		  non-trivial time, it likely has side effects that should complete before the
+		  next functor runs. 
+		</p>
+ 
+		<p>Class 
+		  <samp class="codeph">Serializer</samp> implements the core of the Local Serializer
+		  pattern: 
+		</p>
+ 
+		<pre>class Serializer {
+   tbb::concurrent_queue&lt;WorkItem*&gt; queue;
+   tbb::atomic&lt;int&gt; count;         // Count of queued items and in-flight item
+   void moveOneItemToReadyPile() { // Transfer item from queue to ReadyPile
+       WorkItem* item;
+       queue.try_pop(item);
+       ReadyPile.add(item);
+   }
+public:
+   void add( WorkItem* item ) {
+       queue.push(item);
+       if( ++count==1 )
+           moveOneItemToReadyPile();
+   }
+   void noteCompletion() {        // Called when WorkItem completes.
+       if( ‐‐count!=0 )
+           moveOneItemToReadyPile();
+   }
+};</pre> 
+		<p>The class maintains two members: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>A queue of WorkItem waiting for prior work to complete. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>A count of queued or in-flight work. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>Mutexes are avoided by using 
+		  <samp class="codeph">concurrent_queue&lt;WorkItem*&gt;</samp> and 
+		  <samp class="codeph">atomic&lt;int&gt;</samp> along with careful ordering of
+		  operations. The transitions of count are the key understanding how class 
+		  <samp class="codeph">Serializer</samp> works. 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>If method 
+				<samp class="codeph">add</samp> increments 
+				<samp class="codeph">count</samp> from 0 to 1, this indicates that no other
+				work is in flight and thus the work should be moved to the 
+				<samp class="codeph">ReadyPile</samp>. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>If method 
+				<samp class="codeph">noteCompletion</samp> decrements count and it is 
+				<em>not</em> from 1 to 0, then the queue is non-empty and another
+				item in the queue should be moved to 
+				<samp class="codeph">ReadyPile.</samp> 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>Class 
+		  <samp class="codeph">ReadyPile</samp> is explained in the example for
+		  Non-Preemptive Priorities. 
+		</p>
+ 
+		<p>If priorities are not necessary, there are two variations on method 
+		  <samp class="codeph">moveOneItemToReadyPile</samp>, with different implications. 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Method 
+				<samp class="codeph">moveOneItemToReadyPile</samp> could directly
+				invoke<samp class="codeph">item-&gt;run()</samp>. This approach has relatively low
+				overhead and high thread locality for a given 
+				<samp class="codeph">Serializer</samp>. But it is unfair. If the 
+				<samp class="codeph">Serializer</samp> has a continual stream of tasks, the
+				thread operating on it will keep servicing those tasks to the exclusion of
+				others. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Method 
+				<samp class="codeph">moveOneItemToReadyPile</samp> could invoke 
+				<samp class="codeph">task::enqueue</samp> to enqueue a task that invokes 
+				<samp class="codeph">item-&gt;run()</samp>. Doing so introduces higher
+				overhead and less locality than the first approach, but avoids starvation. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>The conflict between fairness and maximum locality is fundamental. The
+		  best resolution depends upon circumstance. 
+		</p>
+ 
+		<p>The pattern generalizes to constraints on work items more general than
+		  those maintained by class Serializer. A generalized 
+		  <samp class="codeph">Serializer::add</samp> determines if a work item is
+		  unconstrained, and if so, runs it immediately. A generalized 
+		  <samp class="codeph">Serializer::noteCompletion</samp> runs all previously
+		  constrained items that have become unconstrained by the completion of the
+		  current work item. The term "run" means to run work immediately, or if there
+		  are more constraints, forwarding the work to the next constraint resolver. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Non-Preemptive_Priorities.htm#Non-Preemptive_Priorities">Non-Preemptive Priorities 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

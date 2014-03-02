@@ -1,0 +1,520 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="blocked_range Template Class">
+<meta name="DC.subject" content="blocked_range Template Class">
+<meta name="keywords" content="blocked_range Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/algorithms/range_concept.htm">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/algorithms/range_concept/blocked_range_cls/blocked_range.htm">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/algorithms/range_concept/blocked_range_cls/blocked_range_1.htm">
+<meta name="DC.Relation" scheme="URI" content="../parallel_for_func.htm#parallel_for_func">
+<meta name="DC.Relation" scheme="URI" content="../parallel_reduce_func.htm#parallel_reduce_func">
+<meta name="DC.Relation" scheme="URI" content="../parallel_scan_func.htm#parallel_scan_func">
+<meta name="DC.Relation" scheme="URI" content="../../environment/enabling_debugging_features.htm#enabling_debugging_features">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="blocked_range_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>blocked_range Template Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="blocked_range_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="blocked_range_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">blocked_range Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 Template class for a recursively divisible
+		half-open interval. 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<p> 
+		  <pre>#include "tbb/blocked_range.h"</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename Value&gt; class blocked_range;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">blocked_range&lt;Value&gt;</samp> represents a half-open
+		  range [<em>i</em>,<em>j</em>) that can be recursively split. The types of 
+		  <em>i</em> and 
+		  <em>j</em> must model the requirements in the following table. In the
+		  table, type 
+		  <samp class="codeph">D</samp> is the type of the expression 
+		  <samp class="codeph">"j-i"</samp>. It can be any integral type that is convertible
+		  to 
+		  <samp class="codeph">size_t</samp>. Examples that model the Value requirements are
+		  integral types, pointers, and STL random-access iterators whose difference can
+		  be implicitly converted to a 
+		  <samp class="codeph">size_t</samp>. 
+		</p>
+ 
+		<p>A 
+		  <samp class="codeph">blocked_range</samp> models the Range concept. 
+		</p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Value Concept for blocked_range</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" id="d14709e109"> 
+				  <p>Pseudo-Signature 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" id="d14709e115"> 
+				  <p>Semantics 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d14709e109 "> 
+				  <p><samp class="codeph"> Value::Value( const Value&amp;
+						)</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d14709e115 "> 
+				  <p> Copy constructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d14709e109 "> 
+				  <p><samp class="codeph"> Value::~Value()</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d14709e115 "> 
+				  <p> Destructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d14709e109 "> 
+				  <p><samp class="codeph"> void operator=( const Value&amp;
+						)</samp> 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p> The return type 
+						  <samp class="codeph">void</samp> in the pseudo-signature denotes that 
+						  <samp class="codeph">operator=</samp> is not required to return a
+						  value. The actual 
+						  <samp class="codeph">operator=</samp> can return a value, which will
+						  be ignored by 
+						  <samp class="codeph">blocked_range</samp> . 
+						</p>
+ 
+					 </div> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d14709e115 "> 
+				  <p> Assignment 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d14709e109 "> 
+				  <p><samp class="codeph"> bool operator&lt;( const
+						Value&amp; i, const Value&amp; j )</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d14709e115 "> 
+				  <p> Value 
+					 <em>i</em> precedes value<em> j</em>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d14709e109 "> 
+				  <p><samp class="codeph"> D operator-( const Value&amp; i,
+						const Value&amp; j )</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d14709e115 "> 
+				  <p> Number of values in range 
+					 <samp class="codeph">[i,j)</samp>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d14709e109 "> 
+				  <p><samp class="codeph"> Value operator+( const Value&amp;
+						i, D k )</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d14709e115 "> 
+				  <p><em>k</em>th value after 
+					 <em>i</em>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>A 
+		  <samp class="codeph">blocked_range&lt;Value&gt;</samp> specifies a 
+		  <em>grainsize</em> of type 
+		  <samp class="codeph">size_t</samp>. A 
+		  <samp class="codeph">blocked_range</samp> is splittable into two subranges if the
+		  size of the range exceeds 
+		  <em>grain size</em>. The ideal grain size depends upon the context of the
+		  
+		  <samp class="codeph">blocked_range&lt;Value&gt;</samp>, which is typically as the
+		  range argument to the loop templates 
+		  <samp class="codeph">parallel_for</samp>, 
+		  <samp class="codeph">parallel_reduce</samp>, or 
+		  <samp class="codeph">parallel_scan</samp>. A too small grainsize may cause
+		  scheduling overhead within the loop templates to swamp speedup gained from
+		  parallelism. A too large grainsize may unnecessarily limit parallelism. For
+		  example, if the grain size is so large that the range can be split only once,
+		  then the maximum possible parallelism is two. 
+		</p>
+ 
+		<p>Here is a suggested procedure for choosing 
+		  <em>grainsize</em>: 
+		</p>
+ 
+		<ol> 
+		  <li>Set the grainsize parameter to 10,000. This
+			 value is high enough to amortize scheduler overhead sufficiently for
+			 practically all loop bodies, but may be unnecessarily limit parallelism. 
+		  </li>
+ 
+		  <li>Run your algorithm on 
+			 <em>one</em> processor. 
+		  </li>
+ 
+		  <li>Start halving the grainsize parameter and see
+			 how much the algorithm slows down as the value decreases. 
+		  </li>
+ 
+		</ol>
+ 
+		<p>A slowdown of about 5-10% is a good setting for
+		  most purposes. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		  <p>For a 
+			 <samp class="codeph">blocked_range [i,j)</samp> where<samp class="codeph"> j&lt;i</samp>,
+			 not all methods have specified behavior. However, enough methods do have
+			 specified behavior that 
+			 <samp class="codeph">parallel_for</samp>, 
+			 <samp class="codeph">parallel_reduce</samp>, and 
+			 <samp class="codeph">parallel_scan</samp> iterate over the same iteration space
+			 as the serial loop 
+			 <samp class="codeph">for( Value index=i; index&lt;j; ++index )...</samp>, even
+			 when 
+			 <samp class="codeph">j&lt;i</samp>. If 
+			 <samp class="codeph">TBB_USE_ASSERT</samp> is nonzero, methods with unspecified
+			 behavior raise an assertion failure. 
+		  </p>
+ 
+		</div> 
+		<p><strong>Example</strong> 
+		</p>
+ 
+		<p>A 
+		  <samp class="codeph">blocked_range&lt;Value&gt;</samp> typically appears as a
+		  range argument to a loop template. See the examples for 
+		  <samp class="codeph">parallel_for</samp>,<samp class="codeph"> parallel_reduce</samp>, and 
+		  <samp class="codeph">parallel_scan</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre> 
+namespace tbb {
+    template&lt;typename Value&gt;
+    class blocked_range {
+    public:
+        // types
+        typedef size_t size_type;
+        typedef Value const_iterator;
+
+        // constructors
+        blocked_range( Value begin, Value end, 
+                       size_type grainsize=1 );
+        blocked_range( blocked_range&amp; r, split );
+
+        // capacity
+        size_type size() const;
+        bool empty() const;
+    
+        // access
+        size_type grainsize() const;
+        bool is_divisible() const;
+
+        // iterators
+        const_iterator begin() const;
+        const_iterator end() const;
+    };
+}
+</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class.
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d14709e390">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d14709e393">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">size_type 
+					 </span>
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 "> 
+					 <p>The type for measuring the size of a 
+						<samp class="codeph">blocked_range</samp>. The type is always a 
+						<samp class="codeph">size_t</samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">const_iterator</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 ">The type of a value in the range. Despite
+					 its name, the type 
+					 <samp class="codeph">const_iterator</samp> is not necessarily an STL
+					 iterator; it merely needs to meet the Value requirements in the table above.
+					 However, it is convenient to call it 
+					 <samp class="codeph">const_iterator</samp> so that if it is a
+					 const_iterator, then the<samp class="codeph"> blocked_range</samp> behaves like a
+					 read-only STL container. 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">blocked_range( Value begin, Value
+						end, size_t grainsize=1 ) 
+					 </span>
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 "><a href="blocked_range_cls/blocked_range.htm">More Info</a> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">blocked_range( blocked_range&amp;
+						range, split ) 
+					 </span>
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 "><a href="blocked_range_cls/blocked_range_1.htm">More Info</a> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">size_type size() const 
+					 </span>
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 "> 
+					 <p><strong>Requirements</strong> :<samp class="codeph"> end()&lt;begin()</samp> is
+						false. 
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Determines size of range. 
+					 </p>
+ 
+					 <p><strong>Returns</strong> 
+					 </p>
+ 
+					 <p><samp class="codeph"> end()-begin()</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">bool empty() const 
+					 </span>
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 "> 
+					 <p><strong>Effects</strong>: Determines if range is empty. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">!(begin()&lt;end())</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">size_type grainsize() const 
+					 </span>
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 "> 
+					 <p><strong>Returns</strong>: Grain size of range. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">bool is_divisible() const 
+					 </span>
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 "> 
+					 <p><strong>Requirements</strong>: 
+						<samp class="codeph"> !(end()&lt;begin())</samp> 
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Determines if range can be split into
+						subranges. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: True if 
+						<samp class="codeph">size()&gt;grainsize();</samp> false otherwise. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">const_iterator begin()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 "> 
+					 <p><strong>Returns</strong>: Inclusive lower bound on range. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d14709e390 "><span class="keyword">const_iterator end() const 
+					 </span>
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d14709e393 "> 
+					 <p><strong>Returns</strong>: Exclusive upper bound on range. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/algorithms/range_concept.htm">Range Concept</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../../reference/algorithms/range_concept/blocked_range_cls/blocked_range.htm">blocked_range( Value begin, Value end, size_t grainsize=1 )</a><br>
+</li>
+<li class="ulchildlink"><a href="../../../reference/algorithms/range_concept/blocked_range_cls/blocked_range_1.htm">blocked_range( blocked_range&amp; range, split )</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../parallel_for_func.htm#parallel_for_func">parallel_for Template Function 
+		  </a></div>
+<div><a href="../parallel_reduce_func.htm#parallel_reduce_func">parallel_reduce Template Function 
+		  </a></div>
+<div><a href="../parallel_scan_func.htm#parallel_scan_func">parallel_scan Template Function 
+		  </a></div>
+<div><a href="../../environment/enabling_debugging_features.htm#enabling_debugging_features">TBB_USE_ASSERT Macro 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

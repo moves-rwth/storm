@@ -1,0 +1,209 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Compare and Swap Loop">
+<meta name="DC.subject" content="Compare and Swap Loop">
+<meta name="keywords" content="Compare and Swap Loop">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="Reduction.htm#Reduction">
+<meta name="DC.Relation" scheme="URI" content="Reference_Counting.htm#Reference_Counting">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Compare_and_Swap_Loop">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Compare and Swap Loop</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Compare_and_Swap_Loop">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Compare_and_Swap_Loop"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Compare and Swap Loop</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		 
+		<p>Atomically update a scalar value so that a predicate is satisfied. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>Often a shared variable must be updated atomically, by a transform
+		  that maps its old value to a new value. The transform might be a transition of
+		  a finite state machine, or recording global knowledge. For instance, the shared
+		  variable might be recording the maximum value that any thread has seen so far. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<ul type="disc"> 
+		  <li> 
+			 <p>The variable is read and updated by multiple threads. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The hardware implements "compare and swap" for a variable of that
+				type. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Protecting the update with a mutex is to be avoided. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Related</h2> 
+		 
+		<ul type="disc"> 
+		  <li>Reduction 
+		  </li>
+ 
+		  <li>Reference Counting 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		 
+		<p>The solution is to atomically snapshot the current value, and then use
+		  
+		  <samp class="codeph">atomic&lt;T&gt;::compare_and_swap</samp> to update it. Retry
+		  until the 
+		  <samp class="codeph">compare_and_swap</samp> succeeds. In some cases it may be
+		  possible to exit before the 
+		  <samp class="codeph">compare_and_swap</samp> succeeds because the current value
+		  meets some condition. 
+		</p>
+ 
+		<p>The template below does the update x=f(x) atomically. 
+		</p>
+ 
+<pre>// Atomically perform x=f(x).
+template&lt;typename F, typename T&gt;
+void AtomicUpdate( atomic&lt;T&gt;&amp; x, F f ) {
+   int o;
+   do {
+       // Take a snapshot
+       o = x;
+       // Attempt to install new value computed from snapshot
+   } while( x.compare_and_swap(f(o),o)!=o );
+}</pre> 
+		<p>It is critical to take a snapshot and use it for intermediate
+		  calculations, because the value of X may be changed by other threads in the
+		  meantime. 
+		</p>
+ 
+		<p>The following code shows how the template might be used to maintain a
+		  global maximum of any value seen by 
+		  <samp class="codeph">RecordMax</samp>. 
+		</p>
+ 
+		<pre>// Atomically perform UpperBound = max(UpperBound,y) 
+void RecordMax( int y ) {
+   extern atomic&lt;int&gt; UpperBound;
+   AtomicUpdate(UpperBound, [&amp;](int value){return std::max(value,y);} );
+}</pre> 
+		<p>When y is not going to increase 
+		  <samp class="codeph">UpperBound</samp>, the call to 
+		  <samp class="codeph">AtomicUpdate</samp> will waste time doing the redundant
+		  operation 
+		  <samp class="codeph">compare_and_swap(o,o)</samp>. In general, this kind of
+		  redundancy can be eliminated by making the loop in 
+		  <samp class="codeph">AtomicUpdate</samp> exit early if 
+		  <samp class="codeph">f(o)==o</samp>. In this particular case where 
+		  <samp class="codeph">F==std::max&lt;int&gt;</samp>, that test can be further
+		  simplified. The following custom version of 
+		  <samp class="codeph">RecordMax</samp> has the simplified test. 
+		</p>
+ 
+		<pre>// Atomically perform UpperBound =max(UpperBound,y) 
+void RecordMax( int y ) . .
+   extern atomic&lt;int&gt; UpperBound;
+   do {
+       // Take a snapshot
+       int o = UpperBound;
+       // Quit if snapshot meets condition.
+       if( o&gt;=y ) break;
+       // Attempt to install new value.
+   } while( UpperBound.compare_and_swap(y,o)!=o );
+}</pre> 
+		<p>Because all participating threads modify a common location, the
+		  performance of a compare and swap loop can be poor under high contention. Thus
+		  the applicability of more efficient patterns should be considered first. In
+		  particular: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>If the overall purpose is a reduction, use the reduction pattern
+				instead. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>If the update is addition or subtraction, use 
+				<samp class="codeph">atomic&lt;T&gt;::fetch_and_add</samp>. If the update is
+				addition or subtraction by one, use 
+				<samp class="codeph">atomic&lt;T&gt;::operater++</samp> or 
+				<samp class="codeph">atomic&lt;T&gt;::operator--</samp>. These methods
+				typically employ direct hardware support that avoids a compare and swap loop. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>When using 
+			 <samp class="codeph">compare_and_swap</samp> to update links in a linked
+			 structure, be sure you understand if the "ABA problem" is an issue. See the
+			 Internet for discourses on the subject.
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Reduction.htm#Reduction">Reduction 
+		  </a></div>
+<div><a href="Reference_Counting.htm#Reference_Counting">Reference Counting 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

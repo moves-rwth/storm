@@ -1,0 +1,638 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Windows* OS">
+<meta name="DC.subject" content="Windows* OS">
+<meta name="keywords" content="Windows* OS">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Package_Contents.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Microsoft_Visual_Studio_Code_Examples.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Integration_Plug-In_for_Microsoft_Visual_Studio_Projects.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Windows_OS">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Windows* OS</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Windows_OS">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Windows_OS"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Windows* OS</h1>
+ 
+   
+  <div> 
+	 <p>This section uses &lt;<em>install_dir</em>&gt; to indicate the
+		top-level installation directory. The following table describes the
+		subdirectory structure for Windows* OS, relative to &lt;<em>install_dir</em>&gt;. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl3"><!-- --></a><table cellpadding="4" summary="" id="tbl3" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Intel&reg; Threading Building Blocks Subdirectories 
+	 Windows* OS</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" valign="top" width="19.433962264150946%" id="d152427e46"> 
+			 <p>Item 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="63.0188679245283%" id="d152427e52"> 
+			 <p>Location 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="17.547169811320753%" id="d152427e58"> 
+			 <p>Environment Variable 
+			 </p>
+ 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="19.433962264150946%" headers="d152427e46 "> 
+			 <p><span class="keyword">Include</span> files 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="63.0188679245283%" headers="d152427e52 "> 
+			 <p><samp class="codeph">include</samp><samp class="codeph">\tbb\*.h</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.547169811320753%" headers="d152427e58 "> 
+			 <p><samp class="codeph">INCLUDE</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="19.433962264150946%" headers="d152427e46 "> 
+			 <p><span class="keyword">.lib</span> files 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="63.0188679245283%" headers="d152427e52 "> 
+			 <p><samp class="codeph">lib\&lt;<var>arch</var> &gt;\vc
+				  &lt;<var>vcversion</var> &gt;\&lt;<var>lib</var>
+				  &gt;&lt;<var>variant</var> &gt;.lib</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.547169811320753%" headers="d152427e58 "> 
+			 <p><samp class="codeph">LIB</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="19.433962264150946%" headers="d152427e46 "> 
+			 <p><span class="keyword">.dll 
+				</span>files 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="63.0188679245283%" headers="d152427e52 "> 
+			 <p><samp class="codeph">..\redist\ &lt;<var>arch</var>&gt;\tbb\vc
+				  &lt;<var>vcversion</var>&gt; \&lt;<var>lib</var>
+				  &gt;&lt;<var>variant</var> &gt;.dll</samp> 
+			 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all"> 
+				  <thead align="left"> 
+					 <tr> 
+						<th class="cellrowborder" valign="top" width="31.06796116504854%" id="d152427e173"> 
+						  <p>&lt;<var>arch</var>&gt; 
+						  </p>
+ 
+						</th>
+ 
+						<th class="cellrowborder" valign="top" width="68.93203883495146%" id="d152427e182"> 
+						  <p>Processor 
+						  </p>
+ 
+						</th>
+ 
+					 </tr>
+</thead>
+ 
+				  <tbody> 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="31.06796116504854%" headers="d152427e173 "> 
+						  <p>ia32 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="68.93203883495146%" headers="d152427e182 "> 
+						  <p>Intel&reg; IA-32 processors 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="31.06796116504854%" headers="d152427e173 "> 
+						  <p>intel64 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="68.93203883495146%" headers="d152427e182 "> 
+						  <p>Intel&reg; 64 architecture processors 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+				  </tbody>
+ 
+				</table>
+</div>
+ 
+			 </p>
+ 
+			 <p> 
+			 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all"> 
+				  <thead align="left"> 
+					 <tr> 
+						<th class="cellrowborder" valign="top" width="31.715210355987054%" id="d152427e237"> 
+						  <p>&lt;<var>vcversion</var>&gt; 
+						  </p>
+ 
+						</th>
+ 
+						<th class="cellrowborder" valign="top" width="68.28478964401295%" id="d152427e246"> 
+						  <p>Environment 
+						  </p>
+ 
+						</th>
+ 
+					 </tr>
+</thead>
+ 
+				  <tbody> 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="31.715210355987054%" headers="d152427e237 "> 
+						  <p>9 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="68.28478964401295%" headers="d152427e246 "> 
+						  <p>Microsoft Visual Studio* 2008 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="31.715210355987054%" headers="d152427e237 "> 
+						  <p>10
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="68.28478964401295%" headers="d152427e246 "> 
+						  <p>Microsoft Visual Studio* 2010 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="31.715210355987054%" headers="d152427e237 "> 
+						  <p>11 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="68.28478964401295%" headers="d152427e246 "> 
+						  <p>Microsoft Visual Studio* 2012 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="31.715210355987054%" headers="d152427e237 "> 
+						  <p>11_ui 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="68.28478964401295%" headers="d152427e246 "> 
+						  <p>Microsoft Windows Store* applications 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="31.715210355987054%" headers="d152427e237 "> 
+						  <p>12 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="68.28478964401295%" headers="d152427e246 "> 
+						  <p>Microsoft Visual Studio* 2013 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="31.715210355987054%" headers="d152427e237 "> 
+						  <p>_mt 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="68.28478964401295%" headers="d152427e246 "> 
+						  <p>Independent of Microsoft Visual Studio* version. 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+				  </tbody>
+ 
+				</table>
+</div>
+ 
+			 </p>
+ 
+			 <p> 
+			 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all"> 
+				  <thead align="left"> 
+					 <tr> 
+						<th class="cellrowborder" valign="top" width="41.10032362459547%" id="d152427e362"> 
+						  <p>&lt;<var>lib</var>&gt; 
+						  </p>
+ 
+						</th>
+ 
+						<th class="cellrowborder" valign="top" width="58.89967637540453%" id="d152427e371"> 
+						  <p>Version 
+						  </p>
+ 
+						</th>
+ 
+					 </tr>
+</thead>
+ 
+				  <tbody> 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="41.10032362459547%" headers="d152427e362 "> 
+						  <p><samp class="codeph">tbb</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="58.89967637540453%" headers="d152427e371 "> 
+						  <p>General library 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="41.10032362459547%" headers="d152427e362 "> 
+						  <p><samp class="codeph">tbbmalloc</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="58.89967637540453%" headers="d152427e371 "> 
+						  <p>Memory allocator 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="41.10032362459547%" headers="d152427e362 "> 
+						  <p><samp class="codeph">tbbmalloc_proxy</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="58.89967637540453%" headers="d152427e371 "> 
+						  <p>Substitution for default memory allocator 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="41.10032362459547%" headers="d152427e362 "> 
+						  <p><samp class="codeph">tbb_preview</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="58.89967637540453%" headers="d152427e371 "> 
+						  <p>Community preview features library 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+				  </tbody>
+ 
+				</table>
+</div>
+ 
+			 </p>
+ 
+			 <p> 
+			 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all"> 
+				  <thead align="left"> 
+					 <tr> 
+						<th class="cellrowborder" valign="top" width="34.95145631067961%" id="d152427e464"> 
+						  <p>&lt;<var>variant</var>&gt; 
+						  </p>
+ 
+						</th>
+ 
+						<th class="cellrowborder" valign="top" width="65.0485436893204%" id="d152427e473"> 
+						  <p>Version 
+						  </p>
+ 
+						</th>
+ 
+					 </tr>
+</thead>
+ 
+				  <tbody> 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="34.95145631067961%" headers="d152427e464 "> 
+						  <p>(none) 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="65.0485436893204%" headers="d152427e473 "> 
+						  <p>Release version 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="34.95145631067961%" headers="d152427e464 "> 
+						  <p><samp class="codeph">_debug</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="65.0485436893204%" headers="d152427e473 "> 
+						  <p>Debug version 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+				  </tbody>
+ 
+				</table>
+</div>
+ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.547169811320753%" headers="d152427e58 "> 
+			 <p><samp class="codeph">PATH</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="19.433962264150946%" headers="d152427e46 "> 
+			 <p><span class="keyword">.pdb</span> files 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="63.0188679245283%" headers="d152427e52 "> 
+			 <p>Same as corresponding 
+				<samp class="codeph">.dll</samp> file. 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="19.433962264150946%" headers="d152427e46 "> 
+			 <p>Examples 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="63.0188679245283%" headers="d152427e52 "> 
+			 <p><samp class="codeph">examples\<var>&lt;class&gt;</var>\*\.</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.547169811320753%" headers="d152427e58 "> 
+			 <p>&nbsp; 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="19.433962264150946%" headers="d152427e46 "> 
+			 <p>Microsoft Visual Studio Solution File for Example 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="63.0188679245283%" headers="d152427e52 "> 
+			 <p><samp class="codeph">examples\<var>&lt;class&gt;</var>\*\msvs\*&lt;<var>compiler</var>&gt;.sln</samp>
+				
+			 </p>
+ 
+			 <p>where: 
+			 </p>
+ 
+			 <p><var>class</var> describes the class being demonstrated. 
+			 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all"> 
+				  <thead align="left"> 
+					 <tr> 
+						<th class="cellrowborder" valign="top" width="25.062656641604008%" id="d152427e613"> 
+						  <p>&lt;<var>compiler</var>&gt; 
+						  </p>
+ 
+						</th>
+ 
+						<th class="cellrowborder" valign="top" width="74.93734335839599%" id="d152427e622"> 
+						  <p>Version 
+						  </p>
+ 
+						</th>
+ 
+					 </tr>
+</thead>
+ 
+				  <tbody> 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="25.062656641604008%" headers="d152427e613 "> 
+						  <p><samp class="codeph">cl 
+							 </samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="74.93734335839599%" headers="d152427e622 "> 
+						  <p>Microsoft* Visual C++* 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="25.062656641604008%" headers="d152427e613 "> 
+						  <p><samp class="codeph">icl</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="74.93734335839599%" headers="d152427e622 "> 
+						  <p>Intel&reg; C++ Compiler 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+				  </tbody>
+ 
+				</table>
+</div>
+ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.547169811320753%" headers="d152427e58 "> 
+			 <p><samp class="codeph">&nbsp;</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  <p>The last column shows which environment variables are used by the
+	 Microsoft or Intel compilers to find these subdirectories. 
+  </p>
+ 
+  <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+	 <p>Ensure that the relevant product directories are mentioned by the
+		environment variables; otherwise the compiler might not find the required
+		files. 
+	 </p>
+ 
+  </div> 
+  <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+	 <p>Windows* OS run-time libraries come in thread-safe and thread-unsafe
+		forms. Using non-thread-safe versions with Intel&reg; TBB may cause undefined
+		results. When using Intel&reg; TBB, be sure to link with the thread-safe versions.
+		The following shows the compiler options for linking with thread-safe versions
+		of C/C++ run-time for 
+		<samp class="codeph">cl</samp> or 
+		<samp class="codeph">icl</samp>: 
+	 <ul type="disc"> 
+		<li>Options for dynamic linking: 
+	 <span class="option">/MDd</span> (debug); 
+	 <span class="option">/MD</span> (release) 
+	 </li>
+ 
+	 <li>Options for static linking: 
+	 <span class="option">/MTd</span> (debug); 
+	 <span class="option">/MT</span> (release) 
+	 </li>
+ 
+	 </ul>
+ 
+	 </p>
+ 
+	 <p>Not using one of these options causes Intel&reg; TBB to report an error
+		during compilation. In all cases, linking to the Intel&reg; TBB library is dynamic.
+		
+	 </p>
+ 
+  </div> 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Package_Contents.htm">Package Contents</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../tbb_userguide/Microsoft_Visual_Studio_Code_Examples.htm">Microsoft Visual Studio* Code Examples</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Integration_Plug-In_for_Microsoft_Visual_Studio_Projects.htm">Integration Plug-In for Microsoft Visual Studio* Projects</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

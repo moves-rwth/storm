@@ -1,0 +1,189 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Interface for concurrent_vector">
+<meta name="DC.subject" content="Interface for concurrent_vector">
+<meta name="keywords" content="Interface for concurrent_vector">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/compatibility_features.htm">
+<meta name="DC.Relation" scheme="URI" content="../../containers_overview/concurrent_vector/whole_vector_operations.htm">
+<meta name="DC.Relation" scheme="URI" content="../../containers_overview/concurrent_vector/concurrent_growth.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="interface_for_concurrent_vector">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Interface for concurrent_vector</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="interface_for_concurrent_vector">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="interface_for_concurrent_vector"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Interface for concurrent_vector</h1>
+ 
+   
+  <div> 
+	 <p>The return type of methods 
+		<samp class="codeph">grow_by</samp> and 
+		<samp class="codeph">grow_to_at_least</samp> changed
+		in Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.2. Compile with the preprocessor symbol 
+		<samp class="codeph">TBB_DEPRECATED</samp> set to
+		nonzero to get the old methods. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl47"><!-- --></a><table cellpadding="4" summary="" id="tbl47" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Change in Return Types</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" align="center" valign="top" width="50%" id="d25814e50"> 
+			 <p>Method 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" align="center" valign="top" width="25%" id="d25814e56"> 
+			 <p>Deprecated Return Type 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" align="center" valign="top" width="25%" id="d25814e62"> 
+			 <p>New Return Type 
+			 </p>
+ 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d25814e50 "> 
+			 <p><samp class="codeph">grow_by</samp> See Concurrent Growth. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" align="left" valign="top" width="25%" headers="d25814e56 "> 
+			 <p><samp class="codeph">size_type</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" align="left" valign="top" width="25%" headers="d25814e62 "> 
+			 <p><samp class="codeph">iterator</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d25814e50 "> 
+			 <p><samp class="codeph">grow_to_at_least</samp> See Concurrent
+				Growth. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" align="left" valign="top" width="25%" headers="d25814e56 "> 
+			 <p><samp class="codeph">void</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" align="left" valign="top" width="25%" headers="d25814e62 "> 
+			 <p><samp class="codeph">iterator</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d25814e50 "> 
+			 <p><samp class="codeph">push_back</samp> See Concurrent Growth. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" align="left" valign="top" width="25%" headers="d25814e56 "> 
+			 <p><samp class="codeph">size_type</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" align="left" valign="top" width="25%" headers="d25814e62 "> 
+			 <p><samp class="codeph">iterator</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the members of
+		this template class. 
+	 </span><thead align="left"> 
+		  <tr> 
+			 <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d25814e167">Member 
+			 </th>
+ 
+			 <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d25814e170">Description 
+			 </th>
+ 
+		  </tr>
+</thead>
+ 
+		<tbody> 
+		  <tr> 
+			 <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d25814e167 "><span class="keyword">void compact()</span>. 
+			 </td>
+ 
+			 <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d25814e170 "> 
+				<p>Same as 
+				  <samp class="codeph">shrink_to_fit()</samp>
+				  See Whole Vector Operations. 
+				</p>
+ 
+			 </td>
+ 
+		  </tr>
+ 
+		</tbody>
+ 
+	 </table>
+</div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/appendices/compatibility_features.htm">Compatibility Features</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../../containers_overview/concurrent_vector/whole_vector_operations.htm">Whole Vector Operations 
+		  </a></div>
+<div><a href="../../containers_overview/concurrent_vector/concurrent_growth.htm">Concurrent Growth 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Upgrade/Downgrade">
+<meta name="DC.subject" content="Upgrade/Downgrade">
+<meta name="keywords" content="Upgrade/Downgrade">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Mutual_Exclusion.htm">
+<meta name="DC.Relation" scheme="URI" content="Lock_Pathologies.htm#tutorial_Lock_Pathologies">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_UpgradeDowngrade">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Upgrade/Downgrade</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_UpgradeDowngrade">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_UpgradeDowngrade"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Upgrade/Downgrade</h1>
+ 
+  
+  <div>
+	 <p>It is possible to upgrade a reader lock to a writer lock, by using the
+		method 
+		<samp class="codeph">upgrade_to_writer</samp>. Here is an example.
+	 </p>
+
+	 <pre>std::vector&lt;string&gt; MyVector;
+typedef spin_rw_mutex MyVectorMutexType;
+MyVectorMutexType MyVectorMutex;
+&nbsp;
+void AddKeyIfMissing( const string&amp; key ) {
+    // Obtain a reader lock on MyVectorMutex
+    MyVectorMutexType::scoped_lock lock(MyVectorMutex,/*is_writer=*/false);
+    size_t n = MyVector.size();
+    for( size_t i=0; i&lt;n; ++i )
+        if( MyVector[i]==key ) return;
+    if( !lock.upgrade_to_writer() )
+        // Check if key was added while lock was temporarily released
+        for( int i=n; i&lt;MyVector.size(); ++i )
+           if(MyVector[i]==key ) return; 
+    vector.push_back(key);
+}</pre>
+	 <p>Note that the vector must sometimes be searched again. This is necessary
+		because 
+		<samp class="codeph">upgrade_to_writer</samp> might have to temporarily release the
+		lock before it can upgrade. Otherwise, deadlock might ensue, as discussed in 
+		<strong>Lock Pathologies</strong>. Method 
+		<samp class="codeph">upgrade_to_writer</samp> returns a 
+		<samp class="codeph">bool</samp> that is true if it successfully upgraded the lock
+		without releasing it, and false if the lock was released temporarily. Thus when
+		
+		<samp class="codeph">upgrade_to_writer</samp> returns false, the code must rerun the
+		search to check that the key was not inserted by another writer. The example
+		presumes that keys are always added to the end of the vector, and that keys are
+		never removed. Because of these assumptions, it does not have to re-search the
+		entire vector, but only the elements beyond those originally searched. The key
+		point to remember is that when 
+		<samp class="codeph">upgrade_to_writer</samp> returns false, any assumptions
+		established while holding a reader lock may have been invalidated, and must be
+		rechecked.
+	 </p>
+
+	 <p>For symmetry, there is a corresponding method 
+		<samp class="codeph">downgrade_to_reader</samp>, though in practice there are few
+		reasons to use it.
+	 </p>
+
+  </div>
+
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Mutual_Exclusion.htm">Mutual Exclusion</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Lock_Pathologies.htm#tutorial_Lock_Pathologies">Lock Pathologies
+		  </a></div></div>
+</div>
+
+</body>
+</html>

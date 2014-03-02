@@ -1,0 +1,102 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="structured_task_group Class">
+<meta name="DC.subject" content="structured_task_group Class">
+<meta name="keywords" content="structured_task_group Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_groups.htm">
+<meta name="DC.Relation" scheme="URI" content="task_handle_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="task_group_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="structured_task_group_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>structured_task_group Class</title>
+</head>
+<body id="structured_task_group_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="structured_task_group_cls"><!-- --></a>
+
+
+    <h1 class="topictitle1">structured_task_group Class</h1>
+
+    
+<div><div class="section"><h2 class="sectiontitle">Description</h2>
+        <p>A <samp class="codeph">structured_task_group</samp> is like a <samp class="codeph">task_group</samp>, but has only a subset of the functionality. It may permit performance optimizations in the future. The restrictions are:</p>
+
+        <ul type="disc" class="ul_3">
+            <li class="li_2">Methods <samp class="codeph">run</samp> and <samp class="codeph">run_and_wait</samp> take only <samp class="codeph">task_handle</samp> arguments, not general functors.</li>
+
+            <li class="li_2">Methods <samp class="codeph">run</samp> and
+                        <samp class="codeph">run_and_wait</samp> do not copy their <samp class="codeph">task_handle</samp>
+                    arguments. The caller must not destroy those arguments until after wait
+                        or<samp class="codeph"> run_</samp>and<samp class="codeph">_wait</samp> returns.</li>
+
+            <li class="li_2">Methods <samp class="codeph">run</samp>, <samp class="codeph">run_and_wait</samp>, <samp class="codeph">cancel</samp>, and <samp class="codeph">wait</samp> should be called only by the thread that created the <samp class="codeph">structured_task_group</samp>.</li>
+
+            <li class="li_2">Method <samp class="codeph">wait</samp> (or <samp class="codeph">run_and_wait</samp>) should be called only once on a given instance of <samp class="codeph">structured_task_group</samp>.</li>
+
+        </ul>
+
+        </div>
+<div class="section"><h2 class="sectiontitle">Example</h2>
+        <p>The function <samp class="codeph">fork_join</samp> below evaluates <samp class="codeph">f1()</samp> and <samp class="codeph">f2()</samp>, in parallel if resources permit.</p>
+
+<pre>    #include "tbb/task_group.h"
+    &nbsp;
+    using namespace tbb;
+    &nbsp;
+    template&lt;typename Func1, typename Func2&gt;
+    void fork_join( const Func1&amp; f1, const Func2&amp; f2 ) {
+    &nbsp;&nbsp;&nbsp; structured_task_group group;
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; task_handle&lt;Func1&gt; h1(f1);
+    &nbsp;&nbsp;&nbsp; group.run(h1);&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp;&nbsp; // spawn a task
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; task_handle&lt;Func2&gt; h2(f2);
+    &nbsp;&nbsp;  group.run(h2);&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp;&nbsp; // spawn another task
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; group.wait();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // wait for both tasks to complete
+    &nbsp;&nbsp;&nbsp; // now safe to destroy h1 and h2
+    }</pre>
+        </div>
+<div class="section"><h2 class="sectiontitle">Members</h2>
+<pre> namespace tbb {
+    &nbsp;&nbsp;&nbsp; class structured_task_group {
+    &nbsp;&nbsp;&nbsp; public:
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; structured_task_group();
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; ~structured_task_group();
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; template&lt;typename Func&gt; 
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; void run( task_handle&lt;Func&gt;&amp; handle );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; template&lt;typename Func&gt;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; void run_and_wait( task_handle&lt;Func&gt;&amp; handle );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; task_group_status wait(); 
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; bool is_canceling();
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; void cancel();
+    &nbsp;&nbsp;&nbsp; };
+    }
+    &nbsp;</pre></div>
+</div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_groups.htm">Task Groups</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="task_handle_cls.htm">task_handle Template Class</a></div>
+<div><a href="task_group_cls.htm">task_group Class</a></div></div>
+</div>
+
+</body>
+</html>

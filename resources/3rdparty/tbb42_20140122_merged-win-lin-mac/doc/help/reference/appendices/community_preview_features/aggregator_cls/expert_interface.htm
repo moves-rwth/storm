@@ -1,0 +1,275 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="aggregator Class Expert Interface">
+<meta name="DC.subject" content="aggregator Class Expert Interface">
+<meta name="keywords" content="aggregator Class Expert Interface">
+<meta name="DC.Relation" scheme="URI" content="../../../../reference/appendices/community_preview_features/aggregator_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="basic_interface.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="expert_interface">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../../intel_css_styles.css">
+<title>aggregator Class Expert Interface</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="expert_interface">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(4);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="expert_interface"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">aggregator Class Expert Interface</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename handler_type&gt;
+class aggregator_ext;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#define TBB_PREVIEW_AGGREGATOR 1
+#include "tbb/aggregator.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>The extended <samp class="codeph">aggregator</samp> interface is provided for expert-level use of the <samp class="codeph">aggregator</samp>.  
+        It gives the user more control over the operations that are passed to the <samp class="codeph">aggregator</samp> and how those operations 
+        are handled by the <samp class="codeph">aggregator</samp>.  Specifically, instead of an <samp class="codeph">execute</samp> method to pass in a 
+        particular function, there is a <samp class="codeph">process</samp> method to which any sort of data (derived from <samp class="codeph">aggregator_operation</samp>, 
+        see below) can be passed.  In addition, the user must specify a custom function object that performs the operations specified 
+        by the data passed in through the <samp class="codeph">process</samp> method.
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+  class aggregator_operation {
+   public:
+    enum aggregator_operation_status {agg_waiting=0,agg_finished};
+    aggregator_operation();
+    void start();
+    void finish();
+    aggregator_operation* next();
+    void set_next(aggregator_operation* n);
+  };
+
+  template&lt;typename handler_type&gt;
+  class aggregator_ext {
+   public:
+    aggregator_ext(const handler_type&amp; h);
+    void process(aggregator_operation *op);
+  };
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this class. 
+		  </span>
+             <thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d17856e100">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d17856e103">Description 
+				  </th>
+ 
+				</tr>
+
+             </thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d17856e100 "><span class="keyword">aggregator_ext(const handler_type&amp; h)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d17856e103 "> 
+					 <p>Constructs an <span class="keyword">aggregator_ext</span> object that uses 
+                     handler <span class="keyword">h</span> to handle operations.</p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d17856e100 "><span class="keyword">void process(aggregator_operation* op)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d17856e103 "> 
+					 <p>Submits data about an operation in <span class="keyword">op</span> to <span class="keyword">aggregator_ext</span> 
+                     to be executed in a mutually exclusive fashion.  Returns after <span class="keyword">op</span> has been handled.
+                     </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d17856e100 "><span class="keyword">aggregator_operation::aggregator_operation()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d17856e103 "> 
+					 <p>Constructs a base <span class="keyword">aggregator_operation</span> object.</p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d17856e100 "><span class="keyword">void aggregator_operation::start()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d17856e103 "> 
+					 <p>Prepares the <span class="keyword">aggregator_operation</span> object to be handled.</p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d17856e100 "><span class="keyword">void aggregator_operation::finish()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d17856e103 "> 
+					 <p>Prepares the <span class="keyword">aggregator_operation</span> object to be released to its originating thread.</p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d17856e100 "><span class="keyword">aggregator_operation* aggregator_operation::next()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d17856e103 "> 
+					 <p>The next <span class="keyword">aggregator_operation</span> following <span class="keyword">this</span>.
+                     </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d17856e100 "><span class="keyword">void aggregator_operation::set_next(aggregator_operation* n)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d17856e103 "> 
+					 <p>Makes <span class="keyword">n</span> the next <span class="keyword">aggregator_operation</span> following <span class="keyword">this</span>.
+                     </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+  </div>
+ 
+  <div class="section"><h2 class="sectiontitle">Example</h2> 
+   
+  <p>The following example again uses an <samp class="codeph">aggregator_ext</samp> to safely operate on a non-concurrent <samp class="codeph">std::priority_queue</samp> container.</p>
+
+ <pre>typedef priority_queue&lt;value_type, vector&lt;value_type&gt;, compare_type&gt; pq_t;
+pq_t my_pq;
+value_type elem = 42;
+
+// The operation data, derived from aggregator_node
+class op_data : public aggregator_node
+ public:
+  value_type* elem;
+  bool success, is_push;
+  op_data(value_type* e, bool push=false) : 
+    elem(e), success(false), is_push(push) {}
+};
+
+// A handler to pass in the aggregator_ext template
+class my_handler_t {
+  pq_t *pq;
+ public:
+  my_handler_t() {}
+  my_handler_t(pq_t *pq_) : pq(pq_) {}
+  void operator()(aggregator_node* op_list) {
+    op_data* tmp;
+    while (op_list) {
+      tmp = (op_data*)op_list;
+      op_list = op_list-&gt;next();
+      tmp-&gt;start();
+      if (tmp-&gt;is_push) pq-&gt;push(*(tmp-&gt;elem));
+      else {
+        if (!pq-&gt;empty()) {
+          tmp-&gt;success = true;
+          *(tmp-&gt;elem) = pq-&gt;top();
+          pq-&gt;pop();
+        }
+      }
+      tmp-&gt;finish();
+    }
+  }
+};
+
+// create the aggregator_ext and initialize with handler instance
+aggregator_ext&lt;my_handler_t&gt; my_aggregator(my_handler_t(my_pq));
+
+// push elem onto the priority queue
+op_data my_push_op(&amp;elem, true);
+my_aggregator.process(&amp;my_push_op);
+
+// pop an elem from the priority queue
+bool result;
+op_data my_pop_op(&amp;elem);
+my_aggregator.process(&amp;my_pop_op);
+result = my_pop_op.success;</pre>
+
+<p>There are several important things to note in this example.  Most importantly is the handler 
+algorithm, which must conform to what is shown above.  Specifically, the handler must receive a 
+linked list of <samp class="codeph">aggregator_nodes</samp>, and it must process all the nodes in the list.  The ordering of 
+this processing is up to the user, but all the nodes must be processed before the handler returns.  
+The <samp class="codeph">next</samp> and <samp class="codeph">set_next</samp> methods on <samp class="codeph">aggregator_node</samp> should be used 
+for all manipulations of nodes in the list.</p>
+
+
+<p>Further, to process an <samp class="codeph">aggregator_node</samp>, the user must first call the method <samp class="codeph">start</samp> on the node.  
+Then, the user can handle the operation associated with the node in whatever way necessary.  When 
+this is complete, the user must call the method <samp class="codeph">finish</samp> on the node.  The <samp class="codeph">finish</samp> method releases the 
+node to its originating thread, causing that thread's invocation of the <samp class="codeph">process</samp> method to return.</p>
+
+
+<p>The <samp class="codeph">handler</samp> function in the example above illustrates this process in the simplest fashion: 
+loop over the list handling each operation in turn, call <samp class="codeph">start</samp> before working with the information 
+contained in the node, call <samp class="codeph">finish</samp> when done with the node.</p>
+
+  </div>
+ 
+  </div>
+ 
+
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../../reference/appendices/community_preview_features/aggregator_cls.htm">aggregator Class</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="basic_interface.htm">aggregator Class Basic Interface
+		  </a></div></div>
+</div>
+
+</body>
+</html>

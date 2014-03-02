@@ -1,0 +1,87 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Explicit task Destruction">
+<meta name="DC.subject" content="Explicit task Destruction">
+<meta name="keywords" content="Explicit task Destruction">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="explicit_task_destruction">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Explicit task Destruction</title>
+</head>
+<body id="explicit_task_destruction">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="explicit_task_destruction"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Explicit task Destruction</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Usually, a 
+		  <samp class="codeph">task</samp> is automatically destroyed by the scheduler after
+		  its method 
+		  <samp class="codeph">execute</samp> returns. But sometimes 
+		  <samp class="codeph">task</samp> objects are used idiomatically (such as for
+		  reference counting) without ever running&nbsp; 
+		  <samp class="codeph">execute</samp>. Such tasks should be disposed with method 
+		  <samp class="codeph">destroy</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">static void destroy ( task&amp; victim
+		  )</h2> 
+		 
+		<p><strong>Requirements</strong> 
+		</p>
+ 
+		<p>The refcount of 
+		  <samp class="codeph">victim</samp> must be zero. This requirement is checked in
+		  the debug version of the library. 
+		</p>
+ 
+		<p><strong>Effects</strong> 
+		</p>
+ 
+		<p>Calls destructor and deallocates memory for 
+		  <samp class="codeph"><em>victim</em></samp>. If 
+		  <samp class="codeph"><em>victim</em></samp>.<samp class="codeph"><em>parent</em></samp> is not
+		  null, atomically decrements 
+		  <samp class="codeph"><em>victim.parent-&gt;refcount</em></samp>. The parent is 
+		  <strong>not</strong> put into the ready pool if its 
+		  <em>refcount</em> becomes zero. The figure below summarizes the state
+		  transition. 
+		</p>
+ 
+		<div class="fignone"><span class="figcap">Effect of destroy(victim).</span> 
+		   
+		  <br><img src="../Resources/0600000C.png"><br> 
+		</div>
+ 
+		<p> 
+		  <samp class="codeph"><em>refcount</em></samp> adjustment is skipped if parent is
+		  null. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

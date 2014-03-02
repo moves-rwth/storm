@@ -1,0 +1,102 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Speculative locking (Transactional Lock Elision)">
+<meta name="DC.subject" content="Speculative Locking, Lock Elision">
+<meta name="keywords" content="Speculative Locking, Lock Elision">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/synchronization/mutexes.htm">
+<meta name="DC.Relation" scheme="URI" content="mutex_concept.htm">
+<meta name="DC.Relation" scheme="URI" content="speculative_spin_mutex_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="speculative_spin_rw_mutex_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="hardware_transactional_locking">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Speculative locking (Transactional Lock Elision)</title>
+</head>
+<body id="hardware_transactional_locking">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="hardware_transactional_locking"><!-- --></a>
+
+
+    <h1 class="topictitle1">Speculative locking (Transactional Lock Elision)</h1>
+
+    
+<div>
+    <div class="section">
+            <p>
+                On processors that support hardware transaction memory
+                (such as Intel&reg; Transactional Synchronization Extensions (Intel&reg; TSX))
+                speculative mutexes work by letting multiple threads acquire the same lock, as
+                long as there are no "conflicts" that may generate different results than
+                non-speculative locking.  The exact notion of a "conflict" depends on the hardware,
+                and typically means accessing the same cache line where one of the accesses
+                modifies the cache line.
+            </p>
+
+            <p>
+                On processors that do not support hardware transactional memory, speculative mutexes
+                behave like their non-speculating counterparts, but possibly with worse performance.
+            </p>
+
+            <p>
+                On Intel&reg; processors, speculative mutexes use Intel TSX if available.
+                General guidance for speculative locking on such processors is:
+                <ul type="disc">
+                    <li>The protected critical sections should not conflict at cache-line granularity.</li>
+
+                    <li>The protected critical section should be short enough to not be affected by
+                        an interrupt or context switch.</li>
+
+                    <li> The protected critical section should not perform a system call.</li>
+
+                    <li>The protected critical section should not touch more data than fits in L1 cache.</li>
+
+                    <li>There may be a nesting limit for speculation.</li>
+
+                </ul>
+
+                Careful performance comparison with a non-speculative alternative is recommended.
+            </p>
+
+            <p>
+                For more guidance and examples about using Intel TSX effectively, see the
+                <em>Intel&reg; 64 and IA-32 Architectures Optimization Reference Manual</em>, Chapter 12.
+            </p>
+
+    </div>
+
+        <div class="section"><h2 class="sectiontitle">References</h2>
+             <p>
+                 <a href="http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf" target="_blank">
+                 <em>Intel&reg; 64 and IA-32 Architectures Optimization Reference Manual</em>,
+                 Order Number 248966-027, June 2013
+                 </a>
+                 , Chapter 12.
+             </p>
+
+         </div>
+
+
+</div>
+
+    
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/synchronization/mutexes.htm">Mutexes</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="mutex_concept.htm">Mutex Concept</a></div>
+<div><a href="speculative_spin_mutex_cls.htm">speculative_spin_mutex</a></div>
+<div><a href="speculative_spin_rw_mutex_cls.htm">speculative_spin_rw_mutex (Community Preview Feature)</a></div></div>
+</div>
+
+</body>
+</html>
