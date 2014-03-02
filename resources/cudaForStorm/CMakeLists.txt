@@ -183,7 +183,7 @@ include (GenerateExportHeader)
 ##
 #############################################################
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_30)
-cuda_add_library(cudaForStorm
+cuda_add_library(cudaForStorm SHARED
   ${CUDAFORSTORM_CUDA_SOURCES} ${CUDAFORSTORM_CUDA_HEADERS}
   OPTIONS -DSTUFF="" -arch=sm_30
   RELEASE -DNDEBUG
@@ -223,4 +223,4 @@ endif(LINK_LIBCXXABI)
 
 # Install Directive
 install(TARGETS cudaForStorm DESTINATION "${STORM_LIB_INSTALL_DIR}/lib")
-install(FILES "${PROJECT_SOURCE_DIR}/src/cudaForStorm.h" "${PROJECT_BINARY_DIR}/cudaForStorm_Export.h" DESTINATION "${STORM_LIB_INSTALL_DIR}/include")
+install(FILES "${PROJECT_SOURCE_DIR}/srcCuda/cudaForStorm.h" "${PROJECT_BINARY_DIR}/include/cudaForStorm_Export.h" DESTINATION "${STORM_LIB_INSTALL_DIR}/include")

@@ -62,6 +62,8 @@
 
 #include "src/exceptions/InvalidSettingsException.h"
 
+#include "cudaForStorm.h"
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -160,6 +162,7 @@ void printHeader(const int argc, const char* argv[]) {
 	}
 	std::cout << "Command line: " << commandStream.str() << std::endl;
 	std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
+	cudaForStormTestFunction(21, 21);
 }
 
 /*!
