@@ -25,10 +25,10 @@ include_directories(${GMMXX_INCLUDE_DIR})
 ##	CMake options of StoRM
 ##
 #############################################################
-option(DEBUG "Sets whether the DEBUG mode is used" ON)
-option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
+option(STORM_DEBUG "Sets whether the DEBUG mode is used" ON)
+option(STORM_USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
-option(ENABLE_INTELTBB "Sets whether the Intel TBB is available." OFF)
+option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
 option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
@@ -66,7 +66,7 @@ find_package(TBB)
 find_package(Threads REQUIRED)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
-if (DEBUG)
+if (STORM_DEBUG)
     set (CMAKE_BUILD_TYPE "DEBUG")
 else()
     set (CMAKE_BUILD_TYPE "RELEASE")
@@ -109,9 +109,9 @@ if(CMAKE_COMPILER_IS_GNUCC)
     # (Thomas Heinemann, 2012-12-21)
     
     # Turn on popcnt instruction if desired (yes by default)
-    if (USE_POPCNT)
+    if (STORM_USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
-    endif(USE_POPCNT)
+    endif(STORM_USE_POPCNT)
 	
 	# Set the no-strict-aliasing target for GCC
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
@@ -155,9 +155,9 @@ else(CLANG)
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
     
     # Turn on popcnt instruction if desired (yes by default)
-    if (USE_POPCNT)
+    if (STORM_USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
-    endif(USE_POPCNT)    
+    endif(STORM_USE_POPCNT)    
 	
 	# Set the no-strict-aliasing target for Clang
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
@@ -188,7 +188,7 @@ else()
 endif()
 
 # Intel TBB Defines
-if (TBB_FOUND AND ENABLE_INTELTBB)
+if (TBB_FOUND AND STORM_USE_INTELTBB)
 	set(STORM_CPP_INTELTBB_DEF "define")
 else()
 	set(STORM_CPP_INTELTBB_DEF "undef")
@@ -287,7 +287,7 @@ if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
 	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 link_directories(${Boost_LIBRARY_DIRS})
-if (TBB_FOUND AND ENABLE_INTELTBB)
+if (TBB_FOUND AND STORM_USE_INTELTBB)
 	link_directories(${TBB_LIBRARY_DIRS})
 endif()
 
@@ -425,13 +425,13 @@ endif(UNIX AND NOT APPLE)
 #############################################################
 if (TBB_FOUND)
 	message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
-	if (ENABLE_INTELTBB)
+	if (STORM_USE_INTELTBB)
 		message(STATUS "StoRM - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
 		include_directories(${TBB_INCLUDE_DIRS})
 		target_link_libraries(storm tbb tbbmalloc)
 		target_link_libraries(storm-functional-tests tbb tbbmalloc)
 		target_link_libraries(storm-performance-tests tbb tbbmalloc)
-	endif(ENABLE_INTELTBB)
+	endif(STORM_USE_INTELTBB)
 endif(TBB_FOUND)
 
 #############################################################
