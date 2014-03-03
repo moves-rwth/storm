@@ -23,7 +23,7 @@ TEST(DeterministicModelParserTest, NonExistingFile) {
 TEST(DeterministicModelParserTest, BasicDtmcParsing) {
 
 	// Parse a Dtmc and check the result.
-	storm::models::Dtmc<double> dtmc(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general_input.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general_input.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general_input.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general_input.trans.rew"));
+	storm::models::Dtmc<double> dtmc(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew"));
 
 	ASSERT_EQ(dtmc.getNumberOfStates(), 8);
 	ASSERT_EQ(dtmc.getNumberOfTransitions(), 21);
@@ -55,7 +55,7 @@ TEST(DeterministicModelParserTest, BasicDtmcParsing) {
 TEST(DeterministicModelParserTest, BasicCtmcParsing) {
 
 	// Parse a Ctmc and check the result.
-	storm::models::Ctmc<double> ctmc(storm::parser::DeterministicModelParser::parseCtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general_input.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general_input.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general_input.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general_input.trans.rew"));
+	storm::models::Ctmc<double> ctmc(storm::parser::DeterministicModelParser::parseCtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew"));
 
 	ASSERT_EQ(ctmc.getNumberOfStates(), 8);
 	ASSERT_EQ(ctmc.getNumberOfTransitions(), 21);
@@ -88,13 +88,13 @@ TEST(DeterministicModelParserTest, UnmatchedFiles) {
 	// Test file combinations that do not match, i.e. differing number of states, transitions, etc.
 
 	// The labeling file contains a label for a non existent state.
-	ASSERT_THROW(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general_input.lab"), storm::exceptions::OutOfRangeException);
+	ASSERT_THROW(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general.lab"), storm::exceptions::OutOfRangeException);
 
 	// The state reward file contains a reward for a non existent state.
-	ASSERT_THROW(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_unmatched.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general_input.state.rew"), storm::exceptions::OutOfRangeException);
+	ASSERT_THROW(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_unmatched.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.state.rew"), storm::exceptions::OutOfRangeException);
 
 	// The transition reward file contains rewards for a non existent state.
-	ASSERT_THROW(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_unmatched.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general_input.trans.rew"), storm::exceptions::OutOfRangeException);
+	ASSERT_THROW(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_unmatched.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew"), storm::exceptions::OutOfRangeException);
 
 	// The transition reward file contains rewards for a non existent transition
 	ASSERT_THROW(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_unmatched.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_unmatched.trans.rew"), storm::exceptions::OutOfRangeException);

@@ -27,7 +27,7 @@ TEST(DeterministicSparseTransitionParserTest, NonExistingFile) {
 TEST(DeterministicSparseTransitionParserTest, BasicTransitionsParsing) {
 
 	// Parse a deterministic transitions file and test the resulting matrix.
-	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general_input.tra");
+	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra");
 
 	ASSERT_EQ(transitionMatrix.getColumnCount(), 8);
 	ASSERT_EQ(transitionMatrix.getEntryCount(), 21);
@@ -102,9 +102,9 @@ TEST(DeterministicSparseTransitionParserTest, BasicTransitionsParsing) {
 TEST(DeterministicSparseTransitionParserTest, BasicTransitionsRewardsParsing) {
 
 	// First parse a transition file. Then parse a transition reward file for the resulting transitiion matrix.
-	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general_input.tra");
+	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra");
 
-	storm::storage::SparseMatrix<double> rewardMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general_input.trans.rew", transitionMatrix);
+	storm::storage::SparseMatrix<double> rewardMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew", transitionMatrix);
 
 	ASSERT_EQ(rewardMatrix.getColumnCount(), 8);
 	ASSERT_EQ(rewardMatrix.getEntryCount(), 17);
@@ -169,24 +169,24 @@ TEST(DeterministicSparseTransitionParserTest, Whitespaces) {
 
 	// Test the resilience of the parser against whitespaces.
 	// Do so by comparing the hash of the matrix resulting from the file without whitespaces with the hash of the matrix resulting from the file with whitespaces.
-	uint_fast64_t correctHash = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general_input.tra").hash();
-	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_whitespaces_input.tra");
+	uint_fast64_t correctHash = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra").hash();
+	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_whitespaces.tra");
 	ASSERT_EQ(correctHash, transitionMatrix.hash());
 
 	// Do the same for the corresponding transition rewards file (with and without whitespaces)
-	correctHash = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general_input.trans.rew", transitionMatrix).hash();
-	ASSERT_EQ(correctHash, storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_whitespaces_input.trans.rew", transitionMatrix).hash());
+	correctHash = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew", transitionMatrix).hash();
+	ASSERT_EQ(correctHash, storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_whitespaces.trans.rew", transitionMatrix).hash());
 }
 
 TEST(DeterministicSparseTransitionParserTest, MixedTransitionOrder) {
 
 	// Since the MatrixBuilder needs sequential input of new elements reordering of transitions or states should throw an exception.
-	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_mixedTransitionOrder_input.tra"), storm::exceptions::InvalidArgumentException);
-	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_mixedStateOrder_input.tra"), storm::exceptions::InvalidArgumentException);
+	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_mixedTransitionOrder.tra"), storm::exceptions::InvalidArgumentException);
+	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
 
-	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general_input.tra");
-	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_mixedTransitionOrder_input.trans.rew", transitionMatrix), storm::exceptions::InvalidArgumentException);
-	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_mixedStateOrder_input.trans.rew", transitionMatrix), storm::exceptions::InvalidArgumentException);
+	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra");
+	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_mixedTransitionOrder.trans.rew", transitionMatrix), storm::exceptions::InvalidArgumentException);
+	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_mixedStateOrder.trans.rew", transitionMatrix), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(DeterministicSparseTransitionParserTest, FixDeadlocks) {
@@ -195,7 +195,7 @@ TEST(DeterministicSparseTransitionParserTest, FixDeadlocks) {
 	storm::settings::InternalOptionMemento setDeadlockOption("fixDeadlocks", true);
 
 	// Parse a transitions file with the fixDeadlocks Flag set and test if it works.
-	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_deadlock_input.tra");
+	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_deadlock.tra");
 
 	ASSERT_EQ(transitionMatrix.getColumnCount(), 9);
 	ASSERT_EQ(transitionMatrix.getEntryCount(), 23);
@@ -219,11 +219,11 @@ TEST(DeterministicSparseTransitionParserTest, DontFixDeadlocks) {
 	// Try to parse a transitions file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
 	storm::settings::InternalOptionMemento unsetDeadlockOption("fixDeadlocks", false);
 
-	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_deadlock_input.tra"), storm::exceptions::WrongFormatException);
+	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_deadlock.tra"), storm::exceptions::WrongFormatException);
 }
 
 TEST(DeterministicSparseTransitionParserTest, DoubledLines) {
 	// There is a redundant line in the transition file. As the transition already exists this should throw an exception.
 	// Note: If two consecutive lines are doubled no exception is thrown.
-	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_doubledLines_input.tra"), storm::exceptions::InvalidArgumentException);
+	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_doubledLines.tra"), storm::exceptions::InvalidArgumentException);
 }

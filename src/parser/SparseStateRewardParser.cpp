@@ -9,6 +9,7 @@
 
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/OutOfRangeException.h"
+#include "src/exceptions/FileIoException.h"
 #include "src/utility/cstring.h"
 #include "src/parser/MappedFile.h"
 #include "log4cplus/logger.h"
@@ -24,7 +25,7 @@ namespace storm {
 			// Open file.
 			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
 				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
-				throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
+				throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
 			}
 
 			MappedFile file(filename.c_str());

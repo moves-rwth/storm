@@ -11,6 +11,7 @@
 #include <cmath>
 
 #include "src/parser/SparseStateRewardParser.h"
+#include "src/exceptions/FileIoException.h"
 
 TEST(SparseStateRewardParserTest, NonExistingFile) {
 
