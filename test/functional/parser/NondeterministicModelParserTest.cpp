@@ -86,18 +86,18 @@ TEST(NondeterministicModelParserTest, BasicCtmdpParsing) {
 	ASSERT_EQ(rewardSum, 1376.864);
 }
 
-TEST(NondeterministicModelParserTest, UnmatchedFiles) {
+TEST(NondeterministicModelParserTest, MismatchedFiles) {
 	// Test file combinations that do not match, i.e. differing number of states, transitions, etc.
 
 	// The labeling file contains a label for a non existent state.
-	ASSERT_THROW(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/mdp_general.lab"), storm::exceptions::OutOfRangeException);
+	ASSERT_THROW(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_mismatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/mdp_general.lab"), storm::exceptions::OutOfRangeException);
 
 	// The state reward file contains a reward for a non existent state.
-	ASSERT_THROW(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/mdp_unmatched.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_general.state.rew"), storm::exceptions::OutOfRangeException);
+	ASSERT_THROW(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_mismatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/mdp_mismatched.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_general.state.rew"), storm::exceptions::OutOfRangeException);
 
 	// The transition reward file contains rewards for a non existent state.
-	ASSERT_THROW(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/mdp_unmatched.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_general.trans.rew"), storm::exceptions::OutOfRangeException);
+	ASSERT_THROW(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_mismatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/mdp_mismatched.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_general.trans.rew"), storm::exceptions::OutOfRangeException);
 
 	// The transition reward file contains rewards for a non existent transition
-	ASSERT_THROW(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_unmatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/mdp_unmatched.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_unmatched.trans.rew"), storm::exceptions::OutOfRangeException);
+	ASSERT_THROW(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_mismatched.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/mdp_mismatched.lab", "", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_mismatched.trans.rew"), storm::exceptions::OutOfRangeException);
 }

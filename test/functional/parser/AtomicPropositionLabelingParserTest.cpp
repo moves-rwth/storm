@@ -122,8 +122,10 @@ TEST(AtomicPropositionLabelingParserTest, LabelForNonExistentState) {
 // This behavior might not be ideal as multiple lines for one state are not necessary and might indicate a corrupt or wrong file.
 TEST(AtomicPropositionLabelingParserTest, DoubledLines) {
 	// There are multiple lines attributing labels to the same state.
-	storm::models::AtomicPropositionsLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(6, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/doubledLines.lab");
-	ASSERT_EQ(labeling.getPropositionsForState(1).size(), 3);
+	ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(6, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/doubledLines.lab"), storm::exceptions::WrongFormatException);
+
+	// There is a line for a state that has been skipped.
+	ASSERT_THROW(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(6, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/doubledLinesSkipped.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(AtomicPropositionLabelingParserTest, WrongProposition) {

@@ -125,7 +125,8 @@ namespace storm {
 			// Now eliminate remaining whitespaces such as empty lines and start parsing.
 			buf = trimWhitespaces(buf);
 
-			uint_fast64_t state;
+			uint_fast64_t state = 0;
+			uint_fast64_t lastState = -1;
 			cnt = 0;
 
 			// Now parse the assignments of labels to nodes.
@@ -134,6 +135,12 @@ namespace storm {
 				// Parse the state number and iterate over its labels (atomic propositions).
 				// Stop at the end of the line.
 				state = checked_strtol(buf, &buf);
+
+				// If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
+				if(state <= lastState && lastState != -1) {
+					LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). State " << state << " was found but has already been read or skipped previously.");
+					throw storm::exceptions::WrongFormatException() << "State " << state << " was found but has already been read or skipped previously.";
+				}
 
 				while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
 					cnt = skipWord(buf) - buf;
@@ -160,6 +167,7 @@ namespace storm {
 					}
 				}
 				buf = trimWhitespaces(buf);
+				lastState = state;
 			}
 
 			return labeling;

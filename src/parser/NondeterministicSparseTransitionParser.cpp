@@ -174,7 +174,16 @@ namespace storm {
 
 			if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
 
-			return NondeterministicSparseTransitionParser::Result(matrixBuilder.build(), rowMapping);
+			// Finally, build the actual matrix, test and return it together with the rowMapping.
+			storm::storage::SparseMatrix<double> resultMatrix = matrixBuilder.build();
+
+			// Since we cannot do the testing if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to do it afterwards.
+			if(isRewardFile && !resultMatrix.isSubmatrixOf(modelInformation.transitionMatrix)) {
+				LOG4CPLUS_ERROR(logger, "There are rewards for non existent transitions given in the reward file.");
+				throw storm::exceptions::WrongFormatException() << "There are rewards for non existent transitions given in the reward file.";
+			}
+
+			return NondeterministicSparseTransitionParser::Result(resultMatrix, rowMapping);
 		}
 
 		NondeterministicSparseTransitionParser::FirstPassResult NondeterministicSparseTransitionParser::firstPass(char* buf, bool isRewardFile, Result const & modelInformation) {
@@ -189,7 +198,7 @@ namespace storm {
 			}
 
 			// Read all transitions.
-			uint_fast64_t source = 0, target = 0, choice = 0, lastChoice = 0, lastSource = 0;
+			uint_fast64_t source = 0, target = 0, choice = 0, lastChoice = 0, lastSource = 0, lastTarget = -1;
 			double val = 0.0;
 			NondeterministicSparseTransitionParser::FirstPassResult result;
 
@@ -251,11 +260,17 @@ namespace storm {
 					}
 				}
 
-				// Read target and check if we encountered a state index that is bigger than all previously
-				// seen.
+				// Read target and check if we encountered a state index that is bigger than all previously seen.
 				target = checked_strtol(buf, &buf);
+
 				if (target > result.highestStateIndex) {
 					result.highestStateIndex = target;
+				}
+
+				// Also, have we already seen this transition?
+				if (target == lastTarget && choice == lastChoice && source == lastSource) {
+					LOG4CPLUS_ERROR(logger, "The same transition (" << source << ", " << choice << ", " << target << ") is given twice.");
+					throw storm::exceptions::InvalidArgumentException() << "The same transition (" << source << ", " << choice << ", " << target << ") is given twice.";
 				}
 
 				// Read value and check whether it's positive.
@@ -273,6 +288,7 @@ namespace storm {
 
 				lastChoice = choice;
 				lastSource = source;
+				lastTarget = target;
 
 				// Increase number of non-zero values.
 				result.numberOfNonzeroEntries++;

@@ -181,8 +181,16 @@ namespace storm {
 					if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
 				}
 
-				// Finally, build the actual matrix and return it.
-				return resultMatrix.build();
+				// Finally, build the actual matrix, test and return it.
+				storm::storage::SparseMatrix<double> result = resultMatrix.build();
+
+				// Since we cannot do the testing if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to do it afterwards.
+				if(isRewardFile && !result.isSubmatrixOf(transitionMatrix)) {
+					LOG4CPLUS_ERROR(logger, "There are rewards for non existent transitions given in the reward file.");
+					throw storm::exceptions::WrongFormatException() << "There are rewards for non existent transitions given in the reward file.";
+				}
+
+				return result;
 		}
 
 		DeterministicSparseTransitionParser::FirstPassResult DeterministicSparseTransitionParser::firstPass(char* buf, bool insertDiagonalEntriesIfMissing) {
@@ -197,7 +205,7 @@ namespace storm {
 			}
 
 			 // Check all transitions for non-zero diagonal entries and deadlock states.
-			uint_fast64_t row, col, lastRow = 0;
+			uint_fast64_t row, col, lastRow = 0, lastCol = -1;
 			bool rowHadDiagonalEntry = false;
 			while (buf[0] != '\0') {
 
@@ -218,7 +226,6 @@ namespace storm {
 						for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
 							++result.numberOfNonzeroEntries;
 						}
-						lastRow = row;
 						rowHadDiagonalEntry = false;
 					}
 
@@ -237,6 +244,16 @@ namespace storm {
 				if (col > result.highestStateIndex) result.highestStateIndex = col;
 
 				++result.numberOfNonzeroEntries;
+
+				// Have we already seen this transition?
+				if (row == lastRow && col == lastCol) {
+					LOG4CPLUS_ERROR(logger, "The same transition (" << row << ", " <<  col << ") is given twice.");
+					throw storm::exceptions::InvalidArgumentException() << "The same transition (" << row << ", " << col << ") is given twice.";
+				}
+
+				lastRow = row;
+				lastCol = col;
+
 				buf = trimWhitespaces(buf);
 			}
 

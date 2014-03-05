@@ -101,7 +101,7 @@ TEST(DeterministicSparseTransitionParserTest, BasicTransitionsParsing) {
 
 TEST(DeterministicSparseTransitionParserTest, BasicTransitionsRewardsParsing) {
 
-	// First parse a transition file. Then parse a transition reward file for the resulting transitiion matrix.
+	// First parse a transition file. Then parse a transition reward file for the resulting transition matrix.
 	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra");
 
 	storm::storage::SparseMatrix<double> rewardMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew", transitionMatrix);
@@ -223,7 +223,17 @@ TEST(DeterministicSparseTransitionParserTest, DontFixDeadlocks) {
 }
 
 TEST(DeterministicSparseTransitionParserTest, DoubledLines) {
+
 	// There is a redundant line in the transition file. As the transition already exists this should throw an exception.
 	// Note: If two consecutive lines are doubled no exception is thrown.
 	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_doubledLines.tra"), storm::exceptions::InvalidArgumentException);
+}
+
+TEST(DeterministicSparseTransitionParserTest, RewardForNonExistentTransition) {
+
+	// First parse a transition file. Then parse a transition reward file for the resulting transition matrix.
+	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra");
+
+	// There is a reward for a transition that does not exist in the transition matrix.
+	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_rewardForNonExTrans.trans.rew", transitionMatrix), storm::exceptions::WrongFormatException);
 }
