@@ -9,6 +9,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/PrctlParser.h"
+#include "src/exceptions/WrongFormatException.h"
 
 TEST(PrctlParserTest, parseApOnlyTest) {
 	std::string ap = "ap";

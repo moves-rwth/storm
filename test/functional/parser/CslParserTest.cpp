@@ -8,6 +8,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/CslParser.h"
+#include "src/exceptions/WrongFormatException.h"
 
 TEST(CslParserTest, parseApOnlyTest) {
 	std::string formula = "ap";

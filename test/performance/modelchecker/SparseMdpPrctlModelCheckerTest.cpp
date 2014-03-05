@@ -8,11 +8,11 @@
 
 TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew");
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew");
 
-	ASSERT_EQ(parser.getType(), storm::models::MDP);
+	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
 
-	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
+	std::shared_ptr<storm::models::Mdp<double>> mdp = abstractModel->as<storm::models::Mdp<double>>();
 
 	ASSERT_EQ(mdp->getNumberOfStates(), 2095783ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7714385ull);
@@ -79,11 +79,11 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     // Increase the maximal number of iterations, because the solver does not converge otherwise.
 	// This is done in the main cpp unit
     
-	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "");
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "");
     
-	ASSERT_EQ(parser.getType(), storm::models::MDP);
+	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
     
-	std::shared_ptr<storm::models::Mdp<double>> mdp = parser.getModel<storm::models::Mdp<double>>();
+	std::shared_ptr<storm::models::Mdp<double>> mdp = abstractModel->as<storm::models::Mdp<double>>();
     
 	ASSERT_EQ(mdp->getNumberOfStates(), 63616ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 213472ull);

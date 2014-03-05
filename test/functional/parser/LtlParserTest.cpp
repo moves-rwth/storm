@@ -8,6 +8,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/LtlParser.h"
+#include "src/exceptions/WrongFormatException.h"
 
 TEST(LtlParserTest, parseApOnlyTest) {
 	std::string formula = "ap";

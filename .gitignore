@@ -39,3 +39,6 @@ build//CMakeLists.txt
 /*.vcxproj
 /*.filters
 /*.sln
+#Temp texteditor files
+*.orig
+*.*~
