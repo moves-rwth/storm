@@ -38,6 +38,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/../cmake/")
 find_package(CUDA REQUIRED)
 find_package(Doxygen REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Thrust REQUIRED)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (CUDAFORSTORM_DEBUG)
@@ -208,6 +209,14 @@ include_directories(${CUDA_INCLUDE_DIRS})
 #############################################################
 include_directories(${THREADS_INCLUDE_DIRS})
 target_link_libraries(cudaForStorm ${CMAKE_THREAD_LIBS_INIT})
+
+#############################################################
+##
+##	Thrust
+##
+#############################################################
+include_directories(${THRUST_INCLUDE_DIR})
+message(STATUS "StoRM (CudaPlugin) - Found Thrust Version ${THRUST_VERSION}")
 
 if (MSVC)
 	# Add the DebugHelper DLL
