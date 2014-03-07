@@ -3,10 +3,6 @@ cmake_minimum_required (VERSION 2.8.6)
 # Set project name
 project (storm CXX C)
 
-# Set the version number
-set (STORM_CPP_VERSION_MAJOR 1)
-set (STORM_CPP_VERSION_MINOR 0)
-
 # Add base folder for better inclusion paths
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src")
@@ -168,6 +164,27 @@ endif()
 ##	CMake-generated Config File for StoRM
 ##
 #############################################################
+
+#
+# Make a version file containing the current version from git.
+#
+include(GetGitRevisionDescription)
+git_describe_checkout(STORM_GIT_VERSION_STRING)
+
+# Parse the git Tag into variables
+string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" STORM_CPP_VERSION_MAJOR "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" STORM_CPP_VERSION_MINOR "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" STORM_CPP_VERSION_PATCH "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+)\\-([0-9]+)\\-.*" "\\1" STORM_CPP_VERSION_COMMITS_AHEAD "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" STORM_CPP_VERSION_HASH "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_CPP_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
+if ("${STORM_CPP_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
+	set(STORM_CPP_VERSION_DIRTY 1)
+else()
+	set(STORM_CPP_VERSION_DIRTY 0)
+endif()
+message(STATUS "StoRM - Version information: ${STORM_CPP_VERSION_MAJOR}.${STORM_CPP_VERSION_MINOR}.${STORM_CPP_VERSION_PATCH} (${STORM_CPP_VERSION_COMMITS_AHEAD} commits ahead of Tag) build from ${STORM_CPP_VERSION_HASH} (Dirty: ${STORM_CPP_VERSION_DIRTY})")
+
 # Base path for test files
 set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
 # Gurobi Defines
@@ -403,6 +420,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared li
 set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
 set(LOG4CPLUS_BUILD_TESTING OFF)
 set(LOG4CPLUS_USE_UNICODE OFF)
+set(LOG4CPLUS_DEFINE_INSTALL_TARGET OFF)
 add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
 include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
@@ -493,3 +511,10 @@ add_custom_target(memcheck-performance-tests valgrind --leak-check=full --show-r
 
 set(CPPLINT_ARGS --filter=-whitespace/tab,-whitespace/line_length,-legal/copyright,-readability/streams)
 add_custom_target(style python cpplint.py ${CPPLINT_ARGS} `find ./src/ -iname "*.h" -or -iname "*.cpp" `)
+
+INSTALL(TARGETS storm storm-functional-tests storm-performance-tests
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+)
+include(CPackConfig.cmake)

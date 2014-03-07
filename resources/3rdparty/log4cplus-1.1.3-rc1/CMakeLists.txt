@@ -28,6 +28,8 @@ option(LOG4CPLUS_BUILD_TESTING "Build the test suite." ON)
 
 option(LOG4CPLUS_BUILD_LOGGINGSERVER "Build the logging server." ON)
 
+option(LOG4CPLUS_DEFINE_INSTALL_TARGET "Whether the install target should be generated." OFF)
+
 if(NOT LOG4CPLUS_SINGLE_THREADED)
   find_package (Threads)
   message (STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
@@ -134,4 +136,6 @@ if (LOG4CPLUS_QT4)
   add_subdirectory (qt4debugappender)
 endif (LOG4CPLUS_QT4)
 
-include(Log4CPlusCPack.cmake)
+if (LOG4CPLUS_DEFINE_INSTALL_TARGET)
+	include(Log4CPlusCPack.cmake)
+endif()

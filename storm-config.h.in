@@ -9,8 +9,13 @@
 #define STORM_GENERATED_STORMCONFIG_H_
  
 // Version Information
-#define STORM_CPP_VERSION_MAJOR @STORM_CPP_VERSION_MAJOR@
-#define STORM_CPP_VERSION_MINOR @STORM_CPP_VERSION_MINOR@
+#define STORM_CPP_VERSION_MAJOR @STORM_CPP_VERSION_MAJOR@					// The major version of StoRM
+#define STORM_CPP_VERSION_MINOR @STORM_CPP_VERSION_MINOR@					// The minor version of StoRM
+#define STORM_CPP_VERSION_PATCH @STORM_CPP_VERSION_PATCH@					// The patch version of StoRM
+#define STORM_CPP_VERSION_COMMITS_AHEAD @STORM_CPP_VERSION_COMMITS_AHEAD@ 	// How many commits passed since the tag was last set
+#define STORM_CPP_VERSION_HASH "@STORM_CPP_VERSION_HASH@" 					// The short hash of the git commit this build is bases on
+#define STORM_CPP_VERSION_DIRTY @STORM_CPP_VERSION_DIRTY@ 					// 0 iff there no files were modified in the checkout, 1 else
+
 // The path of the sources from which StoRM will be/was build
 #define STORM_CPP_BASE_PATH "@PROJECT_SOURCE_DIR@"
 // The path used in the functional and performance tests to load the supplied example files

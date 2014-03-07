@@ -109,91 +109,93 @@ if (WIN32)
   target_link_libraries (${log4cplus} ws2_32 advapi32)
 endif ()
 
-install(TARGETS ${log4cplus} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+if (LOG4CPLUS_DEFINE_INSTALL_TARGET)
+	install(TARGETS ${log4cplus} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
                           ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
                           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-install(FILES ../include/log4cplus/appender.h
-              ../include/log4cplus/asyncappender.h
-              ../include/log4cplus/clogger.h
-              ../include/log4cplus/config.hxx
-              ../include/log4cplus/configurator.h
-              ../include/log4cplus/consoleappender.h
-              ../include/log4cplus/fileappender.h
-              ../include/log4cplus/fstreams.h
-              ../include/log4cplus/hierarchy.h
-              ../include/log4cplus/hierarchylocker.h
-              ../include/log4cplus/layout.h
-              ../include/log4cplus/log4judpappender.h
-              ../include/log4cplus/logger.h
-              ../include/log4cplus/loggingmacros.h
-              ../include/log4cplus/loglevel.h
-              ../include/log4cplus/mdc.h
-              ../include/log4cplus/ndc.h
-              ../include/log4cplus/nteventlogappender.h
-              ../include/log4cplus/nullappender.h
-              ../include/log4cplus/socketappender.h
-              ../include/log4cplus/streams.h
-              ../include/log4cplus/syslogappender.h
-              ../include/log4cplus/tchar.h
-              ../include/log4cplus/tracelogger.h
-              ../include/log4cplus/tstring.h
-              ../include/log4cplus/version.h
-              ../include/log4cplus/win32debugappender.h
-              ../include/log4cplus/win32consoleappender.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus )
+	install(FILES ../include/log4cplus/appender.h
+				  ../include/log4cplus/asyncappender.h
+				  ../include/log4cplus/clogger.h
+				  ../include/log4cplus/config.hxx
+				  ../include/log4cplus/configurator.h
+				  ../include/log4cplus/consoleappender.h
+				  ../include/log4cplus/fileappender.h
+				  ../include/log4cplus/fstreams.h
+				  ../include/log4cplus/hierarchy.h
+				  ../include/log4cplus/hierarchylocker.h
+				  ../include/log4cplus/layout.h
+				  ../include/log4cplus/log4judpappender.h
+				  ../include/log4cplus/logger.h
+				  ../include/log4cplus/loggingmacros.h
+				  ../include/log4cplus/loglevel.h
+				  ../include/log4cplus/mdc.h
+				  ../include/log4cplus/ndc.h
+				  ../include/log4cplus/nteventlogappender.h
+				  ../include/log4cplus/nullappender.h
+				  ../include/log4cplus/socketappender.h
+				  ../include/log4cplus/streams.h
+				  ../include/log4cplus/syslogappender.h
+				  ../include/log4cplus/tchar.h
+				  ../include/log4cplus/tracelogger.h
+				  ../include/log4cplus/tstring.h
+				  ../include/log4cplus/version.h
+				  ../include/log4cplus/win32debugappender.h
+				  ../include/log4cplus/win32consoleappender.h
+			DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus )
 
-install(FILES ../include/log4cplus/boost/deviceappender.hxx
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/boost )
+	install(FILES ../include/log4cplus/boost/deviceappender.hxx
+			DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/boost )
 
 
-install(FILES ../include/log4cplus/helpers/appenderattachableimpl.h
-              ../include/log4cplus/helpers/fileinfo.h
-              ../include/log4cplus/helpers/lockfile.h
-              ../include/log4cplus/helpers/loglog.h
-              ../include/log4cplus/helpers/logloguser.h
-              ../include/log4cplus/helpers/pointer.h
-              ../include/log4cplus/helpers/property.h
-              ../include/log4cplus/helpers/queue.h
-              ../include/log4cplus/helpers/sleep.h
-              ../include/log4cplus/helpers/snprintf.h
-              ../include/log4cplus/helpers/socket.h
-              ../include/log4cplus/helpers/socketbuffer.h
-              ../include/log4cplus/helpers/stringhelper.h
-              ../include/log4cplus/helpers/thread-config.h
-              ../include/log4cplus/helpers/timehelper.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/helpers )
+	install(FILES ../include/log4cplus/helpers/appenderattachableimpl.h
+				  ../include/log4cplus/helpers/fileinfo.h
+				  ../include/log4cplus/helpers/lockfile.h
+				  ../include/log4cplus/helpers/loglog.h
+				  ../include/log4cplus/helpers/logloguser.h
+				  ../include/log4cplus/helpers/pointer.h
+				  ../include/log4cplus/helpers/property.h
+				  ../include/log4cplus/helpers/queue.h
+				  ../include/log4cplus/helpers/sleep.h
+				  ../include/log4cplus/helpers/snprintf.h
+				  ../include/log4cplus/helpers/socket.h
+				  ../include/log4cplus/helpers/socketbuffer.h
+				  ../include/log4cplus/helpers/stringhelper.h
+				  ../include/log4cplus/helpers/thread-config.h
+				  ../include/log4cplus/helpers/timehelper.h
+			DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/helpers )
 
-install(FILES ../include/log4cplus/internal/env.h
-              ../include/log4cplus/internal/internal.h
-              ../include/log4cplus/internal/socket.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/internal )
+	install(FILES ../include/log4cplus/internal/env.h
+				  ../include/log4cplus/internal/internal.h
+				  ../include/log4cplus/internal/socket.h
+			DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/internal )
 
-install(FILES ../include/log4cplus/spi/appenderattachable.h
-              ../include/log4cplus/spi/factory.h
-              ../include/log4cplus/spi/filter.h
-              ../include/log4cplus/spi/loggerfactory.h
-              ../include/log4cplus/spi/loggerimpl.h
-              ../include/log4cplus/spi/loggingevent.h
-              ../include/log4cplus/spi/objectregistry.h
-              ../include/log4cplus/spi/rootlogger.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/spi )
+	install(FILES ../include/log4cplus/spi/appenderattachable.h
+				  ../include/log4cplus/spi/factory.h
+				  ../include/log4cplus/spi/filter.h
+				  ../include/log4cplus/spi/loggerfactory.h
+				  ../include/log4cplus/spi/loggerimpl.h
+				  ../include/log4cplus/spi/loggingevent.h
+				  ../include/log4cplus/spi/objectregistry.h
+				  ../include/log4cplus/spi/rootlogger.h
+			DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/spi )
 
-install(FILES ../include/log4cplus/thread/impl/syncprims-impl.h
-#              ../include/log4cplus/thread/impl/syncprims-pmsm.h
-              ../include/log4cplus/thread/impl/syncprims-pthreads.h
-              ../include/log4cplus/thread/impl/syncprims-win32.h
-              ../include/log4cplus/thread/impl/threads-impl.h
-              ../include/log4cplus/thread/impl/tls.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/thread/impl )
+	install(FILES ../include/log4cplus/thread/impl/syncprims-impl.h
+	#              ../include/log4cplus/thread/impl/syncprims-pmsm.h
+				  ../include/log4cplus/thread/impl/syncprims-pthreads.h
+				  ../include/log4cplus/thread/impl/syncprims-win32.h
+				  ../include/log4cplus/thread/impl/threads-impl.h
+				  ../include/log4cplus/thread/impl/tls.h
+			DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/thread/impl )
 
-install(FILES ../include/log4cplus/thread/syncprims-pub-impl.h
-              ../include/log4cplus/thread/syncprims.h
-              ../include/log4cplus/thread/threads.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/thread )
+	install(FILES ../include/log4cplus/thread/syncprims-pub-impl.h
+				  ../include/log4cplus/thread/syncprims.h
+				  ../include/log4cplus/thread/threads.h
+			DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/thread )
 
-install(FILES ../include/log4cplus/config/macosx.h
-              ../include/log4cplus/config/win32.h
-              ../include/log4cplus/config/windowsh-inc.h
-              ${log4cplus_BINARY_DIR}/include/log4cplus/config/defines.hxx
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/config )
+	install(FILES ../include/log4cplus/config/macosx.h
+				  ../include/log4cplus/config/win32.h
+				  ../include/log4cplus/config/windowsh-inc.h
+				  ${log4cplus_BINARY_DIR}/include/log4cplus/config/defines.hxx
+			DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/log4cplus/config )
+endif()
