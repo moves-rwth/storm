@@ -1,0 +1,13 @@
+/*
+ * StoRM - Build-in Options
+ *
+ * This file is parsed by CMake during makefile generation
+ * It contains information such as the base path to the test/example data
+ */
+
+#ifndef STORM_CUDAPLUGIN_GENERATED_STORMCONFIG_H_
+#define STORM_CUDAPLUGIN_GENERATED_STORMCONFIG_H_
+
+
+
+#endif // STORM_CUDAPLUGIN_GENERATED_STORMCONFIG_H_

@@ -35,9 +35,12 @@ set(STORM_LIB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/../../build/cudaForStorm" CACHE
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/../cmake/")
 
+# Set the hint for CUSP
+set(CUSP_HINT "${PROJECT_SOURCE_DIR}/../3rdparty/cusplibrary")
+
 find_package(CUDA REQUIRED)
+find_package(Cusp REQUIRED)
 find_package(Doxygen REQUIRED)
-find_package(Threads REQUIRED)
 find_package(Thrust REQUIRED)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
@@ -115,10 +118,23 @@ endif()
 ##
 #############################################################
 
+# Test for type alignment
+try_run(STORM_CUDA_RUN_RESULT_TYPEALIGNMENT STORM_CUDA_COMPILE_RESULT_TYPEALIGNMENT
+	${PROJECT_BINARY_DIR} "${PROJECT_SOURCE_DIR}/CMakeAlignmentCheck.cpp"
+	COMPILE_OUTPUT_VARIABLE OUTPUT_TEST_VAR
+)
+if(NOT STORM_CUDA_COMPILE_RESULT_TYPEALIGNMENT)
+	message(FATAL_ERROR "StoRM (CudaPlugin) - Could not test type alignment, there was an Error while compiling the file ${PROJECT_SOURCE_DIR}/CMakeAlignmentCheck.cpp: ${OUTPUT_TEST_VAR}")
+elseif(STORM_CUDA_RUN_RESULT_TYPEALIGNMENT EQUAL 0)
+	message(STATUS "StoRM (CudaPlugin) - Result of Type Alignment Check: OK.")
+else()
+	message(FATAL_ERROR "StoRM (CudaPlugin) - Result of Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_TYPEALIGNMENT})")
+endif()
+  
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (
-	"${PROJECT_SOURCE_DIR}/../../storm-config.h.in"
-	"${PROJECT_BINARY_DIR}/include/storm-config.h"
+	"${PROJECT_SOURCE_DIR}/storm-cudaplugin-config.h.in"
+	"${PROJECT_BINARY_DIR}/include/storm-cudaplugin-config.h"
 )
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
@@ -161,22 +177,6 @@ endif(ADDITIONAL_LINK_DIRS)
 #############################################################
 
 
-###############################################################################
-##                                                                            #
-##	Executable Creation                                                       #
-##                                                                            #
-##  All link_directories() calls MUST be made before this point               #
-##                                                                            #
-###############################################################################
-include (GenerateExportHeader)
-
-#add_library(cudaForStorm SHARED ${CUDAFORSTORM_HEADERS} ${CUDAFORSTORM_SOURCES})
-#GENERATE_EXPORT_HEADER( cudaForStorm
-#             BASE_NAME cudaForStorm
-#             EXPORT_MACRO_NAME cudaForStorm_EXPORT
-#             EXPORT_FILE_NAME include/cudaForStorm_Export.h
-#             STATIC_DEFINE cudaForStorm_BUILT_AS_STATIC
-#)
 
 #############################################################
 ##
@@ -184,6 +184,48 @@ include (GenerateExportHeader)
 ##
 #############################################################
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_30)
+#target_link_libraries(cudaLibrary ${CUDA_cusparse_LIBRARY})
+#ADD_DEPENDENCIES(cudaForStorm cudaLibrary)
+#target_link_libraries(cudaForStorm cudaLibrary)
+message(STATUS "StoRM (CudaPlugin) - Found CUDA SDK in Version ${CUDA_VERSION_STRING}, sparse lib is ${CUDA_cusparse_LIBRARY}")
+include_directories(${CUDA_INCLUDE_DIRS})
+
+#############################################################
+##
+##	CUSP
+##
+#############################################################
+if(CUSP_FOUND)
+	include_directories(${CUSP_INCLUDE_DIR})
+	cuda_include_directories(${CUSP_INCLUDE_DIR})
+	message(STATUS "StoRM (CudaPlugin) - Found CUSP Version ${CUSP_VERSION} in location ${CUSP_INCLUDE_DIR}")
+else()
+	message(FATAL_ERROR "StoRM (CudaPlugin) - Could not find CUSP!")
+endif()
+
+#############################################################
+##
+##	Thrust
+##
+#############################################################
+if(THRUST_FOUND)
+	include_directories(${THRUST_INCLUDE_DIR})
+	cuda_include_directories(${THRUST_INCLUDE_DIR})
+	message(STATUS "StoRM (CudaPlugin) - Found Thrust Version ${THRUST_VERSION} in location ${THRUST_INCLUDE_DIR}")
+else()
+	message(FATAL_ERROR "StoRM (CudaPlugin) - Could not find Thrust! Check your CUDA installation.")
+endif()
+
+###############################################################################
+##                                                                            #
+##	Executable Creation                                                       #
+##                                                                            #
+##  All link_directories() calls AND include_directories() calls              #
+##  MUST be made before this point                                            #
+##                                                                            #
+###############################################################################
+include (GenerateExportHeader)
+
 cuda_add_library(cudaForStorm SHARED
   ${CUDAFORSTORM_CUDA_SOURCES} ${CUDAFORSTORM_CUDA_HEADERS}
   OPTIONS -DSTUFF="" -arch=sm_30
@@ -196,27 +238,6 @@ GENERATE_EXPORT_HEADER( cudaForStorm
              EXPORT_FILE_NAME include/cudaForStorm_Export.h
              STATIC_DEFINE cudaForStorm_BUILT_AS_STATIC
 )
-#target_link_libraries(cudaLibrary ${CUDA_cusparse_LIBRARY})
-#ADD_DEPENDENCIES(cudaForStorm cudaLibrary)
-#target_link_libraries(cudaForStorm cudaLibrary)
-message(STATUS "StoRM (CudaPlugin) - Found CUDA SDK in Version ${CUDA_VERSION_STRING}, sparse lib is ${CUDA_cusparse_LIBRARY}")
-include_directories(${CUDA_INCLUDE_DIRS})
-
-#############################################################
-##
-##	Threads
-##
-#############################################################
-include_directories(${THREADS_INCLUDE_DIRS})
-target_link_libraries(cudaForStorm ${CMAKE_THREAD_LIBS_INIT})
-
-#############################################################
-##
-##	Thrust
-##
-#############################################################
-include_directories(${THRUST_INCLUDE_DIR})
-message(STATUS "StoRM (CudaPlugin) - Found Thrust Version ${THRUST_VERSION}")
 
 if (MSVC)
 	# Add the DebugHelper DLL
