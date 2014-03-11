@@ -13,6 +13,9 @@
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
+#include "storm-config.h"
+#include "cudaForStorm.h"
+
 namespace storm {
     namespace solver {
         
@@ -80,6 +83,7 @@ namespace storm {
 
 			for (auto sccIndexIt = topologicalSort.begin(); sccIndexIt != topologicalSort.end() && converged; ++sccIndexIt) {
 				storm::storage::StateBlock const& scc = sccDecomposition[*sccIndexIt];
+				std::cout << "SCC Index: " << *sccIndexIt << std::endl;
 
 				// Generate a submatrix
 				storm::storage::BitVector subMatrixIndices(A.getColumnCount(), scc.cbegin(), scc.cend());
@@ -121,6 +125,7 @@ namespace storm {
 				}
 
 				// For the current SCC, we need to perform value iteration until convergence.
+#ifndef STORM_HAVE_CUDAFORSTORM
 				localIterations = 0;
 				converged = false;
 				while (!converged && localIterations < this->maximalNumberOfIterations) {
@@ -157,6 +162,23 @@ namespace storm {
 					++localIterations;
 					++globalIterations;
 				}
+				std::cout << "Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations." << std::endl;
+#else
+				if (!resetCudaDevice()) {
+					std::cout << "Could not reset CUDA Device!" << std::endl;
+				}
+				std::cout << "Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory())) * 100 << "%)." << std::endl;
+				size_t memSize = sizeof(uint_fast64_t)* sccSubmatrix.rowIndications.size() + sizeof(uint_fast64_t)* sccSubmatrix.columnsAndValues.size() * 2 + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubB.size() + sizeof(double)* sccSubB.size() + sizeof(uint_fast64_t)* sccSubNondeterministicChoiceIndices.size();
+				std::cout << "We will allocate " << memSize << " Bytes." << std::endl;
+				std::cout << "The CUDA Runtime Version is " << getRuntimeCudaVersion() << std::endl;
+
+				if (minimize) {
+					basicValueIteration_mvReduce_uint64_double_minimize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices);
+				}
+				else {
+					basicValueIteration_mvReduce_uint64_double_maximize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices);
+				}
+#endif
 
 				// The Result of this SCC has to be taken back into the main result vector
 				innerIndex = 0;
@@ -165,7 +187,7 @@ namespace storm {
 					++innerIndex;
 				}
 
-				// Since the pointers for swapping in the calculation point to temps they should not be valide anymore
+				// Since the pointers for swapping in the calculation point to temps they should not be valid anymore
 				currentX = nullptr;
 				swap = nullptr;
 

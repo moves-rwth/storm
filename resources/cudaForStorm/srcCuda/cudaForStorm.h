@@ -8,6 +8,9 @@
 // TopologicalValueIteration
 #include "srcCuda/basicValueIteration.h"
 
+// Utility Functions
+#include "srcCuda/utility.h"
+
 
 
 

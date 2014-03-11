@@ -19,6 +19,11 @@ namespace storm {
 		class EigenAdapter;
 		class StormAdapter;
 	}
+
+	namespace solver {
+		template<typename T>
+		class TopologicalValueIterationNondeterministicLinearEquationSolver;
+	}
 }
 
 namespace storm {
@@ -142,6 +147,7 @@ namespace storm {
             friend class storm::adapters::GmmxxAdapter;
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
+			friend class storm::solver::TopologicalValueIterationNondeterministicLinearEquationSolver<T>;
             
             typedef typename std::vector<std::pair<uint_fast64_t, T>>::iterator iterator;
             typedef typename std::vector<std::pair<uint_fast64_t, T>>::const_iterator const_iterator;
