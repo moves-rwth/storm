@@ -139,9 +139,10 @@ namespace storm {
 					if ((source != lastSource || choice != lastChoice)) {
 						++curRow;
 					}
+
 					// Check if we have skipped any source node, i.e. if any node has no
 					// outgoing transitions. If so, insert a self-loop.
-					// Also add self-loops to rowMapping.
+					// Also begin a new rowGroup for the skipped state.
 					for (uint_fast64_t node = lastSource + 1; node < source; node++) {
 						hadDeadlocks = true;
 						if (fixDeadlocks) {
@@ -154,7 +155,7 @@ namespace storm {
 						}
 					}
 					if (source != lastSource) {
-						// Add this source to rowMapping, if this is the first choice we encounter for this state.
+						// Add create a new rowGroup for the source, if this is the first choice we encounter for this state.
 						matrixBuilder.newRowGroup(curRow);
 					}
 				}
@@ -187,7 +188,7 @@ namespace storm {
 				}
 			}
 
-			// Finally, build the actual matrix, test and return.
+			// Finally, build the actual matrix, test and return it.
 			storm::storage::SparseMatrix<double> resultMatrix = matrixBuilder.build();
 
 			// Since we cannot do the testing if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to do it afterwards.

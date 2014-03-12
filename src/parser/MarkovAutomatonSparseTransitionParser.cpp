@@ -31,6 +31,7 @@ namespace storm {
 			bool stateHasMarkovianChoice = false;
 			bool stateHasProbabilisticChoice = false;
 			while (buf[0] != '\0' && !encounteredEOF) {
+
 				// At the current point, the next thing to read is the source state of the next choice to come.
 				source = checked_strtol(buf, &buf);
 
@@ -193,7 +194,7 @@ namespace storm {
 				}
 
 				if (source != lastsource) {
-					// If we skipped to a new state we need to record the beginning of the choices in the nondeterministic choice indices.
+					// If we skipped to a new state we need to create a new row group for the choices of the new state.
 					result.transitionMatrixBuilder.newRowGroup(currentChoice);
 				}
 

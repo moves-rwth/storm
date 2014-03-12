@@ -12,7 +12,7 @@ namespace storm {
 		 *
 		 * The file is parsed in two passes.
 		 * The first pass tests the file format and collects statistical data needed for the second pass.
-		 * The second pass then collects the actual file data and compiles it into a ResultType.
+		 * The second pass then collects the actual file data and compiles it into a Result.
 		 */
 		class MarkovAutomatonSparseTransitionParser {
 		public:

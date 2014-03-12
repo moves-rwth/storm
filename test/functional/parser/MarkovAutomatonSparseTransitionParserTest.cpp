@@ -39,26 +39,26 @@ TEST(MarkovAutomatonSparseTransitionParserTest, BasicParsing) {
 	storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build(0,0));
 
 	// Test all sizes and counts.
-	ASSERT_EQ(transitionMatrix.getColumnCount(), STATE_COUNT);
-	ASSERT_EQ(transitionMatrix.getRowCount(), CHOICE_COUNT);
-	ASSERT_EQ(transitionMatrix.getEntryCount(), 12);
-	ASSERT_EQ(transitionMatrix.getRowGroupCount(), 6);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices().size(), 7);
-	ASSERT_EQ(result.markovianChoices.size(), CHOICE_COUNT);
-	ASSERT_EQ(result.markovianStates.size(), STATE_COUNT);
-	ASSERT_EQ(result.markovianStates.getNumberOfSetBits(), 2);
-	ASSERT_EQ(result.exitRates.size(), STATE_COUNT);
+	ASSERT_EQ(STATE_COUNT, transitionMatrix.getColumnCount());
+	ASSERT_EQ(CHOICE_COUNT, transitionMatrix.getRowCount());
+	ASSERT_EQ(12, transitionMatrix.getEntryCount());
+	ASSERT_EQ(6, transitionMatrix.getRowGroupCount());
+	ASSERT_EQ(7, transitionMatrix.getRowGroupIndices().size());
+	ASSERT_EQ(CHOICE_COUNT, result.markovianChoices.size());
+	ASSERT_EQ(STATE_COUNT, result.markovianStates.size());
+	ASSERT_EQ(2, result.markovianStates.getNumberOfSetBits());
+	ASSERT_EQ(STATE_COUNT, result.exitRates.size());
 
 	// Test the general structure of the transition system (that will be an Markov automaton).
 
 	// Test the mapping between states and transition matrix rows.
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[0], 0);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[1], 1);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[2], 2);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[3], 3);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[4], 4);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[5], 6);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[6], 7);
+	ASSERT_EQ(0, transitionMatrix.getRowGroupIndices()[0]);
+	ASSERT_EQ(1, transitionMatrix.getRowGroupIndices()[1]);
+	ASSERT_EQ(2, transitionMatrix.getRowGroupIndices()[2]);
+	ASSERT_EQ(3, transitionMatrix.getRowGroupIndices()[3]);
+	ASSERT_EQ(4, transitionMatrix.getRowGroupIndices()[4]);
+	ASSERT_EQ(6, transitionMatrix.getRowGroupIndices()[5]);
+	ASSERT_EQ(7, transitionMatrix.getRowGroupIndices()[6]);
 
 	// Test the Markovian states.
 	ASSERT_TRUE(result.markovianStates.get(0));
@@ -69,39 +69,39 @@ TEST(MarkovAutomatonSparseTransitionParserTest, BasicParsing) {
 	ASSERT_FALSE(result.markovianStates.get(5));
 
 	// Test the exit rates. These have to be 0 for all non-Markovian states.
-	ASSERT_EQ(result.exitRates[0], 2);
-	ASSERT_EQ(result.exitRates[1], 0);
-	ASSERT_EQ(result.exitRates[2], 15);
-	ASSERT_EQ(result.exitRates[3], 0);
-	ASSERT_EQ(result.exitRates[4], 0);
-	ASSERT_EQ(result.exitRates[5], 0);
+	ASSERT_EQ(2, result.exitRates[0]);
+	ASSERT_EQ(0, result.exitRates[1]);
+	ASSERT_EQ(15, result.exitRates[2]);
+	ASSERT_EQ(0, result.exitRates[3]);
+	ASSERT_EQ(0, result.exitRates[4]);
+	ASSERT_EQ(0, result.exitRates[5]);
 
 	// Finally, test the transition matrix itself.
 	storm::storage::SparseMatrix<double>::const_iterator cIter = transitionMatrix.begin(0);
 
-	ASSERT_EQ(cIter->second, 2);
+	ASSERT_EQ(2, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 1);
+	ASSERT_EQ(1, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 1);
+	ASSERT_EQ(1, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 2);
+	ASSERT_EQ(2, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 4);
+	ASSERT_EQ(4, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 8);
+	ASSERT_EQ(8, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 0.5);
+	ASSERT_EQ(0.5, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 0.5);
+	ASSERT_EQ(0.5, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 1);
+	ASSERT_EQ(1, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 0.5);
+	ASSERT_EQ(0.5, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 0.5);
+	ASSERT_EQ(0.5, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 1);
+	ASSERT_EQ(1, cIter->second);
 	cIter++;
 	ASSERT_EQ(transitionMatrix.end(), cIter);
 }
@@ -114,29 +114,29 @@ TEST(MarkovAutomatonSparseTransitionParserTest, Whitespaces) {
 	storm::parser::MarkovAutomatonSparseTransitionParser::Result result = storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(filename);
 
 	// Build the actual transition matrix.
-	storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build(0,0));
+	storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build());
 
 	// Test all sizes and counts.
-	ASSERT_EQ(transitionMatrix.getColumnCount(), STATE_COUNT);
-	ASSERT_EQ(transitionMatrix.getRowCount(), CHOICE_COUNT);
-	ASSERT_EQ(transitionMatrix.getEntryCount(), 12);
-	ASSERT_EQ(transitionMatrix.getRowGroupCount(), 6);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices().size(), 7);
-	ASSERT_EQ(result.markovianChoices.size(), CHOICE_COUNT);
-	ASSERT_EQ(result.markovianStates.size(), STATE_COUNT);
-	ASSERT_EQ(result.markovianStates.getNumberOfSetBits(), 2);
-	ASSERT_EQ(result.exitRates.size(), STATE_COUNT);
+	ASSERT_EQ(STATE_COUNT, transitionMatrix.getColumnCount());
+	ASSERT_EQ(CHOICE_COUNT, transitionMatrix.getRowCount());
+	ASSERT_EQ(12, transitionMatrix.getEntryCount());
+	ASSERT_EQ(6, transitionMatrix.getRowGroupCount());
+	ASSERT_EQ(7, transitionMatrix.getRowGroupIndices().size());
+	ASSERT_EQ(CHOICE_COUNT, result.markovianChoices.size());
+	ASSERT_EQ(STATE_COUNT, result.markovianStates.size());
+	ASSERT_EQ(2, result.markovianStates.getNumberOfSetBits());
+	ASSERT_EQ(STATE_COUNT, result.exitRates.size());
 
 	// Test the general structure of the transition system (that will be an Markov automaton).
 
 	// Test the mapping between states and transition matrix rows.
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[0], 0);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[1], 1);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[2], 2);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[3], 3);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[4], 4);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[5], 6);
-	ASSERT_EQ(transitionMatrix.getRowGroupIndices()[6], 7);
+	ASSERT_EQ(0, transitionMatrix.getRowGroupIndices()[0]);
+	ASSERT_EQ(1, transitionMatrix.getRowGroupIndices()[1]);
+	ASSERT_EQ(2, transitionMatrix.getRowGroupIndices()[2]);
+	ASSERT_EQ(3, transitionMatrix.getRowGroupIndices()[3]);
+	ASSERT_EQ(4, transitionMatrix.getRowGroupIndices()[4]);
+	ASSERT_EQ(6, transitionMatrix.getRowGroupIndices()[5]);
+	ASSERT_EQ(7, transitionMatrix.getRowGroupIndices()[6]);
 
 	// Test the Markovian states.
 	ASSERT_TRUE(result.markovianStates.get(0));
@@ -147,39 +147,39 @@ TEST(MarkovAutomatonSparseTransitionParserTest, Whitespaces) {
 	ASSERT_FALSE(result.markovianStates.get(5));
 
 	// Test the exit rates. These have to be 0 for all non-Markovian states.
-	ASSERT_EQ(result.exitRates[0], 2);
-	ASSERT_EQ(result.exitRates[1], 0);
-	ASSERT_EQ(result.exitRates[2], 15);
-	ASSERT_EQ(result.exitRates[3], 0);
-	ASSERT_EQ(result.exitRates[4], 0);
-	ASSERT_EQ(result.exitRates[5], 0);
+	ASSERT_EQ(2, result.exitRates[0]);
+	ASSERT_EQ(0, result.exitRates[1]);
+	ASSERT_EQ(15, result.exitRates[2]);
+	ASSERT_EQ(0, result.exitRates[3]);
+	ASSERT_EQ(0, result.exitRates[4]);
+	ASSERT_EQ(0, result.exitRates[5]);
 
 	// Finally, test the transition matrix itself.
 	storm::storage::SparseMatrix<double>::const_iterator cIter = transitionMatrix.begin(0);
 
-	ASSERT_EQ(cIter->second, 2);
+	ASSERT_EQ(2, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 1);
+	ASSERT_EQ(1, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 1);
+	ASSERT_EQ(1, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 2);
+	ASSERT_EQ(2, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 4);
+	ASSERT_EQ(4, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 8);
+	ASSERT_EQ(8, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 0.5);
+	ASSERT_EQ(0.5, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 0.5);
+	ASSERT_EQ(0.5, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 1);
+	ASSERT_EQ(1, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 0.5);
+	ASSERT_EQ(0.5, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 0.5);
+	ASSERT_EQ(0.5, cIter->second);
 	cIter++;
-	ASSERT_EQ(cIter->second, 1);
+	ASSERT_EQ(1, cIter->second);
 	cIter++;
 	ASSERT_EQ(transitionMatrix.end(), cIter);
 }
@@ -192,15 +192,15 @@ TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
 	storm::parser::MarkovAutomatonSparseTransitionParser::Result result = storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_deadlock.tra");
 
 	// Test if the result is consistent with the parsed Markov Automaton.
-	storm::storage::SparseMatrix<double> resultMatrix(result.transitionMatrixBuilder.build(0,0));
-	ASSERT_EQ(resultMatrix.getColumnCount(), STATE_COUNT + 1);
-	ASSERT_EQ(resultMatrix.getEntryCount(), 13);
-	ASSERT_EQ(resultMatrix.getRowGroupCount(), 7);
-	ASSERT_EQ(resultMatrix.getRowGroupIndices().size(), 8);
-	ASSERT_EQ(result.markovianChoices.size(), CHOICE_COUNT +1);
-	ASSERT_EQ(result.markovianStates.size(), STATE_COUNT +1);
-	ASSERT_EQ(result.markovianStates.getNumberOfSetBits(), 2);
-	ASSERT_EQ(result.exitRates.size(), STATE_COUNT + 1);
+	storm::storage::SparseMatrix<double> resultMatrix(result.transitionMatrixBuilder.build());
+	ASSERT_EQ(STATE_COUNT + 1, resultMatrix.getColumnCount());
+	ASSERT_EQ(13, resultMatrix.getEntryCount());
+	ASSERT_EQ(7, resultMatrix.getRowGroupCount());
+	ASSERT_EQ(8, resultMatrix.getRowGroupIndices().size());
+	ASSERT_EQ(CHOICE_COUNT +1, result.markovianChoices.size());
+	ASSERT_EQ(STATE_COUNT +1, result.markovianStates.size());
+	ASSERT_EQ(2, result.markovianStates.getNumberOfSetBits());
+	ASSERT_EQ(STATE_COUNT + 1, result.exitRates.size());
 }
 
 TEST(MarkovAutomatonSparseTransitionParserTest, DontFixDeadlocks) {

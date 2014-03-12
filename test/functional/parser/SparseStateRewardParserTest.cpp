@@ -36,7 +36,7 @@ TEST(SparseStateRewardParserTest, BasicParsing) {
 
 	// Now test if the correct value were parsed.
 	for(int i = 0; i < 100; i++) {
-		ASSERT_EQ(std::round(result[i]) , std::round(2*i + 15/13*i*i - 1.5/(i+0.1) + 15.7));
+		ASSERT_EQ(std::round(2*i + 15/13*i*i - 1.5/(i+0.1) + 15.7), std::round(result[i]));
 	}
 }
 
@@ -47,7 +47,7 @@ TEST(SparseStateRewardParserTest, Whitespaces) {
 
 	// Now test if the correct value were parsed.
 	for(int i = 0; i < 100; i++) {
-		ASSERT_EQ(std::round(result[i]) , std::round(2*i + 15/13*i*i - 1.5/(i+0.1) + 15.7));
+		ASSERT_EQ(std::round(2*i + 15/13*i*i - 1.5/(i+0.1) + 15.7), std::round(result[i]));
 	}
 }
 
