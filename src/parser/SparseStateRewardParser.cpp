@@ -36,7 +36,7 @@ namespace storm {
 
 			// Now parse state reward assignments.
 			uint_fast64_t state = 0;
-			uint_fast64_t lastState = -1;
+			uint_fast64_t lastState = (uint_fast64_t)-1;
 			double reward;
 
 			// Iterate over states.
@@ -47,7 +47,7 @@ namespace storm {
 
 				// If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
 				// Note: The value -1 shows that lastState has not yet been set, i.e. this is the first run of the loop (state index (2^64)-1 is a really bad starting index).
-				if(state <= lastState && lastState != -1) {
+				if(state <= lastState && lastState != (uint_fast64_t)-1) {
 					LOG4CPLUS_ERROR(logger, "State " << state << " was found but has already been read or skipped previously.");
 					throw storm::exceptions::WrongFormatException() << "State " << state << " was found but has already been read or skipped previously.";
 				}

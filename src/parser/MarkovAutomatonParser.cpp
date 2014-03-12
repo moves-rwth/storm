@@ -3,6 +3,10 @@
 #include "SparseStateRewardParser.h"
 #include "src/exceptions/WrongFormatException.h"
 
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+extern log4cplus::Logger logger;
+
 namespace storm {
 	namespace parser {
 
@@ -12,7 +16,7 @@ namespace storm {
 			storm::parser::MarkovAutomatonSparseTransitionParser::Result transitionResult(storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(transitionsFilename));
 
 			// Build the actual transition matrix using the MatrixBuilder provided by the transitionResult.
-			storm::storage::SparseMatrix<double> transitionMatrix(transitionResult.transitionMatrixBuilder.build(0,0));
+			storm::storage::SparseMatrix<double> transitionMatrix(transitionResult.transitionMatrixBuilder.build());
 
 			// Parse the state labeling.
 			storm::models::AtomicPropositionsLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(transitionMatrix.getColumnCount(), labelingFilename));
@@ -30,7 +34,7 @@ namespace storm {
 			}
 
 			// Put the pieces together to generate the Markov Automaton.
-			storm::models::MarkovAutomaton<double> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.nondeterministicChoiceIndices), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+			storm::models::MarkovAutomaton<double> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 
 			return resultingAutomaton;
 		}

@@ -26,19 +26,19 @@ namespace storm {
 
 		using namespace storm::utility::cstring;
 
-		NondeterministicSparseTransitionParser::Result NondeterministicSparseTransitionParser::parseNondeterministicTransitions(std::string const& filename) {
+		storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser::parseNondeterministicTransitions(std::string const& filename) {
 
-			Result emptyResult;
+			storm::storage::SparseMatrix<double> emptyMatrix;
 
-			return NondeterministicSparseTransitionParser::parse(filename, false, emptyResult);
+			return NondeterministicSparseTransitionParser::parse(filename, false, emptyMatrix);
 		}
 
-		NondeterministicSparseTransitionParser::Result NondeterministicSparseTransitionParser::parseNondeterministicTransitionRewards(std::string const& filename, Result const & modelInformation) {
+		storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser::parseNondeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<double> const & modelInformation) {
 
 			return NondeterministicSparseTransitionParser::parse(filename, true, modelInformation);
 		}
 
-		NondeterministicSparseTransitionParser::Result NondeterministicSparseTransitionParser::parse(std::string const &filename, bool isRewardFile, Result const & modelInformation) {
+		storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser::parse(std::string const &filename, bool isRewardFile, storm::storage::SparseMatrix<double> const & modelInformation) {
 
 			// Enforce locale where decimal point is '.'.
 			setlocale(LC_NUMERIC, "C");
@@ -72,17 +72,17 @@ namespace storm {
 
 			if (isRewardFile) {
 				// The reward matrix should match the size of the transition matrix.
-				if (firstPass.choices > modelInformation.transitionMatrix.getRowCount() || (uint_fast64_t)(firstPass.highestStateIndex + 1) > modelInformation.transitionMatrix.getColumnCount()) {
+				if (firstPass.choices > modelInformation.getRowCount() || (uint_fast64_t)(firstPass.highestStateIndex + 1) > modelInformation.getColumnCount()) {
 					LOG4CPLUS_ERROR(logger, "Reward matrix size exceeds transition matrix size.");
 					throw storm::exceptions::OutOfRangeException() << "Reward matrix size exceeds transition matrix size.";
-				} else if (firstPass.choices != modelInformation.transitionMatrix.getRowCount()) {
+				} else if (firstPass.choices != modelInformation.getRowCount()) {
 					LOG4CPLUS_ERROR(logger, "Reward matrix row count does not match transition matrix row count.");
 					throw storm::exceptions::OutOfRangeException() << "Reward matrix row count does not match transition matrix row count.";
-				} else if(firstPass.numberOfNonzeroEntries > modelInformation.transitionMatrix.getEntryCount()) {
+				} else if(firstPass.numberOfNonzeroEntries > modelInformation.getEntryCount()) {
 					LOG4CPLUS_ERROR(logger, "The reward matrix has more entries than the transition matrix. There must be a reward for a non existent transition");
 					throw storm::exceptions::OutOfRangeException() << "The reward matrix has more entries than the transition matrix.";
 				} else {
-					firstPass.highestStateIndex = modelInformation.transitionMatrix.getColumnCount() - 1;
+					firstPass.highestStateIndex = modelInformation.getColumnCount() - 1;
 				}
 			}
 
@@ -90,16 +90,21 @@ namespace storm {
 			// The matrix to be build should have as many columns as we have nodes and as many rows as we have choices.
 			// Those two values, as well as the number of nonzero elements, was been calculated in the first run.
 			LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << firstPass.choices << " x " << (firstPass.highestStateIndex+1) << " with " << firstPass.numberOfNonzeroEntries << " entries.");
-			storm::storage::SparseMatrixBuilder<double> matrixBuilder(firstPass.choices, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries);
-
-			// Create row mapping.
-			std::vector<uint_fast64_t> rowMapping(firstPass.highestStateIndex + 2, 0);
+			storm::storage::SparseMatrixBuilder<double> matrixBuilder;
+			if(!isRewardFile) {
+				matrixBuilder = storm::storage::SparseMatrixBuilder<double>(firstPass.choices, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries, true, firstPass.highestStateIndex + 1);
+			} else {
+				matrixBuilder = storm::storage::SparseMatrixBuilder<double>(firstPass.choices, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries, true, modelInformation.getRowGroupCount());
+			}
 
 			// Initialize variables for the parsing run.
 			uint_fast64_t source = 0, target = 0, lastSource = 0, choice = 0, lastChoice = 0, curRow = 0;
 			double val = 0.0;
 			bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
 			bool hadDeadlocks = false;
+
+			// The first state already starts a new row group of the matrix.
+			matrixBuilder.newRowGroup(0);
 
 			// Read all transitions from file.
 			while (buf[0] != '\0') {
@@ -112,13 +117,13 @@ namespace storm {
 					// If we have switched the source state, we possibly need to insert the rows of the last
 					// source state.
 					if (source != lastSource) {
-						curRow += ((modelInformation.rowMapping)[lastSource + 1] - (modelInformation.rowMapping)[lastSource]) -(lastChoice + 1);
+						curRow += ((modelInformation.getRowGroupIndices())[lastSource + 1] - (modelInformation.getRowGroupIndices())[lastSource]) -(lastChoice + 1);
 					}
 
 					// If we skipped some states, we need to reserve empty rows for all their nondeterministic
 					// choices.
 					for (uint_fast64_t i = lastSource + 1; i < source; ++i) {
-						curRow += ((modelInformation.rowMapping)[i + 1] - (modelInformation.rowMapping)[i]);
+						curRow += ((modelInformation.getRowGroupIndices())[i + 1] - (modelInformation.getRowGroupIndices())[i]);
 					}
 
 					// If we advanced to the next state, but skipped some choices, we have to reserve rows
@@ -140,7 +145,7 @@ namespace storm {
 					for (uint_fast64_t node = lastSource + 1; node < source; node++) {
 						hadDeadlocks = true;
 						if (fixDeadlocks) {
-							rowMapping.at(node) = curRow;
+							matrixBuilder.newRowGroup(curRow);
 							matrixBuilder.addNextValue(curRow, node, 1);
 							++curRow;
 							LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
@@ -150,7 +155,7 @@ namespace storm {
 					}
 					if (source != lastSource) {
 						// Add this source to rowMapping, if this is the first choice we encounter for this state.
-						rowMapping.at(source) = curRow;
+						matrixBuilder.newRowGroup(curRow);
 					}
 				}
 
@@ -168,25 +173,33 @@ namespace storm {
 				buf = trimWhitespaces(buf);
 			}
 
-			for (uint_fast64_t node = lastSource + 1; node <= firstPass.highestStateIndex + 1; node++) {
-				rowMapping.at(node) = curRow + 1;
-			}
-
 			if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
 
-			// Finally, build the actual matrix, test and return it together with the rowMapping.
+			// Since we assume the transition rewards are for the transitions of the model, we copy the rowGroupIndices.
+			if(isRewardFile) {
+				// We already have rowGroup 0.
+				for(uint_fast64_t index = 1; index < modelInformation.getRowGroupIndices().size(); index++) {
+					matrixBuilder.newRowGroup(modelInformation.getRowGroupIndices()[index]);
+				}
+			} else {
+				for (uint_fast64_t node = lastSource + 1; node <= firstPass.highestStateIndex; node++) {
+					matrixBuilder.newRowGroup(curRow + 1);
+				}
+			}
+
+			// Finally, build the actual matrix, test and return.
 			storm::storage::SparseMatrix<double> resultMatrix = matrixBuilder.build();
 
 			// Since we cannot do the testing if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to do it afterwards.
-			if(isRewardFile && !resultMatrix.isSubmatrixOf(modelInformation.transitionMatrix)) {
+			if(isRewardFile && !resultMatrix.isSubmatrixOf(modelInformation)) {
 				LOG4CPLUS_ERROR(logger, "There are rewards for non existent transitions given in the reward file.");
 				throw storm::exceptions::WrongFormatException() << "There are rewards for non existent transitions given in the reward file.";
 			}
 
-			return NondeterministicSparseTransitionParser::Result(resultMatrix, rowMapping);
+			return resultMatrix;
 		}
 
-		NondeterministicSparseTransitionParser::FirstPassResult NondeterministicSparseTransitionParser::firstPass(char* buf, bool isRewardFile, Result const & modelInformation) {
+		NondeterministicSparseTransitionParser::FirstPassResult NondeterministicSparseTransitionParser::firstPass(char* buf, bool isRewardFile, storm::storage::SparseMatrix<double> const & modelInformation) {
 
 			// Check file header and extract number of transitions.
 
@@ -228,13 +241,13 @@ namespace storm {
 					// source state.
 					if (source != lastSource) {
 						// number of choices skipped = number of choices of last state - number of choices read
-						result.choices += ((modelInformation.rowMapping)[lastSource + 1] - (modelInformation.rowMapping)[lastSource]) - (lastChoice + 1);
+						result.choices += ((modelInformation.getRowGroupIndices())[lastSource + 1] - (modelInformation.getRowGroupIndices())[lastSource]) - (lastChoice + 1);
 					}
 
 					// If we skipped some states, we need to reserve empty rows for all their nondeterministic
 					// choices.
 					for (uint_fast64_t i = lastSource + 1; i < source; ++i) {
-						result.choices += ((modelInformation.rowMapping)[i + 1] - (modelInformation.rowMapping)[i]);
+						result.choices += ((modelInformation.getRowGroupIndices())[i + 1] - (modelInformation.getRowGroupIndices())[i]);
 					}
 
 					// If we advanced to the next state, but skipped some choices, we have to reserve rows
@@ -302,12 +315,12 @@ namespace storm {
 
 			if (isRewardFile) {
 				// If not all rows were filled for the last state, we need to insert them.
-				result.choices += ((modelInformation.rowMapping)[lastSource + 1] - (modelInformation.rowMapping)[lastSource] ) - (lastChoice + 1);
+				result.choices += ((modelInformation.getRowGroupIndices())[lastSource + 1] - (modelInformation.getRowGroupIndices())[lastSource] ) - (lastChoice + 1);
 
 				// If we skipped some states, we need to reserve empty rows for all their nondeterministic
 				// choices.
-				for (uint_fast64_t i = lastSource + 1; i < modelInformation.rowMapping.size() - 1; ++i) {
-					result.choices += ((modelInformation.rowMapping)[i + 1] - (modelInformation.rowMapping)[i]);
+				for (uint_fast64_t i = lastSource + 1; i < modelInformation.getRowGroupIndices().size() - 1; ++i) {
+					result.choices += ((modelInformation.getRowGroupIndices())[i + 1] - (modelInformation.getRowGroupIndices())[i]);
 				}
 			}
 

@@ -52,15 +52,12 @@ namespace storm {
 				 *
 				 * @param firstPassResult A reference to the result of the first pass.
 				 */
-				Result(FirstPassResult const& firstPassResult) : transitionMatrixBuilder(firstPassResult.numberOfChoices, firstPassResult.highestStateIndex + 1, firstPassResult.numberOfNonzeroEntries), nondeterministicChoiceIndices(firstPassResult.highestStateIndex + 2), markovianChoices(firstPassResult.numberOfChoices), markovianStates(firstPassResult.highestStateIndex + 1), exitRates(firstPassResult.highestStateIndex + 1) {
+				Result(FirstPassResult const& firstPassResult) : transitionMatrixBuilder(firstPassResult.numberOfChoices, firstPassResult.highestStateIndex + 1, firstPassResult.numberOfNonzeroEntries, true, firstPassResult.highestStateIndex + 1), markovianChoices(firstPassResult.numberOfChoices), markovianStates(firstPassResult.highestStateIndex + 1), exitRates(firstPassResult.highestStateIndex + 1) {
 					// Intentionally left empty.
 				}
 
 				//! A matrix representing the transitions of the model.
 				storm::storage::SparseMatrixBuilder<double> transitionMatrixBuilder;
-
-				//! A vector indicating which rows of the matrix represent the choices of a given state.
-				std::vector<uint_fast64_t> nondeterministicChoiceIndices;
 
 				//! A bit vector indicating which choices are Markovian. By duality, all other choices are probabilitic.
 				storm::storage::BitVector markovianChoices;

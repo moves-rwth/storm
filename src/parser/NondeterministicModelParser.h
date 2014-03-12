@@ -33,10 +33,9 @@ namespace storm {
 				 * The copy constructor.
 				 *
 				 * @param transitionSystem The transition system to be contained in the Result.
-				 * @param rowMapping The mapping between matrix rows and model states to be contained in the Result.
 				 * @param labeling The the labeling of the transition system to be contained in the Result.
 				 */
-				Result(storm::storage::SparseMatrix<double>& transitionSystem, std::vector<uint_fast64_t>& rowMapping, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling), rowMapping(rowMapping) {
+				Result(storm::storage::SparseMatrix<double>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) {
 					// Intentionally left empty.
 				}
 
@@ -44,10 +43,9 @@ namespace storm {
 				 * The move constructor.
 				 *
 				 * @param transitionSystem The transition system to be contained in the Result.
-				 * @param rowMapping The mapping between matrix rows and model states to be contained in the Result.
 				 * @param labeling The the labeling of the transition system to be contained in the Result.
 				 */
-				Result(storm::storage::SparseMatrix<double>&& transitionSystem, std::vector<uint_fast64_t>&& rowMapping, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)), rowMapping(std::move(rowMapping)) {
+				Result(storm::storage::SparseMatrix<double>&& transitionSystem, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) {
 					// Intentionally left empty.
 				}
 
@@ -60,12 +58,6 @@ namespace storm {
 				 * The labels of each state.
 				 */
 				storm::models::AtomicPropositionsLabeling labeling;
-
-				/*!
-				 * A mapping from rows of the matrix to states of the model.
-                 * This resolves the nondeterministic choices inside the transition system.
-				 */
-				std::vector<uint_fast64_t> rowMapping;
 
 				/*!
 				 * Optional rewards for each state.

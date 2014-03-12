@@ -170,6 +170,10 @@ namespace storm {
 			uint_fast64_t lastsource = 0;
 			bool encounteredEOF = false;
 			uint_fast64_t currentChoice = 0;
+
+			// The first choice of the first state already starts a new row group of the matrix.
+			result.transitionMatrixBuilder.newRowGroup(0);
+
 			while (buf[0] != '\0' && !encounteredEOF) {
 				// At the current point, the next thing to read is the source state of the next choice to come.
 				source = checked_strtol(buf, &buf);
@@ -178,7 +182,7 @@ namespace storm {
 				if (source > lastsource + 1) {
 					if (fixDeadlocks) {
 						for (uint_fast64_t index = lastsource + 1; index < source; ++index) {
-							result.nondeterministicChoiceIndices[index] = currentChoice;
+							result.transitionMatrixBuilder.newRowGroup(currentChoice);
 							result.transitionMatrixBuilder.addNextValue(currentChoice, index, 1);
 							++currentChoice;
 						}
@@ -190,7 +194,7 @@ namespace storm {
 
 				if (source != lastsource) {
 					// If we skipped to a new state we need to record the beginning of the choices in the nondeterministic choice indices.
-					result.nondeterministicChoiceIndices[source] = currentChoice;
+					result.transitionMatrixBuilder.newRowGroup(currentChoice);
 				}
 
 				// Record that the current source was the last source.
@@ -253,7 +257,7 @@ namespace storm {
 			}
 
 			// Put a sentinel element at the end.
-			result.nondeterministicChoiceIndices[firstPassResult.highestStateIndex + 1] = currentChoice;
+			result.transitionMatrixBuilder.newRowGroup(currentChoice);
 
 			return result;
 		}
