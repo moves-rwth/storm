@@ -2,7 +2,7 @@
  * This is an extension of the original CUSP csr_vector.h SPMV implementation.
  * It is based on the Code and incorporates changes as to cope with the details
  * of the StoRM code.
- * As this is mostly copy & past, the original license still applies.
+ * As this is mostly copy & paste, the original license still applies.
  */
 
 /*

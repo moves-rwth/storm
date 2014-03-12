@@ -797,6 +797,22 @@ namespace storm {
             }
             return true;
         }
+
+		/*!
+		* Returns a reference to the internal rowMapping vector
+		*/
+		template<typename T>
+		std::vector<uint_fast64_t> const& SparseMatrix<T>::__internal_getRowIndications() {
+			return this->rowIndications;
+		}
+
+		/*!
+		* Returns a reference to the internal columnMapping vector
+		*/
+		template<typename T>
+		std::vector<std::pair<uint_fast64_t, T>> const& SparseMatrix<T>::__internal_getColumnsAndValues() {
+			return this->columnsAndValues;
+		}
         
         template<typename T>
         std::ostream& operator<<(std::ostream& out, SparseMatrix<T> const& matrix) {

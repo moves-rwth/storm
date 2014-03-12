@@ -267,6 +267,125 @@ cleanup:
 	}
 }
 
+template <typename IndexType, typename ValueType>
+void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<IndexType> const& matrixRowIndices, std::vector<std::pair<IndexType, ValueType>> const& columnIndicesAndValues, std::vector<ValueType> const& x, std::vector<ValueType>& b) {
+	IndexType* device_matrixRowIndices = nullptr;
+	IndexType* device_matrixColIndicesAndValues = nullptr;
+	ValueType* device_x = nullptr;
+	ValueType* device_multiplyResult = nullptr;
+
+	std::cout.sync_with_stdio(true);
+	std::cout << "(DLL) Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory()))*100 << "%)." << std::endl; 
+	size_t memSize = sizeof(IndexType) * matrixRowIndices.size() + sizeof(IndexType) * columnIndicesAndValues.size() * 2 + sizeof(ValueType) * x.size() + sizeof(ValueType) * b.size();
+	std::cout << "(DLL) We will allocate " << memSize << " Bytes." << std::endl;
+
+	const IndexType matrixRowCount = matrixRowIndices.size() - 1;
+	const IndexType matrixNnzCount = columnIndicesAndValues.size();
+
+	cudaError_t cudaMallocResult;
+
+	CUDA_CHECK_ALL_ERRORS();
+	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_matrixRowIndices), sizeof(IndexType) * (matrixRowCount + 1));
+	if (cudaMallocResult != cudaSuccess) {
+		std::cout << "Could not allocate memory for Matrix Row Indices, Error Code " << cudaMallocResult << "." << std::endl;
+		goto cleanup;
+	}
+
+	CUDA_CHECK_ALL_ERRORS();
+	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_matrixColIndicesAndValues), sizeof(IndexType) * matrixNnzCount + sizeof(ValueType) * matrixNnzCount);
+	if (cudaMallocResult != cudaSuccess) {
+		std::cout << "Could not allocate memory for Matrix Column Indices and Values, Error Code " << cudaMallocResult << "." << std::endl;
+		goto cleanup;
+	}
+
+	CUDA_CHECK_ALL_ERRORS();
+	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_x), sizeof(ValueType) * matrixColCount);
+	if (cudaMallocResult != cudaSuccess) {
+		std::cout << "Could not allocate memory for Vector x, Error Code " << cudaMallocResult << "." << std::endl;
+		goto cleanup;
+	}
+
+	CUDA_CHECK_ALL_ERRORS();
+	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_multiplyResult), sizeof(ValueType) * matrixRowCount);
+	if (cudaMallocResult != cudaSuccess) {
+		std::cout << "Could not allocate memory for Vector multiplyResult, Error Code " << cudaMallocResult << "." << std::endl;
+		goto cleanup;
+	}
+
+	// Memory allocated, copy data to device
+	cudaError_t cudaCopyResult;
+
+	CUDA_CHECK_ALL_ERRORS();
+	cudaCopyResult = cudaMemcpy(device_matrixRowIndices, matrixRowIndices.data(), sizeof(IndexType) * (matrixRowCount + 1), cudaMemcpyHostToDevice);
+	if (cudaCopyResult != cudaSuccess) {
+		std::cout << "Could not copy data for Matrix Row Indices, Error Code " << cudaCopyResult << std::endl;
+		goto cleanup;
+	}
+
+	CUDA_CHECK_ALL_ERRORS();
+	cudaCopyResult = cudaMemcpy(device_matrixColIndicesAndValues, columnIndicesAndValues.data(), (sizeof(IndexType) * matrixNnzCount) + (sizeof(ValueType) * matrixNnzCount), cudaMemcpyHostToDevice);
+	if (cudaCopyResult != cudaSuccess) {
+		std::cout << "Could not copy data for Matrix Column Indices and Values, Error Code " << cudaCopyResult << std::endl;
+		goto cleanup;
+	}
+
+	CUDA_CHECK_ALL_ERRORS();
+	cudaCopyResult = cudaMemcpy(device_x, x.data(), sizeof(ValueType) * matrixColCount, cudaMemcpyHostToDevice);
+	if (cudaCopyResult != cudaSuccess) {
+		std::cout << "Could not copy data for Vector x, Error Code " << cudaCopyResult << std::endl;
+		goto cleanup;
+	}
+
+	// Preset the multiplyResult to zeros...
+	CUDA_CHECK_ALL_ERRORS();
+	cudaCopyResult = cudaMemset(device_multiplyResult, 0, sizeof(ValueType) * matrixRowCount);
+	if (cudaCopyResult != cudaSuccess) {
+		std::cout << "Could not zero the multiply Result, Error Code " << cudaCopyResult << std::endl;
+		goto cleanup;
+	}
+
+	cusp::detail::device::storm_cuda_opt_spmv_csr_vector<IndexType, ValueType>(matrixRowCount, matrixNnzCount, device_matrixRowIndices, device_matrixColIndicesAndValues, device_x, device_multiplyResult);
+	CUDA_CHECK_ALL_ERRORS();
+
+	// Get result back from the device
+	cudaCopyResult = cudaMemcpy(b.data(), device_multiplyResult, sizeof(ValueType) * matrixRowCount, cudaMemcpyDeviceToHost);
+	if (cudaCopyResult != cudaSuccess) {
+		std::cout << "Could not copy back data for result vector, Error Code " << cudaCopyResult << std::endl;
+		goto cleanup;
+	}
+
+	// All code related to freeing memory and clearing up the device
+cleanup:
+	if (device_matrixRowIndices != nullptr) {
+		cudaError_t cudaFreeResult = cudaFree(device_matrixRowIndices);
+		if (cudaFreeResult != cudaSuccess) {
+			std::cout << "Could not free Memory of Matrix Row Indices, Error Code " << cudaFreeResult << "." << std::endl;
+		}
+		device_matrixRowIndices = nullptr;
+	}
+	if (device_matrixColIndicesAndValues != nullptr) {
+		cudaError_t cudaFreeResult = cudaFree(device_matrixColIndicesAndValues);
+		if (cudaFreeResult != cudaSuccess) {
+			std::cout << "Could not free Memory of Matrix Column Indices and Values, Error Code " << cudaFreeResult << "." << std::endl;
+		}
+		device_matrixColIndicesAndValues = nullptr;
+	}
+	if (device_x != nullptr) {
+		cudaError_t cudaFreeResult = cudaFree(device_x);
+		if (cudaFreeResult != cudaSuccess) {
+			std::cout << "Could not free Memory of Vector x, Error Code " << cudaFreeResult << "." << std::endl;
+		}
+		device_x = nullptr;
+	}
+	if (device_multiplyResult != nullptr) {
+		cudaError_t cudaFreeResult = cudaFree(device_multiplyResult);
+		if (cudaFreeResult != cudaSuccess) {
+			std::cout << "Could not free Memory of Vector multiplyResult, Error Code " << cudaFreeResult << "." << std::endl;
+		}
+		device_multiplyResult = nullptr;
+	}
+}
+
 /*
  * Declare and implement all exported functions for these Kernels here
  *
@@ -274,6 +393,10 @@ cleanup:
 
 void cudaForStormTestFunction(int a, int b) {
 	std::cout << "Cuda for Storm: a + b = " << (a+b) << std::endl;
+}
+
+void basicValueIteration_spmv_uint64_double(uint_fast64_t const matrixColCount, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<std::pair<uint_fast64_t, double>> const& columnIndicesAndValues, std::vector<double> const& x, std::vector<double>& b) {
+	basicValueIteration_spmv(matrixColCount, matrixRowIndices, columnIndicesAndValues, x, b);
 }
 
 void basicValueIteration_mvReduce_uint64_double_minimize(uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<std::pair<uint_fast64_t, double>> const& columnIndicesAndValues, std::vector<double>& x, std::vector<double> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {

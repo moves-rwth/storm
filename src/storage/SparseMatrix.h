@@ -583,6 +583,15 @@ namespace storm {
              * @return size_t A hash value for this matrix.
              */
             std::size_t hash() const;
+
+			/*!
+			 * Returns a reference to the internal rowMapping vector
+			 */
+			std::vector<uint_fast64_t> const& __internal_getRowIndications();
+			/*!
+			* Returns a reference to the internal columnMapping vector
+			*/
+			std::vector<std::pair<uint_fast64_t, T>> const& __internal_getColumnsAndValues();
             
         private:
             // The number of rows of the matrix.
