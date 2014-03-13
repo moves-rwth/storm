@@ -14,7 +14,7 @@
 #include <thrust/device_ptr.h>
 #include <thrust/functional.h>
 
-
+#ifdef DEBUG
 #define CUDA_CHECK_ALL_ERRORS() do { \
 	cudaError_t errSync  = cudaGetLastError(); \
 	cudaError_t errAsync = cudaDeviceSynchronize(); \
@@ -24,7 +24,9 @@
 	if (errAsync != cudaSuccess) { \
 		std::cout << "(DLL) Async kernel error: " << cudaGetErrorString(errAsync) << " (Code: " << errAsync << ")" << std::endl; \
 	} } while(false)
-
+#else
+#define CUDA_CHECK_ALL_ERRORS() do {} while (false)
+#endif
 
 template<typename T, bool Relative>
 struct equalModuloPrecision : public thrust::binary_function<T,T,T>
@@ -32,6 +34,9 @@ struct equalModuloPrecision : public thrust::binary_function<T,T,T>
 __host__ __device__ T operator()(const T &x, const T &y) const
 {
     if (Relative) {
+		if (y == 0) {
+			return x;
+		}
 		const T result = (x - y) / y;
 		return ((result >= 0) ? (result) : (-result));
     } else {
@@ -228,9 +233,6 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 		CUDA_CHECK_ALL_ERRORS();
 		converged = (maxX < precision);
 		++iterationCount;
-
-		// If there are empty rows in the matrix we need to clear multiplyResult
-		thrust::fill(devicePtrThrust_multiplyResult, devicePtrThrust_multiplyResult + matrixRowCount, 0);
 
 		// Swap pointers, device_x always contains the most current result
 		std::swap(device_x, device_xSwap);
