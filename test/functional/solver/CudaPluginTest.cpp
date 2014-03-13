@@ -9,7 +9,7 @@
 
 #include "cudaForStorm.h"
 
-TEST(CudaPlugin, CreationWithDimensions) {
+TEST(CudaPlugin, SpMV_4x4) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder(4, 4, 10);
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));
 	ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 3, -1.0));
@@ -41,7 +41,7 @@ TEST(CudaPlugin, CreationWithDimensions) {
 	ASSERT_EQ(b.at(3), 0);
 }
 
-TEST(CudaPlugin, VerySmall) {
+TEST(CudaPlugin, SpMV_VerySmall) {
 	storm::storage::SparseMatrixBuilder<double> matrixBuilder(2, 2, 2);
 	ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 0, 1.0));
 	ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 1, 2.0));
@@ -60,6 +60,124 @@ TEST(CudaPlugin, VerySmall) {
 
 	ASSERT_EQ(b.at(0), 4.0);
 	ASSERT_EQ(b.at(1), 16.0);
+}
+
+TEST(CudaPlugin, AddVectorsInplace) {
+	std::vector<double> vectorA_1 = { 0.0, 42.0, 21.4, 3.1415, 1.0, 7.3490390, 94093053905390.21, -0.000000000023 };
+	std::vector<double> vectorA_2 = { 0.0, 42.0, 21.4, 3.1415, 1.0, 7.3490390, 94093053905390.21, -0.000000000023 };
+	std::vector<double> vectorA_3 = { 0.0, 42.0, 21.4, 3.1415, 1.0, 7.3490390, 94093053905390.21, -0.000000000023 };
+	std::vector<double> vectorB = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::vector<double> vectorC = { -5000.0, -5000.0, -5000.0, -5000.0, -5000.0, -5000.0, -5000.0, -5000.0 };
+
+	ASSERT_EQ(vectorA_1.size(), 8);
+	ASSERT_EQ(vectorA_2.size(), 8);
+	ASSERT_EQ(vectorA_3.size(), 8);
+	ASSERT_EQ(vectorB.size(), 8);
+	ASSERT_EQ(vectorC.size(), 8);
+
+	ASSERT_NO_THROW(basicValueIteration_addVectorsInplace_double(vectorA_1, vectorB));
+	ASSERT_NO_THROW(basicValueIteration_addVectorsInplace_double(vectorA_2, vectorC));
+
+	ASSERT_EQ(vectorA_1.size(), 8);
+	ASSERT_EQ(vectorA_2.size(), 8);
+	ASSERT_EQ(vectorA_3.size(), 8);
+	ASSERT_EQ(vectorB.size(), 8);
+	ASSERT_EQ(vectorC.size(), 8);
+
+	for (size_t i = 0; i < vectorA_3.size(); ++i) {
+		double cpu_result_b = vectorA_3.at(i) + vectorB.at(i);
+		double cpu_result_c = vectorA_3.at(i) + vectorC.at(i);
+
+		ASSERT_EQ(cpu_result_b, vectorA_1.at(i));
+		ASSERT_EQ(cpu_result_c, vectorA_2.at(i));
+	}
+}
+
+TEST(CudaPlugin, ReduceGroupedVector) {
+	std::vector<double> groupedVector = {
+		0.0, -1000.0, 0.000004, // Group 0
+		5.0,					// Group 1
+		0.0, 1.0, 2.0, 3.0,		// Group 2
+		-1000.0, -3.14, -0.0002,// Group 3 (neg only)
+		25.25, 25.25, 25.25,	// Group 4
+		0.0, 0.0, 1.0,			// Group 5
+		-0.000001, 0.000001		// Group 6
+	};
+	std::vector<uint_fast64_t> grouping = {
+		0, 3, 4, 8, 11, 14, 17, 19
+	};
+
+	std::vector<double> result_minimize = {
+		-1000.0, // Group 0
+		5.0,
+		0.0,
+		-1000.0,
+		25.25,
+		0.0,
+		-0.000001
+	};
+	std::vector<double> result_maximize = {
+		0.000004,
+		5.0,
+		3.0,
+		-0.0002,
+		25.25,
+		1.0,
+		0.000001
+	};
+
+	std::vector<double> result_cuda_minimize = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::vector<double> result_cuda_maximize = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+	ASSERT_NO_THROW(basicValueIteration_reduceGroupedVector_uint64_double_minimize(groupedVector, grouping, result_cuda_minimize));
+	ASSERT_NO_THROW(basicValueIteration_reduceGroupedVector_uint64_double_maximize(groupedVector, grouping, result_cuda_maximize));
+
+	for (size_t i = 0; i < result_minimize.size(); ++i) {
+		ASSERT_EQ(result_minimize.at(i), result_cuda_minimize.at(i));
+		ASSERT_EQ(result_maximize.at(i), result_cuda_maximize.at(i));
+	}
+}
+
+TEST(CudaPlugin, equalModuloPrecision) {
+	std::vector<double> x = {
+		123.45L, 67.8L, 901.23L, 456789.012L, 3.456789L, -4567890.12L
+	};
+	std::vector<double> y1 = {
+		0.45L, 0.8L, 0.23L, 0.012L, 0.456789L, -0.12L
+	};
+	std::vector<double> y2 = {
+		0.45L, 0.8L, 0.23L, 456789.012L, 0.456789L, -4567890.12L
+	};
+	std::vector<double> x2;
+	std::vector<double> x3;
+	std::vector<double> y3;
+	std::vector<double> y4;
+	x2.reserve(1000);
+	x3.reserve(1000);
+	y3.reserve(1000);
+	y4.reserve(1000);
+	for (size_t i = 0; i < 1000; ++i) {
+		x2.push_back(static_cast<double>(i));
+		y3.push_back(1.0);
+		x3.push_back(-(1000.0 - static_cast<double>(i)));
+		y4.push_back(1.0);
+	}
+
+	double maxElement1 = 0.0L;
+	double maxElement2 = 0.0L;
+	double maxElement3 = 0.0L;
+	double maxElement4 = 0.0L;
+	ASSERT_NO_THROW(basicValueIteration_equalModuloPrecision_double_NonRelative(x, y1, maxElement1));
+	ASSERT_NO_THROW(basicValueIteration_equalModuloPrecision_double_NonRelative(x, y2, maxElement2));
+
+	ASSERT_NO_THROW(basicValueIteration_equalModuloPrecision_double_Relative(x2, y3, maxElement3));
+	ASSERT_NO_THROW(basicValueIteration_equalModuloPrecision_double_Relative(x3, y4, maxElement4));
+
+	ASSERT_DOUBLE_EQ(4567890.0L, maxElement1);
+	ASSERT_DOUBLE_EQ(901.0L, maxElement2);
+
+	ASSERT_DOUBLE_EQ(998.0L, maxElement3);
+	ASSERT_DOUBLE_EQ(1001.0L, maxElement4);
 }
 
 #endif

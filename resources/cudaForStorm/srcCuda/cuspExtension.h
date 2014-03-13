@@ -61,7 +61,7 @@ namespace device
 template <typename IndexType, typename ValueType, unsigned int VECTORS_PER_BLOCK, unsigned int THREADS_PER_VECTOR, bool UseCache>
 __launch_bounds__(VECTORS_PER_BLOCK * THREADS_PER_VECTOR,1)
 __global__ void
-storm_cuda_opt_spmv_csr_vector_kernel(const IndexType num_rows, const IndexType * matrixRowIndices, const IndexType * matrixColumnIndicesAndValues, const ValueType * x, ValueType * y)
+storm_cuda_opt_spmv_csr_vector_kernel(const IndexType num_rows, const IndexType * matrixRowIndices, const IndexType * matrixColumnIndices, const ValueType * matrixValues, const ValueType * x, ValueType * y)
 {
     __shared__ volatile ValueType sdata[VECTORS_PER_BLOCK * THREADS_PER_VECTOR + THREADS_PER_VECTOR / 2];  // padded to avoid reduction conditionals
     __shared__ volatile IndexType ptrs[VECTORS_PER_BLOCK][2];
@@ -95,17 +95,17 @@ storm_cuda_opt_spmv_csr_vector_kernel(const IndexType num_rows, const IndexType 
 
             // accumulate local sums
             if(jj >= row_start && jj < row_end)
-                sum += matrixColumnIndicesAndValues[(2 * jj) + 1] * fetch_x<UseCache>(matrixColumnIndicesAndValues[2 * jj], x);
+                sum += matrixValues[jj] * fetch_x<UseCache>(matrixColumnIndices[jj], x);
 
             // accumulate local sums
             for(jj += THREADS_PER_VECTOR; jj < row_end; jj += THREADS_PER_VECTOR)
-                sum += matrixColumnIndicesAndValues[(2 * jj) + 1] * fetch_x<UseCache>(matrixColumnIndicesAndValues[2 * jj], x);
+                sum += matrixValues[jj] * fetch_x<UseCache>(matrixColumnIndices[jj], x);
         }
         else
         {
             // accumulate local sums
             for(IndexType jj = row_start + thread_lane; jj < row_end; jj += THREADS_PER_VECTOR)
-                sum += matrixColumnIndicesAndValues[(2 * jj) + 1] * fetch_x<UseCache>(matrixColumnIndicesAndValues[2 * jj], x);
+                sum += matrixValues[jj] * fetch_x<UseCache>(matrixColumnIndices[jj], x);
         }
 
         // store local sum in shared memory
@@ -214,7 +214,7 @@ storm_cuda_opt_vector_reduce_kernel(const IndexType num_rows, const IndexType * 
 template <bool Minimize, unsigned int THREADS_PER_VECTOR, typename IndexType, typename ValueType>
 void __storm_cuda_opt_vector_reduce(const IndexType num_rows, const IndexType * nondeterministicChoiceIndices, ValueType * x, const ValueType * y)
 {
-	ValueType __minMaxInitializer = 0;
+	ValueType __minMaxInitializer = -std::numeric_limits<ValueType>::max();
 	if (Minimize) {
 		__minMaxInitializer = std::numeric_limits<ValueType>::max();
 	}
@@ -244,7 +244,7 @@ void storm_cuda_opt_vector_reduce(const IndexType num_rows, const IndexType num_
 }
 
 template <bool UseCache, unsigned int THREADS_PER_VECTOR, typename IndexType, typename ValueType>
-void __storm_cuda_opt_spmv_csr_vector(const IndexType num_rows, const IndexType * matrixRowIndices, const IndexType * matrixColumnIndicesAndValues, const ValueType* x, ValueType* y)
+void __storm_cuda_opt_spmv_csr_vector(const IndexType num_rows, const IndexType * matrixRowIndices, const IndexType * matrixColumnIndices, const ValueType * matrixValues, const ValueType* x, ValueType* y)
 {
     const size_t THREADS_PER_BLOCK  = 128;
     const size_t VECTORS_PER_BLOCK  = THREADS_PER_BLOCK / THREADS_PER_VECTOR;
@@ -256,36 +256,36 @@ void __storm_cuda_opt_spmv_csr_vector(const IndexType num_rows, const IndexType 
         bind_x(x);
 
     storm_cuda_opt_spmv_csr_vector_kernel<IndexType, ValueType, VECTORS_PER_BLOCK, THREADS_PER_VECTOR, UseCache> <<<NUM_BLOCKS, THREADS_PER_BLOCK>>> 
-        (num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y);
+        (num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y);
 
     if (UseCache)
         unbind_x(x);
 }
 
 template <typename IndexType, typename ValueType>
-void storm_cuda_opt_spmv_csr_vector(const IndexType num_rows, const IndexType num_entries, const IndexType * matrixRowIndices, const IndexType * matrixColumnIndicesAndValues, const ValueType* x, ValueType* y)
+void storm_cuda_opt_spmv_csr_vector(const IndexType num_rows, const IndexType num_entries, const IndexType * matrixRowIndices, const IndexType * matrixColumnIndices, const ValueType * matrixValues, const ValueType* x, ValueType* y)
 {
     const IndexType nnz_per_row = num_entries / num_rows;
 
-    if (nnz_per_row <=  2) { __storm_cuda_opt_spmv_csr_vector<false, 2>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y); return; }
-    if (nnz_per_row <=  4) { __storm_cuda_opt_spmv_csr_vector<false, 4>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y); return; }
-    if (nnz_per_row <=  8) { __storm_cuda_opt_spmv_csr_vector<false, 8>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y); return; }
-    if (nnz_per_row <= 16) { __storm_cuda_opt_spmv_csr_vector<false,16>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y); return; }
+    if (nnz_per_row <=  2) { __storm_cuda_opt_spmv_csr_vector<false, 2, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y); return; }
+    if (nnz_per_row <=  4) { __storm_cuda_opt_spmv_csr_vector<false, 4, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y); return; }
+    if (nnz_per_row <=  8) { __storm_cuda_opt_spmv_csr_vector<false, 8, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y); return; }
+    if (nnz_per_row <= 16) { __storm_cuda_opt_spmv_csr_vector<false,16, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y); return; }
     
-    __storm_cuda_opt_spmv_csr_vector<false,32>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y);
+    __storm_cuda_opt_spmv_csr_vector<false,32, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y);
 }
 
 template <typename IndexType, typename ValueType>
-void storm_cuda_opt_spmv_csr_vector_tex(const IndexType num_rows, const IndexType num_entries, const IndexType * matrixRowIndices, const IndexType * matrixColumnIndicesAndValues, const ValueType* x, ValueType* y)
+void storm_cuda_opt_spmv_csr_vector_tex(const IndexType num_rows, const IndexType num_entries, const IndexType * matrixRowIndices, const IndexType * matrixColumnIndices, const ValueType * matrixValues, const ValueType* x, ValueType* y)
 {
     const IndexType nnz_per_row = num_entries / num_rows;
 
-    if (nnz_per_row <=  2) { __storm_cuda_opt_spmv_csr_vector<true, 2>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y); return; }
-    if (nnz_per_row <=  4) { __storm_cuda_opt_spmv_csr_vector<true, 4>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y); return; }
-    if (nnz_per_row <=  8) { __storm_cuda_opt_spmv_csr_vector<true, 8>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y); return; }
-    if (nnz_per_row <= 16) { __storm_cuda_opt_spmv_csr_vector<true,16>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y); return; }
+    if (nnz_per_row <=  2) { __storm_cuda_opt_spmv_csr_vector<true, 2, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y); return; }
+    if (nnz_per_row <=  4) { __storm_cuda_opt_spmv_csr_vector<true, 4, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y); return; }
+    if (nnz_per_row <=  8) { __storm_cuda_opt_spmv_csr_vector<true, 8, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y); return; }
+    if (nnz_per_row <= 16) { __storm_cuda_opt_spmv_csr_vector<true,16, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y); return; }
 
-    __storm_cuda_opt_spmv_csr_vector<true,32>(num_rows, matrixRowIndices, matrixColumnIndicesAndValues, x, y);
+    __storm_cuda_opt_spmv_csr_vector<true,32, IndexType, ValueType>(num_rows, matrixRowIndices, matrixColumnIndices, matrixValues, x, y);
 }
 
 // NON-OPT
