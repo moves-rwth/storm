@@ -10,6 +10,7 @@
 
 #include <string>
 #include "src/parser/MappedFile.h"
+#include "src/utility/cstring.h"
 #include "src/exceptions/FileIoException.h"
 
 TEST(MappedFileTest, NonExistingFile) {
@@ -21,13 +22,18 @@ TEST(MappedFileTest, BasicFunctionality) {
 
 	// Open a file and test if the content is loaded as expected.
 	storm::parser::MappedFile file(STORM_CPP_TESTS_BASE_PATH "/functional/parser/testStringFile.txt");
-	std::string testString = "This is a test string.\n";
-	ASSERT_EQ(testString.length(), file.getDataEnd() - file.getData());
-	char const * testStringPtr = testString.c_str();
-	for(char* dataPtr = file.getData(); dataPtr < file.getDataEnd(); dataPtr++) {
+	std::string testString = "This is a test string.";
+	char * dataPtr = file.getData();
+	for(char const * testStringPtr = testString.c_str(); testStringPtr - testString.c_str() < 22; testStringPtr++) {
 		ASSERT_EQ(*testStringPtr, *dataPtr);
-		testStringPtr++;
+		dataPtr++;
 	}
+	// The next character should be an end of line character (actual character varies between operating systems).
+	ASSERT_EQ(dataPtr, storm::utility::cstring::forwardToLineEnd(dataPtr));
+
+	// The newline character should be the last contained in the string.
+	ASSERT_EQ(file.getDataEnd(), storm::utility::cstring::forwardToNextLine(dataPtr));
+
 }
 
 TEST(MappedFileTest, ExistsAndReadble) {

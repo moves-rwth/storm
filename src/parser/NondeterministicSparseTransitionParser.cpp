@@ -238,6 +238,13 @@ namespace storm {
 				}
 
 				if (isRewardFile) {
+
+					// Make sure that the highest state index of the reward file is not higher than the highest state index of the corresponding model.
+					if(result.highestStateIndex > modelInformation.getColumnCount() - 1) {
+						LOG4CPLUS_ERROR(logger, "State index " << result.highestStateIndex << " found. This exceeds the highest state index of the model, which is " << modelInformation.getColumnCount() - 1 << " .");
+						throw storm::exceptions::OutOfRangeException() << "State index " << result.highestStateIndex << " found. This exceeds the highest state index of the model, which is " << modelInformation.getColumnCount() - 1 << " .";
+					}
+
 					// If we have switched the source state, we possibly need to insert rows for skipped choices of the last
 					// source state.
 					if (source != lastSource) {
