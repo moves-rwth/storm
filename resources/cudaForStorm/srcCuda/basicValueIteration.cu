@@ -58,11 +58,10 @@ void exploadVector(std::vector<std::pair<IndexType, ValueType>> const& inputVect
 
 template <bool Minimize, bool Relative, typename IndexType, typename ValueType>
 void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueType const precision, std::vector<IndexType> const& matrixRowIndices, std::vector<std::pair<IndexType, ValueType>> const& columnIndicesAndValues, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<IndexType> const& nondeterministicChoiceIndices) {
-	
 	std::vector<IndexType> matrixColumnIndices;
 	std::vector<ValueType> matrixValues;
 	exploadVector<IndexType, ValueType>(columnIndicesAndValues, matrixColumnIndices, matrixValues);
-	
+
 	IndexType* device_matrixRowIndices = nullptr;
 	IndexType* device_matrixColIndices = nullptr;
 	ValueType* device_matrixValues = nullptr;
@@ -72,10 +71,12 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 	ValueType* device_multiplyResult = nullptr;
 	IndexType* device_nondeterministicChoiceIndices = nullptr;
 
+#ifdef DEBUG
 	std::cout.sync_with_stdio(true);
 	std::cout << "(DLL) Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory()))*100 << "%)." << std::endl; 
 	size_t memSize = sizeof(IndexType) * matrixRowIndices.size() + sizeof(IndexType) * columnIndicesAndValues.size() * 2 + sizeof(ValueType) * x.size() + sizeof(ValueType) * x.size() + sizeof(ValueType) * b.size() + sizeof(ValueType) * b.size() + sizeof(IndexType) * nondeterministicChoiceIndices.size();
 	std::cout << "(DLL) We will allocate " << memSize << " Bytes." << std::endl;
+#endif
 
 	const IndexType matrixRowCount = matrixRowIndices.size() - 1;
 	const IndexType matrixColCount = nondeterministicChoiceIndices.size() - 1;
@@ -237,7 +238,9 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 		// Swap pointers, device_x always contains the most current result
 		std::swap(device_x, device_xSwap);
 	}
+#ifdef DEBUG
 	std::cout << "(DLL) Executed " << iterationCount << " of max. " << maxIterationCount << " Iterations." << std::endl;
+#endif
 
 	// Get x back from the device
 	cudaCopyResult = cudaMemcpy(x.data(), device_x, sizeof(ValueType) * matrixColCount, cudaMemcpyDeviceToHost);
@@ -311,17 +314,19 @@ void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<In
 	std::vector<IndexType> matrixColumnIndices;
 	std::vector<ValueType> matrixValues;
 	exploadVector<IndexType, ValueType>(columnIndicesAndValues, matrixColumnIndices, matrixValues);
-	
+
 	IndexType* device_matrixRowIndices = nullptr;
 	IndexType* device_matrixColIndices = nullptr;
 	ValueType* device_matrixValues = nullptr;
 	ValueType* device_x = nullptr;
 	ValueType* device_multiplyResult = nullptr;
 
+#ifdef DEBUG
 	std::cout.sync_with_stdio(true);
 	std::cout << "(DLL) Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory()))*100 << "%)." << std::endl; 
 	size_t memSize = sizeof(IndexType) * matrixRowIndices.size() + sizeof(IndexType) * columnIndicesAndValues.size() * 2 + sizeof(ValueType) * x.size() + sizeof(ValueType) * b.size();
 	std::cout << "(DLL) We will allocate " << memSize << " Bytes." << std::endl;
+#endif
 
 	const IndexType matrixRowCount = matrixRowIndices.size() - 1;
 	const IndexType matrixNnzCount = columnIndicesAndValues.size();
