@@ -1,0 +1,138 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="speculative_spin_mutex Class">
+<meta name="DC.subject" content="speculative_spin_mutex Class">
+<meta name="keywords" content="speculative_spin_mutex Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/synchronization/mutexes.htm">
+<meta name="DC.Relation" scheme="URI" content="mutex_concept.htm">
+<meta name="DC.Relation" scheme="URI" content="hardware_transactional_locking.htm">
+<meta name="DC.Relation" scheme="URI" content="spin_mutex_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="speculative_spin_mutex_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>speculative_spin_mutex Class</title>
+</head>
+<body id="speculative_spin_mutex_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="speculative_spin_mutex_cls"><!-- --></a>
+
+
+    <h1 class="topictitle1">speculative_spin_mutex Class</h1>
+
+    
+<div>
+        <div class="section"><h2 class="sectiontitle">speculative_spin_mutex Class</h2>
+            <p>
+                <strong>Summary</strong>
+            </p>
+
+            <p>
+                Class that models Mutex Concept using a spin lock, and for processors which
+                support hardware transactional memory (such as Intel&reg; Transactional
+                Synchronization Extensions (Intel&reg; TSX)) may be implemented in a
+                way that allows non-contending changes to the protected data to proceed
+                in parallel.
+            </p>
+
+        </div>
+
+        <div class="section"><h2 class="sectiontitle">Syntax</h2>
+            <pre>class speculative_spin_mutex;</pre>
+        </div>
+
+        <div class="section"><h2 class="sectiontitle">Header</h2>
+            <pre>#include "tbb/spin_mutex.h"</pre>
+        </div>
+
+        <div class="section"><h2 class="sectiontitle">Description</h2>
+            <p>
+                A <samp class="codeph">speculative_spin_mutex</samp> models the Mutex Concept.  It is not
+                fair and not recursive.  A <samp class="codeph">speculative_spin_mutex</samp> is like a
+                <samp class="codeph">spin_mutex</samp>, but may provide better throughput than
+                non-speculative mutexes when
+                <ul type="disc">
+                <li>used on a processor that supports hardware transactional memory <em>and</em></li>
+
+                <li>
+                    multiple threads can usually execute the critical section(s) protected by
+                    the mutex concurrently without conflicting.
+                </li>
+
+                </ul>
+
+                Otherwise it performs like a <samp class="codeph">spin_mutex</samp>, possibly with
+                worse throughput.
+            </p>
+
+            <p>
+                Please see the Speculative locking section for more details.
+            </p>
+
+            <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+                <p>
+                    The <samp class="codeph">speculative_spin_mutex</samp> is padded to ensure each instance appears on
+                    a separate cache line not shared with any other data.  Because of that the size of the
+                    mutex is twice the cache line size.
+                </p>
+
+            </div>
+            <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+                <p>
+                    For the implementation of <samp class="codeph">speculative_spin_mutex</samp>
+                    in Intel&reg; Threading Building Blocks (Intel&reg; TBB)) version 4.2
+                    running on a 4<sup>th</sup> generation Intel&reg; Core&#8482; processor,
+                    any lock nesting may thwart speculation.
+                </p>
+
+            </div>
+            <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+                <p>
+                    Depending on the version of Intel TBB and the hardware, other caveats may apply.
+                    Please check the Release Notes for more information.
+                </p>
+
+            </div>
+        </div>
+
+        <div class="section"><h2 class="sectiontitle">References</h2>
+             <p>
+                 <a href="http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf" target="_blank">
+                 <em>Intel&reg; 64 and IA-32 Architectures Optimization Reference Manual</em>,
+                 Order Number 248966-027, June 2013
+                 </a>
+                 , Chapter 12.
+             </p>
+
+         </div>
+
+         <div class="section"><h2 class="sectiontitle">Members</h2>
+             <p>See Mutex Concept.</p>
+
+         </div>
+
+
+    </div>
+ 
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/synchronization/mutexes.htm">Mutexes</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="mutex_concept.htm">Mutex Concept</a></div>
+<div><a href="hardware_transactional_locking.htm">Speculative locking (Transactional Lock Elision)</a></div>
+<div><a href="spin_mutex_cls.htm">spin_mutex</a></div></div>
+</div>
+</body>
+</html>

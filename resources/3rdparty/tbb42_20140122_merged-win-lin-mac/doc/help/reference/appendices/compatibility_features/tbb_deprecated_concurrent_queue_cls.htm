@@ -1,0 +1,254 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="tbb::deprecated::concurrent_queue<T,Alloc&gt; Template Class">
+<meta name="DC.subject" content="tbb::deprecated::concurrent_queue<T,Alloc&gt; Template Class">
+<meta name="keywords" content="tbb::deprecated::concurrent_queue<T,Alloc&gt; Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/compatibility_features.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tbb_deprecated_concurrent_queue_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>tbb::deprecated::concurrent_queue&lt;T,Alloc&gt; Template Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tbb_deprecated_concurrent_queue_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tbb_deprecated_concurrent_queue_cls"><!-- --></a>
+
+
+  <h1 class="topictitle1">tbb::deprecated::concurrent_queue&lt;T,Alloc&gt;
+	 Template Class</h1>
+
+  
+  <div>
+	 <div class="section"><h2 class="sectiontitle">Summary</h2>
+		
+		<p>Template class for queue with concurrent
+		  operations. This is the 
+		  <samp class="codeph">concurrent_queue</samp>
+		  supported in Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.1 and prior. New code should use the Intel&reg; TBB 2.2
+		  unbounded 
+		  <samp class="codeph">concurrent_queue</samp> or 
+		  <samp class="codeph">concurrent_bounded_queue</samp>.
+		</p>
+
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2>
+		
+		<pre>template&lt;typename T, typename Alloc=cache_aligned_allocator&lt;T&gt; &gt; class concurrent_queue;</pre>
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Header</h2>
+		
+		<pre>#include "tbb/concurrent_queue.h"</pre>
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Description</h2>
+		
+		<p>A 
+		  <samp class="codeph">tbb::deprecated::concurrent_queue</samp> is a
+		  bounded first-in first-out data structure that permits multiple threads to
+		  concurrently push and pop items. The default bounds are large enough to make
+		  the queue practically unbounded, subject to memory limitations on the target
+		  machine.
+		</p>
+
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3>
+		  <p>Compile with 
+			 <samp class="codeph">TBB_DEPRECATED=1</samp> to
+			 inject 
+			 <samp class="codeph">tbb::deprecated::concurrent_queue</samp> into
+			 namespace 
+			 <samp class="codeph">tbb</samp>. Consider
+			 eventually migrating to the new queue classes.
+		  </p>
+
+		  <ul type="disc">
+			 <li>
+				<p>Use the new 
+				  <samp class="codeph">tbb::concurrent_queue</samp> if you need only
+				  the non-blocking operations (<samp class="codeph">push</samp> and 
+				  <samp class="codeph">try_pop</samp>) for
+				  modifying the queue.
+				</p>
+
+			 </li>
+
+			 <li>
+				<p>Otherwise use the new 
+				  <samp class="codeph">tbb::concurrent_bounded_queue</samp>. It
+				  supports both blocking operations (<samp class="codeph">push</samp> and 
+				  <samp class="codeph">try_pop</samp>) and
+				  non-blocking operations.
+				</p>
+
+			 </li>
+
+		  </ul>
+
+		</div>
+		<p>In both cases, use the new method names in the
+		  following table
+		</p>
+
+		
+<div class="tablenoborder"><a name="tbl46"><!-- --></a><table cellpadding="4" summary="" id="tbl46" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Method Name Changes for Concurrent
+		  Queues</span></caption>
+		  <thead align="left">
+			 <tr>
+				<th class="cellrowborder" align="left" valign="top" width="50%" id="d27636e135">
+				  <p>Method in tbb::deprecated::concurrent_queue
+				  </p>
+
+				</th>
+
+				<th class="cellrowborder" align="left" valign="top" width="50%" id="d27636e141">
+				  <p>Equivalent method in tbb::concurrent_queue
+					 or tbb::concurrent_bounded_queue
+				  </p>
+
+				</th>
+
+			 </tr>
+</thead>
+
+		  <tbody>
+			 <tr>
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d27636e135 ">
+				  <p><samp class="codeph">pop_if_present</samp>
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d27636e141 ">
+				  <p><samp class="codeph">try_pop</samp>
+				  </p>
+
+				</td>
+
+			 </tr>
+
+			 <tr>
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d27636e135 ">
+				  <p><samp class="codeph">push_if_not_full</samp>
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d27636e141 ">
+				  <p><samp class="codeph">try_push</samp> (not available in 
+					 <samp class="codeph">tbb::concurrent_queue)</samp>
+				  </p>
+
+				</td>
+
+			 </tr>
+
+			 <tr>
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d27636e135 ">
+				  <p><samp class="codeph">begin</samp>
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d27636e141 ">
+				  <p><samp class="codeph">unsafe_begin</samp>
+				  </p>
+
+				</td>
+
+			 </tr>
+
+			 <tr>
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d27636e135 ">
+				  <p><samp class="codeph">end</samp>
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" align="left" valign="top" width="50%" headers="d27636e141 ">
+				  <p><samp class="codeph">unsafe_end</samp>
+				  </p>
+
+				</td>
+
+			 </tr>
+
+		  </tbody>
+
+		</table>
+</div>
+
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Members</h2>
+		
+		<pre>namespace tbb {
+ namespace deprecated {
+ template&lt;typename T,
+ typename Alloc=cache_aligned_allocator&lt;T&gt; &gt;
+ class concurrent_queue {
+ public:
+ // types
+ typedef T value_type;
+ typedef T&amp; reference;
+ typedef const T&amp; const_reference;
+ typedef std::ptrdiff_t size_type;
+ typedef std::ptrdiff_t difference_type;
+ concurrent_queue(const Alloc&amp; a = Alloc());
+ concurrent_queue(const concurrent_queue&amp; src,
+ const Alloc&amp; a = Alloc());
+ template&lt;typename InputIterator&gt;
+ concurrent_queue(InputIterator first, InputIterator last,
+ const Alloc&amp; a = Alloc());
+ ~concurrent_queue();
+ void push(const T&amp; source);
+ bool push_if_not_full(const T&amp; source);
+ void pop(T&amp; destination);
+ bool pop_if_present(T&amp; destination);
+ void clear();
+ size_type size() const;
+ bool empty() const;
+ size_t capacity() const;
+ void set_capacity(size_type capacity);
+ Alloc get_allocator() const;
+ typedef <var>implementation-defined</var> iterator;
+ typedef <var>implementation-defined</var> const_iterator;
+ // iterators (these are slow and intended only for debugging)
+ iterator begin();
+ iterator end();
+ const_iterator begin() const;
+ const_iterator end() const;
+ };
+ }
+ #if TBB_DEPRECATED
+ using deprecated::concurrent_queue;
+ #else
+ using strict_ppl::concurrent_queue;
+ #endif
+ }</pre>
+	 </div>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/appendices/compatibility_features.htm">Compatibility Features</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

@@ -1,0 +1,905 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Mutex Concept">
+<meta name="DC.subject" content="Mutex Concept">
+<meta name="keywords" content="Mutex Concept">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/synchronization/mutexes.htm">
+<meta name="DC.Relation" scheme="URI" content="../c_11_synchronization.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="mutex_concept">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Mutex Concept</title>
+</head>
+<body id="mutex_concept">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="mutex_concept"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Mutex Concept</h1>
+ 
+  
+  <div>
+	 <div class="section">
+		<p>The mutexes and locks here have relatively spartan interfaces that are
+		  designed for high performance. The interfaces enforce the 
+		  <em>scoped locking pattern</em>, which is widely used in C++ libraries
+		  because: 
+		</p>
+
+		<ol class="ol_3"> 
+		  <li>Does not require the programmer to remember to release the lock
+		  </li>
+
+		  <li>Releases the lock if&nbsp; an exception is thrown out of the mutual
+			 exclusion region protected by the lock 
+		  </li>
+ 
+		</ol>
+
+		<p>There are two parts to the pattern: a 
+		  <em>mutex</em> object, for which construction of a 
+		  <em>lock</em> object acquires a lock on the mutex and destruction of the 
+		  <em>lock</em> object releases the lock. Here's an example:
+		</p>
+ 
+		<pre>
+{
+    // Construction of myLock acquires lock on myMutex 
+    M::scoped_lock myLock( myMutex );
+    // ... actions to be performed while holding the lock ...
+    // Destruction of myLock releases lock on myMutex
+}
+</pre> 
+		<p>If the actions throw an exception, the lock is automatically released
+		  as the block is exited. 
+		</p>
+
+		<p>The following table shows the requirements for the Mutex concept for a
+		  mutex type M 
+		</p>
+
+		<p>Mutex Concept
+		</p>
+
+	 </div>
+
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all">
+		  <thead align="left">
+			 <tr> 
+				<th class="cellrowborder" valign="top" id="d97337e70"> 
+				  <p><strong>Pseudo-Signature</strong>
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" id="d97337e78"> 
+				  <p><strong>Semantics</strong>
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+
+		  </thead>
+
+		  <tbody>
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">M()</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>Construct unlocked mutex.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">~M()</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>Destroy unlocked mutex. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">typename M::scoped_lock</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>Corresponding scoped-lock type.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">M::scoped_lock()</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>Construct lock without acquiring mutex.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">M::scoped_lock(M&amp;)</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>Construct lock and acquire lock on mutex.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">M::~scoped_lock()</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>Release lock (if acquired). 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">M::scoped_lock::acquire(M&amp;)</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>Acquire lock on mutex.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">bool M::scoped_lock::try_acquire(M&amp;)</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>Try to acquire lock on mutex. Return true if lock acquired,
+					 false otherwise.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">M::scoped_lock::release()</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>Release lock.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">static const bool M::is_rw_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>True if mutex is reader-writer mutex; false otherwise.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">static const bool M::is_recursive_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>True if mutex is recursive mutex; false otherwise.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e70 "> 
+				  <p><samp class="codeph">static const bool M::is_fair_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e78 "> 
+				  <p>True if mutex is fair; false otherwise.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+		  </tbody>
+
+		</table>
+</div>
+
+	 <div class="section">
+		<p> The following table summarizes the classes that model the Mutex
+		  concept. 
+		</p>
+
+		<p>Mutexes that Model the Mutex Concept
+		</p>
+
+	 </div>
+
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all">
+		  <thead align="left">
+			 <tr> 
+				<th class="cellrowborder" valign="top" id="d97337e322"> 
+				  <p>
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" id="d97337e328"> 
+				  <p><strong>Scalable</strong>
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" id="d97337e336"> 
+				  <p><strong>Fair</strong>
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" id="d97337e344"> 
+				  <p><strong>Reentrant</strong>
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" id="d97337e352"> 
+				  <p><strong>Long Wait</strong>
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" id="d97337e361"> 
+				  <p><strong>Size</strong>
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+
+		  </thead>
+
+		  <tbody>
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e322 "> 
+				  <p><samp class="codeph">mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e328 "> 
+				  <p>OS dependent
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e336 "> 
+				  <p>OS dependent
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e344 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e352 "> 
+				  <p>Blocks
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e361 "> 
+				  <p>&gt;=3 words
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e322 "> 
+				  <p><samp class="codeph">recursive_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e328 "> 
+				  <p>OS dependent
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e336 "> 
+				  <p>OS dependent
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e344 "> 
+				  <p>Yes
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e352 "> 
+				  <p>Blocks
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e361 "> 
+				  <p>&gt;=3 words
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e322 "> 
+				  <p><samp class="codeph">spin_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e328 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e336 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e344 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e352 "> 
+				  <p>Yields
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e361 "> 
+				  <p>1 byte
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e322 "> 
+				  <p><samp class="codeph">speculative_spin_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e328 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e336 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e344 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e352 "> 
+				  <p>Yields
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e361 "> 
+				  <p>2 cache lines
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e322 "> 
+				  <p><samp class="codeph">queuing_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e328 "> 
+				  <p>Yes
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e336 "> 
+				  <p>Yes
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e344 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e352 "> 
+				  <p>Yields
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e361 "> 
+				  <p>1 word
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e322 "> 
+				  <p><samp class="codeph">spin_rw_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e328 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e336 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e344 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e352 "> 
+				  <p>Yields
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e361 "> 
+				  <p>1 word
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e322 "> 
+				  <p><samp class="codeph">queuing_rw_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e328 "> 
+				  <p>Yes
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e336 "> 
+				  <p>Yes
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e344 "> 
+				  <p>No
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e352 "> 
+				  <p>Yields
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e361 "> 
+				  <p>1 word
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e322 "> 
+				  <p><samp class="codeph">null_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e328 "> 
+				  <p>-
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e336 "> 
+				  <p>Yes
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e344 "> 
+				  <p>Yes
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e352 "> 
+				  <p>-
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e361 "> 
+				  <p>empty
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e322 "> 
+				  <p><samp class="codeph">null_rw_mutex</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e328 "> 
+				  <p>-
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e336 "> 
+				  <p>Yes
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e344 "> 
+				  <p>Yes
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e352 "> 
+				  <p>-
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e361 "> 
+				  <p>empty
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+		  </tbody>
+
+		</table>
+</div>
+
+	 <div class="section">
+		<p>See the Intel&reg; Threading Building Blocks Tutorial for a discussion of
+		  the mutex properties and the rationale for null mutexes.
+		</p>
+
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">C++11 Compatibility</h2>
+		
+		<p>Classes 
+		  <samp class="codeph">mutex, recursive_mutex, spin_mutex,</samp> and 
+		  <samp class="codeph">spin_rw_mutex</samp> support the C++11 interfaces
+		  described in the following table.
+		</p>
+
+		<p>C++11 Methods Available for Some Mutexes.
+		</p>
+
+	 </div>
+
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all">
+		  <thead align="left">
+			 <tr> 
+				<th class="cellrowborder" valign="top" id="d97337e790"> 
+				  <p><strong>Pseudo-Signature</strong>
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" id="d97337e798"> 
+				  <p><strong>Semantics</strong>
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+
+		  </thead>
+
+		  <tbody>
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e790 "> 
+				  <p><samp class="codeph">void M::lock()</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e798 "> 
+				  <p>Acquire lock.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e790 "> 
+				  <p><samp class="codeph">bool M::try_lock()</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e798 "> 
+				  <p>Try to acquire lock on mutex. Return true if lock acquired,
+					 false otherwise.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e790 "> 
+				  <p><samp class="codeph">void M::unlock()</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e798 "> 
+				  <p>Release lock.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e790 "> 
+				  <p><samp class="codeph">class lock_guard&lt;M&gt;</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" rowspan="2" valign="top" headers="d97337e798 "> 
+				  <p>See Section C++11 Synchronization
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e790 "> 
+				  <p><samp class="codeph">class unique_lock&lt;M&gt;</samp>
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+		  </tbody>
+
+		</table>
+</div>
+ 
+	 <div class="section">
+		<p>Classes mutex and recursive mutex also provide the C++11 idiom for
+		  accessing their underlying OS handles, as described in the following table. 
+		</p>
+
+		<p>Native handle interface (M is mutex or recursive_mutex).
+		</p>
+
+	 </div>
+ 
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all">
+		  <thead align="left">
+			 <tr> 
+				<th class="cellrowborder" valign="top" id="d97337e911"> 
+				  <p><strong>Pseudo-Signature</strong>
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" id="d97337e919"> 
+				  <p><strong>Semantics</strong>
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+
+		  </thead>
+
+		  <tbody>
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e911 "> 
+				  <p><samp class="codeph">M::native_handle_type</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e919 "> 
+				  <p>Native handle type.
+				  </p>
+ 
+				  <p>For Windows* operating system, LPCRITICAL_SECTION is the
+					 Native handle type.
+				  </p>
+ 
+				  <p>For all other operating system, it is (pthread_mutex*).
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d97337e911 "> 
+				  <p><samp class="codeph">native_handle_type M::native_handle()</samp>
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d97337e919 "> 
+				  <p>Get underlying native handle of mutex M.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+		  </tbody>
+
+		</table>
+</div>
+
+	 <div class="section">
+		<p>As an extension to C++11, class 
+		  <samp class="codeph">spin_rw_mutex</samp> also has methods 
+		  <samp class="codeph">read_lock()</samp> and 
+		  <samp class="codeph">try_read_lock()</samp> for corresponding operations that
+		  acquire reader locks.
+		</p>
+
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/synchronization/mutexes.htm">Mutexes</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../c_11_synchronization.htm">C++11 Synchronization
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

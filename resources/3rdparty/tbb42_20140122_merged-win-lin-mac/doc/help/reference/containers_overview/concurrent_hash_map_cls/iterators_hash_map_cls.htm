@@ -1,0 +1,192 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Iterators">
+<meta name="DC.subject" content="Iterators">
+<meta name="keywords" content="Iterators">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_hash_map_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../concurrent_unordered_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="iterators_hash_map_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Iterators</title>
+</head>
+<body id="iterators_hash_map_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="iterators_hash_map_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Iterators</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Template class 
+		  <samp class="codeph">concurrent_hash_map</samp> supports forward iterators; that
+		  is, iterators that can advance only forwards across a table. Reverse iterators
+		  are not supported. Concurrent operations (<samp class="codeph">count</samp>, 
+		  <samp class="codeph">find</samp>, 
+		  <samp class="codeph">insert</samp>, and 
+		  <samp class="codeph">erase</samp>) invalidate any existing iterators that point
+		  into the table, An exception to this rule is that 
+		  <samp class="codeph">count</samp> and 
+		  <samp class="codeph">find</samp> do not invalidate iterators if no insertions or
+		  erasures have occurred after the most recent call to method 
+		  <samp class="codeph">rehash</samp>. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p>Do not call concurrent operations, including 
+			 <samp class="codeph">count</samp> and 
+			 <samp class="codeph">find</samp> while iterating the table. Use 
+			 <samp class="codeph">concurrent_unordered_map</samp> if concurrent traversal and
+			 insertion are required. 
+		  </p>
+ 
+		</div> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d35160e74">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d35160e77">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d35160e74 "><span class="keyword">iterator begin()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d35160e77 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">iterator</samp> pointing to beginning of key-value
+						sequence. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d35160e74 "><span class="keyword">iterator end()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d35160e77 "> 
+					 <p><strong>Returns</strong> 
+					 </p>
+ 
+					 <p><samp class="codeph">iterator</samp> pointing to end
+						of key-value sequence. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d35160e74 "><span class="keyword">const_iterator begin()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d35160e77 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_iterator</samp> pointing to the beginning of
+						key-value sequence. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d35160e74 "><span class="keyword">const_iterator end()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d35160e77 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_iterator</samp> pointing to the end of
+						key-value sequence. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d35160e74 "><span class="keyword">std::pair&lt;iterator,
+						iterator&gt; equal_range( const Key&amp; key );</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d35160e77 "> 
+					 <p><strong>Returns</strong>: Pair of iterators 
+						<samp class="codeph">(<em>i,j</em>)</samp> such that the half-open range 
+						<samp class="codeph">[<em>i,j</em>)</samp> contains all pairs in the map
+						(and only such pairs) with keys equal to 
+						<samp class="codeph">key</samp>. Because the map has no duplicate keys,
+						the half-open range is either empty or contains a single pair. 
+					 </p>
+
+					 <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+						<p>This method is serial alternative to concurrent 
+						  <samp class="codeph">count</samp> and 
+						  <samp class="codeph">find</samp> methods. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d35160e74 "><span class="keyword">std::pair&lt;const_iterator,
+						const_iterator&gt; equal_range( const Key&amp; key ) const;</span>
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d35160e77 ">
+					 <p>See 
+						<samp class="codeph">std::pair&lt;iterator, iterator&gt; equal_range(
+						  const Key&amp; key )</samp>. 
+					 </p>
+ 
+				  </td>
+
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_hash_map_cls.htm">concurrent_hash_map Template Class</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../concurrent_unordered_map_cls.htm">concurrent_unordered_map 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

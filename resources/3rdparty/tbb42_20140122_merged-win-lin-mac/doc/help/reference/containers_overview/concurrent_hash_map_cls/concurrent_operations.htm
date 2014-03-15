@@ -1,0 +1,474 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Concurrent Operations">
+<meta name="DC.subject" content="TestMetaData">
+<meta name="keywords" content="TestMetaData">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_hash_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="concurrent_operations">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Concurrent Operations</title>
+</head>
+<body id="concurrent_operations">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="concurrent_operations"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Concurrent Operations </h1>
+ 
+  
+  
+  <div>
+	 <div class="section">
+		<p>The operations 
+		  <samp class="codeph">count</samp>, 
+		  <samp class="codeph">find</samp>, 
+		  <samp class="codeph">insert</samp>, and 
+		  <samp class="codeph">erase</samp> are the only operations that may be concurrently
+		  invoked on the same 
+		  <samp class="codeph">concurrent_hash_map</samp>. These operations search the table
+		  for a key-value pair that matches a given key. The 
+		  <samp class="codeph">find</samp> and 
+		  <samp class="codeph">insert</samp> methods each have two variants. One takes a 
+		  <samp class="codeph">const_accessor</samp> argument and provides read-only access
+		  to the desired key-value pair. The other takes an accessor argument and
+		  provides write access. Additionally, 
+		  <samp class="codeph">insert</samp> has a variant without any accessor. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+		  <p> The concurrent operations
+			 (<samp class="codeph">count</samp>, 
+			 <samp class="codeph">find</samp>, 
+			 <samp class="codeph">insert</samp>, and 
+			 <samp class="codeph">erase</samp>) invalidate any iterators pointing into the
+			 affected instance even with a 
+			 <samp class="codeph">const</samp> qualifier. It is unsafe to use these
+			 operations concurrently with any other operation. An exception to this rule is
+			 that 
+			 <samp class="codeph">count</samp> and 
+			 <samp class="codeph">find</samp> do not invalidate iterators if no insertions or
+			 erasures have occurred after the most recent call to method 
+			 <samp class="codeph">rehash</samp>.
+		  </p>
+
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3>
+		  <p>In serial code, use the 
+			 <samp class="codeph">equal_range</samp> method instead of the 
+			 <samp class="codeph">find</samp> method for lookup, since 
+			 <samp class="codeph">equal_range</samp> is faster and does not invalidate
+			 iterators.
+		  </p>
+
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3>
+		  <p>If the 
+			 <samp class="codeph">nonconst</samp> variant succeeds in finding the key, the
+			 consequent write access blocks any other thread from accessing the key until
+			 the accessor object is destroyed. Where possible, use the const variant to
+			 improve concurrency.
+		  </p>
+
+		</div> 
+		<p>Each map operation in this section returns true if
+		  the operation succeeds, false otherwise.
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+		  <p>Though there can be at most one occurrence of a
+			 given key in the map, there may be other key-value pairs in flight with the
+			 same key. These arise from the semantics of the 
+			 <samp class="codeph">insert</samp> and 
+			 <samp class="codeph">erase</samp> methods. The 
+			 <samp class="codeph">insert</samp> methods can create and destroy a temporary
+			 key-value pair that is not inserted into a map. The erase methods remove a
+			 key-value pair from the map before destroying it, thus permitting another
+			 thread to construct a similar key before the old one is destroyed.
+		  </p>
+
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3>
+		  <p>To guarantee that only one instance of a resource
+			 exists simultaneously for a given key, use the following technique:
+		  </p>
+ 
+		  <ul type="disc"> 
+			 <li>
+				<p>To construct the resource: Obtain an 
+				  <samp class="codeph">accessor</samp> to the key in the map before
+				  constructing the resource. 
+				</p>
+
+			 </li>
+ 
+			 <li>
+				<p>To destroy the resource: Obtain an 
+				  <samp class="codeph">accessor</samp> to the key, destroy the resource, and
+				  then erase the key using the accessor. 
+				</p>
+
+			 </li>
+ 
+		  </ul>
+
+		</div> 
+		<p>Below is a sketch of how this can be done. 
+		</p>
+
+		<pre>        extern tbb::concurrent_hash_map&lt;Key,Resource,HashCompare&gt; Map;
+ 
+    void ConstructResource( Key key ) {
+           accessor acc;
+           if( Map.insert(acc,key) ) {
+                   // Current thread inserted key and has exclusive access.
+                   <em>...construct the resource here...</em>
+           }
+           // Implicit destruction of acc releases lock
+    }
+ &nbsp;
+    void DestroyResource( Key key ) {
+           accessor acc;
+           if( Map.find(acc,key) ) {
+                   // Current thread found key and has exclusive access.
+                   <em>...destroy the resource here...</em>
+                   // Erase key using accessor.
+                   Map.erase(acc);
+           }
+    }</pre>
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d33398e180">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d33398e183">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">size_type count( const Key&amp;
+						key ) const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+						<p>This method may invalidate previously
+						  obtained iterators. In serial code, you can use 
+						  <samp class="codeph">equal_range</samp> that does not have such
+						  problems.
+						</p>
+
+					 </div>
+					 <p><strong>Returns</strong>: 1 if map contains key; 0
+						otherwise.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool find( const_accessor&amp;
+						result, const Key&amp; key ) const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p>Searches table for pair with given key.
+						If key is found, sets result to provide read-only access to the matching pair.
+					 </p>
+
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+						<p>This method may invalidate previously
+						  obtained iterators. In serial code, you can use 
+						  <samp class="codeph">equal_range</samp> that does not have such
+						  problems.
+						</p>
+
+					 </div> 
+					 <p><strong>Returns</strong>: True if key was found;
+						false if key was not found.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool find( accessor&amp; result,
+						const Key&amp; key )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p>Searches table for pair with given key.
+						If key is found, sets result to provide write access to the matching pair 
+					 </p>
+
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+						<p>This method may invalidate previously
+						  obtained iterators. In serial code, you can use 
+						  <samp class="codeph">equal_range</samp> that does not have such
+						  problems.
+						</p>
+
+					 </div>
+					 <p><strong>Returns</strong>: True if key was found;
+						false if key was not found.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool insert( const_accessor&amp;
+						result, const Key&amp; key )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p>Searches table for pair with given key.
+						If not present, inserts new 
+						<samp class="codeph">pair(key,T())</samp> into the table. Sets 
+						<samp class="codeph"><em>result</em></samp> to provide read-only access to
+						the matching pair.
+					 </p>
+ 
+					 <p><strong>Returns</strong> True if new pair was
+						inserted; false if key was already in the map.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool insert( accessor&amp; result,
+						const Key&amp; key )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p>Searches table for pair with given key.
+						If not present, inserts new 
+						<samp class="codeph">pair(key,T())</samp> into the table. Sets 
+						<samp class="codeph"><em>result</em></samp> to provide write access to the
+						matching pair.
+					 </p>
+ 
+					 <p><strong>Returns</strong>: True if new pair was
+						inserted; false if key was already in the map.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool insert( const_accessor&amp;
+						result, const value_type&amp; value )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p>Searches table for pair with given key.
+						If not present, inserts new pair copy-constructed from 
+						<em>value</em> into the table. Sets 
+						<em>result</em> to provide read-only access to the matching
+						pair.
+					 </p>
+ 
+					 <p><strong>Returns</strong>: True if new pair was
+						inserted; false if key was already in the map.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool insert( accessor&amp; result,
+						const value_type&amp; value )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p>Searches table for pair with given key.
+						If not present, inserts new pair copy-constructed from 
+						<samp class="codeph"><em>value</em></samp> into the table. Sets 
+						<samp class="codeph"><em>result</em></samp> to provide write access to the
+						matching pair.
+					 </p>
+ 
+					 <p><strong>Returns</strong>
+					 </p>
+ 
+					 <p>True if new pair was inserted; false if
+						key was already in the map.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool insert( const value_type&amp;
+						value )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p>Searches table for pair with given key.
+						If not present, inserts new pair copy-constructed from 
+						<samp class="codeph"><em>value</em></samp> into the table. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: True if new pair was
+						inserted; false if key was already in the map.
+					 </p>
+
+					 <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3>
+						<p> If you do not need to access the data after insertion,
+						  use the form of insert that does not take an accessor; it may work faster and
+						  use fewer locks.
+						</p>
+
+					 </div> 
+				  </td>
+ 
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">template&lt;typename
+						InputIterator&gt; void insert( InputIterator first, InputIterator last
+						)</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p>For each pair 
+						<samp class="codeph"><em>p</em></samp> in the half-open interval
+						[<samp class="codeph"><em>first,last</em></samp>), does 
+						<samp class="codeph">insert(<em>p</em>)</samp>. The order of the
+						insertions, or whether they are done concurrently, is unspecified.
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+						<p>The current implementation processes
+						  the insertions in order. Future implementations may do the insertions
+						  concurrently. If duplicate keys exist in [<samp class="codeph"><em>first,last</em></samp>),
+						  be careful to not depend on their insertion order.
+						</p>
+
+					 </div>
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool erase( const Key&amp; key
+						)</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p>Searches table for pair with given key.
+						Removes the matching pair if it exists. If there is an accessor pointing to the
+						pair, the pair is nonetheless removed from the table but its destruction is
+						deferred until all accessors stop pointing to it.
+					 </p>
+ 
+					 <p><strong>Returns</strong>: True if pair was removed
+						by the call; false if key was not found in the map.
+					 </p>
+
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool erase( const_accessor&amp;
+						item_accessor )</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p><strong>Requirements</strong>: 
+						<samp class="codeph"><em>item_accessor</em>.empty()==false</samp>
+					 </p>
+ 
+					 <p><strong>Effects</strong>
+					 </p>
+ 
+					 <p>Removes pair referenced by 
+						<samp class="codeph"><em>item_accessor</em></samp>.  If there is another <span class="keyword">const_accessor</span> 
+                        pointing to the <span class="keyword">pair</span>, the <span class="keyword">pair</span> is nonetheless 
+                        removed from the table but its destruction is deferred until all <span class="keyword">accessors</span> 
+                        stop pointing to it.  Concurrent insertion of the same key creates a new <span class="keyword">pair</span> 
+                        in the table, which can temporarily co-exist with the one being destroyed.
+					 </p>
+ 
+					 <p><strong>Returns</strong>: True if pair was removed
+						by this thread; false if pair was removed by another thread.
+					 </p>
+
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d33398e180 "><span class="keyword">bool erase( accessor&amp;
+						item_accessor )</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d33398e183 ">
+					 <p><strong>Requirements</strong>: 
+						<samp class="codeph"><em>item_accessor</em>.empty()==false</samp>
+					 </p>
+ 
+					 <p><strong>Effects</strong> Removes pair referenced by
+						<samp class="codeph"><em>item_accessor</em></samp> from the table and destroys it. 
+                        Concurrent insertion of the same key creates a new <span class="keyword">pair</span> 
+                        in the table, which can temporarily co-exist with the one being destroyed.
+					 </p>
+ 
+					 <p><strong>Returns</strong>: True if pair was removed
+						by this thread; false if pair was removed by another thread.
+					 </p>
+
+				  </td>
+
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_hash_map_cls.htm">concurrent_hash_map Template Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

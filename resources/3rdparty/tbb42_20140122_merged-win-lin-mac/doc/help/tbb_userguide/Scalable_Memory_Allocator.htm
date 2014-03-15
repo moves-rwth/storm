@@ -1,0 +1,66 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Scalable Memory Allocator">
+<meta name="DC.subject" content="Scalable Memory Allocator">
+<meta name="keywords" content="Scalable Memory Allocator">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Package_Contents.htm">
+<meta name="DC.Relation" scheme="URI" content="Memory_Allocation.htm#tutorial_Memory_Allocation">
+<meta name="DC.Relation" scheme="URI" content="Which_Dynamic_Libraries_to_Use.htm#tutorial_Which_Dynamic_Libraries_to_Use">
+<meta name="DC.Relation" scheme="URI" content="Automically_Replacing_malloc.htm#tutorial_Automically_Replacing_malloc">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Scalable_Memory_Allocator">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Scalable Memory Allocator</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Scalable_Memory_Allocator">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Scalable_Memory_Allocator"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Scalable Memory Allocator</h1>
+ 
+   
+  <div> 
+	 <p>Both the debug and release versions of Intel&reg; Threading Building Blocks
+		(Intel&reg; TBB) consists of two dynamic shared libraries, one with general support
+		and the other with a scalable memory allocator. The latter is distinguished by 
+		<samp class="codeph">malloc</samp> in its name. For example, the release versions
+		for Windows* OS are 
+		<samp class="codeph">tbb.dll</samp> and 
+		<span class="filepath">tbbmalloc.dll</span> respectively. Applications may choose
+		to use only the general library, or only the scalable memory allocator, or
+		both. See the links below for more information on memory allocation. 
+	 </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Package_Contents.htm">Package Contents</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Memory_Allocation.htm#tutorial_Memory_Allocation">Memory Allocation 
+		  </a></div>
+<div><a href="Which_Dynamic_Libraries_to_Use.htm#tutorial_Which_Dynamic_Libraries_to_Use">Which Dynamic Libraries to Use 
+		  </a></div>
+<div><a href="Automically_Replacing_malloc.htm#tutorial_Automically_Replacing_malloc">Automically Replacing malloc and Other C/C++ Functions for
+			 Dynamic Memory Allocation 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

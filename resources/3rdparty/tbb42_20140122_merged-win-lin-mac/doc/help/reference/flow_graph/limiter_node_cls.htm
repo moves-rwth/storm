@@ -1,0 +1,431 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="limiter_node Template Class">
+<meta name="DC.subject" content="limiter_node Template Class">
+<meta name="keywords" content="limiter_node Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Relation" scheme="URI" content="message_passing_protocol.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="limiter_node_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>limiter_node Template Class</title>
+</head>
+<body id="limiter_node_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="limiter_node_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">limiter_node Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>An node that counts and limits the number of messages that pass
+		  through it. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template &lt; typename T &gt; class limiter_node;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/flow_graph.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <span class="keyword">limiter_node</span> is a 
+		  <span class="keyword">graph_node</span>, 
+		  <span class="keyword">receiver&lt;T&gt;</span> and 
+		  <span class="keyword">sender&lt;T&gt;</span> that broadcasts messages to all of
+		  its successors. It keeps a counter C of the number of broadcasts it makes and
+		  does not accept new messages once its user-specified 
+		  <span class="keyword">threshold</span> is reached. The internal count of
+		  broadcasts C can be decremented through use of its embedded 
+		  <span class="keyword">continue_receiver decrement</span>. 
+		</p>
+ 
+		<p>The behavior of a call to a 
+		  <span class="keyword">limiter_node</span>'s 
+		  <span class="keyword">try_put</span> is shown below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl27"><!-- --></a><table cellpadding="4" summary="" id="tbl27" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Behavior of a call to a limiter_node's try_put</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" align="center" valign="top" width="30%" id="d75154e95"> 
+				  <p>Value of counter C 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" align="center" valign="top" width="70%" id="d75154e101"> 
+				  <p>bool try_put( const input_type &amp;v ) 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="30%" headers="d75154e95 "> 
+				  <p>C &lt; threshold 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="70%" headers="d75154e101 "> 
+				  <p>C is incremented and 
+					 <span class="keyword">v</span> is broadcast to all successors. If no
+					 successor accepts the message, C is decremented. Returns 
+					 <span class="keyword">true</span> if the message was successfully
+					 broadcast to at least one successor and 
+					 <span class="keyword">false</span> otherwise. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="30%" headers="d75154e95 "> 
+				  <p>C == threshold 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="70%" headers="d75154e101 "> 
+				  <p>Returns 
+					 <span class="keyword">false</span>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<p>When 
+		  <span class="keyword">try_put</span> is called on the member object 
+		  <span class="keyword">decrement</span>, the 
+		  <span class="keyword">limiter_node</span> will try to get a message from one of
+		  its known predecessors and forward that message to all of its successors. If it
+		  cannot obtain a message from a predecessor, it will decrement C. Rejection of
+		  messages by successors and failed gets from predecessors are handled using the
+		  protocol in the Message Passing Protocol, see link below. 
+		</p>
+ 
+		<p><span class="keyword">T</span> must be copy-constructible and assignable. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+namespace flow {
+ 
+template&lt; typename T &gt;
+class limiter_node : public graph_node, public receiver&lt;T&gt;,
+  public sender&lt;T&gt; {
+public:
+    limiter_node( graph &amp;g, size_t threshold,
+                  int number_of_decrement_predecessors = 0 );
+    limiter_node( const limiter_node &amp;src );
+ 
+    // a continue_receiver
+    implementation-dependent-type decrement;
+ 
+    // receiver&lt;T&gt;
+    typedef T input_type;
+    typedef sender&lt;input_type&gt; predecessor_type;
+    bool try_put( const input_type &amp;v );
+    bool register_predecessor( predecessor_type &amp;p );
+    bool remove_predecessor( predecessor_type &amp;p );
+ 
+    // sender&lt;T&gt;
+    typedef T output_type;
+    typedef receiver&lt;output_type&gt; successor_type;
+    bool register_successor( successor_type &amp;r );
+    bool remove_successor( successor_type &amp;r );
+    bool try_get( output_type &amp;v );
+    bool try_reserve( output_type &amp;v );
+    bool try_release( );
+    bool try_consume( );
+};
+ 
+}
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d75154e260">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d75154e263">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">limiter_node( graph &amp;g, size_t
+						threshold, int number_of_decrement_predecessors = 0 )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Constructs a 
+						<span class="keyword">limiter_node</span> that allows up to 
+						<span class="keyword">threshold</span> items to pass through before
+						rejecting 
+						<span class="keyword">try_put</span>'s. Optionally a 
+						<span class="keyword">number_of_decrement_predecessors</span> value can
+						be supplied. This value is passed on to the 
+						<span class="keyword">continue_receiver decrement</span>'s constructor.
+						
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">limiter_node( const limiter_node
+						&amp;src )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Constructs a 
+						<span class="keyword">limiter_node</span> that has the same initial
+						state that 
+						<span class="keyword">src</span> had at its construction. The new 
+						<span class="keyword">limiter_node</span> will belong to the same 
+						<span class="keyword">graph g</span> as 
+						<span class="keyword">src</span>, have the same 
+						<span class="keyword">threshold</span>, and have the same initial 
+						<span class="keyword">number_of_decrement_predecessors</span>. The list
+						of predecessors, the list of successors, and the current count of broadcasts,
+						C, are NOT copied from 
+						<span class="keyword">src</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">bool try_put( const input_type
+						&amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>If the broadcast count is below the threshold, 
+						<span class="keyword">v</span> is broadcast to all successors. For each
+						successor 
+						<span class="keyword">s</span>, if 
+						<span class="keyword">s.try_put( v ) == false &amp;&amp;
+						  s.register_predecessor( *this ) == true</span>, then 
+						<span class="keyword">s</span> is removed from the set of succesors.
+						Otherwise, 
+						<span class="keyword">s</span> will remain in the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if 
+						<span class="keyword">v</span> is broadcast. 
+						<span class="keyword">false</span> if 
+						<span class="keyword">v</span> is not broadcast because the threshold
+						has been reached. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">bool register_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Adds a predecessor that can be pulled from once the
+						broadcast count falls below the threshold. 
+					 </p>
+ 
+					 <p>Adds 
+						<span class="keyword">p</span> to the set of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>:<span class="keyword">true</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">bool remove_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Removes 
+						<span class="keyword">p</span> from the set of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">bool register_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Adds 
+						<span class="keyword">r</span> to the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">bool remove_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Removes 
+						<span class="keyword">r</span> from the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">bool try_get( output_type &amp;v
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Does not contain buffering and therefore cannot be pulled
+						from. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">bool try_reserve( output_type
+						&amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Does not support reservations. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">bool try_release( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Does not support reservations. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d75154e260 "><span class="keyword">bool try_consume( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d75154e263 "> 
+					 <p>Does not support reservations. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="message_passing_protocol.htm">Message Passing Protocol 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

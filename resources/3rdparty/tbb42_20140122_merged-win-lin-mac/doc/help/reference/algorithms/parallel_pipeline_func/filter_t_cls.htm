@@ -1,0 +1,269 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="filter_t Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/algorithms/parallel_pipeline_func.htm">
+<meta name="DC.Relation" scheme="URI" content="../pipeline_cls/filter_cls.htm#filter_cls">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="filter_t_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>filter_t Template Class</title>
+</head>
+<body id="filter_t_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="filter_t_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">filter_t Template Class</h1>
+ 
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 A filter or composite filter used in conjunction
+		with function 
+		<samp class="codeph">parallel_pipeline</samp>. 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre> #include "tbb/pipeline.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename T, typename U&gt; class filter_t;
+template&lt;typename T, typename U, typename Func&gt;
+filter_t&lt;T,U&gt; make_filter( filter::mode mode, const Func&amp; f );
+template&lt;typename T, typename V, typename U&gt;
+filter_t&lt;T,U&gt; operator&amp;( const filter_t&lt;T,V&gt;&amp; left, 
+                         const filter_t&lt;V,U&gt;&amp; right );
+</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p> A<samp class="codeph"> filter_t</samp> is a strongly typed filter that specifies
+		  its input and output types. A<samp class="codeph"> filter_t 
+		  </samp>can be constructed from a functor or by composing of two 
+		  <samp class="codeph">filter_t 
+		  </samp>objects with 
+		  <samp class="codeph">operator&amp;</samp> . The same<samp class="codeph"> filter_t 
+		  </samp>object can be shared by multiple<samp class="codeph"> &amp; 
+		  </samp>expressions. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+    template&lt;typename T, typename U&gt;
+    class filter_t {
+    public:
+        filter_t();
+        filter_t( const filter_t&lt;T,U&gt;&amp; rhs );
+        template&lt;typename Func&gt;
+        filter_t( filter::mode mode, const Func&amp; func );
+        void operator=( const filter_t&lt;T,U&gt;&amp; rhs );
+        ~filter_t();
+        void clear();
+    };
+
+    template&lt;typename T, typename U, typename Func&gt;
+    filter_t&lt;T,U&gt; make_filter( filter::mode mode, const Func&amp; f );
+    template&lt;typename T, typename V, typename U&gt;
+    filter_t&lt;T,U&gt; operator&amp;( const filter_t&lt;T,V&gt;&amp; left, 
+                             const filter_t&lt;V,U&gt;&amp; right );
+}
+</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d4861e85">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d4861e88">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d4861e85 "><span class="keyword">filter _t()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d4861e88 "> 
+					 <p> Construct an undefined filter. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+						<p>The effect of using an undefined filter by 
+						  <samp class="codeph">operator&amp;</samp> or 
+						  <samp class="codeph">parallel_pipeline</samp> is undefined. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d4861e85 "><span class="keyword">filter_t( const
+						filter_t&lt;T,U&gt;&amp; rhs )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d4861e88 "> 
+					 <p> Construct a copy of 
+						<em>rhs</em>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d4861e85 "><span class="keyword">template&lt;typename Func&gt;
+						filter_t( filter::mode mode, const Func&amp; f )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d4861e88 "> 
+					 <p>Construct a 
+						<samp class="codeph">filter_t</samp> that uses a copy of functor 
+						<samp class="codeph"><em>f</em></samp> to map an input value 
+						<em>t</em> of type 
+						<em>T</em> to an output value 
+						<em>u</em> of type 
+						<em>U</em>. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p>When parallel_pipeline uses the 
+						  <samp class="codeph">filter_t</samp>, it computes 
+						  <em>u</em> by evaluating 
+						  <samp class="codeph"><em>f</em>(<em>t</em>)</samp>, unless 
+						  <em>T</em> is 
+						  <samp class="codeph">void</samp>. In the void case 
+						  <em>u</em> is computed by the expression 
+						  <em>u</em>=<samp class="codeph"><em>f</em>(<em>fc</em>)</samp>, where 
+						  <samp class="codeph"><em>fc</em></samp> is of type flow_control. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d4861e85 "><span class="keyword">void operator=( const
+						filter_t&lt;T,U&gt;&amp; rhs )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d4861e88 ">
+					 <p>Update 
+						<samp class="codeph">*this</samp> to use the functor associated with 
+						<em>rhs</em>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d4861e85 "><span class="keyword">~filter_t()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d4861e88 ">
+					 <p>Destroy the 
+						<samp class="codeph">filter_t</samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d4861e85 "><span class="keyword">void clear()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d4861e88 ">
+					 <p> Set 
+						<samp class="codeph">*this</samp> to an undefined filter. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d4861e85 "><span class="keyword">template&lt;typename T, typename
+						U, typename Func&gt; filter_t&lt;T,U&gt; make_filter(filter::mode mode, const
+						Func&amp; f)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d4861e88 ">
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">filter_t&lt;T,U&gt;(mode,f)</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d4861e85 "><span class="keyword">template&lt;typename T, typename
+						V, typename U&gt; filter_t&lt;T,U&gt; operator&amp; (const
+						filter_t&lt;T,V&gt;&amp; left, const filter_t&lt;V,U&gt;&amp; right)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d4861e88 ">
+					 <p><strong>Requires</strong>: The output type of 
+						<em>left</em> must match the input type of 
+						<em>right</em>. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: A<samp class="codeph"> filter_t</samp> representing the
+						composition of filters 
+						<em>left</em> and 
+						<em>right</em>. The composition behaves as if the output value
+						of 
+						<em>left</em> becomes the input value of 
+						<em>right</em>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/algorithms/parallel_pipeline_func.htm">parallel_pipeline Function</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../pipeline_cls/filter_cls.htm#filter_cls">filter Class 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

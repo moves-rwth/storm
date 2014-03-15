@@ -1,0 +1,43 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+  <title>Intel® Threading Building Blocks Documentation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<script type="text/javascript" language="javascript">
+<!--
+
+// ensure page is not loaded inside another frame
+if (top.location != self.location) {top.location = self.location;} 
+
+
+//-- eg. hh_start.htm#index2.htm                -- sets the content frame only
+//-- eg. hh_start.htm#index2.htm+hh_search.htm  -- sets the content and nav frame
+//-- eg. hh_start.htm#+hh_search.htm            -- sets the nav frame only
+var LFile="hh_toc.htm";
+var RFile="main/title.htm";
+var Param=window.location.hash.substring(1);
+var Params=Param.split("+");
+if (Param != "") {
+  if ((Params.length == 2) && (Params[1] != "")) LFile=Params[1];
+  if (Params[0] != "") RFile=Params[0];
+}
+
+//debug line
+//alert('LFile='+ LFile + ', RFile='+RFile);
+
+document.write('<frameset cols="263,100%" frameborder="1" border="3" framespacing="3">');
+document.write('  <frame src="'+LFile+'" name="left" scrolling="no" frameborder="1" />');
+document.write('  <frame src="'+RFile+'" name="right" scrolling="auto" frameborder="1" />');
+document.write('    <noframes>');
+document.write('      <body>');
+document.write('      <p>This page uses frames, but your browser does not support frames.</p>');
+document.write('      </body>');
+document.write('    </noframes>');
+document.write('</frameset>');
+
+//-->
+</script>
+</html>

@@ -1,0 +1,33 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{b0b51c77-6a57-47e6-b25b-4c5a4af67c6f}") = "som", "som.icproj", "{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}.Debug|Win32.ActiveCfg = Debug|Win32
+		{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}.Debug|Win32.Build.0 = Debug|Win32
+		{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}.Debug|x64.ActiveCfg = Debug|x64
+		{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}.Debug|x64.Build.0 = Debug|x64
+		{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}.Release|Win32.ActiveCfg = Release|Win32
+		{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}.Release|Win32.Build.0 = Release|Win32
+		{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}.Release|x64.ActiveCfg = Release|x64
+		{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}.Release|x64.Build.0 = Release|x64
+		{b2ae2edc-697b-4c85-ac0d-e3e523d20d6d}.Release|x64.Build.0 = Release|x64
+		{b2ae2edc-697b-4c85-ac0d-e3e523d20d6d}.Release|x64.ActiveCfg = Release|x64
+		{b2ae2edc-697b-4c85-ac0d-e3e523d20d6d}.Release|Win32.Build.0 = Release|Win32
+		{b2ae2edc-697b-4c85-ac0d-e3e523d20d6d}.Release|Win32.ActiveCfg = Release|Win32
+		{b2ae2edc-697b-4c85-ac0d-e3e523d20d6d}.Debug|x64.Build.0 = Debug|x64
+		{b2ae2edc-697b-4c85-ac0d-e3e523d20d6d}.Debug|x64.ActiveCfg = Debug|x64
+		{b2ae2edc-697b-4c85-ac0d-e3e523d20d6d}.Debug|Win32.Build.0 = Debug|Win32
+		{b2ae2edc-697b-4c85-ac0d-e3e523d20d6d}.Debug|Win32.ActiveCfg = Debug|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

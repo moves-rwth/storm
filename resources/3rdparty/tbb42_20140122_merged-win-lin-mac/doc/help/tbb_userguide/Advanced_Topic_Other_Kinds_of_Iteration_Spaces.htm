@@ -1,0 +1,123 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Advanced Topic: Other Kinds of Iteration Spaces">
+<meta name="DC.subject" content="Advanced Topic: Other Kinds of Iteration Spaces">
+<meta name="keywords" content="Advanced Topic: Other Kinds of Iteration Spaces">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Parallelizing_Simple_Loops.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Advanced_Topic_Other_Kinds_of_Iteration_Spaces">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Advanced Topic: Other Kinds of Iteration Spaces</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Advanced_Topic_Other_Kinds_of_Iteration_Spaces">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Advanced_Topic_Other_Kinds_of_Iteration_Spaces"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Advanced Topic: Other Kinds of Iteration Spaces</h1>
+ 
+  
+  <div>
+	 <p>The examples so far have used the class 
+		<samp class="codeph">blocked_range&lt;T&gt;</samp> to specify ranges. This class is
+		useful in many situations, but it does not fit every situation. You can use
+		Intel&reg; Threading Building Blocks to define your own iteration space objects.
+		The object must specify how it can be split into subspaces by providing two
+		methods and a "splitting constructor". If your class is called 
+		<samp class="codeph">R</samp>, the methods and constructor could be as follows:
+	 </p>
+
+	 <pre>class R {
+    // True if range is empty
+    bool empty() const;
+    // True if range can be split into non-empty subranges
+    bool is_divisible() const;
+    // Split r into subranges r and *this
+    R( R&amp; r, split );
+    ...
+};</pre>
+	 <p>The method 
+		<samp class="codeph">empty</samp> should return true if the range is empty. The
+		method 
+		<samp class="codeph">is_divisible</samp> should return true if the range can be
+		split into two non-empty subspaces, and such a split is worth the overhead. The
+		splitting constructor should take two arguments: 
+	 </p>
+ 
+	 <ul type="disc">
+		<li>
+		  <p>The first of type 
+			 <samp class="codeph">R</samp> 
+		  </p>
+
+		</li>
+
+		<li>
+		  <p>The second of type 
+	 <span class="option">tbb::split</span>
+	 </p>
+
+	 </li>
+
+	 </ul>
+
+	 <p>The second argument is not used; it serves only to distinguish the
+		constructor from an ordinary copy constructor. The splitting constructor should
+		attempt to split 
+		<samp class="codeph">r</samp> roughly into two halves, and update 
+		<samp class="codeph">r</samp> to be the first half, and let constructed object be
+		the second half. The two halves should be non-empty. The parallel algorithm
+		templates call the splitting constructor on 
+		<samp class="codeph">r</samp> only if 
+		<samp class="codeph">r.is_divisible</samp> is true. 
+	 </p>
+
+	 <p>The iteration space does not have to be linear. Look at 
+		<samp class="codeph">tbb/blocked_range2d.h</samp> for an example of a range that is
+		two-dimensional. Its splitting constructor attempts to split the range along
+		its longest axis. When used with 
+		<samp class="codeph">parallel_for</samp>, it causes the loop to be "recursively
+		blocked" in a way that improves cache usage. This nice cache behavior means
+		that using 
+		<samp class="codeph">parallel_for</samp> over a 
+		<samp class="codeph">blocked_range2d&lt;T&gt;</samp> can make a loop run faster than
+		the sequential equivalent, even on a single processor.
+	 </p>
+
+	 <div class="section"><h2 class="sectiontitle">Code Samples</h2>
+		
+		<p>The directory 
+		  <samp class="codeph">examples/parallel_for/seismic</samp> contains a simple
+		  seismic wave simulation based on 
+		  <samp class="codeph">parallel_for</samp> and 
+		  <samp class="codeph">blocked_range</samp>. The directory 
+		  <samp class="codeph">examples/parallel_for/tachyon</samp> contains a more complex
+		  example of a ray tracer based on 
+		  <samp class="codeph">parallel_for</samp> and 
+		  <samp class="codeph">blocked_range2d</samp>.
+		</p>
+
+	 </div>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Parallelizing_Simple_Loops.htm">Parallelizing Simple Loops</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

@@ -1,0 +1,536 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Mutex Flavors">
+<meta name="DC.subject" content="Mutex Flavors">
+<meta name="keywords" content="Mutex Flavors">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Mutual_Exclusion.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Mutex_Flavors">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Mutex Flavors</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Mutex_Flavors">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Mutex_Flavors"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Mutex Flavors</h1>
+ 
+   
+  <div> 
+	 <p>Connoisseurs of mutexes distinguish various attributes of mutexes. It
+		helps to know some of these, because they involve tradeoffs of generality and
+		efficiency. Picking the right one often helps performance. Mutexes can be
+		described by the following qualities, also summarized in the table below. 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p><strong>Scalable</strong>. Some mutexes are called 
+			 <em>scalable</em>. In a strict sense, this is not an accurate name,
+			 because a mutex limits execution to one thread at a time. A 
+			 <em>scalable mutex</em> is one that does not do 
+			 <em>worse</em> than this. A mutex can do worse than serialize execution
+			 if the waiting threads consume excessive processor cycles and memory bandwidth,
+			 reducing the speed of threads trying to do real work. Scalable mutexes are
+			 often slower than non-scalable mutexes under light contention, so a
+			 non-scalable mutex may be better. When in doubt, use a scalable mutex. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Fair</strong>. Mutexes can be 
+			 <em>fair</em> or 
+			 <em>unfair</em>. A fair mutex lets threads through in the order they
+			 arrived. Fair mutexes avoid starving threads. Each thread gets its turn.
+			 However, unfair mutexes can be faster, because they let threads that are
+			 running go through first, instead of the thread that is next in line which may
+			 be sleeping on account of an interrupt. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Recursive</strong>. Mutexes can be 
+			 <em>recursive</em> or 
+			 <em>non-recursive</em>. A recursive mutex allows a thread that is
+			 already holding a lock on the mutex to acquire another lock on the mutex. This
+			 is useful in some recursive algorithms, but typically adds overhead to the lock
+			 implementation. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Yield or Block</strong>. This is an implementation detail that impacts
+			 performance. On long waits, an Intel&reg; Threading Building Blocks (Intel&reg; TBB)
+			 mutex either 
+			 <em>yields</em> or 
+			 <em>blocks</em>. Here 
+			 <em>yields</em> means to repeatedly poll whether progress can be made,
+			 and if not, temporarily yield<a href="#ftn5"><sup><sup>[5]</sup></sup></a> the
+			 processor. To 
+			 <em>block</em> means to yield the processor until the mutex permits
+			 progress. Use the yielding mutexes if waits are typically short and blocking
+			 mutexes if waits are typically long. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>The following is a summary of mutex behaviors: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p><samp class="codeph">spin_mutex</samp> is non-scalable, unfair, non-recursive,
+			 and spins in user space. It would seem to be the worst of all possible worlds,
+			 except that it is 
+			 <em>very fast</em> in 
+			 <em>lightly contended</em> situations. If you can design your program
+			 so that contention is somehow spread out among many 
+			 <samp class="codeph">spin_mutex</samp> objects, you can improve performance over
+			 using other kinds of mutexes. If a mutex is heavily contended, your algorithm
+			 will not scale anyway. Consider redesigning the algorithm instead of looking
+			 for a more efficient lock. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><samp class="codeph">queuing_mutex</samp> is scalable, fair, non-recursive, and
+			 spins in user space. Use it when scalability and fairness are important. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><samp class="codeph">spin_rw_mutex</samp> and 
+			 <samp class="codeph">queuing_rw_mutex</samp> are similar to 
+			 <samp class="codeph">spin_mutex</samp> and 
+			 <samp class="codeph">queuing_mutex</samp>, but additionally support 
+			 <em>reader</em> locks. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><samp class="codeph">mutex</samp> and 
+			 <samp class="codeph">recursive_mutex</samp> are wrappers around the system’s
+			 "native" mutual exclusion. On Windows* operating systems it is implemented on
+			 top of 
+			 <samp class="codeph">CRITICAL_SECTION</samp>. On Linux* and OS X* operating
+			 systems it is implemented on top of 
+			 <samp class="codeph">pthread</samp> mutex. The advantages of using the wrapper
+			 are that it adds an exception-safe interface and it provides an interface
+			 identical to the other mutexes in Intel&reg; TBB, which makes it easy to swap in a
+			 different kind of mutex later if warranted by performance measurements. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><samp class="codeph">null_mutex</samp> and 
+			 <samp class="codeph">null_rw_mutex</samp> do nothing. They can be useful as
+			 template arguments. For example, suppose you are defining a container template
+			 and know that some instantiations will be shared by multiple threads and need
+			 internal locking, but others will be private to a thread and not need locking.
+			 You can define the template to take a Mutex type parameter. The parameter can
+			 be one of the real mutex types when locking is necessary, and 
+			 <samp class="codeph">null_mutex</samp> when locking is unnecessary. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 
+<div class="tablenoborder"><a name="tbl11"><!-- --></a><table cellpadding="4" summary="" id="tbl11" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Traits and Behaviors of Mutexes</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" valign="top" width="26.247689463955638%" id="d142672e207"> 
+			 <p>Mutex 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="17.744916820702404%" id="d142672e213"> 
+			 <p>Scalable 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="17.56007393715342%" id="d142672e219"> 
+			 <p>Fair 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="14.602587800369685%" id="d142672e225"> 
+			 <p>Recursive 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="12.199630314232902%" id="d142672e231"> 
+			 <p>Long Wait 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="11.645101663585953%" id="d142672e238"> 
+			 <p>Size 
+			 </p>
+ 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="26.247689463955638%" headers="d142672e207 "> 
+			 <p><samp class="codeph">mutex</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.744916820702404%" headers="d142672e213 "> 
+			 <p>OS dependent 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.56007393715342%" headers="d142672e219 "> 
+			 <p>OS dependent 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="14.602587800369685%" headers="d142672e225 "> 
+			 <p>no 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="12.199630314232902%" headers="d142672e231 "> 
+			 <p>blocks 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="11.645101663585953%" headers="d142672e238 "> 
+			 <p>≥ 3 words 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="26.247689463955638%" headers="d142672e207 "> 
+			 <p><samp class="codeph">recursive_mutex</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.744916820702404%" headers="d142672e213 "> 
+			 <p>OS dependent 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.56007393715342%" headers="d142672e219 "> 
+			 <p>OS dependent 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="14.602587800369685%" headers="d142672e225 "> 
+			 <p>yes 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="12.199630314232902%" headers="d142672e231 "> 
+			 <p>blocks 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="11.645101663585953%" headers="d142672e238 "> 
+			 <p>≥ 3 words 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="26.247689463955638%" headers="d142672e207 "> 
+			 <p><samp class="codeph">spin_mutex</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.744916820702404%" headers="d142672e213 "> 
+			 <p>no 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.56007393715342%" headers="d142672e219 "> 
+			 <p>no 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="14.602587800369685%" headers="d142672e225 "> 
+			 <p>no 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="12.199630314232902%" headers="d142672e231 "> 
+			 <p>yields 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="11.645101663585953%" headers="d142672e238 "> 
+			 <p>1 byte 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="26.247689463955638%" headers="d142672e207 "> 
+			 <p><samp class="codeph">queuing_mutex</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.744916820702404%" headers="d142672e213 "> 
+			 <p>✓ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.56007393715342%" headers="d142672e219 "> 
+			 <p>✓ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="14.602587800369685%" headers="d142672e225 "> 
+			 <p>no 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="12.199630314232902%" headers="d142672e231 "> 
+			 <p>yields 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="11.645101663585953%" headers="d142672e238 "> 
+			 <p>1 word 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="26.247689463955638%" headers="d142672e207 "> 
+			 <p><samp class="codeph">spin_rw_mutex</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.744916820702404%" headers="d142672e213 "> 
+			 <p>no 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.56007393715342%" headers="d142672e219 "> 
+			 <p>no 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="14.602587800369685%" headers="d142672e225 "> 
+			 <p>no 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="12.199630314232902%" headers="d142672e231 "> 
+			 <p>yields 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="11.645101663585953%" headers="d142672e238 "> 
+			 <p>1 word 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="26.247689463955638%" headers="d142672e207 "> 
+			 <p><samp class="codeph">queuing_rw_mutex</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.744916820702404%" headers="d142672e213 "> 
+			 <p>✓ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.56007393715342%" headers="d142672e219 "> 
+			 <p>✓ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="14.602587800369685%" headers="d142672e225 "> 
+			 <p>no 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="12.199630314232902%" headers="d142672e231 "> 
+			 <p>yields 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="11.645101663585953%" headers="d142672e238 "> 
+			 <p>1 word 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="26.247689463955638%" headers="d142672e207 "> 
+			 <p><samp class="codeph">null_mutex</samp><a href="#ftn6"><sup><sup>[6]</sup></sup></a> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.744916820702404%" headers="d142672e213 "> 
+			 <p>moot 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.56007393715342%" headers="d142672e219 "> 
+			 <p>✓ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="14.602587800369685%" headers="d142672e225 "> 
+			 <p>✓ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="12.199630314232902%" headers="d142672e231 "> 
+			 <p>never 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="11.645101663585953%" headers="d142672e238 "> 
+			 <p>empty 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="26.247689463955638%" headers="d142672e207 "> 
+			 <p><samp class="codeph">null_rw_mutex</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.744916820702404%" headers="d142672e213 "> 
+			 <p>moot 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="17.56007393715342%" headers="d142672e219 "> 
+			 <p>✓ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="14.602587800369685%" headers="d142672e225 "> 
+			 <p>✓ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="12.199630314232902%" headers="d142672e231 "> 
+			 <p>never 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="11.645101663585953%" headers="d142672e238 "> 
+			 <p>empty 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Mutual_Exclusion.htm">Mutual Exclusion</a></div>
+</div>
+<div></div>
+<p class="tfootnote"><a id="ftn5"><sup>[5]</sup></a>   The yielding is implemented via 
+				<samp class="codeph">SwitchToThread()</samp> on Microsoft Windows* operating
+				systems and by 
+				<samp class="codeph">sched_yield()</samp> on other systems.</p><p class="tfootnote"><a id="ftn6"><sup>[6]</sup></a>   Null mutexes are considered
+				  fair by Intel&reg; TBB because they cannot cause starvation. They lack any
+				  non-static data members.</p>
+</body>
+</html>

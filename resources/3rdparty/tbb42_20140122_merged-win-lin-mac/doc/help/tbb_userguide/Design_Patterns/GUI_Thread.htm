@@ -1,0 +1,284 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="GUI Thread">
+<meta name="DC.subject" content="GUI Thread">
+<meta name="keywords" content="GUI Thread">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="Non-Preemptive_Priorities.htm#Non-Preemptive_Priorities">
+<meta name="DC.Relation" scheme="URI" content="Local_Serializer.htm#Local_Serializer">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="GUI_Thread">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>GUI Thread</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="GUI_Thread">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="GUI_Thread"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">GUI Thread</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		 
+		<p>A user interface thread must remain responsive to user requests, and
+		  must not get bogged down in long computations. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>Graphical user interfaces often have a dedicated thread ("GUI thread")
+		  for servicing user interactions. The thread must remain responsive to user
+		  requests even while the application has long computations running. For example,
+		  the user might want to press a "cancel" button to stop the long running
+		  computation. If the GUI thread takes part in the long running computation, it
+		  will not be able to respond to user requests. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<ul type="disc"> 
+		  <li> 
+			 <p>The GUI thread services an event loop. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The GUI thread needs to offload work onto other threads without
+				waiting for the work to complete. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The GUI thread must be responsive to the event loop and not become
+				dedicated to doing the offloaded work. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Related</h2> 
+		 
+		<ul type="disc"> 
+		  <li>Non-Preemptive Priorities 
+		  </li>
+ 
+		  <li>Local Serializer 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		 
+		<p>The GUI thread offloads the work by firing off a task to do it using
+		  method 
+		  <samp class="codeph">task::enqueue</samp>. When finished, the task posts an event
+		  to the GUI thread to indicate that the work is done. The semantics of 
+		  <samp class="codeph">enqueue</samp> cause the task to eventually run on a worker
+		  thread distinct from the calling thread. The method was introduced in Intel&reg;
+		  Threading Building Blocks (Intel&reg; TBB) 3.0. 
+		</p>
+ 
+		<p>The following figure sketches the communication paths. Items in black
+		  are executed by the GUI thread; items in blue are executed by another thread. 
+		</p>
+ 
+		<div class="fignone" id="fig5"><a name="fig5"><!-- --></a><span class="figcap">GUI Thread pattern</span> 
+		  <br><img width="400" height="150" src="Images/image007.jpg"><br> 
+		</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>The example is for the Microsoft Windows* operating systems, though
+		  similar principles apply to any GUI using an event loop idiom. For each event,
+		  the GUI thread calls a user-defined function 
+		  <samp class="codeph">WndProc</samp>. to process an event. The key parts are shown
+		  in 
+		  <samp class="codeph"><span style="color:blue"><strong>bold font</strong></span></samp>. 
+		</p>
+ 
+		<pre><span style="color:blue"><strong>// Event posted from enqueued task when it finishes its work</strong></span><strong>.</strong>
+<span style="color:blue"><strong>const UINT WM_POP_FOO = WM_USER+0;</strong></span>
+
+<span style="color:blue"><strong>// Queue for transmitting results from enqueued task to GUI thread</strong></span><span style="color:blue"><strong>.</strong></span>
+<span style="color:blue"><strong>tbb::concurrent_queue&lt;Foo&gt;ResultQueue;</strong></span>
+
+<span style="color:blue"><strong>// GUI thread’s private copy of most recently computed result.</strong></span>
+<span style="color:blue"><strong>Foo CurrentResult;</strong></span>
+&nbsp;
+LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+   switch(msg) {
+       case WM_COMMAND:
+           switch (LOWORD(wParam)) {
+               case IDM_LONGRUNNINGWORK:
+                   <span style="color:blue"><strong>// User requested a long computation. Delegate it to another thread.</strong></span>
+                   <span style="color:blue"><strong>LaunchLongRunningWork(hWnd);</strong></span>
+                   break;
+               case IDM_EXIT:
+                   DestroyWindow(hWnd);
+                   break;
+               default:
+                   return DefWindowProc(hWnd, msg, wParam, lParam);
+           }
+           break;
+       <span style="color:blue"><strong>case WM_POP_FOO:</strong></span>
+           <span style="color:blue"><strong>// There is another result in ResultQueue for me to grab.</strong></span>
+           <span style="color:blue"><strong>ResultQueue.try_pop(CurrentResult);</strong></span>
+           <span style="color:blue"><strong>// Update the window with the latest result.</strong></span>
+           <span style="color:blue"><strong>RedrawWindow</strong></span>( hWnd, NULL, NULL, RDW_ERASE|RDW_INVALIDATE );
+           break;
+       case WM_PAINT: 
+           <span style="color:blue"><strong><em>Repaint the window using CurrentResult</em></strong></span>
+           break;
+       case WM_DESTROY:
+           PostQuitMessage(0);
+           break;
+       default:
+           return DefWindowProc( hWnd, msg, wParam, lParam );
+   }
+   return 0;
+} </pre> 
+		<p>The GUI thread processes long computations as follows: 
+		</p>
+ 
+		<ol> 
+		  <li> 
+			 <p>The GUI thread calls 
+				<samp class="codeph">LongRunningWork</samp>, which hands off the work to a
+				worker thread and immediately returns. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The GUI thread continues servicing the event loop. If it has to
+				repaint the window, it uses the value of<samp class="codeph">CurrentResult</samp>, which
+				is the most recent 
+				<samp class="codeph">Foo</samp> that it has seen. 
+			 </p>
+ 
+		  </li>
+ 
+		</ol>
+ 
+		<p>When a worker finishes the long computation, it pushes the result into
+		  ResultQueue, and sends a message WM_POP_FOO to the GUI thread. 
+		</p>
+ 
+		<ol> 
+		  <li> 
+			 <p>The GUI thread services a 
+				<samp class="codeph">WM_POP_FOO</samp> message by popping an item from
+				ResultQueue into CurrentResult. The 
+				<samp class="codeph">try_pop</samp> always succeeds because there is exactly
+				one 
+				<samp class="codeph">WM_POP_FOO</samp> message for each item in 
+				<samp class="codeph">ResultQueue</samp>. 
+			 </p>
+ 
+		  </li>
+ 
+		</ol>
+ 
+		<p>Routine 
+		  <samp class="codeph">LaunchLongRunningWork</samp> creates a root task and launches
+		  it using method 
+		  <samp class="codeph">task::enqeueue</samp>. The task is a root task because it has
+		  no successor task waiting on it. 
+		</p>
+ 
+		<pre>class LongTask: public tbb::task {
+   HWND hWnd;
+   tbb::task* execute() {
+       Do long computation
+       Foo x = result of long computation
+       ResultQueue.push( x );
+       // Notify GUI thread that result is available.
+        PostMessage(hWnd,WM_POP_FOO,0,0);
+       return NULL;
+   }
+public:
+   LongTask( HWND hWnd_ ) : hWnd(hWnd_) {}
+};
+&nbsp;
+void LaunchLongRunningWork( HWND hWnd ) {
+   LongTask* t = new( tbb::task::allocate_root() ) LongTask(hWnd); 
+   tbb::task::enqueue(*t);
+}</pre> 
+		<p>It is essential to use method 
+		  <samp class="codeph">task::enqueue</samp> and not method 
+		  <samp class="codeph">task::spawn</samp>. The reason is that method 
+		  <samp class="codeph">enqueue</samp> ensures that the task eventually executes when
+		  resources permit, even if no thread explicitly waits on the task. In contrast,
+		  method 
+		  <samp class="codeph">spawn</samp> may postpone execution of the task until it is
+		  explicitly waited upon. 
+		</p>
+ 
+		<p>The example uses a 
+		  <samp class="codeph">concurrent_queue</samp> for workers to communicate results
+		  back to the GUI thread. Since only the most recent result matters in the
+		  example, and alternative would be to use a shared variable protected by a
+		  mutex. However, doing so would block the worker while the GUI thread was
+		  holding a lock on the mutex, and vice versa. Using 
+		  <samp class="codeph">concurrent_queue</samp> provides a simple robust solution. 
+		</p>
+ 
+		<p>If two long computations are in flight, there is a chance that the
+		  first computation completes after the second one. If displaying the result of
+		  the most recently requested computation is important, then associate a request
+		  serial number with the computation. The GUI thread can pop from 
+		  <samp class="codeph">ResultQueue</samp> into a temporary variable, check the
+		  serial number, and update 
+		  <samp class="codeph">CurrentResult</samp> only if doing so advances the serial
+		  number. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Non-Preemptive_Priorities.htm#Non-Preemptive_Priorities">Non-Preemptive Priorities 
+		  </a> provides informtion on how to implement priorities 
+		  </div>
+<div><a href="Local_Serializer.htm#Local_Serializer">Local Serializer 
+		  </a> provides information on how to force serial ordering of certain
+			 tasks 
+		  </div></div>
+</div> 
+
+</body>
+</html>

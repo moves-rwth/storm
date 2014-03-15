@@ -1,0 +1,230 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="enumerable_thread_specific Template Class">
+<meta name="DC.subject" content="enumerable_thread_specific Template Class">
+<meta name="keywords" content="enumerable_thread_specific Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage/enumerable_thread_specific_cls/whole_container_operations_specific_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage/enumerable_thread_specific_cls/concurrent_operations1.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage/enumerable_thread_specific_cls/combining.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage/enumerable_thread_specific_cls/parallel_literation_specific_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage/enumerable_thread_specific_cls/iterators_specific_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="enumerable_thread_specific_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>enumerable_thread_specific Template Class</title>
+</head>
+<body id="enumerable_thread_specific_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="enumerable_thread_specific_cls"><!-- --></a>
+
+
+    <h1 class="topictitle1">enumerable_thread_specific Template Class</h1>
+
+     
+<div>
+         <div class="section"><h2 class="sectiontitle">Summary</h2><p>Template class for
+                thread local storage.</p>
+</div>
+<div class="section"><h2 class="sectiontitle">Syntax</h2><p>
+                <pre>enum ets_key_usage_type {
+    ets__key_per_instance,
+    ets_no_key
+    };
+
+template &lt;typename T,
+    typename Allocator=cache_aligned_allocator&lt;T&gt;,
+    ets_key_usage_type ETS_key_type=ets_no_key&gt;
+class enumerable_thread_specific;</pre>
+             
+            </p>
+</div>
+<div class="section"><h2 class="sectiontitle">Header</h2><p>
+                <pre>#include "tbb/enumerable_thread_specific.h"</pre>
+            </p>
+</div>
+<div class="section"><h2 class="sectiontitle">Description</h2><p>An
+                    <samp class="codeph">enumerable_thread_specific</samp> provides thread local storage (TLS)
+                for elements of type <samp class="codeph">T</samp>. An enumerable_thread_specific acts as a
+                container by providing iterators and ranges across all of the thread-local
+                elements.</p>
+<p>The thread-local elements are created lazily. A freshly constructed
+                    <samp class="codeph">enumerable_thread_specific</samp> has no elements. When a thread
+                requests access to an <samp class="codeph">enumerable_thread_specific</samp>, it creates an
+                element corresponding to that thread. The number of elements is equal to the number
+                of distinct threads that have accessed the
+                    <samp class="codeph">enumerable_thread_specific</samp> and not the number of threads in use
+                by the application. Clearing an <samp class="codeph">enumerable_thread_specific</samp> removes
+                all of its elements.</p>
+<p>The <samp class="codeph">ETS_key_usage_type</samp> parameter can be
+                used to select between an implementation that consumes no native TLS keys and a
+                specialization that offers higher performance but consumes 1 native TLS key per
+                enumerable_thread_specific instance. If no <samp class="codeph">ETS_key_usage_type</samp>
+                parameter is provided, <samp class="codeph">ets_no_key</samp> is used by
+                default.</p>
+<span>Caution: </span>
+               <p> The number of native TLS keys is limited and can be fairly small, for example 64
+                    or 128. Therefore it is recommended to restrict the use of the
+                        <samp class="codeph">ets_key_per_instance</samp> specialization to only the most
+                    performance critical cases.</p>
+
+            </div>
+<div class="section"><h2 class="sectiontitle">Example</h2><p>The following code shows a simple example usage of
+                <samp class="codeph">enumerable_thread_specific</samp>. The number of calls to
+                <samp class="codeph">null_parallel_for_body::operator()</samp> and total number of iterations executed are
+                counted by each thread that participates in the <samp class="codeph">parallel_for</samp>, and these counts are
+                printed at the end of main. </p>
+
+<pre>#include &lt;cstdio&gt;
+#include &lt;utility&gt;&nbsp;
+
+#include "tbb/task_scheduler_init.h"
+#include "tbb/enumerable_thread_specific.h"
+#include "tbb/parallel_for.h"
+#include "tbb/blocked_range.h"&nbsp;
+
+using namespace tbb;&nbsp;
+
+typedef enumerable_thread_specific&lt; std::pair&lt;int,int&gt; &gt; CounterType;&nbsp;
+CounterType MyCounters (std::make_pair(0,0));
+
+struct Body {
+   &nbsp; void operator()(const tbb::blocked_range&lt;int&gt; &amp;r) const {
+       &nbsp; CounterType::reference my_counter = MyCounters.local();
+          ++my_counter.first;       &nbsp; 
+          for (int i = r.begin(); i != r.end(); ++i)           &nbsp; 
+              ++my_counter.second;  &nbsp; 
+     }
+};&nbsp;
+
+int main() {
+   &nbsp; parallel_for( blocked_range&lt;int&gt;(0, 100000000), Body());
+     
+     for (CounterType::const_iterator i = MyCounters.begin();
+        &nbsp; i != MyCounters.end();&nbsp; ++i)
+   &nbsp;{
+       &nbsp; printf("Thread stats:\n");
+            printf("&nbsp; calls to operator(): %d", i-&gt;first);
+            printf("&nbsp; total # of iterations executed: %d\n\n",
+                 i-&gt;second);
+    }
+}</pre>
+            </div>
+<div class="section"><h2 class="sectiontitle">Example with Lambda Expressions</h2><p>Class
+                    <samp class="codeph">enumerable_thread_specific</samp> has a method
+                        <samp class="codeph">combine(<em>f</em>)</samp> that does a reduction using binary functor
+                        <samp class="codeph"><em>f</em></samp>, which can be written using a lambda expression.
+                For example, the previous example can be extended to sum the thread-local values by
+                adding the following lines to the end of function
+            <samp class="codeph">main</samp>:</p>
+
+<pre>std::pair&lt;int,int&gt; sum =
+    MyCounters.combine([](std::pair&lt;int,int&gt; x,
+                          std::pair&lt;int,int&gt; y) {
+        return std::make_pair(x.first+y.first,
+                              x.second+y.second);
+    });
+printf("Total calls to operator() = %d, "
+         "total iterations = %d\n", sum.first, sum.second);</pre>
+</div>
+
+<div class="section"><h2 class="sectiontitle">Members</h2><pre>namespace tbb {
+    template &lt;typename T,
+        typename Allocator=cache_aligned_allocator&lt;T&gt;,
+        ets_key_usage_type ETS_key_type=ets_no_key &gt;
+    class enumerable_thread_specific {
+    public:
+        // Basic types
+        typedef Allocator allocator_type;
+        typedef T value_type;
+        typedef T&amp; reference;
+        typedef const T&amp; const_reference;
+        typedef T* pointer;
+        typedef <em>implementation-dependent</em> size_type;
+        typedef <em>implementation-dependent</em> difference_type;
+
+        // Iterator types
+        typedef <em>implementation-dependent</em> iterator;
+        typedef <em>implementation-dependent</em> const_iterator;
+
+        // Parallel range types
+        typedef <em>implementation-dependent</em> range_type;
+        typedef <em>implementation-dependent</em> const_range_type;
+        
+        // Whole container operations
+        enumerable_thread_specific();
+        enumerable_thread_specific(
+            const enumerable_thread_specific &amp;other 
+        );
+        template&lt;typename U, typename Alloc, 
+           ets_key_usage_type Cachetype&gt;
+        enumerable_thread_specific( 
+          const enumerable_thread_specific&lt;U, Alloc, 
+              Cachetype&gt;&amp; other );
+        template &lt;typename Finit&gt;
+        enumerable_thread_specific( Finit finit );
+        enumerable_thread_specific(const T &amp;exemplar);
+        ~enumerable_thread_specific();
+        enumerable_thread_specific&amp;
+        operator=(const enumerable_thread_specific&amp; other);
+        template&lt;typename U, typename Alloc,
+            ets_key_usage_type Cachetype&gt;
+        enumerable_thread_specific&amp;
+        operator=(
+            const enumerable_thread_specific&lt;U, Alloc, Cachetype&gt;&amp;
+                other
+        );
+        void clear();
+        
+        // Concurrent operations
+ reference local(); 
+ reference local(bool&amp; existis);
+        size_type size() const;
+        bool empty() const;
+        
+        // Combining
+        template&lt;typename FCombine&gt; T combine(FCombine fcombine);
+        template&lt;typename Func&gt; void combine_each(Func f);
+        
+        // Parallel iteration
+        range_type range( size_t grainsize=1 );
+        const_range_type range( size_t grainsize=1 ) const;
+        
+        // Iterators
+        iterator begin();
+        iterator end();
+        const_iterator begin() const;
+        const_iterator end() const;
+    }; 
+}</pre></div>
+</div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/thread_local_storage.htm">Thread Local Storage</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/thread_local_storage/enumerable_thread_specific_cls/whole_container_operations_specific_cls.htm">Whole Container Operations</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/thread_local_storage/enumerable_thread_specific_cls/concurrent_operations1.htm">Concurrent Operations</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/thread_local_storage/enumerable_thread_specific_cls/combining.htm">Combining</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/thread_local_storage/enumerable_thread_specific_cls/parallel_literation_specific_cls.htm">Parallel Iteration</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/thread_local_storage/enumerable_thread_specific_cls/iterators_specific_cls.htm">Iterators</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Interface for class task">
+<meta name="DC.subject" content="Interface for class task">
+<meta name="keywords" content="Interface for class task">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/compatibility_features.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="interface_for_cls_task">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Interface for class task</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="interface_for_cls_task">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="interface_for_cls_task"><!-- --></a>
+
+
+  <h1 class="topictitle1">Interface for class task</h1>
+
+  
+  <div>
+	 <p>Some methods of class 
+		<samp class="codeph">task</samp> are deprecated
+		because they have obsolete or redundant functionality.
+	 </p>
+
+	 <div class="section"><h2 class="sectiontitle">Deprecated Members of class task</h2>
+		
+		<pre>namespace tbb {
+ class task {
+ public:
+ ...
+ void recycle_to_reexecute();
+ // task depth
+ typedef implementation-defined-signed-integral-type depth_type;
+ depth_type depth() const {return 0;}
+ void set_depth( depth_type new_depth ) {}
+ void add_to_depth( int delta ){}
+ ...
+ };
+ }</pre>
+	 </div>
+
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the members
+		  of this template class. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="33.89830508474576%" id="d25551e75">Member 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="66.10169491525423%" id="d25551e78">Description 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d25551e75 "><span class="keyword">void recycle
+					 _to_reexecute()</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d25551e78 ">
+				  <p>Intel&reg; Threading Building Blocks (Intel&reg; TBB) 3.0 deprecated method 
+					 <samp class="codeph">recycle_to_reexecute</samp> because it is
+					 redundant. Replace a call 
+					 <samp class="codeph"><var>t</var>-&gt;recycle_to_reexecute()</samp>with
+					 the following sequence:
+				  </p>
+
+				  <pre><var>t</var>-&gt;set_refcount(1);
+<var>t</var>-&gt;recycle_as_safe_continuation();</pre> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d25551e75 "><span class="keyword">Depth interface for class
+					 task</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d25551e78 ">
+				  <p>Intel&reg; TBB 2.2 eliminated the notion of
+					 task depth that was present in prior versions of Intel&reg; TBB. The members of
+					 class task that related to depth have been retained under 
+					 <samp class="codeph">TBB_DEPRECATED</samp>, but do nothing.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/appendices/compatibility_features.htm">Compatibility Features</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

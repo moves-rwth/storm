@@ -1,0 +1,214 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Specific Exceptions">
+<meta name="DC.subject" content="Specific Exceptions">
+<meta name="keywords" content="Specific Exceptions">
+<meta name="DC.Relation" scheme="URI" content="../../reference/exceptions.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="specific_exceptions">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Specific Exceptions</title>
+</head>
+<body id="specific_exceptions">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="specific_exceptions"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Specific Exceptions</h1>
+ 
+  
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Exceptions thrown by other library components.
+		</p>
+ 
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2>
+		 
+		<pre>class bad_last_alloc;
+class improper_lock;
+class invalid_multiple_scheduling;
+hclass missing_wait;
+class user_abort;</pre> 
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Header</h2>
+		 
+		<pre>#include "tbb/tbb_exception.h"</pre> 
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Description</h2>
+		 
+		<p>The table below describes when the exceptions are thrown. 
+		</p>
+ 
+		<p>Classes for Specific Exceptions.
+		</p>
+
+	 </div>
+
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all">
+		  <thead align="left">
+			 <tr> 
+				<th class="cellrowborder" valign="top" id="d63237e66"> 
+				  <p><strong>Exception</strong>
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" id="d63237e74"> 
+				  <p><strong>Thrown when...</strong>
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+
+		  </thead>
+
+		  <tbody>
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d63237e66 "> 
+				  <p>bad_last_alloc
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d63237e74 "> 
+				  <ol>
+					 <li>A 
+						<samp class="codeph">pop</samp> operation on a 
+						<samp class="codeph">concurrent_queue</samp> or 
+						<samp class="codeph">concurrent_bounded_queue</samp> corrersponds to a
+						push that threw an exception.
+					 </li>
+
+					 <li> An operation on a 
+						<samp class="codeph">concurrent_vector</samp> cannot be performed
+						because a prior operation threw an exception. 
+					 </li>
+
+				  </ol>
+
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d63237e66 "> 
+				  <p>improper_lock
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d63237e74 "> 
+				  <p>A thread attempts to lock a 
+					 <samp class="codeph">critical_section</samp> or 
+					 <samp class="codeph">reader_writer_lock</samp> that it it has already
+					 locked.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d63237e66 "> 
+				  <p>invalid_multiple_scheduling
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d63237e74 "> 
+				  <p>A 
+					 <samp class="codeph">task_group</samp> or 
+					 <samp class="codeph">structured_task_group</samp> attempts to run a 
+					 <samp class="codeph">task_handle</samp> twice.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" headers="d63237e66 "> 
+				  <p>missing_wait
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" headers="d63237e74 "> 
+				  <p>A 
+					 <samp class="codeph">push</samp> or 
+					 <samp class="codeph">pop</samp> operation on a 
+					 <samp class="codeph">concurrent_bounded_queue</samp> was aborted by the
+					 user.<samp class="codeph">wait()</samp> is invoked.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+
+			 <tr>
+				<td class="cellrowborder" valign="top" headers="d63237e66 ">
+				  <p>user_abort
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" valign="top" headers="d63237e74 ">&#xA0;</td>
+
+			 </tr>
+
+		  </tbody>
+
+		</table>
+</div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2>
+		
+		<pre>namespace tbb {
+      &nbsp; class bad_last_alloc: public std::bad_alloc {
+      &nbsp; public:
+          &nbsp; const char* what() const throw();
+      &nbsp; };
+      &nbsp; class improper_lock: public std::exception {
+      &nbsp; public:
+          &nbsp; const char* what() const throw();
+      &nbsp; };
+      &nbsp; class invalid_multiple_scheduler: public std::exception {
+         &nbsp; const char* what() const throw();
+      &nbsp; };
+      &nbsp; class missing_wait: public std::exception {
+      &nbsp; public:
+          &nbsp; const char* what() const throw();
+      &nbsp; };
+        class user_abort : public std::exception {
+        public:
+           const char* what() const throw();
+        };
+		  
+    }</pre> 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/exceptions.htm">Exceptions</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

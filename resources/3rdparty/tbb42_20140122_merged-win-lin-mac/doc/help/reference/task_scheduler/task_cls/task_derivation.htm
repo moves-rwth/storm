@@ -1,0 +1,88 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="task Derivation">
+<meta name="DC.subject" content="task Derivation">
+<meta name="keywords" content="task Derivation">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/task_scheduler/task_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../recycling_tasks.htm">
+<meta name="DC.Relation" scheme="URI" content="../affinity.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_derivation">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>task Derivation</title>
+</head>
+<body id="task_derivation">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_derivation"><!-- --></a>
+
+
+    <h1 class="topictitle1">task Derivation</h1>
+
+
+<div>
+    <div class="section"><p>Class <samp class="codeph">task</samp> is an abstract base class. You <strong>must</strong> override method
+                    <samp class="codeph">task::execute</samp>. Method <samp class="codeph">execute</samp> should perform
+                the necessary actions for running the task, and then return the next
+                    <samp class="codeph">task</samp> to execute, or NULL if the scheduler should choose the
+                next task to execute. Typically, if non-NULL, the returned task is one of the
+                predecessor tasks of <samp class="codeph">this</samp>. Unless one of the recycle/reschedule
+                methods, described in Section Recycling Tasks, is called while method
+                    <samp class="codeph">execute()</samp> is running, the <samp class="codeph">this</samp> object will be
+                implicitly destroyed after method <samp class="codeph">execute</samp> returns.</p>
+<p>Override the virtual destructor if necessary to release resources allocated by the constructor.</p>
+<p>Override <samp class="codeph">note_affinity</samp> to improve cache reuse across tasks, as described in Section Affinity.</p>
+</div>
+<div class="section"><h2 class="sectiontitle">Processing of execute()</h2><p>When the scheduler decides that a thread should begin executing a <em>task</em>, it performs the
+                following steps:</p>
+
+      <ol class="ol_3">
+            <li>Invokes <samp class="codeph">execute()</samp> and waits for it to return.</li>
+
+            <li>If the task has not been marked by a method <samp class="codeph">recycle_*</samp>:<ol type="a">
+                        <li>Calls the task's destructor.</li>
+
+                        <li>If the task's <em>parent</em> is not null, then atomically decrements
+                                <em>successor</em>-&gt;<em>refcount</em>, and if becomes zero, puts the
+                            successor into the ready pool. </li>
+
+                        <li>Frees the memory of the task for reuse.</li>
+
+                    </ol>
+</li>
+
+
+           <li>If the task has been marked for recycling:<ol type="a">
+                        <li>If marked by <em>recycle_to_reexecute</em>(deprecated), puts the task back
+                        into the ready pool.</li>
+
+               <li>Otherwise it was marked by <em>recycle_as_child</em> or <em>recycle_as_continuation</em>. </li>
+     
+                    </ol>
+</li>
+
+          
+          
+      </ol>
+
+                </div>
+</div>
+ 
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/task_scheduler/task_cls.htm">task Class</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../recycling_tasks.htm">Recycling Tasks</a></div>
+<div><a href="../affinity.htm">Affinity</a></div></div>
+</div>
+</body>
+</html>

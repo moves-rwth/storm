@@ -1,0 +1,105 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="tbb_hash_compare Class">
+<meta name="DC.subject" content="tbb_hash_compare Class">
+<meta name="keywords" content="tbb_hash_compare Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_hash_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tbb_hash_compare_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>tbb_hash_compare Class</title>
+</head>
+<body id="tbb_hash_compare_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tbb_hash_compare_cls"><!-- --></a>
+
+
+    <h1 class="topictitle1">tbb_hash_compare Class</h1>
+
+    
+<div><div class="section"><h2 class="sectiontitle">Summary</h2>
+        
+            <p>Default <samp class="codeph">HashCompare</samp> for
+                    <samp class="codeph">concurrent_hash_map</samp>.</p>
+
+            </div>
+<div class="section"><h2 class="sectiontitle">Syntax</h2>
+            <p><pre>template&lt;typename Key&gt; struct tbb_hash_compare;</pre></p>
+
+            </div>
+<div class="section"><h2 class="sectiontitle">Header</h2>
+            <p><pre>#include "tbb/concurrent_hash_map.h"</pre></p>
+
+            </div>
+<div class="section"><h2 class="sectiontitle">Description</h2>
+            <p>A <samp class="codeph">tbb_hash_compare&lt;Key&gt;</samp> is the default for
+                the <samp class="codeph">HashCompare</samp> argument of template class<samp class="codeph">
+                    concurrent_hash_map</samp>. The built-in definition relies on
+                    <samp class="codeph">operator==</samp> and <samp class="codeph">tbb_hasher</samp> as shown in the
+                Members description. For your own types, you can define a template specialization of
+                    <samp class="codeph">tbb_hash_compare</samp> or define an overload of
+                    <samp class="codeph">tbb_hasher</samp>.</p>
+
+                <p>There are built-in definitions of <samp class="codeph">tbb_hasher</samp> for the following Key types:</p>
+
+            <ul type="disc">
+                <li><p>Types that are convertible to a <samp class="codeph">size_t</samp> by <samp class="codeph">static_cast&lt;T&gt;</samp></p>
+</li>
+
+                <li><p>Pointer types</p>
+</li>
+
+                <li><p><samp class="codeph">std::basic_string</samp></p>
+</li>
+
+                <li><p><samp class="codeph">std::pair&lt;<em>K1,K2</em>&gt;</samp> where
+                            <samp class="codeph"><em>K1</em></samp> and <samp class="codeph"><em>K2</em></samp> are hashed
+                        using <samp class="codeph">tbb_hasher</samp>.</p>
+</li>
+
+            </ul>
+
+            </div>
+<div class="section"><h2 class="sectiontitle">Members</h2>
+<pre> namespace tbb {
+    &nbsp;&nbsp;&nbsp; template&lt;typename Key&gt;
+    &nbsp;&nbsp;&nbsp; struct tbb_hash_compare {
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; static size_t hash(const Key&amp; a) {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return tbb_hasher(a);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; static bool equal(const Key&amp; a, const Key&amp; b) {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return a==b;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+    &nbsp;&nbsp;&nbsp; };
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; template&lt;typename T&gt; 
+    &nbsp;&nbsp;&nbsp; size_t tbb_hasher(const T&amp;);
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; template&lt;typename T&gt; 
+    &nbsp;&nbsp;&nbsp; size_t tbb_hasher(T*);
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; template&lt;typename T, typename Traits, typename Alloc&gt;
+    &nbsp;&nbsp;&nbsp; size_t tbb_hasher(const std::basic_string&lt;T, Traits,Alloc&gt;&amp;);
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; template&lt;typename T1, typename T2&gt;
+    &nbsp;&nbsp;&nbsp; size_t tbb_hasher(const std::pair&lt;T1,T2&gt;&amp; );
+            };</pre>
+            </div>
+</div>
+
+    
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_hash_map_cls.htm">concurrent_hash_map Template Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

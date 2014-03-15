@@ -1,0 +1,286 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="reader_writer_lock Class">
+<meta name="DC.subject" content="reader_writer_lock Class">
+<meta name="keywords" content="reader_writer_lock Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/synchronization/ppl_compatibility_synch.htm">
+<meta name="DC.Relation" scheme="URI" content="../mutexes/mutex_concept.htm">
+<meta name="DC.Relation" scheme="URI" content="../mutexes/readerwritermutex_concept.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="reader_writer_lock_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>reader_writer_lock Class</title>
+</head>
+<body id="reader_writer_lock_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="reader_writer_lock_cls"><!-- --></a>
+
+
+    <h1 class="topictitle1">reader_writer_lock Class</h1>
+
+    
+<div>
+        <div class="section"><h2 class="sectiontitle">Summary</h2>
+            
+            <p>A PPL-compatible reader-writer mutex that is scalable and gives
+                preference to writers.</p>
+</div>
+<div class="section"><h2 class="sectiontitle">Syntax</h2>
+                    
+                    <pre>class reader_writer_lock;</pre>
+                </div>
+<div class="section"><h2 class="sectiontitle">Header</h2>
+                    <pre>#include "tbb/reader_writer_lock.h"</pre>
+                </div>
+<div class="section"><h2 class="sectiontitle">Description</h2>
+                    <p>A <samp class="codeph">reader_writer_lock</samp> implements a PPL-compatible
+                        reader-writer mutex. A <samp class="codeph">reader_writer_lock</samp> is scalable and
+                        nonrecursive. The implementation handles lock requests on a first-come first-serve
+                        basis except that writers have preference over readers. Waiting threads busy wait,
+                        which can degrade system performance if the wait is long. However, if the wait is
+                        typically short, a <samp class="codeph">reader_writer_lock</samp> can provide performance
+                        competitive with other mutexes.</p>
+
+                    <p>A<samp class="codeph"> reader_writer_lock</samp> models part of the
+                        ReaderWriterMutex Concept and part of the C++11 compatibility interface. The
+                        major differences are:</p>
+
+                    <ul type="disc">
+                        <li>
+                            <p>The scoped interfaces support only strictly scoped locks.
+                                For example, the method <samp class="codeph">scoped_lock::release()</samp> is not
+                                supported.</p>
+
+                        </li>
+
+                        <li>
+                            <p>Reader locking has a separate interface. For example,
+                                there is separate scoped interface scoped_lock_read for reader locking,
+                                instead of a flag to distinguish the reader cases as in the
+                                ReaderWriterMutex Concept.</p>
+
+                        </li>
+
+                    </ul>
+
+                </div>
+<div class="section"><h2 class="sectiontitle">Members</h2>
+                    <pre>namespace tbb {
+&nbsp;&nbsp;&nbsp; class reader_writer_lock {
+&nbsp;&nbsp;&nbsp; public:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; reader_writer_lock();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ~reader_writer_lock();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void lock();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void lock_read();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool try_lock();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool try_lock_read();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void unlock();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; class scoped_lock {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; public:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; scoped_lock( reader_writer_lock&amp; mutex );
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ~scoped_lock();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; class scoped_lock_read {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; public:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; scoped_lock_read( reader_writer_lock&amp; mutex );
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ~scoped_lock_read();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };
+&nbsp;&nbsp; };}</pre>
+                    <p>The following table summarizes the semantics.</p>
+
+                    
+<div class="tablenoborder"><a name="tbl30"><!-- --></a><table cellpadding="4" summary="" id="tbl30" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">reader_writer_lock Members Summary</span></caption>
+                            
+                            
+                            <thead align="left">
+                                <tr>
+                                    <th class="cellrowborder" valign="top" width="NaN%" id="d104211e109">
+                                        <p>Member</p>
+
+                                    </th>
+
+                                    <th class="row-nocellborder" valign="top" width="NaN%" id="d104211e115">
+                                        <p>Semantics</p>
+
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 ">
+                                        <p><samp class="codeph">reader_writer_lock()</samp></p>
+
+                                    </td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Construct unlocked mutex.</p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 "><samp class="codeph">
+                                        ~reader_writer_lock()
+                                    </samp></td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Destroy unlocked mutex.</p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 ">
+                                        <p><samp class="codeph">void
+                                            reader_writer_lock::lock()</samp></p>
+
+                                    </td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Acquire write lock on mutex. </p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 ">
+                                        <p><samp class="codeph">void
+                                            reader_writer_lock::lock_read()</samp></p>
+
+                                    </td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Acquire read lock on mutex.</p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 ">
+                                        <p><samp class="codeph">bool
+                                            reader_writer_lock::try_lock()</samp></p>
+
+                                    </td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Try to acquire write lock on mutex. Returns
+                                            <em>true</em> if lock acquired, <em>false</em> otherwise.</p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 ">
+                                        <p><samp class="codeph">bool
+                                            reader_writer_lock::try_lock_read()</samp></p>
+
+                                    </td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Try to acquire read lock on mutex. Returns
+                                            <em>true</em> if lock acquired, <em>false</em> otherwise.</p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 ">
+                                        <p><samp class="codeph">reader_writer_lock::unlock()</samp></p>
+
+                                    </td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Release lock.</p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 "><samp class="codeph"> reader_writer_lock::scoped_lock
+                                        &nbsp; (reader_writer_lock&amp; m) </samp></td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Acquire write lock on mutex m.</p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 ">
+                                        <p><samp class="codeph">reader_writer_lock::~scoped_lock()</samp></p>
+
+                                    </td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Release write lock (if acquired).</p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 "><p><samp class="codeph">
+                                        reader_writer_lock::scoped_lock_read
+                                        &nbsp; (reader_writer_lock&amp; m)
+                                    </samp></p>
+</td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Acquire read lock on mutex m.</p>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+                                    <td class="cellrowborder" valign="top" width="NaN%" headers="d104211e109 ">
+                                        <p><samp class="codeph">reader_writer_lock::~scoped_lock_read()</samp></p>
+
+                                    </td>
+
+                                    <td class="row-nocellborder" valign="top" width="NaN%" headers="d104211e115 ">
+                                        <p>Release read lock (if acquired). </p>
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+</div>
+
+                </div>
+
+    </div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/synchronization/ppl_compatibility_synch.htm">PPL Compatibility</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../mutexes/mutex_concept.htm">Mutext Concept</a></div>
+<div><a href="../mutexes/readerwritermutex_concept.htm">ReaderWriterMutex Concept</a></div></div>
+</div>
+</body>
+</html>

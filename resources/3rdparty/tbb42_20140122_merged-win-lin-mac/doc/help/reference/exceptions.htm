@@ -1,0 +1,84 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Exceptions">
+<meta name="DC.subject" content="Exceptions">
+<meta name="keywords" content="Exceptions">
+<meta name="DC.Relation" scheme="URI" content="../reference/reference.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/exceptions/tbb_exception.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/exceptions/captured_exception.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/exceptions/movable_exception.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/exceptions/specific_exceptions.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Exceptions">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Exceptions</title>
+</head>
+<body id="Exceptions">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Exceptions"><!-- --></a>
+
+
+    <h1 class="topictitle1">Exceptions</h1>
+
+   
+<div>
+       <div class="section">        <p>Intel&reg; Threading Building Blocks (Intel&reg; TBB) propagates exceptions along logical paths in a tree of tasks. Because these paths cross between thread stacks, support for moving an exception between stacks is necessary. </p>
+<p>When an exception is thrown out of a task, it is caught inside the Intel&reg; TBB run-time and handled as follows:</p>
+<ol class="ol_3">
+           <li>If the cancellation group for the task has already been cancelled, the exception is ignored.</li>
+
+           <li>Otherwise the exception or an approximation of it is captured and the group is cancelled.</li>
+
+           <li>The captured exception is rethrown from the root of the cancellation group after all tasks in the group have completed or have been successfully cancelled.</li>
+
+       </ol>
+<p>The exact exception is captured when both of the following conditions are true:</p>
+<ul type="disc" class="ul_4">
+           <li>The task's <samp class="codeph">task_group_context</samp> was created in a translation unit compiled with <samp class="codeph">TBB_USE_CAPTURED_EXCEPTION=0</samp>. </li>
+
+           <li>The Intel&reg; TBB library was built with a compiler that supports the <samp class="codeph">std::exception_ptr</samp> feature of C++11.</li>
+
+       </ul>
+<p>Otherwise an appoximation of the original exception <em>x</em> is captured as follows:</p>
+<ol class="ol_3">
+           <li>If <samp class="codeph"><samp class="codeph"><em>x</em></samp></samp> is a <samp class="codeph">tbb_exception</samp>, it
+                    is captured by <samp class="codeph"><em>x</em>.move()</samp>.</li>
+
+           <li>If <samp class="codeph"><em>x</em></samp> is a <samp class="codeph">std::exception</samp>, it is captured as
+                    a
+                        <samp class="codeph">tbb::captured_exception(typeid(<em>x</em>).name(),<em>x</em>.what())</samp>. </li>
+
+           <li>Otherwise <samp class="codeph"><em>x</em></samp> is captured as a <samp class="codeph">tbb::captured</samp>
+                    exception with implementation-specified value for <samp class="codeph">name()</samp> and
+                        <samp class="codeph">what()</samp>.</li>
+
+       </ol>
+</div>
+</div>
+ 
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../reference/reference.htm">Intel&reg; Threading Building Blocks Reference Manual</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../reference/exceptions/tbb_exception.htm">tbb_exception</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/exceptions/captured_exception.htm">captured_exception</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/exceptions/movable_exception.htm">movable_exception&lt;ExceptionData&gt;</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/exceptions/specific_exceptions.htm">Specific Exceptions</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

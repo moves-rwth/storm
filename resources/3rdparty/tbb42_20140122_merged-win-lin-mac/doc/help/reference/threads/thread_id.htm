@@ -1,0 +1,71 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="thread::id">
+<meta name="DC.subject" content="thread::id">
+<meta name="keywords" content="thread::id">
+<meta name="DC.Relation" scheme="URI" content="../../reference/threads.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="thread_id">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>thread::id</title>
+</head>
+<body id="thread_id">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="thread_id"><!-- --></a>
+
+
+    <h1 class="topictitle1">thread::id</h1>
+
+    
+<div>
+        <div class="section"><h2 class="sectiontitle">Summary</h2>
+            
+            <p>Unique identifier for a thread.</p>
+
+            </div>
+<div class="section"><h2 class="sectiontitle">Syntax</h2>
+            <pre>class thread::id;</pre>
+            </div>
+<div class="section"><h2 class="sectiontitle">Header</h2>
+            <pre>#include "tbb/compat/thread"</pre>
+            </div>
+<div class="section"><h2 class="sectiontitle">Description</h2>
+            <p>A <samp class="codeph">thread::id</samp> is an identifier value for a thread that remains unique over the thread's lifetime. A special value <samp class="codeph">thread::id()</samp> represents no thread of execution. The instances are totally ordered. </p>
+
+            </div>
+<div class="section"><h2 class="sectiontitle">Members</h2>
+            <pre>namespace tbb {&nbsp;&nbsp;&nbsp; 
+                &nbsp;&nbsp;&nbsp; class thread::id {
+                &nbsp;&nbsp;&nbsp; public:
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; id();
+                &nbsp;&nbsp;&nbsp; };
+                &nbsp;&nbsp;&nbsp; template&lt;typename charT, typename traits&gt;
+                &nbsp;&nbsp;&nbsp; std::basic_ostream&lt;charT, traits&gt;&amp; 
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; operator&lt;&lt; (std::basic_ostream&lt;charT, traits&gt; &amp;out,
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; thread::id id)
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+                &nbsp;&nbsp;&nbsp; bool operator==(thread::id x, thread::id y);
+                &nbsp;&nbsp;&nbsp; bool operator!=(thread::id x, thread::id y);
+                &nbsp;&nbsp;&nbsp; bool operator&lt;(thread::id x, thread::id y);
+                &nbsp;&nbsp;&nbsp; bool operator&lt;=(thread::id x, thread::id y);
+                &nbsp;&nbsp;&nbsp; bool operator&gt;(thread::id x, thread::id y);
+                &nbsp;&nbsp;&nbsp; bool operator&gt;=(thread::id x, thread::id y);
+                } // namespace tbb</pre></div>
+    
+    </div>
+ 
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/threads.htm">Threads</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

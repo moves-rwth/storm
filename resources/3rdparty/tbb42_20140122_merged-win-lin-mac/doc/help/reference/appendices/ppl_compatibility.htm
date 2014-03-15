@@ -1,0 +1,228 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="PPL Compatibility">
+<meta name="DC.subject" content="PPL Compatibility">
+<meta name="keywords" content="PPL Compatibility">
+<meta name="DC.Relation" scheme="URI" content="../../reference/appendices.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="ppl_compatibility">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>PPL Compatibility</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="ppl_compatibility">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="ppl_compatibility"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">PPL Compatibility</h1>
+ 
+   
+  <div> 
+	 <p>Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.2
+		introduces features based on joint discussions between the Microsoft
+		Corporation and Intel Corporation. The features establish some degree of
+		compatibility between Intel&reg; TBB and Microsoft Parallel Patterns Library (PPL)
+		development software. 
+	 </p>
+ 
+	 <p>Each feature appears in namespace 
+		<samp class="codeph">tbb</samp>. Each feature can be
+		injected into namespace Concurrency by including the file "<span class="filepath">tbb/compat/ppl.h</span>".
+		Following is the list of features: 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table lists the features and provides links to
+		  additional information. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="46.08294930875576%" id="d28812e48">Feature 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="53.91705069124424%" id="d28812e51">Link 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword"></span>parallel_for(<var>first</var>,<var>last</var>,<var>f</var>) 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../algorithms/parallel_for_func.htm" class="underlined">parallel_for Template
+					 Function</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword"></span>parallel_for(<var>first</var>,<var>last</var>,<var>step</var>,<var>f</var>) 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../algorithms/parallel_for_func.htm" class="underlined">parallel_for Template
+					 Function</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">parallel_for_each</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../algorithms/parallel_for_each_func.htm" class="underlined">parallel_for_each Template Function</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">parallel_invoke</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../algorithms/parallel_invoke_func.htm" class="underlined">parallel_invoke Template Function</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">critical_section</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../synchronization/ppl_compatibility/critical_section.htm" class="underlined">critical_section</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">reader_writer_lock</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../synchronization/ppl_compatibility/reader_writer_lock_cls.htm" class="underlined">reader_writer_lock Class</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">task_handle</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../task_groups/task_handle_cls.htm" class="underlined">task_handle Template
+					 Class</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">task_group_status</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../task_groups/task_group_status_enum.htm" class="underlined">task_group_status Enum</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">task_group</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../task_groups/task_group_cls.htm" class="underlined">task_group Class</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">make_task</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../task_groups/make_task_func.htm" class="underlined">make_task Template
+					 Function</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">structured_task_group</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../task_groups/structured_task_group_cls.htm" class="underlined">structured_task_group Class</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">is_current_task_group_cancelling</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../task_groups/is_current_task_group_canceling_func.htm" class="underlined">is_current_task_group_canceling Function</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">improper_lock</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../exceptions/specific_exceptions.htm" class="underlined">Specific Exceptions</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">invalid_multiple_scheduling</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../exceptions/specific_exceptions.htm" class="underlined">Specific Exceptions</a> 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="46.08294930875576%" headers="d28812e48 "><span class="keyword">missing_wait</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="53.91705069124424%" headers="d28812e51 "><a href="../exceptions/specific_exceptions.htm" class="underlined">Specific Exceptions</a> 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 <p>For 
+		<samp class="codeph">parallel_for</samp>, only the
+		variants listed in the table are injected into namespace Concurrency. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		<p>Because of different environments and evolving
+		  specifications, the behavior of the features can differ between the Intel&reg; TBB
+		  and PPL implementations. 
+		</p>
+ 
+	 </div> 
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/appendices.htm">Appendices</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

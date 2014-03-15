@@ -1,0 +1,182 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Task Scheduler">
+<meta name="DC.subject" content="Task Scheduler">
+<meta name="keywords" content="Task Scheduler">
+<meta name="DC.Relation" scheme="URI" content="../reference/reference.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/scheduling_algorithm.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/task_scheduler_init_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/task_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/task_allocation.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/explicit_task_destruction.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/recycling_tasks.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/synchronization.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/task_context.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/cancellation.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/priorities.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/affinity.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/task_debugging.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/empty_task_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/task_list_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/task_group_context.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/task_scheduler_observer.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/task_scheduler/catalog_of_recommended_task_patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="task_groups.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_scheduler">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Task Scheduler</title>
+</head>
+<body id="task_scheduler">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_scheduler"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Task Scheduler</h1>
+ 
+  
+  <div> 
+	 <div class="section"> 
+		<p>Intel&reg; Threading Building Blocks (Intel&reg; TBB)
+		  provides a task scheduler, which is the engine that drives the algorithm
+		  templates and task groups. You may also call it directly. Using tasks is often
+		  simpler and more efficient than using threads, because the task scheduler takes
+		  care of a lot of details. 
+		</p>
+ 
+		<p>The tasks are quanta of computation. The scheduler
+		  maps these onto physical threads. The mapping is non-preemptive. Each thread
+		  has a method 
+		  <samp class="codeph">execute(</samp>). Once a thread starts running 
+		  <samp class="codeph">execute()</samp>, the task is bound to that thread until 
+		  <samp class="codeph">execute()</samp> returns. During that time, the thread
+		  services other tasks only when it waits on its predecessor tasks, at which time
+		  it may run the predecessor tasks, or if there are no pending predecessor tasks,
+		  the thread may service tasks created by other threads.
+		</p>
+ 
+		<p>The task scheduler is intended for parallelizing
+		  computationally intensive work. Because task objects are not scheduled
+		  preemptively, they should generally avoid making calls that might block for
+		  long periods, because meanwhile that thread is precluded from servicing other
+		  tasks. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+		  <p>There is no guarantee that 
+			 <em>potentially</em> parallel tasks 
+			 <em>actually</em> execute in parallel, because the scheduler adjusts
+			 actual parallelism to fit available worker threads. For example, given a single
+			 worker thread, the scheduler creates no actual parallelism. For example, it is
+			 generally unsafe to use tasks in a producer consumer relationship, because
+			 there is no guarantee that the consumer runs at all while the producer is
+			 running.
+		  </p>
+
+		</div> 
+		<p>Potential parallelism is typically generated by a 
+		  <em>split/join</em> pattern. Two basic patterns of split/join are
+		  supported. The most efficient is continuation-passing form, in which the
+		  programmer constructs an explicit "continuation" task. The parent task creates
+		  child tasks and specifies a continuation task to be executed when the children
+		  complete. The continuation inherits the parent's ancestor. The parent task then
+		  exits; it does not block on its children. The children subsequently run, and
+		  after they (or their continuations) finish, the continuation task starts
+		  running. The figure, "Continuation-passing Style," shows the steps. The running
+		  tasks at each step are shaded.
+		</p>
+ 
+		<div class="fignone" id="fig4"><a name="fig4"><!-- --></a><span class="figcap">Continuation-passing Style</span>
+		   
+		  <br><img src="Resources/06000005.png"><br>
+		</div>
+ 
+		<p>Explicit continuation passing is efficient, because
+		  it decouples the thread's stack from the tasks. However, it is more difficult
+		  to program. A second pattern is "blocking style", which uses implicit
+		  continuations. It is sometimes less efficient in performance, but more
+		  convenient to program. In this pattern, the parent task blocks until its
+		  children complete, as shown in the figure below.
+		</p>
+ 
+		<div class="fignone" id="fig5"><a name="fig5"><!-- --></a><span class="figcap">Blocking Style</span>
+		   
+		  <br><img src="Resources/08000006.png"><br>
+		</div>
+ 
+		<p>The convenience comes with a price. Because the
+		  parent blocks, its thread's stack cannot be popped yet. The thread must be
+		  careful about what work it takes on, because continually stealing and blocking
+		  could cause the stack to grow without bound. To solve this problem, the
+		  scheduler constrains a blocked thread such that it never executes a task that
+		  is less deep than its deepest blocked task. This constraint may impact
+		  performance because it limits available parallelism, and tends to cause threads
+		  to select smaller (deeper) subtrees than they would otherwise choose.
+		</p>
+
+	 </div>
+
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../reference/reference.htm">Intel&reg; Threading Building Blocks Reference Manual</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../reference/task_scheduler/scheduling_algorithm.htm">Scheduling Algorithm</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/task_scheduler_init_cls.htm">task_scheduler_init Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/task_cls.htm">task Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/task_allocation.htm">task Allocation</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/explicit_task_destruction.htm">Explicit task Destruction</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/recycling_tasks.htm">Recycling Tasks</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/synchronization.htm">Synchronization</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/task_context.htm">task Context</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/cancellation.htm">Cancellation</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/priorities.htm">Priorities</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/affinity.htm">Affinity</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/task_debugging.htm">task Debugging</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/empty_task_cls.htm">empty_task Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/task_list_cls.htm">task_list Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/task_group_context.htm">task_group_context</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/task_scheduler_observer.htm">task_scheduler_observer</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/task_scheduler/catalog_of_recommended_task_patterns.htm">Catalog of Recommended task Patterns</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="algorithms.htm">Algorithms
+		  </a></div>
+<div><a href="task_groups.htm">Task Groups
+		  </a></div></div>
+</div>
+
+</body>
+</html>

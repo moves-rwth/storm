@@ -1,0 +1,326 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="task Class">
+<meta name="DC.subject" content="task Class">
+<meta name="keywords" content="task Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler/task_cls/task_derivation.htm">
+<meta name="DC.Relation" scheme="URI" content="task_allocation.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>task Class</title>
+</head>
+<body id="task_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">task Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Base class for tasks. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<p> 
+		  <pre>class task;</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<p><samp class="codeph">#include "tbb/task.h"</samp> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>Class task is the base class for tasks. You are
+		  expected to derive classes from task, and at least override the virtual method 
+		  <samp class="codeph">task* task::execute()</samp>. 
+		</p>
+ 
+		<p>Each instance of 
+		  <samp class="codeph">task</samp> has associated attributes, that while not
+		  directly visible, must be understood to fully grasp how task objects are used.
+		  The attributes are described in the table below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl33"><!-- --></a><table cellpadding="4" summary="" id="tbl33" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Task Attributes</span></caption> 
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d113000e86"> 
+				  <p>Attribute 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d113000e92"> 
+				  <p>Description 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d113000e86 "> 
+				  <p><samp class="codeph">successor</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d113000e92 "> 
+				  <p>Either null, or a pointer to another task
+					 whose refcount field will be decremented after the present task completes.
+					 Typically, the successor is the task that allocated the present task, or a task
+					 allocated as the continuation of that task. 
+				  </p>
+ 
+				  <p>Methods of class 
+					 <samp class="codeph">task</samp> call the successor "parent" and its
+					 preceding task the "child", because this was a common use case. But the library
+					 has evolved such that a child-parent relationship is no longer required between
+					 the predecessor and successor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d113000e86 "> 
+				  <p><samp class="codeph">refcount</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d113000e92 "> 
+				  <p>The number of Tasks that have this as their
+					 parent. Increments and decrement of refcount are always atomic. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		  <p>Always allocate memory for 
+			 <samp class="codeph">task</samp> objects using special overloaded new operators
+			 provided by the library, otherwise the results are undefined. Destruction of a 
+			 <samp class="codeph">task</samp> is normally implicit. The copy constructor and
+			 assignment operators for task are not accessible. This prevents accidental
+			 copying of a task, which would be ill-defined and corrupt internal data
+			 structures. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Notation</h2> 
+		 
+		<p>Some member descriptions illustrate effects by
+		  diagrams such as in the figure below. 
+		</p>
+ 
+		<div class="fignone" id="fig6"><a name="fig6"><!-- --></a><span class="figcap">Example Effect Diagram</span> 
+		   
+		  <br><img src="../Resources/06000007.png"><br> 
+		</div>
+ 
+		<p>Conventions in these diagrams are as follows: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>The big arrow denotes the transition from the
+				old state to the new state. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Each task's state is shown as a box divided
+				into 
+				<em>parent</em> and 
+				<em>refcount</em> sub-boxes. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Gray denotes state that is ignored. Sometimes
+				ignored state is left blank. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Black denotes state that is read. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Blue denotes state that is written. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<p>In the description below, types 
+		  <em>proxy1...proxy5</em> are internal types. Methods returning such types
+		  should only be used in conjunction with the special overloaded new operators,
+		  as described in Section task Allocation. 
+		</p>
+ 
+		<pre>namespace tbb {
+    &nbsp;&nbsp;&nbsp; class task {
+    &nbsp;&nbsp;&nbsp; protected:
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task();
+    &nbsp;
+    &nbsp;&nbsp;&nbsp; public:
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual ~task() {}
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual task* execute() = 0;
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Allocation
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static proxy1 allocate_root();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static proxy2 allocate_root( task_group_context&amp; );
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; proxy3 allocate_continuation();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; proxy4 allocate_child();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static proxy5 allocate_additional_child_of( task&amp; );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Explicit destruction
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static void destroy( task&amp; victim );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Recycling
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void recycle_as_continuation();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void recycle_as_safe_continuation();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void recycle_as_child_of( task&amp; new_parent );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Synchronization
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void set_ref_count( int count );
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void increment_ref_count();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int decrement_ref_count();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void wait_for_all();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static void spawn( task&amp; t );&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static void spawn( task_list&amp; list );
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void spawn_and_wait_for_all( task&amp; t );&nbsp; 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void spawn_and_wait_for_all( task_list&amp; list );&nbsp; 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static void spawn_root_and_wait( task&amp; root );
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static void spawn_root_and_wait( task_list&amp; root );
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static void enqueue( task&amp; );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Task context
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static task&amp; self();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task* parent() const;
+				void set_parent(task *p);				
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool is_stolen_task() const;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task_group_context* group();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void change_group( task_group_context&amp; ctx );
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Cancellation
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool cancel_group_execution();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool is_cancelled() const;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Affinity
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef implementation-defined-unsigned-type affinity_id;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual void note_affinity( affinity_id id );
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void set_affinity( affinity_id id );
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; affinity_id affinity() const;
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Debugging
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum state_type {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; executing,
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; reexecute,
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ready,
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; allocated,
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; freed
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int ref_count() const;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; state_type state() const;
+    &nbsp;&nbsp;&nbsp; };
+    } // namespace tbb
+    &nbsp;
+    void *operator new( size_t bytes, const proxy1&amp; p );
+    void operator delete( void* task, const proxy1&amp; p );
+    void *operator new( size_t bytes, const proxy2&amp; p );
+    void operator delete( void* task, const proxy2&amp; p );
+    void *operator new( size_t bytes, const proxy3&amp; p );
+    void operator delete( void* task, const proxy3&amp; p );
+    void *operator new( size_t bytes, proxy4&amp; p );
+    void operator delete( void* task, proxy4&amp; p );
+    void *operator new( size_t bytes, proxy5&amp; p );
+    void operator delete( void* task, proxy5&amp; p );</pre> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p>Prior to Intel&reg; Threading Building Blocks (Intel&reg;
+			 TBB) 3.0, methods 
+			 <samp class="codeph">allocate_additional_child_of</samp>, 
+			 <samp class="codeph">destroy</samp>, and 
+			 <samp class="codeph">spawn</samp> were non-static. Evolution of the library made
+			 the 
+			 <samp class="codeph">this</samp> argument superfluous for these calls. The
+			 change preserves source compatibility except in cases where the address of the
+			 method was taken. Executables compiled with the older headers that had the
+			 non-static form will continue to work when linked against the current Intel&reg;
+			 TBB 3.0 run-time libraries. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/task_scheduler/task_cls/task_derivation.htm">task Derivation</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="task_allocation.htm">task Allocation 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

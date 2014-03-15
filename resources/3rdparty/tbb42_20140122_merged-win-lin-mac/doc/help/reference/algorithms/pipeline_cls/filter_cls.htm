@@ -1,0 +1,287 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="filter Class">
+<meta name="DC.subject" content="filter Class">
+<meta name="keywords" content="filter Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/algorithms/pipeline_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../appendices/compatibility_features.htm#compatibility_features">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="filter_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>filter Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="filter_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="filter_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">filter Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 Abstract base class that represents a filter in a
+		pipeline. 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/pipeline.h" </pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>class filter;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">filter</samp> represents a filter in a 
+		  <samp class="codeph">pipeline</samp>(0).There are three modes of filters: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> A 
+			 <samp class="codeph">parallel</samp> filter can process multiple items in
+			 parallel and in no particular order. 
+		  </li>
+ 
+		  <li> A 
+			 <samp class="codeph">serial_out_of_order</samp> filter processes items one at a
+			 time, and in no particular order. 
+		  </li>
+ 
+		  <li> A 
+			 <samp class="codeph">serial_in_order</samp> filter processes items one at a
+			 time. All 
+			 <samp class="codeph">serial_in_order</samp> filters in a pipeline process items
+			 in the same order. 
+		  </li>
+ 
+		</ul>
+ 
+		<p>The mode of 
+		  <samp class="codeph">filter</samp> is specified by an argument to the constructor.
+		  Parallel filters are preferred when practical because they permit parallel
+		  speedup. If a filter must be serial, the out of order variant is preferred when
+		  practical because it puts less contraints on processing order. 
+		</p>
+ 
+		<p> Class 
+		  <samp class="codeph">filter</samp> should only be used in conjunction with class 
+		  <samp class="codeph">pipeline</samp>(0). 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		  <p><strong> 
+				<em> 
+				</em></strong> Use a 
+			 <samp class="codeph">serial_in_order</samp> input filter if there are any
+			 subsequent 
+			 <samp class="codeph">serial_in_order</samp> stages that should process items in
+			 their input order. 
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p><strong> 
+				<em> 
+				</em></strong>Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.0 and prior treated parallel input stages as
+			 serial. Later versions of Intel&reg; TBB can execute a parallel input stage in
+			 parallel, so if you specify such a stage, ensure that its 
+			 <samp class="codeph">operator()</samp> is thread safe. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+    class filter {
+    public:
+        enum mode {
+            parallel = <em>implementation-defined</em>,
+            serial_in_order = <em>implementation-defined</em>,
+            serial_out_of_order = <em>implementation-defined</em>
+        };
+        bool is_serial() const;
+        bool is_ordered() const;
+        virtual void* operator()( void* item ) = 0;
+        virtual void finalize( void* item ) {}
+        virtual ~filter();
+    protected:
+        filter( mode );
+    };
+} 
+</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d11466e164">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d11466e167">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d11466e164 "><span class="keyword"> filter( mode filter_mode
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d11466e167 "> 
+					 <p>Constructs a filter of the specified
+						mode. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p>Intel&reg; TBB 2.1 and prior had a similar constructor with a
+						  bool argument 
+						  <samp class="codeph">is_serial</samp>. That constructor exists but is
+						  deprecated (see Compatibility Features in the Appendices). 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d11466e164 "><span class="keyword">~filter()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d11466e167 "> 
+					 <p>Destroys the filter. If the filter is in
+						a 
+						<samp class="codeph">pipeline</samp>, it is automatically removed from
+						that pipeline. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d11466e164 "><span class="keyword"> bool is_serial() const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d11466e167 "> 
+					 <p><strong>Returns</strong>: False if filter mode is 
+						<samp class="codeph">parallel</samp>; true otherwise. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d11466e164 "><span class="keyword">bool is_ordered() const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d11466e167 "> 
+					 <p><strong>Returns</strong>: True if filter mode is 
+						<samp class="codeph">serial_in_order</samp>, false otherwise. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d11466e164 "><span class="keyword">virtual void* operator()( void *
+						item )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d11466e167 "> 
+					 <p>The derived filter should override this
+						method to process an item and return a pointer to an item to be processed by
+						the next 
+						<samp class="codeph">filter</samp>. The item parameter is NULL for the
+						first filter in the pipeline. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: The first filter in a 
+						<samp class="codeph">pipeline</samp> should return NULL if there are no
+						more items to process. The result of the last filter in a pipeline is ignored. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d11466e164 "><span class="keyword">virtual void finalize( void * item
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d11466e167 "> 
+					 <p>A pipeline can be cancelled by user
+						demand or because of an exception. When a pipeline is cancelled, there may be
+						items returned by a filter's operator() that have not yet been processed by the
+						next filter. When a pipeline is cancelled, the next filter invokes 
+						<samp class="codeph">finalize()</samp> on each item instead of 
+						<samp class="codeph">operator()</samp>. In contrast to 
+						<samp class="codeph">operator()</samp>, method 
+						<samp class="codeph">finalize()</samp> does not return an item for
+						further processing. A derived filter should override 
+						<samp class="codeph">finalize()</samp> to perform proper cleanup for an
+						item. A pipeline will not invoke any further methods on the item. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: The default definition
+						has no effect. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+
+		  </table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"> 
+		 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/algorithms/pipeline_cls.htm">pipeline Class</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../../appendices/compatibility_features.htm#compatibility_features">Compatibility Features 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

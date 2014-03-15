@@ -1,0 +1,248 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="task Allocation">
+<meta name="DC.subject" content="task Allocation">
+<meta name="keywords" content="task Allocation">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="task_list_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="synchronization.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_allocation">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>task Allocation</title>
+</head>
+<body id="task_allocation">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_allocation"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">task Allocation</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Always allocate memory for 
+		  <samp class="codeph">task</samp> objects using one of the special overloaded new
+		  operators. The allocation methods do not construct the 
+		  <samp class="codeph">task</samp>. Instead, they return a proxy object that can be
+		  used as an argument to an overloaded version of operator new provided by the
+		  library. 
+		</p>
+ 
+		<p>In general, the allocation methods must be called
+		  before any of the tasks allocated are spawned. The exception to this rule is 
+		  <samp class="codeph">allocate_additional_child_of(t)</samp>, which can be called
+		  even if 
+		  <samp class="codeph">task</samp> 
+		  <samp class="codeph"><em>t</em></samp> is already running. The proxy types are
+		  defined by the implementation. The only guarantee is that the phrase
+		  "new(proxy) T(...)" allocates and constructs a task of type 
+		  <em>T</em>. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		  <p>Allocating tasks larger than 216 bytes might be
+			 significantly slower than allocating smaller tasks. In general, task objects
+			 should be small lightweight entities. 
+		  </p>
+ 
+		</div> 
+		<p>Because these methods are used idiomatically, the
+		  members in the following table show the idiom, not the declaration. The
+		  argument 
+		  <samp class="codeph">this</samp> is typically implicit, but shown explicitly in
+		  the headings to distinguish instance methods from static methods. 
+		</p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d112273e65">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d112273e68">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d112273e65 "><span class="keyword">new( task::allocate_root(
+						task_group_context&amp; group ) ) T 
+					 </span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d112273e68 "> 
+					 <p>Allocate a 
+						<samp class="codeph">task</samp> of type 
+						<em>T 
+						</em>with the specified cancellation group. The figure below
+						summarizes the state transition. 
+					 </p>
+ 
+					 <div class="fignone" id="fig7"><a name="fig7"><!-- --></a><span class="figcap">Effect of
+						  task::allocate_root()</span> 
+						 
+						<br><img src="../Resources/06000008.png"><br> 
+					 </div>
+ 
+					 <p>Use method 
+						<samp class="codeph">spawn_root_and_wait</samp> to execute the 
+						<samp class="codeph">task</samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d112273e65 "><span class="keyword">new( task::allocate_root() )
+						T</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d112273e68 "> 
+					 <p>Like 
+						<samp class="codeph">new(task::allocate_root(task_group_context&amp;))</samp>
+						except that cancellation group is the current innermost cancellation group. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d112273e65 "><span class="keyword">new( x.allocate_continuation() )
+						T</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d112273e68 "> 
+					 <p>Allocates and constructs a task of type 
+						<samp class="codeph"><em>T</em></samp>, and transfers the 
+						<em>successor</em> from 
+						<samp class="codeph"><em>x</em></samp> to the new task. No reference
+						counts change. The figure below summarizes the state transition. 
+					 </p>
+ 
+					 <div class="fignone" id="fig8"><a name="fig8"><!-- --></a><span class="figcap">Effect of
+						  allocate_continuation()</span> 
+						 
+						<br><img src="../Resources/06000009.png"><br> 
+					 </div>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d112273e65 "><span class="keyword">new( x.allocate_child() )
+						T</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d112273e68 "> 
+					 <p>Allocates a 
+						<samp class="codeph">task</samp> with 
+						<samp class="codeph">this</samp> as its 
+						<em>successor</em>. The figure below summarizes the state
+						transition. 
+					 </p>
+ 
+					 <div class="fignone" id="fig9"><a name="fig9"><!-- --></a><span class="figcap">Effect of
+						  allocate_child()</span> 
+						 
+						<br><img src="../Resources/0600000A.png"><br> 
+					 </div>
+ 
+					 <p>If using explicit continuation passing,
+						then the continuation, not the 
+						<samp class="codeph"><em>successor</em></samp>, should call the allocation
+						method, so that successor is set correctly. 
+					 </p>
+ 
+					 <p>If the number of tasks is not a small
+						fixed number, consider building a 
+						<samp class="codeph">task_list</samp> of the predecessors first, and
+						spawning them with a single call to<samp class="codeph"> task::spawn</samp>. If a 
+						<samp class="codeph">task</samp> must spawn some predecessors before all
+						are constructed, it should use 
+						<samp class="codeph">task::allocate_additional_child_of(*this)</samp>
+						instead, because that method atomically increments 
+						<samp class="codeph"><em>refcount</em></samp>, so that the additional
+						predecessor is properly accounted. However, if doing so, the task must protect
+						against premature zeroing of 
+						<samp class="codeph"><em>refcount</em></samp> by using a blocking-style
+						task pattern. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d112273e65 "><span class="keyword">new(task::allocate_additional_child_of( y ))
+						T</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d112273e68 "> 
+					 <p>Allocates a 
+						<samp class="codeph">task</samp> as a predecessor of another 
+						<samp class="codeph">task 
+						  <em>y</em></samp>. Task 
+						<samp class="codeph">y</samp> may be already running or have other
+						predecessors running. The figure below summarizes the state transition. 
+					 </p>
+ 
+					 <div class="fignone" id="fig10"><a name="fig10"><!-- --></a><span class="figcap">Effect of
+						  allocate_additional_child_of(successor)</span> 
+						 
+						<br><img src="../Resources/0600000B.png"><br> 
+					 </div>
+ 
+					 <p>Because 
+						<samp class="codeph"><em>y</em></samp> may already have running
+						predecessors, the increment of 
+						<samp class="codeph"><em>y</em></samp>.<samp class="codeph"><em>refcount</em></samp> is
+						atomic (unlike the other allocation methods, where the increment is not
+						atomic). When adding a predecessor to a task with other predecessors running,
+						it is up to the programmer to ensure that the successor's 
+						<samp class="codeph"><em>refcount</em></samp> does not prematurely reach 0
+						and trigger execution of the successor before the new predecessor is added. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="task_list_cls.htm">task_list Class 
+		  </a></div>
+<div><a href="synchronization.htm">Synchronization 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

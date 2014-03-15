@@ -1,0 +1,149 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Which Dynamic Libraries to Use">
+<meta name="DC.subject" content="Which Dynamic Libraries to Use">
+<meta name="keywords" content="Which Dynamic Libraries to Use">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Memory_Allocation.htm">
+<meta name="DC.Relation" scheme="URI" content="Scalable_Memory_Allocator.htm#tutorial_Scalable_Memory_Allocator">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Which_Dynamic_Libraries_to_Use">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Which Dynamic Libraries to Use</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Which_Dynamic_Libraries_to_Use">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Which_Dynamic_Libraries_to_Use"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Which Dynamic Libraries to Use</h1>
+ 
+   
+  <div> 
+	 <p>The template 
+		<samp class="codeph">scalable_allocator&lt;T&gt;</samp> requires the Intel&reg; Threading Building Blocks (Intel&reg; TBB)
+		scalable memory allocator library as described in 
+		<strong>Scalable Memory Allocator</strong>. It does not require the Intel&reg; TBB
+		general library, and can be used independently of the rest of Intel&reg; TBB. 
+	 </p>
+ 
+	 <p>The templates 
+		<samp class="codeph">tbb_allocator&lt;T&gt;</samp> and 
+		<samp class="codeph">cache_aligned_allocator&lt;T&gt;</samp> use the scalable
+		allocator library if it is present otherwise it reverts to using 
+		<samp class="codeph">malloc</samp> and 
+		<samp class="codeph">free</samp>. Thus, you can use these templates even in
+		applications that choose to omit the scalable memory allocator library. 
+	 </p>
+ 
+	 <p>The rest of Intel&reg; Threading Building Blocks can be used with or without
+		the Intel&reg; TBB scalable memory allocator library. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl15"><!-- --></a><table cellpadding="4" summary="" id="tbl15" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Templates and Libraries</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" valign="top" width="37.77777777777778%" id="d151616e64"> 
+			 <p>Template 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="36.11111111111111%" id="d151616e70"> 
+			 <p>Requirements 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="26.111111111111114%" id="d151616e76"> 
+			 <p>Notes 
+			 </p>
+ 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="37.77777777777778%" headers="d151616e64 "> 
+			 <p><samp class="codeph">scalable_allocator&lt;T&gt;</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="36.11111111111111%" headers="d151616e70 "> 
+			 <p>Intel&reg; Threading Building Blocks scalable memory allocator
+				library. See 
+				<strong>Scalable Memory Allocator</strong>.
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="26.111111111111114%" headers="d151616e76 "> 
+			 <p>&nbsp; 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="37.77777777777778%" headers="d151616e64 "> 
+			 <p><samp class="codeph">tbb_allocator&lt;T&gt;</samp> 
+			 </p>
+ 
+			 <p><samp class="codeph">cache_aligned_allocator&lt;T&gt;</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="36.11111111111111%" headers="d151616e70 "> 
+			 <p>&nbsp; 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="26.111111111111114%" headers="d151616e76 "> 
+			 <p>Uses the scalable allocator library if it is present, otherwise it
+				reverts to using 
+				<samp class="codeph">malloc</samp> and 
+				<samp class="codeph">free</samp>. 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Memory_Allocation.htm">Memory Allocation</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Scalable_Memory_Allocator.htm#tutorial_Scalable_Memory_Allocator">Scalable Memory Allocator
+		  </a></div></div>
+</div>
+
+</body>
+</html>

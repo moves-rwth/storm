@@ -1,0 +1,216 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Feature macros">
+<meta name="DC.subject" content="Feature macros, TBB_DEPRECATED, TBB_USE_EXCEPTIONS, TBB_USE_CAPTURED_EXCEPTION, C++11 Support">
+<meta name="keywords" content="Feature macros, TBB_DEPRECATED, TBB_USE_EXCEPTIONS, TBB_USE_CAPTURED_EXCEPTION, C++11 Support">
+<meta name="DC.Relation" scheme="URI" content="../../reference/environment.htm">
+<meta name="DC.Relation" scheme="URI" content="../exceptions.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="feature_macros">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Feature macros</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="feature_macros">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="feature_macros"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Feature macros</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Macros in this section control optional features in
+		  the library. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"><samp class="codeph">TBB_DEPRECATED</samp>
+		  macro</h2> 
+		 
+		<p>The macro 
+		  <samp class="codeph">TBB_DEPRECATED</samp> controls deprecated features that would
+		  otherwise conflict with non-deprecated use. Define it to be 1 to get deprecated
+		  Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.1 interfaces. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"><samp class="codeph">TBB_USE_EXCEPTIONS</samp>
+		  macro</h2> 
+		 
+		<p>The macro 
+		  <samp class="codeph">TBB_USE_EXCEPTIONS</samp> controls whether the library
+		  headers use exception-handling constructs such as 
+		  <samp class="codeph">try</samp>, 
+		  <samp class="codeph">catch</samp>, and 
+		  <samp class="codeph">throw</samp>. The headers do not use these constructs when 
+		  <samp class="codeph">TBB_USE_EXCEPTIONS=0</samp>. 
+		</p>
+ 
+		<p>For the Microsoft Windows*, Linux*, and OS X*
+		  operating systems, the default value is 1 if exception handling constructs are
+		  enabled in the compiler, and 0 otherwise. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>The runtime library may still throw an exception
+			 when 
+			 <samp class="codeph">TBB_USE_EXCEPTIONS=0</samp>. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"><samp class="codeph">TBB_USE_CAPTURED_EXCEPTION</samp>
+		  macro</h2> 
+		 
+		<p>The macro 
+		  <samp class="codeph">TBB_USE_CAPTURED_EXCEPTION</samp> controls rethrow of
+		  exceptions within the library. Because C++ 1998 does not support catching an
+		  exception on one thread and rethrowing it on another thread, the library
+		  sometimes resorts to rethrowing an approximation called 
+		  <samp class="codeph">tbb::captured_exception</samp>. 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Define 
+				<samp class="codeph">TBB_USE_CAPTURED_EXCEPTION=1</samp> to make the library
+				rethrow an approximation. This is useful for uniform behavior across platforms.
+				
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Define 
+				<samp class="codeph">TBB_USE_CAPTURED_EXCEPTION=0</samp> to request rethrow of
+				the exact exception. This setting is valid only on platforms that support the
+				std::exception_ptr feature of C++11. Otherwise a compile-time diagnostic is
+				issued. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>On Windows* , Linux* and OS X* operating systems,
+		  the default value is 
+		  <samp class="codeph">1</samp> for supported host compilers with 
+		  <samp class="codeph">std::exception_ptr</samp>, and 
+		  <samp class="codeph">0</samp> otherwise. On IA-64 architecture processors the
+		  default value is 
+		  <samp class="codeph">0</samp>. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>In order for exact exception propagation to work
+			 properly an appropriate library binary should be used. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">C++11 Support</h2> 
+		 
+		<p>To enable C++11 specific code, you need to use a compiler that
+		  supports C++11 mode, and compile your code with the C++11 mode set. C++11
+		  support is off by default in the compiler. The following table shows the option
+		  for turning it on. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl9"><!-- --></a><table cellpadding="4" summary="" id="tbl9" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Compilation Commands for Setting C++11 Support</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="30.959752321981426%" id="d60661e176"> 
+				  <p>Environment 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="69.04024767801857%" id="d60661e182"> 
+				  <p>Intel&reg; C++ Compiler (Version 11.0) 
+				  </p>
+ 
+				  <p>Compilation Command and Option 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="30.959752321981426%" headers="d60661e176 "> 
+				  <p>Windows* OS systems 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="69.04024767801857%" headers="d60661e182 "> 
+				  <p><samp class="codeph">icl /Qstd:c++0x foo.cpp</samp> 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="30.959752321981426%" headers="d60661e176 "> 
+				  <p>Linux* OS systems 
+				  </p>
+ 
+				  <p>OS X* systems 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="69.04024767801857%" headers="d60661e182 "> 
+				  <p><samp class="codeph">icc -std=c++0x foo.cpp</samp> 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 </div>
+
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/environment.htm">Environment</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../exceptions.htm">Exceptions 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

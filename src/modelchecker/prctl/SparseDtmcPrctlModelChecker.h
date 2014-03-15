@@ -122,7 +122,7 @@ public:
             // In this case we have have to compute the probabilities.
 
             // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(statesWithProbabilityGreater0);
+            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, statesWithProbabilityGreater0, statesWithProbabilityGreater0, true);
             
             // Compute the new set of target states in the reduced system.
             storm::storage::BitVector rightStatesInReducedSystem = psiStates % statesWithProbabilityGreater0;
@@ -291,7 +291,7 @@ public:
             // In this case we have have to compute the probabilities.
             
             // We can eliminate the rows and columns from the original transition probability matrix.
-            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates);
+            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates, true);
             // Converting the matrix from the fixpoint notation to the form needed for the equation
             // system. That is, we go from x = A*x + b to (I-A)x = b.
             submatrix.convertToEquationSystem();
@@ -444,7 +444,7 @@ public:
         } else {
             // In this case we have to compute the reward values for the remaining states.
             // We can eliminate the rows and columns from the original transition probability matrix.
-            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(maybeStates);
+            storm::storage::SparseMatrix<Type> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates, true);
             // Converting the matrix from the fixpoint notation to the form needed for the equation
             // system. That is, we go from x = A*x + b to (I-A)x = b.
             submatrix.convertToEquationSystem();

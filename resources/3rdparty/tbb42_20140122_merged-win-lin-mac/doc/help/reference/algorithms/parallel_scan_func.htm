@@ -1,0 +1,329 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="parallel_scan Template Function">
+<meta name="DC.subject" content="parallel_scan Template Function">
+<meta name="keywords" content="parallel_scan Template Function">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/parallel_scan_func/pre_scan_tag_and_final_scan_tag_clses.htm">
+<meta name="DC.Relation" scheme="URI" content="parallel_scan_func/pre_scan_tag_and_final_scan_tag_clses.htm#pre_scan_tag_and_final_scan_tag_clses">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_scan_func">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>parallel_scan Template Function</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="parallel_scan_func">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_scan_func"><!-- --></a>
+
+
+<h1 class="topictitle1">parallel_scan Template Function</h1>
+
+  
+ <div>
+  <div class="section"><h2 class="sectiontitle">Summary</h2> Template function that computes parallel prefix. </div>
+
+  <div class="section"><h2 class="sectiontitle">Header</h2> 
+<pre>#include "tbb/parallel_scan.h"</pre>
+ </div>
+
+ <div class="section"><h2 class="sectiontitle">Syntax</h2> <pre>
+template&lt;typename Range, typename Body&gt; 
+void parallel_scan( const Range&amp; range, Body&amp; body );
+
+template&lt;typename Range, typename Body&gt; 
+void parallel_scan( const Range&amp; range, Body&amp; body, const auto_partitioner&amp; );
+
+template&lt;typename Range, typename Body&gt; 
+void parallel_scan( const Range&amp; range, Body&amp; body, const simple_partitioner&amp; );
+</pre>
+</div>
+
+ <div class="section"><h2 class="sectiontitle">Description</h2><p>A <samp class="codeph">parallel_scan</samp>(<em>range</em>,<em>body</em>)
+    computes a parallel prefix, also known as parallel scan. This computation is an advanced concept
+    in parallel computing that is sometimes useful in scenarios that appear to have inherently
+    serial dependences.</p>
+<p>A mathematical definition of the parallel prefix is as follows. Let
+    × be an associative operation with left-identity element id<sub>×</sub>. 
+    The parallel prefix of × over a sequence <em>z</em><sub>0</sub>, <em>z</em><sub>1</sub>, ...<em>z</em><sub>n-1</sub> 
+    is a sequence <em>y</em><sub>0</sub>, <em>y</em><sub>1</sub>, <em>y</em><sub>2</sub>, ...<em>y</em><sub>n-1</sub> 
+    where:</p>
+<ul type="disc"> <li> y<sub>0</sub> = id<sub>×</sub> × z<sub>0</sub>
+    </li>
+
+    <li> y<sub>i</sub> = y<sub>i-1</sub> × z<sub>i</sub>
+    </li>
+
+   </ul>
+<p>For example, if × is addition, the parallel prefix corresponds a running sum. A
+    serial implementation of parallel prefix
+    is:</p>
+<pre>
+T temp = id<sub>×</sub>;
+for( int i=1; i&lt;=n; ++i ) {
+    temp = temp × z[i];
+    y[i] = temp;
+}
+</pre><p>Parallel
+    prefix performs this in parallel by reassociating the application of × and using two
+    passes. It may invoke × up to twice as many times as the serial prefix algorithm. Given
+    the right grain size and sufficient hardware threads, it can out perform the serial prefix
+    because even though it does more work, it can distribute the work across more than one hardware
+    thread.</p>
+<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3>
+    <p> Because <samp class="codeph">parallel_scan</samp> needs two passes, systems with only two hardware
+     threads tend to exhibit small speedup. <samp class="codeph">parallel_scan</samp> is best considered a
+     glimpse of a technique for future systems with more than two cores. It is nonetheless of
+     interest because it shows how a problem that appears inherently sequential can be
+     parallelized.</p>
+
+    <p>The template <samp class="codeph">parallel_scan&lt;Range,Body&gt;</samp> implements parallel prefix
+     generically. It requires the signatures described in the table below.</p>
+
+   </div>
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">parallel_scan Requirements</span></caption>
+     
+     
+     <thead align="left">
+      <tr>
+       <th class="cellrowborder" valign="top" width="50.24875621890548%" id="d7237e170">
+        <p>Pseudo-Signature </p>
+
+       </th>
+
+       <th class="row-nocellborder" valign="top" width="49.75124378109454%" id="d7237e176">
+        <p>Semantics </p>
+
+       </th>
+
+      </tr>
+
+     </thead>
+
+     <tbody>
+      <tr valign="top">
+       <td class="cellrowborder" valign="top" width="50.24875621890548%" headers="d7237e170 ">
+        <p><samp class="codeph">void Body::operator()( const Range&amp; r, pre_scan_tag )
+         </samp>
+        </p>
+
+       </td>
+
+       <td class="row-nocellborder" valign="top" width="49.75124378109454%" headers="d7237e176 ">
+        <p> Accumulate summary for range <samp class="codeph">r</samp> . </p>
+
+       </td>
+
+      </tr>
+
+      <tr valign="top">
+       <td class="cellrowborder" valign="top" width="50.24875621890548%" headers="d7237e170 ">
+        <p><samp class="codeph">void Body::operator()( const Range&amp; r, final_scan_tag )
+         </samp>
+        </p>
+
+       </td>
+
+       <td class="row-nocellborder" valign="top" width="49.75124378109454%" headers="d7237e176 ">
+        <p> Compute scan result and summary for range<samp class="codeph"> r</samp>.</p>
+
+       </td>
+
+      </tr>
+
+      <tr valign="top">
+       <td class="cellrowborder" valign="top" width="50.24875621890548%" headers="d7237e170 ">
+        <p><samp class="codeph">Body::Body( Body&amp; b, split )</samp>
+        </p>
+
+       </td>
+
+       <td class="row-nocellborder" valign="top" width="49.75124378109454%" headers="d7237e176 ">
+        <p>Split <samp class="codeph">b</samp> so that <samp class="codeph">this</samp> and <samp class="codeph">b</samp> can
+         accumulate summaries separately. Body <samp class="codeph">*this</samp> is object <samp class="codeph">a</samp> in the table row
+         below.</p>
+
+       </td>
+
+      </tr>
+
+      <tr valign="top">
+       <td class="cellrowborder" valign="top" width="50.24875621890548%" headers="d7237e170 ">
+        <p><samp class="codeph"> void Body::reverse_join( Body&amp; a )</samp>
+        </p>
+
+       </td>
+
+       <td class="row-nocellborder" valign="top" width="49.75124378109454%" headers="d7237e176 ">
+        <p> Merge summary accumulated by <samp class="codeph">a</samp> into summary accumulated by
+          <samp class="codeph">this</samp>, where <samp class="codeph">this</samp> was created earlier from <samp class="codeph">a</samp> by <samp class="codeph">a</samp>'s
+         splitting constructor. Body <samp class="codeph">*this</samp> is object <samp class="codeph">b</samp> in the table row above.</p>
+
+       </td>
+
+      </tr>
+
+      <tr valign="top">
+       <td class="cellrowborder" valign="top" width="50.24875621890548%" headers="d7237e170 ">
+        <p><samp class="codeph"> void Body::assign( Body&amp; b )</samp></p>
+
+       </td>
+
+       <td class="row-nocellborder" valign="top" width="49.75124378109454%" headers="d7237e176 ">
+        <p>Assign summary of <samp class="codeph">b</samp> to <samp class="codeph">this</samp>.</p>
+
+       </td>
+
+      </tr>
+
+     </tbody>
+
+    </table>
+</div>
+<p>A summary contains enough information such that for two consecutive subranges <em>r</em>
+    and <em>s</em>:</p>
+<ul type="disc">
+    <li> If <em>r</em> has no preceding subrange, the scan result for <em>s</em> can be computed from
+     knowing <em>s</em> and the summary for <em>r</em>.</li>
+
+    <li> A summary of <em>r</em> concatenated with <em>s</em> can be computed from the summaries of <em>r</em>
+     and <em>s</em>.</li>
+
+   </ul>
+<p>For example, if computing a running sum of an array, the summary for a range <em>r</em> is
+    the sum of the array elements corresponding to <em>r</em>.</p>
+<p>The figure below shows one way that
+     <samp class="codeph">parallel_scan</samp> might compute the running sum of an array containing the
+    integers 1-16. Time flows downwards in the diagram. Each color denotes a separate <samp class="codeph">Body</samp> object.
+    Summaries are shown in brackets.</p>
+<ol>
+    <li> The first two steps split the original blue body into the pink and yellow bodies. Each body
+     operates on a quarter of the input array in parallel. The last quarter is processed later in
+     step 5.</li>
+
+    <li> The blue body computes the final scan and summary for 1-4. The pink and yellow bodies
+     compute their summaries by prescanning 5-8 and 9-12 respectively. </li>
+
+    <li> The pink body computes its summary for 1-8 by performing a reverse_join with the blue body. </li>
+
+    <li> The yellow body computes its summary for 1-12 by performing a reverse_join with the pink
+     body. </li>
+
+    <li> The blue, pink, and yellow bodies compute final scans and summaries for portions of the
+     array. </li>
+
+    <li> The yellow summary is assigned to the blue body. The pink and yellow bodies are destroyed.
+    </li>
+
+   </ol>
+<p>Note that two quarters of the array were not prescanned. The
+     <samp class="codeph">parallel_scan</samp> template makes an effort to avoid prescanning where possible, to
+    improve performance when there are only a few or no extra worker threads. If no other workers
+    are available, <samp class="codeph">parallel_scan</samp> processes the subranges without any pre_scans, by processing the
+    subranges from left to right using final scans. That's why final scans must compute a summary as
+    well as the final scan result. The summary might be needed to process the next subrange if no
+    worker thread has prescanned it yet.</p>
+<p><strong>Example Execution of
+     parallel_scan</strong></p>
+<img src="../Resources/parll_scan.jpg"><p>The following code demonstrates how the
+    signatures could be implemented to use <samp class="codeph">parallel_scan</samp> to compute the same result as the earlier
+    sequential example involving ×.
+    </p>
+<pre>
+using namespace tbb;
+
+class Body {
+    T sum;
+    T* const y;
+    const T* const z;
+public:
+    Body( T y_[], const T z_[] ) : sum(id<sub>×</sub>), z(z_), y(y_) {}
+    T get_sum() const {return sum;}
+
+    template&lt;typename Tag&gt;
+    void operator()( const blocked_range&lt;int&gt;&amp; r, Tag ) {
+        T temp = sum;
+        for( int i=r.begin(); i&lt;r.end(); ++i ) {
+            temp = temp × z[i];
+            if( Tag::is_final_scan() )
+                y[i] = temp;
+        }
+        sum = temp;
+    }
+    Body( Body&amp; b, split ) : z(b.z), y(b.y), sum(id<sub>×</sub>) {}
+    void reverse_join( Body&amp; a ) { sum = a.sum ןƒ… sum;}
+    void assign( Body&amp; b ) {sum = b.sum;}
+};
+
+float DoParallelScan( T y[], const T z[], int n ) {
+    Body body(y,z);
+    parallel_scan( blocked_range&lt;int&gt;(0,n), body );
+    return body.get_sum();
+}
+</pre><p>The
+    definition of <samp class="codeph">operator()</samp> demonstrates typical patterns when using
+     <samp class="codeph">parallel_scan</samp>.</p>
+<ul type="disc">
+    <li> A single template defines both versions. Doing so is not required, but usually saves coding
+     effort, because the two versions are usually similar. The library defines static method
+      <samp class="codeph">is_final_scan(</samp>) to enable differentiation between the versions.</li>
+
+      <li> The prescan variant computes the × reduction, but does not update
+      <samp class="codeph">y</samp>. The prescan is used by <samp class="codeph">parallel_scan</samp> to generate
+     look-ahead partial reductions.</li>
+
+      <li> The final scan variant computes the × reduction and updates
+      <samp class="codeph">y</samp>.</li>
+
+   </ul>
+<p>The operation <samp class="codeph">reverse_join</samp> is similar to the operation
+     <samp class="codeph">join</samp> used by <samp class="codeph">parallel_reduce</samp>, except that the arguments are
+    reversed. That is, <samp class="codeph">this</samp> is the <em>right</em> argument of ×.
+    Template function <samp class="codeph">parallel_scan</samp> decides if and when to generate parallel work.
+    It is thus crucial that × is associative and that the methods of Body faithfully represent it.
+    Operations such as floating-point addition that are somewhat associative can be used, with the
+    understanding that the results may be rounded differently depending upon the association used by
+     <samp class="codeph">parallel_scan</samp>. The reassociation may differ between runs even on the same
+    machine. However, if there are no worker threads available, execution associates identically to
+    the serial form shown at the beginning of this section.</p>
+<p>If you change the example to use a
+     <samp class="codeph">simple_partitioner</samp>, be sure to provide a grainsize. The code below shows the
+    how to do this for a grainsize of
+   1000:</p>
+<pre>parallel_scan(blocked_range&lt;int&gt;(0,n,1000), total, 
+                                     simple_partitioner() );
+</pre></div>
+
+
+</div>
+
+ 
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/algorithms/parallel_scan_func/pre_scan_tag_and_final_scan_tag_clses.htm">pre_scan_tag and final_scan_tag Classes</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="parallel_scan_func/pre_scan_tag_and_final_scan_tag_clses.htm#pre_scan_tag_and_final_scan_tag_clses">pre_scan_tag and final_scan_tag Classes</a> </div></div>
+</div> 
+
+</body>
+</html>

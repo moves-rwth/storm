@@ -1,0 +1,76 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Thread Local Storage">
+<meta name="DC.subject" content="Thread Local Storage">
+<meta name="keywords" content="Thread Local Storage">
+<meta name="DC.Relation" scheme="URI" content="../reference/reference.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/thread_local_storage/combinable_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/thread_local_storage/enumerable_thread_specific_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/thread_local_storage/flattened2d_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="threadlocalstorage">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Thread Local Storage</title>
+</head>
+<body id="threadlocalstorage">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="threadlocalstorage"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Thread Local Storage</h1>
+ 
+  
+  <div> 
+	 <div class="section">
+		<p>Intel&reg; Threading Building Blocks (Intel&reg; TBB)
+		  provides two template classes for thread local storage. Both provide a
+		  thread-local element per thread. Both lazily create the elements on demand.
+		  They differ in their intended use models:
+		</p>
+ 
+		<p><samp class="codeph">combinable</samp> provides thread-local
+		  storage for holding per-thread subcomputations that will later be reduced to a
+		  single result. It is PPL compatible. 
+		</p>
+ 
+		<p><samp class="codeph">enumerable_thread_specific</samp>
+		  provides thread-local storage that acts like an STL container with one element
+		  per thread. The container permits iterating over the elements using the usual
+		  STL iteration idioms.
+		</p>
+ 
+		<p>This section also describes template class 
+		  <samp class="codeph">flatten2d</samp>, which assists a common idiom where an 
+		  <samp class="codeph">enumerable_thread_specific</samp> represents a container
+		  partitioner across threads. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../reference/reference.htm">Intel&reg; Threading Building Blocks Reference Manual</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../reference/thread_local_storage/combinable_cls.htm">combinable Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/thread_local_storage/enumerable_thread_specific_cls.htm">enumerable_thread_specific Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/thread_local_storage/flattened2d_cls.htm">flattened2d Template Class</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

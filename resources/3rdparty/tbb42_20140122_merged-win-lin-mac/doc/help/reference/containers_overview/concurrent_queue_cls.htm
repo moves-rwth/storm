@@ -1,0 +1,572 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="concurrent_queue Template Class">
+<meta name="DC.subject" content="concurrent_queue Template Class">
+<meta name="keywords" content="concurrent_queue Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="concurrent_queue_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>concurrent_queue Template Class</title>
+</head>
+<body id="concurrent_queue_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="concurrent_queue_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">concurrent_queue Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Template class for queue with concurrent
+		  operations. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<p> 
+		  <pre>template&lt;typename T, typename Alloc=cache_aligned_allocator&lt;T&gt; &gt; class concurrent_queue;</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<p> 
+		  <pre>#include "tbb/concurrent_queue.h"</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">concurrent_queue</samp> is a first-in first-out data
+		  structure that permits multiple threads to concurrently push and pop items. Its
+		  capacity is unbounded, subject to memory limitations on the target machine. 
+		</p>
+ 
+		<p>The interface is similar to STL 
+		  <samp class="codeph">std::queue</samp> except where it must differ to make
+		  concurrent modification safe. 
+		</p>
+ 
+		<p> 
+		</p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Differences Between STL queue and Intel&reg;
+		  Threading Building Blocks concurrent_queue</span></caption> 
+		   
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d39293e87"> 
+				  <p><strong>Feature</strong> 
+				  </p>
+ 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d39293e95"> 
+				  <p><strong>STL std::queue</strong> 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d39293e103"> 
+				  <p><strong>concurrent_queue</strong> 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+ 
+		  </thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d39293e87 "> 
+				  <p>Access to front and back 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d39293e95 "> 
+				  <p>Methods 
+					 <samp class="codeph">front</samp> and 
+					 <samp class="codeph">back</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d39293e103 "> 
+				  <p>Not present. They would be unsafe while
+					 concurrent operations are in progress. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d39293e87 "> 
+				  <p><samp class="codeph">size_type</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d39293e95 "> 
+				  <p>unsigned integral type 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d39293e103 "> 
+				  <p><samp class="codeph"><em>signed</em></samp> integral
+					 type 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d39293e87 "> 
+				  <p><samp class="codeph">unsafe_size()</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d39293e95 "> 
+				  <p>Returns number of items in queue 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d39293e103 "> 
+				  <p>Returns number of items in queue. May
+					 return incorrect value if any 
+					 <samp class="codeph">push</samp> or 
+					 <samp class="codeph">try_pop</samp> operations are concurrently in flight.
+					 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d39293e87 "> 
+				  <p>Copy and pop item unless queue q is empty. 
+				  </p>
+ 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d39293e95 "> 
+				  <p>bool b=!q.empty(); 
+				  </p>
+ 
+				  <p>if(b) { 
+				  </p>
+ 
+				  <p>&nbsp;&nbsp;&nbsp; x=q.front(); 
+				  </p>
+ 
+				  <p>&nbsp;&nbsp;&nbsp; q.pop(); 
+				  </p>
+ 
+				  <p>} 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d39293e103 "> 
+				  <p>bool b = 
+					 <em>q</em>.try_pop (x) 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+                &nbsp;&nbsp;&nbsp; template&lt;typename T, 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typename Alloc=cache_aligned_allocator&lt;T&gt; &gt;
+    &nbsp;&nbsp;&nbsp; class concurrent_queue {
+    &nbsp;&nbsp;&nbsp; public:
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>// types</em>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef T value_type;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef T&amp; reference;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef const T&amp; const_reference;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef std::ptrdiff_t size_type;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef std::ptrdiff_t difference_type;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef Alloc allocator_type;
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; explicit concurrent_queue(const Alloc&amp; a = Alloc ());
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; concurrent_queue(const concurrent_queue&amp; src,
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const Alloc&amp; a = Alloc());
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; template&lt;typename InputIterator&gt;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; concurrent_queue(InputIterator first, InputIterator last,
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const Alloc&amp; a = Alloc());
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ~concurrent_queue();
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void push( const T&amp; source );
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool try_pop T&amp; destination );
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void clear()&nbsp;;
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; size_type unsafe_size() const;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool empty() const;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Alloc get_allocator() const;
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef implementation-defined iterator;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef implementation-defined const_iterator;
+    &nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // iterators (these are slow and intended only for debugging)
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iterator unsafe_begin();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iterator unsafe_end();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const_iterator unsafe_begin() const;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const_iterator unsafe_end() const;
+    &nbsp;&nbsp;&nbsp; };
+    }</pre> 
+		<p>In Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.1, a 
+		  <samp class="codeph">concurrent_queue</samp> could be bounded. Intel&reg; TBB 2.2
+		  moves this functionality to 
+		  <samp class="codeph">concurrent_bounded_queue</samp>. Compile with 
+		  <samp class="codeph">TBB_DEPRECATED=1</samp> to restore the old functionality, or
+		  (recommended) use 
+		  <samp class="codeph">concurrent_bounded_queue</samp> instead. 
+		</p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d39293e275">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d39293e278">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">concurrent_queue( const Alloc&amp;
+						a = Alloc () )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p>Constructs empty queue. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">concurrent_queue( const
+						concurrent_queue&amp; src, const Alloc&amp; a = Alloc() )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p>Constructs a copy of 
+						<em>src</em>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">template&lt;typename
+						InputIterator&gt; concurrent_queue( InputIterator first, InputIterator last,
+						const Alloc&amp; a = Alloc() )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p>Constructs a queue containing copies of elements in the
+						iterator half-open interval [<em>first,last</em>). 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">~concurrent_queue()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p>Destroys all items in the queue. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">void push( const T&amp; source
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p>Pushes a copy of 
+						<samp class="codeph">source</samp> onto back of the queue. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">bool try_pop ( T&amp; destination
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p>If value is available, pops it from the queue, assigns it to
+						destination, and destroys the original value. Otherwise does nothing. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: True if value was popped; false otherwise. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p><samp class="codeph">try_pop</samp> was called 
+						  <samp class="codeph">pop_if_present</samp> in Intel&reg; TBB 2.1. Compile
+						  with 
+						  <samp class="codeph">TBB_DEPRECATED=1</samp> to use the old name. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">void clear()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p>Clears the queue. Afterwards 
+						<samp class="codeph">size()==0</samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">size_type unsafe_size()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p><strong>Returns</strong> 
+					 </p>
+ 
+					 <p>Number of items in the queue. If there are concurrent
+						modifications in flight, the value might not reflect the actual number of items
+						in the queue. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">bool empty() const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">true</samp> if queue has no items; false otherwise.
+						
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e275 "><span class="keyword">Alloc get_allocator()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e278 "> 
+					 <p><strong>Returns</strong>: Copy of allocator used to construct the
+						queue. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Iterators</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">concurrent_queue</samp> provides limited iterator support
+		  that is intended solely to allow programmers to inspect a queue during
+		  debugging. It provides iterator and const_iterator types. Both follow the usual
+		  STL conventions for forward iterators. The iteration order is from least
+		  recently pushed to most recently pushed. Modifying a 
+		  <samp class="codeph">concurrent_queue</samp> invalidates any iterators that
+		  reference it. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>The iterators are relatively slow. They should be used only for
+			 debugging. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>The following program builds a queue with the integers 0..9, and then
+		  dumps the queue to standard output. Its overall effect is to print 0 1 2 3 4 5
+		  6 7 8 9. 
+		</p>
+ 
+		<pre>#include "tbb/concurrent_queue.h"
+#include &lt;iostream&gt;
+&nbsp;
+using namespace std;
+using namespace tbb;
+&nbsp;
+int main() {
+&nbsp;&nbsp;&nbsp; concurrent_queue&lt;int&gt; queue;
+&nbsp;&nbsp;&nbsp; for( int i=0; i&lt;10; ++i )
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; queue.push(i);
+&nbsp;&nbsp;&nbsp; typedef concurrent_queue&lt;int&gt;::iterator iter;
+&nbsp;&nbsp;&nbsp; for(iter i(queue.unsafe_begin()); i!=queue.unsafe_end(); ++i)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; *i &lt;&lt; " ";
+&nbsp;&nbsp;&nbsp; cout &lt;&lt; endl;
+&nbsp;&nbsp;&nbsp; return 0;
+&nbsp;
+}
+
+</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d39293e517">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d39293e520">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e517 "><span class="keyword">iterator unsafe_begin()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e520 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">iterator</samp> pointing to beginning of the queue.
+						
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e517 "><span class="keyword">iterator unsafe_end()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e520 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">iterator</samp> pointing to end of the queue. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e517 "><span class="keyword">const_iterator unsafe_begin()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e520 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_iterator</samp> with pointing to beginning of
+						the queue. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d39293e517 "><span class="keyword"></span><samp class="codeph">const_iterator</samp> unsafe_end()
+					 const 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d39293e520 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_iterator</samp> pointing to end of the queue.
+						
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/containers_overview.htm">Containers Overview</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

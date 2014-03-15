@@ -1,0 +1,207 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="parallel_for">
+<meta name="DC.subject" content="parallel_for">
+<meta name="keywords" content="parallel_for">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Parallelizing_Simple_Loops.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Lambda_Expressions.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Automatic_Chunking.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Controlling_Chunking.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Bandwidth_and_Cache_Affinity.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Partitioner_Summary.htm">
+<meta name="DC.Relation" scheme="URI" content="Advanced_Topic_Other_Kinds_of_Iteration_Spaces.htm#tutorial_Advanced_Topic_Other_Kinds_of_Iteration_Spaces">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_parallel_for">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>parallel_for</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_parallel_for">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_parallel_for"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">parallel_for</h1>
+ 
+   
+  <div> 
+	 <p>Suppose you want to apply a function 
+		<samp class="codeph">Foo</samp> to each element of an array, and it is safe to
+		process each element concurrently. Here is the sequential code to do this: 
+	 </p>
+ 
+	 <pre>void SerialApplyFoo( float a[], size_t n ) {
+    for( size_t i=0; i!=n; ++i )
+        Foo(a[i]);
+}</pre> 
+	 <p>The iteration space here is of type 
+		<samp class="codeph">size_t</samp>, and goes from 
+		<samp class="codeph">0</samp> to 
+		<samp class="codeph">n-1</samp>. The template function 
+	 <span class="option">tbb::parallel_for</span> breaks this iteration space into chunks,
+	 and runs each chunk on a separate thread. The first step in parallelizing this
+	 loop is to convert the loop body into a form that operates on a chunk. The form
+	 is an STL-style function object, called the 
+	 <em>body</em> object, in which 
+	 <samp class="codeph">operator()</samp> processes a chunk. The following code declares
+	 the body object. The extra code required for Intel&reg; Threading Building Blocks
+	 is shown in 
+	 <samp class="codeph"><span style="color:blue"><strong>bold font</strong></span></samp>. 
+	 </p>
+ 
+	 <pre><span style="color:blue"><strong>#include "tbb/tbb.h</strong>"</span>
+&nbsp;
+<span style="color:blue"><strong>using namespace tbb;</strong></span>
+&nbsp;
+<span style="color:blue"><strong>class ApplyFoo {</strong></span>
+    <span style="color:blue"><strong>float *const my_a;</strong></span>
+<span style="color:blue"><strong>public:</strong></span>
+    <span style="color:blue"><strong>void operator()( const blocked_range&lt;size_t&gt;&amp; r ) const {</strong></span>
+        <span style="color:blue"><strong>float *a = my_a;</strong></span>
+        for( size_t i=r.begin(); i!=r.end(); ++i ) 
+           Foo(a[i]);
+    <span style="color:blue"><strong>}</strong></span>
+    <span style="color:blue"><strong>ApplyFoo( float a[] ) :</strong></span>
+        <span style="color:blue"><strong>my_a(a)</strong></span>
+    <span style="color:blue"><strong>{}</strong></span>
+<span style="color:blue"><strong>};</strong></span></pre> 
+	 <p>The 
+		<samp class="codeph">using</samp> directive in the example enables you to use the
+		library identifiers without having to write out the namespace prefix 
+		<samp class="codeph">tbb</samp> before each identifier. The rest of the examples
+		assume that such a 
+		<samp class="codeph">using</samp> directive is present. 
+	 </p>
+ 
+	 <p>Note the argument to 
+		<samp class="codeph">operator()</samp>. A 
+		<samp class="codeph">blocked_range&lt;T&gt;</samp> is a template class provided by
+		the library. It describes a one-dimensional iteration space over type 
+		<samp class="codeph">T</samp>. Class 
+		<samp class="codeph">parallel_for</samp> works with other kinds of iteration spaces
+		too. The library provides 
+		<samp class="codeph">blocked_range2d</samp> for two-dimensional spaces. You can
+		define your own spaces as explained in 
+		<strong>Advanced Topic: Other Kinds of Iteration Spaces</strong>. 
+	 </p>
+ 
+	 <p>An instance of 
+		<samp class="codeph">ApplyFoo</samp> needs member fields that remember all the local
+		variables that were defined outside the original loop but used inside it.
+		Usually, the constructor for the body object will initialize these fields,
+		though 
+		<samp class="codeph">parallel_for</samp> does not care how the body object is
+		created. Template function 
+		<samp class="codeph">parallel_for</samp> requires that the body object have a copy
+		constructor, which is invoked to create a separate copy (or copies) for each
+		worker thread. It also invokes the destructor to destroy these copies. In most
+		cases, the implicitly generated copy constructor and destructor work correctly.
+		If they do not, it is almost always the case (as usual in C++) that you must
+		define 
+		<em>both</em> to be consistent. 
+	 </p>
+ 
+	 <p>Because the body object might be copied, its 
+		<samp class="codeph">operator()</samp> should not modify the body. Otherwise the
+		modification might or might not become visible to the thread that invoked 
+		<samp class="codeph">parallel_for</samp>, depending upon whether 
+		<samp class="codeph">operator()</samp> is acting on the original or a copy. As a
+		reminder of this nuance, 
+		<samp class="codeph">parallel_for</samp> requires that the body object's 
+		<samp class="codeph">operator()</samp> be declared 
+		<samp class="codeph">const</samp>. 
+	 </p>
+ 
+	 <p>The example 
+		<samp class="codeph">operator()</samp> loads 
+		<samp class="codeph">my_a</samp> into a local variable 
+		<samp class="codeph">a</samp>. Though not necessary, there are two reasons for doing
+		this in the example: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p><strong>Style</strong>. It makes the loop body look more like the original. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><strong>Performance</strong>. Sometimes putting frequently accessed values
+			 into local variables helps the compiler optimize the loop better, because local
+			 variables are often easier for the compiler to track. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>Once you have the loop body written as a body object, invoke the
+		template function 
+		<samp class="codeph">parallel_for</samp>, as follows: 
+	 </p>
+ 
+	 <pre>#include "tbb/tbb.h"
+&nbsp;
+void ParallelApplyFoo( float a[], size_t n ) {
+    parallel_for(blocked_range&lt;size_t&gt;(0,n), ApplyFoo(a));
+}</pre> 
+	 <p>The 
+		<samp class="codeph">blocked_range</samp> constructed here represents the entire
+		iteration space from 0 to n-1, which 
+		<samp class="codeph">parallel_for</samp> divides into subspaces for each processor.
+		The general form of the constructor is 
+		<samp class="codeph">blocked_range&lt;T&gt;(<em>begin</em>,<em>end</em>,<em>grainsize</em>)</samp>.
+		The 
+		<var>T</var> specifies the value type. The arguments 
+		<var>begin</var> and 
+		<samp class="codeph"><em>end</em></samp> specify the iteration space STL-style as a
+		half-open interval [<samp class="codeph"><em>begin</em></samp>,<var>end</var>). The
+		argument 
+		<em>grainsize</em> is explained in the 
+		<strong>Controlling Chunking 
+		</strong>section. The example uses the default grainsize of 1 because by
+		default 
+		<samp class="codeph">parallel_for</samp> applies a heuristic that works well with
+		the default grainsize. 
+	 </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Parallelizing_Simple_Loops.htm">Parallelizing Simple Loops</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../tbb_userguide/Lambda_Expressions.htm">Lambda Expressions</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Automatic_Chunking.htm">Automatic Chunking</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Controlling_Chunking.htm">Controlling Chunking</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Bandwidth_and_Cache_Affinity.htm">Bandwidth and Cache Affinity</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Partitioner_Summary.htm">Partitioner Summary</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Advanced_Topic_Other_Kinds_of_Iteration_Spaces.htm#tutorial_Advanced_Topic_Other_Kinds_of_Iteration_Spaces">Advanced Topic: Other Kinds of Iteration Spaces 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

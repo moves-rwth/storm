@@ -1,0 +1,108 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Cancellation">
+<meta name="DC.subject" content="Cancellation">
+<meta name="keywords" content="Cancellation">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="task_group_context.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="cancellation">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Cancellation</title>
+</head>
+<body id="cancellation">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="cancellation"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Cancellation</h1>
+ 
+  
+  <div> 
+	 <div class="section">
+		<p>A 
+		  <em>task</em> is a quantum of work that is cancelled or executes to
+		  completion. A cancelled task skips its method 
+		  <samp class="codeph">execute()</samp> if that method has not yet started.
+		  Otherwise cancellation has no direct effect on the task. A task can poll 
+		  <samp class="codeph">task::is_cancelled()</samp> to see if cancellation was
+		  requested after it started running.
+		</p>
+
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d107917e43">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d107917e46">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d107917e43 "><span class="keyword">bool
+						cancel_group_execution()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d107917e46 ">
+					 <p>Requests cancellation of all tasks in its group and its
+						subordinate groups. 
+					 </p>
+
+					 <p><strong>Returns</strong>: False if the task's group already received a
+						cancellation request; true otherwise.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d107917e43 "><span class="keyword">bool is_cancelled()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d107917e46 ">
+					 <p><strong>Returns</strong>: True if task's group has received a
+						cancellation request; false otherwise.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="task_group_context.htm">task_group_context
+		  </a></div></div>
+</div>
+
+</body>
+</html>

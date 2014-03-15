@@ -1,0 +1,302 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Controlling Chunking">
+<meta name="DC.subject" content="Controlling Chunking">
+<meta name="keywords" content="Controlling Chunking">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/parallel_for.htm">
+<meta name="DC.Relation" scheme="URI" content="Automatic_Chunking.htm#tutorial_Automatic_Chunking">
+<meta name="DC.Relation" scheme="URI" content="Bandwidth_and_Cache_Affinity.htm#tutorial_Bandwidth_and_Cache_Affinity">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Controlling_Chunking">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Controlling Chunking</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Controlling_Chunking">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Controlling_Chunking"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Controlling Chunking </h1>
+ 
+   
+  <div> 
+	 <p>Chunking is controlled by a 
+		<em>partitioner</em> and a 
+		<em>grainsize.</em>To gain the most control over chunking, you specify
+		both. 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p>Specify 
+			 <samp class="codeph">simple_partitioner()</samp> as the third argument to 
+			 <samp class="codeph">parallel_for</samp>. Doing so turns off automatic chunking.
+			 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Specify the grainsize when constructing the range. The thread
+			 argument form of the constructor is 
+			 <samp class="codeph">blocked_range&lt;<var>T</var>&gt;(<em>begin</em>,<em>end</em>,<em>grainsize</em>)</samp>.
+			 The default value of 
+			 <var>grainsize</var> is 1. It is in units of loop iterations
+			 per chunk. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>If the chunks are too small, the overhead may exceed the performance
+		advantage. 
+	 </p>
+ 
+	 <p>The following code is the last example from 
+		<span class="keyword">parallel_for</span>, modified to use an explicit grainsize 
+		<samp class="codeph">G</samp>. Additions are shown in 
+		<samp class="codeph"><span style="color:blue"><strong>bold font</strong></span></samp>. 
+	 </p>
+ 
+	 <pre>#include "tbb/tbb.h"
+&nbsp;
+void ParallelApplyFoo( float a[], size_t n ) {
+    parallel_for(blocked_range&lt;size_t&gt;(0,n<span style="color:blue"><strong>,G</strong></span>), ApplyFoo(a)<span style="color:blue">,</span> 
+                 simple_partitioner());
+}</pre> 
+	 <p>The grainsize sets a minimum threshold for parallelization. The 
+		<samp class="codeph">parallel_for</samp> in the example invokes 
+		<samp class="codeph">ApplyFoo::operator()</samp> on chunks, possibly of different
+		sizes. Let 
+		<em>chunksize</em> be the number of iterations in a chunk. Using 
+		<samp class="codeph">simple_partitioner</samp> guarantees that 
+		<span class="eqsymbol">⌈</span>G/2<span class="eqsymbol">⌉</span>
+		
+		<span class="eqsymbol">≤</span> 
+		<em>chunksize</em> 
+		<span class="eqsymbol">≤</span> G. 
+	 </p>
+ 
+	 <p>There is also an intermediate level of control where you specify the
+		grainsize for the range, but use an 
+		<samp class="codeph">auto_partitioner</samp> and 
+		<samp class="codeph">affinity_partitioner</samp>. An 
+		<samp class="codeph">auto_partitioner</samp> is the default partitioner. Both
+		partitioners implement the automatic grainsize heuristic described in 
+		<strong>Automatic Chunking</strong>. An 
+		<samp class="codeph">affinity_partitioner</samp> implies an additional hint, as
+		explained later in Section 
+		<strong>Bandwidth and Cache Affinity</strong>. Though these partitioners may cause
+		chunks to have more than G iterations, they never generate chunks with less
+		than 
+		<span class="eqsymbol">⌈</span>G/2<span class="eqsymbol">⌉</span>
+		iterations. Specifying a range with an explicit grainsize may occasionally be
+		useful to prevent these partitioners from generating wastefully small chunks if
+		their heuristics fail. 
+	 </p>
+ 
+	 <p>Because of the impact of grainsize on parallel loops, it is worth
+		reading the following material even if you rely on 
+		<samp class="codeph">auto_partitioner</samp> and 
+		<samp class="codeph">affinity_partitioner</samp> to choose the grainsize
+		automatically. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="fig1"><!-- --></a><table cellpadding="4" summary="" id="fig1" frame="void" border="1" rules="none" cellspacing="2"><caption><span class="tablecap">Packaging Overhead Versus Grainsize</span></caption> 
+		<tbody> 
+		  <tr> 
+			 <td class="noborder" align="center" valign="middle" width="NaN%"><br><img width="161" height="163" src="Images/image002.jpg"><br> 
+			 </td>
+ 
+			 <td class="noborder" align="center" valign="middle" width="NaN%"><br><img width="157" height="144" src="Images/image004.jpg"><br> 
+			 </td>
+ 
+		  </tr>
+ 
+		  <tr> 
+			 <td class="noborder" align="center" valign="top" width="NaN%"> 
+				<p>Case A 
+				</p>
+ 
+			 </td>
+ 
+			 <td class="noborder" align="center" valign="top" width="NaN%"> 
+				<p>Case B 
+				</p>
+ 
+			 </td>
+ 
+		  </tr>
+ 
+		</tbody>
+ 
+	 </table>
+</div>
+ 
+	 <p>The above figure illustrates the impact of grainsize by showing the
+		useful work as the gray area inside a brown border that represents overhead.
+		Both Case A and Case B have the same total gray area. Case A shows how too
+		small a grainsize leads to a relatively high proportion of overhead. Case B
+		shows how a large grainsize reduces this proportion, at the cost of reducing
+		potential parallelism. The overhead as a fraction of useful work depends upon
+		the grainsize, not on the number of grains. Consider this relationship and not
+		the total number of iterations or number of processors when setting a
+		grainsize. 
+	 </p>
+ 
+	 <p>A rule of thumb is that 
+		<samp class="codeph">grainsize</samp> iterations of 
+		<samp class="codeph">operator()</samp> should take at least 100,000 clock cycles to
+		execute. For example, if a single iteration takes 100 clocks, then the 
+		<samp class="codeph">grainsize</samp> needs to be at least 1000 iterations. When in
+		doubt, do the following experiment: 
+	 </p>
+ 
+	 <ol> 
+		<li> 
+		  <p>Set the 
+			 <samp class="codeph">grainsize</samp> parameter higher than necessary. The
+			 grainsize is specified in units of loop iterations. If you have no idea of how
+			 many clock cycles an iteration might take, start with 
+			 <samp class="codeph">grainsize</samp>=100,000. The rationale is that each
+			 iteration normally requires at least one clock per iteration. In most cases,
+			 step 3 will guide you to a much smaller value. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Run your algorithm. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Iteratively halve the 
+			 <var>grainsize</var> parameter and see how much the algorithm
+			 slows down or speeds up as the value decreases. 
+		  </p>
+ 
+		</li>
+ 
+	 </ol>
+ 
+	 <p>A drawback of setting a grainsize too high is that it can reduce
+		parallelism. For example, if the grainsize is 1000 and the loop has 2000
+		iterations, the 
+		<samp class="codeph">parallel_for</samp> distributes the loop across only two
+		processors, even if more are available. However, if you are unsure, err on the
+		side of being a little too high instead of a little too low, because too low a
+		value hurts serial performance, which in turns hurts parallel performance if
+		there is other parallelism available higher up in the call tree. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		<p>You do not have to set the grainsize too precisely. 
+		</p>
+ 
+	 </div> 
+	 <p>The next figure shows the typical "bathtub curve" for execution time
+		versus grainsize, based on the floating point 
+		<samp class="codeph">a[i]=b[i]*c</samp> computation over a million indices. There is
+		little work per iteration. The times were collected on a four-socket machine
+		with eight hardware threads. 
+	 </p>
+ 
+	 <div class="fignone" id="fig2"><a name="fig2"><!-- --></a><span class="figcap">Wall Clock Time Versus Grainsize </span> 
+		<br><img width="462" height="193" src="Images/image006.jpg"><br> 
+	 </div>
+ 
+	 <p>The scale is logarithmic. The downward slope on the left side indicates
+		that with a grainsize of one, most of the overhead is parallel scheduling
+		overhead, not useful work. An increase in grainsize brings a proportional
+		decrease in parallel overhead. Then the curve flattens out because the parallel
+		overhead becomes insignificant for a sufficiently large grainsize. At the end
+		on the right, the curve turns up because the chunks are so large that there are
+		fewer chunks than available hardware threads. Notice that a grainsize over the
+		wide range 100-100,000 works quite well. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		<p>A general rule of thumb for parallelizing loop nests is to parallelize
+		  the outermost one possible. The reason is that each iteration of an outer loop
+		  is likely to provide a bigger grain of work than an iteration of an inner loop.
+		  
+		</p>
+ 
+	 </div> 
+	 <p> 
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"> 
+		   
+		  <thead align="left">
+			 <tr>
+				<th class="cellrowborder" align="left" valign="top" width="100%" id="d130143e300">
+				  <p>Optimization Notice
+				  </p>
+
+				</th>
+
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="bgcolor(#ccecff)" bgcolor="#ccecff" valign="top" width="100%" headers="d130143e300 ">
+				  Intel's compilers may or may not optimize to the same degree for non-Intel
+				  microprocessors for optimizations that are not unique to Intel microprocessors.
+				  These optimizations include SSE2, SSE3, and SSSE3 instruction sets and other
+				  optimizations. Intel does not guarantee the availability, functionality, or
+				  effectiveness of any optimization on microprocessors not manufactured by Intel.
+				  Microprocessor-dependent optimizations in this product are intended for use
+				  with Intel microprocessors. Certain optimizations not specific to Intel
+				  microarchitecture are reserved for Intel microprocessors. Please refer to the
+				  applicable product User and Reference Guides for more information regarding the
+				  specific instruction sets covered by this notice. 
+				  <p>Notice revision #20110804 
+				  </p>
+
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/parallel_for.htm">parallel_for</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Automatic_Chunking.htm#tutorial_Automatic_Chunking">Automatic Chunking 
+		  </a></div>
+<div><a href="Bandwidth_and_Cache_Affinity.htm#tutorial_Bandwidth_and_Cache_Affinity">Bandwidth and Cache Affinity 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

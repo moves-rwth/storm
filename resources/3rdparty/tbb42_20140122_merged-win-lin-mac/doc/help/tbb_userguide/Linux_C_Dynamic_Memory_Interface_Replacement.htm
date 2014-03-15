@@ -1,0 +1,70 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Linux* OS C/C++ Dynamic Memory Interface Replacement">
+<meta name="DC.subject" content="Linux* OS C/C++ Dynamic Memory Interface Replacement">
+<meta name="keywords" content="Linux* OS C/C++ Dynamic Memory Interface Replacement">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Automically_Replacing_malloc.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Linux_C_Dynamic_Memory_Interface_Replacement">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Linux* OS C/C++ Dynamic Memory Interface Replacement</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Linux_C_Dynamic_Memory_Interface_Replacement">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Linux_C_Dynamic_Memory_Interface_Replacement"><!-- --></a>
+
+
+<h1 class="topictitle1">Linux* OS C/C++ Dynamic Memory Interface Replacement </h1>
+
+<div><p>Replacements are provided by the proxy library (release version <samp class="codeph">libtbbmalloc_proxy.so.2</samp>, debug version <samp class="codeph">libtbbmalloc_proxy_debug.so.2</samp>). Replacement can be done either via loading the proxy library at run-time (without changing of executable file via <samp class="codeph">LD_PRELOAD</samp>), or by linking with the proxy library.</p>
+<p>The proxy library implements the following dynamic memory functions:</p>
+
+<ul type="disc"><li><p>C library: <samp class="codeph">malloc</samp>, <samp class="codeph">calloc</samp>, <samp class="codeph">realloc</samp>, <samp class="codeph">free</samp></p>
+</li>
+<li><p>Standard POSIX* function: <samp class="codeph">posix_memalign</samp></p>
+</li>
+<li><p>Obsolete functions: <samp class="codeph">valloc</samp>, <samp class="codeph">memalign</samp>, <samp class="codeph">pvalloc</samp>, <samp class="codeph">mallopt</samp></p>
+</li>
+<li><p>Global C++ operators <samp class="codeph">new</samp> and <samp class="codeph">delete</samp>.</p>
+</li>
+</ul>
+<p>A directory with the proxy library and the appropriate scalable memory allocator library must be available for dynamic loading. To make it available for loading, either include it in <samp class="codeph">LD_LIBRARY_PATH</samp> or add it to <samp class="codeph">/etc/ld.so.conf</samp>.</p>
+<p>The following limitations for replacement exist:</p>
+
+<ul type="disc"><li><p>Replacement does not work for applications that use non-standard calls to the glibc memory allocator.</p>
+</li>
+<li><p>Mono is not supported.</p>
+</li>
+</ul>
+
+<div class="section"><h2 class="sectiontitle">Examples</h2>
+<p>Below is an example of how to set <samp class="codeph">LD_PRELOAD</samp> and link a program to use the replacements.</p>
+<pre># Set LD_PRELOAD so that loader loads release version of proxy 
+LD_PRELOAD=libtbbmalloc_proxy.so.2 
+# Link with release version of proxy and scalable allocator
+g++ foo.o bar.o -ltbbmalloc_proxy -ltbbmalloc -o a.out</pre><p>Here is a variation that shows how to link in the debug versions of the library.</p>
+<pre># Set LD_PRELOAD so that loader loads debug version of proxy
+LD_PRELOAD=libtbbmalloc_proxy_debug.so.2 
+# Link with debug version of proxy and scalable allocator
+g++ foo.o bar.o -ltbbmalloc_proxy_debug -ltbbmalloc_debug -o a.out</pre></div>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Automically_Replacing_malloc.htm">Automatically Replacing malloc and Other C/C++ Functions for Dynamic Memory Allocation</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

@@ -1,0 +1,170 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Terminology">
+<meta name="DC.subject" content="Terminology">
+<meta name="keywords" content="Terminology">
+<meta name="DC.Relation" scheme="URI" content="../../reference/general_conventions.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="terminology">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Terminology</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="terminology">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="terminology"><!-- --></a>
+
+ 
+<h1 class="topictitle1">Terminology</h1>
+ 
+	 	
+  <div> 
+  	<div class="section"><p>This section describes terminology specific to Intel&reg; Threading Building Blocks (Intel&reg; TBB).</p>
+</div>
+
+  	<div class="section"><h2 class="sectiontitle">Concept</h2>
+  		<p>A <em>concept</em> is a set of requirements on a type. The requirements may be syntactic or semantic. For example, the concept of “sortable” could be defined as a set of requirements that enable an array to be sorted. A type <samp class="codeph">T</samp> would be sortable if: </p>
+
+  		<ul type="disc">
+  			<li><p><samp class="codeph">x &lt; y</samp> returns a boolean value, and represents a total order on items of type <samp class="codeph">T</samp>.</p>
+</li>
+
+  			<li><p><samp class="codeph">swap(x,y)</samp> swaps items <samp class="codeph">x</samp> and <samp class="codeph">y </samp></p>
+</li>
+
+  		</ul>
+
+  		<p>You can write a sorting template function in C++ that sorts an array of any type that is sortable.</p>
+
+  		<p>Two approaches for defining concepts are <em>valid expressions</em> and <em>pseudo-signatures</em>. The ISO C++ standard follows the valid <em>expressions</em> approach, which shows what the usage pattern looks like for a concept. It has the drawback of relegating important details to notational conventions. This document uses pseudo-signatures, because they are concise, and can be cut-and-pasted for an initial implementation. </p>
+
+  		<p>For example, the table below shows pseudo-signatures for a sortable type <samp class="codeph">T</samp>:</p>
+
+  		
+<div class="tablenoborder"><a name="tbl1"><!-- --></a><table cellpadding="4" summary="" id="tbl1" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Pseudo-Signatures for Example Concept
+					“sortable”</span></caption>
+  				
+  				
+  				<thead align="left">
+                <tr>
+  					<th class="cellrowborder" valign="top" width="NaN%" id="d90079e104"><p><strong>Pseudo-Signature</strong></p>
+</th>
+
+  					<th class="row-nocellborder" valign="top" width="NaN%" id="d90079e109"><p><strong>Semantics</strong></p>
+</th>
+
+  				</tr>
+
+  				</thead>
+
+  				<tbody>
+                <tr>
+  					<td class="cellrowborder" valign="top" width="NaN%" headers="d90079e104 "><p>bool operator&lt;(const T&amp; x, const T&amp; y)</p>
+</td>
+
+  					<td class="row-nocellborder" valign="top" width="NaN%" headers="d90079e109 "><p>Compare x and y.</p>
+</td>
+
+  				</tr>
+<tr>
+  					<td class="cellrowborder" valign="top" width="NaN%" headers="d90079e104 "><p>void swap(T&amp; x, T&amp; y)</p>
+</td>
+
+  					<td class="row-nocellborder" valign="top" width="NaN%" headers="d90079e109 "><p>Swap x and y.</p>
+</td>
+
+  				</tr>
+</tbody>
+</table>
+</div>
+
+  		<p>A real signature may differ from the pseudo-signature that it implements in ways where implicit conversions would deal with the difference. For an example type <samp class="codeph">U</samp>, the real signature that implements operator<samp class="codeph">&lt;</samp> in the table above can be expressed as <samp class="codeph">int operator&lt;( U x, U y )</samp>, because C++ permits implicit conversion from <samp class="codeph">int</samp> to <samp class="codeph">bool</samp>, and implicit conversion from <samp class="codeph">U</samp> to (<samp class="codeph">const U&amp;</samp>). Similarly, the real signature <samp class="codeph">bool operator&lt;( U&amp; x, U&amp; y )</samp> is acceptable because C++ permits implicit addition of a const qualifier to a reference type. </p>
+
+  	</div>
+
+
+  	<div class="section"><h2 class="sectiontitle">Model</h2>  	
+  			<p>A type <em>models</em> a concept if it meets the requirements of the concept. For example, type <samp class="codeph">int</samp> models the sortable concept in the above table if there exists a function <samp class="codeph">swap(x,y)</samp> that swaps two <samp class="codeph">int</samp> values <samp class="codeph">x</samp> and <samp class="codeph">y</samp>. The other requirement for sortable, specifically <samp class="codeph">x&lt;y</samp>, is already met by the built-in <samp class="codeph">operator&lt;</samp> on type <samp class="codeph">int</samp>.</p>
+</div>
+
+  		
+			<div class="section"><h2 class="sectiontitle">CopyConstructible</h2>
+  				<p>The library sometimes requires that a type model the <em>CopyConstructible</em> concept, which is defined by the ISO C++ standard. The table below shows the requirements for <em>CopyConstructible</em> in pseudo-signature form.</p>
+
+  				
+<div class="tablenoborder"><a name="tbl2"><!-- --></a><table cellpadding="4" summary="" id="tbl2" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">CopyConstructible Requirements</span></caption>
+  						
+  						
+  						<thead align="left">
+                        <tr>
+  							<th class="cellrowborder" valign="top" width="NaN%" id="d90079e232"><p><strong>Pseudo-Signature</strong></p>
+</th>
+
+  							<th class="row-nocellborder" valign="top" width="NaN%" id="d90079e237"><p><strong>Semantics</strong></p>
+</th>
+
+  						</tr>
+
+  				        </thead>
+
+          				<tbody>
+                        <tr>
+  							<td class="cellrowborder" valign="top" width="NaN%" headers="d90079e232 "><p>T( const T&amp; )</p>
+</td>
+
+  							<td class="row-nocellborder" valign="top" width="NaN%" headers="d90079e237 "><p>Construct copy of const T.</p>
+</td>
+
+  						</tr>
+<tr>
+  							<td class="cellrowborder" valign="top" width="NaN%" headers="d90079e232 "><p>~T()</p>
+</td>
+
+  							<td class="row-nocellborder" valign="top" width="NaN%" headers="d90079e237 "><p>Destructor.</p>
+</td>
+
+  						</tr>
+<tr>
+  							<td class="cellrowborder" valign="top" width="NaN%" headers="d90079e232 "><p>T* operator&amp;()</p>
+</td>
+
+  							<td class="row-nocellborder" valign="top" width="NaN%" headers="d90079e237 "><p>Take address.</p>
+</td>
+
+  						</tr>
+<tr>
+  							<td class="cellrowborder" valign="top" width="NaN%" headers="d90079e232 "><p>const T* operator&amp;() const</p>
+</td>
+
+  							<td class="row-nocellborder" valign="top" width="NaN%" headers="d90079e237 "><p>Take address of const T.</p>
+</td>
+
+  						</tr>
+</tbody>
+</table>
+</div>
+
+  			</div>
+
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/general_conventions.htm">General Conventions</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

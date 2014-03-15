@@ -1,0 +1,267 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Range Concept">
+<meta name="DC.subject" content="Range Concept">
+<meta name="keywords" content="Range Concept">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/range_concept/blocked_range_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/range_concept/blocked_range2d_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/range_concept/blocked_range3d_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="parallel_for_func.htm#parallel_for_func">
+<meta name="DC.Relation" scheme="URI" content="parallel_reduce_func.htm#parallel_reduce_func">
+<meta name="DC.Relation" scheme="URI" content="parallel_scan_func.htm#parallel_scan_func">
+<meta name="DC.Relation" scheme="URI" content="../containers_overview/container_range_concept.htm#container_range_concept">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="range_concept">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Range Concept</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="range_concept">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="range_concept"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Range Concept</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Requirements for type representing a recursively divisible set of
+		  values. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Requirements</h2> 
+		 
+		<p>The following table lists the requirements for a
+		  Range type 
+		  <samp class="codeph">R</samp>. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl8"><!-- --></a><table cellpadding="4" summary="" id="tbl8" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Range Concept</span></caption> 
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" id="d12945e60"> 
+				  <p>Pseudo-Signature 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" id="d12945e66"> 
+				  <p>Semantics 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d12945e60 "> 
+				  <p><samp class="codeph"> R::R( const R&amp; )</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d12945e66 "> 
+				  <p> Copy constructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d12945e60 "> 
+				  <p><samp class="codeph"> R::~R()</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d12945e66 "> 
+				  <p> Destructor. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d12945e60 "> 
+				  <p><samp class="codeph"> bool R::empty() const</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d12945e66 "> 
+				  <p> True if range is empty. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d12945e60 "> 
+				  <p><samp class="codeph"> bool R::is_divisible()
+						const</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d12945e66 "> 
+				  <p> True if range can be partitioned into two
+					 subranges. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr valign="top"> 
+				<td class="cellrowborder" valign="top" headers="d12945e60 "> 
+				  <p><samp class="codeph"> R::R( R&amp; r, split )</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" headers="d12945e66 "> 
+				  <p> Split 
+					 <samp class="codeph">r</samp> into two subranges. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Description</h2> 
+		 
+		<p>A Range can be recursively subdivided into two parts. It is
+		  recommended that the division be into nearly equal parts, but it is not
+		  required. Splitting as evenly as possible typically yields the best
+		  parallelism. Ideally, a range is recursively splittable until the parts
+		  represent portions of work that are more efficient to execute serially rather
+		  than split further. The amount of work represented by a Range typically depends
+		  upon higher level context, hence a typical type that models a Range should
+		  provide a way to control the degree of splitting. For example, the template
+		  class 
+		  <samp class="codeph">blocked_range</samp> has a 
+		  <em>grainsize</em> parameter that specifies the biggest range considered
+		  indivisible. 
+		</p>
+ 
+		<p>The constructor that implements splitting is called a 
+		  <em>splitting constructor</em>. If the set of values has a sense of
+		  direction, then by convention the splitting constructor should construct the
+		  second part of the range, and update the argument to be the first half.
+		  Following this convention causes the<samp class="codeph">parallel_for</samp>, 
+          <samp class="codeph">parallel_reduce</samp> and <samp class="codeph">parallel_scan</samp> algorithms, 
+          when running sequentially, to work across a range in the increasing order typical 
+          of an ordinary sequential loop. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Example</h2> 
+		 
+		<p>The following code defines a type 
+		  <samp class="codeph">TrivialIntegerRange</samp> that models the Range concept. It
+		  represents a half-open interval [lower,upper) that is divisible down to a
+		  single integer. 
+		</p>
+ 
+		<pre> 
+struct TrivialIntegerRange {
+    int lower;
+    int upper;
+    bool empty() const {return lower==upper;}
+    bool is_divisible() const {return upper&gt;lower+1;}
+    TrivialIntegerRange( TrivialIntegerRange&amp; r, split ) {
+        int m = (r.lower+r.upper)/2;  
+        lower = m;
+        upper = r.upper;
+        r.upper = m;
+    }
+};
+</pre> 
+		<p> 
+		  <samp class="codeph">TrivialIntegerRange</samp> is for demonstration and not very
+		  practical, because it lacks a grainsize parameter. Use the library class 
+		  <samp class="codeph">blocked_range</samp> instead. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Model Types</h2> 
+		 
+		<p>Type 
+		  <samp class="codeph">blocked_range</samp> models a one-dimensional range. 
+		</p>
+ 
+		<p>Type 
+		  <samp class="codeph">blocked_range2</samp>d models a two-dimensional range. 
+		</p>
+ 
+		<p>Type 
+		  <samp class="codeph">blocked_range3d</samp> models a three-dimensional range. 
+		</p>
+ 
+		<p>The Container Range Concept models a container as a range. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/algorithms/range_concept/blocked_range_cls.htm">blocked_range Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/algorithms/range_concept/blocked_range2d_cls.htm">blocked_range2d Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/algorithms/range_concept/blocked_range3d_cls.htm">blocked_range3d Template Class</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="parallel_for_func.htm#parallel_for_func">parallel_for Template Function 
+		  </a></div>
+<div><a href="parallel_reduce_func.htm#parallel_reduce_func">parallel_reduce Template Function 
+		  </a></div>
+<div><a href="parallel_scan_func.htm#parallel_scan_func">parallel_scan Template Function 
+		  </a></div>
+<div><a href="../containers_overview/container_range_concept.htm#container_range_concept">Container Range Concept 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

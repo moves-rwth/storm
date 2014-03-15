@@ -30,12 +30,11 @@ namespace storm {
              */
             AbstractNondeterministicModel(storm::storage::SparseMatrix<T> const& transitionMatrix,
                                           storm::models::AtomicPropositionsLabeling const& stateLabeling,
-                                          std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
                                           boost::optional<std::vector<T>> const& optionalStateRewardVector,
                                           boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
                                           boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
 			: AbstractModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
-				this->nondeterministicChoiceIndices = nondeterministicChoiceIndices;
+				// Intentionally left empty.
             }
             
             /*! Constructs an abstract non-determinstic model from the given parameters.
@@ -49,13 +48,11 @@ namespace storm {
              */
             AbstractNondeterministicModel(storm::storage::SparseMatrix<T>&& transitionMatrix,
                                           storm::models::AtomicPropositionsLabeling&& stateLabeling,
-                                          std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
                                           boost::optional<std::vector<T>>&& optionalStateRewardVector,
                                           boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
                                           boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
-                // The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
                 : AbstractModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
-                               std::move(optionalChoiceLabeling)), nondeterministicChoiceIndices(std::move(nondeterministicChoiceIndices)) {
+                               std::move(optionalChoiceLabeling)) {
                 // Intentionally left empty.
             }
             
@@ -69,16 +66,14 @@ namespace storm {
             /*!
              * Copy Constructor.
              */
-            AbstractNondeterministicModel(AbstractNondeterministicModel const& other) : AbstractModel<T>(other),
-                nondeterministicChoiceIndices(other.nondeterministicChoiceIndices) {
+            AbstractNondeterministicModel(AbstractNondeterministicModel const& other) : AbstractModel<T>(other) {
                 // Intentionally left empty.
             }
             
             /*!
              * Move Constructor.
              */
-            AbstractNondeterministicModel(AbstractNondeterministicModel&& other) : AbstractModel<T>(std::move(other)),
-                nondeterministicChoiceIndices(std::move(other.nondeterministicChoiceIndices)) {
+            AbstractNondeterministicModel(AbstractNondeterministicModel&& other) : AbstractModel<T>(std::move(other)) {
                 // Intentionally left empty.
             }
             
@@ -97,7 +92,7 @@ namespace storm {
              * measured in bytes.
              */
             virtual uint_fast64_t getSizeInMemory() const {
-                return AbstractModel<T>::getSizeInMemory() + nondeterministicChoiceIndices.size() * sizeof(uint_fast64_t);
+                return AbstractModel<T>::getSizeInMemory();
             }
             
             /*!
@@ -107,13 +102,9 @@ namespace storm {
              * of a certain state.
              */
             std::vector<uint_fast64_t> const& getNondeterministicChoiceIndices() const {
-                return nondeterministicChoiceIndices;
+                return this->getTransitionMatrix().getRowGroupIndices();
             }
             
-            virtual typename storm::storage::SparseMatrix<T>::const_rows getRows(uint_fast64_t state) const override {
-                return this->transitionMatrix.getRows(nondeterministicChoiceIndices[state], nondeterministicChoiceIndices[state + 1] - 1);
-            }
-        
             /*!
              * Retrieves the backward transition relation of the model, i.e. a set of transitions
              * between states that correspond to the reversed transition relation of this model.
@@ -123,46 +114,7 @@ namespace storm {
              * @return A sparse matrix that represents the backward transitions of this model.
              */
             storm::storage::SparseMatrix<T> getBackwardTransitions() const {
-                uint_fast64_t numberOfStates = this->getNumberOfStates();
-                uint_fast64_t numberOfTransitions = this->getTransitionMatrix().getEntryCount();
-
-                std::vector<uint_fast64_t> rowIndications(numberOfStates + 1);
-                std::vector<std::pair<uint_fast64_t, T>> columnsAndValues(numberOfTransitions, std::make_pair(0, storm::utility::constantZero<T>()));
-
-                // First, we need to count how many backward transitions each state has.
-                for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                    typename storm::storage::SparseMatrix<T>::const_rows rows = this->getRows(i);
-                    for (auto const& transition : rows) {
-                        if (transition.second > 0) {
-                            ++rowIndications[transition.first + 1];
-                        }
-                    }
-                }
-
-                // Now compute the accumulated offsets.
-                for (uint_fast64_t i = 1; i < numberOfStates + 1; ++i) {
-                    rowIndications[i] = rowIndications[i - 1] + rowIndications[i];
-                }
-
-                // Create an array that stores the next index for each state. Initially
-                // this corresponds to the previously computed accumulated offsets.
-                std::vector<uint_fast64_t> nextIndices = rowIndications;
-
-                // Now we are ready to actually fill in the list of predecessors for
-                // every state. Again, we start by considering all but the last row.
-                for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                    typename storm::storage::SparseMatrix<T>::const_rows rows = this->getRows(i);
-                    for (auto const& transition : rows) {
-                        if (transition.second > 0) {
-                            columnsAndValues[nextIndices[transition.first]] = std::make_pair(i, transition.second);
-                            ++nextIndices[transition.first];
-                        }
-                    }
-                }
-
-                storm::storage::SparseMatrix<T> backwardTransitionMatrix(numberOfStates, std::move(rowIndications), std::move(columnsAndValues));
-
-                return backwardTransitionMatrix;
+                return this->getTransitionMatrix().transpose(true);
             }
 
             /*!
@@ -171,9 +123,7 @@ namespace storm {
              */
             virtual size_t getHash() const override {
                 std::size_t result = 0;
-                std::size_t hashTmp = storm::utility::Hash<uint_fast64_t>::getHash(nondeterministicChoiceIndices);
                 boost::hash_combine(result, AbstractModel<T>::getHash());
-                boost::hash_combine(result, hashTmp);
                 return result;
             }
 
@@ -196,13 +146,13 @@ namespace storm {
                 AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
     
                 // Write the probability distributions for all the states.
-                for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
-                    uint_fast64_t rowCount = nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state];
+                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    uint_fast64_t rowCount = this->getNondeterministicChoiceIndices()[state + 1] - this->getNondeterministicChoiceIndices()[state];
                     bool highlightChoice = true;
         
                     // For this, we need to iterate over all available nondeterministic choices in the current state.
                     for (uint_fast64_t choice = 0; choice < rowCount; ++choice) {
-                        typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(nondeterministicChoiceIndices[state] + choice);
+                        typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(this->getNondeterministicChoiceIndices()[state] + choice);
                         
                         if (scheduler != nullptr) {
                             // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
@@ -273,17 +223,13 @@ namespace storm {
                 newChoiceLabeling.resize(choiceCount);
     
                 for (size_t state = 0; state < stateCount; ++state) {
-                    for (size_t choice = this->nondeterministicChoiceIndices.at(state); choice < this->nondeterministicChoiceIndices.at(state + 1); ++choice) {
+                    for (size_t choice = this->getNondeterministicChoiceIndices()[state]; choice < this->getNondeterministicChoiceIndices()[state + 1]; ++choice) {
                         newChoiceLabeling.at(choice).insert(state);
                     }
                 }
     
                 this->choiceLabeling.reset(newChoiceLabeling);
             }
-        
-        protected:
-            /*! A vector of indices mapping states to the choices (rows) in the transition matrix. */
-            std::vector<uint_fast64_t> nondeterministicChoiceIndices;
         };
     } // namespace models
 } // namespace storm

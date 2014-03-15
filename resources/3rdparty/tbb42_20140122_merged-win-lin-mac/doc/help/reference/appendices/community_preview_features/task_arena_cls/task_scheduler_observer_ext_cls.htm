@@ -1,0 +1,213 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="task_scheduler_observer Class extensions">
+<meta name="DC.subject" content="task_scheduler_observer Class extensions">
+<meta name="keywords" content="task_scheduler_observer Class extensions">
+<meta name="DC.Relation" scheme="URI" content="../../../../reference/appendices/community_preview_features/task_arena_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../../task_scheduler/task_scheduler_observer.htm#task_scheduler_observer_member">
+<meta name="DC.Relation" scheme="URI" content="../../../task_scheduler/task_scheduler_init_cls.htm#task_scheduler_init_cls">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_scheduler_observer_ext_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../../intel_css_styles.css">
+<title>task_scheduler_observer Class extensions</title>
+</head>
+<body id="task_scheduler_observer_ext_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(4);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_scheduler_observer_ext_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">task_scheduler_observer Class
+	 extensions</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>The 
+		  <samp class="codeph">task_scheduler_observer 
+		  </samp>Class is extended to support local semantics and to observe
+		  when worker threads join and leave a task scheduler arena. Before these
+		  extensions, a 
+		  <samp class="codeph">task_scheduler_observer</samp> would only observe when a
+		  worker thread would join and exit the global task scheduler. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>class task_scheduler_observer;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<p> 
+		  <pre>#define TBB_PREVIEW_LOCAL_OBSERVER 1
+#include "tbb/task_scheduler_observer.h"</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+  class task_scheduler_observer {
+  public:
+    task_scheduler_observer( bool local = false );
+
+    // See task_scheduler_observer for the methods
+    // not related to local observer ...
+
+#if TBB_PREVIEW_TASK_ARENA
+    task_scheduler_observer( task_arena &amp; a)
+#endif
+
+    virtual bool on_scheduler_leaving() { return true; }
+  };
+}</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>The following example sketches the code of an observer used to pin
+		  worker threads to hardware threads and to prevent workers from sleeping. 
+		</p>
+ 
+		<pre>class pinning_observer: public tbb::task_scheduler_observer {
+public:
+  affinity_mask_t m_mask; // HW affinity mask to be used with an arena
+  pinning_observer( affinity_mask_t mask ) : m_mask(mask) { }
+  pinning_observer( tbb::task_arena &amp;a, affinity_mask_t mask )
+    : tbb::task_scheduler_observer(a), m_mask(mask) {
+    observe(true); // activate the observer
+  }
+  /*override*/ void on_scheduler_entry( bool worker ) {
+    set_thread_affinity(tbb::task_arena::current_slot(), m_mask); 
+  }
+  /*override*/ bool on_scheduler_leaving( ) {
+    // Return false to trap the thread in the arena
+    return /*bool*/ !is_more_work_available_soon();
+  }
+  /*override*/ void on_scheduler_exit( bool worker ) { }
+};</pre> 
+	 </div>
+ 
+	 <div class="section"> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc"> 
+			 <p>The following table provides additional information on the members
+				of this template class. 
+			 </p>
+ 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d24630e92">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d24630e95">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d24630e92 "><samp class="codeph">task_scheduler_observer( bool local
+						= false ) 
+					 </samp> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d24630e95 "> 
+					 <p>Constructs a 
+						<samp class="codeph">task_scheduler_observer</samp> object in an
+						inactive state (observation is disabled). If 
+						<samp class="codeph">local</samp> is 
+						<samp class="codeph">false</samp>, it does not differ from the global
+						semantics described for 
+						<samp class="codeph">task_scheduler_observer</samp>. If 
+						<samp class="codeph">local</samp> is true, and the observer has been
+						activated, the entry notifications is invoked only for threads in current arena.
+						Correspondently, a thread receives exit notifications when it leaves this arena.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d24630e92 "><samp class="codeph">task_scheduler_observer( task_arena
+						&amp; ) 
+					 </samp> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d24630e95 "> 
+					 <p>Constructs a 
+						<samp class="codeph">task_scheduler_observer</samp> object in the
+						inactive state (observation is disabled) tied to the specified 
+						<samp class="codeph">task_arena</samp>. It receives notifications related
+						only to this specified arena.
+					 </p>
+
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3>Invocation of observe(true) for such an object can force
+						initialization of the internal arena representation of the specified 
+						<samp class="codeph">task_arena</samp> object 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d24630e92 "><samp class="codeph">virtual bool on_scheduler_leaving()
+						
+					 </samp> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d24630e95 "> 
+					 <p>The callback is invoked in a worker
+						thread before it leaves an arena. If it returns false, the thread remains in
+						the arena trying to find more work.
+						It will not be called for master threads or if a worker thread
+						leaves the arena due to rebalancing, priority changes, etc. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3>The application must be linked against the Community
+						Preview library for this method to take effect. 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../../reference/appendices/community_preview_features/task_arena_cls.htm">task_arena Class</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../../../task_scheduler/task_scheduler_observer.htm#task_scheduler_observer_member">task_scheduler_observer
+		  </a></div>
+<div><a href="../../../task_scheduler/task_scheduler_init_cls.htm#task_scheduler_init_cls">task_scheduler_init Class
+		  </a></div></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,355 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Version Information">
+<meta name="DC.subject" content="Version Information, TBB_INTERFACE_VERSION, TBB_INTERFACE_VERSION_MAJOR, TBB_INTERFACE_VERSION/1000, TBB_COMPATIBLE_INTERFACE_VERSION, TBB_USE_ASSERT, DO_ITT_NOTIFY, ALLOCATOR">
+<meta name="keywords" content="Version Information, TBB_INTERFACE_VERSION, TBB_INTERFACE_VERSION_MAJOR, TBB_INTERFACE_VERSION/1000, TBB_COMPATIBLE_INTERFACE_VERSION, TBB_USE_ASSERT, DO_ITT_NOTIFY, ALLOCATOR">
+<meta name="DC.Relation" scheme="URI" content="../../reference/environment.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="version_information">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Version Information</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="version_information">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="version_information"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Version Information</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Intel&reg; Threading Building Blocks (Intel&reg; TBB) has
+		  macros, an environment variable, and a function that reveal version and
+		  run-time information. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Version Macros </h2> 
+		 
+		<p>The header 
+		  <samp class="codeph">tbb/tbb_stddef.h</samp> defines macros related to versioning,
+		  as described below. You should not redefine these macros. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl4"><!-- --></a><table cellpadding="4" summary="" id="tbl4" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Version Macros</span></caption> 
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d61139e81"> 
+				  <p><strong>Macro</strong> 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d61139e89"> 
+				  <p><strong>Description of Value</strong> 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+ 
+		  </thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e81 "> 
+				  <p><samp class="codeph">TBB_INTERFACE_VERSION</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e89 "> 
+				  <p>Current interface version. The value is a
+					 decimal numeral of the form 
+					 <samp class="codeph"><em>xyyy</em></samp> where 
+					 <samp class="codeph"><em>x</em></samp> is the major version number and 
+					 <samp class="codeph"><em>y</em></samp> is the minor version number. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e81 "> 
+				  <p><samp class="codeph">TBB_INTERFACE_VERSION_MAJOR</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e89 "> 
+				  <p><samp class="codeph">TBB_INTERFACE_VERSION/1000;</samp> that is, the
+					 major version number. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e81 "> 
+				  <p><samp class="codeph">TBB_COMPATIBLE_INTERFACE_VERSION</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e89 "> 
+				  <p>Oldest major interface version still
+					 supported. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"><samp class="codeph">TBB_VERSION</samp> Environment
+		  Variable</h2> 
+		 
+		<p>Set the environment variable 
+		  <samp class="codeph">TBB_VERSION</samp> to 
+		  <samp class="codeph">1</samp> to cause the library to print information on 
+		  <samp class="codeph">stderr</samp>. Each line is of the form 
+		  <samp class="codeph">“TBB: 
+			 <em>tag value</em>”</samp>, where 
+		  <em>tag</em> and 
+		  <em>value</em> are described below. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl5"><!-- --></a><table cellpadding="4" summary="" id="tbl5" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Output from TBB_VERSION</span></caption> 
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d61139e217"> 
+				  <p><strong>Tag</strong> 
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d61139e225"> 
+				  <p><strong>Description of Value</strong> 
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+ 
+		  </thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e217 "> 
+				  <p><samp class="codeph">VERSION</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e225 "> 
+				  <p>Intel TBB product version number. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e217 "> 
+				  <p><samp class="codeph">INTERFACE_VERSION</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e225 "> 
+				  <p>Value of macro 
+					 <samp class="codeph">TBB_INTERFACE_VERSION</samp> when library was
+					 compiled. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e217 "> 
+				  <p><samp class="codeph">BUILD_</samp>... 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e225 "> 
+				  <p>Various information about the machine
+					 configuration on which the library was built. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e217 "> 
+				  <p><samp class="codeph">TBB_USE_ASSERT</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e225 "> 
+				  <p>Setting of macro 
+					 <samp class="codeph">TBB_USE_ASSERT</samp> 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e217 "> 
+				  <p><samp class="codeph">DO_ITT_NOTIFY</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e225 "> 
+				  <p><samp class="codeph">1</samp> if library can enable
+					 instrumentation for Intel&reg; Parallel Studio XE and Intel&reg; Threading Tools; 
+					 <samp class="codeph">0</samp> or 
+					 <samp class="codeph">undefined</samp> otherwise. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e217 "> 
+				  <p><samp class="codeph">ITT</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e225 "> 
+				  <p><samp class="codeph">yes</samp> if library has enabled
+					 instrumentation for Intel&reg; Parallel Studio XE and Intel&reg; Threadng Tools, no
+					 otherwise. Typically 
+					 <samp class="codeph">yes</samp> only if the program is running under
+					 control of Intel&reg; Parallel Studio XE or Intel&reg; Threadng Tools. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d61139e217 "> 
+				  <p><samp class="codeph">ALLOCATOR</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d61139e225 "> 
+				  <p>Underlying allocator for 
+					 <samp class="codeph">tbb::tbb_allocator</samp>. It is 
+					 <samp class="codeph">scalable_malloc</samp> if the Intel&reg; TBB malloc
+					 library was successfully loaded; 
+					 <samp class="codeph">malloc</samp> otherwise. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>This output is implementation specific and may
+			 change at any time. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"><samp class="codeph">TBB_runtime_interface_version</samp>
+		  Function</h2> 
+		 
+		<p><strong>Summary</strong> 
+		</p>
+ 
+		<p>Function that returns the interface version of the
+		  Intel&reg; TBB library that was loaded at runtime. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<p> 
+		  <pre>extern “C” int TBB_runtime_interface_version();</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<p> 
+		  <pre>#include "tbb/tbb_stddef.h"</pre> 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>The value returned by 
+		  <samp class="codeph">TBB_runtime_interface_version()</samp> may differ from the
+		  value of 
+		  <samp class="codeph">TBB_INTERFACE_VERSION</samp> obtained at compile time. This
+		  can be used to identify whether an application was compiled against a
+		  compatible version of the Intel&reg; TBB headers. 
+		</p>
+ 
+		<p>In general, the run-time value 
+		  <samp class="codeph">TBB_runtime_interface_version()</samp> must be greater than
+		  or equal to the compile-time value of TBB_INTERFACE_VERSION. Otherwise the
+		  application may fail to resolve all symbols at run time. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/environment.htm">Environment</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Windows* OS C/C++ Dynamic Memory Interface Replacement">
+<meta name="DC.subject" content="Windows* OS C/C++ Dynamic Memory Interface Replacement">
+<meta name="keywords" content="Windows* OS C/C++ Dynamic Memory Interface Replacement">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Automically_Replacing_malloc.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Windows_C_Dynamic_Memory_Interface_Replacement">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Windows* OS C/C++ Dynamic Memory Interface Replacement</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Windows_C_Dynamic_Memory_Interface_Replacement">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Windows_C_Dynamic_Memory_Interface_Replacement"><!-- --></a>
+
+
+<h1 class="topictitle1">Windows* OS C/C++ Dynamic Memory Interface Replacement</h1>
+
+<div><p>Replacements are provided by a proxy library (release version <samp class="codeph">tbbmalloc_proxy.dll</samp>, debug version <samp class="codeph">tbbmalloc_debug_proxy.dll</samp>). Replacement can be done in one of two ways:</p>
+
+<ul type="disc"><li><p>Add the following header to a source code of any binary which is loaded during application startup.</p>
+<pre>#include "tbb/tbbmalloc_proxy.h"</pre></li>
+<li><p>Alternatively, add the following parameters to the linker options for the .exe or .dll file that is loaded during application startup. </p>
+<p>For 32-bit code (note the triple underscore):</p>
+<pre>tbbmalloc_proxy.lib /INCLUDE:"___TBB_malloc_proxy"</pre><p>For 64-bit code (note the double underscore):</p>
+<pre>tbbmalloc_proxy.lib /INCLUDE:"__TBB_malloc_proxy"</pre></li>
+</ul>
+<p>The proxy library implements the following dynamic memory functions:</p>
+
+<ul type="disc"><li><p>Standard C run-time dynamic memory functions: <samp class="codeph">malloc</samp>, <samp class="codeph">calloc</samp>, <samp class="codeph">realloc</samp>, <samp class="codeph">free</samp></p>
+</li>
+<li><p>Global C++ operators <samp class="codeph">new</samp> and <samp class="codeph">delete</samp>. </p>
+</li>
+<li><p>Microsoft* C run-time library function <samp class="codeph">_msize</samp></p>
+</li>
+		</ul>
+<p>A directory with the proxy library and the appropriate scalable memory allocator library must be available for loading. For example, include the directory in <samp class="codeph">%PATH%</samp>.</p>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Automically_Replacing_malloc.htm">Automatically Replacing malloc and Other C/C++ Functions for Dynamic Memory Allocation</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

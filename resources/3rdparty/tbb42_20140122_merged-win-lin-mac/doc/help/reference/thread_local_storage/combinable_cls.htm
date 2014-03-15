@@ -1,0 +1,292 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="combinable Template Class">
+<meta name="DC.subject" content="combinable Template Class">
+<meta name="keywords" content="combinable Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="combinable_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>combinable Template Class</title>
+</head>
+<body id="combinable_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="combinable_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">combinable Template Class</h1>
+ 
+  
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Template class for holding thread-local values
+		  during a parallel computation that will be merged into a final value.
+		</p>
+ 
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2>
+		 
+		<pre>template&lt;typename T&gt; class combinable;</pre> 
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Header</h2>
+		 
+		<pre>#include "tbb/combinable.h"</pre> 
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Description</h2>
+		 
+		<p>A 
+		  <samp class="codeph">combinable&lt;T&gt;</samp> provides each thread with its own
+		  local instance of type 
+		  <samp class="codeph">T</samp>. 
+		</p>
+ 
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Members</h2>
+		
+		<pre>namespace tbb {
+      &nbsp; template &lt;typename T&gt;
+      &nbsp; class combinable {
+      &nbsp; public:
+          &nbsp; combinable();
+    &nbsp;
+          &nbsp; template &lt;typename FInit&gt;
+          &nbsp; combinable(FInit finit);}
+    &nbsp;
+          &nbsp; combinable(const combinable&amp; other);
+    &nbsp;
+          &nbsp; ~combinable();
+    &nbsp;
+          &nbsp; combinable&amp; operator=( const combinable&amp; other);
+          &nbsp; void clear();
+    &nbsp;
+          &nbsp; T&amp; local();
+          &nbsp; T&amp; local(bool &amp; exists);
+    &nbsp;
+          &nbsp; template&lt;typename FCombine&gt; T combine(FCombine fcombine);
+          &nbsp; template&lt;typename Func&gt; void combine_each(Func f);
+      &nbsp; };
+}</pre>
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d118194e79">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d118194e82">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">combinable()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p>Constructs 
+						<samp class="codeph">combinable</samp> such that any thread-local
+						instances of 
+						<samp class="codeph">T</samp> will be created using default
+						construction.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">template&lt;typename FInit&gt;
+						combinable(FInit finit)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p>Constructs 
+						<samp class="codeph">combinable</samp> such that any thread-local
+						element will be created by copying the result of 
+						<em>finit()</em>. 
+					 </p>
+
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+						<p>The expression finit() must be safe to evaluate
+						  concurrently by multiple threads. It is evaluated each time a thread-local
+						  element is created.
+						</p>
+ 
+					 </div>
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">combinable( const combinable&amp;
+						other );</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p>Construct a copy of 
+						<em>other</em>, so that it has copies of each element in 
+						<em>other</em> with the same thread mapping.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">~combinable()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p>Destroy all thread-local elements in 
+						<samp class="codeph">*this</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">combinable&amp; operator=( const
+						combinable&amp; other )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p>Set<samp class="codeph"> *this</samp> to be a copy of 
+						<em>other</em>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">void clear()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p>Remove all elements from 
+						<samp class="codeph">*this</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">T&amp; local()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p>If thread-local element does not exist, create it.
+					 </p>
+
+					 <p><strong>Returns</strong>: Reference to thread-local element.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">T&amp; local( bool&amp; exists
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p>Similar to 
+						<samp class="codeph">local()</samp>, except that 
+						<em>exists</em> is set to true if an element was already
+						present for the current thread; false otherwise.
+					 </p>
+
+					 <p><strong>Returns</strong>: Reference to thread-local element. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">template&lt;typename FCombine&gt;T
+						combine(FCombine fcombine)</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p><strong>Requires</strong>: Parameter 
+						<samp class="codeph"><em>fcombine</em></samp> should be an associative
+						binary functor with the signature 
+						<samp class="codeph">T(T,T)</samp> or<samp class="codeph"> T(const T&amp;,const
+						  T&amp;)</samp>.
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Computes a reduction over
+						all elements using binary functor 
+						<em>fcombine</em>. If there are no elements, creates the result
+						using the same rules as for creating a thread-local element.
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Result of the reduction.
+					 </p>
+
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d118194e79 "><span class="keyword">template&lt;typename Func&gt; void
+						combine_each(Func f)</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d118194e82 ">
+					 <p><strong>Requires</strong>: Parameter 
+						<samp class="codeph"><em>f 
+						  </em></samp>should be a unary functor with the signature 
+						<samp class="codeph">void(T)</samp> or 
+						<samp class="codeph">void(const T&amp;)</samp>.
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Evaluates 
+						<samp class="codeph"><em>f(x)</em></samp> for each instance 
+						<samp class="codeph"><em>x</em></samp> of 
+						<samp class="codeph">T</samp> in 
+						<samp class="codeph">*this</samp>.
+					 </p>
+ 
+				  </td>
+
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/thread_local_storage.htm">Thread Local Storage</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

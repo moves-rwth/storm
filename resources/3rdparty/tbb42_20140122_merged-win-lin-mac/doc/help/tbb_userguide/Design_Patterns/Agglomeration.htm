@@ -1,0 +1,214 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Agglomeration">
+<meta name="DC.subject" content="Agglomeration">
+<meta name="keywords" content="Agglomeration">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Agglomeration">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Agglomeration</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Agglomeration">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Agglomeration"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Agglomeration</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		 
+		<p>Parallelism is so fine grained that overhead of parallel scheduling or
+		  communication swamps the useful work. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>Many algorithms permit parallelism at a very fine grain, on the order
+		  of a few instructions per task. But synchronization between threads usually
+		  requires orders of magnitude more cycles. For example, elementwise addition of
+		  two arrays can be done fully in parallel, but if each scalar addition is
+		  scheduled as a separate task, most of the time will be spent doing
+		  synchronization instead of useful addition. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Individual computations can be done in parallel, but are small.
+				For practical use of Intel&reg; Threading Building Blocks (Intel&reg; TBB),
+				"small" here means less than 10,000 clock cycles. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The parallelism is for sake of performance and not required for
+				semantic reasons. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		 
+		<p>Group the computations into blocks. Evaluate computations within a
+		  block serially. 
+		</p>
+ 
+		<p>The block size should be chosen to be large enough to amortize
+		  parallel overhead. Too large a block size may limit parallelism or load
+		  balancing because the number of blocks becomes too small to distribute work
+		  evenly across processors. 
+		</p>
+ 
+		<p>The choice of block topology is typically driven by two concerns: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Minimizing synchronization between blocks. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Minimizing cache traffic between blocks. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>If the computations are completely independent, then the blocks will
+		  be independent too, and then only cache traffic issues must be considered. 
+		</p>
+ 
+		<p>If the loop is "small", on the order of less than 10,000 clock cycles,
+		  then it may be impractical to parallelize at all, because the optimal
+		  agglomeration might be a single block, 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Examples</h2> 
+		 
+		<p>Intel&reg; TBB loop templates such as 
+		  <samp class="codeph">tbb::parallel_for</samp> that take a 
+		  <em>range</em> argument support automatic agglomeration. 
+		</p>
+ 
+		<p>When agglomerating, think about cache effects. Avoid having cache
+		  lines cross between groups if possible. 
+		</p>
+ 
+		<p>There may be boundary to interior ratio effects. For example, if the
+		  computations form a 2D grid, and communicate only with nearest neighbors, then
+		  the computation per block grows quadratically (with the block’s area), but the
+		  cross-block communication grows with linearly (with the block’s perimeter). The
+		  following figure shows four different ways to agglomerate an 8×8 grid. If doing
+		  such analysis, be careful to consider that information is transferred in cache
+		  line units. For a given area, the perimeter may be minimized when the block is
+		  square with respect to the underlying grid of cache lines, not square with
+		  respect to the logical grid. 
+		</p>
+ 
+		<div class="fignone" id="fig1"><a name="fig1"><!-- --></a><span class="figcap">Four different agglomerations of an 8×8 grid.</span> 
+		  <img width="301" height="293" src="Images/image002.jpg"> 
+		</div>
+ 
+		<p>Also consider vectorization. Blocks that contain long contiguous
+		  subsets of data may better enable vectorization. 
+		</p>
+ 
+		<p>For recursive computations, most of the work is towards the leaves, so
+		  the solution is to treat subtrees as a groups as shown in the following figure.
+		  
+		</p>
+ 
+		<div class="fignone" id="fig2"><a name="fig2"><!-- --></a><span class="figcap">Agglomeration of a recursive computation</span> 
+		  <img width="291" height="150" src="Images/image003.jpg"> 
+		</div>
+ 
+		<p>Often such an agglomeration is achieved by recursing serially once
+		  some threshold is reached. For example, a recursive sort might solve
+		  sub-problems in parallel only if they are above a certain threshold size. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Reference</h2> 
+		 
+		<p>Ian Foster introduced the term "agglomeration" in his book 
+		  <cite>Designing and Building Parallel Programs</cite>
+		  http://www.mcs.anl.gov/~itf/dbpp. There agglomeration is part of a four step 
+		  <strong>PCAM</strong> design method: 
+		</p>
+ 
+		<ol> 
+		  <li> 
+			 <p><strong>P</strong>artitioning - break the program into the smallest tasks
+				possible. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p><strong>C</strong>ommunication – figure out what communication is required
+				between tasks. When using Intel&reg; TBB, communication is usually cache line
+				transfers. Though they are automatic, understanding which ones happen between
+				tasks helps guide the agglomeration step. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p><strong>A</strong>gglomeration – combine tasks into larger tasks. His book
+				has an extensive list of considerations that is worth reading. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p><strong>M</strong>apping – map tasks onto processors. The Intel&reg; TBB task
+				scheduler does this step for you. 
+			 </p>
+ 
+		  </li>
+ 
+		</ol>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

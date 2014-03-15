@@ -1,0 +1,107 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Combining">
+<meta name="DC.subject" content="Combining">
+<meta name="keywords" content="Combining">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/thread_local_storage/enumerable_thread_specific_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="combining">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Combining</title>
+</head>
+<body id="combining">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="combining"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Combining</h1>
+ 
+  
+  <div> 
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The methods in this section iterate across the entire container. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="33.89830508474576%" id="d119565e29">Member 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="66.10169491525423%" id="d119565e32">Description 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d119565e29 "><span class="keyword">template&lt;typename FCombine&gt;T
+					 combine(FCombine fcombine)</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d119565e32 ">
+				  <p><strong>Requires</strong>: Parameter 
+					 <samp class="codeph"><em>fcombine</em></samp> should be an associative
+					 binary functor with the signature 
+					 <samp class="codeph">T(T,T)</samp> or<samp class="codeph"> T(const T&amp;,const
+						T&amp;)</samp>.
+				  </p>
+ 
+				  <p><strong>Effects</strong>: Computes reduction over all
+					 elements using binary functor 
+					 <em>fcombine</em>. If there are no elements, creates the result
+					 using the same rules as for creating a thread-local element.
+				  </p>
+ 
+				  <p><strong>Returns</strong>: Result of the reduction.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d119565e29 "><span class="keyword">template&lt;typename Func&gt; void
+					 combine_each(Func f)</span> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d119565e32 ">
+				  <p><strong>Requires</strong>: Parameter 
+					 <samp class="codeph"><em>f 
+						</em></samp>should be a unary functor with the signature 
+					 <samp class="codeph">void(T)</samp> or 
+					 <samp class="codeph">void(const T&amp;)</samp>.
+				  </p>
+ 
+				  <p><strong>Effects</strong>: Evaluates 
+					 <samp class="codeph"><em>f(x)</em></samp> for each instance 
+					 <samp class="codeph"><em>x</em></samp> of 
+					 <samp class="codeph">T</samp> in 
+					 <samp class="codeph">*this</samp>.
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/thread_local_storage/enumerable_thread_specific_cls.htm">enumerable_thread_specific Template Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

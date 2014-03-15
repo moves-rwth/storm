@@ -1,0 +1,406 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Construct, Destroy, Copy">
+<meta name="DC.subject" content="Construct, Destroy, Copy">
+<meta name="keywords" content="Construct, Destroy, Copy">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_unordered_set_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="construct_destroy_copy_set_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Construct, Destroy, Copy</title>
+</head>
+<body id="construct_destroy_copy_set_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="construct_destroy_copy_set_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Construct, Destroy, Copy</h1>
+ 
+   
+  <div> 
+	 <div class="section"> The following tables provides information on the members of the 
+		<samp class="codeph">concurrent_unordered_set</samp> and 
+		<samp class="codeph">concurrent_unordered_multiset</samp> template classes. 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> 
+		  <samp class="codeph">concurrent_unordered_set</samp> </h2> 
+		 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="50%" id="d50002e43">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="50%" id="d50002e46">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><span class="keyword">explicit concurrent_unordered_set
+						(size_type n = implementation-defined, const hasher&amp; hf = hasher(),const
+						key_equal&amp; eql = key_equal(), const allocator_type&amp; a =
+						allocator_type())</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+					 <p>Construct table with 
+						<samp class="codeph">n</samp> buckets. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><span class="keyword">template &lt;typename
+						InputIterator&gt; concurrent_unordered_set (InputIterator first, InputIterator
+						last, size_type n = &lt;implementation-defined&gt;, const hasher&amp; hf =
+						hasher(), const key_equal&amp; eql = key_equal(), const allocator_type&amp; a =
+						allocator_type())</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+					 <p>Construct table with 
+						<samp class="codeph">n</samp> buckets initialized with 
+						<samp class="codeph">value_type(*<em>i</em>)</samp> where 
+						<samp class="codeph"><em>i</em></samp> is in the half open interval
+						[<samp class="codeph"><em>first,last</em></samp>). 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><span class="keyword">concurrent_unordered_set(const
+						unordered_set&amp; m)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+					 <p>Construct copy of set 
+						<samp class="codeph"><em>m</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><span class="keyword">concurrent_unordered_set(const
+						Alloc&amp; a)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+					 <p>Construct empty set using allocator 
+						<em>a</em>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><span class="keyword">concurrent_unordered_set(const
+						unordered_set&amp;, const Alloc&amp; a)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+					 <p>Construct copy of set 
+						<em>m</em> using allocator 
+						<samp class="codeph"><em>a</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+
+				<tr> 
+					<td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><samp class="codeph">concurrent_unordered_set(
+						const std::initializer_list&lt;value_type&gt; &amp;il, 
+						size_type n = <em>implementation-defined</em>,
+						const Hasher&amp; hf = hasher(),
+						const key_equal&amp; eql = key_equal(),
+						const allocator_type&amp; a = allocator_type())</samp> 
+					</td>
+ 
+					<td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+						<p>C++11 specific; Equivalent to 
+							<samp class="codeph">concurrent_unordered_set(<em>il</em>.begin(), 
+							  <em>il</em>.end(), 
+							  <em>a</em>)</samp>. 
+						</p>
+ 
+					</td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><span class="keyword">~concurrent_unordered_set()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+					 <p>Destroy the set. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><span class="keyword">concurrent_unordered_set&amp;
+						operator=(const concurrent_unordered_set&amp; m);</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+					 <p>Set 
+						<samp class="codeph">*this</samp> to a copy of set 
+						<samp class="codeph"><em>m</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+					<td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><samp class="codeph">concurrent_unordered_set&amp;
+					   operator=(const std::initializer_list&lt;value_type&gt; &amp;il);</samp> 
+					</td>
+ 
+					<td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+						<p>C++11 specific; Sets 
+						<samp class="codeph">*<em>this</em></samp> 
+						to contain data from
+						<samp class="codeph">il</samp>. 
+						</p>
+ 
+					</td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e43 "><span class="keyword">allocator_type get_allocator()
+						const; 
+					 </span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e46 "> 
+					 <p>Get copy of the allocator associated with
+						
+						<samp class="codeph">*this</samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> 
+		  <samp class="codeph">concurrent_unordered_multiset</samp> </h2> 
+		 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="50%" id="d50002e281">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="50%" id="d50002e284">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><span class="keyword">explicit
+						concurrent_unordered_multiset (size_type n = implementation-defined, const
+						hasher&amp; hf = hasher(),const key_equal&amp; eql = key_equal(), const
+						allocator_type&amp; a = allocator_type())</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+					 <p>Construct table with 
+						<samp class="codeph">n</samp> buckets. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><span class="keyword">template &lt;typename
+						InputIterator&gt; concurrent_unordered_multiset (InputIterator first,
+						InputIterator last, size_type n = &lt;implementation-defined&gt;, const
+						hasher&amp; hf = hasher(), const key_equal&amp; eql = key_equal(), const
+						allocator_type&amp; a = allocator_type())</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+					 <p>Construct table with 
+						<samp class="codeph">n</samp> buckets initialized with 
+						<samp class="codeph">value_type(*<em>i</em>)</samp> where 
+						<samp class="codeph"><em>i</em></samp> is in the half open interval
+						[<samp class="codeph"><em>first,last</em></samp>). 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><span class="keyword">concurrent_unordered_multiset(const
+						unordered_multiset&amp; m)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+					 <p>Construct copy of set 
+						<samp class="codeph"><em>m</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><span class="keyword">concurrent_unordered_multiset(const Alloc&amp;
+						a)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+					 <p>Construct empty set using allocator 
+						<em>a</em>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><span class="keyword">concurrent_unordered_multiset(const
+						unordered_multiset&amp;, const Alloc&amp; a)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+					 <p>Construct copy of set 
+						<em>m</em> using allocator 
+						<samp class="codeph"><em>a</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+
+				<tr> 
+					<td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><samp class="codeph">concurrent_unordered_multiset(
+						const std::initializer_list&lt;value_type&gt; &amp;il, 
+						size_type n = <em>implementation-defined</em>,
+						const Hasher&amp; hf = hasher(),
+						const key_equal&amp; eql = key_equal(),
+						const allocator_type&amp; a = allocator_type())</samp> 
+					</td>
+ 
+					<td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+						<p>C++11 specific; Equivalent to 
+							<samp class="codeph">concurrent_unordered_multiset(<em>il</em>.begin(), 
+							  <em>il</em>.end(), 
+							  <em>a</em>)</samp>. 
+						</p>
+ 
+					</td>
+ 
+				</tr>
+ 				 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><span class="keyword">~concurrent_unordered_multiset()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+					 <p>Destroy the set. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><span class="keyword">concurrent_
+						unordered_multiset&amp; operator=(const concurrent_unordered_multiset&amp;
+						m);</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+					 <p>Set 
+						<samp class="codeph">*this</samp> to a copy of set 
+						<samp class="codeph"><em>m</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+					<td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><samp class="codeph">concurrent_unordered_multiset&amp;
+					   operator=(const std::initializer_list&lt;value_type&gt; &amp;il);</samp> 
+					</td>
+ 
+					<td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+						<p>C++11 specific; Sets 
+						<samp class="codeph">*<em>this</em></samp> 
+						to contain data from
+						<samp class="codeph">il</samp>. 
+						</p>
+ 
+					</td>
+ 
+				</tr>
+ 				
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e281 "><span class="keyword">allocator_type get_allocator()
+						const; 
+					 </span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="50%" headers="d50002e284 "> 
+					 <p>Get copy of the allocator associated with
+						
+						<samp class="codeph">*this</samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_unordered_set_cls.htm">concurrent_unordered_set and concurrent_unordered_multiset Template Classes</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

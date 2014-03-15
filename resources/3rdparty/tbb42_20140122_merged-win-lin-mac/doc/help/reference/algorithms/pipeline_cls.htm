@@ -1,0 +1,274 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="pipeline Class">
+<meta name="DC.subject" content="pipeline Class">
+<meta name="keywords" content="pipeline Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/pipeline_cls/filter_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/pipeline_cls/thread_bound_filter_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../task_scheduler/task_scheduler_init_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="pipeline_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>pipeline Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="pipeline_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="pipeline_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">pipeline Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 Class that performs pipelined execution. 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/pipeline.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>class pipeline; </pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">pipeline</samp> represents pipelined application of a series
+		  of filters to a stream of items. Each filter operates in a particular mode:
+		  parallel, serial in-order, or serial out-of-order (MacDonald 2004). 
+		</p>
+ 
+		<p>A 
+		  <samp class="codeph">pipeline</samp> contains one or more filters, denoted here as
+		  
+		  <em>f<sub>i</sub></em> , where 
+		  <em>i</em> denotes the position of the filter in the pipeline. The
+		  pipeline starts with filter 
+		  <em>f</em><sub>0</sub>, followed by 
+		  <em>f</em><sub>1</sub>, 
+		  <em>f</em><sub>2</sub>, etc. The following steps describe how to use
+		  class pipeline. 
+		</p>
+ 
+		<ol> 
+		  <li>Derive each class 
+			 <em>f<sub>i</sub></em> from 
+			 <span class="keyword">filter</span>. The constructor for 
+			 <em>f<sub>i</sub></em> specifies its mode as a parameter to the
+			 constructor for base class 
+			 <span class="keyword">filter</span> 
+		  </li>
+ 
+		  <li>Override virtual method 
+			 <span class="keyword">filter::operator()</span> to perform the filter's action
+			 on the item, and return a pointer to the item to be processed by the next
+			 filter. The first filter 
+			 <em>f</em><sub>0</sub> generates the stream. It should return NULL if
+			 there are no more items in the stream. The return value for the last filter is
+			 ignored. 
+		  </li>
+ 
+		  <li>Create an instance of class 
+			 <span class="keyword">pipeline</span>. 
+		  </li>
+ 
+		  <li>Create instances of the filters 
+			 <em>f<sub>i</sub></em> and add them to the pipeline, in order from
+			 first to last. An instance of a filter can be added at most once to a pipeline.
+			 A filter should never be a member of more than one pipeline at a time. 
+		  </li>
+ 
+		  <li>Call method 
+			 <span class="keyword">pipeline::run</span> . The parameter 
+			 <samp class="codeph">max_number_of_live_tokens</samp> puts an upper bound on the
+			 number of stages that will be run concurrently. Higher values may increase
+			 concurrency at the expense of more memory consumption from having more items in
+			 flight. See the Tutorial, in the section on class 
+			 <span class="keyword">pipeline</span>, for more about effective use of 
+			 <samp class="codeph">max_number_of_live_tokens</samp>. 
+		  </li>
+ 
+		</ol>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		  <p> Given sufficient processors and tokens, the throughput of the
+			 pipeline is limited to the throughput of the slowest serial filter. 
+		  </p>
+ 
+		</div> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p>Function 
+			 <samp class="codeph">parallel_pipeline</samp> provides a strongly typed
+			 lambda-friendly way to build and run pipelines. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+    class pipeline {
+     public:
+        pipeline();
+        ~pipeline();
+        void add_filter( filter&amp; f );
+        void run( size_t max_number_of_live_tokens <em>[,</em> task_group_context&amp; group<em> ]</em> );
+        void clear();
+    };
+}</pre> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p>Though the current implementation declares the destructor virtual,
+			 do not rely on this detail. The virtual nature is deprecated and may disappear
+			 in future versions of Intel&reg; Threading Building Blocks (Intel&reg; TBB). 
+		  </p>
+ 
+		</div> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d10716e203">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d10716e206">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d10716e203 "><span class="keyword">pipeline()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d10716e206 "> 
+					 <p> Constructs pipeline with no filters. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d10716e203 "><span class="keyword">~pipeline()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d10716e206 "> 
+					 <p>Removes all filters from the pipeline and
+						destroys the pipeline. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d10716e203 "><span class="keyword">void add_filter( filter&amp; f
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d10716e206 "> 
+					 <p> Appends filter 
+						<samp class="codeph"><em>f</em></samp> to sequence of filters in the
+						pipeline. The filter 
+						<samp class="codeph"><em>f</em></samp> must not already be in a pipeline. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d10716e203 "><span class="keyword">void run( size_t
+						max_number_of_live_tokens[, task_group_context&amp; group] ) 
+					 </span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d10716e206 "> 
+					 <p> Runs the pipeline until the first filter returns NULL and
+						each subsequent filter has processed all items from its predecessor. The number
+						of items processed in parallel depends upon the structure of the pipeline and
+						number of available threads. At most 
+						<samp class="codeph">max_number_of_live_tokens</samp> are in flight at
+						any given time. 
+					 </p>
+ 
+					 <p> A pipeline can be run multiple times. It is safe to add
+						stages between runs. Concurrent invocations of run on the same instance of
+						pipeline are prohibited. 
+					 </p>
+ 
+					 <p> If the 
+						<samp class="codeph">group</samp> argument is specified, pipeline’s
+						tasks are executed in this group. By default the algorithm is executed in a
+						bound group of its own. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d10716e203 "><span class="keyword">void clear()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d10716e206 "> 
+					 <p> Removes all filters from the pipeline. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/algorithms/pipeline_cls/filter_cls.htm">filter Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/algorithms/pipeline_cls/thread_bound_filter_cls.htm">thread_bound_filter Class</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../task_scheduler/task_scheduler_init_cls.htm">task_scheduler_init class 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

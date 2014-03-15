@@ -139,7 +139,7 @@ namespace storm {
         
         MarkovAutomatonSparseTransitionParser::ResultType MarkovAutomatonSparseTransitionParser::secondPass(char* buf, SupportedLineEndingsEnum lineEndings, FirstPassResult const& firstPassResult) {
             ResultType result(firstPassResult);
-            storm::storage::SparseMatrixBuilder<double> matrixBuilder(firstPassResult.numberOfChoices, firstPassResult.highestStateIndex + 1, firstPassResult.numberOfNonzeroEntries);
+            storm::storage::SparseMatrixBuilder<double> matrixBuilder(firstPassResult.numberOfChoices, firstPassResult.highestStateIndex + 1, firstPassResult.numberOfNonzeroEntries, true);
             
             bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
             
@@ -159,7 +159,7 @@ namespace storm {
                 if (source > lastsource + 1) {
                     if (fixDeadlocks) {
                         for (uint_fast64_t index = lastsource + 1; index < source; ++index) {
-                            result.nondeterministicChoiceIndices[index] = currentChoice;
+                            matrixBuilder.newRowGroup(currentChoice);
                             matrixBuilder.addNextValue(currentChoice, index, 1);
                             ++currentChoice;
                         }
@@ -171,7 +171,7 @@ namespace storm {
                 
                 if (source != lastsource) {
                     // If we skipped to a new state we need to record the beginning of the choices in the nondeterministic choice indices.
-                    result.nondeterministicChoiceIndices[source] = currentChoice;
+                    matrixBuilder.newRowGroup(currentChoice);
                 }
                 
                 // Record that the current source was the last source.
@@ -237,9 +237,6 @@ namespace storm {
             
             // As we have added all entries at this point, we need to finalize the matrix.
             result.transitionMatrix = matrixBuilder.build();
-            
-            // Put a sentinel element at the end.
-            result.nondeterministicChoiceIndices[firstPassResult.highestStateIndex + 1] = currentChoice;
             
             return result;
         }

@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Memory Allocation">
+<meta name="DC.subject" content="Memory Allocation">
+<meta name="keywords" content="Memory Allocation">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/title.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Which_Dynamic_Libraries_to_Use.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Automically_Replacing_malloc.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Memory_Allocation">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Memory Allocation</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Memory_Allocation">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Memory_Allocation"><!-- --></a>
+
+
+<h1 class="topictitle1">Memory Allocation</h1>
+
+
+<div>
+
+<p>Intel&reg; Threading Building Blocks (Intel&reg; TBB) provides two memory allocator templates that are similar to the STL template class <span class="option">std::allocator</span>. These two templates,  <samp class="codeph">scalable_allocator&lt;T&gt;</samp> and <samp class="codeph">cache_aligned_allocator&lt;T&gt;</samp>, address critical issues in parallel programming as follows:</p>
+
+
+<ul type="disc"><li><p><strong>Scalability</strong>. Problems of scalability arise when using memory allocators originally designed for serial programs, on threads that might have to compete for a single shared pool in a way that allows only one thread to allocate at a time. Use the memory allocator template <samp class="codeph">scalable_allocator&lt;T&gt;</samp> to avoid such scalability bottlenecks. This template can improve the performance of programs that rapidly allocate and free memory. </p>
+</li>
+
+<li><p><strong>False sharing</strong>. Problems of sharing arise when two threads access different words that share the same cache line. The problem is that a cache line is the unit of information interchange between processor caches. If one processor modifies a cache line and another processor reads (or writes) the same cache line, the cache line must be moved from one processor to the other, even if the two processors are dealing with different words within the line. False sharing can hurt performance because cache lines can take hundreds of clocks to move.</p>
+</li>
+</ul>
+
+
+<p>Use the class <samp class="codeph">cache_aligned_allocator&lt;T&gt;</samp> to always allocate on a cache line. Two objects allocated by <samp class="codeph">cache_aligned_allocator</samp> are guaranteed to not have false sharing. If an object is allocated by <samp class="codeph">cache_aligned_allocator</samp> and another object is allocated some other way, there is no guarantee. The interface to <samp class="codeph">cache_aligned_allocator</samp> is identical to <span class="option">std::allocator</span>, so you can use it as the <em>allocator</em> argument to STL template classes.</p>
+
+
+<p>The following code shows how to declare an STL vector that uses <samp class="codeph">cache_aligned_allocator</samp> for allocation:</p>
+
+
+<pre>std::vector&lt;int,cache_aligned_allocator&lt;int&gt; &gt;;</pre>
+
+<p><div class="Note"><h3 class="NoteTipHead">
+					Tip</h3>The functionality of <samp class="codeph">cache_aligned_allocator&lt;T&gt;</samp> comes at some cost in space, because it must allocate at least one cache line’s worth of memory, even for a small object. So use <samp class="codeph">cache_aligned_allocator&lt;T&gt;</samp> only if false sharing is likely to be a real problem.</div></p>
+
+
+<p>The scalable memory allocator incorporates McRT technology developed by Intel’s PSL &nbsp;CTG team.</p>
+
+
+</div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/title.htm">Intel&reg; Threading Building Blocks (Intel&reg; TBB) User Guide</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../tbb_userguide/Which_Dynamic_Libraries_to_Use.htm">Which Dynamic Libraries to Use</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Automically_Replacing_malloc.htm">Automatically Replacing malloc and Other C/C++ Functions for Dynamic Memory Allocation</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

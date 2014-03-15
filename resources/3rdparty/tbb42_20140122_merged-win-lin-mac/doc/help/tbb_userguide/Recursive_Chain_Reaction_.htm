@@ -1,0 +1,67 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Recursive Chain Reaction">
+<meta name="DC.subject" content="Recursive Chain Reaction">
+<meta name="keywords" content="Recursive Chain Reaction">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Useful_Task_Techniques.htm">
+<meta name="DC.Relation" scheme="URI" content="Advanced_Example.htm#tutorial_Advanced_Example">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Recursive_Chain_Reaction_">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Recursive Chain Reaction</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Recursive_Chain_Reaction_">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Recursive_Chain_Reaction_"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Recursive Chain Reaction </h1>
+ 
+  
+  <div>
+	 <p>The scheduler works best with tree-structured task graphs, because that
+		is where the strategy of "breadth-first theft and depth-first work" applies
+		very well. Also, tree-structured task graphs allow fast creation of many tasks.
+		For example, if a master task tries to create 
+		<var>N</var> children directly, it will take
+		O(<var>N</var>) steps. But with tree structured forking, it takes only
+		O(lg(<var>N</var>)) steps.
+	 </p>
+
+	 <p>Often domains are not obviously tree structured, but you can easily map
+		them to trees. For example, 
+		<samp class="codeph">parallel_for</samp> (in 
+		<samp class="codeph">tbb/parallel_for</samp>) works over an iteration space, such as a sequence of integers. Template function 
+		<samp class="codeph">parallel_for</samp> uses that definition to recursively map the
+		iteration space onto a binary tree.
+	 </p>
+
+  </div>
+
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Useful_Task_Techniques.htm">Useful Task Techniques</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Advanced_Example.htm#tutorial_Advanced_Example">Advanced Example
+		  </a>  shows how the iteration space is defined in terms of how to split
+			 it into two halves.
+		  </div></div>
+</div>
+
+</body>
+</html>

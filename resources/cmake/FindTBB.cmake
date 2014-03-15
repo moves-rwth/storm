@@ -76,6 +76,9 @@ if (WIN32)
 	if(MSVC11)
         set(_TBB_COMPILER "vc11")
     endif(MSVC11)
+	if(MSVC12)
+        set(_TBB_COMPILER "vc12")
+    endif(MSVC12)
     # Todo: add other Windows compilers such as ICL.
     set(_TBB_ARCHITECTURE ${TBB_ARCHITECTURE})
 endif (WIN32)
@@ -178,6 +181,7 @@ macro(TBB_CORRECT_LIB_DIR var_name)
     string(REPLACE vc9 "${_TBB_COMPILER}" ${var_name} ${${var_name}})
     string(REPLACE vc10 "${_TBB_COMPILER}" ${var_name} ${${var_name}})
 	string(REPLACE vc11 "${_TBB_COMPILER}" ${var_name} ${${var_name}})
+	string(REPLACE vc12 "${_TBB_COMPILER}" ${var_name} ${${var_name}})
 endmacro(TBB_CORRECT_LIB_DIR var_content)
 
 
@@ -189,6 +193,21 @@ find_path(TBB_INCLUDE_DIR tbb/tbb_stddef.h PATHS "${TBB_INC_SEARCH_DIR}" ENV CPA
 mark_as_advanced(TBB_INCLUDE_DIR)
 
 #-- Look for libraries
+include(CheckSymbolExists)
+
+# Check if we are on Windows
+CHECK_SYMBOL_EXISTS("_WIN32" "" FINDTBB_HAVE_WIN32)
+CHECK_SYMBOL_EXISTS("_WIN64" "" FINDTBB_HAVE_WIN64)
+if(FINDTBB_HAVE_WIN64)
+	# this is a build on 64bit Windows
+	set(_TBB_ARCHITECTURE "intel64")
+	set (_TBB_LIBRARY_DIR "${_TBB_INSTALL_DIR}/lib/${_TBB_ARCHITECTURE}/${_TBB_COMPILER}" ${_TBB_LIBRARY_DIR})
+elseif(FINDTBB_HAVE_WIN32)
+	# this is a build on 32bit Windows
+	set(_TBB_ARCHITECTURE "ia32")
+	set (_TBB_LIBRARY_DIR "${_TBB_INSTALL_DIR}/lib/${_TBB_ARCHITECTURE}/${_TBB_COMPILER}" ${_TBB_LIBRARY_DIR})
+endif()
+	
 # GvdB: $ENV{TBB_ARCH_PLATFORM} is set by the build script tbbvars[.bat|.sh|.csh]
 if (NOT $ENV{TBB_ARCH_PLATFORM} STREQUAL "")
     set (_TBB_LIBRARY_DIR 
@@ -209,7 +228,14 @@ if ((NOT ${TBB_ARCHITECTURE} STREQUAL "") AND (NOT ${TBB_COMPILER} STREQUAL ""))
 endif ((NOT ${TBB_ARCHITECTURE} STREQUAL "") AND (NOT ${TBB_COMPILER} STREQUAL ""))
 
 # GvdB: Mac OS X distribution places libraries directly in lib directory.
-list(APPEND _TBB_LIBRARY_DIR ${_TBB_INSTALL_DIR}/lib)
+if (USE_LIBCXX OR LINK_LIBCXXABI)
+	message(STATUS "FindTBB - Detected libc++ usage, linking to TBB with libc++!")
+	list(APPEND _TBB_LIBRARY_DIR "${_TBB_INSTALL_DIR}/lib/libc++")
+else()
+	list(APPEND _TBB_LIBRARY_DIR "${_TBB_INSTALL_DIR}/lib")
+endif()
+
+message(STATUS "Searching for TBB: TBB_LIBRARY ${_TBB_LIB_NAME} HINTS ${_TBB_LIBRARY_DIR}, _TBB_COMPILER = ${_TBB_COMPILER} and _TBB_ARCHITECTURE = ${_TBB_ARCHITECTURE}")
 
 # Jiri: No reason not to check the default paths. From recent versions,
 #       tbbvars has started exporting the LIBRARY_PATH and LD_LIBRARY_PATH
@@ -249,7 +275,7 @@ mark_as_advanced(TBB_LIBRARY_DEBUG TBB_MALLOC_LIBRARY_DEBUG)
 
 if (TBB_INCLUDE_DIR)
     if (TBB_LIBRARY)
-        set (TBB_FOUND "YES")
+        set (TBB_FOUND ON)
         set (TBB_LIBRARIES ${TBB_LIBRARY} ${TBB_MALLOC_LIBRARY} ${TBB_LIBRARIES})
         set (TBB_DEBUG_LIBRARIES ${TBB_LIBRARY_DEBUG} ${TBB_MALLOC_LIBRARY_DEBUG} ${TBB_DEBUG_LIBRARIES})
         set (TBB_INCLUDE_DIRS ${TBB_INCLUDE_DIR} CACHE PATH "TBB include directory" FORCE)
@@ -276,5 +302,9 @@ if (TBB_FOUND)
 	set(TBB_INTERFACE_VERSION 0)
 	FILE(READ "${TBB_INCLUDE_DIRS}/tbb/tbb_stddef.h" _TBB_VERSION_CONTENTS)
 	STRING(REGEX REPLACE ".*#define TBB_INTERFACE_VERSION ([0-9]+).*" "\\1" TBB_INTERFACE_VERSION "${_TBB_VERSION_CONTENTS}")
+	STRING(REGEX REPLACE ".*#define TBB_VERSION_MAJOR ([0-9]+).*" "\\1" TBB_VERSION_MAJOR "${_TBB_VERSION_CONTENTS}")
+	STRING(REGEX REPLACE ".*#define TBB_VERSION_MINOR ([0-9]+).*" "\\1" TBB_VERSION_MINOR "${_TBB_VERSION_CONTENTS}")
 	set(TBB_INTERFACE_VERSION "${TBB_INTERFACE_VERSION}")
+	set(TBB_VERSION_MAJOR "${TBB_VERSION_MAJOR}")
+	set(TBB_VERSION_MINOR "${TBB_VERSION_MINOR}")
 endif (TBB_FOUND)

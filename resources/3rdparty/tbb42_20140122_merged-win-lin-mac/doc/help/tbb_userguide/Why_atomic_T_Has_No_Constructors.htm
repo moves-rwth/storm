@@ -1,0 +1,126 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Why atomic<T&gt; Has No Constructors in C++03 mode">
+<meta name="DC.subject" content="atomic<T&gt; constructors, constructors, atomic<T&gt;">
+<meta name="keywords" content="atomic<T&gt; constructors, constructors, atomic<T&gt;">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Atomic_Operations.htm">
+<meta name="DC.Relation" scheme="URI" content="Atomic_Operations.htm#tutorial_Atomic_Operations">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Why_atomic_T_Has_No_Constructors">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Why atomic&lt;T&gt; Has No Constructors in C++03 mode</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Why_atomic_T_Has_No_Constructors">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Why_atomic_T_Has_No_Constructors"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Why atomic&lt;T&gt; Has No Constructors in C++03 mode</h1>
+ 
+   
+  <div> 
+	 <p>In C++03 mode template class 
+		<samp class="codeph">atomic&lt;<var>T</var>&gt;</samp> deliberately has no
+		declared constructors, because examples like 
+		<samp class="codeph">GetUniqueInteger</samp>, shown in the Atomic Operations
+		section, are commonly required to work correctly even before all file-scope
+		constructors have been called. If 
+		<samp class="codeph">atomic&lt;<var>T</var>&gt;</samp> declared a
+		constructor, a file-scope instance might be initialized after it had been
+		referenced. 
+	 </p>
+ 
+	 <p>As for any C++ class with no declared constructors, an object 
+		<var>X</var> of type 
+		<samp class="codeph">atomic&lt;<var>T</var>&gt;</samp> is automatically
+		initialized to zero in the following contexts: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p><var>X</var> is declared as a file-scope variable or as a
+			 static data member of a class. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><span class="keyword">x</span> is a member of a class and explicitly listed in
+			 the constructor's initializer list. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>The code below illustrates these points. 
+	 </p>
+ 
+	 <pre>atomic&lt;int&gt; x;  // zero-initialized because it is at file scope
+&nbsp;
+class Foo {
+    atomic&lt;int&gt; y;
+    atomic&lt;int&gt; notzeroed;
+    static atomic&lt;int&gt; z;
+public:
+    Foo() :
+        y()     // zero-initializes y.
+    {
+        // notzeroed has unspecified value here.
+    }
+};
+&nbsp;
+atomic&lt;int&gt; Foo::z; // zero-initialized because it is a static member</pre> 
+	 <p>In C++11 mode, template class 
+		<samp class="codeph">atomic&lt;<var>T</var>&gt;</samp> has two constructors
+		: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p><samp class="codeph">atomic() = default;</samp> default constructor generated
+			 by compiler. This constructor behaves same as if there were no user defined
+			 constrcutors declared at all. This constructor keeps backward compatibilty with
+			 C++03 mode, e.g. allow zero-initilization of global objects. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p><samp class="codeph">constexpr atomic(<var>T</var> arg);</samp> this
+			 constructor allows initialization of atomic variable during translation time,
+			 only if the argument is itself a translation time constant, otherwise
+			 initialization is performed at run time. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Atomic_Operations.htm">Atomic Operations</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Atomic_Operations.htm#tutorial_Atomic_Operations">Atomic Operations
+		  </a></div></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Synchronization">
+<meta name="DC.subject" content="Synchronization">
+<meta name="keywords" content="Synchronization">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="scheduling_algorithm.htm">
+<meta name="DC.Relation" scheme="URI" content="task_group_context.htm">
+<meta name="DC.Relation" scheme="URI" content="task_cls/task_derivation.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="synchronization">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Synchronization</title>
+</head>
+<body id="synchronization">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="synchronization"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Synchronization</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p>Spawning a task 
+		  <em>t</em> either causes the calling thread to invoke 
+		  <em>t</em>.<samp class="codeph">execute()</samp>, or causes<samp class="codeph"><em>
+				t</em></samp> to be put into the ready pool. Any thread participating in task
+		  scheduling may then acquire the task and invoke 
+		  <em>t</em>.<samp class="codeph">execute()</samp>. Section Scheduling Algorithm
+		  describes the structure of the ready pool. 
+		</p>
+ 
+		<p>The calls that spawn come in two forms: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Spawn a single 
+				<samp class="codeph">task</samp>. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Spawn multiple 
+				<samp class="codeph">task</samp> objects specified by a 
+				<samp class="codeph">task_list</samp> and clear 
+				<samp class="codeph">task_list</samp>. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>Some calls distinguish between spawning root tasks
+		  and non-root tasks. A root task is one that was created using method 
+		  <samp class="codeph">allocate_root</samp>. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		  <p>A 
+			 <samp class="codeph">task</samp> should not spawn any predecessor task until it
+			 has called method 
+			 <samp class="codeph">set_ref_count</samp> to indicate both the number of
+			 predecessors and whether it intends to use one of the "wait_for_all" methods. 
+		  </p>
+ 
+		</div> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d110779e108">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d110779e111">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">void set_ref_count( int count
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p><strong>Requirements</strong>: count&gt;=0. If the
+						intent is to subsequently spawn 
+						<em>n</em> predecessors and wait, then 
+						<em>count</em> should be 
+						<em>n</em>+1. Otherwise count should be 
+						<em>n</em>. 
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Sets the 
+						<em>refcount</em> attribute to 
+						<samp class="codeph"><em>count</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">void
+						increment_ref_count();</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p>Atomically increments 
+						<em>refcount</em> attribute. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">int
+						decrement_ref_count();</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p>Atomically decrements 
+						<em>refcount</em> attribute. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: New value of refcount
+						attribute. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p>Explicit use of 
+						  <samp class="codeph">increment_ref_count</samp> and 
+						  <samp class="codeph">decrement_ref_count</samp> is typically necessary
+						  only when a task has more than one immediate successor task. Section "General
+						  Acyclic Graphs of Tasks" of the Tutorial explains more. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">void wait_for_all()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p><strong>Requirements</strong>: 
+						<samp class="codeph"><em>refcount</em>=<em>n</em>+1</samp>, where 
+						<em>n</em> is the number of predecessors that are still
+						running. 
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Executes tasks in ready
+						pool until 
+						<em>refcount</em> is 1. Afterwards, leaves 
+						<em>refcount</em>=1 if the task's 
+						<samp class="codeph">task_group_context</samp> specifies 
+						<samp class="codeph">concurrent_wait</samp>, otherwise sets refcount to
+						0. The figure below summarizes the state transitions. 
+					 </p>
+ 
+					 <p>Also, 
+						<samp class="codeph">wait_for_all()</samp>automatically resets the
+						cancellation state of the 
+						<samp class="codeph">task_group_context</samp> implicitly associated
+						with the task , when all of the following conditions hold: 
+					 </p>
+ 
+					 <ul type="disc"> 
+						<li> 
+						  <p>The task was allocated without
+							 specifying a context. 
+						  </p>
+ 
+						</li>
+ 
+						<li> 
+						  <p>The calling thread is a user-created
+							 thread, not an Intel&reg; Threading Building Blocks (Intel&reg; TBB) worker thread. 
+						  </p>
+ 
+						</li>
+ 
+						<li> 
+						  <p>It is the outermost call to 
+							 <samp class="codeph">wait_for_all()</samp> by the thread. 
+						  </p>
+ 
+						</li>
+ 
+					 </ul>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+						<p>Under such conditions there is no way to know afterwards
+						  if the 
+						  <samp class="codeph">task_group_context</samp> was cancelled. Use an
+						  explicit 
+						  <samp class="codeph">task_group_context</samp> if you need to know. 
+						</p>
+ 
+					 </div> 
+					 <div class="fignone"><span class="figcap">Effect of wait_for_all</span> 
+						 
+						<br><img src="../Resources/0600000D.png"><br> 
+					 </div>
+
+					 <p>k=0 by default
+					 </p>
+
+					 <p>k= 1 if corresponding 
+						<samp class="codeph">task_group_context</samp> specifies 
+						<samp class="codeph">concurrent_wait</samp>
+					 </p>
+
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">static void spawn( task&amp; t
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p>Puts task 
+						<em>t</em> into the ready pool and immediately returns. 
+					 </p>
+ 
+					 <p>If the 
+						<em>successor</em> of 
+						<samp class="codeph">t</samp> is not null, then 
+						<samp class="codeph">set_ref_count</samp> must be called on that 
+						<em>successor</em> before spawning any child tasks, because
+						once the child tasks commence, their completion will cause 
+						<em>successor</em>.<em>refcount</em> to be decremented
+						asynchronously. The debug version of the library often detects when a required
+						call to 
+						<samp class="codeph">set_ref_count</samp> is not made, or is made too
+						late. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">static void spawn ( task_list&amp;
+						list )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p>Equivalent to executing spawn on each
+						task in 
+						<em>list</em> and clearing 
+						<em>list</em>, but may be more efficient. If 
+						<em>list</em> is empty, there is no effect. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p>Spawning a long linear list of tasks
+						  can introduce a bottleneck, because tasks are stolen individually. Instead,
+						  consider using a recursive pattern or a parallel loop template to create many
+						  pieces of independent work. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">void spawn_and_wait_for_all(
+						task&amp; t )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p><strong>Requirements</strong>: Any other
+						predecessors of 
+						<samp class="codeph">this</samp> must already be spawned. The 
+						<samp class="codeph">task</samp> 
+						<em>t</em> must have a non-null attribute 
+						<em>successor</em>. There must be a chain of 
+						<em>successor</em> links from 
+						<em>t</em> to the calling 
+						<samp class="codeph">task</samp>. Typically, this chain contains a
+						single link. That is, 
+						<em>t</em> is typically an immediate predecessor of 
+						<samp class="codeph">this</samp>. 
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Similar to 
+						<samp class="codeph">{spawn(<em>t</em>); wait_for_all();}</samp>, but
+						often more efficient. Furthermore, it guarantees that 
+						<em>task</em> is executed by the current thread. This
+						constraint can sometimes simplify synchronization. The figure below illustrates
+						the state transitions. It is similar to the figure above, with task 
+						<em>t</em> being the 
+						<em>n</em>th task. 
+					 </p>
+ 
+					 <div class="fignone" id="fig13"><a name="fig13"><!-- --></a><span class="figcap">Effect of
+						  spawn_and_wait_for_all</span> 
+						 
+						<br><img src="../Resources/0600000E.png"><br> 
+					 </div>
+
+					 <p>k=0 by default
+					 </p>
+
+					 <p>k= 1 if corresponding 
+						<samp class="codeph">task_group_context</samp> specifies 
+						<samp class="codeph">concurrent_wait</samp>
+					 </p>
+
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">void spawn_and_wait_for_all(
+						task_list&amp; list )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p>Similar to 
+						<samp class="codeph">{spawn(<em>list</em>); wait_for_all();}</samp>, but
+						often more efficient. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">static void spawn_root_and_wait(
+						task&amp; root )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p><strong>Requirements</strong>: The memory for task 
+						<em>root</em> was allocated by 
+						<samp class="codeph">task::allocate_root()</samp>. 
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Sets 
+						<em>parent</em> attribute of 
+						<em>root</em> to an undefined value and execute root as
+						described in Section Processing of execute(). Destroys 
+						<em>root</em> afterwards unless 
+						<em>root</em> was recycled. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">static void spawn_root_and_wait(
+						task_list&amp; root_list )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p><strong>Requirements</strong>: Each 
+						<samp class="codeph">task</samp> object 
+						<em>t</em> in 
+						<em>root_list</em> must meet the requirements in static void
+						spawn_root_and_wait( task&amp; root ). 
+					 </p>
+ 
+					 <p><strong>Effects</strong>: For each 
+						<samp class="codeph">task</samp> object 
+						<em>t</em> in root_list, performs 
+						<samp class="codeph">spawn_root_and_wait(<em>t</em>)</samp>, possibly in
+						parallel. Section static void spawn_root_and_wait( task&amp; root ) describes
+						the actions of 
+						<samp class="codeph">spawn_root_and_wait(<em>t</em>)</samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d110779e108 "><span class="keyword">static void enqueue ( task&amp;
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d110779e111 "> 
+					 <p>The task is scheduled for eventual
+						execution by a worker thread even if no thread ever explicitly waits for the
+						task to complete. If the total number of worker threads is zero, a special
+						additional worker thread is created to execute enqueued tasks. 
+					 </p>
+ 
+					 <p>Enqueued tasks are processed in roughly,
+						but not precisely, first-come first-serve order. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+						<p>Using enqueued tasks for recursive
+						  parallelism can cause high memory usage, because the recursion will expand in a
+						  breadth-first manner. Use ordinary spawning for recursive parallelism. 
+						</p>
+ 
+					 </div> 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+						<p>Explicitly waiting on an enqueued task
+						  should be avoided, because other enqueued tasks from unrelated parts of the
+						  program might have to be processed first. The recommended pattern for using an
+						  enqueued task is to have it asynchronously signal its completion, for example,
+						  by posting a message back to the thread that enqueued it. See the Intel&reg;
+						  Threading Building Blocks 
+						  <em>Design Patterns</em> manual for such an example. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="scheduling_algorithm.htm">Scheduling Algorithm 
+		  </a></div>
+<div><a href="task_group_context.htm">task_group_context 
+		  </a></div>
+<div><a href="task_cls/task_derivation.htm">task Derivation, Processing of execute() 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

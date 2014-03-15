@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioProject
+	ProjectType="Intel C++ Project"
+	Version="11.1"
+	Name="som"
+	ProjectGUID="{fdd223e1-7f29-4ad2-91bb-bf6c0284cd5f}"
+	VCNestedProjectGUID="{b2ae2edc-697b-4c85-ac0d-e3e523d20d6d}"
+	VCNestedProjectFileName="som.vcproj">
+	<Configurations/>
+	<Files/>
+</VisualStudioProject>

@@ -1,0 +1,131 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Debugging Macros">
+<meta name="DC.subject" content="Debugging Macros">
+<meta name="keywords" content="Debugging Macros">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/compatibility_features.htm">
+<meta name="DC.Relation" scheme="URI" content="../../environment/enabling_debugging_features.htm#enabling_debugging_features">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="debugging_macros">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Debugging Macros</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="debugging_macros">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="debugging_macros"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Debugging Macros</h1>
+ 
+   
+  <div> 
+	 <p>The names of the debugging macros have changed as
+		shown in Table 45. If you define the old macros, the Intel&reg; Threading Building Blocks (Intel&reg; TBB) 
+        library sets each undefined new macro in a way that duplicates the behavior the old macro settings. 
+	 </p>
+ 
+	 <p>The old 
+		<span class="keyword">TBB_DO_ASSERT</span>
+		enabled assertions, full support for Intel&reg; Threading Tools, and performance
+		warnings. These three distinct capabilities are now controlled by three
+		separate macros as described in Enabling Debugging Features. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		<p>To enable all three capabilities with a single
+		  macro, define 
+		  <span class="keyword">TBB_USE_DEBUG</span>
+		  to be 1. If you had code under 
+		  <samp class="codeph">"#if TBB_DO_ASSERT"</samp>
+		  that should be conditionally included only when assertions are enabled, use 
+		  <samp class="codeph">"#if TBB_USE_ASSERT"</samp>
+		  instead. 
+		</p>
+ 
+	 </div> 
+	 
+<div class="tablenoborder"><a name="tbl45"><!-- --></a><table cellpadding="4" summary="" id="tbl45" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Deprecated Macros</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" align="left" valign="top" width="45%" id="d25273e61"> 
+			 <p>Deprecated Macro 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" align="left" valign="top" width="55.00000000000001%" id="d25273e67"> 
+			 <p>New Macro 
+			 </p>
+ 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" align="left" valign="middle" width="45%" headers="d25273e61 "> 
+			 <p><span class="keyword">TBB_DO_ASSERT</span> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="middle" width="55.00000000000001%" headers="d25273e67 "> 
+			 <p><span class="keyword">TBB_USE_DEBUG</span> or 
+				<samp class="codeph">TBB_USE_ASSERT</samp>,
+				depending on context. 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" align="left" valign="middle" width="45%" headers="d25273e61 "> 
+			 <p><samp class="codeph">TBB_DO_THREADING_TOOLS</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="middle" width="55.00000000000001%" headers="d25273e67 "> 
+			 <p><samp class="codeph">TBB_USE_THREADING_TOOLS</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/appendices/compatibility_features.htm">Compatibility Features</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../../environment/enabling_debugging_features.htm#enabling_debugging_features">Enabling Debugging Features
+		  </a></div></div>
+</div>
+
+</body>
+</html>

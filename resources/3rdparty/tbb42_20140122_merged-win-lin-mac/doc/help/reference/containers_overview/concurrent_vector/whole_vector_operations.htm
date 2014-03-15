@@ -1,0 +1,173 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Whole Vector Operations">
+<meta name="DC.subject" content="Whole Vector Operations">
+<meta name="keywords" content="Whole Vector Operations">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_vector.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="whole_vector_operations">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Whole Vector Operations</title>
+</head>
+<body id="whole_vector_operations">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="whole_vector_operations"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Whole Vector Operations</h1>
+ 
+   
+  <div> 
+	 <div class="section">
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>Concurrent invocation of these operations on the
+			 same instance is not safe. 
+		  </p>
+ 
+		</div> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d58606e37">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d58606e40">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d58606e37 "><span class="keyword">void reserve( size_type n
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d58606e40 "> 
+					 <p>Reserves space for at least 
+						<samp class="codeph"><em>n</em></samp> elements. 
+					 </p>
+ 
+					 <p><strong>Throws</strong> 
+						<samp class="codeph">std::length_error</samp> if 
+						<samp class="codeph"><em>n</em>&gt;max_size()</samp>. It can also throw an
+						exception if the allocator throws an exception. 
+					 </p>
+ 
+					 <p><strong>Safety</strong>: If an exception is thrown,
+						the instance remains in a valid state. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d58606e37 "><span class="keyword">void shrink_to_fit()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d58606e40 "> 
+					 <p>Compacts the internal representation to
+						reduce fragmentation. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p> Method 
+						  <samp class="codeph">shrink_to_fit</samp> was called 
+						  <samp class="codeph">compact()</samp> in Intel&reg; Threading Building
+						  Blocks (Intel&reg; TBB) 2.1. It was renamed to match the C++11 
+						  <samp class="codeph">std::vector::shrink_to_fit()</samp>. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d58606e37 "><span class="keyword">void swap( concurrent_vector&amp;
+						x )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d58606e40 "> 
+					 <p>Swap contents of two vectors. Takes O(1)
+						time. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d58606e37 "><span class="keyword">void clear()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d58606e40 "> 
+					 <p>Erases all elements. Afterwards, 
+						<samp class="codeph">size()==0</samp>. Does not free internal arrays. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+						<p>To free internal arrays, call 
+						  <samp class="codeph">shrink_to_fit()</samp> after 
+						  <samp class="codeph">clear()</samp>. 
+						</p>
+ 
+					 </div> 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+						<p> The original release of Intel&reg; TBB 2.1
+						  and its "update 1" freed the arrays. The change in "update 2" reverts back to
+						  the behavior of Intel&reg; TBB 2.0. The motivation for not freeing the arrays is to
+						  behave similarly to 
+						  <samp class="codeph">std::vector::clear()</samp>. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d58606e37 "><span class="keyword"> ~concurrent_vector()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d58606e40 "> 
+					 <p>Erases all elements and destroys the
+						vector. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_vector.htm">concurrent_vector</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

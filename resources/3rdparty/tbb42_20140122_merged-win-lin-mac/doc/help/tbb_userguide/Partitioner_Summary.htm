@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Partitioner Summary">
+<meta name="DC.subject" content="Partitioner Summary">
+<meta name="keywords" content="Partitioner Summary">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/parallel_for.htm">
+<meta name="DC.Relation" scheme="URI" content="parallel_for.htm#tutorial_parallel_for">
+<meta name="DC.Relation" scheme="URI" content="parallel_reduce.htm#tutorial_parallel_reduce">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Partitioner_Summary">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Partitioner Summary</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Partitioner_Summary">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Partitioner_Summary"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Partitioner Summary</h1>
+ 
+   
+  <div> 
+	 <p>The parallel loop templates 
+		<samp class="codeph">parallel_for</samp> and 
+		<samp class="codeph">parallel_reduce</samp> take an optional 
+		<em>partitioner</em> argument, which specifies a strategy for executing the
+		loop. The following table summarizes the three partitioners and their effect
+		when used in conjunction with 
+		<samp class="codeph">blocked_range</samp>. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl10"><!-- --></a><table cellpadding="4" summary="" id="tbl10" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Partitioners</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" valign="top" width="33.23076923076923%" id="d148489e52"> 
+			 <p>Partitioner 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="30.76923076923077%" id="d148489e58"> 
+			 <p>Description 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="36%" id="d148489e64"> 
+			 <p>When Used with blocked_range(i,j,<var>g</var>) 
+			 </p>
+ 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="33.23076923076923%" headers="d148489e52 "> 
+			 <p><samp class="codeph">simple_partitioner</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="30.76923076923077%" headers="d148489e58 "> 
+			 <p>Chunksize bounded by grain size. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="36%" headers="d148489e64 "> 
+			 <p><samp class="codeph"><var>g</var>/2 ≤ 
+				  <var>chunksize</var> ≤ 
+				  <var>g</var></samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="33.23076923076923%" headers="d148489e52 "> 
+			 <p><samp class="codeph">auto_partitioner</samp> (default)<a href="#ftn4"><sup><sup>[4]</sup></sup></a> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="30.76923076923077%" headers="d148489e58 "> 
+			 <p>Automatic chunk size. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="36%" headers="d148489e64 "> 
+			 <p><samp class="codeph"><var>g</var>/2 ≤ 
+				  <var>chunksize</var></samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="33.23076923076923%" headers="d148489e52 "> 
+			 <p><samp class="codeph">affinity_partitioner</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="30.76923076923077%" headers="d148489e58 "> 
+			 <p>Automatic chunk size and cache affinity. 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  <p>An 
+	 <samp class="codeph">auto_partitioner</samp> is used when no partitioner is specified.
+	 In general, the 
+	 <samp class="codeph">auto_partitioner</samp> or 
+	 <samp class="codeph">affinity_partitioner</samp> should be used, because these tailor
+	 the number of chunks based on available execution resources. However, 
+	 <samp class="codeph">simple_partitioner</samp> can be useful in the following
+	 situations: 
+  </p>
+ 
+  <ul type="disc"> 
+	 <li> 
+		<p>The subrange size for 
+		  <samp class="codeph">operator()</samp> must not exceed a limit. That might be
+		  advantageous, for example, if your 
+		  <samp class="codeph">operator()</samp> needs a temporary array proportional to the
+		  size of the range. With a limited subrange size, you can use an automatic
+		  variable for the array instead of having to use dynamic memory allocation. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>A large subrange might use cache inefficiently. For example, suppose
+		  the processing of a subrange involves repeated sweeps over the same memory
+		  locations. Keeping the subrange below a limit might enable the repeatedly
+		  referenced memory locations to fit in cache. See the use of 
+		  <samp class="codeph">parallel_reduce</samp> in 
+		  <samp class="codeph">examples/parallel_reduce/primes/primes.cpp</samp> for an
+		  example of this scenario. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>You want to tune to a specific machine. 
+		</p>
+ 
+	 </li>
+ 
+  </ul>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/parallel_for.htm">parallel_for</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="parallel_for.htm#tutorial_parallel_for">parallel_for 
+		  </a></div>
+<div><a href="parallel_reduce.htm#tutorial_parallel_reduce">parallel_reduce 
+		  </a></div></div>
+</div> 
+<p><a id="ftn4"><sup>[4]</sup></a>  &gt;Prior to 
+                  Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.2, the default was 
+				  <samp class="codeph">simple_partitioner</samp>. Compile with 
+				  <samp class="codeph">TBB_DEPRECATED=1</samp> to get the old default.</p>
+</body>
+</html>

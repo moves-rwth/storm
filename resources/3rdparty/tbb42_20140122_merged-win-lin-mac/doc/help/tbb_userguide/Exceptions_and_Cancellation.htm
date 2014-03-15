@@ -1,0 +1,130 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Exceptions and Cancellation">
+<meta name="DC.subject" content="Exceptions and Cancellation">
+<meta name="keywords" content="Exceptions and Cancellation">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/title.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Cancellation_Without_An_Exception.htm">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Cancellation_and_Nested_Parallelism.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Exceptions_and_Cancellation">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Exceptions and Cancellation</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Exceptions_and_Cancellation">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Exceptions_and_Cancellation"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Exceptions and Cancellation</h1>
+ 
+   
+  <div> 
+	 <p>Intel&reg; Threading Building Blocks (Intel&reg; TBB) supports exceptions and
+		cancellation. When code inside an Intel&reg; TBB algorithm throws an exception, the
+		following steps generally occur: 
+	 </p>
+ 
+	 <ol> 
+		<li> 
+		  <p>The exception is captured. Any further exceptions inside the
+			 algorithm are ignored. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>The algorithm is cancelled. Pending iterations are not executed. If
+			 there is Intel&reg; TBB parallelism nested inside, the nested parallelism may also
+			 be cancelled as explained in 
+			 <strong>Cancellation and Nested Parallelism</strong>. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Once all parts of the algorithm stop, an exception is thrown on the
+			 thread that invoked the algorithm. 
+		  </p>
+ 
+		</li>
+ 
+	 </ol>
+ 
+	 <p>The exception thrown in step 3 might be the original exception, or might
+		merely be a summary of type 
+		<samp class="codeph">captured_exception</samp>. The latter usually occurs on current
+		systems because propagating exceptions between threads requires support for the
+		C++ 
+		<samp class="codeph">std::exception_ptr</samp> functionality. As compilers evolve to
+		support this functionality, future versions of Intel&reg; TBB might throw the
+		original exception. So be sure your code can catch either type of exception.
+		The following example demonstrates exception handling. 
+	 </p>
+ 
+	 <pre>#include "tbb/tbb.h"
+#include &lt;vector&gt;
+#include &lt;iostream&gt;
+&nbsp;
+using namespace tbb;
+using namespace std;
+&nbsp;
+vector&lt;int&gt; Data;
+&nbsp;
+struct Update {
+    void operator()( const blocked_range&lt;int&gt;&amp; r ) const {
+        for( int i=r.begin(); i!=r.end(); ++i )
+            Data.at(i) += 1;
+    }
+};
+&nbsp;
+int main() {
+    Data.resize(1000);
+    try {
+        parallel_for( blocked_range&lt;int&gt;(0, 2000), Update());
+    } catch( captured_exception&amp; ex ) {
+       cout &lt;&lt; "captured_exception: " &lt;&lt; ex.what() &lt;&lt; endl;
+    } catch( out_of_range&amp; ex ) {
+       cout &lt;&lt; "out_of_range: " &lt;&lt; ex.what() &lt;&lt; endl;
+    }
+    return 0;
+}</pre> 
+	 <p>The 
+		<samp class="codeph">parallel_for</samp> attempts to iterate over 2000 elements of a
+		vector with only 1000 elements. Hence the expression 
+		<samp class="codeph">Data.at(i)</samp> sometimes throws an exception 
+		<samp class="codeph">std::out_of_range</samp> during execution of the algorithm.
+		When the exception happens, the algorithm is cancelled and an exception thrown
+		at the call site to 
+		<samp class="codeph">parallel_for</samp>. 
+	 </p>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/title.htm">Intel&reg; Threading Building Blocks (Intel&reg; TBB) User Guide</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../tbb_userguide/Cancellation_Without_An_Exception.htm">Cancellation Without An Exception</a><br>
+</li>
+<li class="ulchildlink"><a href="../tbb_userguide/Cancellation_and_Nested_Parallelism.htm">Cancellation and Nested Parallelism</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

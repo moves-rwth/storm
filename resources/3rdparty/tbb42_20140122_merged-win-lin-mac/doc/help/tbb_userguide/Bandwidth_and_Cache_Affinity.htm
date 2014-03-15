@@ -1,0 +1,181 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Bandwidth and Cache Affinity">
+<meta name="DC.subject" content="Bandwidth and Cache Affinity">
+<meta name="keywords" content="Bandwidth and Cache Affinity">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/parallel_for.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Bandwidth_and_Cache_Affinity">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Bandwidth and Cache Affinity</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Bandwidth_and_Cache_Affinity">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Bandwidth_and_Cache_Affinity"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Bandwidth and Cache Affinity</h1>
+ 
+   
+  <div> 
+	 <p>For a sufficiently simple function 
+		<samp class="codeph">Foo</samp>, the examples might not show good speedup when
+		written as parallel loops. The cause could be insufficient system bandwidth
+		between the processors and memory. In that case, you may have to rethink your
+		algorithm to take better advantage of cache. Restructuring to better utilize
+		the cache usually benefits the parallel program as well as the serial program. 
+	 </p>
+ 
+	 <p>An alternative to restructuring that works in some cases is 
+		<samp class="codeph">affinity_partitioner.</samp> It not only automatically chooses
+		the grainsize, but also optimizes for cache affinity. Using 
+		<samp class="codeph">affinity_partitioner</samp> can significantly improve
+		performance when: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p>The computation does a few operations per data access. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>The data acted upon by the loop fits in cache. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>The loop, or a similar loop, is re-executed over the same data. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>There are more than two hardware threads available. If only two
+			 threads are available, the default scheduling in Intel&reg; Threading Building
+			 Blocks (Intel&reg; TBB) usually provides sufficient cache affinity. 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>The following code shows how to use 
+		<samp class="codeph">affinity_partitioner</samp>. 
+	 </p>
+ 
+	 <pre>#include "tbb/tbb.h"
+&nbsp;
+void ParallelApplyFoo( float a[], size_t n ) {
+    static affinity_partitioner ap;
+    parallel_for(blocked_range&lt;size_t&gt;(0,n), ApplyFoo(a), ap);
+}
+&nbsp;
+void TimeStepFoo( float a[], size_t n, int steps ) {    
+    for( int t=0; t&lt;steps; ++t )
+        ParallelApplyFoo( a, n );
+}</pre> 
+	 <p>In the example, the 
+		<samp class="codeph">affinity_partitioner</samp> object 
+		<samp class="codeph">ap</samp> lives between loop iterations. It remembers where
+		iterations of the loop ran, so that each iteration can be handed to the same
+		thread that executed it before. The example code gets the lifetime of the
+		partitioner right by declaring the 
+		<samp class="codeph">affinity_partitioner</samp> as a local static object. Another
+		approach would be to declare it at a scope outside the iterative loop in 
+		<samp class="codeph">TimeStepFoo</samp>, and hand it down the call chain to 
+		<samp class="codeph">parallel_for</samp>. 
+	 </p>
+ 
+	 <p>If the data does not fit across the system’s caches, there may be little
+		benefit. The following figure shows the situations. 
+	 </p>
+ 
+	 <div class="fignone" id="fig3"><a name="fig3"><!-- --></a><span class="figcap">Benefit of Affinity Determined by Relative Size of Data Set and
+		  Cache</span> 
+		<br><img src="Images/image007.jpg" width="453" height="178"><br> 
+	 </div>
+ 
+	 <p>The next figure shows how parallel speedup might vary with the size of a
+		data set. The computation for the example is 
+		<samp class="codeph">A[i]+=B[i]</samp> for 
+		<samp class="codeph">i</samp> in the range [0,N). It was chosen for dramatic effect.
+		You are unlikely to see quite this much variation in your code. The graph shows
+		not much improvement at the extremes. For small N, parallel scheduling overhead
+		dominates, resulting in little speedup. For large N, the data set is too large
+		to be carried in cache between loop invocations. The peak in the middle is the
+		sweet spot for affinity. Hence 
+		<samp class="codeph">affinity_partitioner</samp> should be considered a tool, not a
+		cure-all, when there is a low ratio of computations to memory accesses. 
+	 </p>
+ 
+	 <div class="fignone" id="fig4"><a name="fig4"><!-- --></a><span class="figcap">Improvement from Affinity Dependent on Array Size</span> 
+		<br><img src="Images/image008.jpg" width="551" height="192"><br> 
+	 </div>
+ 
+	 <p> 
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"> 
+		   
+		  <thead align="left">
+			 <tr>
+				<th class="cellrowborder" align="left" valign="top" width="100%" id="d128272e134">
+				  <p>Optimization Notice
+				  </p>
+
+				</th>
+
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="bgcolor(#ccecff)" bgcolor="#ccecff" valign="top" width="100%" headers="d128272e134 ">
+				  Intel's compilers may or may not optimize to the same degree for non-Intel
+				  microprocessors for optimizations that are not unique to Intel microprocessors.
+				  These optimizations include SSE2, SSE3, and SSSE3 instruction sets and other
+				  optimizations. Intel does not guarantee the availability, functionality, or
+				  effectiveness of any optimization on microprocessors not manufactured by Intel.
+				  Microprocessor-dependent optimizations in this product are intended for use
+				  with Intel microprocessors. Certain optimizations not specific to Intel
+				  microarchitecture are reserved for Intel microprocessors. Please refer to the
+				  applicable product User and Reference Guides for more information regarding the
+				  specific instruction sets covered by this notice. 
+				  <p>Notice revision #20110804 
+				  </p>
+
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 </p>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/parallel_for.htm">parallel_for</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

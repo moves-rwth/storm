@@ -1,0 +1,214 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Non-Preemptive Priorities">
+<meta name="DC.subject" content="Non-Preemptive Priorities">
+<meta name="keywords" content="Non-Preemptive Priorities">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Non-Preemptive_Priorities">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Non-Preemptive Priorities</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Non-Preemptive_Priorities">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Non-Preemptive_Priorities"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Non-Preemptive Priorities</h1>
+ 
+  
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		
+		<p>Choose the next work item to do, based on priorities. 
+		</p>
+
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		
+		<p>The scheduler in Intel&reg; Threading Building Blocks (Intel&reg; TBB) chooses
+		  tasks using rules based on scalability concerns. The rules are based on the
+		  order in which tasks were spawned or enqueued, and are oblivious to the
+		  contents of tasks. However, sometimes it is best to choose work based on some
+		  kind of priority relationship. 
+		</p>
+
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<ul type="disc">
+		  <li>
+			 <p>Given multiple work items, there is a rule for which item should
+				be done next that is 
+				<em>not</em> the default Intel&reg; TBB rule.
+			 </p>
+
+		  </li>
+
+		  <li>
+			 <p>Preemptive priorities are not necessary. If a higher priority item
+				appears, it is not necessary to immediately stop lower priority items in
+				flight. If preemptive priorities are necessary, then non-preemptive tasking is
+				inappropriate. Use threads instead.
+			 </p>
+
+		  </li>
+
+		</ul>
+
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		
+		<p>Put the work in a shared work pile. Decouple tasks from specific work,
+		  so that task execution chooses the actual piece of work to be selected from the
+		  pile. 
+		</p>
+
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p id="NonPreemptivePrioritiesExample"><a name="NonPreemptivePrioritiesExample"><!-- --></a>The following example implements
+		  three priority levels. The user interface for it and top-level implementation
+		  follow:
+		</p>
+
+		<pre>enum Priority {
+   P_High,
+   P_Medium,
+   P_Low
+};
+&nbsp;
+template&lt;typename Func&gt;
+void EnqueueWork( Priority p, Func f ) {
+   WorkItem* item = new ConcreteWorkItem&lt;Func&gt;( p, f );
+   ReadyPile.add(item);
+}</pre>
+		<p>The caller provides a priority 
+		  <samp class="codeph">p</samp> and a functor 
+		  <samp class="codeph">f</samp> to routine 
+		  <samp class="codeph">EnqueueWork</samp>. The functor may be the result of a
+		  lambda expression. 
+		  <samp class="codeph">EnqueueWork</samp> packages 
+		  <samp class="codeph">f</samp> as a 
+		  <samp class="codeph">WorkItem</samp> and adds it to global object 
+		  <samp class="codeph">ReadyPile</samp>. 
+		</p>
+
+		<p>Class 
+		  <samp class="codeph">WorkItem</samp> provides a uniform interface for running
+		  functors of unknown type:
+		</p>
+
+		<pre>// Abstract base class for a prioritized piece of work.
+class WorkItem {
+public:
+   WorkItem( Priority p ) : priority(p) {}
+   // Derived class defines the actual work.
+   virtual void run() = 0;
+   const Priority priority;
+};
+&nbsp;
+template&lt;typename Func&gt;</pre>
+		<pre id="ConcreteWorkItem"><a name="ConcreteWorkItem"><!-- --></a>class ConcreteWorkItem: public WorkItem {
+   Func f;
+   /*override*/ void run() {
+       f();
+       delete this;
+   }
+public:
+   ConcreteWorkItem( Priority p, const Func&amp; f_ ) :
+       WorkItem(p), f(f_)
+   {}
+};</pre>
+		<p>Class 
+		  <samp class="codeph">ReadyPile</samp> contains the core pattern. It maintains a
+		  collection of work and fires off tasks that choose work from the collection:
+		</p>
+
+		<pre id="ReadyPile"><a name="ReadyPile"><!-- --></a>class ReadyPileType {
+   // One queue for each priority level
+   tbb::concurrent_queue&lt;WorkItem*&gt; level[P_Low+1];
+public:
+   void add( WorkItem* item ) {
+       level[item-&gt;priority].push(item);
+       tbb::task::enqueue(*new(tbb::task::allocate_root()) RunWorkItem);
+   }
+   void runNextWorkItem() {
+       // Scan queues in priority order for an item.
+       WorkItem* item=NULL;
+       for( int i=P_High; i&lt;=P_Low; ++i )
+           if( level[i].try_pop(item) )
+               break;
+       assert(item);
+       item-&gt;run();
+   }
+};
+&nbsp;
+ReadyPileType ReadyPile;</pre>
+		<p>The task enqueued by 
+		  <samp class="codeph">add(item)</samp> does 
+		  <em>not</em> necessarily execute that item. The task executes 
+		  <samp class="codeph">runNextWorkItem()</samp>, which may find a higher priority
+		  item. There is one task for each item, but the mapping resolves when the task
+		  actually executes, not when it is created. 
+		</p>
+
+		<p>Here are the details of class 
+		  <samp class="codeph">RunWorkItem</samp>:
+		</p>
+
+		<pre>class RunWorkItem: public tbb::task {
+   /*override*/tbb::task* execute(); // Private override of virtual method
+};
+...
+tbb::task* RunWorkItem::execute() { 
+   ReadyPile.runNextWorkItem();
+   return NULL;
+};</pre>
+		<p><samp class="codeph">RunWorkItem</samp> objects are fungible. They enable the
+		  Intel&reg; TBB scheduler to choose when to do a work item, not which work item to
+		  do. The override of virtual method 
+		<samp class="codeph">task::execute</samp> is private because all calls to it are
+		dispatched via base class 
+		<samp class="codeph">task</samp>.
+		</p>
+
+		<p>Other priority schemes can be implemented by changing the internals
+		  for 
+		  <samp class="codeph">ReadyPileType</samp>. A priority queue could be used to
+		  implement very fine grained priorities.
+		</p>
+
+		<p>The scalability of the pattern is limited by the scalability of 
+		  <samp class="codeph">ReadyPileType</samp>. Ideally scalable concurrent
+		  containers should be used for it.
+		</p>
+
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

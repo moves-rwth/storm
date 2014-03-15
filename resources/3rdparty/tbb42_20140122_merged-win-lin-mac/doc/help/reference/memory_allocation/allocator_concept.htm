@@ -1,0 +1,232 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Allocator Concept">
+<meta name="DC.subject" content="Allocator Concept">
+<meta name="keywords" content="Allocator Concept">
+<meta name="DC.Relation" scheme="URI" content="../../reference/memory_allocation.htm">
+<meta name="DC.Relation" scheme="URI" content="tbb_allocator_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="scalable_allocator_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="cache_aligned_allocator_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="zero_allocator.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="allocator_concept">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Allocator Concept</title>
+</head>
+<body id="allocator_concept">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="allocator_concept"><!-- --></a>
+
+
+    <h1 class="topictitle1">Allocator Concept</h1>
+
+    
+<div>
+        <div class="section">
+            <p>The allocator concept for allocators in Intel&reg; Threading Building Blocks is similar to the "Allocator requirements" in Table 32 of the ISO C++ Standard, but with further guarantees required by the ISO C++ Standard for use with ISO C++ containers. The table below summarizes the allocator concept. Here, A and B represent instances of the allocator class.</p>
+
+            
+<div class="tablenoborder"><a name="tbl22"><!-- --></a><table cellpadding="4" summary="" id="tbl22" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Allocator Concept </span></caption>
+                    
+                    
+                    <thead align="left"><tr>
+                        <th class="cellrowborder" valign="top" width="NaN%" id="d91657e35"><p>Pseudo-Signature</p>
+</th>
+
+                        <th class="row-nocellborder" valign="top" width="NaN%" id="d91657e39"><p>Semantics</p>
+</th>
+
+                    </tr>
+
+                    </thead>
+
+                    <tbody>
+                    <tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">typedef T* A::pointer</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Pointer to <em>T</em>.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">typedef const T* A::const_pointer</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Pointer to const <em>T</em>.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">typedef T&amp; A::reference</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Reference to <em>T</em>.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">typedef const T&amp; A::const_reference</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Reference to const <em>T</em>.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">typedef T A::value_type</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Type of value to be allocated.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">typedef size_t A::size_type</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Type for representing number of values.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">typedef ptrdiff_t A::difference_type</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Type for representing pointer difference.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">template&lt;typename U&gt; struct rebind { typedef A&lt;U&gt; A::other;};</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Rebind to a different type U</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">A() throw()</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Default constructor.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">A( const A&amp; ) throw()</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Copy constructor.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">template&lt;typename U&gt; A( const A&amp; )</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Rebinding constructor.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">~A() throw()</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Destructor.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">T* A::address( T&amp; x ) const</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Take address.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">const T* A::const_address( const T&amp; x ) const</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Take const address.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">T* A::allocate( size_type n, const void* hint=0 )</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Allocate space for <samp class="codeph">n</samp> values.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">void A::deallocate( T* p, size_t&nbsp; n )</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Deallocate <samp class="codeph">n</samp> values.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">size_type A::max_size() const throw()</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Maximum plausible argument to method allocate.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">void A::construct( T* p, const T&amp; value )</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p><samp class="codeph">new(p) T(value)</samp></p>
+</td>
+
+                    </tr>
+<tr>
+                            <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 ">
+                                <samp class="codeph">void A::destroy( T* p )</samp>
+                            </td>
+
+                            
+                                <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 ">
+                                    <samp class="codeph">  p-&gt;T::~T()
+                                    </samp> </td>
+
+                           
+                        </tr>
+<tr>
+                            <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">bool operator==( const A&amp;, const B&amp; )</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Return true.</p>
+</td>
+
+                    </tr>
+<tr>
+                        <td class="cellrowborder" valign="top" width="NaN%" headers="d91657e35 "><samp class="codeph">bool operator!=( const A&amp;, const B&amp; )</samp></td>
+
+                        <td class="row-nocellborder" valign="top" width="NaN%" headers="d91657e39 "><p>Return false.</p>
+</td>
+
+                    </tr>
+</tbody>
+</table>
+</div>
+
+        </div>
+
+        <div class="section"><p><strong>Model Types</strong></p>
+
+            <p>Template classes:<samp class="codeph"> tbb_allocator</samp>,<samp class="codeph">
+                    scalable_allocator</samp>, and <samp class="codeph">cached_aligned_allocator</samp>, and
+                    <samp class="codeph">zero_allocator</samp> model the Allocator concept.</p>
+</div>
+
+    </div>
+
+    
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/memory_allocation.htm">Memory Allocation</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="tbb_allocator_cls.htm">tbb_allocator Template Class</a></div>
+<div><a href="scalable_allocator_cls.htm">scalable_allocator Template Class</a></div>
+<div><a href="cache_aligned_allocator_cls.htm">cache_aligned_allocator Template Class</a></div>
+<div><a href="zero_allocator.htm">zero_allocator Template Class</a></div></div>
+</div>
+</body>
+</html>

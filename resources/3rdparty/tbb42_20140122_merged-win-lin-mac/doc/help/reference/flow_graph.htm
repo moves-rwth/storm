@@ -1,0 +1,138 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Flow Graph">
+<meta name="DC.subject" content="Flow Graph">
+<meta name="keywords" content="Flow Graph">
+<meta name="DC.Relation" scheme="URI" content="../reference/reference.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/primary_components.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/message_passing_protocol.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/body_objects.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/flow_tuple.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/dependency_flow_graph_example.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/message_flow_graph_example.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/graph_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/sender_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/receiver_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/continue_msg_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/continue_receiver_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/graph_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/continue_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/func_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/source_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/multifunc_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/overwrite_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/write_once_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/broadcast_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/buffer_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/queue_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/priority_queue_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/sequencer_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/limiter_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/join_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/split_node_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/input_port_func.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/make_edge_func.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/remove_edge_func.htm">
+<meta name="DC.Relation" scheme="URI" content="../reference/flow_graph/copy_body_func.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="flow_graph">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Flow Graph</title>
+</head>
+<body id="flow_graph">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="flow_graph"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Flow Graph</h1>
+ 
+   
+  <div> 
+	 <p>There are some applications that best express dependencies as messages
+		passed between nodes in a flow graph. These messages may contain data or simply
+		act as signals that a predecessor has completed. The <span class="keyword">graph</span> class and its
+		associated node classes can be used to express such applications. All
+		graph-related classes and functions are in the <span class="keyword">tbb::flow</span> namespace.
+	 </p>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../reference/reference.htm">Intel&reg; Threading Building Blocks Reference Manual</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../reference/flow_graph/primary_components.htm">Primary Components</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/message_passing_protocol.htm">Message Passing Protocol</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/body_objects.htm">Body Objects</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/flow_tuple.htm">flow::tuple Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/dependency_flow_graph_example.htm">Dependency Flow Graph Example</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/message_flow_graph_example.htm">Message Flow Graph Example</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/graph_cls.htm">graph Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/sender_cls.htm">sender Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/receiver_cls.htm">receiver Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/continue_msg_cls.htm">continue_msg Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/continue_receiver_cls.htm">continue_receiver Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/graph_node_cls.htm">graph_node Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/continue_node_cls.htm">continue_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/func_node_cls.htm">function_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/source_node_cls.htm">source_node Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/multifunc_node_cls.htm">multifunction_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/overwrite_node_cls.htm">overwrite_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/write_once_node_cls.htm">write_once_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/broadcast_node_cls.htm">broadcast_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/buffer_node_cls.htm">buffer_node Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/queue_node_cls.htm">queue_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/priority_queue_node_cls.htm">priority_queue_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/sequencer_node_cls.htm">sequencer_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/limiter_node_cls.htm">limiter_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/join_node_cls.htm">join_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/split_node_cls.htm">split_node Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/input_port_func.htm">input_port Template Function</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/make_edge_func.htm">make_edge Template Function</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/remove_edge_func.htm">remove_edge Template Function</a><br>
+</li>
+<li class="ulchildlink"><a href="../reference/flow_graph/copy_body_func.htm">copy_body Template Function</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

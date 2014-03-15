@@ -331,7 +331,7 @@ namespace storm {
             bool equalModuloPrecision(T const& val1, T const& val2, T precision, bool relativeError = true) {
                 if (relativeError) {
 					if (val2 == 0) {
-						return (val1 > precision);
+						return (std::abs(val1) <= precision);
 					}
                     if (std::abs((val1 - val2)/val2) > precision) return false;
                 } else {

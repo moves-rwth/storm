@@ -1,0 +1,430 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="concurrent_unordered_set and concurrent_unordered_multiset Template Classes">
+<meta name="DC.subject" content="concurrent_unordered_set, concurrent_unordered_multiset">
+<meta name="keywords" content="concurrent_unordered_set, concurrent_unordered_multiset">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_unordered_set_cls/construct_destroy_copy_set_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_unordered_set_cls/size_and_capacity_set_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_unordered_set_cls/container_iterators_set_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_unordered_set_cls/modifiers_set_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_unordered_set_cls/observers_set_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_unordered_set_cls/lookup_set_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_unordered_set_cls/parallel_iteration_set_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_unordered_set_cls/bucket_interface_set_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview/concurrent_unordered_set_cls/hash_policy_set_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="concurrent_hash_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="concurrent_unordered_set_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>concurrent_unordered_set and concurrent_unordered_multiset Template Classes</title>
+</head>
+<body id="concurrent_unordered_set_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="concurrent_unordered_set_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1"> 
+	 <samp class="codeph">concurrent_unordered_set</samp> and 
+	 <samp class="codeph">concurrent_unordered_multiset</samp> Template Classes</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Template classes for set containers that supports
+		  concurrent insertion and traversal. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template &lt;typename Key, 
+          typename Hasher = tbb_hash&lt;Key&gt;, 
+          typename Equality = std::equal_to&lt;Key&gt;, 
+          typename Allocator = tbb::tbb_allocator&lt;Key&gt;
+class concurrent_unordered_set;</pre> 
+		<pre>template &lt;typename Key, 
+          typename Hasher = tbb_hash&lt;Key&gt;, 
+          typename Equality = std::equal_to&lt;Key&gt;, 
+          typename Allocator = tbb::tbb_allocator&lt;Key&gt;
+class concurrent_unordered_multiset;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/concurrent_unordered_set.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p> 
+		  <samp class="codeph">concurrent_unordered_set</samp> and 
+		  <samp class="codeph">concurrent_unordered_multiset</samp> support concurrent
+		  insertion and traversal, but not concurrent erasure. The interfaces have no
+		  visible locking. They may hold locks internally, but never while calling
+		  user-defined code. They have semantics similar to the C++11 
+		  <samp class="codeph">std::unordered_set</samp> and 
+		  <samp class="codeph">std::unordered_multiset</samp> respectively except as
+		  follows: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Some methods requiring C++11 language features (such
+				as rvalue references and 
+				<samp class="codeph">std::initializer_list</samp>) are omitted. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The erase methods are prefixed with 
+				<samp class="codeph">unsafe_</samp>, to indicate that they are not concurrency
+				safe. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Bucket methods are prefixed with 
+				<samp class="codeph">unsafe_</samp> as a reminder that they are not
+				concurrency safe with respect to insertion. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>For 
+				<samp class="codeph">concurrent_unordered_set</samp>, 
+				<samp class="codeph">insert</samp> methods may create a temporary item that is
+				destroyed if another thread inserts the same item concurrently. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Like 
+				<samp class="codeph">std::list</samp>, insertion of new items does 
+				<em>not</em> invalidate any iterators, nor change the order of items
+				already in the map. Insertion and traversal may be concurrent. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The iterator types 
+				<samp class="codeph">iterator</samp> and 
+				<samp class="codeph">const_iterator</samp> are of the forward iterator
+				category. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Insertion does not invalidate or update the
+				iterators returned by 
+				<samp class="codeph">equal_range</samp>, so insertion may cause non-equal
+				items to be inserted at the end of the range. However, the first iterator will
+				nonetheless point to the found item even after an insertion operation. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="37.453183520599254%" id="d48088e163"> 
+					 <p>Class 
+					 </p>
+ 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="62.546816479400746%" id="d48088e169">Key Difference 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="37.453183520599254%" headers="d48088e163 "> 
+					 <p><samp class="codeph">concurrent_unordered_set</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="62.546816479400746%" headers="d48088e169 "> 
+					 <p> An item may be inserted in 
+						<samp class="codeph">concurrent_unordered_set</samp> only once. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="37.453183520599254%" headers="d48088e163 "> 
+					 <p><samp class="codeph">concurrent_unordered_multiset</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="62.546816479400746%" headers="d48088e169 "> 
+					 <ul type="disc"> 
+						<li> 
+						  <p> An item may be inserted in 
+							 <samp class="codeph">concurrent_unordered_multiset</samp> more than
+							 once. 
+						  </p>
+ 
+						</li>
+ 
+						<li> 
+						  <p><samp class="codeph">find</samp> will return the
+							 first item in the table with a matching search key, though concurrent accesses
+							 to the container may insert other other occurrences of the same item before the
+							 one returned. 
+						  </p>
+ 
+						</li>
+ 
+					 </ul>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>As with any form of hash table, keys that are
+			 equal must have the same hash code, and the ideal hash function distributes
+			 keys uniformly across the hash code space. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members of 
+		  <samp class="codeph">concurrent_unordered_set</samp> and 
+		  <samp class="codeph">concurrent_unordered_multiset</samp></h2> 
+		 
+		<p>In the following synopsis, methods shown in 
+		  <samp class="codeph"><span style="color:blue"><strong>bold font</strong></span></samp>
+		  may be concurrently invoked. For example, three different threads can
+		  concurrently call methods 
+		  <samp class="codeph">insert</samp>, 
+		  <samp class="codeph">begin</samp>, and 
+		  <samp class="codeph">size</samp>. Their results might be non-deterministic. For
+		  example, the result from size might correspond to before, or after the
+		  insertion. 
+		</p>
+ 
+		<pre>
+public:
+    <em>// types</em>
+    typedef Key key_type;
+    typedef Key value_type;
+    typedef Key mapped_type;
+    typedef Hash hasher;
+    typedef Equality key_equal;
+    typedef Alloc allocator_type;
+    typedef typename allocator_type::pointer pointer;
+    typedef typename allocator_type::const_pointer const_pointer;
+    typedef typename allocator_type::reference reference;
+    typedef typename allocator_type::const_reference const_reference;
+    typedef <em>implementation-defined</em> size_type;
+    typedef <em>implementation-defined</em> difference_type;
+    typedef <em>implementation-defined</em> iterator;
+    typedef <em>implementation-defined</em> const_iterator;
+    typedef <em>implementation-defined</em> local_iterator;
+    typedef <em>implementation-defined</em> const_local_iterator;
+
+    allocator_type get_allocator() const;
+
+    <em>// size and capacity</em>
+    bool <span style="color:blue"><strong>empty()</strong></span> const;     <em>// May take linear time!</em>
+    size_type <span style="color:blue"><strong>size()</strong></span> const; <em>// May take linear time!</em>
+    size_type max_size() const;
+
+    <em>// iterators</em> 
+    iterator <span style="color:blue"><strong>begin</strong></span>();
+    const_iterator <span style="color:blue"><strong>begin</strong></span>() const;
+    iterator <span style="color:blue"><strong>end</strong></span>();
+    const_iterator <span style="color:blue"><strong>end</strong></span>() const;
+    const_iterator <span style="color:blue"><strong>cbegin</strong></span>() const;
+    const_iterator <span style="color:blue"><strong>cend</strong></span>() const;
+
+    <em>// modifiers</em>
+    std::pair&lt;iterator, bool&gt; <span style="color:blue"><strong>insert</strong></span>(const value_type&amp; x);
+    iterator <span style="color:blue"><strong>insert</strong></span>(const_iterator hint, const value_type&amp; x);
+    template&lt;class InputIterator&gt; void <span style="color:blue"><strong>insert</strong></span>(InputIterator first, 
+                                              InputIterator last);
+    
+    iterator unsafe_erase(const_iterator position);
+    size_type unsafe_erase(const key_type&amp; k);
+    iterator unsafe_erase(const_iterator first, const_iterator last);
+    void clear();
+
+    <em>// observers</em>
+    hasher hash_function() const;
+    key_equal key_eq() const;
+
+    <em>// lookup</em>
+    iterator <span style="color:blue"><strong>find</strong></span>(const key_type&amp; k);
+    const_iterator <span style="color:blue"><strong>find</strong></span>(const key_type&amp; k) const;
+    size_type <span style="color:blue"><strong>count</strong></span>(const key_type&amp; k) const;
+    std::pair&lt;iterator, iterator&gt; <span style="color:blue"><strong>equal_range</strong></span>(const key_type&amp; k);
+    std::pair&lt;const_iterator, const_iterator&gt; <span style="color:blue"><strong>equal_range</strong></span>(const key_type&amp; k) const;
+
+    <em>// parallel iteration</em>
+    typedef <em>implementation defined</em> range_type;
+    typedef <em>implementation defined</em> const_range_type;
+    range_type range();
+    const_range_type range() const;
+    
+    <em>// bucket interface - for debugging</em> 
+    size_type unsafe_bucket_count() const;
+    size_type unsafe_max_bucket_count() const;
+    size_type unsafe_bucket_size(size_type n);
+    size_type unsafe_bucket(const key_type&amp; k) const;
+    local_iterator unsafe_begin(size_type n);
+    const_local_iterator unsafe_begin(size_type n) const;
+    local_iterator unsafe_end(size_type n);
+    const_local_iterator unsafe_end(size_type n) const;
+    const_local_iterator unsafe_cbegin(size_type n) const;
+    const_local_iterator unsafe_cend(size_type n) const;
+
+    <em>// hash policy</em>
+    float load_factor() const;
+    float max_load_factor() const;
+    void max_load_factor(float z);
+    void rehash(size_type n);
+};
+</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members of 
+		  <samp class="codeph">concurrent_unordered_set</samp></h2> 
+		 
+		<pre>
+public:
+    <em>// construct/destroy/copy</em>
+    explicit concurrent_unordered_set(size_type n = <em>implementation-defined</em>,
+        const Hasher&amp; hf = hasher(),
+        const key_equal&amp; eql = key_equal(),
+        const allocator_type&amp; a = allocator_type());
+    template &lt;typename InputIterator&gt;
+    concurrent_unordered_set(
+            InputIterator first, InputIterator last,
+            size_type n = <em>implementation-defined</em>,
+            const hasher&amp; hf = hasher(),
+            const key_equal&amp; eql = key_equal(),
+            const allocator_type&amp; a = allocator_type());
+    concurrent_unordered_set(const concurrent_unordered_set&amp;);
+    concurrent_unordered_set(const Alloc&amp;);
+    concurrent_unordered_set(const concurrent_unordered_set&amp;, const Alloc&amp;);
+    <em>//C++11 specific</em> 
+    concurrent_unordered_set(const std::initializer_list&lt;value_type&gt; &amp;il, 
+               size_type n = <em>implementation-defined</em>,
+               const Hasher&amp; hf = hasher(),
+               const key_equal&amp; eql = key_equal(),
+               const allocator_type&amp; a = allocator_type());
+    ~concurrent_unordered_set();
+
+    concurrent_unordered_set&amp; operator=( const concurrent_unordered_set&amp;);
+    <em>//C++11 specific</em>
+    concurrent_unordered_set&amp; operator=( const std::initializer_list&lt;value_type&gt; &amp;il);
+
+    void swap(concurrent_unordered_set&amp;);
+</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members of 
+		  <samp class="codeph">concurrent_unordered_multiset</samp></h2> 
+		 
+		<pre>
+public:
+    <em>// construct/destroy/copy</em>
+    explicit concurrent_unordered_multiset(size_type n = <em>implementation-defined</em>,
+        const Hasher&amp; hf = hasher(),
+        const key_equal&amp; eql = key_equal(),
+        const allocator_type&amp; a = allocator_type());
+    template &lt;typename InputIterator&gt;
+    concurrent_unordered_multiset(
+            InputIterator first, InputIterator last,
+            size_type n = <em>implementation-defined</em>,
+            const hasher&amp; hf = hasher(),
+            const key_equal&amp; eql = key_equal(),
+            const allocator_type&amp; a = allocator_type());
+    concurrent_unordered_multiset(const concurrent_unordered_multiset&amp;);
+    concurrent_unordered_multiset(const Alloc&amp;);
+    concurrent_unordered_multiset(const concurrent_unordered_multiset&amp;, const Alloc&amp;);
+        <em>//C++11 specific</em> 
+    concurrent_unordered_multiset(const std::initializer_list&lt;value_type&gt; &amp;il, 
+               size_type n = <em>implementation-defined</em>,
+               const Hasher&amp; hf = hasher(),
+               const key_equal&amp; eql = key_equal(),
+               const allocator_type&amp; a = allocator_type());
+    ~concurrent_unordered_multiset();
+
+    concurrent_unordered_multiset&amp; operator=( const concurrent_unordered_multiset&amp;);
+    <em>//C++11 specific</em>
+    concurrent_unordered_multiset&amp; operator=( const std::initializer_list&lt;value_type&gt; &amp;il);
+
+    void swap(concurrent_unordered_multiset&amp;);
+</pre> 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/containers_overview.htm">Containers Overview</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_unordered_set_cls/construct_destroy_copy_set_cls.htm">Construct, Destroy, Copy</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_unordered_set_cls/size_and_capacity_set_cls.htm">Size and Capacity</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_unordered_set_cls/container_iterators_set_cls.htm">Iterators</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_unordered_set_cls/modifiers_set_cls.htm">Modifiers</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_unordered_set_cls/observers_set_cls.htm">Observers</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_unordered_set_cls/lookup_set_cls.htm">Lookup</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_unordered_set_cls/parallel_iteration_set_cls.htm">Parallel Iteration</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_unordered_set_cls/bucket_interface_set_cls.htm">Bucket Interface</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/containers_overview/concurrent_unordered_set_cls/hash_policy_set_cls.htm">Hash Policy</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="concurrent_hash_map_cls.htm">concurrent_hash_map 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,484 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Linux* OS">
+<meta name="DC.subject" content="Linux* OS">
+<meta name="keywords" content="Linux* OS">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Package_Contents.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Linux_OS">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Linux* OS</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Linux_OS">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Linux_OS"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Linux* OS</h1>
+ 
+   
+  <div> 
+	 <p>On Linux* operating systems, the default installation location is 
+		<samp class="codeph">/opt/intel/composer_xe_2013/tbb</samp>. The following table
+		describes the subdirectories. 
+	 </p>
+ 
+	 
+<div class="tablenoborder"><a name="tbl5"><!-- --></a><table cellpadding="4" summary="" id="tbl5" width="100%" frame="border" border="1" cellspacing="0" rules="all"><caption><span class="tablecap">Intel&reg; Threading Building Blocks Subdirectories on Linux* OS</span></caption> 
+	 <thead align="left"> 
+		<tr> 
+		  <th class="cellrowborder" valign="top" width="16.079632465543643%" id="d139408e43"> 
+			 <p>Item 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="76.26339969372128%" id="d139408e49"> 
+			 <p>Location 
+			 </p>
+ 
+		  </th>
+ 
+		  <th class="cellrowborder" valign="top" width="7.656967840735068%" id="d139408e55"> 
+			 <p>Environment Variable 
+			 </p>
+ 
+		  </th>
+ 
+		</tr>
+</thead>
+ 
+	 <tbody> 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="16.079632465543643%" headers="d139408e43 "> 
+			 <p>Include files 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="76.26339969372128%" headers="d139408e49 "> 
+			 <p><samp class="codeph">include/tbb/*.h</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="7.656967840735068%" headers="d139408e55 "> 
+			 <p><samp class="codeph">CPATH</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="16.079632465543643%" headers="d139408e43 "> 
+			 <p>Shared libraries 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="76.26339969372128%" headers="d139408e49 "> 
+			 <pre>lib/&lt;<var>arch</var>&gt;/&lt;<var>gccversion</var>&gt;/lib&lt;<var>lib</var>&gt;&lt;<var>variant</var>&gt;.so</pre> 
+			 <p>where 
+			 </p>
+ 
+			 <p> 
+			 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all"> 
+				  <thead align="left"> 
+					 <tr> 
+						<th class="cellrowborder" valign="top" width="37.202380952380956%" id="d139408e129"> 
+						  <p>&lt;<var>arch</var>&gt; 
+						  </p>
+ 
+						</th>
+ 
+						<th class="cellrowborder" valign="top" width="62.797619047619044%" id="d139408e138"> 
+						  <p>Processor and OS 
+						  </p>
+ 
+						</th>
+ 
+					 </tr>
+</thead>
+ 
+				  <tbody> 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e129 "> 
+						  <p><samp class="codeph">android</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e138 "> 
+						  <p> Android 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e129 "> 
+						  <p><samp class="codeph">ia32</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e138 "> 
+						  <p> IA-32 processors 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e129 "> 
+						  <p><samp class="codeph">intel64</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e138 "> 
+						  <p>Intel&reg; 64 architecture processors 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e129 "> 
+						  <p><samp class="codeph">mic</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e138 "> 
+						  <p> Intel&reg; Many Integrated Core architecture 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+				  </tbody>
+ 
+				</table>
+</div>
+ 
+			 </p>
+ 
+			 <p> 
+			 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all"> 
+				  <thead align="left"> 
+					 <tr> 
+						<th class="cellrowborder" valign="top" width="37.014925373134325%" id="d139408e231"> 
+						  <p><samp class="codeph">&lt;<em>gccversion</em>&gt;</samp> 
+						  </p>
+ 
+						</th>
+ 
+						<th class="cellrowborder" valign="top" width="62.98507462686567%" id="d139408e242"> 
+						  <p>Linux OS configuration 
+						  </p>
+ 
+						</th>
+ 
+					 </tr>
+</thead>
+ 
+				  <tbody> 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.014925373134325%" headers="d139408e231 "> 
+						  <p><samp class="codeph">gcc4.1</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.98507462686567%" headers="d139408e242 "> 
+						  <p>gcc version number between 4.1 and 4.4 that do not support 
+							<samp class="codeph">exception_ptr</samp> 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.014925373134325%" headers="d139408e231 "> 
+						  <p><samp class="codeph">gcc4.4</samp>
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.98507462686567%" headers="d139408e242 "> 
+						  <p>gcc version 4.4 or higher that may or may not support 
+							<samp class="codeph">exception_ptr</samp> 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.014925373134325%" headers="d139408e231 "> 
+						  <p>(none)</p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.98507462686567%" headers="d139408e242 ">  
+						  <p>For the case where 
+						     &lt;<samp class="codeph"><var>arch</var>&gt; </samp> is 
+						     <samp class="codeph">android</samp> or <samp class="codeph">mic</samp>. 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+				  </tbody>
+ 
+				</table>
+</div>
+ 
+			 </p>
+ 
+			 <p> 
+			 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all"> 
+				  <thead align="left"> 
+					 <tr> 
+						<th class="cellrowborder" valign="top" width="37.202380952380956%" id="d139408e333"> 
+						  <p><samp class="codeph">&lt;<var>lib</var>&gt;</samp> 
+						  </p>
+ 
+						</th>
+ 
+						<th class="cellrowborder" valign="top" width="62.797619047619044%" id="d139408e344"> 
+						  <p>Version 
+						  </p>
+ 
+						</th>
+ 
+					 </tr>
+</thead>
+ 
+				  <tbody> 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e333 "> 
+						  <p><samp class="codeph">tbb</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e344 "> 
+						  <p>General library 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e333 "> 
+						  <p><samp class="codeph">tbbmalloc</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e344 "> 
+						  <p>Memory allocator 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e333 "> 
+						  <p><samp class="codeph">tbbmalloc_proxy</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e344 "> 
+						  <p>Substitution for default memory allocator 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e333 "> 
+						  <p><samp class="codeph">tbb_preview</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e344 "> 
+						  <p>Community preview features library 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+				  </tbody>
+ 
+				</table>
+</div>
+ 
+			 </p>
+ 
+			 <p> 
+			 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="border" border="1" cellspacing="0" rules="all"> 
+				  <thead align="left"> 
+					 <tr> 
+						<th class="cellrowborder" valign="top" width="37.202380952380956%" id="d139408e438"> 
+						  <p><samp class="codeph">&lt;<var>variant</var>&gt;</samp> 
+						  </p>
+ 
+						</th>
+ 
+						<th class="cellrowborder" valign="top" width="62.797619047619044%" id="d139408e449"> 
+						  <p>Version 
+						  </p>
+ 
+						</th>
+ 
+					 </tr>
+</thead>
+ 
+				  <tbody> 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e438 "> 
+						  <p>(none) 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e449 "> 
+						  <p>Release version 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+					 <tr> 
+						<td class="cellrowborder" valign="top" width="37.202380952380956%" headers="d139408e438 "> 
+						  <p><samp class="codeph">_debug</samp> 
+						  </p>
+ 
+						</td>
+ 
+						<td class="cellrowborder" valign="top" width="62.797619047619044%" headers="d139408e449 "> 
+						  <p>Debug version 
+						  </p>
+ 
+						</td>
+ 
+					 </tr>
+ 
+				  </tbody>
+ 
+				</table>
+</div>
+ 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="7.656967840735068%" headers="d139408e55 "> 
+			 <p><samp class="codeph">LIBRARY_PATH</samp> 
+			 </p>
+ 
+			 <p><samp class="codeph">LD_LIBRARY_PATH</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="16.079632465543643%" headers="d139408e43 "> 
+			 <p>Examples 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="76.26339969372128%" headers="d139408e49 "> 
+			 <p><samp class="codeph">examples/&lt;<var>class</var>&gt;/*/.</samp> 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="7.656967840735068%" headers="d139408e55 "> 
+			 <p>&nbsp; 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+		<tr> 
+		  <td class="cellrowborder" valign="top" width="16.079632465543643%" headers="d139408e43 "> 
+			 <p>GNU Makefile for example 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="76.26339969372128%" headers="d139408e49 "> 
+			 <p><samp class="codeph">examples/&lt;<var>class</var>&gt;/*/Makefile</samp>
+				
+			 </p>
+ 
+			 <p>where 
+				<var>class</var> describes the class being demonstrated. 
+			 </p>
+ 
+		  </td>
+ 
+		  <td class="cellrowborder" valign="top" width="7.656967840735068%" headers="d139408e55 "> 
+			 <p><strong>&nbsp;</strong> 
+			 </p>
+ 
+		  </td>
+ 
+		</tr>
+ 
+	 </tbody>
+ 
+  </table>
+</div>
+ 
+  <p>&nbsp; 
+  </p>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Package_Contents.htm">Package Contents</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

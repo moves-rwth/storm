@@ -1,0 +1,126 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="parallel_do_feeder<item&gt; class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/algorithms/parallel_do_func.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_do_feeder_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>parallel_do_feeder&lt;item&gt; class</title>
+</head>
+<body id="parallel_do_feeder_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_do_feeder_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">parallel_do_feeder&lt;item&gt; class</h1>
+ 
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 Inlet into which additional work items for a 
+		<samp class="codeph">parallel_do</samp> can be fed. 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/parallel_do.h" </pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename Item&gt; 
+class parallel_do_feeder;
+</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">parallel_do_feeder</samp> enables the body of a 
+		  <samp class="codeph">parallel_do</samp> to add more work items. 
+		</p>
+ 
+		<p>Only class<samp class="codeph"> parallel_do</samp> can create or destroy a 
+		  <samp class="codeph">parallel_do_feeder</samp>. The only operation other code can
+		  perform on a 
+		  <samp class="codeph">parallel_do_feeder</samp> is to invoke method 
+		  <samp class="codeph">parallel_do_feeder::add</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+    template&lt;typename Item&gt;
+    struct parallel_do_feeder {
+        void add( const Item&amp; item );
+    };
+}
+</pre> 
+	 </div>
+ 
+	 <div class="section"><!--no heading--><h2 class="sectiontitle"> </h2> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the member
+			 of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d3084e91">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d3084e94">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d3084e91 "><span class="keyword">void add( const Item&amp; item
+						)()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d3084e94 "> 
+					 <p><strong>Requirements</strong>: Must be called from
+						a call to 
+						<em>body</em> .<samp class="codeph">operator()</samp> created by 
+						<samp class="codeph">parallel_do</samp>. Otherwise, the termination
+						semantics of method 
+						<samp class="codeph">operator()</samp> are undefined. 
+					 </p>
+ 
+					 <p> 
+						<strong>Effects</strong>: Adds item to collection of work items to be
+						processed. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+		 
+	 </div>
+ 
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/algorithms/parallel_do_func.htm">parallel_do Template Function</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

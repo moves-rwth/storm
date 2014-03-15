@@ -1,0 +1,267 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Reduction">
+<meta name="DC.subject" content="Reduction">
+<meta name="keywords" content="Reduction">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="Agglomeration.htm#Agglomeration">
+<meta name="DC.Relation" scheme="URI" content="Elementwise.htm#Elementwise">
+<meta name="DC.Relation" scheme="URI" content="Divide_and_Conquer.htm#Divide_and_Conquer">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Reduction">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Reduction</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Reduction">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Reduction"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Reduction</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		 
+		<p>Perform an associative reduction operation across a data set. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>Many serial algorithms sweep over a set of items to collect summary
+		  information. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<p>The summary can be expressed as an associative operation over the data
+		  set, or at least is close enough to associative that reassociation does not
+		  matter. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		 
+		<p>Two solutions exist in Intel&reg; Threading Building Blocks (Intel&reg; TBB).
+		  The choice on which to use depends upon several considerations: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Is the operation commutative as well as associative? 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>Are instances of the reduction type expensive to construct and
+				destroy. For example, a floating point number is inexpensive to construct. A
+				sparse floating-point matrix might be very expensive to construct. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+		<p>Use 
+		  <samp class="codeph">tbb::parallel_reduce</samp> when the objects are inexpensive
+		  to construct. It works even if the reduction operation is not commutative. The
+		  Intel&reg; TBB Tutorial describes how to use 
+		  <samp class="codeph">tbb::parallel_reduce</samp> for basic reductions. 
+		</p>
+ 
+		<p>Use 
+		  <samp class="codeph">tbb::parallel_for</samp> and 
+		  <samp class="codeph">tbb::combinable</samp> if the reduction operation is
+		  commutative and instances of the type are expensive. 
+		</p>
+ 
+		<p>If the operation is not precisely associative but a precisely
+		  deterministic result is required, use recursive reduction and parallelize it
+		  using 
+		  <samp class="codeph">tbb::parallel_invoke</samp>. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Examples</h2> 
+		 
+		<p>The examples presented here illustrate the various solutions and some
+		  tradeoffs. 
+		</p>
+ 
+		<p>The first example uses
+		  <samp class="codeph">tbb::parallel_reduce</samp> to do a + reduction over sequence
+		  of type <samp class="codeph">T</samp>. The sequence is defined by a half-open interval [first,last). 
+		</p>
+ 
+		<pre>T AssocReduce( const T* first, const T* last, T identity ) {
+   return tbb::parallel_reduce(
+       // Index range for reduction
+       tbb::blocked_range&lt;const T*&gt;(first,last),
+       // Identity element
+       identity,
+       // Reduce a subrange and partial sum
+       [&amp;]( tbb::blocked_range&lt;const T*&gt; r, T partial_sum )-&gt;float {
+           return std::accumulate( r.begin(), r.end(), partial_sum );
+       },
+       // Reduce two partial sums
+       std::plus&lt;T&gt;()
+   );
+} </pre> 
+		<p>The third and fourth arguments to this form of <samp class="codeph">parallel_reduce</samp> are a
+		  built in form of the agglomeration pattern. If there is an elementwise action
+		  to be performed before the reduction, incorporating it into the third argument
+		  (reduction of a subrange) may improve performance because of better locality of
+		  reference. 
+		</p>
+ 
+		<p>The second example assumes the + is commutative on <samp class="codeph">T</samp>. It is a good
+		  solution when <samp class="codeph">T</samp> objects are expensive to construct. 
+		</p>
+ 
+		<pre>T CombineReduce( const T* first, const T* last, T identity ) {
+   tbb::combinable&lt;T&gt; sum(identity);
+   tbb::parallel_for(
+       tbb::blocked_range&lt;const T*&gt;(first,last),
+       [&amp;]( tbb::blocked_range&lt;const T*&gt; r ) {
+           sum.local() += std::accumulate(r.begin(), r.end(), identity);
+       }
+   );
+   return sum.combine( []( const T&amp; x, const T&amp; y ) {return x+y;} );
+}</pre> 
+		<p>Sometimes it is desirable to destructively use the partial results to
+		  generate the final result. For example, if the partial results are lists, they
+		  can be spliced together to form the final result. In that case use class 
+		  <samp class="codeph">tbb::enumerable_thread_specific</samp> instead of 
+		  <samp class="codeph">combinable</samp>. The 
+		  <samp class="codeph">ParallelFindCollisions</samp>
+		  example in <em>Divide amd Conquer</em> demonstrates the technique. 
+		</p>
+ 
+		<p>Floating-point addition and multiplication are almost associative.
+		  Reassociation can cause changes because of rounding effects. The techniques
+		  shown so far reassociate terms non-deterministically. Fully deterministic
+		  parallel reduction for a not quite associative operation requires using
+		  deterministic reassociation. The code below demonstrates this in the form of a
+		  template that does a + reduction over a sequence of values of type <samp class="codeph">T</samp>. 
+		</p>
+ 
+		<pre>template&lt;typename T&gt;
+T RepeatableReduce( const T* first, const T* last, T identity ) {
+   if( last-first&lt;=1000 ) {
+       // Use serial reduction
+       return std::accumulate( first, last, identity );
+   } else {
+       // Do parallel divide-and-conquer reduction
+       const T* mid = first+(last-first)/2;
+       T left, right;
+       tbb::parallel_invoke(
+           [&amp;]{left=RepeatableReduce(first,mid,identity);},
+           [&amp;]{right=RepeatableReduce(mid,last,identity);} 
+       );
+       return left+right;
+   }
+}</pre> 
+		<p>The outer if-else is an instance of the agglomeration pattern for
+		  recursive computations. The reduction graph, though not a strict binary tree,
+		  is fully deterministic. Thus the result will always be the same for a given
+		  input sequence, assuming all threads do identical floating-point rounding. 
+		</p>
+ 
+		<p>The final example shows how a problem that typically is not viewed as
+		  a reduction can be parallelized by viewing it as a reduction. The problem is
+		  retrieving floating-point exception flags for a computation across a data set.
+		  The serial code might look something like: 
+		</p>
+ 
+		<pre>   feclearexcept(FE_ALL_EXCEPT); 
+   for( int i=0; i&lt;N; ++i )
+       C[i]=A[i]*B[i];
+   int flags = fetestexcept(FE_ALL_EXCEPT);
+   if (flags &amp; FE_DIVBYZERO) ...;
+   if (flags &amp; FE_OVERFLOW) ...;
+   ...</pre> 
+		<p>The code can be parallelized by computing chunks of the loop
+		  separately, and merging floating-point flags from each chunk. To do this with 
+		  <samp class="codeph">tbb:parallel_reduce</samp>, first define a
+		  "body" type, as shown below. 
+		</p>
+ 
+		<pre>struct ComputeChunk {
+   int flags;          // Holds floating-point exceptions seen so far.
+   void reset_fpe() {
+       flags=0;
+       feclearexcept(FE_ALL_EXCEPT);
+   }
+   ComputeChunk () {
+       reset_fpe();
+   }
+   // "Splitting constructor"called by parallel_reduce when splitting a range into subranges.
+   ComputeChunk ( const ComputeChunk&amp;, tbb::split ) {
+       reset_fpe();
+   }
+   // Operates on a chunk and collects floating-point exception state into flags member.
+   void operator()( tbb::blocked_range&lt;int&gt; r ) {
+       int end=r.end();
+       for( int i=r.begin(); i!=end; ++i )
+           C[i] = A[i]/B[i];
+       // It is critical to do |= here, not =, because otherwise we
+       // might lose earlier exceptions from the same thread.
+       flags |= fetestexcept(FE_ALL_EXCEPT);
+   }
+   // Called by parallel_reduce when joining results from two subranges.
+   void join( Body&amp; other ) {
+       flags |= other.flags;
+   }
+};</pre> 
+		<p>Then invoke it as follows: 
+		</p>
+ 
+		<pre>// Construction of cc implicitly resets FP exception state.
+   ComputeChunk cc;
+   tbb::parallel_reduce( tbb::blocked_range&lt;int&gt;(0,N), cc );
+   if (cc.flags &amp; FE_DIVBYZERO) ...;
+   if (cc.flags &amp; FE_OVERFLOW) ...;
+   ...</pre> 
+		<p>&nbsp; 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Agglomeration.htm#Agglomeration">Agglomeration 
+		  </a></div>
+<div><a href="Elementwise.htm#Elementwise">Elementwise 
+		  </a></div>
+<div><a href="Divide_and_Conquer.htm#Divide_and_Conquer">Divide and Conquer 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

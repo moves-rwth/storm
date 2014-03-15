@@ -1,0 +1,80 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Appendix B Mixing With Other Threading Packages">
+<meta name="DC.subject" content="Appendix B Mixing With Other Threading Packages">
+<meta name="keywords" content="Appendix B Mixing With Other Threading Packages">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/title.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_appendix_B">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Appendix B Mixing With Other Threading Packages</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_appendix_B">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_appendix_B"><!-- --></a>
+
+
+<h1 class="topictitle1">Appendix B Mixing With Other Threading Packages</h1>
+
+<div><p>Intel&reg; Threading Building Blocks (Intel&reg; TBB) can be mixed with other threading packages. No special effort is required to use any part of Intel&reg; TBB with other threading packages.<a href="#ftn9"><sup><sup>[9]</sup></sup></a></p>
+<p>Here is an example that parallelizes an outer loop with OpenMP and an inner loop with Intel&reg; Threading Building Blocks. </p>
+
+<pre>int M, N;
+&nbsp;
+struct InnerBody {
+    ...
+};
+&nbsp;
+void TBB_NestedInOpenMP() {
+#pragma omp parallel
+    {
+#pragma omp for
+        for( int i=0; i&lt;M; ++ ) {
+            parallel_for( blocked_range&lt;int&gt;(0,N,10), InnerBody(i) );
+        }
+    }
+}</pre>
+<p>The details of <samp class="codeph">InnerBody</samp> are omitted for brevity. The <samp class="codeph">#pragma omp parallel</samp> causes the OpenMP to create a team of threads, and each thread executes the block statement associated with the pragma. The <samp class="codeph">#pragma omp for</samp> indicates that the compiler should use the previously created thread team to execute the loop in parallel.</p>
+<p>Here is the same example written using POSIX* Threads.</p>
+
+<pre>int M, N;
+&nbsp;
+struct InnerBody {
+    ...
+};
+&nbsp;
+void* OuterLoopIteration( void* args ) {
+    int i = (int)args;
+    parallel_for( blocked_range&lt;int&gt;(0,N,10), InnerBody(i) );
+}
+&nbsp;
+void TBB_NestedInPThreads() {
+    std::vector&lt;pthread_t&gt; id( M );
+    // Create thread for each outer loop iteration
+    for( int i=0; i&lt;M; ++i )
+        pthread_create( &amp;id[i], NULL, OuterLoopIteration, NULL );
+    // Wait for outer loop threads to finish
+    for( int i=0; i&lt;M; ++i )
+        pthread_join( &amp;id[i], NULL );
+} </pre>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/title.htm">Intel&reg; Threading Building Blocks (Intel&reg; TBB) User Guide</a></div>
+</div>
+<div></div>
+<p class="tfootnote"><a id="ftn9"><sup>[9]</sup></a>   Intel&reg; TBB 2.1 required creating a <samp class="codeph">tbb::task_scheduler_init</samp> object in each thread that invokes the task scheduler or a parallel algorithm. Intel&reg; TBB 2.2 and later versions automatically create the task scheduler.  </p>
+</body>
+</html>

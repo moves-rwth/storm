@@ -42,7 +42,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void GmmxxNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
             
@@ -75,9 +75,9 @@ namespace storm {
                 
                 // Reduce the vector x by applying min/max over all nondeterministic choices.
                 if (minimize) {
-                    storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, nondeterministicChoiceIndices);
+                    storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, A.getRowGroupIndices());
                 } else {
-                    storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, nondeterministicChoiceIndices);
+                    storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, A.getRowGroupIndices());
                 }
                 
                 // Determine whether the method converged.
@@ -111,7 +111,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void GmmxxNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
             
@@ -130,9 +130,9 @@ namespace storm {
                 }
                 
                 if (minimize) {
-                    storm::utility::vector::reduceVectorMin(*multiplyResult, x, nondeterministicChoiceIndices);
+                    storm::utility::vector::reduceVectorMin(*multiplyResult, x, A.getRowGroupIndices());
                 } else {
-                    storm::utility::vector::reduceVectorMax(*multiplyResult, x, nondeterministicChoiceIndices);
+                    storm::utility::vector::reduceVectorMax(*multiplyResult, x, A.getRowGroupIndices());
                 }
             }
             

@@ -1,0 +1,531 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+  <script type="text/javascript">
+  <!--
+
+  if (parent.location.href == self.location.href)
+    window.location.href = "index.htm#+hh_index.htm";
+
+  function CloseNav() {
+    if ((top.right.location == null) || (top.right.location == undefined) || (typeof(top.right.location.href) != "string") || (top.right.location.href == ""))
+      top.location="main/title.htm";
+    else
+      top.location=top.right.location;
+  }
+  function IndexListOnChange() { //Listbox select -> Put selected text into Entry field
+    var iSelect = document.getElementById("indexcontainer").selectedIndex;
+    var text = document.getElementById("indexcontainer").item(iSelect).text;
+    //Remove leading spaces - &#160; &nbsp; %A0 -- Finding it hard to remove Non-breaking space. JScript does not see %A0 as White space
+    text = escape(text);    text = text.replace(/^(%A0)+/g, "");
+    text = unescape(text);  text = text.replace(/^\s+/g, "");
+    document.getElementById("IndexEntry").value = text;
+  }
+  function IndexEntryOnKeyUp() { //text typed -> select closest listbox entry 
+    var oList = document.getElementById("indexcontainer"); 
+    var ListLen = oList.length; 
+    var iCurSel = oList.selectedIndex; 
+    var text = document.getElementById("IndexEntry").value.toUpperCase(); 
+    var TextLen = text.length; 
+    for (var i = 0; i < ListLen; i++) { 
+      var listitem = oList.item(i).text.substr(0, TextLen).toUpperCase(); 
+      if (listitem == text) { 
+        if (i != iCurSel) { 
+          var iPos = i + oList.size - 1; 
+          if(ListLen > iPos) 
+            oList.selectedIndex = iPos; 
+          else 
+            oList.selectedIndex = ListLen-1; 
+          oList.selectedIndex = i; 
+        } 
+        break; 
+      } 
+    } 
+    return(true); //do not gobble keypress 
+  } 
+  function OpenSelected() {  //open selected list item
+    var iSelect = document.getElementById("indexcontainer").selectedIndex;
+    if (iSelect >= 0) {
+      var URL = document.getElementById("indexcontainer").item(iSelect).value;
+      if (URL.length > 0) top.right.location = URL;  //right pane has name "right"
+    }
+  }
+  function KeyDownEvent(event) {
+    if ((event.which && event.which==13) || (event.keyCode && event.keyCode==13)) {
+      OpenSelected();
+      IndexListOnChange();  //update entry field to list box selected text
+      return(false);        //gobble text
+      } else return(true);
+  }
+
+  function GetFrameWidth() { 
+    var x = 300; 
+    if (self.innerHeight) // all except Explorer 
+	x = self.innerWidth; 
+    else if (document.documentElement && document.documentElement.clientHeight) // Explorer 6 Strict Mode 
+	x = document.documentElement.clientWidth; 
+    else if (document.body) // other Explorers 
+	x = document.body.clientWidth; 
+    return(x); 
+  } 
+
+  function GetFrameHeight() { 
+    var y = 400; 
+    if (self.innerHeight) // all except Explorer 
+      y = self.innerHeight; 
+    else if (document.documentElement && document.documentElement.clientWidth) // Explorer 6 Strict Mode 
+      y = document.documentElement.clientHeight; 
+    else if (document.body) // other Explorers 
+      y = document.body.clientHeight; 
+    return(y); 
+  } 
+
+  function resizeIndex() {
+    var indexDiv = document.getElementById("indexcontainer");
+    var xTop = indexDiv.offsetTop;
+    var DivFooter = document.getElementById("DivFooter");
+    if ((DivFooter != null) && (DivFooter != undefined))
+        xTop = xTop + DivFooter.offsetHeight;
+
+    var WW = GetFrameWidth() - 10; //working with 5px each side 
+    indexDiv.style.width = WW.toString() + "px"; 
+    var HH = GetFrameHeight() -  xTop; 
+    if (HH > 0) 
+      indexDiv.style.height = HH.toString() + "px"; 
+  }
+  function OnLoadCode() {
+    window.onresize=resizeIndex;
+    resizeIndex();
+  }
+  -->
+  </script>
+
+
+<title>Index</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <style type="text/css">
+  .docstyle
+  {
+    font-size: 80%;
+    font-family: arial,verdana,sans-serif;
+  }
+  </style>
+
+</head>
+
+<body id="docBody" style="color: Black; margin: 5px 0px 0px 0px;" onload="OnLoadCode()">
+
+
+<div style="display: inline; white-space: nowrap; margin: 0px 0px 0px 5px;">
+<input
+ TYPE="button" VALUE="Contents" ONCLICK="javascript:location='hh_toc.htm';"
+ NAME="HelpTopics"><input
+ TYPE="button" VALUE="Index" ONCLICK="javascript:location='hh_index.htm';"
+ NAME="Index"><input
+ TYPE="button" VALUE="Search" ONCLICK="javascript:location='hh_search.htm';"
+ NAME="Search">
+</div>
+
+
+  <div style="margin: 11px 0px 0px 0px; padding: 0px 5px 0px 5px;">
+     <input type="text" id="IndexEntry" class="docstyle"
+       style="width:100%;"
+       onkeydown="javascript:return(KeyDownEvent(event));"
+       onkeyup="javascript:return(IndexEntryOnKeyUp());">
+  </div>
+
+<div style="margin: 5px 0px 0px 0px; padding: 0px 5px 0px 5px;">
+<select id="indexcontainer" name="IndexListbox" class="docstyle"
+  style="width:200; height:200;"
+  size="500"
+  onchange="javascript:IndexListOnChange();"
+  onclick="javascript:OpenSelected();return(true);"
+  onkeydown="javascript:return(KeyDownEvent(event));">
+<option value="reference/task_scheduler/task_scheduler_init_cls/task_scheduler_init_1.htm">~task_scheduler_init</option>
+<option value="reference/containers_overview/concurrent_vector/access.htm">Access</option>
+<option value="tbb_userguide/Advanced_Example.htm">Advanced 			 Example</option>
+<option value="tbb_userguide/Advanced_Idiom_Waiting_on_an_Element.htm">Advanced Idiom: Waiting on an 			 Element</option>
+<option value="tbb_userguide/Advanced_Topic_Other_Kinds_of_Iteration_Spaces.htm">Advanced Topic: Other Kinds of Iteration 			 Spaces</option>
+<option value="reference/task_scheduler/affinity.htm">Affinity</option>
+<option value="reference/algorithms/partitioners/affinity_partitioner.htm">affinity_partitioner</option>
+<option value="tbb_userguide/Design_Patterns/Agglomeration.htm">Agglomeration</option>
+<option value="reference/appendices/community_preview_features/aggregator_cls.htm">aggregator Class</option>
+<option value="reference/appendices/community_preview_features/aggregator_cls/basic_interface.htm">aggregator Class Basic Interface</option>
+<option value="reference/appendices/community_preview_features/aggregator_cls/expert_interface.htm">aggregator Class Expert Interface</option>
+<option value="reference/algorithms.htm">Algorithms</option>
+<option value="reference/memory_allocation/aligned_space_cls.htm">aligned 			 space</option>
+<option value="">allocator</option>
+<option value="reference/memory_allocation/scalable_allocator_cls.htm">&nbsp;&nbsp;&nbsp;scalable_allocator Template Class</option>
+<option value="reference/memory_allocation/zero_allocator.htm">&nbsp;&nbsp;&nbsp;zero_allocator</option>
+<option value="reference/memory_allocation/aligned_space_cls.htm">&nbsp;&nbsp;&nbsp;aligned_space Template Class</option>
+<option value="reference/memory_allocation/tbb_allocator_cls.htm">&nbsp;&nbsp;&nbsp;tbb_allocator Template Class</option>
+<option value="reference/memory_allocation/cache_aligned_allocator_cls.htm">&nbsp;&nbsp;&nbsp;cache_aligned_allocator Template Class</option>
+<option value="reference/environment/version_information.htm">ALLOCATOR</option>
+<option value="reference/memory_allocation/allocator_concept.htm">Allocator Concept</option>
+<option value="tbb_userguide/appendix_A.htm">Appendix A Costs of Time 			 Slicing</option>
+<option value="tbb_userguide/appendix_B.htm">Appendix B Mixing With Other Threading Packages</option>
+<option value="tbb_userguide/Atomic_Operations.htm">Atomic 			 Operations</option>
+<option value="reference/synchronization/atomic_cls.htm">atomic Template 			 Class</option>
+<option value="tbb_userguide/Why_atomic_T_Has_No_Constructors.htm">atomic&lt;T&gt; 			 constructors</option>
+<option value="reference/algorithms/partitioners/auto_partitioner_cls.htm">auto_partitioner 			 Class</option>
+<option value="tbb_userguide/Automatic_Chunking.htm">Automatic 			 Chunking</option>
+<option value="tbb_userguide/Automically_Replacing_malloc.htm">Automatically Replacing malloc and Other C/C++ 			 Functions for Dynamic Memory Allocation</option>
+<option value="tbb_userguide/Bandwidth_and_Cache_Affinity.htm">Bandwidth and Cache 			 Affinity</option>
+<option value="main/Benefits.htm">Benefits</option>
+<option value="reference/algorithms/range_concept/blocked_range_cls.htm">blocked_range Template 			 Class</option>
+<option value="reference/algorithms/range_concept/blocked_range2d_cls.htm">blocked_range2d Template 			 Class</option>
+<option value="reference/algorithms/range_concept/blocked_range3d_cls.htm">blocked_range3d Template Class</option>
+<option value="reference/flow_graph/body_objects.htm">Body Objects</option>
+<option value="reference/flow_graph/broadcast_node_cls.htm">broadcast_node Template 			 Class</option>
+<option value="">Bucket 			 Interface</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls/bucket_interface_map_cls.htm">&nbsp;&nbsp;&nbsp;Bucket Interface</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls/bucket_interface_set_cls.htm">&nbsp;&nbsp;&nbsp;Bucket Interface</option>
+<option value="reference/flow_graph/buffer_node_cls.htm">buffer_node Class</option>
+<option value="reference/memory_allocation/scalable_allocator_cls/c_interface_to_scalable_allocator.htm">C Interface to Scalable 			 Allocator</option>
+<option value="reference/environment/feature_macros.htm">C++11 			 Support</option>
+<option value="reference/synchronization/c_11_synchronization.htm">C++11 Synchronization</option>
+<option value="reference/memory_allocation/cache_aligned_allocator_cls.htm">cache aligned allocator</option>
+<option value="reference/task_scheduler/cancellation.htm">Cancellation</option>
+<option value="tbb_userguide/Cancellation_and_Nested_Parallelism.htm">Cancellation and Nested 			 Parallelism</option>
+<option value="tbb_userguide/Cancellation_Without_An_Exception.htm">Cancellation Without An 			 Exception</option>
+<option value="">Capacity</option>
+<option value="reference/containers_overview/concurrent_hash_map_cls/capacity_map_cls.htm">&nbsp;&nbsp;&nbsp;Capacity</option>
+<option value="reference/containers_overview/concurrent_vector/capacity_vector.htm">&nbsp;&nbsp;&nbsp;Capacity</option>
+<option value="reference/exceptions/captured_exception.htm">captured_exception</option>
+<option value="reference/task_scheduler/catalog_of_recommended_task_patterns.htm">Catalog of Recommended task Patterns</option>
+<option value="reference/thread_local_storage/combinable_cls.htm">combinable Template 			 Class</option>
+<option value="reference/thread_local_storage/enumerable_thread_specific_cls/combining.htm">Combining</option>
+<option value="reference/appendices/community_preview_features.htm">Community Preview Features</option>
+<option value="tbb_userguide/Design_Patterns/Compare_and_Swap_Loop.htm">Compare and Swap 			 Loop</option>
+<option value="reference/appendices.htm">compatibility</option>
+<option value="reference/appendices/compatibility_features.htm">Compatibility 			 Features</option>
+<option value="reference/containers_overview/concurrent_hash_map_cls/concurrent_access.htm">Concurrent 			 Access</option>
+<option value="reference/containers_overview/concurrent_vector/concurrent_growth.htm">Concurrent 			 Growth</option>
+<option value="">Concurrent 			 Operations</option>
+<option value="reference/thread_local_storage/flattened2d_cls/concurrent_operations.htm">&nbsp;&nbsp;&nbsp;Concurrent Operations</option>
+<option value="reference/thread_local_storage/enumerable_thread_specific_cls/concurrent_operations1.htm">&nbsp;&nbsp;&nbsp;Concurrent Operations</option>
+<option value="tbb_userguide/Concurrent_Queue_Classes.htm">Concurrent Queue Classes</option>
+<option value="reference/containers_overview/concurrent_bounded_queue_cls.htm">concurrent_bounded_queue Template 			 Class</option>
+<option value="tbb_userguide/concurrent_hash_map.htm">concurrent_hash_map</option>
+<option value="reference/containers_overview/concurrent_hash_map_cls.htm">concurrent_hash_map Template 			 Class</option>
+<option value="reference/appendices/community_preview_features/concurrent_lru_cache_cls.htm">concurrent_lru_cache Template 			 Class</option>
+<option value="reference/containers_overview/concurrent_priority_queue_cls.htm">concurrent_priority_queue Template 			 Class</option>
+<option value="reference/containers_overview/concurrent_queue_cls.htm">concurrent_queue Template 			 Class</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls.htm">concurrent_unordered_map</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls.htm">concurrent_unordered_multimap</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls.htm">concurrent_unordered_multiset</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls.htm">concurrent_unordered_set</option>
+<option value="">concurrent_vector</option>
+<option value="tbb_userguide/concurrent_vector.htm">&nbsp;&nbsp;&nbsp;concurrent_vector</option>
+<option value="reference/containers_overview/concurrent_vector.htm">&nbsp;&nbsp;&nbsp;concurrent_vector</option>
+<option value="">Construct, Destroy, 			 Copy</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls/construct_destroy_copy_set_cls.htm">&nbsp;&nbsp;&nbsp;Construct, Destroy, Copy</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls/construct_destroy_copy_map_cls.htm">&nbsp;&nbsp;&nbsp;Construct, Destroy, Copy</option>
+<option value="reference/containers_overview/concurrent_vector/construction_copy_and_assignment.htm">Construction, Copy, and 			 Assignment</option>
+<option value="">constructors</option>
+<option value="tbb_userguide/Why_atomic_T_Has_No_Constructors.htm">&nbsp;&nbsp;&nbsp;Why atomic&lt;T&gt; Has No Constructors in C++03 mode</option>
+<option value="tbb_userguide/Why_atomic_T_Has_No_Constructors.htm">&nbsp;&nbsp;&nbsp;atomic&lt;T&gt;</option>
+<option value="reference/containers_overview/container_range_concept.htm">Container Range 			 Concept</option>
+<option value="tbb_userguide/Containers.htm">Containers</option>
+<option value="tbb_userguide/Continuation_Passing.htm">Continuation 			 Passing</option>
+<option value="reference/flow_graph/continue_msg_cls.htm">continue_msg Class</option>
+<option value="reference/flow_graph/continue_node_cls.htm">continue_node Template 			 Class</option>
+<option value="reference/flow_graph/continue_receiver_cls.htm">continue_receiver 			 Class</option>
+<option value="tbb_userguide/Controlling_Chunking.htm">Controlling Chunking  		</option>
+<option value="tbb_userguide/Cook_Until_Done_parallel_do.htm">Cook Until Done: 			 parallel_do</option>
+<option value="reference/flow_graph/copy_body_func.htm">copy_body Template 			 Function</option>
+<option value="reference/synchronization/ppl_compatibility/critical_section.htm">critical_section</option>
+<option value="tbb_userguide/Debug_Versus_Release_Libraries.htm">Debug Versus Release 			 Libraries</option>
+<option value="reference/appendices/compatibility_features/debugging_macros.htm">Debugging Macros</option>
+<option value="reference/flow_graph/dependency_flow_graph_example.htm">Dependency Flow Graph 			 Example</option>
+<option value="tbb_userguide/Design_Patterns/Divide_and_Conquer.htm">Divide and Conquer</option>
+<option value="reference/environment/version_information.htm">DO_ITT_NOTIFY</option>
+<option value="tbb_userguide/Automically_Replacing_malloc.htm">dynamic memory 			 allocation</option>
+<option value="tbb_userguide/Design_Patterns/Elementwise.htm">Elementwise</option>
+<option value="tbb_userguide/Empty_Tasks.htm">Empty Tasks</option>
+<option value="reference/task_scheduler/empty_task_cls.htm">empty_task Class</option>
+<option value="reference/appendices/community_preview_features/enabling_a_community_preview_feature.htm">Enabling a Community Preview Feature</option>
+<option value="reference/environment/enabling_debugging_features.htm">Enabling Debugging Features</option>
+<option value="reference/thread_local_storage/enumerable_thread_specific_cls.htm">enumerable_thread_specific Template Class</option>
+<option value="reference/environment.htm">Environment</option>
+<option value="reference/appendices/community_preview_features/run_time_loader/runtime_loader_cls/error_code_load.htm">error_code load(char const * path[],int min_ver = 			 TBB_INTERFACE_VERSION, int max_ver = INT_MAX)</option>
+<option value="reference/exceptions.htm">Exceptions</option>
+<option value="tbb_userguide/Exceptions_and_Cancellation.htm">Exceptions and 			 Cancellation</option>
+<option value="reference/task_scheduler/explicit_task_destruction.htm">Explicit task 			 Destruction</option>
+<option value="reference/environment/feature_macros.htm">Feature macros</option>
+<option value="tbb_userguide/Design_Patterns/Fenced_Data_Transfer.htm">Fenced Data 			 Transfer</option>
+<option value="reference/algorithms/pipeline_cls/filter_cls.htm">filter Class</option>
+<option value="reference/appendices/community_preview_features/scalable_memory_pools/fixed_pool_cls.htm">fixed_pool Class</option>
+<option value="reference/thread_local_storage/flattened2d_cls.htm">flattened2d Template Class</option>
+<option value="">Flow Graph</option>
+<option value="reference/appendices/community_preview_features/flow_graph_features.htm">&nbsp;&nbsp;&nbsp;Flow Graph</option>
+<option value="reference/flow_graph.htm">&nbsp;&nbsp;&nbsp;Flow Graph</option>
+<option value="reference/algorithms/parallel_pipeline_func/flow_control_cls.htm">flow_control Class</option>
+<option value="reference/flow_graph/flow_tuple.htm">flow::tuple</option>
+<option value="reference/flow_graph/func_node_cls.htm">function_node Template 			 Class</option>
+<option value="tbb_userguide/General_Acyclic_Graphs_of_Tasks.htm">General Acyclic Graphs of 			 Tasks</option>
+<option value="reference/general_conventions.htm">General Conventions</option>
+<option value="tbb_userguide/Design_Patterns/General_References.htm">General References</option>
+<option value="reference/containers_overview/concurrent_hash_map_cls/global_funcs.htm">Global 			 Functions</option>
+<option value="reference/flow_graph/graph_cls.htm">graph Class</option>
+<option value="reference/flow_graph/graph_node_cls.htm">graph_node Class</option>
+<option value="tbb_userguide/Design_Patterns/GUI_Thread.htm">GUI Thread</option>
+<option value="reference/appendices/community_preview_features/concurrent_lru_cache_cls/handle_object_cls.htm">handle_object 			 class</option>
+<option value="">Hash 			 policy</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls/hash_policy_map_cls.htm">&nbsp;&nbsp;&nbsp;Hash Policy</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls/hash_policy_set_cls.htm">&nbsp;&nbsp;&nbsp;Hash Policy</option>
+<option value="main/help_support.htm">Help</option>
+<option value="tbb_userguide/How_Task_Scheduling_Works.htm">How Task Scheduling 			 Works</option>
+<option value="reference/general_conventions/identifiers.htm">Identifiers</option>
+<option value="tbb_userguide/Initializing_and_Terminating_the_Library.htm">Initializing and Terminating the 			 Library</option>
+<option value="reference/flow_graph/input_port_func.htm">input_port Template 			 Function</option>
+<option value="tbb_userguide/Integration_Plug-In_for_Microsoft_Visual_Studio_Projects.htm">Integration Plug-In for Microsoft Visual Studio* Projects</option>
+<option value="">Intel® Thread Building Blocks  			</option>
+<option value="reference/introducing.htm">&nbsp;&nbsp;&nbsp;Introducing Intel® Threading Building Blocks</option>
+<option value="main/introducing.htm">&nbsp;&nbsp;&nbsp;Introducing Intel® Threading Building Blocks</option>
+<option value="">&nbsp;&nbsp;&nbsp;Overview</option>
+<option value="reference/introducing.htm">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Introducing Intel® Threading Building Blocks</option>
+<option value="main/introducing.htm">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Introducing Intel® Threading Building Blocks</option>
+<option value="reference/appendices/compatibility_features/interface_for_concurrent_vector.htm">Interface for 			 concurrent_vector</option>
+<option value="reference/appendices/compatibility_features/interface_for_cls_task.htm">Interface for class 			 task</option>
+<option value="reference/appendices/compatibility_features/interface_for_constructing_a_pipeline_filter.htm">Interface for constructing a pipeline 			 filter</option>
+<option value="reference/task_groups/is_current_task_group_canceling_func.htm">is_current_task_group_canceling Function</option>
+<option value="tbb_userguide/Iterating_Over_a_Concurrent_Queue_for_Debugging.htm">Iterating Over a Concurrent Queue for Debugging</option>
+<option value="">Iterators</option>
+<option value="reference/containers_overview/concurrent_hash_map_cls/iterators_hash_map_cls.htm">&nbsp;&nbsp;&nbsp;Iterators</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls/container_iterators_map_cls.htm">&nbsp;&nbsp;&nbsp;Iterators</option>
+<option value="reference/thread_local_storage/flattened2d_cls/iterators_2d_cls.htm">&nbsp;&nbsp;&nbsp;Iterators</option>
+<option value="reference/thread_local_storage/enumerable_thread_specific_cls/iterators_specific_cls.htm">&nbsp;&nbsp;&nbsp;Iterators</option>
+<option value="reference/containers_overview/concurrent_vector/iterators_vector.htm">&nbsp;&nbsp;&nbsp;Iterators</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls/container_iterators_set_cls.htm">&nbsp;&nbsp;&nbsp;Iterators</option>
+<option value="reference/flow_graph/join_node_cls.htm">join_node Template 			 Class</option>
+<option value="reference/appendices.htm">known issues</option>
+<option value="reference/appendices/known_issues.htm">Known Issues</option>
+<option value="tbb_userguide/Lambda_Expressions.htm">Lambda 			 Expressions</option>
+<option value="tbb_userguide/Design_Patterns/Lazy_Initialization.htm">Lazy 			 Initialization</option>
+<option value="reference/flow_graph/limiter_node_cls.htm">limiter_node Template 			 Class</option>
+<option value="tbb_userguide/Linux_OS.htm">Linux* OS</option>
+<option value="tbb_userguide/Linux_C_Dynamic_Memory_Interface_Replacement.htm">Linux* OS C/C++ Dynamic Memory Interface Replacement</option>
+<option value="tbb_userguide/Design_Patterns/Local_Serializer.htm">Local Serializer</option>
+<option value="tbb_userguide/Lock_Pathologies.htm">Lock 			 Pathologies</option>
+<option value="reference/synchronization/mutexes/hardware_transactional_locking.htm">Lock Elision</option>
+<option value="">Lookup</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls/lookup_set_cls.htm">&nbsp;&nbsp;&nbsp;Lookup</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls/lookup_map_cls.htm">&nbsp;&nbsp;&nbsp;Lookup</option>
+<option value="reference/flow_graph/make_edge_func.htm">make_edge Template Function</option>
+<option value="reference/task_groups/make_task_func.htm">make_task Template Function</option>
+<option value="tbb_userguide/Automically_Replacing_malloc.htm">malloc</option>
+<option value="tbb_userguide/Memory_Consistency.htm">Memory 			 Consistency</option>
+<option value="">Memory Allocation</option>
+<option value="reference/memory_allocation.htm">&nbsp;&nbsp;&nbsp;Memory Allocation</option>
+<option value="tbb_userguide/Memory_Allocation.htm">&nbsp;&nbsp;&nbsp;Memory Allocation</option>
+<option value="reference/appendices/community_preview_features/scalable_memory_pools/memory_pool_cls.htm">memory_pool Template 			 Class</option>
+<option value="reference/appendices/community_preview_features/scalable_memory_pools/memory_pool_allocator_cls.htm">memory_pool_allocator Template 			 Class</option>
+<option value="reference/flow_graph/message_flow_graph_example.htm">Message Flow Graph 			 Example</option>
+<option value="reference/flow_graph/message_passing_protocol.htm">Message Passing Protocol</option>
+<option value="tbb_userguide/Microsoft_Visual_Studio_Code_Examples.htm">Microsoft Visual Studio* Code 			 Examples</option>
+<option value="">Modifiers</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls/modifiers_map_cls.htm">&nbsp;&nbsp;&nbsp;Modifiers</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls/modifiers_set_cls.htm">&nbsp;&nbsp;&nbsp;Modifiers</option>
+<option value="tbb_userguide/More_on_HashCompare.htm">More on HashCompare</option>
+<option value="reference/exceptions/movable_exception.htm">movable_exception</option>
+<option value="reference/flow_graph/multifunc_node_cls.htm">multifunction_node Template 			 Class</option>
+<option value="reference/synchronization/mutexes/mutex_concept.htm">Mutex 			 Concept</option>
+<option value="tbb_userguide/Mutex_Flavors.htm">Mutex 			 Flavors</option>
+<option value="reference/synchronization/mutexes.htm">Mutexes</option>
+<option value="tbb_userguide/Mutual_Exclusion.htm">Mutual 			 Exclusion</option>
+<option value="reference/general_conventions/namespaces.htm">Namespaces</option>
+<option value="tbb_userguide/Non-Linear_Pipelines.htm">Non-Linear Pipelines</option>
+<option value="tbb_userguide/Design_Patterns/Non-Preemptive_Priorities.htm">Non-Preemptive 			 Priorities</option>
+<option value="main/notation.htm">Notation</option>
+<option value="reference/synchronization/mutexes/null_mutex_cls.htm">null_mutex Class</option>
+<option value="reference/synchronization/mutexes/null_rw_mutex_cls.htm">null_rw_mutex Class</option>
+<option value="">Observers</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls/observers_map_cls.htm">&nbsp;&nbsp;&nbsp;Observers</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls/observers_set_cls.htm">&nbsp;&nbsp;&nbsp;Observers</option>
+<option value="tbb_userguide/Design_Patterns/Odd-Even_Communication.htm">Odd-Even 			 Communication</option>
+<option value="tbb_userguide/Open_Source_Version.htm">Open Source 			 Version</option>
+<option value="reference/appendices/community_preview_features/flow_graph/or_node_cls.htm">or_node Template 			 Class</option>
+<option value="tbb_userguide/OS_X_Systems.htm">OS X* 			 Systems</option>
+<option value="reference/flow_graph/overwrite_node_cls.htm">overwrite_node Template 			 Class</option>
+<option value="tbb_userguide/Package_Contents.htm">Package 			 Contents</option>
+<option value="">Parallel 			 Iteration</option>
+<option value="reference/containers_overview/concurrent_vector/parallel_iteration.htm">&nbsp;&nbsp;&nbsp;Parallel Iteration</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls/parallel_iteration_set_cls.htm">&nbsp;&nbsp;&nbsp;Parallel Iteration</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls/parallel_iteration_map_cls.htm">&nbsp;&nbsp;&nbsp;Parallel Iteration</option>
+<option value="reference/thread_local_storage/enumerable_thread_specific_cls/parallel_literation_specific_cls.htm">&nbsp;&nbsp;&nbsp;Parallel Iteration</option>
+<option value="reference/containers_overview/concurrent_hash_map_cls/parallel_iteration_container.htm">&nbsp;&nbsp;&nbsp;Parallel Iteration</option>
+<option value="reference/algorithms/parallel_deterministic_reduce_func.htm">parallel_ deterministic _reduce Template 			 Function</option>
+<option value="reference/algorithms/parallel_do_func.htm">parallel_do Template 			 Function</option>
+<option value="tbb_userguide/parallel_for.htm">parallel_for</option>
+<option value="reference/algorithms/parallel_for_func.htm">parallel_for Template Function</option>
+<option value="reference/algorithms/parallel_for_each_func.htm">parallel_for_each Template Function</option>
+<option value="reference/algorithms/parallel_invoke_func.htm">parallel_invoke Template Function</option>
+<option value="tbb_userguide/parallel_reduce.htm">parallel_reduce</option>
+<option value="reference/algorithms/parallel_reduce_func.htm">parallel_reduce Template Function</option>
+<option value="reference/algorithms/parallel_scan_func.htm">parallel_scan Template Function</option>
+<option value="reference/algorithms/parallel_sort_func.htm">parallel_sort Template Function</option>
+<option value="reference/appendices/compatibility_features/parallel_while_cls.htm">parallel_while Template 			 Class</option>
+<option value="tbb_userguide/Parallelizing_Complex_Loops.htm">Parallelizing Complex 			 Loops</option>
+<option value="tbb_userguide/Parallelizing_Simple_Loops.htm">Parallelizing Simple 			 Loops</option>
+<option value="tbb_userguide/Partitioner_Summary.htm">Partitioner 			 Summary</option>
+<option value="reference/algorithms/partitioners.htm">Partitioners</option>
+<option value="reference/algorithms/pipeline_cls.htm">pipeline Class</option>
+<option value="">PPL Compatibility</option>
+<option value="reference/synchronization/ppl_compatibility_synch.htm">&nbsp;&nbsp;&nbsp;PPL Compatibility</option>
+<option value="reference/appendices/ppl_compatibility.htm">&nbsp;&nbsp;&nbsp;PPL Compatibility</option>
+<option value="reference/flow_graph/primary_components.htm">Primary Components</option>
+<option value="reference/task_scheduler/priorities.htm">Priority</option>
+<option value="reference/flow_graph/priority_queue_node_cls.htm">priority_queue_node Template 			 Class</option>
+<option value="reference/flow_graph/queue_node_cls.htm">queue_node Template 			 Class</option>
+<option value="reference/synchronization/mutexes/queuing_mutex_cls.htm">queuing_mutex Class</option>
+<option value="reference/synchronization/mutexes/queuing_rw_mutex_cls.htm">queuing_rw_mutex Class</option>
+<option value="">Range Concept</option>
+<option value="reference/algorithms/range_concept.htm">&nbsp;&nbsp;&nbsp;Range Concept</option>
+<option value="reference/algorithms/parallel_pipeline_func.htm">&nbsp;&nbsp;&nbsp;parallel_pipeline Function</option>
+<option value="tbb_userguide/Reader_Writer_Mutexes.htm">Reader Writer 			 Mutexes</option>
+<option value="reference/synchronization/ppl_compatibility/reader_writer_lock_cls.htm">reader_writer_lock Class</option>
+<option value="reference/synchronization/mutexes/readerwritermutex_concept.htm">ReaderWriterMutex 			 Concept</option>
+<option value="reference/flow_graph/receiver_cls.htm">receiver Template 			 Class</option>
+<option value="tbb_userguide/Recursive_Chain_Reaction_.htm">Recursive Chain Reaction  		</option>
+<option value="reference/synchronization/mutexes/recursive_mutex_cls.htm">recursive_mutex Class</option>
+<option value="tbb_userguide/Recycling.htm">Recycling</option>
+<option value="reference/task_scheduler/recycling_tasks.htm">Recycling 			 Tasks</option>
+<option value="tbb_userguide/Design_Patterns/Reduction.htm">Reduction</option>
+<option value="tbb_userguide/Design_Patterns/Reference_Counting.htm">Reference Counting</option>
+<option value="tbb_userguide/References.htm">References</option>
+<option value="reference/flow_graph/remove_edge_func.htm">remove_edge Template Function</option>
+<option value="reference/appendices/community_preview_features/run_time_loader.htm">Run-time loader</option>
+<option value="reference/appendices/community_preview_features/run_time_loader/runtime_loader_cls.htm">runtime_loader 			 Class</option>
+<option value="tbb_userguide/Scalable_Memory_Allocator.htm">Scalable Memory 			 Allocator</option>
+<option value="reference/appendices/community_preview_features/scalable_memory_pools.htm">Scalable Memory 			 Pools</option>
+<option value="reference/memory_allocation/scalable_allocator_cls.htm">scalable_allocator</option>
+<option value="tbb_userguide/Scheduler_Bypass.htm">Scheduler 			 Bypass</option>
+<option value="reference/task_scheduler/scheduling_algorithm.htm">Scheduling 			 Algorithm</option>
+<option value="reference/flow_graph/sender_cls.htm">sender Template 			 Class</option>
+<option value="reference/flow_graph/sequencer_node_cls.htm">sequencer_node Template 			 Class</option>
+<option value="reference/appendices/community_preview_features/serial_subset.htm">Serial subset</option>
+<option value="tbb_userguide/Simple_Example_Fibonacci_Numbers.htm">Simple Example: Fibonacci 			 Numbers</option>
+<option value="reference/algorithms/partitioners/simple_partitioner_cls.htm">simple_partitioner 			 Class</option>
+<option value="">Size and 			 Capacity</option>
+<option value="reference/containers_overview/concurrent_unordered_set_cls/size_and_capacity_set_cls.htm">&nbsp;&nbsp;&nbsp;Size and Capacity</option>
+<option value="reference/containers_overview/concurrent_unordered_map_cls/size_and_capacity_map_cls.htm">&nbsp;&nbsp;&nbsp;Size and capacity</option>
+<option value="reference/flow_graph/source_node_cls.htm">source_node Class</option>
+<option value="reference/exceptions/specific_exceptions.htm">Specific 			 Exceptions</option>
+<option value="reference/synchronization/mutexes/hardware_transactional_locking.htm">Speculative Locking</option>
+<option value="reference/synchronization/mutexes/speculative_spin_mutex_cls.htm">speculative_spin_mutex Class</option>
+<option value="reference/synchronization/mutexes/speculative_spin_rw_mutex_cls.htm">speculative_spin_rw_mutex Class</option>
+<option value="reference/synchronization/mutexes/spin_mutex_cls.htm">spin_mutex Class</option>
+<option value="reference/synchronization/mutexes/spin_rw_mutex_cls.htm">spin_rw_mutex Class</option>
+<option value="reference/algorithms/splittable_concept/split_cls.htm">split Class</option>
+<option value="reference/flow_graph/split_node_cls.htm">split_node Template 			 Class</option>
+<option value="reference/algorithms/splittable_concept.htm">Splittable Concept</option>
+<option value="reference/task_groups/structured_task_group_cls.htm">structured_task_group Class</option>
+<option value="tbb_userguide/Summary_of_Containers.htm">Summary of Containers</option>
+<option value="tbb_userguide/Summary_of_Loops_and_Pipelines.htm">Summary of Loops and Pipelines</option>
+<option value="main/help_support.htm">Support</option>
+<option value="">Synchronization</option>
+<option value="reference/task_scheduler/synchronization.htm">&nbsp;&nbsp;&nbsp;Synchronization</option>
+<option value="reference/synchronization.htm">&nbsp;&nbsp;&nbsp;Synchronization</option>
+<option value="reference/task_scheduler/task_allocation.htm">task 			 Allocation</option>
+<option value="reference/task_scheduler/task_context.htm">task 			 Context</option>
+<option value="reference/task_scheduler/task_debugging.htm">task 			 Debugging</option>
+<option value="reference/task_groups.htm">Task 			 Groups</option>
+<option value="reference/task_scheduler.htm">Task 			 Scheduler</option>
+<option value="reference/task_scheduler/task_cls.htm">task Class</option>
+<option value="reference/task_scheduler/task_cls/task_derivation.htm">task Derivation</option>
+<option value="tbb_userguide/Task_Scheduler_Summary.htm">Task Scheduler Summary</option>
+<option value="reference/appendices/community_preview_features/task_arena_cls.htm">task_arena Class</option>
+<option value="reference/task_groups/task_group_cls.htm">task_group Class</option>
+<option value="">task_group_context</option>
+<option value="reference/task_scheduler/task_group_context.htm">&nbsp;&nbsp;&nbsp;task_group_context</option>
+<option value="reference/task_scheduler/task_group_context/task_group_context.htm">&nbsp;&nbsp;&nbsp;task_group_context Members</option>
+<option value="reference/task_groups/task_group_status_enum.htm">task_group_status Enum</option>
+<option value="reference/task_groups/task_handle_cls.htm">task_handle Template Class</option>
+<option value="reference/task_scheduler/task_list_cls.htm">task_list 			 Class</option>
+<option value="reference/task_scheduler/task_scheduler_init_cls/task_scheduler_init.htm">task_scheduler_init</option>
+<option value="reference/task_scheduler/task_scheduler_init_cls.htm">task_scheduler_init 			 Class</option>
+<option value="">task_scheduler_observer</option>
+<option value="reference/task_scheduler/task_scheduler_observer.htm">&nbsp;&nbsp;&nbsp;task_scheduler_observer</option>
+<option value="reference/task_scheduler/task_scheduler_observer/task_scheduler_observer_member.htm">&nbsp;&nbsp;&nbsp;task_scheduler_observer Members</option>
+<option value="reference/appendices/community_preview_features/task_arena_cls/task_scheduler_observer_ext_cls.htm">task_scheduler_observer Class 			 extensions</option>
+<option value="tbb_userguide/Task-Based_Programming.htm">Task-Based 			 Programming</option>
+<option value="reference/general_conventions/namespaces.htm">tbb</option>
+<option value="reference/memory_allocation/tbb_allocator_cls.htm">tbb_allocator</option>
+<option value="reference/environment/version_information.htm">TBB_COMPATIBLE_INTERFACE_VERSION</option>
+<option value="">TBB_DEPRECATED</option>
+<option value="reference/environment/feature_macros.htm">&nbsp;&nbsp;&nbsp;Feature macros</option>
+<option value="reference/general_conventions/namespaces.htm">&nbsp;&nbsp;&nbsp;Namespaces</option>
+<option value="reference/exceptions/tbb_exception.htm">tbb_exception</option>
+<option value="reference/containers_overview/concurrent_hash_map_cls/tbb_hash_compare_cls.htm">tbb_hash_compare Class</option>
+<option value="reference/environment/version_information.htm">TBB_INTERFACE_VERSION</option>
+<option value="reference/environment/version_information.htm">TBB_INTERFACE_VERSION_MAJOR</option>
+<option value="reference/environment/version_information.htm">TBB_INTERFACE_VERSION/1000</option>
+<option value="reference/appendices/compatibility_features/tbb_thread_cls.htm">tbb_thread Class</option>
+<option value="">TBB_USE_ASSERT</option>
+<option value="reference/environment/enabling_debugging_features.htm">&nbsp;&nbsp;&nbsp;Enabling Debugging Features</option>
+<option value="reference/environment/version_information.htm">&nbsp;&nbsp;&nbsp;Version Information</option>
+<option value="reference/environment/feature_macros.htm">TBB_USE_CAPTURED_EXCEPTION</option>
+<option value="reference/environment/enabling_debugging_features.htm">TBB_USE_DEBUG</option>
+<option value="reference/environment/feature_macros.htm">TBB_USE_EXCEPTIONS</option>
+<option value="reference/environment/enabling_debugging_features.htm">TBB_USE_PERFORMANCE_WARNINGS</option>
+<option value="reference/environment/enabling_debugging_features.htm">TBB_USE_THREADING_TOOLS</option>
+<option value="reference/general_conventions/namespaces.htm">tbb::deprecated</option>
+<option value="reference/appendices/compatibility_features/tbb_deprecated_concurrent_queue_cls.htm">tbb::deprecated::concurrent_queue&lt;T,Alloc&gt; 			 Template Class</option>
+<option value="reference/general_conventions/namespaces.htm">tbb::interface</option>
+<option value="reference/general_conventions/namespaces.htm">tbb::interfacex</option>
+<option value="reference/general_conventions/namespaces.htm">tbb::internal</option>
+<option value="reference/appendices/community_preview_features/serial_subset/tbb_serial_parallel_for.htm">tbb::serial::parallel_for()</option>
+<option value="reference/general_conventions/namespaces.htm">tbb::strict_ppl</option>
+<option value="reference/memory_allocation/aligned_space_cls.htm">template class</option>
+<option value="reference/general_conventions/terminology.htm">Terminology</option>
+<option value="">TestMetaData</option>
+<option value="reference/threads/thread_cls/thread_cls_members.htm">&nbsp;&nbsp;&nbsp;thread Class Members</option>
+<option value="reference/containers_overview/concurrent_hash_map_cls/concurrent_operations.htm">&nbsp;&nbsp;&nbsp;Concurrent Operations</option>
+<option value="reference/task_groups/task_group_cls/task_group_cls_members.htm">&nbsp;&nbsp;&nbsp;task_group Class Members</option>
+<option value="reference/timing/tick_count_cls/tick_count_cls_members.htm">&nbsp;&nbsp;&nbsp;tick_count Class Members</option>
+<option value="reference/synchronization/mutexes/mutex_cls.htm">&nbsp;&nbsp;&nbsp;mutex Class</option>
+<option value="tbb_userguide/The_Task_Scheduler.htm">The Task Scheduler</option>
+<option value="reference/threads/this_thread_namespace.htm">this_thread 			 Namespace</option>
+<option value="reference/threads/thread_cls.htm">thread Class</option>
+<option value="reference/thread_local_storage.htm">Thread Local 			 Storage</option>
+<option value="reference/general_conventions/thread_safety.htm">Thread Safety</option>
+<option value="reference/algorithms/pipeline_cls/thread_bound_filter_cls.htm">thread_bound_filter 			 Class</option>
+<option value="reference/threads/thread_id.htm">thread::id</option>
+<option value="reference/threads.htm">Threads</option>
+<option value="tbb_userguide/Throughput_of_pipeline.htm">Throughput of 			 pipeline</option>
+<option value="reference/timing/tick_count_cls.htm">tick_count Class</option>
+<option value="reference/timing/tick_count_cls/tick_count_interval_t_cls.htm">tick_count::interval_t 			 Class</option>
+<option value="">Timing</option>
+<option value="reference/timing.htm">&nbsp;&nbsp;&nbsp;Timing</option>
+<option value="tbb_userguide/Timing.htm">&nbsp;&nbsp;&nbsp;Timing</option>
+<option value="tbb_userguide/UpgradeDowngrade.htm">Upgrade/Downgrade</option>
+<option value="tbb_userguide/Useful_Task_Techniques.htm">Useful Task Techniques</option>
+<option value="tbb_userguide/Using_Circular_Buffers.htm">Using Circular 			 Buffers</option>
+<option value="reference/thread_local_storage/flattened2d_cls/utility_funcs.htm">Utility 			 Functions</option>
+<option value="reference/environment/version_information.htm">Version Information</option>
+<option value="tbb_userguide/Design_Patterns/Wavefront.htm">Wavefront</option>
+<option value="reference/appendices/community_preview_features/what_is_a_community_preview_feature.htm">What is a Community Preview 			 Feature?</option>
+<option value="tbb_userguide/When_Not_to_Use_Queues.htm">When Not to Use 			 Queues</option>
+<option value="tbb_userguide/When_Task-Based_Programming_Is_Inappropriate.htm">When Task-Based Programming Is Inappropriate</option>
+<option value="tbb_userguide/Which_Dynamic_Libraries_to_Use.htm">Which Dynamic Libraries to 			 Use</option>
+<option value="">Whole Container 			 Operations</option>
+<option value="reference/thread_local_storage/enumerable_thread_specific_cls/whole_container_operations_specific_cls.htm">&nbsp;&nbsp;&nbsp;Whole Container Operations</option>
+<option value="reference/thread_local_storage/flattened2d_cls/whole_container_operations_2d_cls.htm">&nbsp;&nbsp;&nbsp;Whole Container Operations</option>
+<option value="reference/containers_overview/concurrent_hash_map_cls/whole_table_operations.htm">Whole Table 			 Operations</option>
+<option value="reference/containers_overview/concurrent_vector/whole_vector_operations.htm">Whole Vector 			 Operations</option>
+<option value="">Windows* OS</option>
+<option value="reference/appendices/known_issues/windows_os.htm">&nbsp;&nbsp;&nbsp;Windows* OS</option>
+<option value="tbb_userguide/Windows_OS.htm">&nbsp;&nbsp;&nbsp;Windows* OS</option>
+<option value="tbb_userguide/Windows_C_Dynamic_Memory_Interface_Replacement.htm">Windows* OS C/C++ Dynamic Memory Interface Replacement</option>
+<option value="tbb_userguide/Working_on_the_Assembly_Line_pipeline.htm">Working on the Assembly Line: 			 pipeline</option>
+<option value="reference/flow_graph/write_once_node_cls.htm">write_once_node Template 			 Class</option>
+<option value="reference/memory_allocation/zero_allocator.htm">zero allocator</option>
+</select>
+</div>
+
+
+</body>
+</html>

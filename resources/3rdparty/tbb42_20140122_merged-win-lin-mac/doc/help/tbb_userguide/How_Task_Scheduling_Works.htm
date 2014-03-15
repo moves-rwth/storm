@@ -1,0 +1,244 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="How Task Scheduling Works">
+<meta name="DC.subject" content="How Task Scheduling Works">
+<meta name="keywords" content="How Task Scheduling Works">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/The_Task_Scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="Scheduler_Bypass.htm">
+<meta name="DC.Relation" scheme="URI" content="Simple_Example_Fibonacci_Numbers.htm#tutorial_Simple_Example_Fibonacci_Numbers">
+<meta name="DC.Relation" scheme="URI" content="Continuation_Passing.htm#tutorial_Continuation_Passing">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_How_Task_Scheduling_Works">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>How Task Scheduling Works</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_How_Task_Scheduling_Works">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_How_Task_Scheduling_Works"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">How Task Scheduling Works</h1>
+ 
+   
+  <div> 
+	 <p>The scheduler evaluates a 
+		<em>task graph.</em> The graph is a directed graph where each node is a
+		task. Each task points to its 
+		<em>successor</em>, which is another task that is waiting on it to
+		complete, or NULL. Method 
+  <span class="option">task::parent</span><samp class="codeph">()</samp>
+  gives you read-only access to the successor pointer. Each task has a 
+  <em>refcount</em> that counts the number of tasks that have it as a successor.
+  The graph evolves over time. 
+  </p>
+ 
+  <div class="fignone" id="fig7"><a name="fig7"><!-- --></a><span class="figcap">Snapshot of Task Graph for the Fibonacci Example</span> 
+	 <br><img src="Images/image014.jpg"><br> 
+  </div>
+ 
+  <p> The figure above shows a snapshot of a task graph for the Fibonacci
+	 example where: 
+  </p>
+ 
+  <ul type="disc"> 
+	 <li> 
+		<p>Tasks A, B, and C spawned child tasks that they are waiting upon.
+		  Their 
+		  <em>refcount</em> values are the number of children in flight plus one.
+		  The extra one is part of a convention for explicit waiting that is explained
+		  later in this section. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>Task D is running, but has not yet spawned any children, and so it has
+		  not had to set its reference count yet. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>Tasks E, F, and G have been spawned, but have not yet started
+		  executing. 
+		</p>
+ 
+	 </li>
+ 
+  </ul>
+ 
+  <p>The scheduler runs tasks in a way that tends to minimize both memory
+	 demands and cross-thread communication. The intuition is that a balance must be
+	 reached between depth-first and breadth-first execution. Assuming that the tree
+	 is finite, depth-first is best for sequential execution for the following
+	 reasons: 
+  </p>
+ 
+  <ul type="disc"> 
+	 <li> 
+		<p><strong>Strike when the cache is hot</strong>. The deepest tasks are the most
+		  recently created tasks, and therefore are hottest in cache. Also, if they can
+		  complete, then task C can continue executing, and though not the hottest in
+		  cache, it is still warmer than the older tasks above it. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p><strong>Minimize space</strong>. Executing the shallowest task leads to
+		  breadth-first unfolding of the tree. This creates an exponential number of
+		  nodes that coexist simultaneously. In contrast, depth-first execution creates
+		  the same number of nodes, but only a linear number have to exist at the same
+		  time, because it stacks the other ready tasks (E, F, and G in the picture). 
+		</p>
+ 
+	 </li>
+ 
+  </ul>
+ 
+  <p>Though breadth-first execution has a severe problem with memory
+	 consumption, it does maximize parallelism if you have an unlimited number of
+	 physical threads. Since physical threads are limited, it is better to use only
+	 enough breadth-first execution to keep the available processors busy. 
+  </p>
+ 
+  <p>The scheduler implements a hybrid of depth-first and breadth-first
+	 execution. Each thread has its own deque<a href="#ftn8"><sup><sup>[8]</sup></sup></a> of tasks that are ready to
+	 run. When a thread spawns a task, it pushes it onto the bottom of its deque.
+	 The following figure shows a snapshot of a thread's deque that corresponds to
+	 the task graph in figure above. 
+  </p>
+ 
+  <div class="fignone" id="fig8"><a name="fig8"><!-- --></a><span class="figcap">A Thread's Deque</span> 
+	 <br><img src="Images/image015.jpg" width="222" height="93"><br> 
+  </div>
+ 
+  <p>When a thread participates in task graph evaluation, it continually
+	 executes a task obtained by the first rule below that applies:
+  </p>
+ 
+  <ol> 
+	 <li> 
+		<p id="Execution_Rules"><a name="Execution_Rules"><!-- --></a>Get the task returned by method 
+		  <samp class="codeph">execute</samp> for the previous task. This rule does not
+		  apply if 
+		  <samp class="codeph">execute</samp> returned 
+		  <samp class="codeph">NULL</samp>. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>Pop a task from the 
+		  <em>bottom</em> of its 
+		  <em>own</em> deque. This rule does not apply if the deque is empty. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>Steal a task from the 
+		  <em>top</em> of 
+		  <em>another</em> randomly chosen deque. If the chosen deque is empty, the
+		  thread tries this rule again until it succeeds. 
+		</p>
+ 
+	 </li>
+ 
+  </ol>
+ 
+  <p>Rule 1 is discussed in 
+	 <strong>Scheduler Bypass</strong>. The overall effect of rule 2 is to execute the 
+	 <em>youngest</em> task spawned by the thread, which causes depth-first
+	 execution until the thread runs out of work. Then rule 3 applies. It steals the
+	 
+	 <em>oldest</em> task spawned by another thread, which causes temporary
+	 breadth-first execution that converts potential parallelism into actual
+	 parallelism. 
+  </p>
+ 
+  <p>Getting a task is always automatic; it happens as part of task graph
+	 evaluation. Putting a task into a deque can be explicit or implicit. A thread
+	 always pushes a task onto the bottom of its own deque, never another thread's
+	 deque. Only theft can transfer a task spawned by one thread to another thread. 
+  </p>
+ 
+  <p>There are three conditions that cause a thread to push a task onto its
+	 deque: 
+  </p>
+ 
+  <ul type="disc"> 
+	 <li> 
+		<p>The task is explicitly spawned by the thread, for example, by method 
+		  <samp class="codeph">spawn</samp>. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>A task has been marked for re-execution by method 
+		  <samp class="codeph">task::recycle_to_reexecute</samp>. 
+		</p>
+ 
+	 </li>
+ 
+	 <li> 
+		<p>The thread completes execution of the last predecessor task 
+		  <em>and</em> after doing so implicitly decrements the task's reference
+		  count to zero. If so, the thread implicitly pushes the successor task onto the
+		  bottom of its deque. Completing the last child does not cause the reference
+		  count to become zero if the reference count includes extra references. 
+		</p>
+ 
+	 </li>
+ 
+  </ul>
+ 
+  <p>The example in 
+	 <strong>Fibonacci Numbers</strong> does not have implicit pushing, because it
+	 explicitly waits for children to complete. It uses 
+	 <samp class="codeph">set_ref_count(3)</samp> for a task having only two children. The
+	 extra reference protects the successor from being implicitly pushed. 
+	 <strong>Continuation Passing</strong> has a similar example that employs implicit
+	 pushing. It uses 
+	 <samp class="codeph">set_ref_count(2)</samp> for a task having two children, so that
+	 that task executes automatically when the children complete. 
+  </p>
+ 
+  <p>To summarize, the task scheduler's fundamental strategy is 'breadth-first
+	 theft and depth-first work". The breadth-first theft rule raises
+	 parallelism sufficiently to keep threads busy. The depth-first work rule keeps
+	 each thread operating efficiently once it has sufficient work to do. 
+  </p>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/The_Task_Scheduler.htm">The Task Scheduler</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Scheduler_Bypass.htm">Scheduler Bypass 
+		  </a></div>
+<div><a href="Simple_Example_Fibonacci_Numbers.htm#tutorial_Simple_Example_Fibonacci_Numbers">Simple Example: Fibonacci Numbers 
+		  </a></div>
+<div><a href="Continuation_Passing.htm#tutorial_Continuation_Passing">
+		  </a></div></div>
+</div> 
+<p class="tfootnote"><a id="ftn8"><sup>[8]</sup></a>   Double-ended queue.</p>
+</body>
+</html>

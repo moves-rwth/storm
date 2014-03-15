@@ -1,0 +1,238 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Bucket Interface">
+<meta name="DC.subject" content="Bucket Interface">
+<meta name="keywords" content="Bucket Interface">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_unordered_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="bucket_interface_map_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Bucket Interface</title>
+</head>
+<body id="bucket_interface_map_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="bucket_interface_map_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Bucket Interface</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<p> The bucket interface is similar to the bucket
+		  interface for the C++11 class 
+		  <samp class="codeph">unordered_map</samp> and 
+		  <samp class="codeph">unordered_multimap</samp>, except that the prefix 
+		  <samp class="codeph">unsafe_</samp> has been added as a reminder that the methods
+		  are unsafe to use during concurrent insertion. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>The bucket interface is intended for debugging.
+			 It is not concurrency safe. 
+		  </p>
+
+		  <p>The mapping of keys to buckets is implementation specific.
+		  </p>
+
+		</div> 
+		<p>Buckets are numbered from 0 to<samp class="codeph">
+			 unsafe_bucket_count()-1</samp>. To iterate over a bucket use a 
+		  <samp class="codeph">local_iterator</samp> or 
+		  <samp class="codeph">const_local_iterator</samp>. 
+		</p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d42223e64">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d42223e67">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">size_type unsafe_bucket_count()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong>: Number of buckets. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">size_type
+						unsafe_max_bucket_count() const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong>: Upper bound on possible
+						number of buckets. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">size_type
+						unsafe_bucket_size(size_type n)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong>: Number of items in bucket
+						
+						<samp class="codeph"><em>n</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">size_type unsafe_bucket(const
+						key_type&amp; k) const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong>: Index of bucket where
+						item with key 
+						<em>k</em> would be placed. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">local_iterator
+						unsafe_begin(size_type n)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">local_iterator</samp> pointing to first item in
+						bucket 
+						<em>n</em>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">const_local_iterator
+						unsafe_begin(size_type n) const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_local_iterator</samp> pointing to first item
+						in bucket 
+						<samp class="codeph"><em>n</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">local_iterator
+						unsafe_end(size_type n)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">local_iterator</samp> pointing to immediately after
+						the last item in bucket 
+						<samp class="codeph"><em>n</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">const_local_iterator
+						unsafe_end(size_type n) const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong> 
+						<samp class="codeph">const_local_iterator</samp> pointing to immediately
+						after the last item in bucket 
+						<samp class="codeph"><em>n</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">const_local_iterator
+						unsafe_cbegin(size_type n) const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_local_iterator</samp> pointing to first item
+						in bucket 
+						<samp class="codeph"><em>n</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d42223e64 "><span class="keyword">const_local_iterator
+						unsafe_cend(size_type n) const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d42223e67 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_local_iterator</samp> pointing to immediately
+						past last item in bucket 
+						<samp class="codeph"><em>n</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_unordered_map_cls.htm">concurrent_unordered_map and concurrent_unordered_multimap Template Classes</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

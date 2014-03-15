@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Non-Linear Pipelines">
+<meta name="DC.subject" content="Non-Linear Pipelines">
+<meta name="keywords" content="Non-Linear Pipelines">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Working_on_the_Assembly_Line_pipeline.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Non-Linear_Pipelines">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Non-Linear Pipelines</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Non-Linear_Pipelines">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Non-Linear_Pipelines"><!-- --></a>
+
+
+<h1 class="topictitle1">Non-Linear Pipelines</h1>
+
+<div><p>Template function <samp class="codeph">parallel_pipeline</samp> supports only linear pipelines. It does not directly handle more baroque plumbing, such as in the diagram below.</p>
+<div class="fignone" id="image011"><a name="image011"><!-- --></a><br><img width="281" height="107" src="Images/image011.jpg"><br></div>
+<p>However, you can still use a pipeline for this. Just topologically sort the filters into a linear order, like this:</p>
+<p>The light gray arrows are the original arrows that are now implied by transitive closure of the other arrows. It might seem that lot of parallelism is lost by forcing a linear order on the filters, but in fact the only loss is in the <em>latency</em> of the pipeline, not the throughput. The latency is the time it takes a token to flow from the beginning to the end of the pipeline. Given a sufficient number of processors, the latency of the original non-linear pipeline is three filters. This is because filters A and B could process the token concurrently, and likewise filters D and E could process the token concurrently. </p>
+<div class="fignone" id="image012"><a name="image012"><!-- --></a><br><img width="281" height="107" src="Images/image012.jpg"><br></div>
+<p>In the linear pipeline, the latency is five filters. The behavior of filters A, B, D and E above may need to be modified in order to properly handle objects that don’t need to be acted upon by the filter other than to be passed along to the next filter in the pipeline.</p>
+<p>The throughput remains the same, because regardless of the topology, the throughput is still limited by the throughput of the slowest serial filter. If <samp class="codeph">parallel_pipeline</samp> supported non-linear pipelines, it would add a lot of programming complexity, and not improve throughput. The linear limitation of <samp class="codeph">parallel_pipeline</samp> is a good tradeoff of gain versus pain.</p>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Working_on_the_Assembly_Line_pipeline.htm">Working on the Assembly Line: pipeline</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

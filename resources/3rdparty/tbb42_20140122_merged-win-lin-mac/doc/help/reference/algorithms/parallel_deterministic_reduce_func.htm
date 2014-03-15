@@ -1,0 +1,190 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="parallel_deterministic_reduce Template Function">
+<meta name="DC.subject" content="parallel_ deterministic _reduce Template Function">
+<meta name="keywords" content="parallel_ deterministic _reduce Template Function">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="partitioners/simple_partitioner_cls.htm#simple_partitioner_cls">
+<meta name="DC.Relation" scheme="URI" content="parallel_reduce_func.htm#parallel_reduce_func">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_deterministic_reduce_func">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>parallel_deterministic_reduce Template Function</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="parallel_deterministic_reduce_func">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_deterministic_reduce_func"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">parallel_deterministic_reduce Template
+	 Function</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Computes reduction over a range, with deterministic
+		  split/join behavior. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt;typename Range, typename Value,
+           typename Func, typename Reduction&gt;
+           Value parallel_deterministic_reduce( const Range&amp; range,
+           const Value&amp; identity, const Func&amp; func,
+           const Reduction&amp; reduction,
+           <var>[,</var> task_group_context&amp; group<var>]</var> );
+ 
+template&lt;typename Range, typename Body&gt;
+           void parallel_deterministic_reduce( const Range&amp; range,
+           const Body&amp; body
+           <var>[,</var> task_group_context&amp; group<var>]</var> );</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/parallel_reduce.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>The 
+		  <samp class="codeph">parallel_deterministic_reduce</samp> template
+		  is very similar to the 
+		  <samp class="codeph">parallel_reduce</samp>
+		  template. It also has the functional and imperative forms and has similar
+		  requirements for Func and Reduction. 
+		</p>
+ 
+		<p>Unlike 
+		  <samp class="codeph">parallel_reduce</samp>, 
+		  <samp class="codeph">parallel_deterministic_reduce</samp> has
+		  deterministic behavior with regard to splits of both Body and Range and joins
+		  of the bodies. For the functional form, Func is applied to a deterministic set
+		  of Ranges, and Reduction merges partial results in a deterministic order. To
+		  achieve that, 
+		  <samp class="codeph">parallel_deterministic_reduce</samp> always
+		  uses a 
+		  <samp class="codeph">simple_partitioner</samp>
+		  because other partitioners react to random work stealing behavior. Therefore,
+		  the template declaration does not have a partitioner argument. 
+		</p>
+ 
+		<p><samp class="codeph">parallel_deterministic_reduce</samp> always
+		  invokes the Body splitting constructor for each range split. 
+		</p>
+ 
+		<div class="fignone" id="fig18"><a name="fig18"><!-- --></a><span class="figcap">Execution of
+			 parallel_deterministic_reduce over
+			 blocked_range&lt;int&gt;(0,20,5)</span> 
+		  <br><div class="imageleft"><img src="../Resources/reference-latest-19.jpg" height="135" width="403" align="left"></div><br> 
+		</div>
+ 
+		<p>As a result, 
+		  <samp class="codeph">parallel_deterministic_reduce</samp>
+		  recursively splits a range until it is no longer divisible, and creates a new
+		  body (by calling Body splitting constructor) for each new subrange. Like 
+		  <samp class="codeph">parallel_reduce</samp>, for
+		  each body split the method 
+		  <samp class="codeph">join</samp> is invoked in order to merge the results from the
+		  bodies. The figure above shows the execution of 
+		  <samp class="codeph">parallel_deterministic_reduce</samp> over a
+		  sample range, with the slash marks (/) denoting where new instances of the body
+		  were created. 
+		</p>
+ 
+		<p>Therefore for given arguments, 
+		  <samp class="codeph">parallel_
+			 deterministic_reduce</samp> executes the same set of split and join
+		  operations no matter how many threads participate in execution and how tasks
+		  are mapped to the threads. If the user-provided functions are also
+		  deterministic (i.e. different runs with the same input result in the same
+		  output), then multiple calls to 
+		  <samp class="codeph">parallel_deterministic_reduce</samp> will
+		  produce the same result. Note however that the result might differ from that
+		  obtained with an equivalent sequential (linear) algorithm. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>Since 
+			 <samp class="codeph">simple_partitioner</samp>
+			 is always used, be careful to specify an appropriate grainsize. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Complexity</h2> 
+		 
+		<p>If the range and body take O(1) space, and the
+		  range splits into nearly equal pieces, then the space complexity is O(P
+		  log(N)), where N is the size of the range and P is the number of threads. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>The example from 
+		  <samp class="codeph">parallel_reduce</samp>
+		  section can be easily modified to use 
+		  <samp class="codeph">parallel_deterministic_reduce</samp>. It is
+		  sufficient torename 
+		  <samp class="codeph">parallel_reduce</samp> to 
+		  <samp class="codeph">parallel_deterministic_reduce</samp>; a
+		  partitioner, if any, should be removed to prevent compilation error. A grain
+		  size may need to be specified for blocked_range if performance suffered. 
+		</p>
+ 
+		<pre>#include &lt;numeric&gt;
+#include &lt;functional&gt;
+#include "tbb/parallel_reduce.h"
+#include "tbb/blocked_range.h"
+using namespace tbb;
+
+float ParallelSum( float array[], size_t n ) {
+    size_t grain_size = 1000;
+    return parallel_deterministic_reduce( 
+        blocked_range&lt;float*&gt;( array, array+n, grain_size[ ),
+        0.f,
+        [](const blocked_range&lt;float*&gt;&amp; r, float value)-&gt;float {
+            return std::accumulate(r.begin(),r.end(),value);
+        },
+        std::plus&lt;float&gt;());
+}</pre> 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="partitioners/simple_partitioner_cls.htm#simple_partitioner_cls">simple_partitioner Class 
+		  </a></div>
+<div><a href="parallel_reduce_func.htm#parallel_reduce_func">parallel_reduce Template Function 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

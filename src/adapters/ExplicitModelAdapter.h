@@ -58,7 +58,7 @@ namespace storm {
             
             // A structure holding the individual components of a model.
             struct ModelComponents {
-                ModelComponents() : transitionMatrix(), stateLabeling(), nondeterministicChoiceIndices(), stateRewards(), transitionRewardMatrix(), choiceLabeling() {
+                ModelComponents() : transitionMatrix(), stateLabeling(),  stateRewards(), transitionRewardMatrix(), choiceLabeling() {
                     // Intentionally left empty.
                 }
                 
@@ -67,9 +67,6 @@ namespace storm {
                 
                 // The state labeling.
                 storm::models::AtomicPropositionsLabeling stateLabeling;
-                
-                // A vector indicating at which row the choices for a particular state begin.
-                std::vector<uint_fast64_t> nondeterministicChoiceIndices;
                 
                 // The state reward vector.
                 std::vector<ValueType> stateRewards;
@@ -108,10 +105,10 @@ namespace storm {
                         result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     case storm::ir::Program::MDP:
-                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.nondeterministicChoiceIndices), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     case storm::ir::Program::CTMDP:
-                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.nondeterministicChoiceIndices), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     default:
                         LOG4CPLUS_ERROR(logger, "Error while creating model from probabilistic program: cannot handle this model type.");
@@ -455,8 +452,7 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static std::pair<std::vector<uint_fast64_t>, std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
-                std::vector<uint_fast64_t> nondeterministicChoiceIndices;
+            static std::vector<boost::container::flat_set<uint_fast64_t>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
                 std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabels;
                 
                 // Initialize a queue and insert the initial state.
@@ -524,7 +520,6 @@ namespace storm {
 
                             
                             // Now add the resulting distribution as the only choice of the current state.
-                            nondeterministicChoiceIndices.push_back(currentRow);
                             choiceLabels.push_back(globalChoice.getChoiceLabels());
                             
                             for (auto const& stateProbabilityPair : globalChoice) {
@@ -541,7 +536,8 @@ namespace storm {
                             ++currentRow;
                         } else {
                             // If the model is nondeterministic, we add all choices individually.
-                            nondeterministicChoiceIndices.push_back(currentRow);
+                            transitionMatrixBuilder.newRowGroup(currentRow);
+                            transitionRewardMatrixBuilder.newRowGroup(currentRow);
                             
                             // First, process all unlabeled choices.
                             for (auto const& choice : allUnlabeledChoices) {
@@ -602,9 +598,7 @@ namespace storm {
                     stateQueue.pop();
                 }
                 
-                nondeterministicChoiceIndices.push_back(currentRow);
-                
-                return std::make_pair(nondeterministicChoiceIndices, choiceLabels);
+                return choiceLabels;
             }
             
             /*!
@@ -631,11 +625,9 @@ namespace storm {
                 bool deterministicModel = program.getModelType() == storm::ir::Program::DTMC || program.getModelType() == storm::ir::Program::CTMC;
 
                 // Build the transition and reward matrices.
-                storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder;
-                storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder;
-                std::pair<std::vector<uint_fast64_t>, std::vector<boost::container::flat_set<uint_fast64_t>>> nondeterministicChoiceIndicesAndChoiceLabelsPair = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
-                modelComponents.nondeterministicChoiceIndices = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.first);
-                modelComponents.choiceLabeling = std::move(nondeterministicChoiceIndicesAndChoiceLabelsPair.second);
+                storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, !deterministicModel, 0);
+                storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder(0, 0, 0, !deterministicModel, 0);
+                modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
                 
                 // Finalize the resulting matrices.
                 modelComponents.transitionMatrix = transitionMatrixBuilder.build();

@@ -1,0 +1,428 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="parallel_reduce Template Function">
+<meta name="DC.subject" content="parallel_reduce Template Function">
+<meta name="keywords" content="parallel_reduce Template Function">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../task_scheduler/task_scheduler_init_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_reduce_func">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>parallel_reduce Template Function</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="parallel_reduce_func">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_reduce_func"><!-- --></a>
+
+
+<h1 class="topictitle1">parallel_reduce Template Function</h1>
+
+     
+<div>
+    <div class="section"><h2 class="sectiontitle">Summary</h2> 
+         
+        <p>Computes reduction over a range.</p>
+
+    </div>
+
+    <div class="section"><h2 class="sectiontitle">Header</h2> 
+         
+<pre> #include "tbb/parallel_reduce.h"</pre>
+    </div>
+
+    <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+            
+<pre>
+template&lt;typename Range, typename Value, 
+         typename Func, typename Reduction&gt;
+Value parallel_reduce( const Range&amp; range, const Value&amp; identity,
+                     const Func&amp; func, const Reduction&amp; reduction,
+                     [, partitioner[, task_group_context&amp; group]] );
+
+template&lt;typename Range, typename Body&gt; 
+void parallel_reduce( const Range&amp; range, const Body&amp; body
+                      [, partitioner[, task_group_context&amp; group]] );
+</pre><p>where the optional <samp class="codeph">partitioner</samp> declares any of the partitioners as shown in column 1 of the Partitioners table in the Partitioners section.</p>
+
+    </div>
+
+    <div class="section"><h2 class="sectiontitle">Description</h2>
+            
+            <p>The <samp class="codeph">parallel_reduce</samp> template has two forms. The functional form is
+                designed to be easy to use in conjunction with lambda expressions. The imperative
+                form is designed to minimize copying of data. </p>
+<p>The functional form<samp class="codeph">
+                    parallel_reduce(range,identity,func,reduction)</samp> performs a parallel
+                reduction by applying <em>func</em> to subranges in range and reducing the results
+                using binary operator <em>reduction</em>. It returns the result of the reduction.
+                Parameter <em>func</em> and <em>reduction</em> can be lambda expressions. The table below
+                summarizes the type requirements on the types of <em>identity</em>, <em>func</em>, and
+                <em>reduction</em>.</p>
+
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Requirements for Func and Reduction</span></caption>
+                    
+                    
+                    <thead align="left">
+                        <tr>
+                            <th class="cellrowborder" valign="top" id="d5924e111">
+                                <p>Pseudo-Signature </p>
+
+                            </th>
+
+                            <th class="row-nocellborder" valign="top" id="d5924e117">
+                                <p>Semantics </p>
+
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+                        <tr valign="top">
+                            <td class="cellrowborder" valign="top" headers="d5924e111 ">
+                                <p><samp class="codeph"> Value Identity;</samp>
+                                </p>
+
+                            </td>
+
+                            <td class="row-nocellborder" valign="top" headers="d5924e117 ">
+                                <p> Left identity element for
+                                        <samp class="codeph">Func::operator()</samp>.</p>
+
+                            </td>
+
+                        </tr>
+
+                        <tr valign="top">
+                            <td class="cellrowborder" valign="top" headers="d5924e111 ">
+                                <p><samp class="codeph"> Value Func::operator()(const
+                                        Range&amp; range, const Value&amp; x) </samp>
+                                </p>
+
+                            </td>
+
+                            <td class="row-nocellborder" valign="top" headers="d5924e117 ">
+                                <p> Accumulate result for subrange, starting with
+                                    initial value <samp class="codeph">x</samp>.</p>
+
+                            </td>
+
+                        </tr>
+
+                        <tr valign="top">
+                            <td class="cellrowborder" valign="top" headers="d5924e111 ">
+                                <p><samp class="codeph">Value Reduction::operator()(const
+                                        Value&amp; x, const Value&amp; y); </samp>
+                                </p>
+
+                            </td>
+
+                            <td class="row-nocellborder" valign="top" headers="d5924e117 ">
+                                <p> Combine results<samp class="codeph"> x</samp> and
+                                        <samp class="codeph">y</samp>.</p>
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+</div>
+
+            <p>The imperative form
+                        <samp class="codeph">parallel_reduce(<em>range</em>,<em>body</em>)</samp> performs parallel
+                reduction of <em>body</em> over each value in <em>range</em>. Type
+                    <samp class="codeph">Range</samp> must model the Range concept. The body must model the
+                requirements shown in the table below.</p>
+
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Requirements for parallel_reduce
+                    Body</span></caption>
+                    
+                    
+                    <thead align="left">
+                        <tr>
+                            <th class="cellrowborder" valign="top" id="d5924e228">
+                                <p>Pseudo-Signature </p>
+
+                            </th>
+
+                            <th class="row-nocellborder" valign="top" id="d5924e234">
+                                <p>Semantics </p>
+
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+                        <tr valign="top">
+                            <td class="cellrowborder" valign="top" headers="d5924e228 ">
+                                <p><samp class="codeph"> Body::Body( Body&amp;, split
+                                        );</samp>
+                                </p>
+
+                            </td>
+
+                            <td class="row-nocellborder" valign="top" headers="d5924e234 ">
+                                <p>Splitting constructor. Must be able to run concurrently with
+                                        <samp class="codeph">operator()</samp> and method
+                                    <samp class="codeph">join</samp>.</p>
+
+                            </td>
+
+                        </tr>
+
+                        <tr valign="top">
+                            <td class="cellrowborder" valign="top" headers="d5924e228 ">
+                                <p><samp class="codeph"> Body::~Body()</samp>
+                                </p>
+
+                            </td>
+
+                            <td class="row-nocellborder" valign="top" headers="d5924e234 ">
+                                <p> Destructor.</p>
+
+                            </td>
+
+                        </tr>
+
+                        <tr valign="top">
+                            <td class="cellrowborder" valign="top" headers="d5924e228 ">
+                                <p><samp class="codeph"> void Body::operator()(const
+                                        Range&amp; range); </samp>
+                                </p>
+
+                            </td>
+
+                            <td class="row-nocellborder" valign="top" headers="d5924e234 ">
+                                <p> Accumulate result for subrange.</p>
+
+                            </td>
+
+                        </tr>
+
+                        <tr valign="top">
+                            <td class="cellrowborder" valign="top" headers="d5924e228 ">
+                                <p><samp class="codeph"> void Body::join( Body&amp; rhs );
+                                    </samp>
+                                </p>
+
+                            </td>
+
+                            <td class="row-nocellborder" valign="top" headers="d5924e234 ">
+                                <p> Join results. The result in rhs should be merged into the result
+                                    of <samp class="codeph">this</samp>.</p>
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+</div>
+
+            <p>A <samp class="codeph">parallel_reduce</samp> recursively splits the range into subranges to the
+                point such that <samp class="codeph">is_divisible()</samp> is false for each subrange.
+                    A<samp class="codeph"> parallel_reduce</samp> uses the splitting constructor to make one or
+                more copies of the body for each thread. It may copy a body while the body’s
+                    <samp class="codeph">operator() </samp>or method join runs concurrently. You are
+                responsible for ensuring the safety of such concurrency. In typical usage, the
+                safety requires no extra effort.</p>
+<p>When worker threads are available,
+                    <samp class="codeph">parallel_reduce</samp> invokes the splitting constructor for the body.
+                For each such split of the body, it invokes method join in order to merge the
+                results from the bodies. Define join to update this to represent the accumulated
+                result for this and rhs. The reduction operation should be associative, but does not
+                have to be commutative. For a noncommutative operation op,
+                        "<samp class="codeph"><em>left</em>.join(<em>right</em>)</samp>" should update <em>left</em>
+                to be the result of <em>left</em>
+                <em>op</em>
+                <em>right</em>.</p>
+<p>A body is split only if the range is split, but the converse is
+                not necessarily so. The figure below diagrams a sample execution of
+                    <samp class="codeph">parallel_reduce</samp>. The root represents the original body b0 being
+                applied to the half-open interval [0,20). The range is recursively split at each
+                level into two subranges. The grain size for the example is 5, which yields four
+                leaf ranges. The slash marks (/) denote where copies (b<sub>1</sub> and
+                    b<sub>2</sub>) of the body were created by the body splitting constructor.
+                Bodies b<sub>0</sub> and b<sub>1</sub> each evaluate one leaf. Body b<sub>2</sub>
+                evaluates leaf [10,15) and [15,20), in that order. On the way back up the tree,
+                    <samp class="codeph">parallel_reduce</samp> invokes b<sub>0</sub>.join(b<sub>1</sub>) and
+                    b<sub>0</sub>.join(b<sub>2</sub>) to merge the results of the leaves. </p>
+<p><strong>Execution of parallel_reduce over
+                    blocked_range&lt;int&gt;(0,20,5)</strong></p>
+
+            <a name="image_5E29BE34010E45D982CC687AE7BA97D8"><!-- --></a><img id="image_5E29BE34010E45D982CC687AE7BA97D8" src="../Resources/parll_red.jpg"><p> The figure above shows only one
+                possible execution. Other valid executions include splitting b<sub> 2</sub> into
+                    b<sub> 2</sub> and b<sub> 3</sub>, or doing no splitting at all. With no
+                splitting, b<sub> 0</sub> evaluates each leaf in left to right order, with no calls
+                to <samp class="codeph">join</samp>. A given body always evaluates one or more subranges in
+                left to right order. For example, in the figure above, body b<sub> 2</sub> is guaranteed to
+                evaluate [10,15) before [15,20). You may rely on the left to right property for a
+                given instance of a body. However, you t must neither rely on a particular choice of
+                body splitting nor on the subranges processed by a given body object being
+                consecutive. <samp class="codeph">parallel_reduce</samp> makes the choice of body splitting
+                nondeterministically.</p>
+<p><strong>Example where Body b<sub>0</sub> processes
+                non-consecutive subranges.</strong></p>
+
+            <a name="image_F63A9E8F7D5743878142989C0D8A9143"><!-- --></a><img id="image_F63A9E8F7D5743878142989C0D8A9143" src="../Resources/non_consq_rng.jpg"><p>The subranges evaluated by a given body are not
+                consecutive if there is an intervening <samp class="codeph">join</samp>. The joined information
+                represents processing of a gap between evaluated subranges. The figure above shows such an
+                example. The body b<sub>0</sub> performs the following sequence of operations:
+                </p>
+<ol>
+                <li>b<sub>0</sub>( [0,5) )</li>
+
+                <li>b<sub>0</sub>.<samp class="codeph">join</samp>()( b<sub>1</sub> ) where b<sub>1</sub> has
+                    already processed [5,10)</li>
+
+                <li>b<sub>0</sub>( [10,15) )</li>
+
+                <li>b<sub>0</sub>( [15,20) )</li>
+
+            </ol>
+<p>In other words, body b<sub>0</sub> gathers information about all the leaf
+                subranges in left to right order, either by directly processing each leaf, or by a
+                join operation on a body that gathered information about one or more leaves in a
+                similar way. When no worker threads are available, <samp class="codeph">parallel_reduce</samp>
+                executes sequentially from left to right in the same sense as for
+                    <samp class="codeph">parallel_for</samp> . Sequential execution never invokes the splitting
+                constructor or method join.</p>
+<p>All overloads can be passed a<samp class="codeph">
+                    task_group_context</samp> object so that the algorithm’s tasks are executed in
+                this group. By default the algorithm is executed in a bound group of its
+                    own.</p>
+<p><strong>Complexity</strong></p>
+<p>If the range and body take O(1) space, and
+                the range splits into nearly equal pieces, then the space complexity is O(P log(N)),
+                where N is the size of the range and P is the number of threads.</p>
+
+        </div>
+
+    <div class="section"><h2 class="sectiontitle">Example (Imperative Form)</h2> 
+         
+<p>The following code sums the values in an array.</p>
+
+        <p>
+            <pre>
+#include "tbb/parallel_reduce.h"
+#include "tbb/blocked_range.h"
+
+using namespace tbb;
+
+struct Sum {
+    float value;
+    Sum() : value(0) {}
+    Sum( Sum&amp; s, split ) {value = 0;}
+    void operator()( const blocked_range&lt;float*&gt;&amp; r ) {
+        float temp = value;
+        for( float* a=r.begin(); a!=r.end(); ++a ) {
+            temp += *a;
+        }
+        value = temp;
+    }
+    void join( Sum&amp; rhs ) {value += rhs.value;}
+};
+
+float ParallelSum( float array[], size_t n ) {
+    Sum total;
+    parallel_reduce( blocked_range&lt;float*&gt;( array, array+n ), 
+                     total );
+    return total.value;
+}
+</pre></p>
+<p>The example generalizes to reduction for any associative
+operation <em>op</em> as follows:</p>
+
+<ul type="disc"><li> Replace
+occurrences of 0 with the identity element for <em>op</em>
+</li>
+<li> Replace
+occurrences of  += with <em>op</em>= or its logical
+equivalent.</li>
+<li> Change the name <samp class="codeph">Sum</samp> to something more appropriate for <em>op</em>.</li>
+</ul>
+<p>The operation may be noncommutative. For example, <em>op</em> could be matrix multiplication.</p>
+
+    </div>
+
+    <div class="section"><h2 class="sectiontitle">Example with Lambda Expressions</h2> 
+ 
+        <p>The following is analogous to the previous example, but written using
+                lambda expressions and the functional form of <samp class="codeph">parallel_reduce</samp>.</p>
+<p><pre>
+#include "tbb/parallel_reduce.h"
+#include "tbb/blocked_range.h"
+
+using namespace tbb;
+
+float ParallelSum( float array[], size_t n ) {
+    return parallel_reduce( 
+        blocked_range&lt;float*&gt;( array, array+n ), 
+        0.f, 
+        [](const blocked_range&lt;float*&gt;&amp; r, float init)-&gt;float {
+            for( float* a=r.begin(); a!=r.end(); ++a ) 
+                init += *a;
+            return init;
+        },
+        []( float x, float y )-&gt;float {
+            return x+y;
+        }
+    );                    
+}
+</pre></p>
+<p>STL generalized numeric operations and functions objects can be used to write the example more compactly as follows:</p>
+
+<p><pre>
+#include &lt;numeric&gt;
+#include &lt;functional&gt;
+#include "tbb/parallel_reduce.h"
+#include "tbb/blocked_range.h"
+
+using namespace tbb;
+
+float ParallelSum( float array[], size_t n ) {
+    return parallel_reduce(
+        blocked_range&lt;float*&gt;( array, array+n ),
+        0.f,
+        [](const blocked_range&lt;float*&gt;&amp; r, float value)-&gt;float {
+            return std::accumulate(r.begin(),r.end(),value);
+        },
+        std::plus&lt;float&gt;()
+    );
+}
+</pre></p>
+
+</div>
+</div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../task_scheduler/task_scheduler_init_cls.htm">task_scheduler_init 
+		  class</a></div></div>
+</div>
+ 
+</body>
+</html>

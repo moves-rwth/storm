@@ -40,7 +40,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void NativeNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             
             // Set up the environment for the power method. If scratch memory was not provided, we need to create it.
             bool multiplyResultMemoryProvided = true;
@@ -71,9 +71,9 @@ namespace storm {
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
                 if (minimize) {
-                    storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, nondeterministicChoiceIndices);
+                    storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, A.getRowGroupIndices());
                 } else {
-                    storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, nondeterministicChoiceIndices);
+                    storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, A.getRowGroupIndices());
                 }
                 
                 // Determine whether the method converged.
@@ -107,7 +107,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void NativeNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             
             // If scratch memory was not provided, we need to create it.
             bool multiplyResultMemoryProvided = true;
@@ -128,9 +128,9 @@ namespace storm {
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
                 if (minimize) {
-                    storm::utility::vector::reduceVectorMin(*multiplyResult, x, nondeterministicChoiceIndices);
+                    storm::utility::vector::reduceVectorMin(*multiplyResult, x, A.getRowGroupIndices());
                 } else {
-                    storm::utility::vector::reduceVectorMax(*multiplyResult, x, nondeterministicChoiceIndices);
+                    storm::utility::vector::reduceVectorMax(*multiplyResult, x, A.getRowGroupIndices());
                 }
             }
             

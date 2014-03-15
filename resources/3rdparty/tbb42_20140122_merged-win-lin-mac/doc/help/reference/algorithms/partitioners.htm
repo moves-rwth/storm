@@ -1,0 +1,186 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Partitioners">
+<meta name="DC.subject" content="Partitioners">
+<meta name="keywords" content="Partitioners">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/partitioners/auto_partitioner_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/partitioners/affinity_partitioner.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/partitioners/simple_partitioner_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="parallel_for_func.htm#parallel_for_func">
+<meta name="DC.Relation" scheme="URI" content="parallel_reduce_func.htm#parallel_reduce_func">
+<meta name="DC.Relation" scheme="URI" content="parallel_scan_func.htm#parallel_scan_func">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="partitioners">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Partitioners</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="partitioners">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="partitioners"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Partitioners</h1>
+ 
+	 
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>A partitioner specifies how a loop template should partition its work
+		  among threads. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Description</h2> 
+		 
+		<p>The default behavior of the loop templates<samp class="codeph"> parallel_for</samp>,
+					<samp class="codeph">parallel_reduce</samp>, and <samp class="codeph">parallel_scan</samp> tries to
+				recursively split a range into enough parts to keep processors busy, not necessarily
+				splitting as finely as possible. An optional partitioner parameter enables other
+				behaviors to be specified, as shown in the table below. The first column of the table shows
+				how the formal parameter is declared in the loop templates. An<samp class="codeph">
+					affinity_partitioner</samp> is passed by non-const reference because it is
+				updated to remember where loop iterations run. </p>
+ 
+		<p> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Partitioners</span></caption> 
+			 <thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" id="d9145e71"> 
+					 <p> Partitioner 
+					 </p>
+ 
+				  </th>
+ 
+				  <th class="row-nocellborder" valign="top" id="d9145e77"> 
+					 <p> Loop Behavior 
+					 </p>
+ 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr valign="top"> 
+				  <td class="cellrowborder" valign="top" headers="d9145e71 "> 
+					 <p><samp class="codeph">const auto_partitioner&amp;
+						  (default)</samp> 
+					 </p>
+ 
+					  
+						<div class="Note"><h3 class="NoteTipHead">
+					Note</h3><p>In Intel&reg; Threading Building Blocks (Intel&reg; TBB) 2.1, <samp class="codeph">simple_partitioner</samp> was the default. Intel&reg;
+											TBB 2.2 changed the default to
+												<samp class="codeph">auto_partitioner</samp> to simplify common
+											usage of the loop templates. To get the old default,
+											compile with the preprocessor symbol
+												<samp class="codeph">TBB_DEPRECATED=1</samp>. </p>
+</div> 
+					  
+				  </td>
+ 
+				  <td class="row-nocellborder" valign="top" headers="d9145e77 "> 
+					 <p>Performs sufficient splitting to balance load, not necessarily splitting
+										as finely as <samp class="codeph">Range::is_divisible</samp> permits.
+										When used with classes such as
+											<samp class="codeph">blocked_range</samp>, the selection of an
+										appropriate grainsize is less important, and often
+										acceptable performance can be achieved with the default
+										grain size of 1. </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr valign="top"> 
+				  <td class="cellrowborder" valign="top" headers="d9145e71 "> 
+					 <p><samp class="codeph">affinity_partitioner&amp;</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				  <td class="row-nocellborder" valign="top" headers="d9145e77 "> 
+					 <p> Similar to <samp class="codeph">auto_partitioner</samp>, but improves cache
+										affinity by its choice of mapping subranges to worker
+										threads. It can improve performance significantly when a
+										loop is re-executed over the same data set, and the data set
+										fits in cache. </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr valign="top"> 
+				  <td class="cellrowborder" valign="top" headers="d9145e71 "> 
+					 <p><samp class="codeph">const simple_partitioner&amp; 
+						</samp> 
+					 </p>
+ 
+				  </td>
+ 
+				  <td class="row-nocellborder" valign="top" headers="d9145e77 "> 
+					 <p>Recursively splits a range until it is no longer divisible. The
+											<samp class="codeph">Range::is_divisible</samp> function is wholly
+										responsible for deciding when recursive splitting halts.
+										When used with classes such as
+											<samp class="codeph">blocked_range</samp>, the selection of an
+										appropriate grainsize is critical to enabling concurrency
+										while limiting overheads (see the discussion in the blocked_range Template Class section). </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/algorithms/partitioners/auto_partitioner_cls.htm">auto_partitioner Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/algorithms/partitioners/affinity_partitioner.htm">affinity_partitioner</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/algorithms/partitioners/simple_partitioner_cls.htm">simple_partitioner Class</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="parallel_for_func.htm#parallel_for_func">parallel_for Template Function
+		  </a></div>
+<div><a href="parallel_reduce_func.htm#parallel_reduce_func">parallel_reduce Template Function
+		  </a></div>
+<div><a href="parallel_scan_func.htm#parallel_scan_func">parallel_scan Template Function
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

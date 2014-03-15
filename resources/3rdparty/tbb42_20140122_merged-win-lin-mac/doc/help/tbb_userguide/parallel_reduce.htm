@@ -1,0 +1,230 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="parallel_reduce">
+<meta name="DC.subject" content="parallel_reduce">
+<meta name="keywords" content="parallel_reduce">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Parallelizing_Simple_Loops.htm">
+<meta name="DC.Relation" scheme="URI" content="parallel_for.htm#tutorial_parallel_for">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_parallel_reduce">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>parallel_reduce</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_parallel_reduce">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_parallel_reduce"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">parallel_reduce</h1>
+ 
+   
+  <div> 
+	 <p>A loop can do a reduction, as in this summation: 
+	 </p>
+ 
+	 <pre>float SerialSumFoo( float a[], size_t n ) {
+    float sum = 0;
+    for( size_t i=0; i!=n; ++i )
+        sum += Foo(a[i]);
+    return sum;
+}</pre> 
+	 <p>If the iterations are independent, you can parallelize this loop using
+		the template class 
+		<samp class="codeph">parallel_reduce</samp> as follows: 
+	 </p>
+ 
+	 <pre>float ParallelSumFoo( const float a[], size_t n ) {
+    SumFoo sf(a);
+    parallel_reduce( blocked_range&lt;size_t&gt;(0,n), sf );
+    return <span style="color:blue"><strong>sf.my_</strong></span>sum;
+}</pre> 
+	 <p>The class 
+		<samp class="codeph">SumFoo</samp> specifies details of the reduction, such as how
+		to accumulate subsums and combine them. Here is the definition of class 
+		<samp class="codeph">SumFoo</samp>: 
+	 </p>
+ 
+	 <pre>class SumFoo {
+    float* my_a;
+public:
+    float my_sum; 
+    void operator()( const blocked_range&lt;size_t&gt;&amp; r ) {
+        float *a = my_a;
+        float sum = my_sum;
+        size_t end = r.end();
+        for( size_t i=r.begin(); i!=end; ++i ) 
+            sum += Foo(a[i]); 
+        <span style="color:blue"><strong>my_sum = sum;</strong></span>    
+    <span style="color:blue"><strong>}</strong></span>
+&nbsp;
+    SumFoo( SumFoo&amp; x, split ) : my_a(x.my_a), my_sum(0) {}
+&nbsp;
+    void join( const SumFoo&amp; y ) {my_sum+=y.my_sum;}
+             
+    SumFoo(float a[] ) :
+        my_a(a), my_sum(0)
+    {}
+};</pre> 
+	 <p>Note the differences with class 
+		<samp class="codeph">ApplyFoo</samp> from 
+		<span class="keyword">parallel_for</span>. First, 
+		<samp class="codeph">operator()</samp> is 
+		<em>not</em> 
+		<samp class="codeph">const</samp>. This is because it must update 
+	 <span class="option">SumFoo::my_sum</span>. Second, 
+	 <samp class="codeph">SumFoo</samp> has a 
+	 <em>splitting constructor</em> and a method 
+	 <samp class="codeph">join</samp> that must be present for 
+	 <samp class="codeph">parallel_reduce</samp> to work. The splitting constructor takes
+	 as arguments a reference to the original object, and a dummy argument of type 
+	 <samp class="codeph">split</samp>, which is defined by the library. The dummy argument
+	 distinguishes the splitting constructor from a copy constructor. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Tip</h3> 
+		<p>In the example, the definition of 
+		  <samp class="codeph">operator()</samp> uses local temporary variables
+		  (<samp class="codeph">a</samp>, 
+		  <samp class="codeph">sum</samp>, 
+		  <samp class="codeph">end</samp>) for scalar values accessed inside the loop. This
+		  technique can improve performance by making it obvious to the compiler that the
+		  values can be held in registers instead of memory. If the values are too large
+		  to fit in registers, or have their address taken in a way the compiler cannot
+		  track, the technique might not help. With a typical optimizing compiler, using
+		  local temporaries for only written variables (such as 
+		  <samp class="codeph">sum</samp> in the example) can suffice, because then the
+		  compiler can deduce that the loop does not write to any of the other locations,
+		  and hoist the other reads to outside the loop. 
+		</p>
+ 
+	 </div> 
+	 <p>When a worker thread is available, as decided by the task scheduler, 
+		<samp class="codeph">parallel_reduce</samp> invokes the splitting constructor to
+		create a subtask for the worker. When the subtask completes, 
+		<samp class="codeph">parallel_reduce</samp> uses method 
+		<samp class="codeph">join</samp> to accumulate the result of the subtask. The graph
+		at the top of the following figure shows the split-join sequence that happens
+		when a worker is available: 
+	 </p>
+ 
+	 <div class="fignone" id="fig5"><a name="fig5"><!-- --></a><span class="figcap">Graph of the Split-join Sequence</span> 
+		<br><img src="Images/image009.jpg" width="512" height="438"><br> 
+	 </div>
+ 
+	 <p>An arc in the above figure indicates order in time. The splitting
+		constructor might run concurrently while object x is being used for the first
+		half of the reduction. Therefore, all actions of the splitting constructor that
+		creates y must be made thread safe with respect to x. So if the splitting
+		constructor needs to increment a reference count shared with other objects, it
+		should use an atomic increment. 
+	 </p>
+ 
+	 <p>If a worker is not available, the second half of the iteration is
+		reduced using the same body object that reduced the first half. That is the
+		reduction of the second half starts where reduction of the first half finished.
+		
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		<p>Because split/join are not used if workers are unavailable, 
+		  <samp class="codeph">parallel_reduce</samp> does not necessarily do recursive
+		  splitting. 
+		</p>
+ 
+	 </div> 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		<p>Because the same body might be used to accumulate multiple subranges,
+		  it is critical that 
+		  <samp class="codeph">operator()</samp> not discard earlier accumulations. The code
+		  below shows an incorrect definition of 
+		  <samp class="codeph">SumFoo::operator()</samp>. 
+		</p>
+ 
+	 </div> 
+	 <pre>class SumFoo {
+    ...
+public:
+    float my_sum; 
+    void operator()( const blocked_range&lt;size_t&gt;&amp; r ) {
+        ...
+        float <span style="color:blue"><strong>sum = 0;</strong></span>  // WRONG – should be 'sum = <span style="color:blue"><strong>my_sum</strong></span>".
+        ...
+        for( ... ) 
+            sum += Foo(a[i]); 
+        my_sum = sum;   
+    }
+    ...
+};</pre> 
+	 <p>With the mistake, the body returns a partial sum for the last subrange
+		instead of all subranges to which 
+		<samp class="codeph">parallel_reduce</samp> applies it. 
+	 </p>
+ 
+	 <p>The rules for partitioners and grain sizes for 
+		<samp class="codeph">parallel_reduce</samp> are the same as for 
+		<samp class="codeph">parallel_for</samp>. 
+	 </p>
+ 
+	 <p><samp class="codeph">parallel_reduce</samp> generalizes to any associative
+		operation. In general, the splitting constructor does two things: 
+	 </p>
+ 
+	 <ul type="disc"> 
+		<li> 
+		  <p>Copy read-only information necessary to run the loop body. 
+		  </p>
+ 
+		</li>
+ 
+		<li> 
+		  <p>Initialize the reduction variable(s) to the identity element of the
+			 operation(s). 
+		  </p>
+ 
+		</li>
+ 
+	 </ul>
+ 
+	 <p>The join method should do the corresponding merge(s). You can do more
+		than one reduction at the same time: you can gather the min and max with a
+		single 
+		<samp class="codeph">parallel_reduce</samp>. 
+	 </p>
+ 
+	 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+		<p>The reduction operation can be non-commutative. The example still
+		  works if floating-point addition is replaced by string concatenation. 
+		</p>
+ 
+	 </div> 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Parallelizing_Simple_Loops.htm">Parallelizing Simple Loops</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="parallel_for.htm#tutorial_parallel_for">parallel_for 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

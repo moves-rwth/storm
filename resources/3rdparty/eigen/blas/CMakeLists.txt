@@ -7,6 +7,9 @@ workaround_9220(Fortran EIGEN_Fortran_COMPILER_WORKS)
 
 if(EIGEN_Fortran_COMPILER_WORKS)
   enable_language(Fortran OPTIONAL)
+  if(NOT CMAKE_Fortran_COMPILER)
+    set(EIGEN_Fortran_COMPILER_WORKS OFF)
+  endif()
 endif()
 
 add_custom_target(blas)
@@ -18,10 +21,10 @@ if(EIGEN_Fortran_COMPILER_WORKS)
 set(EigenBlas_SRCS ${EigenBlas_SRCS}
     complexdots.f
     srotm.f srotmg.f drotm.f drotmg.f
-    lsame.f   chpr2.f  dspmv.f    dtpsv.f ssbmv.f  sspr.f   stpmv.f
-    zhpr2.f  chbmv.f  chpr.f   ctpmv.f     dspr2.f  sspmv.f    stpsv.f
-    zhbmv.f  zhpr.f   ztpmv.f chpmv.f   ctpsv.f    dsbmv.f  dspr.f   dtpmv.f   sspr2.f
-    zhpmv.f    ztpsv.f
+    lsame.f  dspmv.f ssbmv.f
+    chbmv.f  sspmv.f
+    zhbmv.f  chpmv.f dsbmv.f
+    zhpmv.f
     dtbmv.f stbmv.f ctbmv.f ztbmv.f
 )
 else()

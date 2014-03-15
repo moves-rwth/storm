@@ -1,0 +1,55 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Enabling a Community Preview Feature">
+<meta name="DC.subject" content="Enabling a Community Preview Feature">
+<meta name="keywords" content="Enabling a Community Preview Feature">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/community_preview_features.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="enabling_a_community_preview_feature">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Enabling a Community Preview Feature</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="enabling_a_community_preview_feature">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="enabling_a_community_preview_feature"><!-- --></a>
+
+
+<h1 class="topictitle1">Enabling a Community Preview Feature</h1>
+
+
+<div>
+<p>A Community Preview feature may be defined completely in header files or it may require some additional support defined in a library.</p>
+
+<p>For a CP feature that is contained completely in header files, a feature-specific macro must be defined before inclusion of the header files.</p>
+
+<p>Example</p>
+<pre>#define TBB_PREVIEW_FOO 1
+ #include "tbb/foo.h"</pre>
+<p>If a CP feature requires support from a library, then an additional library must be linked with the application.</p>
+
+<p>The use of separate headers, feature-specific macros and separate libraries mitigates the impact of Community Preview features on other product features.</p>
+<div class="Note"><h3 class="NoteTipHead">
+					Note</h3>
+<p>Unless a CP feature is explicitly enabled using the above mechanisms, it will have no impact on the application.</p>
+</div></div>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/appendices/community_preview_features.htm">Community Preview Features</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

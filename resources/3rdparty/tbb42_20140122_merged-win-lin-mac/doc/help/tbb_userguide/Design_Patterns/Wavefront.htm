@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Wavefront">
+<meta name="DC.subject" content="Wavefront">
+<meta name="keywords" content="Wavefront">
+<meta name="DC.Relation" scheme="URI" content="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">
+<meta name="DC.Relation" scheme="URI" content="General_References.htm#General_References">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="Wavefront">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Wavefront</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="Wavefront">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="Wavefront"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Wavefront</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Problem</h2> 
+		 
+		<p>Perform computations on items in a data set, where the computation on
+		  an item uses results from computations on predecessor items. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Context</h2> 
+		 
+		<p>The dependences between computations form an acyclic graph. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Forces</h2> 
+		 
+		<ul type="disc"> 
+		  <li> 
+			 <p>Dependence constraints between items form an acyclic graph. 
+			 </p>
+ 
+		  </li>
+ 
+		  <li> 
+			 <p>The number of immediate predecessors in the graph is known in
+				advance, or can be determined some time before the last predecessor completes. 
+			 </p>
+ 
+		  </li>
+ 
+		</ul>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Solution</h2> 
+		 
+		<p>The solution is a parallel variant of topological sorting, using 
+		  <samp class="codeph">tbb::parallel_do</samp> to process items. Associate an atomic
+		  counter with each item. Initialize each counter to the number of predecessors.
+		  Invoke tbb::parallel_do to process the items that have no predessors (have
+		  counts of zero). After an item is processed, decrement the counters of its
+		  successors. If a successor's counter reaches zero, add that successor to the 
+		  <samp class="codeph">tbb::parallel_do</samp> via a "feeder". 
+		</p>
+ 
+		<p>If the number of predecessors for an item cannot be determined in
+		  advance, treat the information "know number of predecessors" as an
+		  additional predecessor. When the number of predecessors becomes known, treat
+		  this conceptual predecessor as completed. 
+		</p>
+ 
+		<p>If the overhead of counting individual items is excessive, aggregate
+		  items into blocks, and do the wavefront over the blocks. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>Below is a serial kernel for the longest common subsequence algorithm.
+		  The parameters are strings 
+		  <samp class="codeph">x</samp> and 
+		  <samp class="codeph">y</samp> with respective lengths 
+		  <samp class="codeph">xlen</samp> and 
+		  <samp class="codeph">ylen</samp>. 
+		</p>
+ 
+		<pre>int F[MAX_LEN+1][MAX_LEN+1];
+
+void SerialLCS( const char* x, size_t xlen, const char* y, size_t ylen )
+{
+   for( size_t i=1; i&lt;=xlen; ++i )
+       for( size_t j=1; j&lt;=ylen; ++j )
+           F[i][j] = x[i-1]==y[j-1] ? F[i-1][j-1]+1:
+                                      max(F[i][j-1],F[i-1][j]);
+}</pre> 
+		<p>The kernel sets 
+		  <samp class="codeph">F[i][j]</samp> to the length of the longest common
+		  subsequence shared by 
+		  <samp class="codeph">x[0..i-1]</samp> and 
+		  <samp class="codeph">y[0..j-1]</samp>. It assumes that F[0][0..ylen] and 
+		  <samp class="codeph">F[0..xlen][0]</samp> have already been initialized to zero. 
+		</p>
+ 
+		<p>The following figure shows the data dependences for calculating 
+		  <samp class="codeph">F[i][j]</samp>. 
+		</p>
+ 
+		<div class="fignone" id="fig3"><a name="fig3"><!-- --></a><span class="figcap">Data dependences for longest common substring
+			 calculation.</span> 
+		  <br><img width="122" height="122" src="Images/image005.jpg"><br> 
+		</div>
+ 
+		<p>The following figure shows the gray diagonal dependence is the
+		  transitive closure of other dependencies. Thus for parallelization purposes it
+		  is a redundant dependence that can be ignored. 
+		</p>
+ 
+		<div class="fignone" id="fig4"><a name="fig4"><!-- --></a><span class="figcap">Diagonal dependence is redundant.</span> 
+		  <br><img width="122" height="122" src="Images/image006.jpg"><br> 
+		</div>
+ 
+		<p>It is generally good to remove redundant dependences from
+		  consideration, because the atomic counting incurs a cost for each dependence
+		  considered. 
+		</p>
+ 
+		<p>Another consideration is grain size. Scheduling each 
+		  <samp class="codeph">F[i][j]</samp> element calculation separately is
+		  prohibitively expensive. A good solution is to aggregate the elements into
+		  contiguous blocks, and process the contents of a block serially. The blocks
+		  have the same dependence pattern, but at a block scale. Hence scheduling
+		  overheads can be amortized over blocks. 
+		</p>
+ 
+		<p>The parallel code follows. Each block consists of 
+		  <samp class="codeph">N×N</samp> elements. Each block has an associated atomic
+		  counter. Array 
+		  <samp class="codeph">Count</samp> organizes these counters for easy lookup. The
+		  code initializes the counters and then rolls a wavefront using 
+		  <samp class="codeph">parallel_do</samp>, starting with the block at the origin
+		  since it has no predecessors. 
+		</p>
+ 
+		<pre>const int N = 64;
+tbb::atomic&lt;char&gt; Count[MAX_LEN/N+1][MAX_LEN/N+1];
+&nbsp;
+void ParallelLCS( const char* x, size_t xlen, const char* y, size_t ylen ) {
+   // Initialize predecessor counts for blocks.
+   size_t m = (xlen+N-1)/N;
+   size_t n = (ylen+N-1)/N;
+   for( int i=0; i&lt;m; ++i )
+       for( int j=0; j&lt;n; ++j )
+           Count[i][j] = (i&gt;0)+(j&gt;0);
+   // Roll the wavefront from the origin.
+   typedef pair&lt;size_t,size_t&gt; block;
+   block origin(0,0);
+   tbb::parallel_do( &amp;origin, &amp;origin+1,
+       [=]( const block&amp; b, tbb::parallel_do_feeder&lt;block&gt;&amp;feeder ) {
+           // Extract bounds on block
+           size_t bi = b.first;
+           size_t bj = b.second;
+           size_t xl = N*bi+1;
+           size_t xu = min(xl+N,xlen+1);
+           size_t yl = N*bj+1;
+           size_t yu = min(yl+N,ylen+1);
+           // Process the block
+           for( size_t i=xl; i&lt;xu; ++i )
+               for( size_t j=yl; j&lt;yu; ++j )
+                   F[i][j] = x[i-1]==y[j-1] ? F[i-1][j-1]+1:
+                                              max(F[i][j-1],F[i-1][j]);
+           // Account for successors
+           if( bj+1&lt;n &amp;&amp; ‐‐Count[bi][bj+1]==0 )
+               feeder.add( block(bi,bj+1) );
+           if( bi+1&lt;m &amp;&amp; ‐‐Count[bi+1][bj]==0 )
+               feeder.add( block(bi+1,bj) );       }
+   );
+}</pre> 
+		<p>A regular structure simplifies implementation of the wavefront
+		  pattern, but is not required. The parallel preorder traversal in 
+		  <samp class="codeph">examples/parallel_do/parallel_preorder</samp> applies the
+		  wavefront pattern to traverse each node of a graph in parallel, subject to the
+		  constraint that a node is traversed after its predecessors are traversed. In
+		  that example, each node in the graph stores its predecessor count. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">References</h2> 
+		 
+		<p>Eun-Gyu Kim and Mark Snir, "Wavefront Pattern",
+		  http://www.cs.uiuc.edu/homes/snir/PPP/patterns/wavefront.pdf 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../tbb_userguide/Design_Patterns/Design_Patterns.htm">Design Patterns</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="General_References.htm#General_References">General References 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Scalable Memory Pools">
+<meta name="DC.subject" content="Scalable Memory Pools">
+<meta name="keywords" content="Scalable Memory Pools">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/community_preview_features.htm">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/community_preview_features/scalable_memory_pools/memory_pool_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/community_preview_features/scalable_memory_pools/fixed_pool_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/community_preview_features/scalable_memory_pools/memory_pool_allocator_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="scalable_memory_pools">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Scalable Memory Pools</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="scalable_memory_pools">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="scalable_memory_pools"><!-- --></a>
+
+
+  <h1 class="topictitle1">Scalable Memory Pools</h1>
+
+  
+  <div>
+	 <p>Memory pools allocate and free memory from a
+		specified region or underlying allocator providing thread-safe, scalable
+		operations. The following table summarizes the memory pool concept. Here, P
+		represents an instance of the memory pool class.
+	 </p>
+
+	 
+<div class="tablenoborder"><a name="tbl52"><!-- --></a><table cellpadding="4" summary="" id="tbl52" frame="border" border="1" cellspacing="0" rules="rows"><caption><span class="tablecap">Memory Pool Concept</span></caption>
+	 <thead align="left">
+		<tr>
+		  <th class="cellrowborder" align="center" valign="top" width="50%" id="d21966e40">
+			 <p>Pseudo-Signature
+			 </p>
+
+		  </th>
+
+		  <th class="cellrowborder" align="center" valign="top" width="50%" id="d21966e46">
+			 <p>Semantics
+			 </p>
+
+		  </th>
+
+		</tr>
+</thead>
+
+	 <tbody>
+		<tr>
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e40 ">
+			 <p><samp class="codeph">~P()
+				  throw();</samp>
+			 </p>
+
+		  </td>
+
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e46 ">
+			 <p>Destructor. Frees all the memory of allocated
+				objects.
+			 </p>
+
+		  </td>
+
+		</tr>
+
+		<tr>
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e40 ">
+			 <p><samp class="codeph">void
+				  P::recycle();</samp>
+			 </p>
+
+		  </td>
+
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e46 ">
+			 <p>Frees all the memory of allocated objects.
+			 </p>
+
+		  </td>
+
+		</tr>
+
+		<tr>
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e40 ">
+			 <p><samp class="codeph">void*
+				  P::malloc(size_t n);</samp>
+			 </p>
+
+		  </td>
+
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e46 ">
+			 <p>Returns pointer to 
+				<var>n</var> bytes
+				allocated from memory pool.
+			 </p>
+
+		  </td>
+
+		</tr>
+
+		<tr>
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e40 ">
+			 <p><samp class="codeph">void
+				  P::free(void* ptr);</samp>
+			 </p>
+
+		  </td>
+
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e46 ">
+			 <p>Frees memory object specified via 
+				<var>ptr</var>
+				pointer.
+			 </p>
+
+		  </td>
+
+		</tr>
+
+		<tr>
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e40 ">
+			 <p><samp class="codeph">void*
+				  P::realloc(void* ptr, size_t n);</samp>
+			 </p>
+
+		  </td>
+
+		  <td class="cellrowborder" align="left" valign="top" width="50%" headers="d21966e46 ">
+			 <p>Reallocates memory object pointed by 
+				<var>ptr</var> to 
+				<var>n</var> bytes.
+			 </p>
+
+		  </td>
+
+		</tr>
+
+	 </tbody>
+
+  </table>
+</div>
+
+  <div class="section"><h2 class="sectiontitle">Model Types</h2>
+	 
+	 <p>Template class memory_pool and class fixed_pool model
+		the Memory Pool concept.
+	 </p>
+
+  </div>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/appendices/community_preview_features.htm">Community Preview Features</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../../reference/appendices/community_preview_features/scalable_memory_pools/memory_pool_cls.htm">memory_pool Template Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../../reference/appendices/community_preview_features/scalable_memory_pools/fixed_pool_cls.htm">fixed_pool Class</a><br>
+</li>
+<li class="ulchildlink"><a href="../../../reference/appendices/community_preview_features/scalable_memory_pools/memory_pool_allocator_cls.htm">memory_pool_allocator Template Class</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

@@ -38,8 +38,6 @@ public:
      *
 	 * @param probabilityMatrix The transition probability relation of the MDP given by a matrix.
 	 * @param stateLabeling The labeling that assigns a set of atomic propositions to each state.
-     * @param nondeterministicChoiceIndices The row indices in the sparse matrix at which the nondeterministic
-     * choices of a given state begin.
      * @param optionalStateRewardVector A vector assigning rewards to states.
      * @param optionalTransitionRewardVector A sparse matrix that represents an assignment of rewards to the transitions.
      * @param optionalChoiceLabeling A vector that represents the labels associated with each nondeterministic choice of
@@ -47,11 +45,10 @@ public:
 	 */
 	Mdp(storm::storage::SparseMatrix<T> const& transitionMatrix, 
 			storm::models::AtomicPropositionsLabeling const& stateLabeling,
-			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
-			boost::optional<std::vector<T>> const& optionalStateRewardVector, 
+			boost::optional<std::vector<T>> const& optionalStateRewardVector,
 			boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
-			: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
+			: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
         if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
 			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
@@ -75,12 +72,11 @@ public:
 	 */
 	Mdp(storm::storage::SparseMatrix<T>&& transitionMatrix, 
 			storm::models::AtomicPropositionsLabeling&& stateLabeling,
-			std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
-			boost::optional<std::vector<T>>&& optionalStateRewardVector, 
+			boost::optional<std::vector<T>>&& optionalStateRewardVector,
 			boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
 			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
-			: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
+			: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
                                                std::move(optionalChoiceLabeling)) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
@@ -144,20 +140,19 @@ public:
         std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = this->getChoiceLabeling();
         
         storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder;
-        std::vector<uint_fast64_t> nondeterministicChoiceIndices;
         std::vector<boost::container::flat_set<uint_fast64_t>> newChoiceLabeling;
         
         // Check for each choice of each state, whether the choice labels are fully contained in the given label set.
         uint_fast64_t currentRow = 0;
         for(uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
             bool stateHasValidChoice = false;
-            for (uint_fast64_t choice = this->getNondeterministicChoiceIndices()[state]; choice < this->getNondeterministicChoiceIndices()[state + 1]; ++choice) {
+            for (uint_fast64_t choice = this->getTransitionMatrix().getRowGroupIndices()[state]; choice < this->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
                 bool choiceValid = std::includes(enabledChoiceLabels.begin(), enabledChoiceLabels.end(), choiceLabeling[choice].begin(), choiceLabeling[choice].end());
                 
                 // If the choice is valid, copy over all its elements.
                 if (choiceValid) {
                     if (!stateHasValidChoice) {
-                        nondeterministicChoiceIndices.push_back(currentRow);
+                        transitionMatrixBuilder.newRowGroup(currentRow);
                     }
                     stateHasValidChoice = true;
                     for (auto const& entry : this->getTransitionMatrix().getRow(choice)) {
@@ -170,16 +165,14 @@ public:
             
             // If no choice of the current state may be taken, we insert a self-loop to the state instead.
             if (!stateHasValidChoice) {
-                nondeterministicChoiceIndices.push_back(currentRow);
+                transitionMatrixBuilder.newRowGroup(currentRow);
                 transitionMatrixBuilder.addNextValue(currentRow, state, storm::utility::constantOne<T>());
                 newChoiceLabeling.emplace_back();
                 ++currentRow;
             }
         }
-
-        nondeterministicChoiceIndices.push_back(currentRow);
-                
-        Mdp<T> restrictedMdp(transitionMatrixBuilder.build(), storm::models::AtomicPropositionsLabeling(this->getStateLabeling()), std::move(nondeterministicChoiceIndices), this->hasStateRewards() ? boost::optional<std::vector<T>>(this->getStateRewardVector()) : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<T>>(this->getTransitionRewardMatrix()) : boost::optional<storm::storage::SparseMatrix<T>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>(newChoiceLabeling));
+        
+        Mdp<T> restrictedMdp(transitionMatrixBuilder.build(), storm::models::AtomicPropositionsLabeling(this->getStateLabeling()), this->hasStateRewards() ? boost::optional<std::vector<T>>(this->getStateRewardVector()) : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<T>>(this->getTransitionRewardMatrix()) : boost::optional<storm::storage::SparseMatrix<T>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>(newChoiceLabeling));
         return restrictedMdp;
     }
     
@@ -192,15 +185,8 @@ public:
 	}
     
     virtual std::shared_ptr<AbstractModel<T>> applyScheduler(storm::storage::Scheduler const& scheduler) const override {
-        storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), this->getNondeterministicChoiceIndices(), scheduler);
-    
-        // Construct the new nondeterministic choice indices for the resulting matrix.
-        std::vector<uint_fast64_t> nondeterministicChoiceIndices(this->getNumberOfStates() + 1);
-        for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-            nondeterministicChoiceIndices[state] = state;
-        }
-        nondeterministicChoiceIndices[this->getNumberOfStates()] = this->getNumberOfStates();
-        return std::shared_ptr<AbstractModel<T>>(new Mdp(newTransitionMatrix, this->getStateLabeling(), nondeterministicChoiceIndices, this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>()));
+        storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), scheduler);
+        return std::shared_ptr<AbstractModel<T>>(new Mdp(newTransitionMatrix, this->getStateLabeling(), this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>()));
     }
     
 private:

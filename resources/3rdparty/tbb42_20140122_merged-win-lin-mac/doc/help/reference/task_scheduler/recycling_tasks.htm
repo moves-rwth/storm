@@ -1,0 +1,220 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Recycling Tasks">
+<meta name="DC.subject" content="Recycling Tasks">
+<meta name="keywords" content="Recycling Tasks">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="recycling_tasks">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Recycling Tasks</title>
+</head>
+<body id="recycling_tasks">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="recycling_tasks"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Recycling Tasks</h1>
+
+  
+  <div> 
+	 <div class="section"> 
+		<p>It is often more efficient to recycle a task object
+		  rather than reallocate one from scratch. Often the parent can become the
+		  continuation, or one of the predecessors. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+		  <p><strong>Overlap rule</strong>: A recycled task 
+			 <em>t</em> must not be put in jeopardy of having 
+			 <samp class="codeph"><em>t</em>.execute()</samp> rerun while the previous
+			 invocation of 
+			 <samp class="codeph"><em>t</em>.execute()</samp> is still running. The debug
+			 version of the library detects some violations of this rule.
+		  </p>
+
+		</div> 
+		<p>For example, 
+		  <samp class="codeph"><em>t</em>.execute()</samp> should never spawn 
+		  <samp class="codeph"><em>t</em></samp> directly after recycling it. Instead, 
+		  <samp class="codeph"><em>t</em>.execute()</samp> should return a pointer to 
+		  <samp class="codeph"><em>t</em></samp>, so that 
+		  <samp class="codeph">t</samp> is spawned after 
+		  <samp class="codeph"><em>t</em>.execute()</samp> completes.
+		</p>
+
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d109721e85">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d109721e88">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d109721e85 "><span class="keyword">void
+						recycle_as_continuation()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d109721e88 ">
+					 <p><strong>Requirements</strong>: Must be called while
+						method 
+						<samp class="codeph">execute()</samp> is running.
+					 </p>
+ 
+					 <p>The 
+						<samp class="codeph"><em>refcount</em></samp> for the recycled task should
+						be set to 
+						<samp class="codeph"><em>n</em></samp>, where 
+						<samp class="codeph"><em>n</em></samp> is the number of predecessors of
+						the continuation task.
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3>
+						<p>The caller must guarantee that the
+						  task's 
+						  <samp class="codeph"><em>refcount</em></samp> does not become zero until
+						  after method 
+						  <samp class="codeph">execute()</samp> returns, otherwise the overlap
+						  rule is broken. If the guarantee is not possible, use method 
+						  <samp class="codeph">recycle_as_safe_continuation()</samp> instead,
+						  and set the 
+						  <samp class="codeph"><em>refcount</em></samp> to 
+						  <samp class="codeph"><em>n</em>+1</samp>. 
+						</p>
+
+					 </div> 
+					 <p>The race can occur for a task 
+						<samp class="codeph"><em>t</em></samp> when:
+					 </p>
+ 
+					 <p><samp class="codeph"><em>t</em>.execute()</samp>
+						recycles 
+						<samp class="codeph"><em>t</em></samp> as a continuation.
+					 </p>
+ 
+					 <p>The continuation has predecessors that
+						all complete before 
+						<samp class="codeph"><em>t</em>.execute()</samp> returns.
+					 </p>
+ 
+					 <p>Hence the recycled 
+						<samp class="codeph"><em>t 
+						  </em></samp>will be implicitly respawned with the original
+						
+						<samp class="codeph"><em>t</em>.execute()</samp>still running, which
+						breaks the overlap rule.
+					 </p>
+ 
+					 <p>Patterns that use 
+						<samp class="codeph">recycle_as_continuation()</samp> typically avoid
+						the race by making 
+						<samp class="codeph"><em>t</em>.execute()</samp> return a pointer to one
+						of the predecessors instead of explicitly spawning that predecessor. The
+						scheduler implicitly spawns that predecessor after 
+						<samp class="codeph"><em>t</em>.execute()</samp> returns, thus
+						guaranteeing that the recycled t does not rerun prematurely.
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Causes 
+						<samp class="codeph">this</samp> to not be destroyed when method 
+						<samp class="codeph">execute()</samp> returns.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d109721e85 "><span class="keyword">void
+						recycle_as_safe_continuation()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d109721e88 ">
+					 <p><strong>Requirements</strong>: Must be called while
+						method 
+						<samp class="codeph">execute()</samp> is running.
+					 </p>
+ 
+					 <p>The 
+						<samp class="codeph"><em>refcount</em></samp> for the recycled task should
+						be set to 
+						<samp class="codeph"><em>n</em>+1</samp>, where 
+						<samp class="codeph"><em>n</em></samp> is the number of predecessors of
+						the continuation task. The additional 
+						<samp class="codeph">+1</samp> represents the task to be recycled.
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Causes 
+						<samp class="codeph">this</samp> to not be destroyed when method 
+						<samp class="codeph">execute()</samp> returns. 
+					 </p>
+ 
+					 <p>This method avoids the race discussed for
+						recycle_as_continuation because the additional +1 in the 
+						<samp class="codeph"><em>refcount</em></samp> prevents the continuation
+						from executing until the original invocation of 
+						<samp class="codeph">execute() 
+						</samp>completes.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d109721e85 "><span class="keyword">void recycle_as_child_of(
+						task&amp; new_successor )</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d109721e88 ">
+					 <p><strong>Requirements</strong>: Must be called while
+						method 
+						<samp class="codeph">execute()</samp> is running.
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Causes 
+						<samp class="codeph">this</samp> to become a predecessor of 
+						<samp class="codeph"><em>new_successor</em></samp>, and not be destroyed
+						when method 
+						<samp class="codeph">execute()</samp> returns.
+					 </p>
+
+				  </td>
+
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

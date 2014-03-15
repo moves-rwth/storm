@@ -1,0 +1,386 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="priority_queue_node Template Class">
+<meta name="DC.subject" content="priority_queue_node Template Class">
+<meta name="keywords" content="priority_queue_node Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/flow_graph.htm">
+<meta name="DC.Relation" scheme="URI" content="message_passing_protocol.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="priority_queue_node_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>priority_queue_node Template Class</title>
+</head>
+<body id="priority_queue_node_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="priority_queue_node_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">priority_queue_node Template Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>An unbounded buffer of messages of type 
+		  <span class="keyword">T</span>. Messages are forwarded in priority order. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre>template&lt; typename T,
+          typename Compare = std::less&lt;T&gt;,
+          typename A = cache_aligned_allocator&lt;T&gt; &gt;
+class priority_queue_node;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/flow_graph.h"</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <span class="keyword">priority_queue_node</span> is a 
+		  <span class="keyword">graph_node</span>, 
+		  <span class="keyword">receiver&lt;T&gt;</span> and 
+		  <span class="keyword">sender&lt;T&gt;</span> that forwards messages in priority
+		  order to a single successor in its successor set. Successors are tried in the
+		  order that they were registered with the node. If a successor rejects the
+		  message, it is removed from the successor list as described by the policy in
+		  the Message Passing Protocol, and the next successor in the set is tried. This
+		  continues until a successor accepts the message, or all successors have been
+		  attempted. Items that are successfully transferred to a successor are removed
+		  from the buffer. 
+		</p>
+ 
+		<p>The next message to be forwarded has the largest priority as
+		  determined by 
+		  <span class="keyword">Compare</span>. 
+		</p>
+ 
+		<p>A 
+		  <span class="keyword">priority_queue_node</span> is reservable and supports a
+		  single reservation at a time. While the 
+		  <span class="keyword">priority_queue_node</span> is reserved, no other items will
+		  be forwarded to successors and all 
+		  <span class="keyword">try_get</span> calls will return 
+		  <span class="keyword">false</span>. While reserved, 
+		  <span class="keyword">try_put</span> will still return 
+		  <span class="keyword">true</span> and add items to the 
+		  <span class="keyword">priority_queue_node</span>. 
+		</p>
+ 
+		<p>An allocator of type 
+		  <span class="keyword">A</span> is used to allocate internal memory for the 
+		  <span class="keyword">priority_queue_node.</span> 
+		</p>
+ 
+		<p><span class="keyword">T</span> must be copy-constructible and assignable. 
+		</p>
+ 
+		<p>Rejection of messages by successors is handled using the protocol in
+		  the Message Passing Protocol, see link below. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p> The <samp class="codeph">Compare</samp> function object must not throw an exception.
+		  </p>
+ 
+                </div>
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+namespace flow {
+ 
+template&lt; typename T, typename Compare = std::less&lt;T&gt;,
+          typename A = cache_aligned_allocator&lt;T&gt;&gt;
+class priority_queue_node : public queue_node&lt;T&gt; {
+public:
+    typedef size_t size_type;
+    priority_queue_node( graph &amp;g );
+    priority_queue_node( const priority_queue_node &amp;src );
+    ~priority_queue_node();
+ 
+    // receiver&lt;T&gt;
+    typedef T input_type;
+    typedef sender&lt;input_type&gt; predecessor_type;
+    bool try_put( const input_type &amp;v );
+    bool register_predecessor( predecessor_type &amp;p );
+    bool remove_predecessor( predecessor_type &amp;p );
+ 
+    // sender&lt;T&gt;
+    typedef T output_type;
+    typedef receiver&lt;output_type&gt; successor_type;
+    bool register_successor( successor_type &amp;r );
+    bool remove_successor( successor_type &amp;r );
+    bool try_get( output_type &amp;v );
+    bool try_reserve( output_type &amp;v );
+    bool try_release( );
+    bool try_consume( );
+};
+ 
+}
+}</pre> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d80049e148">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d80049e151">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">priority_queue_node( graph &amp;g
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>Constructs an empty 
+						<span class="keyword">priority_queue_node</span> that belongs to the 
+						<span class="keyword">graph g</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">priority_queue_node( const
+						priority_queue_node &amp;src )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>Constructs an empty 
+						<span class="keyword">priority_queue_node</span> that belongs to the
+						same 
+						<span class="keyword">graph g</span> as 
+						<span class="keyword">src</span>. The list of predecessors, the list of
+						successors and the messages in the buffer are NOT copied. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">bool try_put( const input_type
+						&amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>Adds 
+						<span class="keyword">v</span> to the 
+						<span class="keyword">priority_queue_node</span>. If 
+						<span class="keyword">v</span>'s priority is the largest of all of the
+						currently buffered messages, a task is spawned to forward the item to a
+						successor. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">bool register_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>Never rejects puts and therefore does not need to maintain a
+						list of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">bool remove_predecessor(
+						predecessor_type &amp;p )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>Never rejects puts and therefore does not need to maintain a
+						list of predecessors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">false</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">bool register_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>Adds 
+						<span class="keyword">r</span> to the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">bool remove_successor(
+						successor_type &amp;r )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>Removes 
+						<span class="keyword">r</span> from the set of successors. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">bool try_get( output_type &amp;v
+						)</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if a message is available in the node
+						and the node is not currently reserved. Otherwise returns 
+						<span class="keyword">false</span>. If the node returns 
+						<span class="keyword">true</span>, the message with the largest
+						priority will have been copied to 
+						<span class="keyword">v</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">bool try_reserve( output_type
+						&amp;v )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>If the call returns 
+						<span class="keyword">true</span>, the node is reserved and will
+						forward no more messages until the reservation has been released or consumed. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if a message is available in the node
+						and the node is not currently reserved. Otherwise returns 
+						<span class="keyword">false</span>. If the node returns 
+						<span class="keyword">true</span>, the message with the largest
+						priority will have been copied to 
+						<span class="keyword">v</span>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">bool try_release( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>Releases the reservation on the node. The item that was
+						returned in the last successful call to 
+						<span class="keyword">try_reserve</span> remains in the 
+						<span class="keyword">priority_queue_node</span>. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if the buffer is currently reserved
+						and 
+						<span class="keyword">false</span> otherwise. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d80049e148 "><span class="keyword">bool try_consume( )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d80049e151 "> 
+					 <p>Releases the reservation on the node. The item that was
+						returned in the last successful call to 
+						<span class="keyword">try_reserve</span> is popped from the front of
+						the queue. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<span class="keyword">true</span> if the buffer is currently reserved
+						and 
+						<span class="keyword">false</span> otherwise. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/flow_graph.htm">Flow Graph</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="message_passing_protocol.htm">Message Passing Protocol 
+		  </a></div></div>
+</div>
+
+</body>
+</html>

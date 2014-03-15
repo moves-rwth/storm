@@ -1,0 +1,66 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="blocked_range( blocked_range&amp; range, split )">
+<meta name="DC.Relation" scheme="URI" content="../../../../reference/algorithms/range_concept/blocked_range_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="blocked_range_1">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../../intel_css_styles.css">
+<title>blocked_range( blocked_range&amp; range, split )</title>
+</head>
+<body id="blocked_range_1">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(4);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="blocked_range_1"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">blocked_range( blocked_range&amp; range, split )</h1>
+ 
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Requirements</h2> 
+		 
+		<p>
+				<samp class="codeph">is_divisible()</samp> is true. </p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Effects</h2> 
+		 
+		<p>Partitions <samp class="codeph">range</samp> into two subranges. The newly constructed<samp class="codeph">
+					blocked_range </samp>is approximately the second half of the original
+					<samp class="codeph">range</samp>, and <samp class="codeph">range</samp> is updated to be the
+				remainder. Each subrange has the same <samp class="codeph">grainsize</samp> as the original
+				range. </p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Example</h2> 
+		 
+		<p>Let<samp class="codeph"> i</samp> and<samp class="codeph"> j</samp> be integers that define a half-open interval
+					<samp class="codeph">[ i, j)</samp> and let <samp class="codeph">g</samp> specifiy a grain size. The
+				statement <samp class="codeph">blocked_range&lt;int&gt; r(i,j,g)</samp> constructs a
+					<samp class="codeph">blocked_range&lt;int&gt;</samp> that represents<samp class="codeph"> [ i,
+					j)</samp> with grain size<samp class="codeph"> g</samp>. Running the statement<samp class="codeph">
+					blocked_range&lt;int&gt; s(r,split);</samp> subsequently causes r to
+					represent<samp class="codeph"> [ i, i +( j - i)/2)</samp> and <samp class="codeph">s</samp> to
+					represent<samp class="codeph"> [ i +( j - i)/2, j)</samp>, both with grain size<samp class="codeph">
+					g</samp>. </p>
+ 
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../../reference/algorithms/range_concept/blocked_range_cls.htm">blocked_range Template Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

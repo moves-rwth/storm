@@ -1,0 +1,163 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="flattened2d Template Class">
+<meta name="DC.subject" content="flattened2d Template Class">
+<meta name="keywords" content="flattened2d Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage/flattened2d_cls/whole_container_operations_2d_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage/flattened2d_cls/concurrent_operations.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage/flattened2d_cls/iterators_2d_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/thread_local_storage/flattened2d_cls/utility_funcs.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="flattened2d_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>flattened2d Template Class</title>
+</head>
+<body id="flattened2d_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="flattened2d_cls"><!-- --></a>
+
+
+        <h1 class="topictitle1">flattened2d Template Class</h1>
+
+        
+<div><div class="section"><h2 class="sectiontitle">Summary</h2>
+            <p>Adaptor that provides a flattened view of a container of containers. </p>
+
+           </div>
+<div class="section"><h2 class="sectiontitle">Syntax </h2> 
+<pre>
+    template&lt;typename Container&gt;
+    class flattened2;
+     
+    template &lt;typename Container&gt;
+    flattened2d&lt;Container&gt; flatten2d(const Container &amp;c); 
+     
+    template &lt;typename Container&gt;
+    flattened2d&lt;Container&gt; flatten2d(
+        const Container &amp;c, 
+        const typename Container::const_iterator b, 
+        const typename Container::const_iterator e); </pre>
+            </div>
+<div class="section"><h2 class="sectiontitle">Header</h2>
+            <pre>#include "tbb/enumerable_thread_specific.h"</pre>
+            </div>
+<div class="section"><h2 class="sectiontitle">Description</h2>
+            <p>A <samp class="codeph">flattened2d</samp> provides a flattened view of a container of containers. Iterating from <samp class="codeph">begin()</samp> to <samp class="codeph">end()</samp>visits all of the elements in the inner containers. This can be useful when traversing an <samp class="codeph">enumerable_thread_specific</samp> whose elements are containers. </p>
+
+            <p>The utility function <samp class="codeph">flatten2d</samp> creates a <samp class="codeph">flattened2d</samp> object from a container.</p>
+
+            </div>
+<div class="section"><h2 class="sectiontitle">Example</h2>
+            <p>The following code shows a simple example usage of <samp class="codeph">flatten2d</samp> and <samp class="codeph">flattened2d</samp>. Each thread collects the values of <samp class="codeph">i</samp> that are evenly divisible by <samp class="codeph">K</samp> in a thread-local vector. In main, the results are printed by using a <samp class="codeph">flattened2d</samp> to simplify the traversal of all of the elements in all of the local vectors. </p>
+
+<pre>    
+             #include &lt;iostream&gt;
+             #include &lt;utility&gt;
+             #include &lt;vector&gt;
+              
+             #include "tbb/task_scheduler_init.h"
+             #include "tbb/enumerable_thread_specific.h"
+             #include "tbb/parallel_for.h"
+             #include "tbb/blocked_range.h"
+              
+             using namespace tbb;
+              
+             // A VecType has a separate std::vector&lt;int&gt; per thread
+             typedef enumerable_thread_specific&lt; std::vector&lt;int&gt; &gt; VecType;
+             VecType MyVectors; 
+             int K = 1000000;
+              
+             struct Func {
+                 void operator()(const blocked_range&lt;int&gt;&amp; r) const {
+                     VecType::reference v = MyVectors.local();
+                     for (int i=r.begin(); i!=r.end(); ++i) 
+                         if( i%k==0 ) 
+                             v.push_back(i);
+                 } 
+             };
+              
+             int main() {
+                 parallel_for(blocked_range&lt;int&gt;(0, 100000000), 
+                              Func());
+              
+                 flattened2d&lt;VecType&gt; flat_view = flatten2d( MyVectors );
+                 for( flattened2d&lt;VecType&gt;::const_iterator 
+                      i = flat_view.begin(); i != flat_view.end(); ++i) 
+                     cout &lt;&lt; *i &lt;&lt; endl;
+                 return 0;
+             }
+              </pre>
+            </div>
+<div class="section"><h2 class="sectiontitle">Members</h2>
+            <pre>namespace tbb {
+            
+                template&lt;typename Container&gt;
+                class flattened2d {
+             
+                public:
+                    // Basic types
+                    typedef <em>implementation-dependent</em> size_type;
+                    typedef <em>implementation-dependent</em> difference_type;
+                    typedef <em>implementation-dependent</em> allocator_type;
+                    typedef <em>implementation-dependent</em> value_type;
+                    typedef <em>implementation-dependent</em> reference;
+                    typedef <em>implementation-dependent</em> const_reference;
+                    typedef <em>implementation-dependent</em> pointer;
+                    typedef <em>implementation-dependent</em> const_pointer;
+             
+                    typedef <em>implementation-dependent</em> iterator;
+                    typedef <em>implementation-dependent</em> const_iterator;
+             
+                    flattened2d( const Container&amp; c );
+             
+                    flattened2d( const Container&amp; c, 
+                                 typename Container::const_iterator first,
+                                typename Container::const_iterator last );
+             
+                    iterator begin();
+                    iterator end();
+                    const_iterator begin() const;
+                    const_iterator end() const;
+             
+                    size_type size() const;
+                };
+             
+                template &lt;typename Container&gt;
+                flattened2d&lt;Container&gt; flatten2d(const Container &amp;c);
+             
+                template &lt;typename Container&gt;
+                flattened2d&lt;Container&gt; flatten2d(
+                    const Container &amp;c, 
+                    const typename Container::const_iterator first, 
+                    const typename Container::const_iterator last);
+            }</pre></div>
+</div>
+
+    
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/thread_local_storage.htm">Thread Local Storage</a></div>
+</div>
+<div>
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/thread_local_storage/flattened2d_cls/whole_container_operations_2d_cls.htm">Whole Container Operations</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/thread_local_storage/flattened2d_cls/concurrent_operations.htm">Concurrent Operations</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/thread_local_storage/flattened2d_cls/iterators_2d_cls.htm">Iterators</a><br>
+</li>
+<li class="ulchildlink"><a href="../../reference/thread_local_storage/flattened2d_cls/utility_funcs.htm">Utility Functions</a><br>
+</li>
+</ul>
+</div>
+
+</body>
+</html>

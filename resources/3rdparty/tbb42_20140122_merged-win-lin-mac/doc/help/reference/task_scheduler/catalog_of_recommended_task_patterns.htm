@@ -1,0 +1,194 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Catalog of Recommended task Patterns">
+<meta name="DC.subject" content="Catalog of Recommended task Patterns">
+<meta name="keywords" content="Catalog of Recommended task Patterns">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Relation" scheme="URI" content="empty_task_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="catalog_of_recommended_task_patterns">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Catalog of Recommended task Patterns</title>
+</head>
+<body id="catalog_of_recommended_task_patterns">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="catalog_of_recommended_task_patterns"><!-- --></a>
+
+
+    <h1 class="topictitle1">Catalog of Recommended task Patterns</h1>
+
+   
+<div>
+       <div class="section">
+           <p>This section catalogues recommended task patterns. In each pattern, class T is assumed to derive from class <samp class="codeph">task</samp>. Subtasks are labeled t<sub>1</sub>, t<sub>2</sub>, ... t<sub>k</sub>. The subscripts indicate the order in which the subtasks execute if no parallelism is available. If parallelism is available, the subtask execution order is non-deterministic, except that t<sub>1</sub> is guaranteed to be executed by the spawning thread.</p>
+
+           <p>Recursive task patterns are recommended for efficient scalable parallelism, because they allow the task scheduler to unfold potential parallelism to match available parallelism. A recursive task pattern begins by creating a root task t<sub>0</sub> and running it as follows. </p>
+
+           <pre>T&amp; t<sub>0</sub> = *new(allocate_root()) T(...);&nbsp; 
+           task::spawn_root_and_wait(t<sub>0</sub>);</pre>
+           <p>The root task's method <samp class="codeph">execute()</samp> recursively
+                creates more tasks as described in subsequent subsections. </p>
+</div>
+
+       <div class="section"><h2 class="sectiontitle">Blocking Style With <em>k </em>Children</h2>
+               <p>The following shows the recommended style for a recursive task
+                of type <em>T</em> where each level spawns <em>k</em> children.</p>
+
+<pre>           task* T::execute() {
+    &nbsp;&nbsp;&nbsp; if( not recursing any further ) {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+    &nbsp;&nbsp;&nbsp; } else {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; set_ref_count(k+1);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task&amp; t<sub>k</sub> = *new(allocate_child()) T(...);&nbsp; spawn(t<sub>k</sub>);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task&amp; t<sub>k-1</sub>= *new(allocate_child()) T(...);&nbsp; spawn(t<sub>k-1</sub>);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task&amp; t<sub>1</sub><sub></sub>= *new(allocate_child()) T(...);&nbsp;&nbsp; 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; spawn_and_wait_for_all(t<sub>1</sub>);
+    &nbsp;&nbsp;&nbsp; }
+    &nbsp;&nbsp;&nbsp; return NULL;
+    }</pre>
+               <p>Child construction and spawning may be reordered if convenient, as long as a task is constructed before it is spawned. </p>
+
+               <p>The key points of the pattern are:</p>
+
+               <ul type="disc">
+                   <li><p>The call to <samp class="codeph">set_ref_count</samp> uses <em>k</em>+1 as its argument. The extra 1 is critical.</p>
+</li>
+
+                   <li><p>Each task is allocated by <samp class="codeph">allocate_child</samp>.</p>
+</li>
+
+                   <li><p>The call <samp class="codeph">spawn_and_wait_for_all</samp> combines spawning and waiting. A more uniform but slightly less efficient alternative is to spawn all tasks with spawn and wait by calling <samp class="codeph">wait_for_all</samp>. </p>
+</li>
+
+               </ul>
+</div>
+
+               <div class="section"><h2 class="sectiontitle">Continuation-Passing Style With <em>k</em> Children</h2>
+                   <p>There are two recommended styles. They differ in whether it is more convenient to recycle the parent as the continuation or as a child. The decision should be based upon whether the continuation or child acts more like the parent.</p>
+
+                   <p>Optionally, as shown in the following examples, the code can return a pointer to one of the children instead of spawning it. Doing so causes the child to execute immediately after the parent returns. This option often improves efficiency because it skips pointless overhead of putting the task into the task pool and taking it back out.</p>
+</div>
+
+               <div class="section"><h2 class="sectiontitle">Recycling Parent as Continuation</h2>
+                   <p>This style is useful when the continuation needs to inherit much of the state of the parent and the child does not need the state. The continuation must have the same type as the parent.</p>
+
+<pre>task* T::execute() {
+    &nbsp;&nbsp;&nbsp; if( not recursing any further ) {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return NULL;
+    &nbsp;&nbsp;&nbsp; } else {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; set_ref_count(k);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; recycle_as_continuation();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task&amp; t<sub>k </sub> = *new(allocate_child()) T(...); spawn(t<sub>k</sub>);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task&amp; t<sub>k</sub><sub class="sub_1">-</sub><sub>1 </sub>= *new(allocate_child()) T(...); spawn(t<sub>k</sub><sub class="sub_1">-</sub><sub>1</sub>);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Return pointer to first child instead of spawning it,
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // to remove unnecessary overhead.
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task&amp; t<sub>1</sub> = *new(allocate_child()) T(...);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return &amp;t<sub>1</sub>;
+    &nbsp;&nbsp;&nbsp; }
+    }    </pre>              
+                   <p>The key points of the pattern are:</p>
+
+                   <ul type="disc">
+                       <li><p>The call to <samp class="codeph">set_ref_count</samp> uses <em>k</em> as its argument. There is no extra +1 as there is in blocking style discussed in Section Blocking Style With k Children.</p>
+</li>
+
+                       <li><p>Each child task is allocated by <samp class="codeph">allocate_child</samp>.</p>
+</li>
+
+                       <li><p>The continuation is recycled from the parent, and hence gets the parent's state without doing copy operations.</p>
+</li>
+
+                   </ul>
+</div>
+
+               <div class="section"><h2 class="sectiontitle">Recycling Parent as a Child</h2>
+                   <p>This style is useful when the child inherits much of its
+                state from a parent and the continuation does not need the state of the parent. The
+                child must have the same type as the parent. In the example, C is the type of the
+                continuation, and must derive from class <samp class="codeph">task</samp>. If C does nothing
+                except wait for all children to complete, then C can be the class
+                    <samp class="codeph">empty_task</samp>.</p>
+
+<pre>task* T::execute() {
+    &nbsp;&nbsp;&nbsp; if( not recursing any further ) {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return NULL;
+    &nbsp;&nbsp;&nbsp; } else {
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Construct continuation
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C&amp; c = allocate_continuation();
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c.set_ref_count(k);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Recycle self as first child
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task&amp; t<sub>k</sub><sub></sub> = *new(c.allocate_child()) T(...); spawn(t<sub>k</sub>);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task&amp; t<sub>k</sub><sub class="sub_1">-</sub><sub>1 </sub>= *new(c.allocate_child()) T(...); spawn(t<sub>k</sub><sub class="sub_1">-</sub><sub>1</sub>);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; task&amp; t<sub>2</sub> = *new(c.allocate_child()) T(...);&nbsp; spawn(t<sub>2</sub>);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // task t<sub>1</sub> is our recycled self.
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; recycle_as_child_of(c);
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; update fields of *this to subproblem to be solved by t<sub>1</sub>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return this;
+    &nbsp;&nbsp;&nbsp; }
+    }</pre>
+                   <p>The key points of the pattern are:</p>
+
+                   <ul type="disc">
+                       <li><p>The call to <samp class="codeph">set_ref_count</samp> uses <em>k</em> as its argument. There is no extra 1 as there is in blocking style discussed in Section Blocking Style With k Children .</p>
+</li>
+
+                       <li><p>Each child task except for t<sub>1</sub> is allocated by c.<samp class="codeph">allocate_child</samp>. It is critical to use <samp class="codeph">c.allocate_child</samp>, and not <samp class="codeph">(*this).allocate_child; </samp>otherwise the task graph will be wrong.</p>
+</li>
+
+                       <li><p>Task t<sub>1</sub>is recycled from the parent, and hence gets the parent's state without performing copy operations. Do not forget to update the state to represent a child subproblem; otherwise infinite recursion will occur.</p>
+</li>
+
+                   </ul>
+</div>
+
+       <div class="section"><h2 class="sectiontitle">Letting Main Thread Work While Child Tasks Run</h2>
+           <p>Sometimes it is desirable to have the main thread continue execution while child tasks
+                are running. The following pattern does this by using a dummy
+                    <samp class="codeph">empty_task</samp>.</p>
+
+          <pre>task* dummy = new( task::allocate_root() ) empty_task;
+dummy-&gt;set_ref_count(k+1);
+task&amp; t<sub>k</sub> = *new( dummy-&gt;allocate_child() ) T;  dummy-&gt;spawn(t<sub>k</sub>);
+task&amp; t<sub>k-1</sub> = *new( dummy-&gt;allocate_child() ) T;  dummy-&gt;spawn(t<sub>k-1</sub>);
+...
+task&amp; t<sub>1</sub> = *new( dummy-&gt;allocate_child() ) T;  dummy-&gt;spawn(t<sub>1</sub>);
+...do any other work...
+dummy-&gt;wait_for_all();
+dummy-&gt;destroy(*dummy);</pre>
+          <p> The key points of the pattern are:</p>
+
+           <ol><li>The dummy task is a placeholder and never runs.</li>
+
+               <li>The call to <samp class="codeph">set_ref_count</samp> uses <em>k</em>+1 as its argument. </li>
+
+               <li>The dummy task must be explicitly destroyed.</li>
+</ol>
+ 
+       </div>
+
+       
+   </div>
+ 
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="empty_task_cls.htm">empty_task Class</a></div></div>
+</div>
+</body>
+</html>

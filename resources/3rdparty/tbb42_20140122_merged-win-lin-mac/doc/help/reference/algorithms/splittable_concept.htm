@@ -1,0 +1,180 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Splittable Concept">
+<meta name="DC.subject" content="Splittable Concept">
+<meta name="keywords" content="Splittable Concept">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms.htm">
+<meta name="DC.Relation" scheme="URI" content="../../reference/algorithms/splittable_concept/split_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="range_concept/blocked_range_cls.htm#blocked_range_cls">
+<meta name="DC.Relation" scheme="URI" content="range_concept/blocked_range2d_cls.htm#blocked_range2d_cls">
+<meta name="DC.Relation" scheme="URI" content="parallel_reduce_func.htm#parallel_reduce_func">
+<meta name="DC.Relation" scheme="URI" content="parallel_scan_func.htm#parallel_scan_func">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="splittable_concept">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Splittable Concept</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="splittable_concept">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="splittable_concept"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Splittable Concept</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>Requirements for a type whose instances can be split into two pieces. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Requirements</h2> 
+		 
+		<p>The following table lists the requirements for a
+		  splittable type 
+		  <samp class="codeph">X</samp> with instance 
+		  <samp class="codeph">x</samp>. 
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl7"><!-- --></a><table cellpadding="4" summary="" id="tbl7" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Splittable Concept</span></caption> 
+		   
+		   
+		  <thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d16663e65"> 
+				  <p><strong>Pseudo-Signature 
+					 </strong>
+				  </p>
+ 
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d16663e73"> 
+				  <p><strong>Semantics 
+					 </strong>
+				  </p>
+ 
+				</th>
+ 
+			 </tr>
+ 
+          </thead>
+
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d16663e65 "> 
+				  <p><samp class="codeph">X::X(X&amp; x, Split)</samp> 
+				  </p>
+ 
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d16663e73 "> 
+				  <p>Split 
+					 <samp class="codeph">x</samp> into 
+					 <samp class="codeph">x</samp> and newly constructed object. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Description</h2> 
+		 
+		<p>A type is splittable if it has a 
+		  <em>splitting constructor</em> that allows an instance to be split into
+		  two pieces. The splitting constructor takes as arguments a reference to the
+		  original object, and a dummy argument of type 
+		  <samp class="codeph">Split</samp>, which is defined by the library. The dummy
+		  argument distinguishes the splitting constructor from a copy constructor. After
+		  the constructor runs, 
+		  <samp class="codeph"><em>x</em></samp> and the newly constructed object should
+		  represent the two pieces of the original 
+		  <samp class="codeph"><em>x.</em></samp> The library uses splitting constructors in
+		  two contexts: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li> 
+			 <em>Partitioning</em> a range into two subranges that can be processed
+			 concurrently. 
+		  </li>
+ 
+		  <li> 
+			 <em>Forking</em> a body (function object) into two bodies that can run
+			 concurrently. 
+		  </li>
+ 
+		</ul>
+ 
+		<p>The following model types provide examples. 
+		</p>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle"> Model Types</h2> 
+		 
+		<p> 
+		  <samp class="codeph">blocked_range</samp> and 
+		  <samp class="codeph">blocked_range2d</samp> represent splittable ranges. For each
+		  of these, splitting partitions the range into two subranges. See the 
+		  <samp class="codeph">blocked_range</samp> Template Class section for an example of
+		  the splitting constructor for 
+		  <samp class="codeph">blocked_range</samp>. 
+		</p>
+ 
+		<p>The bodies for 
+		  <samp class="codeph">parallel_reduce</samp> and 
+		  <samp class="codeph">parallel_scan</samp> must be splittable. For each of these,
+		  splitting results in two bodies that can be run concurrently. 
+		</p>
+ 
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/algorithms.htm">Algorithms</a></div>
+</div>
+<div class="See Also">
+<ul class="ullinks">
+<li class="ulchildlink"><a href="../../reference/algorithms/splittable_concept/split_cls.htm">split Class</a><br>
+</li>
+</ul>
+
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="range_concept/blocked_range_cls.htm#blocked_range_cls">blocked_range Template Class 
+		  </a></div>
+<div><a href="range_concept/blocked_range2d_cls.htm#blocked_range2d_cls">blocked_range2d Template Class 
+		  </a></div>
+<div><a href="parallel_reduce_func.htm#parallel_reduce_func">parallel_reduce Template Function 
+		  </a></div>
+<div><a href="parallel_scan_func.htm#parallel_scan_func">parallel_scan Template Function 
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

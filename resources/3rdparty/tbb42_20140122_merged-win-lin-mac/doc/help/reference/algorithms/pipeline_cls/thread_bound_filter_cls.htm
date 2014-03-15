@@ -1,0 +1,339 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="thread_bound_filter Class">
+<meta name="DC.subject" content="thread_bound_filter Class">
+<meta name="keywords" content="thread_bound_filter Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/algorithms/pipeline_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="thread_bound_filter_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>thread_bound_filter Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="thread_bound_filter_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="thread_bound_filter_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">thread_bound_filter Class</h1>
+ 
+   
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 Abstract base class that represents a filter in a
+		pipeline that a thread must service explicitly. 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Header</h2> 
+		 
+		<pre>#include "tbb/pipeline.h" </pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2> 
+		 
+		<pre> class thread_bound_filter;</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Description</h2> 
+		 
+		<p>A 
+		  <samp class="codeph">thread_bound_filter</samp> is a special kind of 
+		  <samp class="codeph">filter</samp> that is explicitly serviced by a particular
+		  thread. It is useful when a filter must be executed by a particular thread. 
+		</p>
+ 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>Use 
+			 <samp class="codeph">thread_bound_filter</samp> only if you need a filter to be
+			 executed on a particular thread. The thread that services a 
+			 <samp class="codeph">thread_bound_filter</samp> must not be the thread that
+			 calls 
+			 <samp class="codeph">pipeline::run()</samp>. 
+		  </p>
+ 
+		</div> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Members</h2> 
+		 
+		<pre>namespace tbb {
+    class thread_bound_filter: public filter {
+    protected:
+        thread_bound_filter(mode filter_mode);
+    public:
+        enum result_type {
+            success,
+            item_not_available,
+            end_of_stream
+        };
+        result_type try_process_item();
+        result_type process_item();
+    };
+} 
+
+</pre> 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Example</h2> 
+		 
+		<p>The example below shows a pipeline with two filters
+		  where the second filter is a<samp class="codeph"> thread_bound_filter</samp> serviced by
+		  the main thread. 
+		</p>
+ 
+		<pre>#include &lt;iostream&gt;
+#include "tbb/pipeline.h"
+#include "tbb/compat/thread"
+#include "tbb/task_scheduler_init.h"
+
+using namespace tbb;
+
+char InputString[] = "abcdefg\n";
+
+class InputFilter: public filter {
+    char* my_ptr;
+public:
+    void* operator()(void*) {
+        if (*my_ptr)
+            return my_ptr++;
+        else
+            return NULL;
+    }
+    InputFilter() : 
+        filter( serial_in_order ), my_ptr(InputString) 
+    {}
+};
+
+class OutputFilter: public thread_bound_filter {
+public:
+    void* operator()(void* item) {
+        std::cout &lt;&lt; *(char*)item;
+        return NULL;
+    }
+    OutputFilter() : thread_bound_filter(serial_in_order) {}
+};
+
+void RunPipeline(pipeline* p) {
+    p-&gt;run(8);
+}
+
+int main() {
+    // Construct the pipeline
+    InputFilter f;
+    OutputFilter g;
+    pipeline p;
+    p.add_filter(f);
+    p.add_filter(g);
+
+    // Another thread initiates execution of the pipeline
+    std::thread t(RunPipeline,&amp;p);
+
+    // Process the thread_bound_filter with the current thread.
+    while (g.process_item()!=thread_bound_filter::end_of_stream)
+        continue;
+
+    // Wait for pipeline to finish on the other thread.
+    t.join();    
+    return 0;
+}
+</pre> 
+		<p>The main thread does the following after
+		  constructing the pipeline: 
+		</p>
+ 
+		<ul type="disc"> 
+		  <li>Start the pipeline on another thread. 
+		  </li>
+ 
+		  <li>Service the<samp class="codeph"> thread_bound_filter</samp> until it reaches 
+			 <samp class="codeph">end_of_stream</samp>. 
+		  </li>
+ 
+		  <li>Wait for the other thread to finish. 
+		  </li>
+ 
+		</ul>
+ 
+		<p>The pipeline is run on a separate thread because the main thread is
+		  responsible for servicing the 
+		  <samp class="codeph">thread_bound_filter</samp> 
+		  <samp class="codeph">g</samp>. The roles of the two threads can be reversed. A
+		  single thread cannot do both roles. 
+		</p>
+ 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="29.940119760479046%" id="d12241e148">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="70.05988023952095%" id="d12241e151">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="29.940119760479046%" headers="d12241e148 "><span class="keyword">thread_bound_filter(mode
+						filter_mode)()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="70.05988023952095%" headers="d12241e151 "> 
+					 <p>Constructs a filter of the specified mode. The pipeline
+						Class section describes the modes. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="29.940119760479046%" headers="d12241e148 "><span class="keyword">result_type
+						try_process_item()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="70.05988023952095%" headers="d12241e151 "> 
+					 <p>If an item is available and it can be processed without
+						exceeding the token limit, process the item with 
+						<samp class="codeph">filter::operator()</samp>. The return values are
+						detailed in the following table.
+					 </p>
+ 
+					 <p> 
+					 
+<div class="tablenoborder"><table cellpadding="4" summary="" width="100%" frame="hsides" border="1" rules="all"> 
+						  <thead align="left"> 
+							 <tr> 
+								<th class="cellrowborder" valign="top" id="d12241e198"> 
+								  <p>Return Value 
+								  </p>
+ 
+								</th>
+ 
+								<th class="row-nocellborder" valign="top" id="d12241e204"> 
+								  <p> Description 
+								  </p>
+ 
+								</th>
+ 
+							 </tr>
+</thead>
+ 
+						  <tbody> 
+							 <tr valign="top"> 
+								<td class="cellrowborder" valign="top" headers="d12241e198 ">success 
+								</td>
+ 
+								<td class="row-nocellborder" valign="top" headers="d12241e204 "> 
+								  <p>Applied 
+									 <samp class="codeph">filter::operator()</samp> to one item. 
+								  </p>
+ 
+								</td>
+ 
+							 </tr>
+ 
+							 <tr valign="top"> 
+								<td class="cellrowborder" valign="top" headers="d12241e198 "> 
+								  <p>item_not_available 
+								  </p>
+ 
+								</td>
+ 
+								<td class="row-nocellborder" valign="top" headers="d12241e204 "> 
+								  <p> No item is currently available
+									 to process, or the token limit would be exceeded. 
+								  </p>
+ 
+								</td>
+ 
+							 </tr>
+ 
+							 <tr valign="top"> 
+								<td class="cellrowborder" valign="top" headers="d12241e198 "> 
+								  <p>end_of_stream 
+								  </p>
+ 
+								</td>
+ 
+								<td class="row-nocellborder" valign="top" headers="d12241e204 "> 
+								  <p>No more items will ever arrive
+									 at this filter. 
+								  </p>
+ 
+								</td>
+ 
+							 </tr>
+ 
+						  </tbody>
+ 
+						</table>
+</div>
+ 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="29.940119760479046%" headers="d12241e148 "> 
+					 <span class="keyword">result_type process_item()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="70.05988023952095%" headers="d12241e151 "> 
+					 <p> Like 
+						<samp class="codeph">try_process_item</samp>, but waits until it can
+						process an item or the end of the stream is reached. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Either 
+						<samp class="codeph">success</samp> or 
+						<samp class="codeph">end_of_stream</samp>. See the table above for
+						details. 
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+						<p>The current implementation spin waits until it can process
+						  an item or reaches the end of the stream. 
+						</p>
+ 
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/algorithms/pipeline_cls.htm">pipeline Class</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

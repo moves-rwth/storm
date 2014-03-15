@@ -1,0 +1,279 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Modifiers">
+<meta name="DC.subject" content="Modifiers">
+<meta name="keywords" content="Modifiers">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_unordered_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="modifiers_map_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Modifiers</title>
+</head>
+<body id="modifiers_map_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="modifiers_map_cls"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Modifiers</h1>
+ 
+   
+  <div> 
+      <div class="section">
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the members
+		  of the 
+                  <samp class="codeph">concurrent_unordered_map</samp> and
+                  <samp class="codeph">concurrent_unordered_multimap</samp>
+                  template classes. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="33.89830508474576%" id="d46377e37">Member 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="66.10169491525423%" id="d46377e40">Description 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d46377e37 "><samp class="codeph"> std::pair&lt;iterator, bool&gt;
+					 insert(const value_type&amp; x)</samp> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d46377e40 "> 
+				  <p>Constructs copy of 
+					 <samp class="codeph">x</samp> and attempts to insert it into the
+					 map. Destroys the copy if the attempt fails because there was already an item
+					 with the same key. 
+				  </p>
+ 
+				  <p><strong>Returns</strong>: 
+					 <samp class="codeph">std::pair(iterator,success)</samp>. The value 
+					 <samp class="codeph">iterator</samp> points to an item in the map with a matching
+					 key. The value of 
+					 <samp class="codeph">success</samp> is true if the item was inserted; false
+					 otherwise. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d46377e37 "><samp class="codeph">iterator insert(const_iterator hint,
+					 const value_type&amp; x)</samp> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d46377e40 "> 
+				  <p>Same as 
+					 <samp class="codeph">insert(x)</samp>. 
+				  </p>
+ 
+				  <div class="Note"><h3 class="NoteTipHead">
+					Note</h3> 
+					 <p>The current implementation ignores the
+						hint argument. Other implementations might not ignore it. It exists for
+						similarity with the C++11 class 
+						<samp class="codeph">unordered_map</samp>. It hints to the
+						implementation about where to start searching. Typically it should point to an
+						item adjacent to where the item will be inserted. 
+					 </p>
+ 
+				  </div> 
+				  <p><strong>Returns</strong>: Iterator pointing to
+					 inserted item, or item already in the map with the same key. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d46377e37 "><samp class="codeph">template&lt;class InputIterator&gt;
+					 void insert(InputIterator first, InputIterator last)</samp> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d46377e40 "> 
+				  <p>Does 
+					 <samp class="codeph">insert(*<em>i</em>)</samp> where 
+					 <samp class="codeph">i</samp> is in the half-open interval
+					 <samp class="codeph">[first,last)</samp>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d46377e37 "><samp class="codeph">iterator unsafe_erase(const_iterator
+					 position)</samp> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d46377e40 "> 
+				  <p>Removes the item pointed to by 
+					 <samp class="codeph">position</samp> from the map. 
+				  </p>
+ 
+				  <p><strong>Returns</strong>: Iterator pointing to item
+					 that was immediately after the erased item, or 
+					 <samp class="codeph">end()</samp> if erased item was the last item in the
+					 map. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d46377e37 "><samp class="codeph">size_type unsafe_erase(const
+					 key_type&amp; k)</samp> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d46377e40 "> 
+				  <p>Removes item with key 
+					 <samp class="codeph">k</samp> if such an item exists. 
+				  </p>
+ 
+				  <p><strong>Returns</strong>: 1 if an item was removed; 0
+					 otherwise. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d46377e37 "><samp class="codeph">iterator unsafe_erase(const_iterator
+					 first, const_iterator last)</samp> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d46377e40 "> 
+				  <p>Removes 
+					 <samp class="codeph">*i</samp> where 
+					 <samp class="codeph">i</samp> is in the half-open interval<samp class="codeph">
+						[first,last)</samp> .
+				  </p>
+ 
+				  <p><strong>Returns</strong>: 
+					 <samp class="codeph">last</samp> 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d46377e37 "><samp class="codeph">void clear()</samp> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d46377e40 "> 
+				  <p>Remove all items from the map. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+      </div>
+
+      <div class="section">
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on 
+		  the <samp class="codeph">concurrent_unordered_map</samp> template class. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="33.89830508474576%" id="d46377e248">Member 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="66.10169491525423%" id="d46377e251">Description 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d46377e248 "><samp class="codeph">void
+					 swap(concurrent_unordered_map&amp; m)</samp> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d46377e251 "> 
+				  <p>Swaps contents of 
+					 <samp class="codeph">*this</samp> and 
+					 <samp class="codeph">m</samp>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+      </div>
+
+      <div class="section">
+	 
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on 
+		  the <samp class="codeph">concurrent_unordered_multimap</samp> template class. 
+		</span><thead align="left"> 
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="33.89830508474576%" id="d46377e298">Member 
+				</th>
+ 
+				<th class="cellrowborder" valign="top" width="66.10169491525423%" id="d46377e301">Description 
+				</th>
+ 
+			 </tr>
+</thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d46377e298 "><samp class="codeph">void
+					 swap(concurrent_unordered_multimap&amp; m)</samp> 
+				</td>
+ 
+				<td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d46377e301 "> 
+				  <p>Swaps contents of 
+					 <samp class="codeph">*this</samp> and 
+					 <samp class="codeph">m</samp>. 
+				  </p>
+ 
+				</td>
+ 
+			 </tr>
+ 
+		  </tbody>
+ 
+		</table>
+</div>
+ 
+      </div>
+
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_unordered_map_cls.htm">concurrent_unordered_map and concurrent_unordered_multimap Template Classes</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Construction, Copy, and Assignment">
+<meta name="DC.subject" content="Construction, Copy, and Assignment">
+<meta name="keywords" content="Construction, Copy, and Assignment">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_vector.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="construction_copy_and_assignment">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Construction, Copy, and Assignment</title>
+</head>
+<body id="construction_copy_and_assignment">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="construction_copy_and_assignment"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Construction, Copy, and Assignment</h1>
+ 
+   
+  <div> 
+	 <div class="section"> 
+		<div class="Note"><h3 class="NoteTipHead">
+					Caution</h3> 
+		  <p>These operations must not be invoked concurrently
+			 on the same vector. 
+		  </p>
+ 
+		</div> 
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d56735e37">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d56735e40">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword">concurrent_vector( const
+						allocator_type&amp; a = allocator_type() )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>Constructs empty vector using optionally
+						specified allocator instance. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword">concurrent_vector( size_type n,
+						const_reference t=T(), const allocator_type&amp; a = allocator_type()
+						);</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>Constructs vector of 
+						<samp class="codeph"><em>n</em></samp> copies of 
+						<samp class="codeph"><em>t</em></samp>, using optionally specified
+						allocator instance. If 
+						<samp class="codeph"><em>t</em></samp> is not specified, each element is
+						default constructed instead of copied. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword">template&lt;typename
+						InputIterator&gt; concurrent_vector( InputIterator first, InputIterator last,
+						const allocator_type&amp; a = allocator_type() )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>Constructs vector that is copy of the
+						sequence 
+						<samp class="codeph">[<em>first,last</em>)</samp>, making only 
+						<samp class="codeph">N</samp> calls to the copy constructor of 
+						<samp class="codeph">T</samp>, where 
+						<samp class="codeph">N</samp> is the distance between first and last. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword">concurrent_vector(std::initializer_list&lt;T&gt; il,
+						const allocator_type &amp;a = allocator_type()) )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>C++11 specific; Equivalent to 
+						<samp class="codeph">concurrent_vector(<em>il</em>.begin(), 
+						  <em>il</em>.end(), 
+						  <em>a</em>)</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword">concurrent_vector( const
+						concurrent_vector&amp; src )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>Constructs copy of 
+						<samp class="codeph"><em>src</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword"> concurrent_vector&amp; operator=(
+						const concurrent_vector&amp; src )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>Assigns contents of 
+						<samp class="codeph">src</samp> to 
+						<samp class="codeph">*<em>this</em></samp>. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Reference to left hand
+						side. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword">template&lt;typename M&gt;
+				concurrent_vector&amp;
+						operator=( const concurrent_vector&lt;T, M&gt;&amp; src )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>Assign contents of 
+						<samp class="codeph"><em>src</em></samp> to 
+						<samp class="codeph">*this</samp>. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Reference to left hand
+						side. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword"> concurrent_vector&amp; operator=(
+						std::initializer_list&lt;T&gt; il )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>C++11 specific; Sets 
+                        <samp class="codeph">*<em>this</em></samp> 
+                        to contain data from
+                        <samp class="codeph">il</samp>. 
+					 </p>
+ 
+					 <p><strong>Returns</strong>: Reference to left hand
+						side. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword">void assign( size_type n,
+						const_reference t )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>Assign 
+						<samp class="codeph"><em>n</em></samp> copies of 
+						<samp class="codeph"><em>t</em></samp>. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword">template&lt;class InputIterator
+						&gt;
+				void assign(
+						InputIterator first, InputIterator last )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>Assign copies of sequence 
+						<samp class="codeph">[<em>first,last</em>)</samp>, making only<samp class="codeph">
+						  N</samp> calls to the copy constructor of<samp class="codeph"> T</samp>, where 
+						<samp class="codeph">N</samp> is the distance between first and last. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d56735e37 "><span class="keyword">void assign(
+						std::initializer_list&lt;T&gt; il )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d56735e40 "> 
+					 <p>C++11 specific; Equivalent to 
+						<samp class="codeph">assign(<em>il</em>.begin(), 
+						  <em>il</em>.end())</samp>
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+ 
+	 </div>
+ 
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_vector.htm">concurrent_vector</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

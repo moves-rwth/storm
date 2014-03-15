@@ -1,0 +1,248 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Container Range Concept">
+<meta name="DC.subject" content="Container Range Concept">
+<meta name="keywords" content="Container Range Concept">
+<meta name="DC.Relation" scheme="URI" content="../../reference/containers_overview.htm">
+<meta name="DC.Relation" scheme="URI" content="concurrent_hash_map_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="concurrent_vector.htm">
+<meta name="DC.Relation" scheme="URI" content="../algorithms/parallel_for_func.htm">
+<meta name="DC.Relation" scheme="URI" content="../algorithms/parallel_reduce_func.htm">
+<meta name="DC.Relation" scheme="URI" content="../algorithms/parallel_scan_func.htm">
+<meta name="DC.Relation" scheme="URI" content="../algorithms/range_concept.htm">
+<meta name="DC.Relation" scheme="URI" content="concurrent_hash_map_cls/capacity_map_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="concurrent_vector/parallel_iteration.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="container_range_concept">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>Container Range Concept</title>
+</head>
+<body id="container_range_concept">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="container_range_concept"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Container Range Concept</h1>
+ 
+  
+  <div> 
+	 <div class="section"><h2 class="sectiontitle">Summary</h2> 
+		 
+		<p>View set of items in a container as a recursively
+		  divisible range.
+		</p>
+
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Requirements</h2>
+		 
+		<p>A Container Range is a 
+		  <strong>Range</strong> with the further requirements listed in below.
+		</p>
+ 
+		
+<div class="tablenoborder"><a name="tbl18"><!-- --></a><table cellpadding="4" summary="" id="tbl18" width="100%" frame="hsides" border="1" rules="all"><caption><span class="tablecap">Additional Requirements on a Container
+		  Range R</span></caption> 
+		   
+		   
+		  <thead align="left">
+			 <tr> 
+				<th class="cellrowborder" valign="top" width="NaN%" id="d59076e52">
+				  <p><strong>Pseudo-Signature</strong>
+				  </p>
+
+				</th>
+ 
+				<th class="row-nocellborder" valign="top" width="NaN%" id="d59076e60">
+				  <p><strong>Semantics</strong>
+				  </p>
+
+				</th>
+ 
+			 </tr>
+ 
+		  </thead>
+ 
+		  <tbody> 
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d59076e52 ">
+				  <p><samp class="codeph">R::value_type</samp>
+				  </p>
+
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d59076e60 ">
+				  <p>Item type
+				  </p>
+
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d59076e52 ">
+				  <p><samp class="codeph">R::reference</samp>
+				  </p>
+
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d59076e60 ">
+				  <p>Item reference type
+				  </p>
+
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d59076e52 ">
+				  <p><samp class="codeph">R::const_reference</samp>
+				  </p>
+
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d59076e60 ">
+				  <p>Item const reference type
+				  </p>
+
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d59076e52 ">
+				  <p><samp class="codeph">R::difference_type</samp>
+				  </p>
+
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d59076e60 ">
+				  <p>Type for difference of two iterators
+				  </p>
+
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d59076e52 ">
+				  <p><samp class="codeph">R::iterator</samp>
+				  </p>
+
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d59076e60 ">
+				  <p>Iterator type for range
+				  </p>
+
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d59076e52 ">
+				  <p><samp class="codeph">R::iterator R::begin()</samp> 
+				  </p>
+
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d59076e60 ">
+				  <p>First item in range
+				  </p>
+
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d59076e52 ">
+				  <p><samp class="codeph">R::iterator R::end()</samp> 
+				  </p>
+
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d59076e60 ">
+				  <p>One past last item in range
+				  </p>
+
+				</td>
+ 
+			 </tr>
+
+			 <tr> 
+				<td class="cellrowborder" valign="top" width="NaN%" headers="d59076e52 ">
+				  <p><samp class="codeph">R::size_type R::grainsize()
+						const</samp>
+				  </p>
+
+				</td>
+ 
+				<td class="row-nocellborder" valign="top" width="NaN%" headers="d59076e60 ">
+				  <p>Grain size
+				  </p>
+
+				</td>
+ 
+			 </tr>
+
+		  </tbody>
+
+		</table>
+</div>
+ 
+	 </div>
+ 
+	 <div class="section"><h2 class="sectiontitle">Model Types</h2>
+		 
+		<p>Classes 
+		  <samp class="codeph">concurrent_hash_map</samp> and 
+		  <samp class="codeph">concurrent_vector</samp> both have member types 
+		  <samp class="codeph">range_type</samp> and 
+		  <samp class="codeph">const_range_type</samp> that model a Container Range.
+		</p>
+ 
+		<p>Use the range types in conjunction with 
+		  <samp class="codeph">parallel_for</samp>, 
+		  <samp class="codeph">parallel_reduce</samp>, and 
+		  <samp class="codeph">parallel_scan</samp> to iterate over items in a container. 
+		</p>
+
+	 </div>
+ 
+  </div>
+
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/containers_overview.htm">Containers Overview</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="concurrent_hash_map_cls.htm">concurrent_hash_map
+		  </a></div>
+<div><a href="concurrent_vector.htm">concurrent_vector
+		  </a></div>
+<div><a href="../algorithms/parallel_for_func.htm">parallel_for
+		  </a></div>
+<div><a href="../algorithms/parallel_reduce_func.htm">parallel_reduce
+		  </a></div>
+<div><a href="../algorithms/parallel_scan_func.htm">parallel_scan
+		  </a></div>
+<div><a href="../algorithms/range_concept.htm">Range
+		  </a></div>
+<div><a href="concurrent_hash_map_cls/capacity_map_cls.htm">Capacity 
+		  </a></div>
+<div><a href="concurrent_vector/parallel_iteration.htm">Parallel Iteration
+		  </a></div></div>
+</div>
+
+</body>
+</html>

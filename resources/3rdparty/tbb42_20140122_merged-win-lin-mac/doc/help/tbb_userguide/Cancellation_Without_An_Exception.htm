@@ -1,0 +1,93 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="topic">
+<meta name="DC.Title" content="Cancellation Without An Exception">
+<meta name="DC.subject" content="Cancellation Without An Exception">
+<meta name="keywords" content="Cancellation Without An Exception">
+<meta name="DC.Relation" scheme="URI" content="../tbb_userguide/Exceptions_and_Cancellation.htm">
+<meta name="DC.Relation" scheme="URI" content="Lambda_Expressions.htm#tutorial_Lambda_Expressions">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="tutorial_Cancellation_Without_An_Exception">
+<link rel="stylesheet" type="text/css" href="../intel_css_styles.css">
+<title>Cancellation Without An Exception</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="tutorial_Cancellation_Without_An_Exception">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(1);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="tutorial_Cancellation_Without_An_Exception"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Cancellation Without An Exception</h1>
+ 
+   
+  <div> 
+	 <p>To cancel an algorithm but not throw an exception, use the expression 
+		<samp class="codeph">task::self().cancel_group_execution()</samp>. The part 
+		<samp class="codeph">task::self()</samp> references the innermost Intel&reg; TBB task on
+		the current thread. Calling 
+		<samp class="codeph">cancel_group_execution()</samp> cancels all tasks in its 
+		<samp class="codeph">task_group_context</samp>, which is explained in more detail in
+		
+		<strong>Cancellation and Nested Parallelism</strong>. The method returns 
+		<samp class="codeph">true</samp> if it actually causes cancellation, 
+		<samp class="codeph">false</samp> if the 
+		<samp class="codeph">task_group_context</samp> was already cancelled. 
+	 </p>
+ 
+	 <p>The example below shows how to use 
+		<samp class="codeph">task::self().cancel_group_execution()</samp>. 
+	 </p>
+ 
+	 <pre>#include "tbb/tbb.h"
+#include &lt;vector&gt;
+#include &lt;iostream&gt;
+&nbsp;
+using namespace tbb;
+using namespace std;
+&nbsp;
+vector&lt;int&gt; Data;
+&nbsp;
+struct Update {
+    void operator()( const blocked_range&lt;int&gt;&amp; r ) const {
+        for( int i=r.begin(); i!=r.end(); ++i )
+            if( i&lt;Data.size() ) {
+                ++Data[i];
+            } else {
+                // Cancel related tasks.
+                if( task::self().cancel_group_execution() )
+                    cout &lt;&lt; "Index " &lt;&lt; i &lt;&lt; " caused cancellation\n";
+                return;
+            }
+    }
+};
+&nbsp;
+int main() {
+    Data.resize(1000);
+    parallel_for( blocked_range&lt;int&gt;(0, 2000), Update());
+    return 0;
+}</pre> 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../tbb_userguide/Exceptions_and_Cancellation.htm">Exceptions and Cancellation</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="Lambda_Expressions.htm#tutorial_Lambda_Expressions">Lambda Expressions
+		  </a></div></div>
+</div> 
+
+</body>
+</html>

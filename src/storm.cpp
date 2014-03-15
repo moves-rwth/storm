@@ -62,7 +62,19 @@
 
 #include "src/exceptions/InvalidSettingsException.h"
 
-#include "cudaForStorm.h"
+// Includes for the linked libraries and versions header
+#ifdef STORM_HAVE_INTELTBB
+#	include "tbb/tbb_stddef.h"
+#endif
+#ifdef STORM_HAVE_GLPK
+#	include "glpk.h"
+#endif
+#ifdef STORM_HAVE_GUROBI
+#	include "gurobi_c.h"
+#endif
+#ifdef STORM_HAVE_Z3
+#	include "z3.h"
+#endif
 
 #include <iostream>
 #include <iomanip>
@@ -153,16 +165,38 @@ void printHeader(const int argc, const char* argv[]) {
 	std::cout << "StoRM" << std::endl;
 	std::cout << "-----" << std::endl << std::endl;
 
-	std::cout << "Version: 1.0 Alpha" << std::endl;
+	std::cout << "Version: " << STORM_CPP_VERSION_MAJOR << "." << STORM_CPP_VERSION_MINOR << "." << STORM_CPP_VERSION_PATCH;
+	if (STORM_CPP_VERSION_COMMITS_AHEAD != 0) {
+		std::cout << " (+" << STORM_CPP_VERSION_COMMITS_AHEAD << " commits)";
+	}
+	std::cout << " build from revision " << STORM_CPP_VERSION_HASH;
+	if (STORM_CPP_VERSION_DIRTY == 1) {
+		std::cout << " (DIRTY)";
+	}
+	std::cout << std::endl;
+	
+#ifdef STORM_HAVE_INTELTBB
+	std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
+#endif
+#ifdef STORM_HAVE_GLPK
+	std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
+#endif
+#ifdef STORM_HAVE_GUROBI
+	std::cout << "Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl;
+#endif
+#ifdef STORM_HAVE_Z3
+	unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
+	Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
+	std::cout << "Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "." << std::endl;
+#endif
     
 	// "Compute" the command line argument string with which STORM was invoked.
 	std::stringstream commandStream;
 	for (int i = 0; i < argc; ++i) {
 		commandStream << argv[i] << " ";
 	}
-	std::cout << "Command line: " << commandStream.str() << std::endl;
+	std::cout << "Command line: " << commandStream.str() << std::endl << std::endl;
 	std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
-	cudaForStormTestFunction(21, 21);
 }
 
 /*!
@@ -249,7 +283,6 @@ storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecke
  * @return
  */
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
-    // Create the appropriate model checker.
     //return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp);
 	return new storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double>(mdp);
 }

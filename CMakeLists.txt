@@ -3,10 +3,6 @@ cmake_minimum_required (VERSION 2.8.6)
 # Set project name
 project (storm CXX C)
 
-# Set the version number
-set (STORM_CPP_VERSION_MAJOR 1)
-set (STORM_CPP_VERSION_MINOR 0)
-
 # Add base folder for better inclusion paths
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src")
@@ -25,10 +21,10 @@ include_directories(${GMMXX_INCLUDE_DIR})
 ##	CMake options of StoRM
 ##
 #############################################################
-option(DEBUG "Sets whether the DEBUG mode is used" ON)
-option(USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
+option(STORM_DEBUG "Sets whether the DEBUG mode is used" ON)
+option(STORM_USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
-option(ENABLE_INTELTBB "Sets whether the Intel TBB is available." OFF)
+option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
 option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
@@ -59,13 +55,15 @@ if(CUSTOM_BOOST_ROOT)
 	set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
 endif(CUSTOM_BOOST_ROOT)
 
+set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_merged-win-lin-mac")
+
 find_package(Boost REQUIRED)
 find_package(Doxygen REQUIRED)
 find_package(TBB)
 find_package(Threads REQUIRED)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
-if (DEBUG)
+if (STORM_DEBUG)
     set (CMAKE_BUILD_TYPE "DEBUG")
 else()
     set (CMAKE_BUILD_TYPE "RELEASE")
@@ -102,15 +100,15 @@ if(CMAKE_COMPILER_IS_GNUCC)
     message(STATUS "StoRM - Using Compiler Configuration: GCC")
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic -DBOOST_RESULT_OF_USE_TR1")
     # -Werror is atm removed as this gave some problems with existing code
     # May be re-set later
     # (Thomas Heinemann, 2012-12-21)
     
     # Turn on popcnt instruction if desired (yes by default)
-    if (USE_POPCNT)
+    if (STORM_USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
-    endif(USE_POPCNT)
+    endif(STORM_USE_POPCNT)
 	
 	# Set the no-strict-aliasing target for GCC
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
@@ -154,9 +152,9 @@ else(CLANG)
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
     
     # Turn on popcnt instruction if desired (yes by default)
-    if (USE_POPCNT)
+    if (STORM_USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
-    endif(USE_POPCNT)    
+    endif(STORM_USE_POPCNT)    
 	
 	# Set the no-strict-aliasing target for Clang
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
@@ -167,6 +165,27 @@ endif()
 ##	CMake-generated Config File for StoRM
 ##
 #############################################################
+
+#
+# Make a version file containing the current version from git.
+#
+include(GetGitRevisionDescription)
+git_describe_checkout(STORM_GIT_VERSION_STRING)
+message(STATUS "STORM_GIT_VERSION_STRING: ${STORM_GIT_VERSION_STRING}")
+# Parse the git Tag into variables
+string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" STORM_CPP_VERSION_MAJOR "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" STORM_CPP_VERSION_MINOR "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" STORM_CPP_VERSION_PATCH "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-([0-9]+)\\-.*" "\\1" STORM_CPP_VERSION_COMMITS_AHEAD "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" STORM_CPP_VERSION_HASH "${STORM_GIT_VERSION_STRING}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_CPP_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
+if ("${STORM_CPP_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
+	set(STORM_CPP_VERSION_DIRTY 1)
+else()
+	set(STORM_CPP_VERSION_DIRTY 0)
+endif()
+message(STATUS "StoRM - Version information: ${STORM_CPP_VERSION_MAJOR}.${STORM_CPP_VERSION_MINOR}.${STORM_CPP_VERSION_PATCH} (${STORM_CPP_VERSION_COMMITS_AHEAD} commits ahead of Tag) build from ${STORM_CPP_VERSION_HASH} (Dirty: ${STORM_CPP_VERSION_DIRTY})")
+
 # Base path for test files
 set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
 # Gurobi Defines
@@ -194,7 +213,7 @@ else()
 endif()
 
 # Intel TBB Defines
-if (TBB_FOUND AND ENABLE_INTELTBB)
+if (TBB_FOUND AND STORM_USE_INTELTBB)
 	set(STORM_CPP_INTELTBB_DEF "define")
 else()
 	set(STORM_CPP_INTELTBB_DEF "undef")
@@ -296,7 +315,7 @@ if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
 	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 link_directories(${Boost_LIBRARY_DIRS})
-if (TBB_FOUND AND ENABLE_INTELTBB)
+if (TBB_FOUND AND STORM_USE_INTELTBB)
 	link_directories(${TBB_LIBRARY_DIRS})
 endif()
 
@@ -423,11 +442,13 @@ add_test(NAME storm-performance-tests COMMAND storm-performance-tests)
 ##
 #############################################################
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
-set(LOG4CPLUS_BUILD_TESTING NO)
+set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
+set(LOG4CPLUS_BUILD_TESTING OFF)
 set(LOG4CPLUS_USE_UNICODE OFF)
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2/include")
-include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.2-rc2/include") # This adds the defines.hxx file
+set(LOG4CPLUS_DEFINE_INSTALL_TARGET OFF)
+add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
+include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
 target_link_libraries(storm log4cplusS)
 target_link_libraries(storm-functional-tests log4cplusS)
 target_link_libraries(storm-performance-tests log4cplusS)
@@ -447,13 +468,13 @@ endif(UNIX AND NOT APPLE)
 #############################################################
 if (TBB_FOUND)
 	message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
-	if (ENABLE_INTELTBB)
+	if (STORM_USE_INTELTBB)
 		message(STATUS "StoRM - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
 		include_directories(${TBB_INCLUDE_DIRS})
 		target_link_libraries(storm tbb tbbmalloc)
 		target_link_libraries(storm-functional-tests tbb tbbmalloc)
 		target_link_libraries(storm-performance-tests tbb tbbmalloc)
-	endif(ENABLE_INTELTBB)
+	endif(STORM_USE_INTELTBB)
 endif(TBB_FOUND)
 
 #############################################################
@@ -515,3 +536,10 @@ add_custom_target(memcheck-performance-tests valgrind --leak-check=full --show-r
 
 set(CPPLINT_ARGS --filter=-whitespace/tab,-whitespace/line_length,-legal/copyright,-readability/streams)
 add_custom_target(style python cpplint.py ${CPPLINT_ARGS} `find ./src/ -iname "*.h" -or -iname "*.cpp" `)
+
+INSTALL(TARGETS storm storm-functional-tests storm-performance-tests
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+)
+include(CPackConfig.cmake)

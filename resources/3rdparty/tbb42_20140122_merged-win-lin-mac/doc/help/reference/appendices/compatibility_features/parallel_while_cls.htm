@@ -1,0 +1,350 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="parallel_while Template Class">
+<meta name="DC.subject" content="parallel_while Template Class">
+<meta name="keywords" content="parallel_while Template Class">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/appendices/compatibility_features.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_while_cls">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>parallel_while Template Class</title>
+<xml>
+<MSHelp:Attr Name="DocSet" Value="Intel"></MSHelp:Attr>
+<MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+<MSHelp:Attr Name="TopicType" Value="kbReference"></MSHelp:Attr>
+</xml>
+</head>
+<body id="parallel_while_cls">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_while_cls"><!-- --></a>
+
+
+  <h1 class="topictitle1">parallel_while Template Class</h1>
+
+  
+  <div>
+	 <div class="section"><h2 class="sectiontitle">Summary</h2>
+		
+		<p>Template class that processes work items.
+		</p>
+
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3>
+		  <p>This class is deprecated. Use parallel_do (4.7)
+			 instead.
+		  </p>
+
+		</div>
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Syntax</h2>
+		
+		<pre>template&lt;typename Body&gt;
+ class parallel_while;</pre>
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Header</h2>
+		
+		<pre>#include "tbb/parallel_while.h"</pre>
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Description</h2>
+		
+		<p>A 
+		  <samp class="codeph">parallel_while&lt;Body&gt;</samp> performs
+		  parallel iteration over items. The processing to be performed on each item is
+		  defined by a function object of type Body. The items are specified in two ways:
+		</p>
+
+		<ul type="disc">
+		  <li>
+			 <p>A stream of items.
+			 </p>
+
+		  </li>
+
+		  <li>
+			 <p>Additional items that are added while the
+				stream is being processed.
+			 </p>
+
+		  </li>
+
+		</ul>
+
+		<p><a href="#tbl44">Table 44</a> shows the
+		  requirements on the stream and body.
+		</p>
+
+		
+<div class="tablenoborder"><a name="tbl44"><!-- --></a><table cellpadding="4" summary="" id="tbl44" frame="border" border="1" cellspacing="0" rules="rows"><caption><span class="tablecap">Table 44: parallel_while Requirements for
+		  Stream S and Body B</span></caption>
+		  <thead align="left">
+			 <tr>
+				<th class="cellrowborder" align="left" valign="top" width="60%" id="d26597e104">
+				  <p>Pseudo-Signature
+				  </p>
+
+				</th>
+
+				<th class="cellrowborder" align="left" valign="top" width="40%" id="d26597e110">
+				  <p>Semantics
+				  </p>
+
+				</th>
+
+			 </tr>
+</thead>
+
+		  <tbody>
+			 <tr>
+				<td class="cellrowborder" align="left" valign="top" width="60%" headers="d26597e104 ">
+				  <p><samp class="codeph">bool S::pop_if_present( B::argument_type&amp;
+						item )</samp>
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d26597e110 ">
+				  <p>Get next stream item. 
+					 <samp class="codeph">parallel_while</samp>
+					 does not concurrently invoke the method on the same this.
+				  </p>
+
+				</td>
+
+			 </tr>
+
+			 <tr>
+				<td class="cellrowborder" align="left" valign="top" width="60%" headers="d26597e104 ">
+				  <p><samp class="codeph">B::operator()( B::argument_type&amp; item )
+						const</samp>
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d26597e110 ">
+				  <p>Process 
+					 <samp class="codeph">item.
+						parallel_while</samp> may concurrently invoke the operator for the same 
+					 <span class="keyword">this</span> but different 
+					 <span class="keyword">item</span>.
+				  </p>
+
+				</td>
+
+			 </tr>
+
+			 <tr>
+				<td class="cellrowborder" align="left" valign="top" width="60%" headers="d26597e104 ">
+				  <p><samp class="codeph">B::argument_type()</samp>
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d26597e110 ">
+				  <p>Default constructor.
+				  </p>
+
+				</td>
+
+			 </tr>
+
+			 <tr>
+				<td class="cellrowborder" align="left" valign="top" width="60%" headers="d26597e104 ">
+				  <p><samp class="codeph">B::argument_type( const B::argument_type&amp;
+						)</samp>
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d26597e110 ">
+				  <p>Copy constructor.
+				  </p>
+
+				</td>
+
+			 </tr>
+
+			 <tr>
+				<td class="cellrowborder" align="left" valign="top" width="60%" headers="d26597e104 ">
+				  <p><samp class="codeph">~B::argument_type()</samp>
+				  </p>
+
+				</td>
+
+				<td class="cellrowborder" align="left" valign="top" width="40%" headers="d26597e110 ">
+				  <p>Destructor.
+				  </p>
+
+				</td>
+
+			 </tr>
+
+		  </tbody>
+
+		</table>
+</div>
+
+		<p>For example, a unary function object, as defined in
+		  Section 20.3 of the C++ standard, models the requirements for B. A 
+		  <samp class="codeph">concurrent_queue</samp> (5.5)
+		  models the requirements for S.
+		</p>
+
+		<div class="Note"><h3 class="NoteTipHead">
+					Tip</h3>
+		  <p>To achieve speedup, the 
+			 <samp class="codeph">grainsize of
+				B::operator()</samp> needs to be on the order of at least ~10,000
+			 instructions. Otherwise, the internal overheads of parallel_while swamp the
+			 useful work. The parallelism in 
+			 <samp class="codeph">parallel_while</samp> is
+			 not scalable if all the items come from the input stream. To achieve scaling,
+			 design your algorithm such that method add often adds more than one piece of
+			 work.
+		  </p>
+
+		</div>
+	 </div>
+
+	 <div class="section"><h2 class="sectiontitle">Members</h2>
+		
+		<pre>namespace tbb {
+ template&lt;typename Body&gt;
+ class parallel_while {
+ public:
+ parallel_while();
+ ~parallel_while();
+ typedef typename Body::argument_type value_type;
+ template&lt;typename Stream&gt;
+ void run( Stream&amp; stream, const Body&amp; body );
+ void add( const value_type&amp; item );
+ };
+ }</pre>
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d26597e281">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d26597e284">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d26597e281 "><span class="keyword">parallel_while&lt;Body&gt;()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d26597e284 ">
+					 <p>Constructs a 
+						<samp class="codeph">parallel_while</samp> that is not yet
+						running.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d26597e281 "><span class="keyword">~parallel_while&lt;Body&gt;()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d26597e284 ">
+					 <p>Destroys a 
+						<samp class="codeph">parallel_while</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d26597e281 "><span class="keyword">Template &lt;typename Stream&gt;
+						void run( Stream&amp; stream, const Body&amp; body )</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d26597e284 ">
+					 <p>Applies 
+						<var>body</var>
+						to each item in 
+						<var>stream</var> and any other items that
+						are added by method add. Terminates when both of the following conditions
+						become true:
+					 </p>
+
+					 <ul type="disc">
+						<li>
+						  <p><samp class="codeph">stream.pop_if_present</samp> returned false.
+						  </p>
+
+						</li>
+
+						<li>
+						  <p><samp class="codeph">body(x)</samp> returned for all items 
+							 <var>x</var> generated from the stream or
+							 method add.
+						  </p>
+
+						</li>
+
+					 </ul>
+
+				  </td>
+
+				</tr>
+
+				<tr>
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d26597e281 "><span class="keyword">void add( const value_type&amp;
+						item )</span> 
+				  </td>
+
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d26597e284 ">
+					 <p><strong>Requirements</strong>: Must be called from
+						a call to 
+						<samp class="codeph"><var>body</var>.operator()</samp>
+						created by 
+						<samp class="codeph">parallel_while</samp>. Otherwise, the
+						termination semantics of method 
+						<span class="keyword">run</span>
+						are undefined.
+					 </p>
+ 
+					 <p><strong>Effects</strong>: Adds item to collection
+						of items to be processed.
+					 </p>
+
+				  </td>
+
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+
+  </div>
+
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/appendices/compatibility_features.htm">Compatibility Features</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

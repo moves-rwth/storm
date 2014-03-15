@@ -1,0 +1,174 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="task Context">
+<meta name="DC.subject" content="task Context">
+<meta name="keywords" content="task Context">
+<meta name="DC.Relation" scheme="URI" content="../../reference/task_scheduler.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="task_context">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>task Context</title>
+</head>
+<body id="task_context">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="task_context"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">task Context</h1>
+ 
+  
+  <div>
+	 <div class="section">
+		<p> The methods detailed in the following table expose
+		  relationships between 
+		  <em>task</em> objects, and between 
+		  <em>task</em> objects and the underlying physical threads.
+		</p>
+
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d113806e37">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d113806e40">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d113806e37 "><span class="keyword">static task&amp; self()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d113806e40 ">
+					 <p><strong>Returns</strong>: Reference to innermost 
+						<em>task</em> that the calling thread is running. A task is
+						considered running if its methods 
+						<samp class="codeph">execute(), note_affinity()</samp>, or destructor
+						are running. If the calling thread is a user-created thread that is not running
+						any task, 
+						<samp class="codeph">self()</samp> returns a reference to an implicit
+						dummy task associated with the thread.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d113806e37 "><span class="keyword">task* parent() const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d113806e40 ">
+					 <p><strong>Returns</strong>: Value of the attribute 
+						<em>successor</em>. The result is an undefined value if the
+						task was allocated by 
+						<samp class="codeph">allocate_root</samp> and is currently running under
+						control of 
+						<samp class="codeph">spawn_root_and_wait</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d113806e37 "><span class="keyword">void set_parent(task* p)</span>
+					 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d113806e40 ">
+					 <p><strong>Requirements</strong>: Both tasks must be
+						in the same task group. For example, for 
+						<samp class="codeph">task t, t.group() == p-&gt;group()</samp>
+					 </p>
+
+					 <p><strong>Effects</strong>: Sets parent task pointer
+						to specified value 
+						<samp class="codeph">p</samp>.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d113806e37 "><span class="keyword">bool is_stolen_task()
+						const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d113806e40 ">
+					 <p><strong>Returns</strong>: 
+						<em>true</em> if task is running on a thread different than the
+						thread that spawned it.
+					 </p>
+ 
+					 <div class="Note"><h3 class="NoteTipHead">
+					Note</h3>
+						<p>Tasks enqueued with 
+						  <samp class="codeph">task::enqueue()</samp> are never reported as
+						  stolen.
+						</p>
+
+					 </div> 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d113806e37 "><span class="keyword">task_group_context*
+						group()</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d113806e40 ">
+					 <p><strong>Returns</strong>: Descriptor of the task
+						group, which this task belongs to.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d113806e37 "><span class="keyword">void change_group(
+						task_group_context&amp; ctx )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d113806e40 ">
+					 <p>Moves the task from its current task
+						group into the one specified by the 
+						<samp class="codeph">ctx</samp> argument.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/task_scheduler.htm">Task Scheduler</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

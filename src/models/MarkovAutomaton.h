@@ -24,10 +24,10 @@ namespace storm {
 
 		public:
 			MarkovAutomaton(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-							std::vector<uint_fast64_t>& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<T> const& exitRates,
+							storm::storage::BitVector const& markovianStates, std::vector<T> const& exitRates,
 							boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
 							boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
-							: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, nondeterministicChoiceIndices, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling),
+							: AbstractNondeterministicModel<T>(transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling),
                             markovianStates(markovianStates), exitRates(exitRates), closed(false) {
                                 
                 this->turnRatesToProbabilities();
@@ -42,12 +42,11 @@ namespace storm {
 
 			MarkovAutomaton(storm::storage::SparseMatrix<T>&& transitionMatrix,
 							storm::models::AtomicPropositionsLabeling&& stateLabeling,
-							std::vector<uint_fast64_t>&& nondeterministicChoiceIndices,
                             storm::storage::BitVector const& markovianStates, std::vector<T> const& exitRates,
 							boost::optional<std::vector<T>>&& optionalStateRewardVector,
 							boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
 							boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
-							: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(nondeterministicChoiceIndices), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
+							: AbstractNondeterministicModel<T>(std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
                                                                std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
                                 
                 this->turnRatesToProbabilities();
@@ -81,7 +80,7 @@ namespace storm {
             }
             
             bool isHybridState(uint_fast64_t state) const {
-                return isMarkovianState(state) && (this->getNondeterministicChoiceIndices()[state + 1] - this->getNondeterministicChoiceIndices()[state] > 1);
+                return isMarkovianState(state) && (this->getTransitionMatrix().getRowGroupSize(state) > 1);
             }
                             
             bool isMarkovianState(uint_fast64_t state) const {
@@ -127,8 +126,7 @@ namespace storm {
                     uint_fast64_t newNumberOfRows = this->getNumberOfChoices() - numberOfHybridStates;
                     
                     // Create the matrix for the new transition relation and the corresponding nondeterministic choice vector.
-                    storm::storage::SparseMatrixBuilder<T> newTransitionMatrixBuilder;
-                    std::vector<uint_fast64_t> newNondeterministicChoiceIndices(this->getNumberOfStates() + 1);
+                    storm::storage::SparseMatrixBuilder<T> newTransitionMatrixBuilder(0, 0, 0, true, this->getNumberOfStates() + 1);
                     
                     // Now copy over all choices that need to be kept.
                     uint_fast64_t currentChoice = 0;
@@ -139,7 +137,7 @@ namespace storm {
                         }
                         
                         // Record the new beginning of choices of this state.
-                        newNondeterministicChoiceIndices[state] = currentChoice;
+                        newTransitionMatrixBuilder.newRowGroup(currentChoice);
                         
                         // If we are currently treating a hybrid state, we need to skip its first choice.
                         if (this->isHybridState(state)) {
@@ -147,7 +145,7 @@ namespace storm {
                             this->markovianStates.set(state, false);
                         }
 
-                        for (uint_fast64_t row = this->nondeterministicChoiceIndices[state] + (this->isHybridState(state) ? 1 : 0); row < this->nondeterministicChoiceIndices[state + 1]; ++row) {
+                        for (uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state] + (this->isHybridState(state) ? 1 : 0); row < this->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
                             for (auto const& entry : this->transitionMatrix.getRow(row)) {
                                 newTransitionMatrixBuilder.addNextValue(currentChoice, entry.first, entry.second);
                             }
@@ -155,12 +153,8 @@ namespace storm {
                         }
                     }
                     
-                    // Put a sentinel element at the end.
-                    newNondeterministicChoiceIndices.back() = currentChoice;
-                    
                     // Finalize the matrix and put the new transition data in place.
                     this->transitionMatrix = newTransitionMatrixBuilder.build();
-                    this->nondeterministicChoiceIndices = std::move(newNondeterministicChoiceIndices);
                     
                     // Mark the automaton as closed.
                     closed = true;
@@ -172,29 +166,21 @@ namespace storm {
                     throw storm::exceptions::InvalidStateException() << "Applying a scheduler to a non-closed Markov automaton is illegal; it needs to be closed first.";
                 }
                 
-                storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), this->getNondeterministicChoiceIndices(), scheduler);
-                                
-                // Construct the new nondeterministic choice indices for the resulting matrix.
-                std::vector<uint_fast64_t> nondeterministicChoiceIndices(this->getNumberOfStates() + 1);
-                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-                    nondeterministicChoiceIndices[state] = state;
-                }
-                nondeterministicChoiceIndices[this->getNumberOfStates()] = this->getNumberOfStates();
-            
-                return std::shared_ptr<AbstractModel<T>>(new MarkovAutomaton(newTransitionMatrix, this->getStateLabeling(), nondeterministicChoiceIndices, markovianStates, exitRates, this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>()));
+                storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), scheduler);
+                return std::shared_ptr<AbstractModel<T>>(new MarkovAutomaton(newTransitionMatrix, this->getStateLabeling(), markovianStates, exitRates, this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>()));
             }
         
         virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<T> const* firstValue = nullptr, std::vector<T> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override {
         AbstractModel<T>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
         
         // Write the probability distributions for all the states.
-        for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
-            uint_fast64_t rowCount = this->getNondeterministicChoiceIndices()[state + 1] - this->getNondeterministicChoiceIndices()[state];
+        for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+            uint_fast64_t rowCount = this->getTransitionMatrix().getRowGroupIndices()[state + 1] - this->getTransitionMatrix().getRowGroupIndices()[state];
             bool highlightChoice = true;
             
             // For this, we need to iterate over all available nondeterministic choices in the current state.
             for (uint_fast64_t choice = 0; choice < rowCount; ++choice) {
-                typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(choice);
+                typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(this->getTransitionMatrix().getRowGroupIndices()[state] + choice);
                 
                 if (scheduler != nullptr) {
                     // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
@@ -263,6 +249,7 @@ namespace storm {
                         outStream << "}" << std::endl;
                     }
                     }
+                    
 		private:
 
             /*!
@@ -271,7 +258,7 @@ namespace storm {
              */
             void turnRatesToProbabilities() {
                 for (auto state : this->markovianStates) {
-                    for (auto& transition : this->transitionMatrix.getRow(this->getNondeterministicChoiceIndices()[state])) {
+                    for (auto& transition : this->transitionMatrix.getRowGroup(state)) {
                         transition.second /= this->exitRates[state];
                     }
                 }

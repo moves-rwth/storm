@@ -1,0 +1,121 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="Parallel Iteration">
+<meta name="DC.subject" content="Parallel Iteration">
+<meta name="keywords" content="Parallel Iteration">
+<meta name="DC.Relation" scheme="URI" content="../../../reference/containers_overview/concurrent_hash_map_cls.htm">
+<meta name="DC.Relation" scheme="URI" content="../concurrent_unordered_map_cls.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="parallel_literation_container">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../../intel_css_styles.css">
+<title>Parallel Iteration</title>
+</head>
+<body id="parallel_literation_container">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(3);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="parallel_literation_container"><!-- --></a>
+
+ 
+  <h1 class="topictitle1">Parallel Iteration</h1>
+ 
+  
+  <div>
+	 <div class="section">
+		<p>Types 
+		  <samp class="codeph">const_range_type</samp> and 
+		  <samp class="codeph">range_type</samp> model the Container Range concept. The
+		  types differ only in that the bounds for a 
+		  <samp class="codeph">const_range_type</samp> are of type 
+		  <samp class="codeph">const_iterator</samp>, whereas the bounds for a 
+		  <samp class="codeph">range_type</samp> are of type iterator.
+		</p>
+
+		<div class="Note"><h3 class="NoteTipHead">
+					Note</h3>
+		  <p>Do not call concurrent operations, including 
+			 <samp class="codeph">count</samp> and 
+			 <samp class="codeph">find</samp> while iterating the table. Use 
+			 <samp class="codeph">concurrent_unordered_map</samp> if concurrent traversal and
+			 insertion are required.
+		  </p>
+
+		</div>
+		
+<div class="tablenoborder"><table cellpadding="4" summary="" frame="border" border="1" cellspacing="0" rules="all"><span class="tabledesc">The following table provides additional information on the
+			 members of this template class. 
+		  </span><thead align="left"> 
+				<tr> 
+				  <th class="cellrowborder" valign="top" width="33.89830508474576%" id="d35770e64">Member 
+				  </th>
+ 
+				  <th class="cellrowborder" valign="top" width="66.10169491525423%" id="d35770e67">Description 
+				  </th>
+ 
+				</tr>
+</thead>
+ 
+			 <tbody> 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d35770e64 "><span class="keyword">const_range_type range( size_t
+						grainsize=1 ) const</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d35770e67 "> 
+					 <p>Constructs a 
+						<samp class="codeph">const_range_type</samp> representing all keys in
+						the table. The parameter 
+						<samp class="codeph">grainsize</samp> is in units of hash table buckets.
+						Each bucket typically has on average about one key-value pair.
+					 </p>
+ 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">const_range_type</samp> object for the table. 
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+				<tr> 
+				  <td class="cellrowborder" valign="top" width="33.89830508474576%" headers="d35770e64 "><span class="keyword">range_type range( size_t
+						grainsize=1 )</span> 
+				  </td>
+ 
+				  <td class="cellrowborder" valign="top" width="66.10169491525423%" headers="d35770e67 "> 
+					 <p><strong>Returns</strong>: 
+						<samp class="codeph">range_type</samp> object for the table.
+					 </p>
+ 
+				  </td>
+ 
+				</tr>
+ 
+			 </tbody>
+ 
+		  </table>
+</div>
+
+	 </div>
+ 
+  </div>
+ 
+  
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../../reference/containers_overview/concurrent_hash_map_cls.htm">concurrent_hash_map Template Class</a></div>
+</div>
+<div class="See Also">
+<h2>See Also</h2>
+<div class="linklist">
+<div><a href="../concurrent_unordered_map_cls.htm">concurrent_unordered_map
+		  </a></div></div>
+</div>
+
+</body>
+</html>

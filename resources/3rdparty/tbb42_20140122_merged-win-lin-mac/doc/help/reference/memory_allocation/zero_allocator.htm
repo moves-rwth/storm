@@ -1,0 +1,93 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns:MSHelp="http://www.microsoft.com/MSHelp/" lang="en-us" xml:lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="DC.Type" content="reference">
+<meta name="DC.Title" content="zero_allocator">
+<meta name="DC.subject" content="allocator, zero allocator">
+<meta name="keywords" content="allocator, zero allocator">
+<meta name="DC.Relation" scheme="URI" content="../../reference/memory_allocation.htm">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="zero_allocator">
+<meta name="DC.Language" content="en-US">
+<link rel="stylesheet" type="text/css" href="../../intel_css_styles.css">
+<title>zero_allocator</title>
+</head>
+<body id="zero_allocator">
+ <!-- ==============(Start:NavScript)================= -->
+ <script src="..\..\NavScript.js" language="JavaScript1.2" type="text/javascript"></script>
+ <script language="JavaScript1.2" type="text/javascript">WriteNavLink(2);</script>
+ <!-- ==============(End:NavScript)================= -->
+<a name="zero_allocator"><!-- --></a>
+
+
+    <h1 class="topictitle1">zero_allocator</h1>
+
+    
+<div><div class="section"><h2 class="sectiontitle">Summary</h2>
+        <p>Template class for allocator that returns zeroed memory. </p>
+
+        </div>
+<div class="section"><h2 class="sectiontitle">Syntax</h2>
+<pre>template &lt;typename T, 
+          template&lt;typename U&gt; class Alloc = tbb_allocator&gt; 
+class zero_allocator: public Alloc&lt;T&gt;;
+</pre>
+        </div>
+<div class="section"><h2 class="sectiontitle">Header</h2>
+<pre>#include "tbb/tbb_allocator.h"</pre>
+</div>
+
+<div class="section"><h2 class="sectiontitle">Description</h2>
+
+        <p>A <samp class="codeph">zero_allocator</samp> allocates zeroed memory. A
+                        <samp class="codeph">zero_allocator&lt;<em>T,A</em>&gt;</samp> can be instantiated for any
+                    class<em> A</em> that models the Allocator concept. The default for <em>A</em> is
+                    <samp class="codeph">tbb_allocator</samp>. A <samp class="codeph">zero_allocator</samp> forwards
+                allocation requests to <em>A</em> and zeros the allocation before returning it.</p>
+
+        </div>
+<div class="section"><h2 class="sectiontitle">Members</h2>
+<pre>namespace tbb {
+    template &lt;typename T, template&lt;typename U&gt; class Alloc = tbb_allocator&gt;
+    class zero_allocator : public Alloc&lt;T&gt; {
+    public:
+        typedef Alloc&lt;T&gt; base_allocator_type;
+        typedef typename base_allocator_type::value_type 
+                                              value_type;
+        typedef typename base_allocator_type::pointer pointer;
+        typedef typename base_allocator_type::const_pointer 
+                                              const_pointer;
+        typedef typename base_allocator_type::reference 
+ reference;
+        typedef typename base_allocator_type::const_reference 
+                                              const_reference;
+        typedef typename base_allocator_type::size_type 
+                                              size_type;
+        typedef typename base_allocator_type::difference_type 
+                                              difference_type;
+        template&lt;typename U&gt; struct rebind {
+            typedef zero_allocator&lt;U, Alloc&gt; other;
+        };
+
+        zero_allocator() throw() { }
+        zero_allocator(const zero_allocator &amp;a) throw();
+        template&lt;typename U&gt;
+        zero_allocator(const zero_allocator&lt;U&gt; &amp;a) throw(); 
+
+        pointer allocate(const size_type n, const void* hint=0);
+    };
+} 
+ </pre>
+        </div>
+</div>
+
+    
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong>&nbsp;<a href="../../reference/memory_allocation.htm">Memory Allocation</a></div>
+</div>
+<div></div>
+
+</body>
+</html>

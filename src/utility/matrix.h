@@ -14,19 +14,18 @@ namespace storm {
              * dropped from the transition matrix. If a state has no choice enabled, it is equipped with a self-loop instead.
              *
              * @param transitionMatrix The transition matrix of the original system.
-             * @param nondeterministicChoiceIndices A vector indicating at which rows the choices for the states begin.
              * @param scheduler The scheduler to apply to the system.
              * @return A transition matrix that corresponds to all transitions of the given system that are selected by the given scheduler.
              */
             template <typename T>
-            storm::storage::SparseMatrix<T> applyScheduler(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::Scheduler const& scheduler) {
-                storm::storage::SparseMatrixBuilder<T> matrixBuilder(nondeterministicChoiceIndices.size() - 1, transitionMatrix.getColumnCount());
+            storm::storage::SparseMatrix<T> applyScheduler(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler const& scheduler) {
+                storm::storage::SparseMatrixBuilder<T> matrixBuilder(transitionMatrix.getRowGroupCount(), transitionMatrix.getColumnCount());
                 
-                for (uint_fast64_t state = 0; state < nondeterministicChoiceIndices.size() - 1; ++state) {
+                for (uint_fast64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
                     if (scheduler.isChoiceDefined(state)) {
                         // Check whether the choice is valid for this state.
-                        uint_fast64_t choice = nondeterministicChoiceIndices[state] + scheduler.getChoice(state);
-                        if (choice >= nondeterministicChoiceIndices[state + 1]) {
+                        uint_fast64_t choice = transitionMatrix.getRowGroupIndices()[state] + scheduler.getChoice(state);
+                        if (choice >= transitionMatrix.getRowGroupIndices()[state + 1]) {
                             throw storm::exceptions::InvalidStateException() << "Scheduler defines illegal choice " << choice << " for state " << state << ".";
                         }
                         
