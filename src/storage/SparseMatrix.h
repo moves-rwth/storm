@@ -344,6 +344,13 @@ namespace storm {
              * @return The number of entries in the matrix.
              */
             uint_fast64_t getEntryCount() const;
+
+			/*!
+			* Returns the number of entries in the given row group of the matrix.
+			*
+			* @return The number of entries in the given row group of the matrix.
+			*/
+			uint_fast64_t getRowGroupEntryCount(uint_fast64_t const group) const;
             
             /*!
              * Returns the number of row groups in the matrix.

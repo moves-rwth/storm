@@ -2,6 +2,11 @@
 #define STORM_SOLVER_TOPOLOGICALVALUEITERATIONNONDETERMINISTICLINEAREQUATIONSOLVER_H_
 
 #include "src/solver/NativeNondeterministicLinearEquationSolver.h"
+#include "src/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/storage/SparseMatrix.h"
+
+#include <utility>
+#include <vector>
 
 namespace storm {
     namespace solver {
@@ -30,7 +35,12 @@ namespace storm {
             
             virtual NondeterministicLinearEquationSolver<ValueType>* clone() const override;
             
-            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
+            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
+		private:
+			/*!
+			 * Given a topological sort of a SCC Decomposition, this will calculate the optimal grouping of SCCs with respect to the size of the GPU memory.
+			 */
+			std::vector<std::pair<bool, std::vector<uint_fast64_t>>> getOptimalGroupingFromTopologicalSccDecomposition(storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& sccDecomposition, std::vector<uint_fast64_t> const& topologicalSort, storm::storage::SparseMatrix<ValueType> const& matrix) const;
         };
     } // namespace solver
 } // namespace storm

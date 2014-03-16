@@ -35,7 +35,7 @@ __host__ __device__ T operator()(const T &x, const T &y) const
 {
     if (Relative) {
 		if (y == 0) {
-			return x;
+			return ((x >= 0) ? (x) : (-x));
 		}
 		const T result = (x - y) / y;
 		return ((result >= 0) ? (result) : (-result));
@@ -73,6 +73,7 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 
 #ifdef DEBUG
 	std::cout.sync_with_stdio(true);
+	std::cout << "(DLL) Entering CUDA Function: basicValueIteration_mvReduce" << std::endl;
 	std::cout << "(DLL) Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory()))*100 << "%)." << std::endl; 
 	size_t memSize = sizeof(IndexType) * matrixRowIndices.size() + sizeof(IndexType) * columnIndicesAndValues.size() * 2 + sizeof(ValueType) * x.size() + sizeof(ValueType) * x.size() + sizeof(ValueType) * b.size() + sizeof(ValueType) * b.size() + sizeof(IndexType) * nondeterministicChoiceIndices.size();
 	std::cout << "(DLL) We will allocate " << memSize << " Bytes." << std::endl;
@@ -143,6 +144,10 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 		goto cleanup;
 	}
 
+#ifdef DEBUG
+	std::cout << "(DLL) Finished allocating memory." << std::endl;
+#endif
+
 	// Memory allocated, copy data to device
 	cudaError_t cudaCopyResult;
 
@@ -204,6 +209,10 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 		goto cleanup;
 	}
 
+#ifdef DEBUG
+	std::cout << "(DLL) Finished copying data to GPU memory." << std::endl;
+#endif
+
 	// Data is on device, start Kernel
 	while (!converged && iterationCount < maxIterationCount)
 	{ // In a sub-area since transfer of control via label evades initialization
@@ -239,6 +248,7 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 		std::swap(device_x, device_xSwap);
 	}
 #ifdef DEBUG
+	std::cout << "(DLL) Finished kernel execution." << std::endl;
 	std::cout << "(DLL) Executed " << iterationCount << " of max. " << maxIterationCount << " Iterations." << std::endl;
 #endif
 
@@ -248,6 +258,10 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 		std::cout << "Could not copy back data for result vector x, Error Code " << cudaCopyResult << std::endl;
 		goto cleanup;
 	}
+
+#ifdef DEBUG
+	std::cout << "(DLL) Finished copying result data." << std::endl;
+#endif
 
 	// All code related to freeing memory and clearing up the device
 cleanup:
@@ -307,6 +321,9 @@ cleanup:
 		}
 		device_nondeterministicChoiceIndices = nullptr;
 	}
+#ifdef DEBUG
+	std::cout << "(DLL) Finished cleanup." << std::endl;
+#endif
 }
 
 template <typename IndexType, typename ValueType>
@@ -323,6 +340,7 @@ void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<In
 
 #ifdef DEBUG
 	std::cout.sync_with_stdio(true);
+	std::cout << "(DLL) Entering CUDA Function: basicValueIteration_spmv" << std::endl;
 	std::cout << "(DLL) Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory()))*100 << "%)." << std::endl; 
 	size_t memSize = sizeof(IndexType) * matrixRowIndices.size() + sizeof(IndexType) * columnIndicesAndValues.size() * 2 + sizeof(ValueType) * x.size() + sizeof(ValueType) * b.size();
 	std::cout << "(DLL) We will allocate " << memSize << " Bytes." << std::endl;
@@ -368,6 +386,10 @@ void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<In
 		goto cleanup;
 	}
 
+#ifdef DEBUG
+	std::cout << "(DLL) Finished allocating memory." << std::endl;
+#endif
+
 	// Memory allocated, copy data to device
 	cudaError_t cudaCopyResult;
 
@@ -407,8 +429,16 @@ void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<In
 		goto cleanup;
 	}
 
+#ifdef DEBUG
+	std::cout << "(DLL) Finished copying data to GPU memory." << std::endl;
+#endif
+
 	cusp::detail::device::storm_cuda_opt_spmv_csr_vector<IndexType, ValueType>(matrixRowCount, matrixNnzCount, device_matrixRowIndices, device_matrixColIndices, device_matrixValues, device_x, device_multiplyResult);
 	CUDA_CHECK_ALL_ERRORS();
+
+#ifdef DEBUG
+	std::cout << "(DLL) Finished kernel execution." << std::endl;
+#endif
 
 	// Get result back from the device
 	cudaCopyResult = cudaMemcpy(b.data(), device_multiplyResult, sizeof(ValueType) * matrixRowCount, cudaMemcpyDeviceToHost);
@@ -416,6 +446,10 @@ void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<In
 		std::cout << "Could not copy back data for result vector, Error Code " << cudaCopyResult << std::endl;
 		goto cleanup;
 	}
+
+#ifdef DEBUG
+	std::cout << "(DLL) Finished copying result data." << std::endl;
+#endif
 
 	// All code related to freeing memory and clearing up the device
 cleanup:
@@ -454,6 +488,9 @@ cleanup:
 		}
 		device_multiplyResult = nullptr;
 	}
+#ifdef DEBUG
+	std::cout << "(DLL) Finished cleanup." << std::endl;
+#endif
 }
 
 template <typename ValueType>
@@ -730,4 +767,27 @@ void basicValueIteration_mvReduce_uint64_double_maximize(uint_fast64_t const max
 	} else {
 		basicValueIteration_mvReduce<false, false, uint_fast64_t, double>(maxIterationCount, precision, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices);
 	}
+}
+
+size_t basicValueIteration_mvReduce_uint64_double_calculateMemorySize(size_t const rowCount, size_t const rowGroupCount, size_t const nnzCount) {
+	size_t const valueTypeSize = sizeof(double);
+	size_t const indexTypeSize = sizeof(uint_fast64_t);
+
+	/*
+	IndexType* device_matrixRowIndices = nullptr;
+	IndexType* device_matrixColIndices = nullptr;
+	ValueType* device_matrixValues = nullptr;
+	ValueType* device_x = nullptr;
+	ValueType* device_xSwap = nullptr;
+	ValueType* device_b = nullptr;
+	ValueType* device_multiplyResult = nullptr;
+	IndexType* device_nondeterministicChoiceIndices = nullptr;
+	*/
+
+	// Row Indices, Column Indices, Values, Choice Indices
+	size_t const matrixDataSize = ((rowCount + 1) * indexTypeSize) + (nnzCount * indexTypeSize) + (nnzCount * valueTypeSize) + ((rowGroupCount + 1) * indexTypeSize);
+	// Vectors x, xSwap, b, multiplyResult
+	size_t const vectorSizes = (rowGroupCount * valueTypeSize) + (rowGroupCount * valueTypeSize) + (rowCount * valueTypeSize) + (rowCount * valueTypeSize);
+
+	return (matrixDataSize + vectorSizes);
 }
