@@ -7,6 +7,8 @@
 #include "src/modelchecker/prctl/TopologicalValueIterationMdpPrctlModelChecker.h"
 #include "src/parser/AutoParser.h"
 
+#include "storm-config.h"
+
 TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
@@ -86,8 +88,12 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	storm::property::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
     
 	result = mc.checkNoBoundOperator(*rewardFormula);
-    
+
+#ifdef STORM_HAVE_CUDAFORSTORM
+	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#else
 	ASSERT_LT(std::abs(result[0] - 7.33332904), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#endif
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
@@ -95,8 +101,12 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
     
 	result = mc.checkNoBoundOperator(*rewardFormula);;
-    
+
+#ifdef STORM_HAVE_CUDAFORSTORM
+	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#else
 	ASSERT_LT(std::abs(result[0] - 7.33333151), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#endif
 	delete rewardFormula;
     
 	storm::parser::AutoParser<double> stateRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "");
@@ -112,8 +122,12 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
     
 	result = stateRewardModelChecker.checkNoBoundOperator(*rewardFormula);
-    
+   
+#ifdef STORM_HAVE_CUDAFORSTORM
+	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#else
 	ASSERT_LT(std::abs(result[0] - 7.33332904), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#endif
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
@@ -122,7 +136,11 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
+#ifdef STORM_HAVE_CUDAFORSTORM
+	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#else
 	ASSERT_LT(std::abs(result[0] - 7.33333151), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#endif
 	delete rewardFormula;
     
 	storm::parser::AutoParser<double> stateAndTransitionRewardParser(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
@@ -139,7 +157,11 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
+#ifdef STORM_HAVE_CUDAFORSTORM
+	ASSERT_LT(std::abs(result[0] - 14.666658998), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#else
 	ASSERT_LT(std::abs(result[0] - 14.6666581), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#endif
 	delete rewardFormula;
     
 	apFormula = new storm::property::prctl::Ap<double>("done");
@@ -148,7 +170,11 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
     
 	result = stateAndTransitionRewardModelChecker.checkNoBoundOperator(*rewardFormula);
     
+#ifdef STORM_HAVE_CUDAFORSTORM
+	ASSERT_LT(std::abs(result[0] - 14.666658998), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#else
 	ASSERT_LT(std::abs(result[0] - 14.666663), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#endif
 	delete rewardFormula;
 }
 
@@ -209,17 +235,25 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
 	storm::property::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
 
-	result = mc.checkNoBoundOperator(*rewardFormula);;
+	result = mc.checkNoBoundOperator(*rewardFormula);
 
+#ifdef STORM_HAVE_CUDAFORSTORM
 	ASSERT_LT(std::abs(result[0] - 4.285689611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#else
+	ASSERT_LT(std::abs(result[0] - 4.285701547), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#endif
 	delete rewardFormula;
 
 	apFormula = new storm::property::prctl::Ap<double>("elected");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
 	rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
 
-	result = mc.checkNoBoundOperator(*rewardFormula);;
+	result = mc.checkNoBoundOperator(*rewardFormula);
 
+#ifdef STORM_HAVE_CUDAFORSTORM
 	ASSERT_LT(std::abs(result[0] - 4.285689611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#else
+	ASSERT_LT(std::abs(result[0] - 4.285703591), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+#endif
 	delete rewardFormula;
 }

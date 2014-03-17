@@ -1,6 +1,7 @@
 #include "src/solver/TopologicalValueIterationNondeterministicLinearEquationSolver.h"
 
 #include <utility>
+#include <set>
 
 #include "src/settings/Settings.h"
 #include "src/utility/vector.h"
@@ -15,7 +16,9 @@
 extern log4cplus::Logger logger;
 
 #include "storm-config.h"
-#include "cudaForStorm.h"
+#ifdef STORM_HAVE_CUDAFORSTORM
+#	include "cudaForStorm.h"
+#endif
 
 namespace storm {
     namespace solver {
@@ -44,12 +47,9 @@ namespace storm {
         template<typename ValueType>
 		void TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             
-			// Now, we need to determine the SCCs of the MDP and a topological sort.
-			//std::vector<std::vector<uint_fast64_t>> stronglyConnectedComponents = storm::utility::graph::performSccDecomposition(this->getModel(), stronglyConnectedComponents, stronglyConnectedComponentsDependencyGraph);
-			//storm::storage::SparseMatrix<T> stronglyConnectedComponentsDependencyGraph = this->getModel().extractSccDependencyGraph(stronglyConnectedComponents);
+			// Now, we need to determine the SCCs of the MDP and perform a topological sort.
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = A.getRowGroupIndices();
 			storm::models::NonDeterministicMatrixBasedPseudoModel<ValueType> pseudoModel(A, nondeterministicChoiceIndices);
-			//storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(*static_cast<storm::models::AbstractPseudoModel<ValueType>*>(&pseudoModel), false, false);
 			storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(pseudoModel, false, false);
 
 			if (sccDecomposition.size() == 0) {
@@ -61,20 +61,10 @@ namespace storm {
 			std::vector<uint_fast64_t> topologicalSort = storm::utility::graph::getTopologicalSort(stronglyConnectedComponentsDependencyGraph);
 
 			// Calculate the optimal distribution of sccs
-			std::vector<std::pair<bool, std::vector<uint_fast64_t>>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, A);
+			std::vector<std::pair<bool, storm::storage::StateBlock>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, A);
+			LOG4CPLUS_INFO(logger, "Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
 
-			// Set up the environment for the power method.
-//			bool multiplyResultMemoryProvided = true;
-//			if (multiplyResult == nullptr) {
-//				multiplyResult = new std::vector<ValueType>(A.getRowCount());
-//				multiplyResultMemoryProvided = false;
-//			}
 			std::vector<ValueType>* currentX = nullptr;
-			//bool xMemoryProvided = true;
-			//if (newX == nullptr) {
-			//	newX = new std::vector<ValueType>(x.size());
-			//	xMemoryProvided = false;
-			//}
 			std::vector<ValueType>* swap = nullptr;
 			uint_fast64_t currentMaxLocalIterations = 0;
 			uint_fast64_t localIterations = 0;
@@ -87,7 +77,7 @@ namespace storm {
 
 			for (auto sccIndexIt = optimalSccs.cbegin(); sccIndexIt != optimalSccs.cend() && converged; ++sccIndexIt) {
 				bool const useGpu = sccIndexIt->first;
-				std::vector <uint_fast64_t> const& scc = sccIndexIt->second;
+				storm::storage::StateBlock const& scc = sccIndexIt->second;
 
 				// Generate a submatrix
 				storm::storage::BitVector subMatrixIndices(A.getColumnCount(), scc.cbegin(), scc.cend());
@@ -140,63 +130,16 @@ namespace storm {
 					LOG4CPLUS_INFO(logger, "We will allocate " << (sizeof(uint_fast64_t)* sccSubmatrix.rowIndications.size() + sizeof(uint_fast64_t)* sccSubmatrix.columnsAndValues.size() * 2 + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubB.size() + sizeof(double)* sccSubB.size() + sizeof(uint_fast64_t)* sccSubNondeterministicChoiceIndices.size()) << " Bytes.");
 					LOG4CPLUS_INFO(logger, "The CUDA Runtime Version is " << getRuntimeCudaVersion());
 
-					std::vector<ValueType> copyX(*currentX);
 					if (minimize) {
-						basicValueIteration_mvReduce_uint64_double_minimize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, copyX, sccSubB, sccSubNondeterministicChoiceIndices);
+						basicValueIteration_mvReduce_uint64_double_minimize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices);
 					}
 					else {
-						basicValueIteration_mvReduce_uint64_double_maximize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, copyX, sccSubB, sccSubNondeterministicChoiceIndices);
+						basicValueIteration_mvReduce_uint64_double_maximize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices);
 					}
 					converged = true;
-
-					// DEBUG
-					localIterations = 0;
-					converged = false;
-					while (!converged && localIterations < this->maximalNumberOfIterations) {
-						// Compute x' = A*x + b.
-						sccSubmatrix.multiplyWithVector(*currentX, sccMultiplyResult);
-						storm::utility::vector::addVectorsInPlace<ValueType>(sccMultiplyResult, sccSubB);
-
-						//A.multiplyWithVector(scc, nondeterministicChoiceIndices, *currentX, multiplyResult);
-						//storm::utility::addVectors(scc, nondeterministicChoiceIndices, multiplyResult, b);
-
-						/*
-						Versus:
-						A.multiplyWithVector(*currentX, *multiplyResult);
-						storm::utility::vector::addVectorsInPlace(*multiplyResult, b);
-						*/
-
-						// Reduce the vector x' by applying min/max for all non-deterministic choices.
-						if (minimize) {
-							storm::utility::vector::reduceVectorMin<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
-						}
-						else {
-							storm::utility::vector::reduceVectorMax<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
-						}
-
-						// Determine whether the method converged.
-						// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
-						// running time. In fact, it is faster. This has to be investigated.
-						// converged = storm::utility::equalModuloPrecision(*currentX, *newX, scc, precision, relative);
-						converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *swap, this->precision, this->relative);
-
-						// Update environment variables.
-						std::swap(currentX, swap);
-
-						++localIterations;
-						++globalIterations;
-					}
-					LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations.");
-
-					uint_fast64_t diffCount = 0;
-					for (size_t i = 0; i < currentX->size(); ++i) {
-						if (currentX->at(i) != copyX.at(i)) {
-							LOG4CPLUS_WARN(logger, "CUDA solution differs on index " << i << " diff. " << std::abs(currentX->at(i) - copyX.at(i)) << ", CPU: " << currentX->at(i) << ", CUDA: " << copyX.at(i));
-							std::cout << "CUDA solution differs on index " << i << " diff. " << std::abs(currentX->at(i) - copyX.at(i)) << ", CPU: " << currentX->at(i) << ", CUDA: " << copyX.at(i) << std::endl;
-							++diffCount;
-						}
-					}
-					std::cout << "CUDA solution differed in " << diffCount << " of " << currentX->size() << " values." << std::endl;
+#else
+					LOG4CPLUS_ERROR(logger, "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
+					throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
 #endif
 				} else {
 					localIterations = 0;
@@ -256,14 +199,6 @@ namespace storm {
 					currentMaxLocalIterations = localIterations;
 				}
 			}
-			
-			//if (!xMemoryProvided) {
-			//	delete newX;
-			//}
-
-//			if (!multiplyResultMemoryProvided) {
-//				delete multiplyResult;
-//			}
 
 			// Check if the solver converged and issue a warning otherwise.
 			if (converged) {
@@ -275,9 +210,9 @@ namespace storm {
         }
 
 		template<typename ValueType>
-		std::vector<std::pair<bool, std::vector<uint_fast64_t>>> 
+		std::vector<std::pair<bool, storm::storage::StateBlock>>
 			TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::getOptimalGroupingFromTopologicalSccDecomposition(storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& sccDecomposition, std::vector<uint_fast64_t> const& topologicalSort, storm::storage::SparseMatrix<ValueType> const& matrix) const {
-				std::vector<std::pair<bool, std::vector<uint_fast64_t>>> result;
+				std::vector<std::pair<bool, storm::storage::StateBlock>> result;
 #ifdef STORM_HAVE_CUDAFORSTORM
 				// 95% to have a bit of padding
 				size_t const cudaFreeMemory = static_cast<size_t>(getFreeCudaMemory() * 0.95);
@@ -290,13 +225,13 @@ namespace storm {
 
 					uint_fast64_t rowCount = 0;
 					uint_fast64_t entryCount = 0;
-					std::vector<uint_fast64_t> rowGroups;
+					storm::storage::StateBlock rowGroups;
 					rowGroups.reserve(scc.size());
 
 					for (auto sccIt = scc.cbegin(); sccIt != scc.cend(); ++sccIt) {
 						rowCount += matrix.getRowGroupSize(*sccIt);
 						entryCount += matrix.getRowGroupEntryCount(*sccIt);
-						rowGroups.push_back(*sccIt);
+						rowGroups.insert(*sccIt);
 					}
 
 					size_t sccSize = basicValueIteration_mvReduce_uint64_double_calculateMemorySize(static_cast<size_t>(rowCount), scc.size(), static_cast<size_t>(entryCount));
@@ -308,7 +243,7 @@ namespace storm {
 							result.push_back(std::make_pair(true, rowGroups));
 						}
 						else {
-							result[lastResultIndex].second.insert(result[lastResultIndex].second.end(), rowGroups.begin(), rowGroups.end());
+							result[lastResultIndex].second.insert(rowGroups.begin(), rowGroups.end());
 						}
 						currentSize += sccSize;
 					}
@@ -329,12 +264,12 @@ namespace storm {
 #else
 				for (auto sccIndexIt = topologicalSort.cbegin(); sccIndexIt != topologicalSort.cend(); ++sccIndexIt) {
 					storm::storage::StateBlock const& scc = sccDecomposition[*sccIndexIt];
-					std::vector<uint_fast64_t> rowGroups;
+					storm::storage::StateBlock rowGroups;
 					rowGroups.reserve(scc.size());
 					for (auto sccIt = scc.cbegin(); sccIt != scc.cend(); ++sccIt) {
-						rowGroups.push_back(*sccIt);
-						result.push_back(std::make_pair(false, rowGroups));
+						rowGroups.insert(*sccIt);
 					}
+					result.push_back(std::make_pair(false, rowGroups));
 				}
 #endif
 			return result;

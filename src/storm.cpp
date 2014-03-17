@@ -75,6 +75,9 @@
 #ifdef STORM_HAVE_Z3
 #	include "z3.h"
 #endif
+#ifdef STORM_HAVE_CUDAFORSTORM
+#	include "cudaForStorm.h"
+#endif
 
 #include <iostream>
 #include <iomanip>
@@ -173,8 +176,20 @@ void printHeader(const int argc, const char* argv[]) {
 	if (STORM_CPP_VERSION_DIRTY == 1) {
 		std::cout << " (DIRTY)";
 	}
-	std::cout << std::endl;
-	
+	std::cout << "." << std::endl;
+
+#ifdef STORM_HAVE_CUDAFORSTORM
+	std::cout << "Compiled with Runtime Support for the StoRM CUDA Plugin." << std::endl;
+	std::cout << "Detected the StoRM CUDA Plugin in Version " << getStormCudaPluginVersionMajor() << "." << getStormCudaPluginVersionMinor() << "." << getStormCudaPluginVersionPatch();
+	if (getStormCudaPluginVersionCommitsAhead() != 0) {
+		std::cout << " (+" << getStormCudaPluginVersionCommitsAhead() << " commits)";
+	}
+	std::cout << " build from revision " << getStormCudaPluginVersionHash();
+	if (getStormCudaPluginVersionIsDirty()) {
+		std::cout << " (DIRTY)";
+	}
+	std::cout << "." << std::endl;
+#endif
 #ifdef STORM_HAVE_INTELTBB
 	std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
 #endif

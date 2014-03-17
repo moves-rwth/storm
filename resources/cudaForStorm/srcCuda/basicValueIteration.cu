@@ -138,7 +138,7 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 	}
 
 	CUDA_CHECK_ALL_ERRORS();
-	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_nondeterministicChoiceIndices), sizeof(IndexType) * (matrixRowCount + 1));
+	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_nondeterministicChoiceIndices), sizeof(IndexType) * (matrixColCount + 1));
 	if (cudaMallocResult != cudaSuccess) {
 		std::cout << "Could not allocate memory for Nondeterministic Choice Indices, Error Code " << cudaMallocResult << "." << std::endl;
 		goto cleanup;
@@ -203,7 +203,7 @@ void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 	}
 
 	CUDA_CHECK_ALL_ERRORS();
-	cudaCopyResult = cudaMemcpy(device_nondeterministicChoiceIndices, nondeterministicChoiceIndices.data(), sizeof(IndexType) * (matrixRowCount + 1), cudaMemcpyHostToDevice);
+	cudaCopyResult = cudaMemcpy(device_nondeterministicChoiceIndices, nondeterministicChoiceIndices.data(), sizeof(IndexType) * (matrixColCount + 1), cudaMemcpyHostToDevice);
 	if (cudaCopyResult != cudaSuccess) {
 		std::cout << "Could not copy data for Vector b, Error Code " << cudaCopyResult << std::endl;
 		goto cleanup;

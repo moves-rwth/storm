@@ -11,6 +11,8 @@
 // Utility Functions
 #include "srcCuda/utility.h"
 
+// Version Information
+#include "srcCuda/version.h"
 
 
 
