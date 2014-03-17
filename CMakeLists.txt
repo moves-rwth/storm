@@ -33,7 +33,7 @@ set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory.")
-
+option(PARAMETRIC_SYSTEMS "Sets whether models with parameters are supported." OFF)
 #############################################################
 ##
 ##	Inclusion of required libraries
@@ -82,8 +82,12 @@ else()
 	set(Z3_LIB_NAME "z3")
 endif()
 
+find_package(carl)
+
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
+
+
 
 
 #############################################################
@@ -391,11 +395,26 @@ target_link_libraries(storm-performance-tests "glpk")
 #############################################################
 if (ENABLE_Z3)
     message (STATUS "StoRM - Linking with Z3")
-	include_directories("${Z3_ROOT}/include")
+    include_directories("${Z3_ROOT}/include")
     target_link_libraries(storm ${Z3_LIB_NAME})
     target_link_libraries(storm-functional-tests ${Z3_LIB_NAME})
     target_link_libraries(storm-performance-tests ${Z3_LIB_NAME})
 endif(ENABLE_Z3)
+
+#############################################################
+##
+##      carl
+##
+#############################################################
+
+if(PARAMETRIC_SYSTEMS)
+    message(STATUS "StoRM - Linking with carl")
+    include_directories("${carl_INCLUDE_DIR}")
+    target_link_libraries(storm lib_carl)
+    target_link_libraries(storm-functional-tests lib_carl)
+    target_link_libraries(storm-performance-tests lib_carl)
+endif()
+
 
 #############################################################
 ##
