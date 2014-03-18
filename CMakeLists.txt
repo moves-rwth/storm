@@ -82,7 +82,10 @@ else()
 	set(Z3_LIB_NAME "z3")
 endif()
 
-find_package(carl)
+if(${PARAMETRIC_SYSTEMS})
+	find_package(carl REQUIRED)
+	set(STORM_HAVE_CARL)
+endif()
 
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")

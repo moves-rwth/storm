@@ -33,4 +33,7 @@
 // Whether Intel Threading Building Blocks are available and to be used (define/undef)
 #@STORM_CPP_INTELTBB_DEF@ STORM_HAVE_INTELTBB
 
+// Whether carl is available and to be used.
+#cmakedefine STORM_HAVE_CARL
+
 #endif // STORM_GENERATED_STORMCONFIG_H_
