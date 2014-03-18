@@ -84,7 +84,7 @@ endif()
 
 if(${PARAMETRIC_SYSTEMS})
 	find_package(carl REQUIRED)
-	set(STORM_HAVE_CARL)
+	set(STORM_HAVE_CARL ON)
 endif()
 
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
