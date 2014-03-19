@@ -1,7 +1,6 @@
 #include "src/solver/TopologicalValueIterationNondeterministicLinearEquationSolver.h"
 
 #include <utility>
-#include <set>
 
 #include "src/settings/Settings.h"
 #include "src/utility/vector.h"
@@ -46,7 +45,6 @@ namespace storm {
         
         template<typename ValueType>
 		void TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
-            
 			// Now, we need to determine the SCCs of the MDP and perform a topological sort.
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = A.getRowGroupIndices();
 			storm::models::NonDeterministicMatrixBasedPseudoModel<ValueType> pseudoModel(A, nondeterministicChoiceIndices);
@@ -219,57 +217,94 @@ namespace storm {
 				size_t lastResultIndex = 0;
 
 				std::vector<uint_fast64_t> const& rowGroupIndices = matrix.getRowGroupIndices();
+
+				size_t const gpuSizeOfCompleteSystem = basicValueIteration_mvReduce_uint64_double_calculateMemorySize(static_cast<size_t>(matrix.getRowCount()), rowGroupIndices.size(), static_cast<size_t>(matrix.getEntryCount()));
+				size_t const gpuSizePerRowGroup = std::max(static_cast<size_t>(gpuSizeOfCompleteSystem / rowGroupIndices.size()), static_cast<size_t>(1));
+				size_t const maxRowGroupsPerMemory = cudaFreeMemory / gpuSizePerRowGroup;
+
 				size_t currentSize = 0;
-				for (auto sccIndexIt = topologicalSort.cbegin(); sccIndexIt != topologicalSort.cend(); ++sccIndexIt) {
-					storm::storage::StateBlock const& scc = sccDecomposition[*sccIndexIt];
+				size_t neededReserveSize = 0;
+				size_t startIndex = 0;
+				for (size_t i = 0; i < topologicalSort.size(); ++i) {
+					storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[i]];
+					size_t const currentSccSize = scc.size();
 
 					uint_fast64_t rowCount = 0;
 					uint_fast64_t entryCount = 0;
-					storm::storage::StateBlock rowGroups;
-					rowGroups.reserve(scc.size());
 
 					for (auto sccIt = scc.cbegin(); sccIt != scc.cend(); ++sccIt) {
 						rowCount += matrix.getRowGroupSize(*sccIt);
 						entryCount += matrix.getRowGroupEntryCount(*sccIt);
-						rowGroups.insert(*sccIt);
 					}
 
 					size_t sccSize = basicValueIteration_mvReduce_uint64_double_calculateMemorySize(static_cast<size_t>(rowCount), scc.size(), static_cast<size_t>(entryCount));
 
 					if ((currentSize + sccSize) <= cudaFreeMemory) {
 						// There is enough space left in the current group
-
-						if (currentSize == 0) {
-							result.push_back(std::make_pair(true, rowGroups));
-						}
-						else {
-							result[lastResultIndex].second.insert(rowGroups.begin(), rowGroups.end());
-						}
+						neededReserveSize += currentSccSize;
 						currentSize += sccSize;
+					} else {
+						// This would make the last open group to big for the GPU
+
+						if (startIndex < i) {
+							if ((startIndex + 1) < i) {
+								// More than one component
+								std::vector<uint_fast64_t> tempGroups;
+								tempGroups.reserve(neededReserveSize);
+								for (size_t j = startIndex; j < i; ++j) {
+									storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
+									tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
+								}
+								std::sort(tempGroups.begin(), tempGroups.end());
+
+								result.push_back(std::make_pair(true, storm::storage::StateBlock(boost::container::ordered_unique_range, tempGroups.cbegin(), tempGroups.cend())));
+							} else {
+								// Only one group, copy construct.
+								result.push_back(std::make_pair(true, storm::storage::StateBlock(std::move(sccDecomposition[topologicalSort[startIndex]]))));
+							}
+							++lastResultIndex;
+						}
+
+						if (sccSize <= cudaFreeMemory) {
+							currentSize = sccSize;
+							neededReserveSize = currentSccSize;
+							startIndex = i;
+						} else {
+							// This group is too big to fit into the CUDA Memory by itself
+							result.push_back(std::make_pair(false, storm::storage::StateBlock(std::move(sccDecomposition[topologicalSort[i]]))));
+							++lastResultIndex;
+
+							currentSize = 0;
+							neededReserveSize = 0;
+							startIndex = i + 1;
+						}
+					}
+				}
+
+				size_t const topologicalSortSize = topologicalSort.size();
+				if (startIndex < topologicalSortSize) {
+					if ((startIndex + 1) < topologicalSortSize) {
+						// More than one component
+						std::vector<uint_fast64_t> tempGroups;
+						tempGroups.reserve(neededReserveSize);
+						for (size_t j = startIndex; j < topologicalSortSize; ++j) {
+							storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
+							tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
+						}
+						std::sort(tempGroups.begin(), tempGroups.end());
+
+						result.push_back(std::make_pair(true, storm::storage::StateBlock(boost::container::ordered_unique_range, tempGroups.cbegin(), tempGroups.cend())));
 					}
 					else {
-						if (sccSize <= cudaFreeMemory) {
-							++lastResultIndex;
-							result.push_back(std::make_pair(true, rowGroups));
-							currentSize = sccSize;
-						}
-						else {
-							// This group is too big to fit into the CUDA Memory by itself
-							lastResultIndex += 2;
-							result.push_back(std::make_pair(false, rowGroups));
-							currentSize = 0;
-						}
+						// Only one group, copy construct.
+						result.push_back(std::make_pair(true, storm::storage::StateBlock(std::move(sccDecomposition[topologicalSort[startIndex]]))));
 					}
+					++lastResultIndex;
 				}
 #else
 				for (auto sccIndexIt = topologicalSort.cbegin(); sccIndexIt != topologicalSort.cend(); ++sccIndexIt) {
 					storm::storage::StateBlock const& scc = sccDecomposition[*sccIndexIt];
-					storm::storage::StateBlock rowGroups;
-					rowGroups.reserve(scc.size());
-					for (auto sccIt = scc.cbegin(); sccIt != scc.cend(); ++sccIt) {
-						rowGroups.insert(*sccIt);
-					}
-					result.push_back(std::make_pair(false, rowGroups));
+					result.push_back(std::make_pair(false, scc));
 				}
 #endif
 			return result;
