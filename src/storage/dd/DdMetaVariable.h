@@ -14,8 +14,8 @@ namespace storm {
         
         template <DdType Type>
         class DdMetaVariable {
-            // Declare the other DD-related classes as friends so they can access the internals of a meta variable.
-            friend class Dd<Type>;
+            // Declare the DdManager class as friend so it can access the internals of a meta variable.
+            friend class DdManager<Type>;
             
             /*!
              * Creates a meta variable with the given name, range bounds.
@@ -26,7 +26,7 @@ namespace storm {
              * @param ddVariables The vector of variables used to encode this variable.
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
-            DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager);
+            DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager) noexcept;
             
             // Explictly generate all default versions of copy/move constructors/assignments.
             DdMetaVariable(DdMetaVariable const& other) = default;
