@@ -251,11 +251,17 @@ namespace storm {
 								// More than one component
 								std::vector<uint_fast64_t> tempGroups;
 								tempGroups.reserve(neededReserveSize);
-								for (size_t j = startIndex; j < i; ++j) {
+
+								// Copy the first group to make inplace_merge possible
+								storm::storage::StateBlock const& scc_first = sccDecomposition[topologicalSort[startIndex]];
+								tempGroups.insert(tempGroups.cend(), scc_first.cbegin(), scc_first.cend());
+
+								for (size_t j = startIndex + 1; j < i; ++j) {
 									storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
+									std::vector<uint_fast64_t>::iterator const middleIterator = tempGroups.end();
 									tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
+									std::inplace_merge(tempGroups.begin(), middleIterator, tempGroups.end());
 								}
-								std::sort(tempGroups.begin(), tempGroups.end());
 
 								result.push_back(std::make_pair(true, storm::storage::StateBlock(boost::container::ordered_unique_range, tempGroups.cbegin(), tempGroups.cend())));
 							} else {
@@ -287,11 +293,17 @@ namespace storm {
 						// More than one component
 						std::vector<uint_fast64_t> tempGroups;
 						tempGroups.reserve(neededReserveSize);
-						for (size_t j = startIndex; j < topologicalSortSize; ++j) {
+						
+						// Copy the first group to make inplace_merge possible
+						storm::storage::StateBlock const& scc_first = sccDecomposition[topologicalSort[startIndex]];
+						tempGroups.insert(tempGroups.cend(), scc_first.cbegin(), scc_first.cend());
+
+						for (size_t j = startIndex + 1; j < topologicalSort.size(); ++j) {
 							storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
+							std::vector<uint_fast64_t>::iterator const middleIterator = tempGroups.end();
 							tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
+							std::inplace_merge(tempGroups.begin(), middleIterator, tempGroups.end());
 						}
-						std::sort(tempGroups.begin(), tempGroups.end());
 
 						result.push_back(std::make_pair(true, storm::storage::StateBlock(boost::container::ordered_unique_range, tempGroups.cbegin(), tempGroups.cend())));
 					}

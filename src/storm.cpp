@@ -20,6 +20,7 @@
 #include <climits>
 #include <sstream>
 #include <vector>
+#include <chrono>
 
 #include "storm-config.h"
 #include "src/models/Dtmc.h"
@@ -114,14 +115,14 @@ void printUsage() {
 	ULARGE_INTEGER uLargeInteger;
 	uLargeInteger.LowPart = ftKernel.dwLowDateTime;
 	uLargeInteger.HighPart = ftKernel.dwHighDateTime;
-	double kernelTime = uLargeInteger.QuadPart / 10000.0; // 100 ns Resolution to milliseconds
+	double kernelTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0; // 100 ns Resolution to milliseconds
 	uLargeInteger.LowPart = ftUser.dwLowDateTime;
 	uLargeInteger.HighPart = ftUser.dwHighDateTime;
-	double userTime = uLargeInteger.QuadPart / 10000.0;
+	double userTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0;
 
 	std::cout << "CPU Time: " << std::endl;
-	std::cout << "\tKernel Time: " << std::setprecision(3) << kernelTime << std::endl;
-	std::cout << "\tUser Time: " << std::setprecision(3) << userTime << std::endl;
+	std::cout << "\tKernel Time: " << std::setprecision(5) << kernelTime << std::endl;
+	std::cout << "\tUser Time: " << std::setprecision(5) << userTime << std::endl;
 #endif
 }
 
@@ -315,8 +316,11 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
         
         for (auto formula : formulaList) {
+			std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
         	modelchecker.check(*formula);
             delete formula;
+			std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+			std::cout << "Checking the formula took " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
         }
 	}
 }
