@@ -16,7 +16,6 @@ namespace storm {
         template<>
         class DdManager<CUDD> : std::enable_shared_from_this<DdManager<CUDD>> {
             // To break the cylic dependencies, we need to forward-declare the other DD-related classes.
-            friend class DdMetaVariable<CUDD>;
             friend class Dd<CUDD>;
 
             /*!

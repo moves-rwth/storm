@@ -24,10 +24,10 @@ namespace storm {
             
             std::vector<Dd<CUDD>> variables;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
-                variables.emplace_back(cuddManager.addVar());
+                variables.emplace_back(Dd<CUDD>(this->shared_from_this(), cuddManager.addVar(), {name}));
             }
             
-            metaVariableMap.emplace(name, low, high, variables, this->shared_from_this());
+            metaVariableMap.emplace(name, DdMetaVariable<CUDD>(name, low, high, variables, this->shared_from_this()));
         }
         
         void DdManager<CUDD>::addMetaVariablesInterleaved(std::vector<std::string> const& names, int_fast64_t low, int_fast64_t high) {
@@ -40,13 +40,13 @@ namespace storm {
             std::vector<std::vector<Dd<CUDD>>> variables;
             for (uint_fast64_t bit = 0; bit < numberOfBits; ++bit) {
                 for (uint_fast64_t i = 0; i < names.size(); ++i) {
-                    variables[i].emplace_back(cuddManager.addVar());
+                    variables[i].emplace_back(Dd<CUDD>(this->shared_from_this(), cuddManager.addVar(), {names[i]}));
                 }
             }
             
             // Now add the meta variables.
             for (uint_fast64_t i = 0; i < names.size(); ++i) {
-                metaVariableMap.emplace(names[i], low, high, variables[i], this->shared_from_this());
+                metaVariableMap.emplace(names[i], DdMetaVariable<CUDD>(names[i], low, high, variables[i], this->shared_from_this()));
             }
         }
         

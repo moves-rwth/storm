@@ -6,16 +6,19 @@
 #include <cstdint>
 #include <string>
 
-#include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/CuddDd.h"
 
 namespace storm {
     namespace dd {
+        // Forward-declare the DdManager class.
+        template<DdType Type> class DdManager;
         
         template <DdType Type>
         class DdMetaVariable {
+        public:
             // Declare the DdManager class as friend so it can access the internals of a meta variable.
             friend class DdManager<Type>;
+            friend class Dd<Type>;
             
             /*!
              * Creates a meta variable with the given name, range bounds.

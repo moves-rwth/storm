@@ -1,4 +1,5 @@
 #include "src/storage/dd/DdMetaVariable.h"
+#include "src/storage/dd/CuddDdManager.h"
 
 namespace storm {
     namespace dd {

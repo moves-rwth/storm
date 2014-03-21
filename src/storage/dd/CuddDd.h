@@ -1,14 +1,18 @@
 #ifndef STORM_STORAGE_DD_CUDDDD_H_
 #define STORM_STORAGE_DD_CUDDDD_H_
 
+#include <unordered_set>
+#include <unordered_map>
+
 #include "src/storage/dd/Dd.h"
-#include "src/storage/dd/CuddDdManager.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
 
 namespace storm {
     namespace dd {
+        // Forward-declare the DdManager class.
+        template<DdType Type> class DdManager;
         
         template<>
         class Dd<CUDD> {
@@ -264,6 +268,20 @@ namespace storm {
             std::shared_ptr<DdManager<CUDD>> getDdManager() const;
             
         private:
+            /*!
+             * Retrieves the CUDD ADD object associated with this DD.
+             *
+             * @return The CUDD ADD object assoicated with this DD.
+             */
+            ADD getCuddAdd();
+            
+            /*!
+             * Retrieves the CUDD ADD object associated with this DD.
+             *
+             * @return The CUDD ADD object assoicated with this DD.
+             */
+            ADD const& getCuddAdd() const;
+            
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.
              *
