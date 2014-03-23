@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/exceptions/InvalidArgumentException.h"
 

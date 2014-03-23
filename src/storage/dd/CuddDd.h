@@ -3,6 +3,7 @@
 
 #include <unordered_set>
 #include <unordered_map>
+#include <memory>
 
 #include "src/storage/dd/Dd.h"
 
@@ -26,6 +27,13 @@ namespace storm {
             Dd(Dd<CUDD>&& other) = default;
             Dd& operator=(Dd<CUDD> const& other) = default;
             Dd& operator=(Dd<CUDD>&& other) = default;
+            
+            /*!
+             * Retrieves whether the two DDs represent the same function.
+             *
+             * @param other The DD that is to be compared with the current one.
+             */
+            bool operator==(Dd<CUDD> const& other) const;
             
             /*!
              * Adds the two DDs.
@@ -195,6 +203,34 @@ namespace storm {
             void maxAbstract(std::unordered_set<std::string> const& metaVariableNames);
 
             /*!
+             * Retrieves the number of encodings that are mapped to a non-zero value.
+             *
+             * @return The number of encodings that are mapped to a non-zero value.
+             */
+            uint_fast64_t getNonZeroCount() const;
+            
+            /*!
+             * Retrieves the number of leaves of the DD.
+             *
+             * @return The number of leaves of the DD.
+             */
+            uint_fast64_t getLeafCount() const;
+            
+            /*!
+             * Retrieves the lowest function value of any encoding.
+             *
+             * @return The lowest function value of any encoding.
+             */
+            double getMin() const;
+            
+            /*!
+             * Retrieves the highest function value of any encoding.
+             *
+             * @return The highest function value of any encoding.
+             */
+            double getMax() const;
+            
+            /*!
              * Sets the function values of all encodings that have the given value of the meta variable to the given
              * target value.
              *
@@ -232,6 +268,20 @@ namespace storm {
             void setValue(std::unordered_map<std::string, int_fast64_t> const& metaVariableNameToValueMap, double targetValue);
             
             /*!
+             * Retrieves whether this DD represents the constant one function.
+             *
+             * @return True if this DD represents the constant one function.
+             */
+            bool isOne() const;
+            
+            /*!
+             * Retrieves whether this DD represents the constant zero function.
+             *
+             * @return True if this DD represents the constant zero function.
+             */
+            bool isZero() const;
+            
+            /*!
              * Retrieves whether the given meta variable is contained in the DD.
              *
              * @param metaVariableName The name of the meta variable for which to query membership.
@@ -253,6 +303,13 @@ namespace storm {
              * @return The set of names of all meta variables contained in the DD.
              */
             std::unordered_set<std::string> const& getContainedMetaVariableNames() const;
+            
+            /*!
+             * Retrieves the set of all names of meta variables contained in the DD.
+             *
+             * @return The set of names of all meta variables contained in the DD.
+             */
+            std::unordered_set<std::string>& getContainedMetaVariableNames();
             
             /*!
              * Exports the DD to the given file in the dot format.

@@ -1,10 +1,16 @@
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdManager.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
 namespace storm {
     namespace dd {
         Dd<CUDD>::Dd(std::shared_ptr<DdManager<CUDD>> ddManager, ADD cuddAdd, std::unordered_set<std::string> const& containedMetaVariableNames) noexcept : ddManager(ddManager), cuddAdd(cuddAdd), containedMetaVariableNames(containedMetaVariableNames) {
             // Intentionally left empty.
+        }
+        
+        bool Dd<CUDD>::operator==(Dd<CUDD> const& other) const {
+            return this->getCuddAdd() == other.getCuddAdd();
         }
         
         Dd<CUDD> Dd<CUDD>::operator+(Dd<CUDD> const& other) const {
@@ -14,7 +20,7 @@ namespace storm {
         }
         
         Dd<CUDD>& Dd<CUDD>::operator+=(Dd<CUDD> const& other) {
-            cuddAdd += other.getCuddAdd();
+            this->getCuddAdd() += other.getCuddAdd();
             
             // Join the variable sets of the two participating DDs.
             std::copy(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end(), std::inserter(this->containedMetaVariableNames, this->containedMetaVariableNames.end()));
@@ -29,7 +35,7 @@ namespace storm {
         }
         
         Dd<CUDD>& Dd<CUDD>::operator*=(Dd<CUDD> const& other) {
-            cuddAdd *= other.getCuddAdd();
+            this->getCuddAdd() *= other.getCuddAdd();
             
             // Join the variable sets of the two participating DDs.
             std::copy(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end(), std::inserter(this->containedMetaVariableNames, this->containedMetaVariableNames.end()));
@@ -44,7 +50,7 @@ namespace storm {
         }
         
         Dd<CUDD>& Dd<CUDD>::operator-=(Dd<CUDD> const& other) {
-            cuddAdd -= other.getCuddAdd();
+            this->getCuddAdd() -= other.getCuddAdd();
             
             // Join the variable sets of the two participating DDs.
             std::copy(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end(), std::inserter(this->containedMetaVariableNames, this->containedMetaVariableNames.end()));
@@ -59,7 +65,7 @@ namespace storm {
         }
         
         Dd<CUDD>& Dd<CUDD>::operator/=(Dd<CUDD> const& other) {
-            cuddAdd.Divide(other.getCuddAdd());
+            this->getCuddAdd().Divide(other.getCuddAdd());
             
             // Join the variable sets of the two participating DDs.
             std::copy(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end(), std::inserter(this->containedMetaVariableNames, this->containedMetaVariableNames.end()));
@@ -74,7 +80,7 @@ namespace storm {
         }
         
         Dd<CUDD>& Dd<CUDD>::complement() {
-            cuddAdd = ~cuddAdd;
+            this->getCuddAdd() = ~this->getCuddAdd();
             return *this;
         }
         
@@ -118,6 +124,12 @@ namespace storm {
             Dd<CUDD> cubeDd(this->getDdManager()->getOne());
             
             for (auto const& metaVariableName : metaVariableNames) {
+                // First check whether the DD contains the meta variable and erase it, if this is the case.
+                if (!this->containsMetaVariable(metaVariableName)) {
+                    throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
+                }
+                this->getContainedMetaVariableNames().erase(metaVariableName);
+                
                 DdMetaVariable<CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
@@ -129,6 +141,12 @@ namespace storm {
             Dd<CUDD> cubeDd(this->getDdManager()->getOne());
             
             for (auto const& metaVariableName : metaVariableNames) {
+                // First check whether the DD contains the meta variable and erase it, if this is the case.
+                if (!this->containsMetaVariable(metaVariableName)) {
+                    throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
+                }
+                this->getContainedMetaVariableNames().erase(metaVariableName);
+                
                 DdMetaVariable<CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
@@ -140,6 +158,12 @@ namespace storm {
             Dd<CUDD> cubeDd(this->getDdManager()->getOne());
             
             for (auto const& metaVariableName : metaVariableNames) {
+                // First check whether the DD contains the meta variable and erase it, if this is the case.
+                if (!this->containsMetaVariable(metaVariableName)) {
+                    throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
+                }
+                this->getContainedMetaVariableNames().erase(metaVariableName);
+                
                 DdMetaVariable<CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
@@ -151,11 +175,41 @@ namespace storm {
             Dd<CUDD> cubeDd(this->getDdManager()->getOne());
             
             for (auto const& metaVariableName : metaVariableNames) {
+                // First check whether the DD contains the meta variable and erase it, if this is the case.
+                if (!this->containsMetaVariable(metaVariableName)) {
+                    throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
+                }
+                this->getContainedMetaVariableNames().erase(metaVariableName);
+                
                 DdMetaVariable<CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
             this->getCuddAdd().Maximum(cubeDd.getCuddAdd());
+        }
+        
+        uint_fast64_t Dd<CUDD>::getNonZeroCount() const {
+            std::size_t numberOfDdVariables = 0;
+            for (auto const& metaVariableName : this->containedMetaVariableNames) {
+                numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariableName).getNumberOfDdVariables();
+            }
+            return static_cast<uint_fast64_t>(this->cuddAdd.CountMinterm(static_cast<int>(numberOfDdVariables)));
+        }
+        
+        uint_fast64_t Dd<CUDD>::getLeafCount() const {
+            return static_cast<uint_fast64_t>(this->cuddAdd.CountLeaves());
+        }
+        
+        double Dd<CUDD>::getMin() const {
+            ADD constantMinAdd = this->getCuddAdd().FindMin();
+            // FIXME
+            return 0;
+        }
+        
+        double Dd<CUDD>::getMax() const {
+            ADD constantMaxAdd = this->getCuddAdd().FindMax();
+            // FIXME
+            return 0;
         }
         
         void Dd<CUDD>::setValue(std::string const& metaVariableName, int_fast64_t variableValue, double targetValue) {
@@ -177,7 +231,15 @@ namespace storm {
                 valueEncoding *= this->getDdManager()->getEncoding(nameValuePair.first, nameValuePair.second);
             }
             
-            this->cuddAdd = valueEncoding.getCuddAdd().Ite(this->getDdManager()->getConstant(targetValue).getCuddAdd(), this->cuddAdd);
+            this->getCuddAdd() = valueEncoding.getCuddAdd().Ite(this->getDdManager()->getConstant(targetValue).getCuddAdd(), this->cuddAdd);
+        }
+        
+        bool Dd<CUDD>::isOne() const {
+            return *this == this->getDdManager()->getOne();
+        }
+        
+        bool Dd<CUDD>::isZero() const {
+            return *this == this->getDdManager()->getZero();
         }
         
         bool Dd<CUDD>::containsMetaVariable(std::string const& metaVariableName) const {
@@ -197,7 +259,11 @@ namespace storm {
         }
         
         std::unordered_set<std::string> const& Dd<CUDD>::getContainedMetaVariableNames() const {
-            return containedMetaVariableNames;
+            return this->containedMetaVariableNames;
+        }
+        
+        std::unordered_set<std::string>& Dd<CUDD>::getContainedMetaVariableNames() {
+            return this->containedMetaVariableNames;
         }
         
         void Dd<CUDD>::exportToDot(std::string const& filename) const {
