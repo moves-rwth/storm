@@ -39,6 +39,16 @@ namespace storm {
             
             return result;
         }
+        
+        Dd<CUDD> DdManager<CUDD>::getRange(std::string const metaVariableName) {
+            storm::dd::DdMetaVariable<CUDD> const& metaVariable = this->getMetaVariable(metaVariableName);
+            
+            Dd<CUDD> result = this->getZero();
+            for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
+                result.setValue(metaVariableName, value - metaVariable.getLow(), static_cast<double>(value));
+            }
+            return result;
+        }
 
         void DdManager<CUDD>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
             if (high == low) {

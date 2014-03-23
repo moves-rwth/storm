@@ -63,6 +63,15 @@ namespace storm {
             Dd<CUDD> getEncoding(std::string const& metaVariableName, int_fast64_t value);
             
             /*!
+             * Retrieves the DD representing the range of the meta variable, i.e., a function that maps all legal values
+             * of the range of the meta variable to one.
+             *
+             * @param metaVariableName The name of the meta variable whose range to retrieve.
+             * @return The range of the meta variable
+             */
+            Dd<CUDD> getRange(std::string const metaVariableName);
+            
+            /*!
              * Adds a meta variable with the given name and range.
              *
              * @param name The name of the meta variable.
