@@ -19,8 +19,9 @@ namespace storm {
         public:
             // Declare the DdManager class as friend so it can access the internals of a DD.
             friend class DdManager<CUDD>;
-
+            
             // Instantiate all copy/move constructors/assignments with the default implementation.
+            Dd() = default;
             Dd(Dd<CUDD> const& other) = default;
             Dd(Dd<CUDD>&& other) = default;
             Dd& operator=(Dd<CUDD> const& other) = default;

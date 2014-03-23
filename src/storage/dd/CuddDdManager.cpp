@@ -18,9 +18,34 @@ namespace storm {
         Dd<CUDD> DdManager<CUDD>::getConstant(double value) {
             return Dd<CUDD>(this->shared_from_this(), cuddManager.constant(value), {""});
         }
+        
+        Dd<CUDD> DdManager<CUDD>::getEncoding(std::string const& metaVariableName, int_fast64_t value) {
+            std::vector<Dd<CUDD>> ddVariables = this->getMetaVariable(metaVariableName).getDdVariables();
+
+            Dd<CUDD> result;
+            if (value & (1ull << (ddVariables.size() - 1))) {
+                result = ddVariables[0];
+            } else {
+                result = ddVariables[0];
+            }
+            
+            for (std::size_t i = 1; i < ddVariables.size(); ++i) {
+                if (value & (1ull << (ddVariables.size() - i - 1))) {
+                    result *= ddVariables[i];
+                } else {
+                    result *= ~ddVariables[i];
+                }
+            }
+            
+            return result;
+        }
 
         void DdManager<CUDD>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
-            std::size_t numberOfBits = std::log2(high - low);
+            if (high == low) {
+                throw storm::exceptions::InvalidArgumentException() << "Range of meta variable must be at least 2 elements.";
+            }
+            
+            std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low)));
             
             std::vector<Dd<CUDD>> variables;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
@@ -36,7 +61,7 @@ namespace storm {
             }
             
             // Add the variables in interleaved order.
-            std::size_t numberOfBits = std::log2(high - low);
+            std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low)));
             std::vector<std::vector<Dd<CUDD>>> variables;
             for (uint_fast64_t bit = 0; bit < numberOfBits; ++bit) {
                 for (uint_fast64_t i = 0; i < names.size(); ++i) {

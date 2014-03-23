@@ -172,7 +172,12 @@ namespace storm {
         }
         
         void Dd<CUDD>::setValue(std::unordered_map<std::string, int_fast64_t> const& metaVariableNameToValueMap, double targetValue) {
-            // TODO: Fill this
+            Dd<CUDD> valueEncoding(this->getDdManager()->getOne());
+            for (auto const& nameValuePair : metaVariableNameToValueMap) {
+                valueEncoding *= this->getDdManager()->getEncoding(nameValuePair.first, nameValuePair.second);
+            }
+            
+            this->cuddAdd = valueEncoding.getCuddAdd().Ite(this->getDdManager()->getConstant(targetValue).getCuddAdd(), this->cuddAdd);
         }
         
         bool Dd<CUDD>::containsMetaVariable(std::string const& metaVariableName) const {

@@ -14,7 +14,8 @@
 namespace storm {
     namespace dd {
         template<>
-        class DdManager<CUDD> : std::enable_shared_from_this<DdManager<CUDD>> {
+        class DdManager<CUDD> : public std::enable_shared_from_this<DdManager<CUDD>> {
+        public:
             // To break the cylic dependencies, we need to forward-declare the other DD-related classes.
             friend class Dd<CUDD>;
 
@@ -50,6 +51,17 @@ namespace storm {
              */
             Dd<CUDD> getConstant(double value);
 
+            /*!
+             * Retrieves the DD representing the function that maps all inputs which have the given meta variable equal
+             * to the given value one.
+             *
+             * @param metaVariableName The meta variable that is supposed to have the given value.
+             * @param value The value the meta variable is supposed to have.
+             * @return The DD representing the function that maps all inputs which have the given meta variable equal
+             * to the given value one.
+             */
+            Dd<CUDD> getEncoding(std::string const& metaVariableName, int_fast64_t value);
+            
             /*!
              * Adds a meta variable with the given name and range.
              *

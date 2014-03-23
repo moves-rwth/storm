@@ -4,9 +4,8 @@
 namespace storm {
     namespace dd {
         template<DdType Type>
-        DdMetaVariable<Type>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager) noexcept : name(name), low(low), high(high), ddVariables(ddVariables), manager(manager) {
+        DdMetaVariable<Type>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager) noexcept : name(name), low(low), high(high), ddVariables(ddVariables), cube(manager->getOne()), manager(manager) {
             // Create the cube of all variables of this meta variable.
-            this->cube = this->getDdManager()->getOne();
             for (auto const& ddVariable : this->ddVariables) {
                 this->cube *= ddVariable;
             }
@@ -28,6 +27,11 @@ namespace storm {
         }
         
         template<DdType Type>
+        std::size_t DdMetaVariable<Type>::getNumberOfDdVariables() const {
+            return this->ddVariables.size();
+        }
+        
+        template<DdType Type>
         std::shared_ptr<DdManager<Type>> DdMetaVariable<Type>::getDdManager() const {
             return this->manager;
         }
@@ -43,6 +47,6 @@ namespace storm {
         }
         
         // Explicitly instantiate DdMetaVariable.
-        template<> class DdMetaVariable<CUDD>;
+        template class DdMetaVariable<CUDD>;
     }
 }
