@@ -233,6 +233,13 @@ namespace storm {
                     }
                     
                     std::set<uint_fast64_t> const& commandIndices = module.getCommandsByAction(action);
+                    
+                    // If the module contains the action, but there is no command in the module that is labeled with
+                    // this action, we don't have any feasible command combinations.
+                    if (commandIndices.empty()) {
+                        return boost::optional<std::vector<std::list<storm::ir::Command>>>();
+                    }
+                    
                     std::list<storm::ir::Command> commands;
                     
                     // Look up commands by their indices and add them if the guard evaluates to true in the given state.
