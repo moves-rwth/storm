@@ -519,4 +519,4 @@ INSTALL(TARGETS storm storm-functional-tests storm-performance-tests
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 )
-include(CPackConfig.cmake)
+include(StormCPackConfig.cmake)

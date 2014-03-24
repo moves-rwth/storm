@@ -33,6 +33,7 @@ resources/3rdparty/cudd-2.5.0/
 ipch/
 obj/
 CMakeFiles/
+CPackConfig.cmake
 # The build Dir
 build/
 build//CMakeLists.txt
