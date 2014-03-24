@@ -8,6 +8,8 @@
 #endif
 
 #include "src/storage/SparseMatrix.h"
+#include "src/storage/parameters.h"
+
 #include "src/exceptions/InvalidStateException.h"
 
 #include "log4cplus/logger.h"
@@ -692,6 +694,14 @@ namespace storm {
             return std::make_pair(std::move(resultLU), dInvBuilder.build());
         }
         
+        template<>
+        typename std::pair<storm::storage::SparseMatrix<Polynomial>, storm::storage::SparseMatrix<Polynomial>> SparseMatrix<Polynomial>::getJacobiDecomposition() const {
+            // NOT SUPPORTED
+            // TODO do whatever storm does in such cases.
+            assert(false);
+        }
+        
+        
         template<typename T>
         std::vector<T> SparseMatrix<T>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) const {
             std::vector<T> result(rowCount, storm::utility::constantZero<T>());
@@ -923,6 +933,12 @@ namespace storm {
         template class SparseMatrixBuilder<int>;
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
+#ifdef STORM_HAVE_CARL
+        template class SparseMatrixBuilder<Polynomial>;
+        template class SparseMatrix<Polynomial>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<Polynomial> const& matrix);
+#endif
+        
         
     } // namespace storage
 } // namespace storm
