@@ -188,6 +188,33 @@ namespace storm {
             this->getCuddAdd().Maximum(cubeDd.getCuddAdd());
         }
         
+        void Dd<CUDD>::swapVariables(std::vector<std::pair<std::string, std::string>> const& metaVariablePairs) {
+            std::vector<ADD> from;
+            std::vector<ADD> to;
+            for (auto const& metaVariablePair : metaVariablePairs) {
+                DdMetaVariable<CUDD> const& variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
+                DdMetaVariable<CUDD> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
+
+                // Check if it's legal so swap the meta variables.
+                if (variable1.getNumberOfDdVariables() != variable2.getNumberOfDdVariables()) {
+                    throw storm::exceptions::InvalidArgumentException() << "Unable to swap meta variables with different size.";
+                }
+                
+                // Keep track of the contained meta variables in the DD.
+                bool containsVariable1 = this->containsMetaVariable(metaVariablePair.first);
+                bool containsVariable2 = this->containsMetaVariable(metaVariablePair.second);
+                if (containsVariable1 && !containsVariable2) {
+                    this->removeContainedMetaVariable(metaVariablePair.first);
+                    this->addContainedMetaVariable(metaVariablePair.second);
+                } else if (!containsVariable1 && containsVariable2) {
+                    this->removeContainedMetaVariable(metaVariablePair.second);
+                    this->addContainedMetaVariable(metaVariablePair.first);
+                }
+            }
+            
+            // FIXME: complete this and add matrix-matrix multiplication.
+        }
+        
         uint_fast64_t Dd<CUDD>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
             for (auto const& metaVariableName : this->containedMetaVariableNames) {
@@ -200,16 +227,18 @@ namespace storm {
             return static_cast<uint_fast64_t>(this->cuddAdd.CountLeaves());
         }
         
+        uint_fast64_t Dd<CUDD>::getNodeCount() const {
+            return static_cast<uint_fast64_t>(this->cuddAdd.nodeCount());
+        }
+        
         double Dd<CUDD>::getMin() const {
             ADD constantMinAdd = this->getCuddAdd().FindMin();
-            // FIXME
-            return 0;
+            return static_cast<double>(Cudd_V(constantMinAdd));
         }
         
         double Dd<CUDD>::getMax() const {
             ADD constantMaxAdd = this->getCuddAdd().FindMax();
-            // FIXME
-            return 0;
+            return static_cast<double>(Cudd_V(constantMaxAdd));
         }
         
         void Dd<CUDD>::setValue(std::string const& metaVariableName, int_fast64_t variableValue, double targetValue) {
@@ -278,6 +307,14 @@ namespace storm {
         
         ADD const& Dd<CUDD>::getCuddAdd() const {
             return this->cuddAdd;
+        }
+        
+        void Dd<CUDD>::addContainedMetaVariable(std::string const& metaVariableName) {
+            this->getContainedMetaVariableNames().insert(metaVariableName);
+        }
+
+        void Dd<CUDD>::removeContainedMetaVariable(std::string const& metaVariableName) {
+            this->getContainedMetaVariableNames().erase(metaVariableName);
         }
         
         std::shared_ptr<DdManager<CUDD>> Dd<CUDD>::getDdManager() const {

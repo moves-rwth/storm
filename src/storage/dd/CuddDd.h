@@ -203,6 +203,14 @@ namespace storm {
             void maxAbstract(std::unordered_set<std::string> const& metaVariableNames);
 
             /*!
+             * Swaps the given pairs of meta variables in the DD. The pairs of meta variables must be guaranteed to have
+             * the same number of underlying DD variables.
+             *
+             * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
+             */
+            void swapVariables(std::vector<std::pair<std::string, std::string>> const& metaVariablePairs);
+            
+            /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
              * @return The number of encodings that are mapped to a non-zero value.
@@ -215,6 +223,13 @@ namespace storm {
              * @return The number of leaves of the DD.
              */
             uint_fast64_t getLeafCount() const;
+            
+            /*!
+             * Retrieves the number of nodes necessary to represent the DD.
+             *
+             * @return The number of nodes in this DD.
+             */
+            uint_fast64_t getNodeCount() const;
             
             /*!
              * Retrieves the lowest function value of any encoding.
@@ -340,6 +355,20 @@ namespace storm {
              */
             ADD const& getCuddAdd() const;
             
+            /*!
+             * Adds the given meta variable name to the set of meta variables that are contained in this DD.
+             *
+             * @param metaVariableName The name of the meta variable to add.
+             */
+            void addContainedMetaVariable(std::string const& metaVariableName);
+            
+            /*!
+             * Removes the given meta variable name to the set of meta variables that are contained in this DD.
+             *
+             * @param metaVariableName The name of the meta variable to remove.
+             */
+            void removeContainedMetaVariable(std::string const& metaVariableName);
+
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.
              *
