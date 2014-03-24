@@ -97,8 +97,8 @@ namespace storm {
             return nameVariablePair->second;
         }
         
-        std::unordered_set<std::string> DdManager<CUDD>::getAllMetaVariableNames() const {
-            std::unordered_set<std::string> result;
+        std::set<std::string> DdManager<CUDD>::getAllMetaVariableNames() const {
+            std::set<std::string> result;
             for (auto const& nameValuePair : metaVariableMap) {
                 result.insert(nameValuePair.first);
             }

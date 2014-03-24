@@ -1,8 +1,8 @@
 #ifndef STORM_STORAGE_DD_CUDDDD_H_
 #define STORM_STORAGE_DD_CUDDDD_H_
 
-#include <unordered_set>
 #include <unordered_map>
+#include <set>
 #include <memory>
 
 #include "src/storage/dd/Dd.h"
@@ -179,28 +179,28 @@ namespace storm {
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void existsAbstract(std::unordered_set<std::string> const& metaVariableNames);
+            void existsAbstract(std::set<std::string> const& metaVariableNames);
 
             /*!
              * Sum-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void sumAbstract(std::unordered_set<std::string> const& metaVariableNames);
+            void sumAbstract(std::set<std::string> const& metaVariableNames);
             
             /*!
              * Min-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void minAbstract(std::unordered_set<std::string> const& metaVariableNames);
+            void minAbstract(std::set<std::string> const& metaVariableNames);
             
             /*!
              * Max-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void maxAbstract(std::unordered_set<std::string> const& metaVariableNames);
+            void maxAbstract(std::set<std::string> const& metaVariableNames);
 
             /*!
              * Swaps the given pairs of meta variables in the DD. The pairs of meta variables must be guaranteed to have
@@ -209,6 +209,17 @@ namespace storm {
              * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
              */
             void swapVariables(std::vector<std::pair<std::string, std::string>> const& metaVariablePairs);
+            
+            /*!
+             * Multiplies the current DD (representing a matrix) with the given matrix by summing over the given meta
+             * variables.
+             *
+             * @param otherMatrix The matrix with which to multiply.
+             * @param summationMetaVariableNames The names of the meta variables over which to sum during the matrix-
+             * matrix multiplication.
+             * @return A DD representing the result of the matrix-matrix multiplication.
+             */
+            Dd<CUDD> multiplyMatrix(Dd<CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames);
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
@@ -310,21 +321,21 @@ namespace storm {
              * @param metaVariableNames The names of the meta variable for which to query membership.
              * @return True iff all meta variables are contained in the DD.
              */
-            bool containsMetaVariables(std::unordered_set<std::string> metaVariableNames) const;
+            bool containsMetaVariables(std::set<std::string> metaVariableNames) const;
             
             /*!
              * Retrieves the set of all names of meta variables contained in the DD.
              *
              * @return The set of names of all meta variables contained in the DD.
              */
-            std::unordered_set<std::string> const& getContainedMetaVariableNames() const;
+            std::set<std::string> const& getContainedMetaVariableNames() const;
             
             /*!
              * Retrieves the set of all names of meta variables contained in the DD.
              *
              * @return The set of names of all meta variables contained in the DD.
              */
-            std::unordered_set<std::string>& getContainedMetaVariableNames();
+            std::set<std::string>& getContainedMetaVariableNames();
             
             /*!
              * Exports the DD to the given file in the dot format.
@@ -376,7 +387,7 @@ namespace storm {
              * @param cuddAdd The CUDD ADD to store.
              * @param
              */
-            Dd(std::shared_ptr<DdManager<CUDD>> ddManager, ADD cuddAdd, std::unordered_set<std::string> const& containedMetaVariableNames) noexcept;
+            Dd(std::shared_ptr<DdManager<CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames) noexcept;
             
             // A pointer to the manager responsible for this DD.
             std::shared_ptr<DdManager<CUDD>> ddManager;
@@ -385,7 +396,7 @@ namespace storm {
             ADD cuddAdd;
             
             // The names of all meta variables that appear in this DD.
-            std::unordered_set<std::string> containedMetaVariableNames;
+            std::set<std::string> containedMetaVariableNames;
         };
     }
 }

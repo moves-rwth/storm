@@ -1,7 +1,6 @@
 #ifndef STORM_STORAGE_DD_CUDDDDMANAGER_H_
 #define STORM_STORAGE_DD_CUDDDDMANAGER_H_
 
-#include <unordered_set>
 #include <unordered_map>
 
 #include "src/storage/dd/DdManager.h"
@@ -102,7 +101,7 @@ namespace storm {
              *
              * @return The set of all meta variable names of the manager.
              */
-            std::unordered_set<std::string> getAllMetaVariableNames() const;
+            std::set<std::string> getAllMetaVariableNames() const;
             
         private:
             /*!
