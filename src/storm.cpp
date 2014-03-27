@@ -240,7 +240,7 @@ void setUp() {
  * Performs some necessary clean-up.
  */
 void cleanUp() {
-	delete storm::utility::cuddUtilityInstance();
+    // Intentionally left empty.
 }
 
 /*!
