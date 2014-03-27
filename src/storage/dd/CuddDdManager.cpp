@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace dd {
-        DdManager<CUDD>::DdManager() noexcept : metaVariableMap(), cuddManager() {
+        DdManager<CUDD>::DdManager() : metaVariableMap(), cuddManager() {
             // Intentionally left empty.
         }
         

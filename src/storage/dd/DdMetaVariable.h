@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <string>
 
+#include "utility\OsDetection.h"
 #include "src/storage/dd/CuddDd.h"
 
 namespace storm {
@@ -29,13 +30,17 @@ namespace storm {
              * @param ddVariables The vector of variables used to encode this variable.
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
-            DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager) noexcept;
+            DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager);
             
             // Explictly generate all default versions of copy/move constructors/assignments.
             DdMetaVariable(DdMetaVariable const& other) = default;
-            DdMetaVariable(DdMetaVariable&& other) = default;
-            DdMetaVariable& operator=(DdMetaVariable const& other) = default;
-            DdMetaVariable& operator=(DdMetaVariable&& other) = default;
+			DdMetaVariable& operator=(DdMetaVariable const& other) = default;
+			#ifndef WINDOWS
+				DdMetaVariable(DdMetaVariable&& other) = default;
+				DdMetaVariable& operator=(DdMetaVariable&& other) = default;
+			#endif
+            
+            
             
             /*!
              * Retrieves the name of the meta variable.

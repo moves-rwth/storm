@@ -6,6 +6,7 @@
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/storage/dd/CuddDd.h"
+#include "utility\OsDetection.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
@@ -21,13 +22,17 @@ namespace storm {
             /*!
              * Creates an empty manager without any meta variables.
              */
-            DdManager() noexcept;
+            DdManager();
             
             // Explictly forbid copying a DdManager, but allow moving it.
             DdManager(DdManager<CUDD> const& other) = delete;
-            DdManager(DdManager<CUDD>&& other) = default;
-            DdManager<CUDD>& operator=(DdManager<CUDD> const& other) = delete;
-            DdManager<CUDD>& operator=(DdManager<CUDD>&& other) = default;
+			DdManager<CUDD>& operator=(DdManager<CUDD> const& other) = delete;
+			#ifndef WINDOWS
+				DdManager(DdManager<CUDD>&& other) = default;
+				DdManager<CUDD>& operator=(DdManager<CUDD>&& other) = default;
+			#endif
+            
+            
             
             /*!
              * Retrieves a DD representing the constant one function.

@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "src/storage/dd/Dd.h"
+#include "utility\OsDetection.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
@@ -24,9 +25,11 @@ namespace storm {
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Dd() = default;
             Dd(Dd<CUDD> const& other) = default;
-            Dd(Dd<CUDD>&& other) = default;
-            Dd& operator=(Dd<CUDD> const& other) = default;
-            Dd& operator=(Dd<CUDD>&& other) = default;
+			Dd& operator=(Dd<CUDD> const& other) = default;
+			#ifndef WINDOWS
+				Dd(Dd<CUDD>&& other) = default;
+				Dd& operator=(Dd<CUDD>&& other) = default;
+			#endif
             
             /*!
              * Retrieves whether the two DDs represent the same function.
@@ -387,7 +390,7 @@ namespace storm {
              * @param cuddAdd The CUDD ADD to store.
              * @param
              */
-            Dd(std::shared_ptr<DdManager<CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames) noexcept;
+            Dd(std::shared_ptr<DdManager<CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames);
             
             // A pointer to the manager responsible for this DD.
             std::shared_ptr<DdManager<CUDD>> ddManager;
