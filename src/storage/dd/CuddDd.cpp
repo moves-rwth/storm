@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdManager.h"
 
