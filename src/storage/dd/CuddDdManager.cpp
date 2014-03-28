@@ -1,7 +1,10 @@
 #include <cmath>
+#include <algorithm>
 
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/exceptions/InvalidArgumentException.h"
+
+#include <iostream>
 
 namespace storm {
     namespace dd {
@@ -10,15 +13,15 @@ namespace storm {
         }
         
         Dd<CUDD> DdManager<CUDD>::getOne() {
-            return Dd<CUDD>(this->shared_from_this(), cuddManager.addOne(), {""});
+            return Dd<CUDD>(this->shared_from_this(), cuddManager.addOne());
         }
         
         Dd<CUDD> DdManager<CUDD>::getZero() {
-            return Dd<CUDD>(this->shared_from_this(), cuddManager.addZero(), {""});
+            return Dd<CUDD>(this->shared_from_this(), cuddManager.addZero());
         }
         
         Dd<CUDD> DdManager<CUDD>::getConstant(double value) {
-            return Dd<CUDD>(this->shared_from_this(), cuddManager.constant(value), {""});
+            return Dd<CUDD>(this->shared_from_this(), cuddManager.constant(value));
         }
         
         Dd<CUDD> DdManager<CUDD>::getEncoding(std::string const& metaVariableName, int_fast64_t value) {
@@ -53,6 +56,12 @@ namespace storm {
         }
 
         void DdManager<CUDD>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
+            // Check whether a meta variable already exists.
+            if (this->containsMetaVariable(name)) {
+                throw storm::exceptions::InvalidArgumentException() << "A meta variable '" << name << "' already exists.";
+            }
+
+            // Check that the range is legal.
             if (high == low) {
                 throw storm::exceptions::InvalidArgumentException() << "Range of meta variable must be at least 2 elements.";
             }
@@ -68,13 +77,33 @@ namespace storm {
         }
         
         void DdManager<CUDD>::addMetaVariablesInterleaved(std::vector<std::string> const& names, int_fast64_t low, int_fast64_t high) {
+            // Make sure that at least one meta variable is added.
             if (names.size() == 0) {
                 throw storm::exceptions::InvalidArgumentException() << "Illegal to add zero meta variables.";
             }
             
+            // Check that there are no duplicate names in the given name vector.
+            std::vector<std::string> nameCopy(names);
+            std::sort(nameCopy.begin(), nameCopy.end());
+            if (std::adjacent_find(nameCopy.begin(), nameCopy.end()) != nameCopy.end()) {
+                throw storm::exceptions::InvalidArgumentException() << "Cannot add duplicate meta variables.";
+            }
+            
+            // Check that the range is legal.
+            if (high == low) {
+                throw storm::exceptions::InvalidArgumentException() << "Range of meta variable must be at least 2 elements.";
+            }
+
+            // Check whether a meta variable already exists.
+            for (auto const& metaVariableName : names) {
+                if (this->containsMetaVariable(metaVariableName)) {
+                    throw storm::exceptions::InvalidArgumentException() << "A meta variable '" << metaVariableName << "' already exists.";
+                }
+            }
+            
             // Add the variables in interleaved order.
             std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low)));
-            std::vector<std::vector<Dd<CUDD>>> variables;
+            std::vector<std::vector<Dd<CUDD>>> variables(names.size());
             for (uint_fast64_t bit = 0; bit < numberOfBits; ++bit) {
                 for (uint_fast64_t i = 0; i < names.size(); ++i) {
                     variables[i].emplace_back(Dd<CUDD>(this->shared_from_this(), cuddManager.addVar(), {names[i]}));
@@ -90,7 +119,7 @@ namespace storm {
         DdMetaVariable<CUDD> const& DdManager<CUDD>::getMetaVariable(std::string const& metaVariableName) const {
             auto const& nameVariablePair = metaVariableMap.find(metaVariableName);
             
-            if (nameVariablePair == metaVariableMap.end()) {
+            if (!this->containsMetaVariable(metaVariableName)) {
                 throw storm::exceptions::InvalidArgumentException() << "Unknown meta variable name.";
             }
             
@@ -103,6 +132,14 @@ namespace storm {
                 result.insert(nameValuePair.first);
             }
             return result;
+        }
+        
+        std::size_t DdManager<CUDD>::getNumberOfMetaVariables() const {
+            return this->metaVariableMap.size();
+        }
+        
+        bool DdManager<CUDD>::containsMetaVariable(std::string const& metaVariableName) const {
+            return this->metaVariableMap.find(metaVariableName) != this->metaVariableMap.end();
         }
         
         Cudd& DdManager<CUDD>::getCuddManager() {

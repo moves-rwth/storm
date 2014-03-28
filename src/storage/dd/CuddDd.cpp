@@ -263,12 +263,12 @@ namespace storm {
         
         double Dd<CUDD>::getMin() const {
             ADD constantMinAdd = this->getCuddAdd().FindMin();
-            return static_cast<double>(Cudd_V(constantMinAdd));
+            return static_cast<double>(Cudd_V(constantMinAdd.getNode()));
         }
         
         double Dd<CUDD>::getMax() const {
             ADD constantMaxAdd = this->getCuddAdd().FindMax();
-            return static_cast<double>(Cudd_V(constantMaxAdd));
+            return static_cast<double>(Cudd_V(constantMaxAdd.getNode()));
         }
         
         void Dd<CUDD>::setValue(std::string const& metaVariableName, int_fast64_t variableValue, double targetValue) {

@@ -106,6 +106,21 @@ namespace storm {
              */
             std::set<std::string> getAllMetaVariableNames() const;
             
+            /*!
+             * Retrieves the number of meta variables that are contained in this manager.
+             *
+             * @return The number of meta variables contained in this manager.
+             */
+            std::size_t getNumberOfMetaVariables() const;
+            
+            /*!
+             * Retrieves whether the given meta variable name is already in use.
+             *
+             * @param metaVariableName The meta variable name whose membership to query.
+             * @return True if the given meta variable name is managed by this manager.
+             */
+            bool containsMetaVariable(std::string const& metaVariableName) const;
+            
         private:
             /*!
              * Retrieves the underlying CUDD manager.

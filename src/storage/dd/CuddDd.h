@@ -390,7 +390,7 @@ namespace storm {
              * @param cuddAdd The CUDD ADD to store.
              * @param
              */
-            Dd(std::shared_ptr<DdManager<CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames);
+            Dd(std::shared_ptr<DdManager<CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames = std::set<std::string>());
             
             // A pointer to the manager responsible for this DD.
             std::shared_ptr<DdManager<CUDD>> ddManager;
