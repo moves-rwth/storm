@@ -36,7 +36,7 @@ TEST(CuddDdManager, Constants) {
     EXPECT_EQ(2, two.getMax());
 }
 
-TEST(CuddDdManager, AddMetaVariableTest) {
+TEST(CuddDdManager, MetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::CUDD>> manager(new storm::dd::DdManager<storm::dd::CUDD>());
     
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
@@ -51,4 +51,21 @@ TEST(CuddDdManager, AddMetaVariableTest) {
     names = {"y", "y'"};
     ASSERT_NO_THROW(manager->addMetaVariablesInterleaved(names, 0, 3));
     EXPECT_EQ(3, manager->getNumberOfMetaVariables());
+    
+    EXPECT_FALSE(manager->hasMetaVariable("x'"));
+    EXPECT_TRUE(manager->hasMetaVariable("y'"));
+    
+    std::set<std::string> metaVariableSet = {"x", "y", "y'"};
+    EXPECT_EQ(metaVariableSet, manager->getAllMetaVariableNames());
+    
+    ASSERT_THROW(storm::dd::DdMetaVariable<storm::dd::CUDD> const& metaVariableX = manager->getMetaVariable("x'"), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(storm::dd::DdMetaVariable<storm::dd::CUDD> const& metaVariableX = manager->getMetaVariable("x"));
+    storm::dd::DdMetaVariable<storm::dd::CUDD> const& metaVariableX = manager->getMetaVariable("x");
+    
+    EXPECT_EQ(1, metaVariableX.getLow());
+    EXPECT_EQ(9, metaVariableX.getHigh());
+    EXPECT_EQ("x", metaVariableX.getName());
+    EXPECT_EQ(manager, metaVariableX.getDdManager());
+    EXPECT_EQ(4, metaVariableX.getNumberOfDdVariables());
 }
+

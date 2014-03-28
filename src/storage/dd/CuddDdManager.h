@@ -119,7 +119,7 @@ namespace storm {
              * @param metaVariableName The meta variable name whose membership to query.
              * @return True if the given meta variable name is managed by this manager.
              */
-            bool containsMetaVariable(std::string const& metaVariableName) const;
+            bool hasMetaVariable(std::string const& metaVariableName) const;
             
         private:
             /*!

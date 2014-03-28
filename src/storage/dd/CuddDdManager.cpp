@@ -57,7 +57,7 @@ namespace storm {
 
         void DdManager<CUDD>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
             // Check whether a meta variable already exists.
-            if (this->containsMetaVariable(name)) {
+            if (this->hasMetaVariable(name)) {
                 throw storm::exceptions::InvalidArgumentException() << "A meta variable '" << name << "' already exists.";
             }
 
@@ -66,7 +66,7 @@ namespace storm {
                 throw storm::exceptions::InvalidArgumentException() << "Range of meta variable must be at least 2 elements.";
             }
             
-            std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low)));
+            std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
             
             std::vector<Dd<CUDD>> variables;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
@@ -96,13 +96,13 @@ namespace storm {
 
             // Check whether a meta variable already exists.
             for (auto const& metaVariableName : names) {
-                if (this->containsMetaVariable(metaVariableName)) {
+                if (this->hasMetaVariable(metaVariableName)) {
                     throw storm::exceptions::InvalidArgumentException() << "A meta variable '" << metaVariableName << "' already exists.";
                 }
             }
             
             // Add the variables in interleaved order.
-            std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low)));
+            std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
             std::vector<std::vector<Dd<CUDD>>> variables(names.size());
             for (uint_fast64_t bit = 0; bit < numberOfBits; ++bit) {
                 for (uint_fast64_t i = 0; i < names.size(); ++i) {
@@ -119,7 +119,7 @@ namespace storm {
         DdMetaVariable<CUDD> const& DdManager<CUDD>::getMetaVariable(std::string const& metaVariableName) const {
             auto const& nameVariablePair = metaVariableMap.find(metaVariableName);
             
-            if (!this->containsMetaVariable(metaVariableName)) {
+            if (!this->hasMetaVariable(metaVariableName)) {
                 throw storm::exceptions::InvalidArgumentException() << "Unknown meta variable name.";
             }
             
@@ -138,7 +138,7 @@ namespace storm {
             return this->metaVariableMap.size();
         }
         
-        bool DdManager<CUDD>::containsMetaVariable(std::string const& metaVariableName) const {
+        bool DdManager<CUDD>::hasMetaVariable(std::string const& metaVariableName) const {
             return this->metaVariableMap.find(metaVariableName) != this->metaVariableMap.end();
         }
         

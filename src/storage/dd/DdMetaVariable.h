@@ -68,13 +68,13 @@ namespace storm {
              */
             std::shared_ptr<DdManager<Type>> getDdManager() const;
             
-            
             /*!
              * Retrieves the number of DD variables for this meta variable.
              *
              * @return The number of DD variables for this meta variable.
              */
             std::size_t getNumberOfDdVariables() const;
+            
         private:
             /*!
              * Retrieves the variables used to encode the meta variable.
