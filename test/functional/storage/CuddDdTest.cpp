@@ -36,7 +36,7 @@ TEST(CuddDdManager, Constants) {
     EXPECT_EQ(2, two.getMax());
 }
 
-TEST(CuddDdManager, AddMetaVariableTest) {
+TEST(CuddDdManager, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::CUDD>> manager(new storm::dd::DdManager<storm::dd::CUDD>());
     
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
@@ -71,10 +71,37 @@ TEST(CuddDdManager, EncodingTest) {
     ASSERT_THROW(encoding = manager->getEncoding("x", 0), storm::exceptions::InvalidArgumentException);
     ASSERT_THROW(encoding = manager->getEncoding("x", 10), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(encoding = manager->getEncoding("x", 4));
-    encoding.exportToDot("out.dot");
     EXPECT_EQ(1, encoding.getNonZeroCount());
     EXPECT_EQ(6, encoding.getNodeCount());
     EXPECT_EQ(2, encoding.getLeafCount());
+}
+
+TEST(CuddDdManager, RangeTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::CUDD>> manager(new storm::dd::DdManager<storm::dd::CUDD>());
+    
+    ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
+    
+    storm::dd::Dd<storm::dd::CUDD> range;
+    ASSERT_THROW(range = manager->getRange("y"), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(range = manager->getRange("x"));
+    
+    EXPECT_EQ(9, range.getNonZeroCount());
+    EXPECT_EQ(2, range.getLeafCount());
+    EXPECT_EQ(6, range.getNodeCount());
+}
+
+TEST(CuddDdManager, IdentityTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::CUDD>> manager(new storm::dd::DdManager<storm::dd::CUDD>());
+    
+    ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
+    
+    storm::dd::Dd<storm::dd::CUDD> range;
+    ASSERT_THROW(range = manager->getIdentity("y"), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(range = manager->getIdentity("x"));
+    
+    EXPECT_EQ(9, range.getNonZeroCount());
+    EXPECT_EQ(10, range.getLeafCount());
+    EXPECT_EQ(21, range.getNodeCount());
 }
 
 TEST(CuddDdMetaVariable, AccessorTest) {

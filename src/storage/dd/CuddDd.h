@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_DD_CUDDDD_H_
 #define STORM_STORAGE_DD_CUDDDD_H_
 
-#include <unordered_map>
+#include <map>
 #include <set>
 #include <memory>
 #include <iostream>
@@ -295,7 +295,16 @@ namespace storm {
              * have. All values must be within the range of the respective meta variable.
              * @param targetValue The new function value of the modified encodings.
              */
-            void setValue(std::unordered_map<std::string, int_fast64_t> const& metaVariableNameToValueMap, double targetValue);
+            void setValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap, double targetValue);
+            
+            /*!
+             * Retrieves the value of the function when all meta variables are assigned the values of the given mapping.
+             * Note that the mapping must specify values for all meta variables contained in the DD.
+             *
+             * @param metaVariableNameToValueMap A mapping of meta variable names to their values.
+             * @return The value of the function evaluated with the given input.
+             */
+            double getValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap) const;
             
             /*!
              * Retrieves whether this DD represents the constant one function.
@@ -362,7 +371,7 @@ namespace storm {
              *
              * @return The CUDD ADD object associated with this DD.
              */
-            ADD& getCuddAdd();
+            ADD getCuddAdd();
             
             /*!
              * Retrieves the CUDD ADD object associated with this DD.

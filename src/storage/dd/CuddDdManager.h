@@ -69,9 +69,18 @@ namespace storm {
              * of the range of the meta variable to one.
              *
              * @param metaVariableName The name of the meta variable whose range to retrieve.
-             * @return The range of the meta variable
+             * @return The range of the meta variable.
              */
-            Dd<CUDD> getRange(std::string const metaVariableName);
+            Dd<CUDD> getRange(std::string const& metaVariableName);
+
+            /*!
+             * Retrieves the DD representing the identity of the meta variable, i.e., a function that maps all legal
+             * values of the range of the meta variable to themselves.
+             *
+             * @param metaVariableName The name of the meta variable whose identity to retrieve.
+             * @return The identity of the meta variable.
+             */
+            Dd<CUDD> getIdentity(std::string const& metaVariableName);
             
             /*!
              * Adds a meta variable with the given name and range.

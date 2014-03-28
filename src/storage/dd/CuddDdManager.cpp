@@ -28,18 +28,23 @@ namespace storm {
                 throw storm::exceptions::InvalidArgumentException() << "Unknown meta variable name '" << metaVariableName << "'.";
             }
             
+            DdMetaVariable<CUDD> const& metaVariable = this->getMetaVariable(metaVariableName);
+            
             // Check whether the value is legal for this meta variable.
-            if (value < this->getMetaVariable(metaVariableName).getLow() || value > this->getMetaVariable(metaVariableName).getHigh()) {
+            if (value < metaVariable.getLow() || value > metaVariable.getHigh()) {
                 throw storm::exceptions::InvalidArgumentException() << "Illegal value " << value << " for meta variable '" << metaVariableName << "'.";
             }
             
-            std::vector<Dd<CUDD>> const& ddVariables = this->getMetaVariable(metaVariableName).getDdVariables();
+            // Now compute the encoding relative to the low value of the meta variable.
+            value -= metaVariable.getLow();
+            
+            std::vector<Dd<CUDD>> const& ddVariables = metaVariable.getDdVariables();
 
             Dd<CUDD> result;
             if (value & (1ull << (ddVariables.size() - 1))) {
                 result = ddVariables[0];
             } else {
-                result = ddVariables[0];
+                result = ~ddVariables[0];
             }
             
             for (std::size_t i = 1; i < ddVariables.size(); ++i) {
@@ -49,16 +54,37 @@ namespace storm {
                     result *= ~ddVariables[i];
                 }
             }
-            
+                        
             return result;
         }
         
-        Dd<CUDD> DdManager<CUDD>::getRange(std::string const metaVariableName) {
+        Dd<CUDD> DdManager<CUDD>::getRange(std::string const& metaVariableName) {
+            // Check whether the meta variable exists.
+            if (!this->hasMetaVariable(metaVariableName)) {
+                throw storm::exceptions::InvalidArgumentException() << "Unknown meta variable name '" << metaVariableName << "'.";
+            }
+
+            storm::dd::DdMetaVariable<CUDD> const& metaVariable = this->getMetaVariable(metaVariableName);
+            
+            Dd<CUDD> result = this->getZero();
+            
+            for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
+                result.setValue(metaVariableName, value, static_cast<double>(1));
+            }
+            return result;
+        }
+        
+        Dd<CUDD> DdManager<CUDD>::getIdentity(std::string const& metaVariableName) {
+            // Check whether the meta variable exists.
+            if (!this->hasMetaVariable(metaVariableName)) {
+                throw storm::exceptions::InvalidArgumentException() << "Unknown meta variable name '" << metaVariableName << "'.";
+            }
+            
             storm::dd::DdMetaVariable<CUDD> const& metaVariable = this->getMetaVariable(metaVariableName);
             
             Dd<CUDD> result = this->getZero();
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-                result.setValue(metaVariableName, value - metaVariable.getLow(), static_cast<double>(value));
+                result.setValue(metaVariableName, value, static_cast<double>(value));
             }
             return result;
         }
