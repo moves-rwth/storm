@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "src/storage/dd/Dd.h"
-#include "utility\OsDetection.h"
+#include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
@@ -26,10 +26,10 @@ namespace storm {
             Dd() = default;
             Dd(Dd<CUDD> const& other) = default;
 			Dd& operator=(Dd<CUDD> const& other) = default;
-			#ifndef WINDOWS
-				Dd(Dd<CUDD>&& other) = default;
-				Dd& operator=(Dd<CUDD>&& other) = default;
-			#endif
+#ifndef WINDOWS
+            Dd(Dd<CUDD>&& other) = default;
+            Dd& operator=(Dd<CUDD>&& other) = default;
+#endif
             
             /*!
              * Retrieves whether the two DDs represent the same function.
@@ -45,7 +45,7 @@ namespace storm {
              * @return The result of the addition.
              */
             Dd<CUDD> operator+(Dd<CUDD> const& other) const;
-
+            
             /*!
              * Adds the given DD to the current one.
              *
@@ -61,7 +61,7 @@ namespace storm {
              * @return The result of the multiplication.
              */
             Dd<CUDD> operator*(Dd<CUDD> const& other) const;
-
+            
             /*!
              * Multiplies the given DD with the current one and assigns the result to the current DD.
              *
@@ -183,7 +183,7 @@ namespace storm {
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
             void existsAbstract(std::set<std::string> const& metaVariableNames);
-
+            
             /*!
              * Sum-abstracts from the given meta variables.
              *
@@ -204,7 +204,7 @@ namespace storm {
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
             void maxAbstract(std::set<std::string> const& metaVariableNames);
-
+            
             /*!
              * Swaps the given pairs of meta variables in the DD. The pairs of meta variables must be guaranteed to have
              * the same number of underlying DD variables.
@@ -269,7 +269,7 @@ namespace storm {
              * @param targetValue The new function value of the modified encodings.
              */
             void setValue(std::string const& metaVariableName, int_fast64_t variableValue, double targetValue);
-
+            
             /*!
              * Sets the function values of all encodings that have the given values of the two meta variables to the
              * given target value.
@@ -382,7 +382,7 @@ namespace storm {
              * @param metaVariableName The name of the meta variable to remove.
              */
             void removeContainedMetaVariable(std::string const& metaVariableName);
-
+            
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.
              *
@@ -394,7 +394,7 @@ namespace storm {
             
             // A pointer to the manager responsible for this DD.
             std::shared_ptr<DdManager<CUDD>> ddManager;
-
+            
             // The ADD created by CUDD.
             ADD cuddAdd;
             

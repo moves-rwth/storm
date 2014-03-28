@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <string>
 
-#include "utility\OsDetection.h"
+#include "utility/OsDetection.h"
 #include "src/storage/dd/CuddDd.h"
 
 namespace storm {
@@ -35,12 +35,10 @@ namespace storm {
             // Explictly generate all default versions of copy/move constructors/assignments.
             DdMetaVariable(DdMetaVariable const& other) = default;
 			DdMetaVariable& operator=(DdMetaVariable const& other) = default;
-			#ifndef WINDOWS
-				DdMetaVariable(DdMetaVariable&& other) = default;
-				DdMetaVariable& operator=(DdMetaVariable&& other) = default;
-			#endif
-            
-            
+#ifndef WINDOWS
+            DdMetaVariable(DdMetaVariable&& other) = default;
+            DdMetaVariable& operator=(DdMetaVariable&& other) = default;
+#endif
             
             /*!
              * Retrieves the name of the meta variable.
@@ -55,14 +53,14 @@ namespace storm {
              * @return The lowest value of the range of the variable.
              */
             int_fast64_t getLow() const;
-
+            
             /*!
              * Retrieves the highest value of the range of the variable.
              *
              * @return The highest value of the range of the variable.
              */
             int_fast64_t getHigh() const;
-
+            
             /*!
              * Retrieves the manager that is responsible for this meta variable.
              *
@@ -91,7 +89,7 @@ namespace storm {
              * @return The cube of all variables that encode this meta variable.
              */
             Dd<Type> const& getCube() const;
-
+            
             // The name of the meta variable.
             std::string name;
             

@@ -6,7 +6,7 @@
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/storage/dd/CuddDd.h"
-#include "utility\OsDetection.h"
+#include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
@@ -18,7 +18,7 @@ namespace storm {
         public:
             // To break the cylic dependencies, we need to forward-declare the other DD-related classes.
             friend class Dd<CUDD>;
-
+            
             /*!
              * Creates an empty manager without any meta variables.
              */
@@ -27,12 +27,10 @@ namespace storm {
             // Explictly forbid copying a DdManager, but allow moving it.
             DdManager(DdManager<CUDD> const& other) = delete;
 			DdManager<CUDD>& operator=(DdManager<CUDD> const& other) = delete;
-			#ifndef WINDOWS
-				DdManager(DdManager<CUDD>&& other) = default;
-				DdManager<CUDD>& operator=(DdManager<CUDD>&& other) = default;
-			#endif
-            
-            
+#ifndef WINDOWS
+            DdManager(DdManager<CUDD>&& other) = default;
+            DdManager<CUDD>& operator=(DdManager<CUDD>&& other) = default;
+#endif
             
             /*!
              * Retrieves a DD representing the constant one function.
@@ -54,7 +52,7 @@ namespace storm {
              * @return A DD representing the constant function with the given value.
              */
             Dd<CUDD> getConstant(double value);
-
+            
             /*!
              * Retrieves the DD representing the function that maps all inputs which have the given meta variable equal
              * to the given value one.
