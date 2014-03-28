@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <set>
 #include <memory>
+#include <iostream>
 
 #include "src/storage/dd/Dd.h"
 #include "src/utility/OsDetection.h"
@@ -345,7 +346,7 @@ namespace storm {
              *
              * @param filename The name of the file to which the DD is to be exported.
              */
-            void exportToDot(std::string const& filename) const;
+            void exportToDot(std::string const& filename = "") const;
             
             /*!
              * Retrieves the manager that is responsible for this DD.
@@ -354,13 +355,14 @@ namespace storm {
              */
             std::shared_ptr<DdManager<CUDD>> getDdManager() const;
             
+            friend std::ostream & operator<<(std::ostream& out, const Dd<CUDD>& dd);
         private:
             /*!
-             * Retrieves the CUDD ADD object associated with this DD.
+             * Retrieves a reference to the CUDD ADD object associated with this DD.
              *
-             * @return The CUDD ADD object assoicated with this DD.
+             * @return The CUDD ADD object associated with this DD.
              */
-            ADD getCuddAdd();
+            ADD& getCuddAdd();
             
             /*!
              * Retrieves the CUDD ADD object associated with this DD.

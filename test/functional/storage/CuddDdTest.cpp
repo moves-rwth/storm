@@ -36,7 +36,7 @@ TEST(CuddDdManager, Constants) {
     EXPECT_EQ(2, two.getMax());
 }
 
-TEST(CuddDdManager, MetaVariableTest) {
+TEST(CuddDdManager, AddMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::CUDD>> manager(new storm::dd::DdManager<storm::dd::CUDD>());
     
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
@@ -60,6 +60,29 @@ TEST(CuddDdManager, MetaVariableTest) {
     
     ASSERT_THROW(storm::dd::DdMetaVariable<storm::dd::CUDD> const& metaVariableX = manager->getMetaVariable("x'"), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(storm::dd::DdMetaVariable<storm::dd::CUDD> const& metaVariableX = manager->getMetaVariable("x"));
+}
+
+TEST(CuddDdManager, EncodingTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::CUDD>> manager(new storm::dd::DdManager<storm::dd::CUDD>());
+    
+    ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
+    
+    storm::dd::Dd<storm::dd::CUDD> encoding;
+    ASSERT_THROW(encoding = manager->getEncoding("x", 0), storm::exceptions::InvalidArgumentException);
+    ASSERT_THROW(encoding = manager->getEncoding("x", 10), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(encoding = manager->getEncoding("x", 4));
+    encoding.exportToDot("out.dot");
+    EXPECT_EQ(1, encoding.getNonZeroCount());
+    EXPECT_EQ(6, encoding.getNodeCount());
+    EXPECT_EQ(2, encoding.getLeafCount());
+}
+
+TEST(CuddDdMetaVariable, AccessorTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::CUDD>> manager(new storm::dd::DdManager<storm::dd::CUDD>());
+    
+    ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
+    EXPECT_EQ(1, manager->getNumberOfMetaVariables());
+    ASSERT_NO_THROW(storm::dd::DdMetaVariable<storm::dd::CUDD> const& metaVariableX = manager->getMetaVariable("x"));
     storm::dd::DdMetaVariable<storm::dd::CUDD> const& metaVariableX = manager->getMetaVariable("x");
     
     EXPECT_EQ(1, metaVariableX.getLow());
@@ -69,3 +92,13 @@ TEST(CuddDdManager, MetaVariableTest) {
     EXPECT_EQ(4, metaVariableX.getNumberOfDdVariables());
 }
 
+//TEST(CuddDd, OperatorTest) {
+//    std::shared_ptr<storm::dd::DdManager<storm::dd::CUDD>> manager(new storm::dd::DdManager<storm::dd::CUDD>());
+//    
+//    ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
+//    EXPECT_EQ(manager->getZero(), manager->getZero());
+//    EXPECT_NE(manager->getZero(), manager->getOne());
+//    
+//    storm::dd::Dd<storm::dd::CUDD> add;
+//    
+//}

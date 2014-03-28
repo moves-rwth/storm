@@ -326,12 +326,16 @@ namespace storm {
         }
         
         void Dd<CUDD>::exportToDot(std::string const& filename) const {
-            FILE* filePointer = fopen(filename.c_str() , "w");
-            this->getDdManager()->getCuddManager().DumpDot({this->cuddAdd}, nullptr, nullptr, filePointer);
-            fclose(filePointer);
+            if (filename.empty()) {
+                this->getDdManager()->getCuddManager().DumpDot({this->getCuddAdd()});
+            } else {
+                FILE* filePointer = fopen(filename.c_str() , "w");
+                this->getDdManager()->getCuddManager().DumpDot({this->getCuddAdd()}, nullptr, nullptr, filePointer);
+                fclose(filePointer);
+            }
         }
         
-        ADD Dd<CUDD>::getCuddAdd() {
+        ADD& Dd<CUDD>::getCuddAdd() {
             return this->cuddAdd;
         }
         
@@ -350,5 +354,11 @@ namespace storm {
         std::shared_ptr<DdManager<CUDD>> Dd<CUDD>::getDdManager() const {
             return this->ddManager;
         }
+        
+        std::ostream & operator<<(std::ostream& out, const Dd<CUDD>& dd) {
+            dd.exportToDot();
+            return out;
+        }
+
     }
 }
