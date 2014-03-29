@@ -110,8 +110,6 @@ namespace storm {
             glp_set_row_name(this->lp, nextConstraintIndex, name.c_str());
             
             // Determine the type of the constraint and add it properly.
-            bool isUpperBound = boundType == LESS || boundType == LESS_EQUAL;
-            bool isStrict = boundType == LESS || boundType == GREATER;
             switch (boundType) {
                 case LESS:
                     glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightHandSideValue - storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());

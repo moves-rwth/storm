@@ -152,7 +152,6 @@ namespace storm {
 
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
-            std::vector<ValueType>* swap = nullptr;
             std::vector<ValueType>* currentX = &x;
 
             bool multiplyResultProvided = true;

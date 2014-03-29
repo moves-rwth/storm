@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "storm-config.h"
+#include "storm-version.h"
 #include "src/models/Dtmc.h"
 #include "src/models/MarkovAutomaton.h"
 #include "src/storage/SparseMatrix.h"
@@ -240,7 +241,7 @@ void setUp() {
  * Performs some necessary clean-up.
  */
 void cleanUp() {
-	delete storm::utility::cuddUtilityInstance();
+    // Intentionally left empty.
 }
 
 /*!

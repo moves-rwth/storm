@@ -157,7 +157,6 @@ private:
 
 			for (uint_fast64_t j = 0; j < module.getNumberOfBooleanVariables(); ++j) {
 				storm::ir::BooleanVariable const& booleanVariable = module.getBooleanVariable(j);
-				bool initialValue = booleanVariable.getInitialValue()->getValueAsBool(nullptr);
 				*initialStates *= *cuddUtility->getConstantEncoding(1, variableToRowDecisionDiagramVariableMap[booleanVariable.getName()]);
 			}
 			for (uint_fast64_t j = 0; j < module.getNumberOfIntegerVariables(); ++j) {
@@ -187,7 +186,6 @@ private:
 		}
 
 		bool changed;
-		int iter = 0;
 		do {
 			changed = false;
 			*newReachableStates = *reachableStates * *systemAdd01;

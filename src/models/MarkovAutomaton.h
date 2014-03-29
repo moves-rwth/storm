@@ -123,7 +123,7 @@ namespace storm {
                     }
                     
                     // Then compute how many rows the new matrix is going to have.
-                    uint_fast64_t newNumberOfRows = this->getNumberOfChoices() - numberOfHybridStates;
+                    //uint_fast64_t newNumberOfRows = this->getNumberOfChoices() - numberOfHybridStates;
                     
                     // Create the matrix for the new transition relation and the corresponding nondeterministic choice vector.
                     storm::storage::SparseMatrixBuilder<T> newTransitionMatrixBuilder(0, 0, 0, true, this->getNumberOfStates() + 1);

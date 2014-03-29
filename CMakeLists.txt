@@ -223,6 +223,13 @@ configure_file (
 	"${PROJECT_SOURCE_DIR}/storm-config.h.in"
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
+
+# Configure a header file to pass the storm version to the source code
+configure_file (
+	"${PROJECT_SOURCE_DIR}/storm-version.h.in"
+	"${PROJECT_BINARY_DIR}/include/storm-version.h"
+)
+
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
@@ -249,7 +256,8 @@ file(GLOB STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOUR
 file(GLOB_RECURSE STORM_PARSER_PRISMPARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.h ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.cpp)
 file(GLOB_RECURSE STORM_SETTINGS_FILES ${PROJECT_SOURCE_DIR}/src/settings/*.h ${PROJECT_SOURCE_DIR}/src/settings/*.cpp)
 file(GLOB_RECURSE STORM_SOLVER_FILES ${PROJECT_SOURCE_DIR}/src/solver/*.h ${PROJECT_SOURCE_DIR}/src/solver/*.cpp)
-file(GLOB_RECURSE STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
+file(GLOB STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_DD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/*.cpp)
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
 file(GLOB STORM_IR_FILES ${PROJECT_SOURCE_DIR}/src/ir/*.h ${PROJECT_SOURCE_DIR}/src/ir/*.cpp)
 file(GLOB_RECURSE STORM_IR_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/ir/expressions/*.h ${PROJECT_SOURCE_DIR}/src/ir/expressions/*.cpp)
@@ -282,6 +290,7 @@ source_group(parser\\prismparser FILES ${STORM_PARSER_PRISMPARSER_FILES})
 source_group(settings FILES ${STORM_SETTINGS_FILES})
 source_group(solver FILES ${STORM_SOLVER_FILES})
 source_group(storage FILES ${STORM_STORAGE_FILES})
+source_group(storage\\dd FILES ${STORM_STORAGE_DD_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
 source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES})
@@ -539,4 +548,4 @@ INSTALL(TARGETS storm storm-functional-tests storm-performance-tests
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 )
-include(CPackConfig.cmake)
+include(StormCPackConfig.cmake)

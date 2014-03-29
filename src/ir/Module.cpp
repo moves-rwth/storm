@@ -169,11 +169,16 @@ namespace storm {
             if (actionsCommandSetPair != this->actionsToCommandIndexMap.end()) {
                 return actionsCommandSetPair->second;
             }
+            
             LOG4CPLUS_ERROR(logger, "Action name '" << action << "' does not exist in module.");
             throw storm::exceptions::OutOfRangeException() << "Action name '" << action << "' does not exist in module.";
         }
         
         void Module::collectActions() {
+            // Clear the current mapping.
+            this->actionsToCommandIndexMap.clear();
+            
+            // Add the mapping for all commands.
             for (unsigned int id = 0; id < this->commands.size(); id++) {
                 std::string const& action = this->commands[id].getActionName();
                 if (action != "") {
@@ -184,9 +189,18 @@ namespace storm {
                     this->actions.insert(action);
                 }
             }
+            
+            // For all actions that are "in the module", but for which no command exists, we add the mapping to an empty
+            // set of commands.
+            for (auto const& action : this->actions) {
+                if (this->actionsToCommandIndexMap.find(action) == this->actionsToCommandIndexMap.end()) {
+                    this->actionsToCommandIndexMap[action] = std::set<uint_fast64_t>();
+                }
+            }
         }
         
         void Module::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
+            // First construct the new vector of commands.
             std::vector<storm::ir::Command> newCommands;
             for (auto const& command : commands) {
                 if (indexSet.find(command.getGlobalIndex()) != indexSet.end()) {
@@ -194,6 +208,9 @@ namespace storm {
                 }
             }
             commands = std::move(newCommands);
+            
+            // Then refresh the internal mappings.
+            this->collectActions();
         }
         
     } // namespace ir

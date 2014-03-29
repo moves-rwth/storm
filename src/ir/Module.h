@@ -188,8 +188,8 @@ namespace storm {
              * @param indexSet The set of indices for which to keep the commands.
              */
             void restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet);
-        private:
             
+        private:
             /*!
              * Computes the locally maintained mappings for fast data retrieval.
              */
@@ -217,11 +217,7 @@ namespace storm {
             std::set<std::string> actions;
             
             // A map of actions to the set of commands labeled with this action.
-#ifdef LINUX
-            boost::container::map<std::string, std::set<uint_fast64_t>> actionsToCommandIndexMap;
-#else
             std::map<std::string, std::set<uint_fast64_t>> actionsToCommandIndexMap;
-#endif
         };
         
     } // namespace ir
