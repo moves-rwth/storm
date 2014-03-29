@@ -354,11 +354,11 @@ namespace storm {
         }
         
         void Dd<CUDD>::exportToDot(std::string const& filename) const {
-            if (filename.empty()) {
-                this->getDdManager()->getCuddManager().DumpDot({this->cuddAdd});
+			std::vector<ADD> cuddAddVector = { this->cuddAdd };
+			if (filename.empty()) {
+				this->getDdManager()->getCuddManager().DumpDot(cuddAddVector);
             } else {
                 FILE* filePointer = fopen(filename.c_str() , "w");
-				std::vector<ADD> cuddAddVector = { this->cuddAdd };
 				this->getDdManager()->getCuddManager().DumpDot(cuddAddVector, nullptr, nullptr, filePointer);
                 fclose(filePointer);
             }
