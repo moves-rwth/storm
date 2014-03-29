@@ -5,7 +5,8 @@
 
 namespace storm {
 	namespace parser {
-
+		
+		
 		/*!
 		 *	This class can be used to parse a file containing either transitions or transition rewards of a deterministic model.
 		 *
@@ -16,6 +17,13 @@ namespace storm {
 		class DeterministicSparseTransitionParser {
 		public:
 
+			template<typename T>
+			struct DeterministicTransitionEntry
+			{
+				uint_fast64_t row = 0;
+				uint_fast64_t col = 0;
+				T val;
+			};
 			/*!
 			 * A structure representing the result of the first pass of this parser. It contains the number of non-zero entries in the model and the highest state index.
 			 */
@@ -80,9 +88,22 @@ namespace storm {
 			 *                         The dimensions (rows and columns) of the two matrices should match.
 			 * @return A SparseMatrix containing the parsed file contents.
 			 */
-			static storm::storage::SparseMatrix<double> parse(std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const & transitionMatrix);
+			template<typename T>
+			static storm::storage::SparseMatrix<T> parse(std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<T> const & transitionMatrix);
 
+			// Helper methods.
+			/*
+			 */
+			template<typename T>
+			static void readNextTransition(char** buf, DeterministicTransitionEntry<T>* trans );
+			
+			
+			template<typename T>
+			static void addTransitionToMatrix(DeterministicTransitionEntry<T> const& trans, storm::storage::SparseMatrixBuilder<T>* mat);
+		
+			static char* skipFormatHint(char*);
 		};
+				
 
 	} // namespace parser
 } // namespace storm

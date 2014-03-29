@@ -85,7 +85,7 @@ namespace storm {
             
             // Finally, set the element and increase the current size.
             if (storagePreallocated) {
-                columnsAndValues[currentEntryCount] = std::make_pair(column, value);
+                columnsAndValues.at(currentEntryCount) = std::make_pair(column, value);
             } else {
                 columnsAndValues.emplace_back(column, value);
                 if (!columnCountSet) {
