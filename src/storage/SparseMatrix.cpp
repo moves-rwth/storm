@@ -743,7 +743,6 @@ namespace storm {
             const_iterator it = this->begin();
             const_iterator ite;
             typename std::vector<uint_fast64_t>::const_iterator rowIterator = rowIndications.begin();
-            typename std::vector<uint_fast64_t>::const_iterator rowIteratorEnd = rowIndications.end();
             typename std::vector<T>::iterator resultIterator = result.begin();
             typename std::vector<T>::iterator resultIteratorEnd = result.end();
             

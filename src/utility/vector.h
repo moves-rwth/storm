@@ -94,7 +94,6 @@ namespace storm {
              */
             template<class T>
             void selectVectorValues(std::vector<T>& vector, std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGrouping, std::vector<T> const& values) {
-                uint_fast64_t oldPosition = 0;
                 for (uint_fast64_t i = 0; i < vector.size(); ++i) {
                     vector[i] = values[rowGrouping[i] + rowGroupToRowIndexMapping[i]];
                 }

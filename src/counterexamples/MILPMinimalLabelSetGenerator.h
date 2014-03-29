@@ -169,7 +169,6 @@ namespace storm {
              * @return A mapping from labels to variable indices.
              */
             static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver& solver, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
-                int error = 0;
                 std::stringstream variableNameBuffer;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
                 for (auto const& label : relevantLabels) {
@@ -190,7 +189,6 @@ namespace storm {
              * @return A mapping from states to a list of choice variable indices.
              */
             static std::pair<std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>>, uint_fast64_t> createSchedulerVariables(storm::solver::LpSolver& solver, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
-                int error = 0;
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> resultingMap;
@@ -219,7 +217,6 @@ namespace storm {
              * @return A mapping from initial states to choice variable indices.
              */
             static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createInitialChoiceVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation) {
-                int error = 0;
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
@@ -245,7 +242,6 @@ namespace storm {
              * @return A mapping from states to the index of the corresponding probability variables.
              */
             static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createProbabilityVariables(storm::solver::LpSolver& solver, StateInformation const& stateInformation) {
-                int error = 0;
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
@@ -269,7 +265,6 @@ namespace storm {
              * @return The index of the variable for the probability of the virtual initial state.
              */
             static std::pair<uint_fast64_t, uint_fast64_t> createVirtualInitialStateVariable(storm::solver::LpSolver& solver, bool maximizeProbability = false) {
-                int error = 0;
                 std::stringstream variableNameBuffer;
                 variableNameBuffer << "pinit";
                 
@@ -285,7 +280,6 @@ namespace storm {
              * @return A mapping from problematic states to the index of the corresponding variables.
              */
             static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createProblematicStateVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
-                int error = 0;
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
                 std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
@@ -329,7 +323,6 @@ namespace storm {
              * @return A mapping from problematic choices to the index of the corresponding variables.
              */
             static std::pair<std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, uint_fast64_t, PairHash>, uint_fast64_t> createProblematicChoiceVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
-                int error = 0;
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
                 std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, uint_fast64_t, PairHash> resultingMap;
@@ -539,7 +532,6 @@ namespace storm {
              */
             static uint_fast64_t assertReachabilityProbabilities(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
-                int error = 0;
                 for (auto state : stateInformation.relevantStates) {
                     std::vector<double> coefficients;
                     std::vector<uint_fast64_t> variables;
