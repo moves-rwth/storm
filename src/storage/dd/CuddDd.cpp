@@ -358,7 +358,8 @@ namespace storm {
                 this->getDdManager()->getCuddManager().DumpDot({this->cuddAdd});
             } else {
                 FILE* filePointer = fopen(filename.c_str() , "w");
-                this->getDdManager()->getCuddManager().DumpDot({this->cuddAdd}, nullptr, nullptr, filePointer);
+				std::vector<ADD> cuddAddVector = { this->cuddAdd };
+				this->getDdManager()->getCuddManager().DumpDot(cuddAddVector, nullptr, nullptr, filePointer);
                 fclose(filePointer);
             }
         }
