@@ -36,8 +36,17 @@ namespace storm {
              * Retrieves whether the two DDs represent the same function.
              *
              * @param other The DD that is to be compared with the current one.
+             * @return True if the DDs represent the same function.
              */
             bool operator==(Dd<CUDD> const& other) const;
+            
+            /*!
+             * Retrieves whether the two DDs represent different functions.
+             *
+             * @param other The DD that is to be compared with the current one.
+             * @return True if the DDs represent the different functions.
+             */
+            bool operator!=(Dd<CUDD> const& other) const;
             
             /*!
              * Adds the two DDs.
@@ -295,7 +304,7 @@ namespace storm {
              * have. All values must be within the range of the respective meta variable.
              * @param targetValue The new function value of the modified encodings.
              */
-            void setValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap, double targetValue);
+            void setValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap = std::map<std::string, int_fast64_t>(), double targetValue = 0);
             
             /*!
              * Retrieves the value of the function when all meta variables are assigned the values of the given mapping.
@@ -304,7 +313,7 @@ namespace storm {
              * @param metaVariableNameToValueMap A mapping of meta variable names to their values.
              * @return The value of the function evaluated with the given input.
              */
-            double getValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap) const;
+            double getValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap = std::map<std::string, int_fast64_t>()) const;
             
             /*!
              * Retrieves whether this DD represents the constant one function.
@@ -319,6 +328,13 @@ namespace storm {
              * @return True if this DD represents the constant zero function.
              */
             bool isZero() const;
+            
+            /*!
+             * Retrieves whether this DD represents a constant function.
+             *
+             * @return True if this DD represents a constants function.
+             */
+            bool isConstant() const;
             
             /*!
              * Retrieves whether the given meta variable is contained in the DD.

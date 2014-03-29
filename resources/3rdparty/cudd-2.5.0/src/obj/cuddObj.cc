@@ -2405,6 +2405,23 @@ ADD::OrAbstract(
 
 } // ADD::OrAbstract
 
+ADD
+ADD::MinAbstract(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMinAbstract(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MinAbstract
+
+ADD
+ADD::MaxAbstract(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMaxAbstract(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MaxAbstract
 
 ADD
 ADD::Plus(
