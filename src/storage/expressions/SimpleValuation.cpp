@@ -14,16 +14,31 @@ namespace storm {
             (*this->identifierToIndexMap)[name] = index;
         }
         
+        void SimpleValuation::setBooleanValue(std::string const& name, bool value) {
+            this->booleanValues[(*this->identifierToIndexMap)[name]] = value;
+        }
+        
+        void SimpleValuation::setIntegerValue(std::string const& name, int_fast64_t value) {
+            this->integerValues[(*this->identifierToIndexMap)[name]] = value;
+        }
+        
+        void SimpleValuation::setDoubleValue(std::string const& name, double value) {
+            this->doubleValues[(*this->identifierToIndexMap)[name]] = value;
+        }
+        
         bool SimpleValuation::getBooleanValue(std::string const& name) const {
-            return false;
+            auto const& nameIndexPair = this->identifierToIndexMap->find(name);
+            return this->booleanValues[nameIndexPair->second];
         }
         
         int_fast64_t SimpleValuation::getIntegerValue(std::string const& name) const {
-            return 0;
+            auto const& nameIndexPair = this->identifierToIndexMap->find(name);
+            return this->integerValues[nameIndexPair->second];
         }
         
         double SimpleValuation::getDoubleValue(std::string const& name) const {
-            return 0.0;
+            auto const& nameIndexPair = this->identifierToIndexMap->find(name);
+            return this->doubleValues[nameIndexPair->second];
         }
     }
 }

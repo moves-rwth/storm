@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_BASEEXPRESSION_H_
 
 #include "src/storage/expressions/Valuation.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {
@@ -12,13 +13,15 @@ namespace storm {
              */
             enum ReturnType {undefined, bool_, int_, double_};
             
-            std::unique_ptr<BaseExpression> substitute() const = 0;
+            virtual int_fast64_t evaluateAsInt(Valuation const& evaluation) const = 0;
             
-            virtual int_fast64_t evaluateAsInt(Evaluation const& evaluation) const = 0;
+            virtual bool evaluateAsBool(Valuation const& evaluation) const = 0;
             
-            virtual bool evaluateAsBool(Evaluation const& evaluation) const = 0;
+            virtual double evaluateAsDouble(Valuation const& evaluation) const = 0;
             
-            virtual double evaluateAsDouble(Evaluation const& evaluation) const = 0;
+            virtual std::unique_ptr<BaseExpression> operator+(BaseExpression const& other) const = 0;
+            
+            virtual void visit(ExpressionVisitor* visitor) const = 0;
         };
     }
 }

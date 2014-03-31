@@ -1,6 +1,10 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_
 
+#include <functional>
+
+#include "src/storage/expressions/BaseExpression.h"
+
 namespace storm {
     namespace expressions {
         class Expression {
@@ -12,19 +16,25 @@ namespace storm {
             virtual Expression operator+(Expression const& other);
             
             /*!
-             * Substitutes all occurrences of identifiers according to the given substitution. Note that this
-             * substitution is done simultaneously, i.e., identifiers appearing in the expressions that were "plugged
-             * in" are not substituted.
-             *
-             * @param substitutionFilter A function that returns true iff the given identifier is supposed to be
+             * Substitutes all occurrences of identifiers according to the given map. Note that this substitution is
+             * done simultaneously, i.e., identifiers appearing in the expressions that were "plugged in" are not
              * substituted.
-             * @param substitution A substitution that returns for each identifier an expression that is supposed to
-             * replace the identifier.
-             * @return An expression in which all identifiers
+             *
+             * @param identifierToExpressionMap A mapping from identifiers to the expression they are substituted with.
+             * @return An expression in which all identifiers in the key set of the mapping are replaced by the
+             * expression they are mapped to.
              */
-            Expression substitute(std::function<Expression (std::string const&)> const& substitution) const;
+            template<template<typename... Arguments> class MapType>
+            Expression substitute(MapType<std::string, Expression> const& identifierToExpressionMap) const;
             
         private:
+            /*!
+             * Creates an expression with the given underlying base expression.
+             *
+             * @param expressionPtr A pointer to the underlying base expression.
+             */
+            Expression(std::unique_ptr<BaseExpression>&& expressionPtr);
+            
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the
              * expression object must be properly initialized.

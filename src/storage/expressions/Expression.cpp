@@ -1,13 +1,29 @@
+#include <map>
+#include <unordered_map>
+
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
     namespace expressions {
-        virtual Expression Expression::operator+(Expression const& other) {
+        Expression::Expression(std::unique_ptr<BaseExpression>&& expressionPtr) : expressionPtr(std::move(expressionPtr)) {
+            // Intentionally left empty.
+        }
+        
+        template<template<typename... Arguments> class MapType>
+        Expression Expression::substitute(MapType<std::string, Expression> const& identifierToExpressionMap) const {
+            SubstitutionVisitor visitor;
+            return visitor.substitute(this->getBaseExpression(), identifierToExpressionMap);
+        }
+
+        Expression Expression::operator+(Expression const& other) {
             return Expression(this->getBaseExpression() + other.getBaseExpression());
         }
         
-        BaseExpression const& getBaseExpression() const {
+        BaseExpression const& Expression::getBaseExpression() const {
             return *this->expressionPtr;
         }
+        
+        template Expression Expression::substitute<std::map>(std::map<std::string, storm::expressions::Expression> const&) const;
+        template Expression Expression::substitute<std::unordered_map>(std::unordered_map<std::string, storm::expressions::Expression> const&) const;
     }
 }

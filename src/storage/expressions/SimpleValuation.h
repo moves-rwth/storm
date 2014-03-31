@@ -24,6 +24,10 @@ namespace storm {
             
             void setIdentifierIndex(std::string const& name, uint_fast64_t index);
             
+            void setBooleanValue(std::string const& name, bool value);
+            void setIntegerValue(std::string const& name, int_fast64_t value);
+            void setDoubleValue(std::string const& name, double value);
+            
             virtual bool getBooleanValue(std::string const& name) const override;
             virtual int_fast64_t getIntegerValue(std::string const& name) const override;
             virtual double getDoubleValue(std::string const& name) const override;
