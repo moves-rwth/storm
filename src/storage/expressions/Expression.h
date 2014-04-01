@@ -8,6 +8,7 @@
 namespace storm {
     namespace expressions {
         class Expression {
+        public:
             Expression() = default;
             
             // Static factory methods to create atomic expression parts.
@@ -42,6 +43,13 @@ namespace storm {
              * @return A reference to the underlying base expression.
              */
             BaseExpression const& getBaseExpression() const;
+            
+            /*!
+             * Retrieves a pointer to the base expression underlying this expression object.
+             *
+             * @return A pointer to the underlying base expression.
+             */
+            BaseExpression const* getBaseExpressionPointer() const;
             
             // A pointer to the underlying base expression.
             std::unique_ptr<BaseExpression> expressionPtr;

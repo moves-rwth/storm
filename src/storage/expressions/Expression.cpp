@@ -2,6 +2,7 @@
 #include <unordered_map>
 
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/SubstitutionVisitor.h"
 
 namespace storm {
     namespace expressions {
@@ -12,7 +13,7 @@ namespace storm {
         template<template<typename... Arguments> class MapType>
         Expression Expression::substitute(MapType<std::string, Expression> const& identifierToExpressionMap) const {
             SubstitutionVisitor visitor;
-            return visitor.substitute(this->getBaseExpression(), identifierToExpressionMap);
+            return visitor.substitute<MapType>(this->getBaseExpressionPointer(), identifierToExpressionMap);
         }
 
         Expression Expression::operator+(Expression const& other) {
@@ -21,6 +22,10 @@ namespace storm {
         
         BaseExpression const& Expression::getBaseExpression() const {
             return *this->expressionPtr;
+        }
+        
+        BaseExpression const* Expression::getBaseExpressionPointer() const {
+            return this->expressionPtr.get();
         }
         
         template Expression Expression::substitute<std::map>(std::map<std::string, storm::expressions::Expression> const&) const;
