@@ -17,12 +17,12 @@ namespace storm {
         }
         
         bool VariableExpression::evaluateAsBool(Valuation const& evaluation) const {
-            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::bool_), "Cannot evaluate expression as integer: return type is not an integer.");
+            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::bool_), "Cannot evaluate expression as integer: return type is not a boolean.");
             return evaluation.getBooleanValue(this->getVariableName());
         }
         
         double VariableExpression::evaluateAsDouble(Valuation const& evaluation) const {
-            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::double_), "Cannot evaluate expression as integer: return type is not an integer.");
+            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::double_), "Cannot evaluate expression as integer: return type is not a double.");
             return evaluation.getDoubleValue(this->getVariableName());
         }
         
@@ -52,5 +52,7 @@ namespace storm {
         std::unique_ptr<BaseExpression> ceil() const;
         
         void visit(ExpressionVisitor* visitor) const;
+        
+        virtual std::unique_ptr<BaseExpression> clonse() const;
     }
 }

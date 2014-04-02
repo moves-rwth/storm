@@ -38,6 +38,8 @@ namespace storm {
             
             virtual void visit(ExpressionVisitor* visitor) const;
             
+            virtual std::unique_ptr<BaseExpression> clonse() const;
+            
         private:
             std::string variableName;
         };

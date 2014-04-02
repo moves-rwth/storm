@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_VALUATION_H_
 #define STORM_STORAGE_EXPRESSIONS_VALUATION_H_
 
+#include <string>
+
 namespace storm {
     namespace expressions {
         class Valuation {

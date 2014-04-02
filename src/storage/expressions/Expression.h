@@ -14,7 +14,26 @@ namespace storm {
             // Static factory methods to create atomic expression parts.
             
             // Virtual operator overloading.
-            virtual Expression operator+(Expression const& other);
+            Expression operator+(Expression const& other) const;
+            Expression operator-(Expression const& other) const;
+            Expression operator-() const;
+            Expression operator*(Expression const& other) const;
+            Expression operator/(Expression const& other) const;
+            Expression operator&(Expression const& other) const;
+            Expression operator|(Expression const& other) const;
+            Expression operator~() const;
+            
+            Expression equals(Expression const& other) const;
+            Expression notEquals(Expression const& other) const;
+            Expression greater(Expression const& other) const;
+            Expression greaterOrEqual(Expression const& other) const;
+            Expression less(Expression const& other) const;
+            Expression lessOrEqual(Expression const& other) const;
+            Expression minimum(Expression const& other) const;
+            Expression maximum(Expression const& other) const;
+            Expression mod(Expression const& other) const;
+            Expression floor() const;
+            Expression ceil() const;
             
             /*!
              * Substitutes all occurrences of identifiers according to the given map. Note that this substitution is
@@ -27,6 +46,13 @@ namespace storm {
              */
             template<template<typename... Arguments> class MapType>
             Expression substitute(MapType<std::string, Expression> const& identifierToExpressionMap) const;
+            
+            /*!
+             * Retrieves the return type of the expression.
+             *
+             * @return The return type of the expression.
+             */
+            ExpressionReturnType getReturnType() const;
             
         private:
             /*!
