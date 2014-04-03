@@ -4,6 +4,7 @@
 #include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
 #include "src/storage/expressions/BinaryRelationExpression.h"
+#include "src/storage/expressions/BooleanConstantExpression.h"
 
 namespace storm {
     namespace expressions {
@@ -11,6 +12,7 @@ namespace storm {
             virtual void visit(BinaryBooleanFunctionExpression const* expression) = 0;
             virtual void visit(BinaryNumericalFunctionExpression const* expression) = 0;
             virtual void visit(BinaryRelationExpression const* expression) = 0;
+            virtual void visit(BooleanConstantExpression const* expression) = 0;
         };
     }
 }
