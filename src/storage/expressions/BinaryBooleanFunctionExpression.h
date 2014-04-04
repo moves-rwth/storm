@@ -10,7 +10,7 @@ namespace storm {
             /*!
              * An enum type specifying the different operators applicable.
              */
-            enum OperatorType {AND, OR};
+            enum class OperatorType {And, Or};
             
             /*!
              * Creates a binary boolean function expression with the given return type, operands and operator.
@@ -22,11 +22,9 @@ namespace storm {
              */
             BinaryBooleanFunctionExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& fistOperand, std::unique_ptr<BaseExpression>&& secondOperand, OperatorType operatorType);
             
-            // Provide custom versions of copy construction and assignment.
-            BinaryBooleanFunctionExpression(BinaryBooleanFunctionExpression const& other);
-            BinaryBooleanFunctionExpression& operator=(BinaryBooleanFunctionExpression const& other);
-            
-            // Create default variants of move construction/assignment and virtual destructor.
+            // Instantiate constructors and assignments with their default implementations.
+            BinaryBooleanFunctionExpression(BinaryBooleanFunctionExpression const& other) = default;
+            BinaryBooleanFunctionExpression& operator=(BinaryBooleanFunctionExpression const& other) = default;
             BinaryBooleanFunctionExpression(BinaryBooleanFunctionExpression&&) = default;
             BinaryBooleanFunctionExpression& operator=(BinaryBooleanFunctionExpression&&) = default;
             virtual ~BinaryBooleanFunctionExpression() = default;

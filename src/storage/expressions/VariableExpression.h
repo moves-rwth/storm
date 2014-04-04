@@ -7,40 +7,33 @@ namespace storm {
     namespace expressions {
         class VariableExpression : public BaseExpression {
             VariableExpression(ExpressionReturnType returnType, std::string const& variableName);
+            
+            // Instantiate constructors and assignments with their default implementations.
+            VariableExpression(VariableExpression const&) = default;
+            VariableExpression(VariableExpression&&) = default;
+            VariableExpression& operator=(VariableExpression const&) = default;
+            VariableExpression& operator=(VariableExpression&&) = default;
             virtual ~VariableExpression() = default;
-            
+
+            // Override base class methods.
+            virtual bool evaluateAsBool(Valuation const& valuation) const override;
+            virtual int_fast64_t evaluateAsInt(Valuation const& valuation) const override;
+            virtual double evaluateAsDouble(Valuation const& valuation) const override;
+            virtual std::set<std::string> getVariables() const override;
+            virtual std::set<std::string> getConstants() const override;
+            virtual std::unique_ptr<BaseExpression> simplify() const override;
+            virtual void accept(ExpressionVisitor* visitor) const override;
+            virtual std::unique_ptr<BaseExpression> clone() const override;
+
+            /*!
+             * Retrieves the name of the variable associated with this expression.
+             *
+             * @return The name of the variable.
+             */
             std::string const& getVariableName() const;
-            
-            virtual int_fast64_t evaluateAsInt(Valuation const& evaluation) const;
-            virtual bool evaluateAsBool(Valuation const& evaluation) const;
-            virtual double evaluateAsDouble(Valuation const& evaluation) const;
-            
-            virtual std::unique_ptr<BaseExpression> operator+(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> operator-(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> operator-() const;
-            virtual std::unique_ptr<BaseExpression> operator*(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> operator/(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> operator&(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> operator|(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> operator~() const;
-            
-            virtual std::unique_ptr<BaseExpression> equals(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> notEquals(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> greater(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> greaterOrEqual(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> less(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> lessOrEqual(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> minimum(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> maximum(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> mod(BaseExpression const& other) const;
-            virtual std::unique_ptr<BaseExpression> floor() const;
-            virtual std::unique_ptr<BaseExpression> ceil() const;
-            
-            virtual void visit(ExpressionVisitor* visitor) const;
-            
-            virtual std::unique_ptr<BaseExpression> clonse() const;
-            
+
         private:
+            // The variable name associated with this expression.
             std::string variableName;
         };
     }

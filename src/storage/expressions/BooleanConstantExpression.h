@@ -8,18 +8,15 @@ namespace storm {
         class BooleanConstantExpression : public ConstantExpression {
         public:
             /*!
-             * Creates a boolean constant expression with the given return type and constant name.
+             * Creates a boolean constant expression with the given constant name.
              *
-             * @param returnType The return type of the expression.
              * @param constantName The name of the boolean constant associated with this expression.
              */
             BooleanConstantExpression(std::string const& constantName);
             
-            // Provide custom versions of copy construction and assignment.
-            BooleanConstantExpression(BooleanConstantExpression const& other);
-            BooleanConstantExpression& operator=(BooleanConstantExpression const& other);
-            
-            // Create default variants of move construction/assignment and virtual destructor.
+            // Instantiate constructors and assignments with their default implementations.
+            BooleanConstantExpression(BooleanConstantExpression const& other) = default;
+            BooleanConstantExpression& operator=(BooleanConstantExpression const& other) = default;
             BooleanConstantExpression(BooleanConstantExpression&&) = default;
             BooleanConstantExpression& operator=(BooleanConstantExpression&&) = default;
             virtual ~BooleanConstantExpression() = default;

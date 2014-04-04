@@ -9,43 +9,31 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        BinaryNumericalFunctionExpression::BinaryNumericalFunctionExpression(BinaryNumericalFunctionExpression const& other) : BinaryExpression(other), operatorType(this->getOperatorType()) {
-            // Intentionally left empty.
-        }
-        
-        BinaryNumericalFunctionExpression& BinaryNumericalFunctionExpression::operator=(BinaryNumericalFunctionExpression const& other) {
-            if (this != &other) {
-                BinaryExpression::operator=(other);
-                this->operatorType = other.getOperatorType();
-            }
-            return *this;
-        }
-        
         int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const& valuation) const {
-            LOG_ASSERT(this->getReturnType() == ExpressionReturnType::int_, "Unable to evaluate expression as integer.");
+            LOG_ASSERT(this->getReturnType() == ExpressionReturnType::Int, "Unable to evaluate expression as integer.");
             int_fast64_t firstOperandEvaluation = this->getFirstOperand()->evaluateAsInt(valuation);
             int_fast64_t secondOperandEvaluation = this->getSecondOperand()->evaluateAsInt(valuation);
             switch (this->getOperatorType()) {
-                case PLUS: return firstOperandEvaluation + secondOperandEvaluation; break;
-                case MINUS: return firstOperandEvaluation - secondOperandEvaluation; break;
-                case TIMES: return firstOperandEvaluation * secondOperandEvaluation; break;
-                case DIVIDE: return firstOperandEvaluation / secondOperandEvaluation; break;
-                case MIN: return std::min(firstOperandEvaluation, secondOperandEvaluation); break;
-                case MAX: return std::max(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Plus: return firstOperandEvaluation + secondOperandEvaluation; break;
+                case OperatorType::Minus: return firstOperandEvaluation - secondOperandEvaluation; break;
+                case OperatorType::Times: return firstOperandEvaluation * secondOperandEvaluation; break;
+                case OperatorType::Divide: return firstOperandEvaluation / secondOperandEvaluation; break;
+                case OperatorType::Min: return std::min(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Max: return std::max(firstOperandEvaluation, secondOperandEvaluation); break;
             }
         }
         
         double BinaryNumericalFunctionExpression::evaluateAsDouble(Valuation const& valuation) const {
-            LOG_ASSERT(this->getReturnType() == ExpressionReturnType::int_, "Unable to evaluate expression as integer.");
-            double firstOperandEvaluation = this->getFirstOperand()->evaluateAsInt(valuation);
-            double secondOperandEvaluation = this->getSecondOperand()->evaluateAsInt(valuation);
+            LOG_ASSERT(this->getReturnType() == ExpressionReturnType::Double, "Unable to evaluate expression as double.");
+            double firstOperandEvaluation = this->getFirstOperand()->evaluateAsDouble(valuation);
+            double secondOperandEvaluation = this->getSecondOperand()->evaluateAsDouble(valuation);
             switch (this->getOperatorType()) {
-                case PLUS: return firstOperandEvaluation + secondOperandEvaluation; break;
-                case MINUS: return firstOperandEvaluation - secondOperandEvaluation; break;
-                case TIMES: return firstOperandEvaluation * secondOperandEvaluation; break;
-                case DIVIDE: return firstOperandEvaluation / secondOperandEvaluation; break;
-                case MIN: return std::min(firstOperandEvaluation, secondOperandEvaluation); break;
-                case MAX: return std::max(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Plus: return static_cast<double>(firstOperandEvaluation + secondOperandEvaluation); break;
+                case OperatorType::Minus: return static_cast<double>(firstOperandEvaluation - secondOperandEvaluation); break;
+                case OperatorType::Times: return static_cast<double>(firstOperandEvaluation * secondOperandEvaluation); break;
+                case OperatorType::Divide: return static_cast<double>(firstOperandEvaluation / secondOperandEvaluation); break;
+                case OperatorType::Min: return static_cast<double>(std::min(firstOperandEvaluation, secondOperandEvaluation)); break;
+                case OperatorType::Max: return static_cast<double>(std::max(firstOperandEvaluation, secondOperandEvaluation)); break;
             }
         }
         

@@ -10,8 +10,6 @@ namespace storm {
         public:
             template<template<typename... Arguments> class MapType>
             Expression substitute(BaseExpression const* expression, MapType<std::string, Expression> const& identifierToExpressionMap);
-            
-            
         };
     }
 }

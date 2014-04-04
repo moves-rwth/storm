@@ -6,30 +6,6 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        ConstantExpression::ConstantExpression(ConstantExpression const& other) : BaseExpression(other), constantName(other.getConstantName()) {
-            // Intentionally left empty.
-        }
-        
-        ConstantExpression& ConstantExpression::operator=(ConstantExpression const& other) {
-            if (this != &other) {
-                BaseExpression::operator=(other);
-                this->constantName = other.getConstantName();
-            }
-            return *this;
-        }
-        
-        bool ConstantExpression::isConstant() const {
-            return false;
-        }
-        
-        bool ConstantExpression::isTrue() const {
-            return false;
-        }
-        
-        bool ConstantExpression::isFalse() const {
-            return false;
-        }
-        
         std::set<std::string> ConstantExpression::getVariables() const {
             return std::set<std::string>();
         }

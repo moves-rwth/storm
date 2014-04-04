@@ -12,47 +12,38 @@ namespace storm {
         }
         
         int_fast64_t VariableExpression::evaluateAsInt(Valuation const& evaluation) const {
-            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::int_), "Cannot evaluate expression as integer: return type is not an integer.");
+            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::Int), "Cannot evaluate expression as integer: return type is not an integer.");
             return evaluation.getIntegerValue(this->getVariableName());
         }
         
         bool VariableExpression::evaluateAsBool(Valuation const& evaluation) const {
-            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::bool_), "Cannot evaluate expression as integer: return type is not a boolean.");
+            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::Bool), "Cannot evaluate expression as integer: return type is not a boolean.");
             return evaluation.getBooleanValue(this->getVariableName());
         }
         
         double VariableExpression::evaluateAsDouble(Valuation const& evaluation) const {
-            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::double_), "Cannot evaluate expression as integer: return type is not a double.");
+            LOG_ASSERT((this->getReturnType() == ExpressionReturnType::Double), "Cannot evaluate expression as integer: return type is not a double.");
             return evaluation.getDoubleValue(this->getVariableName());
         }
         
-        std::unique_ptr<BaseExpression> VariableExpression::operator+(BaseExpression const& other) const {
-            // FIXME
-            return nullptr;
+        std::set<std::string> VariableExpression::getVariables() const {
+            return {this->getVariableName()};
         }
         
-        std::unique_ptr<BaseExpression> operator-(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> operator-() const;
-        std::unique_ptr<BaseExpression> operator*(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> operator/(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> operator&(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> operator|(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> operator~() const;
+        std::set<std::string> VariableExpression::getConstants() const {
+            return std::set<std::string>();
+        }
         
-        std::unique_ptr<BaseExpression> equals(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> notEquals(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> greater(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> greaterOrEqual(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> less(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> lessOrEqual(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> minimum(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> maximum(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> mod(BaseExpression const& other) const;
-        std::unique_ptr<BaseExpression> floor() const;
-        std::unique_ptr<BaseExpression> ceil() const;
+        std::unique_ptr<BaseExpression> VariableExpression::simplify() const {
+            return this->clone();
+        }
         
-        void visit(ExpressionVisitor* visitor) const;
+        void VariableExpression::accept(ExpressionVisitor* visitor) const {
+            visitor->visit(this);
+        }
         
-        virtual std::unique_ptr<BaseExpression> clonse() const;
+        std::unique_ptr<BaseExpression> VariableExpression::clone() const {
+            return std::unique_ptr<BaseExpression>(new VariableExpression(*this));
+        }
     }
 }

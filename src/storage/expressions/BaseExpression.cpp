@@ -11,6 +11,14 @@ namespace storm {
             return this->returnType;
         }
         
+        bool BaseExpression::hasNumericalReturnType() const {
+            return this->getReturnType() == ExpressionReturnType::Double || this->getReturnType() == ExpressionReturnType::Int;
+        }
+        
+        bool BaseExpression::hasBooleanReturnType() const {
+            return this->getReturnType() == ExpressionReturnType::Bool;
+        }
+        
         int_fast64_t BaseExpression::evaluateAsInt(Valuation const& evaluation) const {
             LOG_ASSERT(false, "Unable to evaluate expression as integer.");
         }
@@ -23,6 +31,10 @@ namespace storm {
             LOG_ASSERT(false, "Unable to evaluate expression as double.");
         }
         
+        bool BaseExpression::isConstant() const {
+            return false;
+        }
+
         bool BaseExpression::isTrue() const {
             return false;
         }

@@ -1,6 +1,7 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_BASEEXPRESSION_H_
 #define STORM_STORAGE_EXPRESSIONS_BASEEXPRESSION_H_
 
+#include <cstdint>
 #include <memory>
 #include <set>
 
@@ -13,7 +14,7 @@ namespace storm {
         /*!
          * Each node in an expression tree has a uniquely defined type from this enum.
          */
-        enum ExpressionReturnType {undefined, bool_, int_, double_};
+        enum class ExpressionReturnType {Undefined, Bool, Int, Double};
         
         /*!
          * The base class of all expression classes.
@@ -71,7 +72,7 @@ namespace storm {
              *
              * @return True iff the expression is constant.
              */
-            virtual bool isConstant() const = 0;
+            virtual bool isConstant() const;
             
             /*!
              * Checks if the expression is equal to the boolean literal true.
@@ -121,6 +122,20 @@ namespace storm {
              * @return A pointer to a deep-copy of the expression.
              */
             virtual std::unique_ptr<BaseExpression> clone() const = 0;
+            
+            /*!
+             * Retrieves whether the expression has a numerical return type, i.e., integer or double.
+             *
+             * @return True iff the expression has a numerical return type.
+             */
+            bool hasNumericalReturnType() const;
+            
+            /*!
+             * Retrieves whether the expression has a boolean return type.
+             *
+             * @return True iff the expression has a boolean return type.
+             */
+            bool hasBooleanReturnType() const;
             
             /*!
              * Retrieves the return type of the expression.

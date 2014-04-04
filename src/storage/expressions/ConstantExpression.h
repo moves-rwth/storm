@@ -15,19 +15,14 @@ namespace storm {
              */
             ConstantExpression(ExpressionReturnType returnType, std::string const& constantName);
             
-            // Provide custom versions of copy construction and assignment.
-            ConstantExpression(ConstantExpression const& other);
-            ConstantExpression& operator=(ConstantExpression const& other);
-            
-            // Create default variants of move construction/assignment and virtual destructor.
+            // Instantiate constructors and assignments with their default implementations.
+            ConstantExpression(ConstantExpression const& other) = default;
+            ConstantExpression& operator=(ConstantExpression const& other) = default;
             ConstantExpression(ConstantExpression&&) = default;
             ConstantExpression& operator=(ConstantExpression&&) = default;
             virtual ~ConstantExpression() = default;
             
             // Override base class methods.
-            virtual bool isConstant() const override;
-            virtual bool isTrue() const override;
-            virtual bool isFalse() const override;
             virtual std::set<std::string> getVariables() const override;
             virtual std::set<std::string> getConstants() const override;
             virtual std::unique_ptr<BaseExpression> simplify() const override;

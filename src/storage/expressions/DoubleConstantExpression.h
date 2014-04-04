@@ -7,8 +7,24 @@ namespace storm {
     namespace expressions {
         class DoubleConstantExpression : public ConstantExpression {
         public:
+            /*!
+             * Creates a double constant expression with the given constant name.
+             *
+             * @param constantName The name of the double constant associated with this expression.
+             */
             DoubleConstantExpression(std::string const& constantName);
+            
+            // Instantiate constructors and assignments with their default implementations.
+            DoubleConstantExpression(DoubleConstantExpression const& other) = default;
+            DoubleConstantExpression& operator=(DoubleConstantExpression const& other) = default;
+            DoubleConstantExpression(DoubleConstantExpression&&) = default;
+            DoubleConstantExpression& operator=(DoubleConstantExpression&&) = default;
             virtual ~DoubleConstantExpression() = default;
+            
+            // Override base class methods.
+            virtual double evaluateAsDouble(Valuation const& valuation) const;
+            virtual std::unique_ptr<BaseExpression> clone() const;
+            virtual void accept(ExpressionVisitor* visitor) const;
         };
     }
 }

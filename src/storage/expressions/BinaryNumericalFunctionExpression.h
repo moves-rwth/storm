@@ -10,7 +10,7 @@ namespace storm {
             /*!
              * An enum type specifying the different operators applicable.
              */
-            enum OperatorType {PLUS, MINUS, TIMES, DIVIDE, MIN, MAX};
+            enum class OperatorType {Plus, Minus, Times, Divide, Min, Max};
             
             /*!
              * Constructs a binary numerical function expression with the given return type, operands and operator.
@@ -22,11 +22,9 @@ namespace storm {
              */
             BinaryNumericalFunctionExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& firstOperand, std::unique_ptr<BaseExpression>&& secondOperand, OperatorType operatorType);
             
-            // Provide custom versions of copy construction and assignment.
-            BinaryNumericalFunctionExpression(BinaryNumericalFunctionExpression const& other);
-            BinaryNumericalFunctionExpression& operator=(BinaryNumericalFunctionExpression const& other);
-            
-            // Create default variants of move construction/assignment and virtual destructor.
+            // Instantiate constructors and assignments with their default implementations.
+            BinaryNumericalFunctionExpression(BinaryNumericalFunctionExpression const& other) = default;
+            BinaryNumericalFunctionExpression& operator=(BinaryNumericalFunctionExpression const& other) = default;
             BinaryNumericalFunctionExpression(BinaryNumericalFunctionExpression&&) = default;
             BinaryNumericalFunctionExpression& operator=(BinaryNumericalFunctionExpression&&) = default;
             virtual ~BinaryNumericalFunctionExpression() = default;

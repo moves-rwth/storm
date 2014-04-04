@@ -10,7 +10,7 @@ namespace storm {
             /*!
              * An enum type specifying the different relations applicable.
              */
-            enum RelationType {EQUAL, NOT_EQUAL, LESS, LESS_OR_EQUAL, GREATER, GREATER_OR_EQUAL};
+            enum class RelationType {Equal, NotEqual, Less, LessOrEqual, Greater, GreaterOrEqual};
             
             /*!
              * Creates a binary relation expression with the given return type, operands and relation type.
@@ -22,11 +22,9 @@ namespace storm {
              */
             BinaryRelationExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& firstOperand, std::unique_ptr<BaseExpression>&& secondOperand, RelationType relationType);
             
-            // Provide custom versions of copy construction and assignment.
-            BinaryRelationExpression(BinaryRelationExpression const& other);
-            BinaryRelationExpression& operator=(BinaryRelationExpression const& other);
-            
-            // Create default variants of move construction/assignment and virtual destructor.
+            // Instantiate constructors and assignments with their default implementations.
+            BinaryRelationExpression(BinaryRelationExpression const& other) = default;
+            BinaryRelationExpression& operator=(BinaryRelationExpression const& other) = default;
             BinaryRelationExpression(BinaryRelationExpression&&) = default;
             BinaryRelationExpression& operator=(BinaryRelationExpression&&) = default;
             virtual ~BinaryRelationExpression() = default;

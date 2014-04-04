@@ -2,8 +2,20 @@
 
 namespace storm {
     namespace expressions {
-        DoubleConstantExpression::DoubleConstantExpression(std::string const& constantName) : ConstantExpression(ReturnType::double_, constantName) {
+        DoubleConstantExpression::DoubleConstantExpression(std::string const& constantName) : ConstantExpression(ExpressionReturnType::Double, constantName) {
             // Intentionally left empty.
+        }
+        
+        double DoubleConstantExpression::evaluateAsDouble(Valuation const& valuation) const {
+            return valuation.getDoubleValue(this->getConstantName());
+        }
+        
+        std::unique_ptr<BaseExpression> DoubleConstantExpression::clone() const {
+            return std::unique_ptr<BaseExpression>(new DoubleConstantExpression(*this));
+        }
+        
+        void DoubleConstantExpression::accept(ExpressionVisitor* visitor) const {
+            visitor->visit(this);
         }
     }
 }
