@@ -21,6 +21,7 @@
 #include "src/utility/vector.h"
 #include "src/utility/matrix.h"
 
+
 namespace storm {
 
 namespace models {
@@ -306,7 +307,6 @@ private:
 			LOG4CPLUS_ERROR(logger, "Probability matrix is not square.");
 			return false;
 		}
-
 		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); ++row) {
 			T sum = this->getTransitionMatrix().getRowSum(row);
                         
