@@ -14,12 +14,12 @@ namespace storm {
             return {this->getConstantName()};
         }
         
-        std::unique_ptr<BaseExpression> ConstantExpression::simplify() const {
-            return this->clone();
-        }
-        
         std::string const& ConstantExpression::getConstantName() const {
             return this->constantName;
+        }
+        
+        void ConstantExpression::printToStream(std::ostream& stream) const {
+            stream << this->getConstantName();
         }
     }
 }

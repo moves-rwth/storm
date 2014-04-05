@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        class IntegerLiteralExpression : BaseExpression {
+        class IntegerLiteralExpression : public BaseExpression {
         public:
             /*!
              * Creates an integer literal expression with the given value.
@@ -27,9 +27,8 @@ namespace storm {
             virtual bool isConstant() const override;
             virtual std::set<std::string> getVariables() const override;
             virtual std::set<std::string> getConstants() const override;
-            virtual std::unique_ptr<BaseExpression> simplify() const override;
+            virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;
-            virtual std::unique_ptr<BaseExpression> clone() const override;
             
             /*!
              * Retrieves the value of the integer literal.
@@ -38,6 +37,10 @@ namespace storm {
              */
             int_fast64_t getValue() const;
             
+        protected:
+            // Override base class method.
+            virtual void printToStream(std::ostream& stream) const override;
+
         private:
             // The value of the integer literal.
             int_fast64_t value;

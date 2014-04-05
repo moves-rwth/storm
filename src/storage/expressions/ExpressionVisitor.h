@@ -19,6 +19,7 @@ namespace storm {
         class DoubleLiteralExpression;
         
         class ExpressionVisitor {
+        public:
             virtual void visit(BinaryBooleanFunctionExpression const* expression) = 0;
             virtual void visit(BinaryNumericalFunctionExpression const* expression) = 0;
             virtual void visit(BinaryRelationExpression const* expression) = 0;

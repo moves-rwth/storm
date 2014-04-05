@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <iostream>
 
 #include "src/storage/expressions/Valuation.h"
 
@@ -76,6 +77,8 @@ namespace storm {
             virtual int_fast64_t getIntegerValue(std::string const& name) const override;
             virtual double getDoubleValue(std::string const& name) const override;
             
+            friend std::ostream& operator<<(std::ostream& stream, SimpleValuation const& valuation);
+
         private:
             // A mapping of identifiers to their local indices in the value containers.
             std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> identifierToIndexMap;

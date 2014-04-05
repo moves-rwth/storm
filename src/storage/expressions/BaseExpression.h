@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <set>
+#include <iostream>
 
 #include "src/storage/expressions/Valuation.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
@@ -19,7 +20,7 @@ namespace storm {
         /*!
          * The base class of all expression classes.
          */
-        class BaseExpression {
+        class BaseExpression : public std::enable_shared_from_this<BaseExpression> {
         public:
             /*!
              * Constructs a base expression with the given return type.
@@ -107,7 +108,7 @@ namespace storm {
              *
              * @return A pointer to the simplified expression.
              */
-            virtual std::unique_ptr<BaseExpression> simplify() const = 0;
+            virtual std::shared_ptr<BaseExpression const> simplify() const = 0;
             
             /*!
              * Accepts the given visitor by calling its visit method.
@@ -117,18 +118,18 @@ namespace storm {
             virtual void accept(ExpressionVisitor* visitor) const = 0;
             
             /*!
-             * Performs a deep-copy of the expression.
-             *
-             * @return A pointer to a deep-copy of the expression.
-             */
-            virtual std::unique_ptr<BaseExpression> clone() const = 0;
-            
-            /*!
              * Retrieves whether the expression has a numerical return type, i.e., integer or double.
              *
              * @return True iff the expression has a numerical return type.
              */
             bool hasNumericalReturnType() const;
+            
+            /*!
+             * Retrieves whether the expression has an integral return type, i.e., integer.
+             *
+             * @return True iff the expression has an integral return type.
+             */
+            bool hasIntegralReturnType() const;
             
             /*!
              * Retrieves whether the expression has a boolean return type.
@@ -138,11 +139,27 @@ namespace storm {
             bool hasBooleanReturnType() const;
             
             /*!
+             * Retrieves a shared pointer to this expression.
+             *
+             * @return A shared pointer to this expression.
+             */
+            std::shared_ptr<BaseExpression const> getSharedPointer() const;
+            
+            /*!
              * Retrieves the return type of the expression.
              *
              * @return The return type of the expression.
              */
             ExpressionReturnType getReturnType() const;
+            
+            friend std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression);
+        protected:
+            /*!
+             * Prints the expression to the given stream.
+             *
+             * @param stream The stream to which to write the expression.
+             */
+            virtual void printToStream(std::ostream& stream) const = 0;
             
         private:
             // The return type of this expression.

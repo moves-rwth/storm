@@ -13,13 +13,11 @@ namespace storm {
              * @param returnType The return type of the expression.
              * @param operand The operand of the unary expression.
              */
-            UnaryExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& operand);
+            UnaryExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand);
 
-            // Provide custom versions of copy construction and assignment.
+            // Instantiate constructors and assignments with their default implementations.
             UnaryExpression(UnaryExpression const& other);
             UnaryExpression& operator=(UnaryExpression const& other);
-            
-            // Create default variants of move construction/assignment and virtual destructor.
             UnaryExpression(UnaryExpression&&) = default;
             UnaryExpression& operator=(UnaryExpression&&) = default;
             virtual ~UnaryExpression() = default;
@@ -34,11 +32,11 @@ namespace storm {
              *
              * @return The operand of the unary expression.
              */
-            std::unique_ptr<BaseExpression> const& getOperand() const;
+            std::shared_ptr<BaseExpression const> const& getOperand() const;
             
         private:
             // The operand of the unary expression.
-            std::unique_ptr<BaseExpression> operand;
+            std::shared_ptr<BaseExpression const> operand;
         };
     }
 }

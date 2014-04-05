@@ -10,8 +10,8 @@ namespace storm {
             return valuation.getDoubleValue(this->getConstantName());
         }
         
-        std::unique_ptr<BaseExpression> DoubleConstantExpression::clone() const {
-            return std::unique_ptr<BaseExpression>(new DoubleConstantExpression(*this));
+        std::shared_ptr<BaseExpression const> DoubleConstantExpression::simplify() const {
+            return this->shared_from_this();
         }
         
         void DoubleConstantExpression::accept(ExpressionVisitor* visitor) const {

@@ -6,7 +6,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        int_fast64_t IntegerConstantExpression::evaluateAsInteger(Valuation const& valuation) const {
+        int_fast64_t IntegerConstantExpression::evaluateAsInt(Valuation const& valuation) const {
             return valuation.getIntegerValue(this->getConstantName());
         }
         
@@ -14,8 +14,8 @@ namespace storm {
             return static_cast<double>(valuation.getIntegerValue(this->getConstantName()));
         }
         
-        std::unique_ptr<BaseExpression> IntegerConstantExpression::clone() const {
-            return std::unique_ptr<BaseExpression>(new IntegerConstantExpression(*this));
+        std::shared_ptr<BaseExpression const> IntegerConstantExpression::simplify() const {
+            return this->shared_from_this();
         }
         
         void IntegerConstantExpression::accept(ExpressionVisitor* visitor) const {

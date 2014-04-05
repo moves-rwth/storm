@@ -20,7 +20,7 @@ namespace storm {
              * @param secondOperand The second operand of the expression.
              * @param relationType The operator of the expression.
              */
-            BinaryRelationExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& firstOperand, std::unique_ptr<BaseExpression>&& secondOperand, RelationType relationType);
+            BinaryRelationExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType);
             
             // Instantiate constructors and assignments with their default implementations.
             BinaryRelationExpression(BinaryRelationExpression const& other) = default;
@@ -31,10 +31,9 @@ namespace storm {
             
             // Override base class methods.
             virtual bool evaluateAsBool(Valuation const& valuation) const override;
-            virtual std::unique_ptr<BaseExpression> simplify() const override;
+            virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;
-            virtual std::unique_ptr<BaseExpression> clone() const override;
-            
+
             /*!
              * Retrieves the relation associated with the expression.
              *
@@ -42,6 +41,10 @@ namespace storm {
              */
             RelationType getRelationType() const;
             
+        protected:
+            // Override base class method.
+            virtual void printToStream(std::ostream& stream) const override;
+
         private:
             // The relation type of the expression.
             RelationType relationType;

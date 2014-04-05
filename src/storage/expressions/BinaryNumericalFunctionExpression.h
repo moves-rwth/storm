@@ -20,7 +20,7 @@ namespace storm {
              * @param secondOperand The second operand of the expression.
              * @param functionType The operator of the expression.
              */
-            BinaryNumericalFunctionExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& firstOperand, std::unique_ptr<BaseExpression>&& secondOperand, OperatorType operatorType);
+            BinaryNumericalFunctionExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, OperatorType operatorType);
             
             // Instantiate constructors and assignments with their default implementations.
             BinaryNumericalFunctionExpression(BinaryNumericalFunctionExpression const& other) = default;
@@ -32,10 +32,9 @@ namespace storm {
             // Override base class methods.
             virtual int_fast64_t evaluateAsInt(Valuation const& valuation) const override;
             virtual double evaluateAsDouble(Valuation const& valuation) const override;
-            virtual std::unique_ptr<BaseExpression> simplify() const override;
+            virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;
-            virtual std::unique_ptr<BaseExpression> clone() const override;
-            
+
             /*!
              * Retrieves the operator associated with the expression.
              *
@@ -43,6 +42,10 @@ namespace storm {
              */
             OperatorType getOperatorType() const;
             
+        protected:
+            // Override base class method.
+            virtual void printToStream(std::ostream& stream) const override;
+
         private:
             // The operator of the expression.
             OperatorType operatorType;

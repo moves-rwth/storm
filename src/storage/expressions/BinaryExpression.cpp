@@ -2,22 +2,10 @@
 
 namespace storm {
     namespace expressions {
-        BinaryExpression::BinaryExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& firstOperand, std::unique_ptr<BaseExpression>&& secondOperand) : BaseExpression(returnType), firstOperand(std::move(firstOperand)), secondOperand(std::move(secondOperand)) {
+        BinaryExpression::BinaryExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand) : BaseExpression(returnType), firstOperand(firstOperand), secondOperand(secondOperand) {
             // Intentionally left empty.
         }
-        
-        BinaryExpression::BinaryExpression(BinaryExpression const& other) : BaseExpression(other.getReturnType()), firstOperand(other.getFirstOperand()->clone()), secondOperand(other.getSecondOperand()->clone()) {
-            // Intentionally left empty.
-        }
-        
-        BinaryExpression& BinaryExpression::operator=(BinaryExpression const& other) {
-            if (this != &other) {
-                this->firstOperand = other.getFirstOperand()->clone();
-                this->secondOperand = other.getSecondOperand()->clone();
-            }
-            return *this;
-        }
-        
+                
         bool BinaryExpression::isConstant() const {
             return this->getFirstOperand()->isConstant() && this->getSecondOperand()->isConstant();
         }
@@ -36,11 +24,11 @@ namespace storm {
             return firstConstantSet;
         }
         
-        std::unique_ptr<BaseExpression> const& BinaryExpression::getFirstOperand() const {
+        std::shared_ptr<BaseExpression const> const& BinaryExpression::getFirstOperand() const {
             return this->firstOperand;
         }
         
-        std::unique_ptr<BaseExpression> const& BinaryExpression::getSecondOperand() const {
+        std::shared_ptr<BaseExpression const> const& BinaryExpression::getSecondOperand() const {
             return this->secondOperand;
         }
     }

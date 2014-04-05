@@ -17,13 +17,11 @@ namespace storm {
              * @param firstOperand The first operand of the expression.
              * @param secondOperand The second operand of the expression.
              */
-            BinaryExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& firstOperand, std::unique_ptr<BaseExpression>&& secondOperand);
+            BinaryExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand);
             
-            // Provide custom versions of copy construction and assignment.
-            BinaryExpression(BinaryExpression const& other);
-            BinaryExpression& operator=(BinaryExpression const& other);
-
-            // Create default variants of move construction/assignment and virtual destructor.
+            // Instantiate constructors and assignments with their default implementations.
+            BinaryExpression(BinaryExpression const& other) = default;
+            BinaryExpression& operator=(BinaryExpression const& other) = default;
             BinaryExpression(BinaryExpression&&) = default;
             BinaryExpression& operator=(BinaryExpression&&) = default;
             virtual ~BinaryExpression() = default;
@@ -38,21 +36,21 @@ namespace storm {
              *
              * @return The first operand of the expression.
              */
-            std::unique_ptr<BaseExpression> const& getFirstOperand() const;
+            std::shared_ptr<BaseExpression const> const& getFirstOperand() const;
             
             /*!
              * Retrieves the second operand of the expression.
              *
              * @return The second operand of the expression.
              */
-            std::unique_ptr<BaseExpression> const& getSecondOperand() const;
+            std::shared_ptr<BaseExpression const> const& getSecondOperand() const;
 
         private:
             // The first operand of the expression.
-            std::unique_ptr<BaseExpression> firstOperand;
+            std::shared_ptr<BaseExpression const> firstOperand;
             
             // The second operand of the expression.
-            std::unique_ptr<BaseExpression> secondOperand;
+            std::shared_ptr<BaseExpression const> secondOperand;
         };
     }
 }

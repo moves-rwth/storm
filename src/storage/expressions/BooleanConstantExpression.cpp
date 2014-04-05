@@ -10,12 +10,12 @@ namespace storm {
             return valuation.getBooleanValue(this->getConstantName());
         }
         
-        std::unique_ptr<BaseExpression> BooleanConstantExpression::clone() const {
-            return std::unique_ptr<BaseExpression>(new BooleanConstantExpression(*this));
-        }
-        
         void BooleanConstantExpression::accept(ExpressionVisitor* visitor) const {
             visitor->visit(this);
+        }
+        
+        std::shared_ptr<BaseExpression const> BooleanConstantExpression::simplify() const {
+            return this->shared_from_this();
         }
     }
 }

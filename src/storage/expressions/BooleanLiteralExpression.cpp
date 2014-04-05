@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace expressions {
-        BooleanLiteralExpression::BooleanLiteralExpression(bool value) : value(value) {
+        BooleanLiteralExpression::BooleanLiteralExpression(bool value) : BaseExpression(ExpressionReturnType::Bool), value(value) {
             // Intentionally left empty.
         }
         
@@ -23,27 +23,27 @@ namespace storm {
         }
         
         std::set<std::string> BooleanLiteralExpression::getVariables() const {
-            return {};
+            return std::set<std::string>();
         }
         
         std::set<std::string> BooleanLiteralExpression::getConstants() const {
-            return {};
+            return std::set<std::string>();
         }
         
-        std::unique_ptr<BaseExpression> BooleanLiteralExpression::simplify() const {
-            return this->clone();
+        std::shared_ptr<BaseExpression const> BooleanLiteralExpression::simplify() const {
+            return this->shared_from_this();
         }
         
         void BooleanLiteralExpression::accept(ExpressionVisitor* visitor) const {
             visitor->visit(this);
         }
         
-        std::unique_ptr<BaseExpression> BooleanLiteralExpression::clone() const {
-            return std::unique_ptr<BaseExpression>(new BooleanLiteralExpression(*this));
-        }
-        
         bool BooleanLiteralExpression::getValue() const {
             return this->value;
+        }
+        
+        void BooleanLiteralExpression::printToStream(std::ostream& stream) const {
+            stream << (this->getValue() ? "true" : "false");
         }
     }
 }

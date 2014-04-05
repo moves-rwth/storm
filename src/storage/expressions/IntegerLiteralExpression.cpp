@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace expressions {
-        IntegerLiteralExpression::IntegerLiteralExpression(int_fast64_t value) : value(value) {
+        IntegerLiteralExpression::IntegerLiteralExpression(int_fast64_t value) : BaseExpression(ExpressionReturnType::Int), value(value) {
             // Intentionally left empty.
         }
         
@@ -19,27 +19,27 @@ namespace storm {
         }
         
         std::set<std::string> IntegerLiteralExpression::getVariables() const {
-            return {};
+            return std::set<std::string>();
         }
         
         std::set<std::string> IntegerLiteralExpression::getConstants() const {
-            return {};
+            return std::set<std::string>();
         }
         
-        std::unique_ptr<BaseExpression> IntegerLiteralExpression::simplify() const {
-            return this->clone();
+        std::shared_ptr<BaseExpression const> IntegerLiteralExpression::simplify() const {
+            return this->shared_from_this();
         }
         
         void IntegerLiteralExpression::accept(ExpressionVisitor* visitor) const {
             visitor->visit(this);
         }
         
-        std::unique_ptr<BaseExpression> IntegerLiteralExpression::clone() const {
-            return std::unique_ptr<BaseExpression>(new IntegerLiteralExpression(*this));
-        }
-        
         int_fast64_t IntegerLiteralExpression::getValue() const {
             return this->value;
+        }
+        
+        void IntegerLiteralExpression::printToStream(std::ostream& stream) const {
+            stream << this->getValue();
         }
     }
 }

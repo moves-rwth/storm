@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace expressions {
-        SimpleValuation::SimpleValuation(std::size_t booleanVariableCount, std::size_t integerVariableCount, std::size_t doubleVariableCount) : identifierToIndexMap(), booleanValues(booleanVariableCount), integerValues(integerVariableCount), doubleValues(doubleVariableCount) {
+        SimpleValuation::SimpleValuation(std::size_t booleanVariableCount, std::size_t integerVariableCount, std::size_t doubleVariableCount) : identifierToIndexMap(new std::unordered_map<std::string, uint_fast64_t>), booleanValues(booleanVariableCount), integerValues(integerVariableCount), doubleValues(doubleVariableCount) {
             // Intentionally left empty.
         }
         
@@ -15,15 +15,15 @@ namespace storm {
         }
         
         void SimpleValuation::setBooleanValue(std::string const& name, bool value) {
-            this->booleanValues[(*this->identifierToIndexMap)[name]] = value;
+            this->booleanValues[this->identifierToIndexMap->at(name)] = value;
         }
         
         void SimpleValuation::setIntegerValue(std::string const& name, int_fast64_t value) {
-            this->integerValues[(*this->identifierToIndexMap)[name]] = value;
+            this->integerValues[this->identifierToIndexMap->at(name)] = value;
         }
         
         void SimpleValuation::setDoubleValue(std::string const& name, double value) {
-            this->doubleValues[(*this->identifierToIndexMap)[name]] = value;
+            this->doubleValues[this->identifierToIndexMap->at(name)] = value;
         }
         
         bool SimpleValuation::getBooleanValue(std::string const& name) const {
@@ -39,6 +39,24 @@ namespace storm {
         double SimpleValuation::getDoubleValue(std::string const& name) const {
             auto const& nameIndexPair = this->identifierToIndexMap->find(name);
             return this->doubleValues[nameIndexPair->second];
+        }
+        
+        std::ostream& operator<<(std::ostream& stream, SimpleValuation const& valuation) {
+            stream << "valuation { bool[";
+            for (uint_fast64_t i = 0; i < valuation.booleanValues.size() - 1; ++i) {
+                stream << valuation.booleanValues[i] << ", ";
+            }
+            stream << valuation.booleanValues.back() << "] ints[";
+            for (uint_fast64_t i = 0; i < valuation.integerValues.size() - 1; ++i) {
+                stream << valuation.integerValues[i] << ", ";
+            }
+            stream << valuation.integerValues.back() << "] double[";
+            for (uint_fast64_t i = 0; i < valuation.doubleValues.size() - 1; ++i) {
+                stream << valuation.doubleValues[i] << ", ";
+            }
+            stream << valuation.doubleValues.back() << "] }";
+            
+            return stream;
         }
     }
 }

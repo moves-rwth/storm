@@ -6,10 +6,11 @@
 namespace storm {
     namespace expressions {
         class UnaryBooleanFunctionExpression : public UnaryExpression {
+        public:
             /*!
              * An enum type specifying the different functions applicable.
              */
-            enum class OperatorType {Not};
+            enum class OperatorType { Not };
             
             /*!
              * Creates a unary boolean function expression with the given return type, operand and operator.
@@ -18,7 +19,7 @@ namespace storm {
              * @param operand The operand of the expression.
              * @param operatorType The operator of the expression.
              */
-            UnaryBooleanFunctionExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& operand, OperatorType operatorType);
+            UnaryBooleanFunctionExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType);
 
             // Instantiate constructors and assignments with their default implementations.
             UnaryBooleanFunctionExpression(UnaryBooleanFunctionExpression const& other) = default;
@@ -29,9 +30,8 @@ namespace storm {
             
             // Override base class methods.
             virtual bool evaluateAsBool(Valuation const& valuation) const override;
-            virtual std::unique_ptr<BaseExpression> simplify() const override;
+            virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;
-            virtual std::unique_ptr<BaseExpression> clone() const override;
 
             /*!
              * Retrieves the operator associated with this expression.
@@ -40,6 +40,10 @@ namespace storm {
              */
             OperatorType getOperatorType() const;
             
+        protected:
+            // Override base class method.
+            virtual void printToStream(std::ostream& stream) const override;
+
         private:
             // The operator of this expression.
             OperatorType operatorType;

@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace expressions {
-        DoubleLiteralExpression::DoubleLiteralExpression(double value) : value(value) {
+        DoubleLiteralExpression::DoubleLiteralExpression(double value) : BaseExpression(ExpressionReturnType::Double), value(value) {
             // Intentionally left empty.
         }
         
@@ -15,27 +15,27 @@ namespace storm {
         }
         
         std::set<std::string> DoubleLiteralExpression::getVariables() const {
-            return {};
+            return std::set<std::string>();
         }
         
         std::set<std::string> DoubleLiteralExpression::getConstants() const {
-            return {};
+            return std::set<std::string>();
         }
         
-        std::unique_ptr<BaseExpression> DoubleLiteralExpression::simplify() const {
-            return this->clone();
+        std::shared_ptr<BaseExpression const> DoubleLiteralExpression::simplify() const {
+            return this->shared_from_this();
         }
         
         void DoubleLiteralExpression::accept(ExpressionVisitor* visitor) const {
             visitor->visit(this);
         }
         
-        std::unique_ptr<BaseExpression> DoubleLiteralExpression::clone() const {
-            return std::unique_ptr<BaseExpression>(new DoubleLiteralExpression(*this));
-        }
-        
         double DoubleLiteralExpression::getValue() const {
             return this->value;
+        }
+        
+        void DoubleLiteralExpression::printToStream(std::ostream& stream) const {
+            stream << this->getValue();
         }
     }
 }

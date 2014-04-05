@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        class BooleanLiteralExpression : BaseExpression {
+        class BooleanLiteralExpression : public BaseExpression {
         public:
             /*!
              * Creates a boolean literal expression with the given value.
@@ -28,9 +28,8 @@ namespace storm {
             virtual bool isFalse() const override;
             virtual std::set<std::string> getVariables() const override;
             virtual std::set<std::string> getConstants() const override;
-            virtual std::unique_ptr<BaseExpression> simplify() const override;
+            virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;
-            virtual std::unique_ptr<BaseExpression> clone() const override;
             
             /*!
              * Retrieves the value of the boolean literal.
@@ -38,6 +37,10 @@ namespace storm {
              * @return The value of the boolean literal.
              */
             bool getValue() const;
+            
+        protected:
+            // Override base class method.
+            virtual void printToStream(std::ostream& stream) const override;
             
         private:
             // The value of the boolean literal.

@@ -25,7 +25,6 @@ namespace storm {
             // Override base class methods.
             virtual std::set<std::string> getVariables() const override;
             virtual std::set<std::string> getConstants() const override;
-            virtual std::unique_ptr<BaseExpression> simplify() const override;
             
             /*!
              * Retrieves the name of the constant.
@@ -33,6 +32,10 @@ namespace storm {
              * @return The name of the constant.
              */
             std::string const& getConstantName() const;
+
+        protected:
+            // Override base class method.
+            virtual void printToStream(std::ostream& stream) const override;
             
         private:
             // The name of the constant.

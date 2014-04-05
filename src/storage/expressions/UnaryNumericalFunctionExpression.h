@@ -6,6 +6,7 @@
 namespace storm {
     namespace expressions {
         class UnaryNumericalFunctionExpression : public UnaryExpression {
+        public:
             /*!
              * An enum type specifying the different functions applicable.
              */
@@ -18,7 +19,7 @@ namespace storm {
              * @param operand The operand of the expression.
              * @param operatorType The operator of the expression.
              */
-            UnaryNumericalFunctionExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& operand, OperatorType operatorType);
+            UnaryNumericalFunctionExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType);
             
             // Instantiate constructors and assignments with their default implementations.
             UnaryNumericalFunctionExpression(UnaryNumericalFunctionExpression const& other) = default;
@@ -30,10 +31,9 @@ namespace storm {
             // Override base class methods.
             virtual int_fast64_t evaluateAsInt(Valuation const& valuation) const override;
             virtual double evaluateAsDouble(Valuation const& valuation) const override;
-            virtual std::unique_ptr<BaseExpression> simplify() const override;
+            virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;
-            virtual std::unique_ptr<BaseExpression> clone() const override;
-            
+     
             /*!
              * Retrieves the operator associated with this expression.
              *
@@ -41,6 +41,10 @@ namespace storm {
              */
             OperatorType getOperatorType() const;
             
+        protected:
+            // Override base class method.
+            virtual void printToStream(std::ostream& stream) const override;
+
         private:
             // The operator of this expression.
             OperatorType operatorType;

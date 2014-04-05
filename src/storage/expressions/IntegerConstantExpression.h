@@ -22,9 +22,9 @@ namespace storm {
             virtual ~IntegerConstantExpression() = default;
             
             // Override base class methods.
-            virtual int_fast64_t evaluateAsInteger(Valuation const& valuation) const;
-            virtual double evaluateAsDouble(Valuation const& valuation) const;
-            virtual std::unique_ptr<BaseExpression> clone() const;
+            virtual int_fast64_t evaluateAsInt(Valuation const& valuation) const override;
+            virtual double evaluateAsDouble(Valuation const& valuation) const override;
+            virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const;
         };
     }

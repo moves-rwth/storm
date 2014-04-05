@@ -16,16 +16,16 @@ extern log4cplus::Logger logger;
         assert(cond);                           \
     }                                           \
 } while (false)
-#define LOG_THROW(cond, exception, message)     \
-{                                               \
-    if (!(cond)) {                              \
-        LOG4CPLUS_ERROR(logger, message);       \
-        throw exception() << message;           \
-    }                                           \
-} while (false)
 #else
 #define LOG_ASSERT(cond, message) /* empty */
-#define LOG_THROW(cond, exception, message) /* empty */
 #endif
+
+#define LOG_THROW(cond, exception, message)     \
+{                                               \
+if (!(cond)) {                              \
+LOG4CPLUS_ERROR(logger, message);       \
+throw exception() << message;           \
+}                                           \
+} while (false)
 
 #endif /* STORM_EXCEPTIONS_EXCEPTIONMACROS_H_ */

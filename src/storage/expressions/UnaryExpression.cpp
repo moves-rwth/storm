@@ -2,20 +2,8 @@
 
 namespace storm {
     namespace expressions {
-        UnaryExpression::UnaryExpression(ExpressionReturnType returnType, std::unique_ptr<BaseExpression>&& operand) : BaseExpression(returnType), operand(std::move(operand)) {
+        UnaryExpression::UnaryExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand) : BaseExpression(returnType), operand(operand) {
             // Intentionally left empty.
-        }
-        
-        UnaryExpression::UnaryExpression(UnaryExpression const& other) : BaseExpression(other), operand(other.getOperand()->clone()) {
-            // Intentionally left empty.
-        }
-        
-        UnaryExpression& UnaryExpression::operator=(UnaryExpression const& other) {
-            if (this != &other) {
-                BaseExpression::operator=(other);
-                this->operand = other.getOperand()->clone();
-            }
-            return *this;
         }
 
         bool UnaryExpression::isConstant() const {
@@ -28,6 +16,10 @@ namespace storm {
         
         std::set<std::string> UnaryExpression::getConstants() const {
             return this->getOperand()->getVariables();
+        }
+        
+        std::shared_ptr<BaseExpression const> const& UnaryExpression::getOperand() const {
+            return this->operand;
         }
     }
 }
