@@ -1,69 +1,42 @@
-/*
- * Command.h
- *
- *  Created on: 06.01.2013
- *      Author: Christian Dehnert
- */
-
-#ifndef STORM_IR_COMMAND_H_
-#define STORM_IR_COMMAND_H_
+#ifndef STORM_STORAGE_PRISM_COMMAND_H_
+#define STORM_STORAGE_PRISM_COMMAND_H_
 
 #include <vector>
 #include <string>
 #include <map>
 
-#include "expressions/BaseExpression.h"
-#include "Update.h"
+#include "src/storage/expressions/Expression.h"
+#include "src/storage/prism/Update.h"
 
 namespace storm {
-    
-    namespace parser {
-        namespace prism {
-            class VariableState;
-        } // namespace prismparser
-    } // namespace parser
-    
-    namespace ir {
-        
-        /*!
-         * A class representing a command.
-         */
+    namespace prism {
         class Command {
         public:
             /*!
-             * Default constructor. Creates a a command without name, guard and updates.
-             */
-            Command();
-            
-            /*!
-             * Creates a command with the given name, guard and updates.
+             * Creates a command with the given action name, guard and updates.
              *
              * @param globalIndex The global index of the command.
              * @param actionName The action name of the command.
              * @param guardExpression the expression that defines the guard of the command.
              * @param updates A list of updates that is associated with this command.
              */
-            Command(uint_fast64_t globalIndex, std::string const& actionName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& guardExpression, std::vector<storm::ir::Update> const& updates);
+            Command(uint_fast64_t globalIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates);
             
             /*!
              * Creates a copy of the given command and performs the provided renaming.
              *
              * @param oldCommand The command to copy.
              * @param newGlobalIndex The global index of the copy of the command.
-             * @param renaming A mapping from names that are to be renamed to the names they are to be
-             * replaced with.
-             * @param variableState An object knowing about the variables in the system.
+             * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
              */
-            Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState);
+            Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming);
             
-            /*!
-             * Performs a deep-copy of the given command.
-             *
-             * @param otherCommand The command to copy.
-             */
-            Command(Command const& otherCommand);
-            
-            Command& operator=(Command const& otherCommand);
+            // Create default implementations of constructors/assignment.
+            Command() = default;
+            Command(Command const& otherVariable) = default;
+            Command& operator=(Command const& otherVariable)= default;
+            Command(Command&& otherVariable) = default;
+            Command& operator=(Command&& otherVariable) = default;
             
             /*!
              * Retrieves the action name of this command.
@@ -77,28 +50,28 @@ namespace storm {
              *
              * @return A reference to the guard of the command.
              */
-            std::unique_ptr<storm::ir::expressions::BaseExpression> const& getGuard() const;
+            storm::expressions::Expression const& getGuardExpression() const;
             
             /*!
              * Retrieves the number of updates associated with this command.
              *
              * @return The number of updates associated with this command.
              */
-            uint_fast64_t getNumberOfUpdates() const;
+            std::size_t getNumberOfUpdates() const;
             
             /*!
              * Retrieves a reference to the update with the given index.
              *
              * @return A reference to the update with the given index.
              */
-            storm::ir::Update const& getUpdate(uint_fast64_t index) const;
+            storm::prism::Update const& getUpdate(uint_fast64_t index) const;
             
             /*!
              * Retrieves a vector of all updates associated with this command.
              *
              * @return A vector of updates associated with this command.
              */
-            std::vector<storm::ir::Update> const& getUpdates() const;
+            std::vector<storm::prism::Update> const& getUpdates() const;
             
             /*!
              * Retrieves the global index of the command, that is, a unique index over all modules.
@@ -107,28 +80,23 @@ namespace storm {
              */
             uint_fast64_t getGlobalIndex() const;
             
-            /*!
-             * Retrieves a string representation of this command.
-             *
-             * @return A string representation of this command.
-             */
-            std::string toString() const;
+            friend std::ostream& operator<<(std::ostream& stream, Command const& command);
             
         private:
             // The name of the command.
             std::string actionName;
             
             // The expression that defines the guard of the command.
-            std::unique_ptr<storm::ir::expressions::BaseExpression> guardExpression;
+            storm::expressions::Expression guardExpression;
             
             // The list of updates of the command.
-            std::vector<storm::ir::Update> updates;
+            std::vector<storm::prism::Update> updates;
             
             // The global index of the command.
             uint_fast64_t globalIndex;
         };
         
-    } // namespace ir
+    } // namespace prism
 } // namespace storm
 
-#endif /* STORM_IR_COMMAND_H_ */
+#endif /* STORM_STORAGE_PRISM_COMMAND_H_ */
