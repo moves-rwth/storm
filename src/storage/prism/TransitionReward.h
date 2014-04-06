@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "expressions/BaseExpression.h"
+#include "src/storage/expressions/Expression.h"
 
 namespace storm {
 
@@ -36,21 +36,21 @@ public:
 	 * @param rewardValue An expression specifying the values of the rewards to attach to the
 	 * transitions.
 	 */
-	TransitionReward(std::string const& commandName, std::unique_ptr<storm::ir::expressions::BaseExpression>&& statePredicate, std::unique_ptr<storm::ir::expressions::BaseExpression>&& rewardValue);
+	TransitionReward(std::string const& commandName, storm::expressions::Expression const& statePredicate, storm::expressions::Expression const& rewardValue);
 
     /*!
      * Performs a deep-copy of the given transition reward.
      *
      * @param otherReward The transition reward to copy.
      */
-    TransitionReward(TransitionReward const& otherReward);
+    TransitionReward(TransitionReward const& otherReward) = default;
     
     /*!
      * Performs a deep-copy of the given transition reward and assigns it to the current one.
      *
      * @param otherReward The reward to assign.
      */
-    TransitionReward& operator=(TransitionReward const& otherReward);
+    TransitionReward& operator=(TransitionReward const& otherReward) = default;
     
 	/*!
 	 * Retrieves a string representation of this transition reward.
@@ -71,14 +71,14 @@ public:
      *
      * @return The state predicate that is associated with this state reward.
      */
-    std::unique_ptr<storm::ir::expressions::BaseExpression> const& getStatePredicate() const;
+    storm::expressions::Expression const& getStatePredicate() const;
     
     /*!
      * Retrieves the reward value associated with this state reward.
      *
      * @return The reward value associated with this state reward.
      */
-    std::unique_ptr<storm::ir::expressions::BaseExpression> const& getRewardValue() const;
+    storm::expressions::Expression const& getRewardValue() const;
 
 private:
 	// The name of the command this transition-based reward is attached to.
@@ -86,10 +86,10 @@ private:
 
 	// A predicate that needs to be satisfied by states for the reward to be obtained (by taking
 	// a corresponding command transition).
-	std::unique_ptr<storm::ir::expressions::BaseExpression> statePredicate;
+	storm::expressions::Expression statePredicate;
 
 	// The expression specifying the value of the reward obtained along the transitions.
-	std::unique_ptr<storm::ir::expressions::BaseExpression> rewardValue;
+	storm::expressions::Expression rewardValue;
 };
 
 } // namespace ir

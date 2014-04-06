@@ -3,6 +3,7 @@
 
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/SubstitutionVisitor.h"
+#include "src/storage/expressions/IdentifierSubstitutionVisitor.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/ExceptionMacros.h"
 
@@ -28,6 +29,11 @@ namespace storm {
         template<template<typename... Arguments> class MapType>
         Expression Expression::substitute(MapType<std::string, Expression> const& identifierToExpressionMap) const {
             return SubstitutionVisitor<MapType>(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
+        }
+        
+        template<template<typename... Arguments> class MapType>
+        Expression Expression::substitute(MapType<std::string, std::string> const& identifierToIdentifierMap) const {
+            return IdentifierSubstitutionVisitor<MapType>(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
         }
         
         bool Expression::evaluateAsBool(Valuation const& valuation) const {
@@ -222,6 +228,8 @@ namespace storm {
         
         template Expression Expression::substitute<std::map>(std::map<std::string, storm::expressions::Expression> const&) const;
         template Expression Expression::substitute<std::unordered_map>(std::unordered_map<std::string, storm::expressions::Expression> const&) const;
+        template Expression Expression::substitute<std::map>(std::map<std::string, std::string> const&) const;
+        template Expression Expression::substitute<std::unordered_map>(std::unordered_map<std::string, std::string> const&) const;
         
         std::ostream& operator<<(std::ostream& stream, Expression const& expression) {
             stream << expression.getBaseExpression();

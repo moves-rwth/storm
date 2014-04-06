@@ -72,6 +72,16 @@ namespace storm {
             Expression substitute(MapType<std::string, Expression> const& identifierToExpressionMap) const;
             
             /*!
+             * Substitutes all occurrences of identifiers with different names given by a mapping.
+             *
+             * @param identifierToIdentifierMap A mapping from identifiers to identifiers they are substituted with.
+             * @return An expression in which all identifiers in the key set of the mapping are replaced by the
+             * identifiers they are mapped to.
+             */
+            template<template<typename... Arguments> class MapType>
+            Expression substitute(MapType<std::string, std::string> const& identifierToIdentifierMap) const;
+            
+            /*!
              * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
              * valuation and returns the resulting boolean value. If the return type of the expression is not a boolean
              * an exception is thrown.

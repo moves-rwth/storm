@@ -14,10 +14,10 @@
 namespace storm {
     namespace dd {
         template<>
-        class DdManager<CUDD> : public std::enable_shared_from_this<DdManager<CUDD>> {
+        class DdManager<DdType::CUDD> : public std::enable_shared_from_this<DdManager<DdType::CUDD>> {
         public:
             // To break the cylic dependencies, we need to forward-declare the other DD-related classes.
-            friend class Dd<CUDD>;
+            friend class Dd<DdType::CUDD>;
             
             /*!
              * Creates an empty manager without any meta variables.
@@ -25,11 +25,11 @@ namespace storm {
             DdManager();
             
             // Explictly forbid copying a DdManager, but allow moving it.
-            DdManager(DdManager<CUDD> const& other) = delete;
-			DdManager<CUDD>& operator=(DdManager<CUDD> const& other) = delete;
+            DdManager(DdManager<DdType::CUDD> const& other) = delete;
+			DdManager<DdType::CUDD>& operator=(DdManager<DdType::CUDD> const& other) = delete;
 #ifndef WINDOWS
-            DdManager(DdManager<CUDD>&& other) = default;
-            DdManager<CUDD>& operator=(DdManager<CUDD>&& other) = default;
+            DdManager(DdManager<DdType::CUDD>&& other) = default;
+            DdManager<DdType::CUDD>& operator=(DdManager<DdType::CUDD>&& other) = default;
 #endif
             
             /*!
@@ -37,21 +37,21 @@ namespace storm {
              *
              * @return A DD representing the constant one function.
              */
-            Dd<CUDD> getOne();
+            Dd<DdType::CUDD> getOne();
             
             /*!
              * Retrieves a DD representing the constant zero function.
              *
              * @return A DD representing the constant zero function.
              */
-            Dd<CUDD> getZero();
+            Dd<DdType::CUDD> getZero();
             
             /*!
              * Retrieves a DD representing the constant function with the given value.
              *
              * @return A DD representing the constant function with the given value.
              */
-            Dd<CUDD> getConstant(double value);
+            Dd<DdType::CUDD> getConstant(double value);
             
             /*!
              * Retrieves the DD representing the function that maps all inputs which have the given meta variable equal
@@ -62,7 +62,7 @@ namespace storm {
              * @return The DD representing the function that maps all inputs which have the given meta variable equal
              * to the given value one.
              */
-            Dd<CUDD> getEncoding(std::string const& metaVariableName, int_fast64_t value);
+            Dd<DdType::CUDD> getEncoding(std::string const& metaVariableName, int_fast64_t value);
             
             /*!
              * Retrieves the DD representing the range of the meta variable, i.e., a function that maps all legal values
@@ -71,7 +71,7 @@ namespace storm {
              * @param metaVariableName The name of the meta variable whose range to retrieve.
              * @return The range of the meta variable.
              */
-            Dd<CUDD> getRange(std::string const& metaVariableName);
+            Dd<DdType::CUDD> getRange(std::string const& metaVariableName);
 
             /*!
              * Retrieves the DD representing the identity of the meta variable, i.e., a function that maps all legal
@@ -80,7 +80,7 @@ namespace storm {
              * @param metaVariableName The name of the meta variable whose identity to retrieve.
              * @return The identity of the meta variable.
              */
-            Dd<CUDD> getIdentity(std::string const& metaVariableName);
+            Dd<DdType::CUDD> getIdentity(std::string const& metaVariableName);
             
             /*!
              * Adds a meta variable with the given name and range.
@@ -106,7 +106,7 @@ namespace storm {
              * @param metaVariableName The name of the meta variable to retrieve.
              * @return The meta variable with the given name.
              */
-            DdMetaVariable<CUDD> const& getMetaVariable(std::string const& metaVariableName) const;
+            DdMetaVariable<DdType::CUDD> const& getMetaVariable(std::string const& metaVariableName) const;
             
             /*!
              * Retrieves the names of all meta variables that have been added to the manager.
@@ -139,7 +139,7 @@ namespace storm {
             Cudd& getCuddManager();
             
             // A mapping from variable names to the meta variable information.
-            std::unordered_map<std::string, DdMetaVariable<CUDD>> metaVariableMap;
+            std::unordered_map<std::string, DdMetaVariable<DdType::CUDD>> metaVariableMap;
             
             // The manager responsible for the DDs created/modified with this DdManager.
             Cudd cuddManager;

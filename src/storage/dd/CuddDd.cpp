@@ -7,25 +7,25 @@
 
 namespace storm {
     namespace dd {
-        Dd<CUDD>::Dd(std::shared_ptr<DdManager<CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames) : ddManager(ddManager), cuddAdd(cuddAdd), containedMetaVariableNames(containedMetaVariableNames) {
+        Dd<DdType::CUDD>::Dd(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames) : ddManager(ddManager), cuddAdd(cuddAdd), containedMetaVariableNames(containedMetaVariableNames) {
             // Intentionally left empty.
         }
         
-        bool Dd<CUDD>::operator==(Dd<CUDD> const& other) const {
+        bool Dd<DdType::CUDD>::operator==(Dd<DdType::CUDD> const& other) const {
             return this->cuddAdd == other.getCuddAdd();
         }
         
-        bool Dd<CUDD>::operator!=(Dd<CUDD> const& other) const {
+        bool Dd<DdType::CUDD>::operator!=(Dd<DdType::CUDD> const& other) const {
             return this->cuddAdd == other.getCuddAdd();
         }
         
-        Dd<CUDD> Dd<CUDD>::operator+(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator+(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result += other;
             return result;
         }
         
-        Dd<CUDD>& Dd<CUDD>::operator+=(Dd<CUDD> const& other) {
+        Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator+=(Dd<DdType::CUDD> const& other) {
             this->cuddAdd += other.getCuddAdd();
             
             // Join the variable sets of the two participating DDs.
@@ -34,13 +34,13 @@ namespace storm {
             return *this;
         }
         
-        Dd<CUDD> Dd<CUDD>::operator*(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator*(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result *= other;
             return result;
         }
         
-        Dd<CUDD>& Dd<CUDD>::operator*=(Dd<CUDD> const& other) {
+        Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator*=(Dd<DdType::CUDD> const& other) {
             this->cuddAdd *= other.getCuddAdd();
             
             // Join the variable sets of the two participating DDs.
@@ -49,13 +49,13 @@ namespace storm {
             return *this;
         }
         
-        Dd<CUDD> Dd<CUDD>::operator-(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator-(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result -= other;
             return result;
         }
         
-        Dd<CUDD>& Dd<CUDD>::operator-=(Dd<CUDD> const& other) {
+        Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator-=(Dd<DdType::CUDD> const& other) {
             this->cuddAdd -= other.getCuddAdd();
             
             // Join the variable sets of the two participating DDs.
@@ -64,13 +64,13 @@ namespace storm {
             return *this;
         }
         
-        Dd<CUDD> Dd<CUDD>::operator/(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator/(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result /= other;
             return result;
         }
         
-        Dd<CUDD>& Dd<CUDD>::operator/=(Dd<CUDD> const& other) {
+        Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator/=(Dd<DdType::CUDD> const& other) {
             this->cuddAdd = this->cuddAdd.Divide(other.getCuddAdd());
             
             // Join the variable sets of the two participating DDs.
@@ -79,55 +79,55 @@ namespace storm {
             return *this;
         }
         
-        Dd<CUDD> Dd<CUDD>::operator~() const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator~() const {
+            Dd<DdType::CUDD> result(*this);
             result.complement();
             return result;
         }
         
-        Dd<CUDD>& Dd<CUDD>::complement() {
+        Dd<DdType::CUDD>& Dd<DdType::CUDD>::complement() {
             this->cuddAdd = ~this->cuddAdd;
             return *this;
         }
         
-        Dd<CUDD> Dd<CUDD>::equals(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::equals(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result.cuddAdd = result.cuddAdd.Equals(other.getCuddAdd());
             return result;
         }
         
-        Dd<CUDD> Dd<CUDD>::notEquals(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::notEquals(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result.cuddAdd = result.cuddAdd.NotEquals(other.getCuddAdd());
             return result;
         }
         
-        Dd<CUDD> Dd<CUDD>::less(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::less(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result.cuddAdd = result.cuddAdd.LessThan(other.getCuddAdd());
             return result;
         }
         
-        Dd<CUDD> Dd<CUDD>::lessOrEqual(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::lessOrEqual(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result.cuddAdd = result.cuddAdd.LessThanOrEqual(other.getCuddAdd());
             return result;
         }
         
-        Dd<CUDD> Dd<CUDD>::greater(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::greater(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result.cuddAdd = result.cuddAdd.GreaterThan(other.getCuddAdd());
             return result;
         }
         
-        Dd<CUDD> Dd<CUDD>::greaterOrEqual(Dd<CUDD> const& other) const {
-            Dd<CUDD> result(*this);
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::greaterOrEqual(Dd<DdType::CUDD> const& other) const {
+            Dd<DdType::CUDD> result(*this);
             result.cuddAdd = result.cuddAdd.GreaterThanOrEqual(other.getCuddAdd());
             return result;
         }
         
-        void Dd<CUDD>::existsAbstract(std::set<std::string> const& metaVariableNames) {
-            Dd<CUDD> cubeDd(this->getDdManager()->getOne());
+        void Dd<DdType::CUDD>::existsAbstract(std::set<std::string> const& metaVariableNames) {
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             
             for (auto const& metaVariableName : metaVariableNames) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
@@ -136,15 +136,15 @@ namespace storm {
                 }
                 this->getContainedMetaVariableNames().erase(metaVariableName);
                 
-                DdMetaVariable<CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
+                DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
             this->cuddAdd = this->cuddAdd.OrAbstract(cubeDd.getCuddAdd());
         }
         
-        void Dd<CUDD>::sumAbstract(std::set<std::string> const& metaVariableNames) {
-            Dd<CUDD> cubeDd(this->getDdManager()->getOne());
+        void Dd<DdType::CUDD>::sumAbstract(std::set<std::string> const& metaVariableNames) {
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             
             for (auto const& metaVariableName : metaVariableNames) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
@@ -153,15 +153,15 @@ namespace storm {
                 }
                 this->getContainedMetaVariableNames().erase(metaVariableName);
                 
-                DdMetaVariable<CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
+                DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
             this->cuddAdd = this->cuddAdd.ExistAbstract(cubeDd.getCuddAdd());
         }
         
-        void Dd<CUDD>::minAbstract(std::set<std::string> const& metaVariableNames) {
-            Dd<CUDD> cubeDd(this->getDdManager()->getOne());
+        void Dd<DdType::CUDD>::minAbstract(std::set<std::string> const& metaVariableNames) {
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             
             for (auto const& metaVariableName : metaVariableNames) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
@@ -170,15 +170,15 @@ namespace storm {
                 }
                 this->getContainedMetaVariableNames().erase(metaVariableName);
                 
-                DdMetaVariable<CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
+                DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
             this->cuddAdd = this->cuddAdd.MinAbstract(cubeDd.getCuddAdd());
         }
         
-        void Dd<CUDD>::maxAbstract(std::set<std::string> const& metaVariableNames) {
-            Dd<CUDD> cubeDd(this->getDdManager()->getOne());
+        void Dd<DdType::CUDD>::maxAbstract(std::set<std::string> const& metaVariableNames) {
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             
             for (auto const& metaVariableName : metaVariableNames) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
@@ -187,19 +187,19 @@ namespace storm {
                 }
                 this->getContainedMetaVariableNames().erase(metaVariableName);
                 
-                DdMetaVariable<CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
+                DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
             this->cuddAdd = this->cuddAdd.MaxAbstract(cubeDd.getCuddAdd());
         }
         
-        void Dd<CUDD>::swapVariables(std::vector<std::pair<std::string, std::string>> const& metaVariablePairs) {
+        void Dd<DdType::CUDD>::swapVariables(std::vector<std::pair<std::string, std::string>> const& metaVariablePairs) {
             std::vector<ADD> from;
             std::vector<ADD> to;
             for (auto const& metaVariablePair : metaVariablePairs) {
-                DdMetaVariable<CUDD> const& variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
-                DdMetaVariable<CUDD> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
+                DdMetaVariable<DdType::CUDD> const& variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
+                DdMetaVariable<DdType::CUDD> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
 
                 // Check if it's legal so swap the meta variables.
                 if (variable1.getNumberOfDdVariables() != variable2.getNumberOfDdVariables()) {
@@ -230,7 +230,7 @@ namespace storm {
             this->cuddAdd = this->cuddAdd.SwapVariables(from, to);
         }
         
-        Dd<CUDD> Dd<CUDD>::multiplyMatrix(Dd<CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames) {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames) {
             std::vector<ADD> summationDdVariables;
             
             // Create the CUDD summation variables.
@@ -245,10 +245,10 @@ namespace storm {
             std::set<std::string> containedMetaVariableNames;
             std::set_difference(unionOfMetaVariableNames.begin(), unionOfMetaVariableNames.end(), summationMetaVariableNames.begin(), summationMetaVariableNames.end(), std::inserter(containedMetaVariableNames, containedMetaVariableNames.begin()));
             
-            return Dd<CUDD>(this->getDdManager(), this->cuddAdd.MatrixMultiply(otherMatrix.getCuddAdd(), summationDdVariables), containedMetaVariableNames);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.MatrixMultiply(otherMatrix.getCuddAdd(), summationDdVariables), containedMetaVariableNames);
         }
         
-        uint_fast64_t Dd<CUDD>::getNonZeroCount() const {
+        uint_fast64_t Dd<DdType::CUDD>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
             for (auto const& metaVariableName : this->containedMetaVariableNames) {
                 numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariableName).getNumberOfDdVariables();
@@ -256,39 +256,39 @@ namespace storm {
             return static_cast<uint_fast64_t>(this->cuddAdd.CountMinterm(static_cast<int>(numberOfDdVariables)));
         }
         
-        uint_fast64_t Dd<CUDD>::getLeafCount() const {
+        uint_fast64_t Dd<DdType::CUDD>::getLeafCount() const {
             return static_cast<uint_fast64_t>(this->cuddAdd.CountLeaves());
         }
         
-        uint_fast64_t Dd<CUDD>::getNodeCount() const {
+        uint_fast64_t Dd<DdType::CUDD>::getNodeCount() const {
             return static_cast<uint_fast64_t>(this->cuddAdd.nodeCount());
         }
         
-        double Dd<CUDD>::getMin() const {
+        double Dd<DdType::CUDD>::getMin() const {
             ADD constantMinAdd = this->cuddAdd.FindMin();
             return static_cast<double>(Cudd_V(constantMinAdd.getNode()));
         }
         
-        double Dd<CUDD>::getMax() const {
+        double Dd<DdType::CUDD>::getMax() const {
             ADD constantMaxAdd = this->cuddAdd.FindMax();
             return static_cast<double>(Cudd_V(constantMaxAdd.getNode()));
         }
         
-        void Dd<CUDD>::setValue(std::string const& metaVariableName, int_fast64_t variableValue, double targetValue) {
+        void Dd<DdType::CUDD>::setValue(std::string const& metaVariableName, int_fast64_t variableValue, double targetValue) {
             std::map<std::string, int_fast64_t> metaVariableNameToValueMap;
             metaVariableNameToValueMap.emplace(metaVariableName, variableValue);
             this->setValue(metaVariableNameToValueMap, targetValue);
         }
         
-        void Dd<CUDD>::setValue(std::string const& metaVariableName1, int_fast64_t variableValue1, std::string const& metaVariableName2, int_fast64_t variableValue2, double targetValue) {
+        void Dd<DdType::CUDD>::setValue(std::string const& metaVariableName1, int_fast64_t variableValue1, std::string const& metaVariableName2, int_fast64_t variableValue2, double targetValue) {
             std::map<std::string, int_fast64_t> metaVariableNameToValueMap;
             metaVariableNameToValueMap.emplace(metaVariableName1, variableValue1);
             metaVariableNameToValueMap.emplace(metaVariableName2, variableValue2);
             this->setValue(metaVariableNameToValueMap, targetValue);
         }
         
-        void Dd<CUDD>::setValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap, double targetValue) {
-            Dd<CUDD> valueEncoding(this->getDdManager()->getOne());
+        void Dd<DdType::CUDD>::setValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap, double targetValue) {
+            Dd<DdType::CUDD> valueEncoding(this->getDdManager()->getOne());
             for (auto const& nameValuePair : metaVariableNameToValueMap) {
                 valueEncoding *= this->getDdManager()->getEncoding(nameValuePair.first, nameValuePair.second);
                 // Also record that the DD now contains the meta variable.
@@ -298,9 +298,9 @@ namespace storm {
             this->cuddAdd = valueEncoding.getCuddAdd().Ite(this->getDdManager()->getConstant(targetValue).getCuddAdd(), this->cuddAdd);
         }
         
-        double Dd<CUDD>::getValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap) const {
+        double Dd<DdType::CUDD>::getValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap) const {
             std::set<std::string> remainingMetaVariables(this->getContainedMetaVariableNames());
-            Dd<CUDD> valueEncoding(this->getDdManager()->getOne());
+            Dd<DdType::CUDD> valueEncoding(this->getDdManager()->getOne());
             for (auto const& nameValuePair : metaVariableNameToValueMap) {
                 valueEncoding *= this->getDdManager()->getEncoding(nameValuePair.first, nameValuePair.second);
                 if (this->containsMetaVariable(nameValuePair.first)) {
@@ -312,29 +312,29 @@ namespace storm {
                 throw storm::exceptions::InvalidArgumentException() << "Cannot evaluate function for which not all inputs were given.";
             }
             
-            Dd<CUDD> value = *this * valueEncoding;
+            Dd<DdType::CUDD> value = *this * valueEncoding;
             value.sumAbstract(this->getContainedMetaVariableNames());
             return static_cast<double>(Cudd_V(value.getCuddAdd().getNode()));
         }
         
-        bool Dd<CUDD>::isOne() const {
+        bool Dd<DdType::CUDD>::isOne() const {
             return *this == this->getDdManager()->getOne();
         }
         
-        bool Dd<CUDD>::isZero() const {
+        bool Dd<DdType::CUDD>::isZero() const {
             return *this == this->getDdManager()->getZero();
         }
         
-        bool Dd<CUDD>::isConstant() const {
+        bool Dd<DdType::CUDD>::isConstant() const {
             return Cudd_IsConstant(this->cuddAdd.getNode());
         }
         
-        bool Dd<CUDD>::containsMetaVariable(std::string const& metaVariableName) const {
+        bool Dd<DdType::CUDD>::containsMetaVariable(std::string const& metaVariableName) const {
             auto const& metaVariable = containedMetaVariableNames.find(metaVariableName);
             return metaVariable != containedMetaVariableNames.end();
         }
         
-        bool Dd<CUDD>::containsMetaVariables(std::set<std::string> metaVariableNames) const {
+        bool Dd<DdType::CUDD>::containsMetaVariables(std::set<std::string> metaVariableNames) const {
             for (auto const& metaVariableName : metaVariableNames) {
                 auto const& metaVariable = containedMetaVariableNames.find(metaVariableName);
                 
@@ -345,15 +345,15 @@ namespace storm {
             return true;
         }
         
-        std::set<std::string> const& Dd<CUDD>::getContainedMetaVariableNames() const {
+        std::set<std::string> const& Dd<DdType::CUDD>::getContainedMetaVariableNames() const {
             return this->containedMetaVariableNames;
         }
         
-        std::set<std::string>& Dd<CUDD>::getContainedMetaVariableNames() {
+        std::set<std::string>& Dd<DdType::CUDD>::getContainedMetaVariableNames() {
             return this->containedMetaVariableNames;
         }
         
-        void Dd<CUDD>::exportToDot(std::string const& filename) const {
+        void Dd<DdType::CUDD>::exportToDot(std::string const& filename) const {
 			std::vector<ADD> cuddAddVector = { this->cuddAdd };
 			if (filename.empty()) {
 				this->getDdManager()->getCuddManager().DumpDot(cuddAddVector);
@@ -364,27 +364,27 @@ namespace storm {
             }
         }
         
-        ADD Dd<CUDD>::getCuddAdd() {
+        ADD Dd<DdType::CUDD>::getCuddAdd() {
             return this->cuddAdd;
         }
         
-        ADD const& Dd<CUDD>::getCuddAdd() const {
+        ADD const& Dd<DdType::CUDD>::getCuddAdd() const {
             return this->cuddAdd;
         }
         
-        void Dd<CUDD>::addContainedMetaVariable(std::string const& metaVariableName) {
+        void Dd<DdType::CUDD>::addContainedMetaVariable(std::string const& metaVariableName) {
             this->getContainedMetaVariableNames().insert(metaVariableName);
         }
 
-        void Dd<CUDD>::removeContainedMetaVariable(std::string const& metaVariableName) {
+        void Dd<DdType::CUDD>::removeContainedMetaVariable(std::string const& metaVariableName) {
             this->getContainedMetaVariableNames().erase(metaVariableName);
         }
         
-        std::shared_ptr<DdManager<CUDD>> Dd<CUDD>::getDdManager() const {
+        std::shared_ptr<DdManager<DdType::CUDD>> Dd<DdType::CUDD>::getDdManager() const {
             return this->ddManager;
         }
         
-        std::ostream & operator<<(std::ostream& out, const Dd<CUDD>& dd) {
+        std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd) {
             dd.exportToDot();
             return out;
         }
