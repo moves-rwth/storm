@@ -28,7 +28,14 @@ namespace storm {
              * @return The expression defining the initial value of the variable.
              */
             storm::expressions::Expression const& getInitialValueExpression() const;
-                        
+            
+            /*!
+             * Retrieves whether the variable has the default initial value with respect to its type.
+             *
+             * @return True iff the variable has the default initial value.
+             */
+            bool hasDefaultInitialValue() const;
+            
             // Make the constructors protected to forbid instantiation of this class.
         protected:
             Variable() = default;
@@ -38,8 +45,10 @@ namespace storm {
              *
              * @param variableName The name of the variable.
              * @param initialValueExpression The constant expression that defines the initial value of the variable.
+             * @param hasDefaultInitialValue A flag indicating whether the initial value of the variable is its default
+             * value.
              */
-            Variable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression);
+            Variable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, bool defaultInitialValue);
             
             /*!
              * Creates a copy of the given variable and performs the provided renaming.
@@ -56,6 +65,9 @@ namespace storm {
             
             // The constant expression defining the initial value of the variable.
             storm::expressions::Expression initialValueExpression;
+            
+            // A flag that stores whether the variable has its default initial expression.
+            bool defaultInitialValue;
         };
         
     } // namespace prism

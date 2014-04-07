@@ -4,11 +4,11 @@
 
 namespace storm {
     namespace prism {
-        Variable::Variable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression) : variableName(variableName), initialValueExpression(initialValueExpression) {
+        Variable::Variable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, bool defaultInitialValue) : variableName(variableName), initialValueExpression(initialValueExpression), defaultInitialValue(defaultInitialValue) {
             // Nothing to do here.
         }
         
-        Variable::Variable(Variable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming) : variableName(newName), initialValueExpression(oldVariable.getInitialValueExpression().substitute<std::map>(renaming)) {
+        Variable::Variable(Variable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming) : variableName(newName), initialValueExpression(oldVariable.getInitialValueExpression().substitute<std::map>(renaming)), defaultInitialValue(oldVariable.hasDefaultInitialValue()) {
             // Intentionally left empty.
         }
         
@@ -16,6 +16,10 @@ namespace storm {
             return variableName;
         }
         
+        bool Variable::hasDefaultInitialValue() const {
+            return this->defaultInitialValue;
+        }
+
         storm::expressions::Expression const& Variable::getInitialValueExpression() const {
             return this->initialValueExpression;
         }

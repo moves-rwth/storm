@@ -2,11 +2,11 @@
 
 namespace storm {
     namespace prism {
-        IntegerVariable::IntegerVariable(std::string const& variableName, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression) : IntegerVariable(variableName, lowerBoundExpression, upperBoundExpression, lowerBoundExpression) {
+        IntegerVariable::IntegerVariable(std::string const& variableName, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression) : Variable(variableName, lowerBoundExpression, true), lowerBoundExpression(lowerBoundExpression), upperBoundExpression(upperBoundExpression) {
             // Intentionally left empty.
         }
 
-        IntegerVariable::IntegerVariable(std::string const& variableName, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, storm::expressions::Expression const& initialValueExpression) : Variable(variableName, initialValueExpression), lowerBoundExpression(lowerBoundExpression), upperBoundExpression(upperBoundExpression) {
+        IntegerVariable::IntegerVariable(std::string const& variableName, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, storm::expressions::Expression const& initialValueExpression) : Variable(variableName, initialValueExpression, false), lowerBoundExpression(lowerBoundExpression), upperBoundExpression(upperBoundExpression) {
             // Intentionally left empty.
         }
         
@@ -23,7 +23,7 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, IntegerVariable const& variable) {
-            stream << this->getName() << ": [" << variable.getLowerBoundExpression() << ".." << variable.getUpperBoundExpression() << "]" << variable.getInitialValueExpression() << ";";
+            stream << variable.getName() << ": [" << variable.getLowerBoundExpression() << ".." << variable.getUpperBoundExpression() << "]" << variable.getInitialValueExpression() << ";";
             return stream;
         }
     } // namespace prism

@@ -2,11 +2,11 @@
 
 namespace storm {
     namespace prism {
-        BooleanVariable::BooleanVariable(std::string const& variableName) : BooleanVariable(variableName, storm::expressions::Expression::createFalse()) {
+        BooleanVariable::BooleanVariable(std::string const& variableName) : Variable(variableName, storm::expressions::Expression::createFalse(), true) {
             // Nothing to do here.
         }
 
-        BooleanVariable::BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression) : Variable(variableName, initialValueExpression) {
+        BooleanVariable::BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression) : Variable(variableName, initialValueExpression, false) {
             // Nothing to do here.
         }
         
