@@ -1,63 +1,18 @@
-/*
- * Program.cpp
- *
- *  Created on: 12.01.2013
- *      Author: Christian Dehnert
- */
-
-#include <sstream>
-#include <iostream>
-
-#include "Program.h"
+#include "src/storage/prism/Program.h"
+#include "src/exceptions/ExceptionMacros.h"
 #include "exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
 namespace storm {
-    namespace ir {
-        
-        Program::Program() : modelType(UNDEFINED), booleanUndefinedConstantExpressions(), integerUndefinedConstantExpressions(), doubleUndefinedConstantExpressions(), modules(), rewards(), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
-            // Nothing to do here.
-        }
-        
-        Program::Program(ModelType modelType,
-                         std::map<std::string, std::unique_ptr<storm::ir::expressions::BooleanConstantExpression>> const& booleanUndefinedConstantExpressions,
-                         std::map<std::string, std::unique_ptr<storm::ir::expressions::IntegerConstantExpression>> const& integerUndefinedConstantExpressions,
-                         std::map<std::string, std::unique_ptr<storm::ir::expressions::DoubleConstantExpression>> const& doubleUndefinedConstantExpressions,
-                         std::vector<BooleanVariable> const& globalBooleanVariables,
-                         std::vector<IntegerVariable> const& globalIntegerVariables,
-                         std::map<std::string, uint_fast64_t> const& globalBooleanVariableToIndexMap,
-                         std::map<std::string, uint_fast64_t> const& globalIntegerVariableToIndexMap,
-                         std::vector<storm::ir::Module> const& modules,
-                         std::map<std::string, storm::ir::RewardModel> const& rewards,
-                         std::map<std::string, std::unique_ptr<storm::ir::expressions::BaseExpression>> const& labels)
-        : modelType(modelType), globalBooleanVariables(globalBooleanVariables), globalIntegerVariables(globalIntegerVariables),
-        globalBooleanVariableToIndexMap(globalBooleanVariableToIndexMap), globalIntegerVariableToIndexMap(globalIntegerVariableToIndexMap),
-        modules(modules), rewards(rewards), actionsToModuleIndexMap(), variableToModuleIndexMap() {
-            
-            // Perform a deep-copy of the maps.
-            for (auto const& booleanUndefinedConstant : booleanUndefinedConstantExpressions) {
-                this->booleanUndefinedConstantExpressions[booleanUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::BooleanConstantExpression>(new storm::ir::expressions::BooleanConstantExpression(*booleanUndefinedConstant.second));
-            }
-            for (auto const& integerUndefinedConstant : integerUndefinedConstantExpressions) {
-                this->integerUndefinedConstantExpressions[integerUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::IntegerConstantExpression>(new storm::ir::expressions::IntegerConstantExpression(*integerUndefinedConstant.second));
-            }
-            for (auto const& doubleUndefinedConstant : doubleUndefinedConstantExpressions) {
-                this->doubleUndefinedConstantExpressions[doubleUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::DoubleConstantExpression>(new storm::ir::expressions::DoubleConstantExpression(*doubleUndefinedConstant.second));
-            }
-            for (auto const& label : labels) {
-                this->labels[label.first] = label.second->clone();
-            }
-            
+    namespace prism {
+        Program::Program(ModelType modelType, std::set<std::string> const& undefinedBooleanConstants, std::set<std::string> const& undefinedIntegerConstants, std::set<std::string> const& undefinedDoubleConstants, std::map<std::string, BooleanVariable> const& globalBooleanVariables, std::map<std::string, IntegerVariable> const& globalIntegerVariables, std::vector<storm::prism::Module> const& modules, std::map<std::string, storm::prism::RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::map<std::string, storm::expressions::Expression> const& labels) : modelType(modelType), undefinedBooleanConstants(undefinedBooleanConstants), undefinedIntegerConstants(undefinedIntegerConstants), undefinedDoubleConstants(undefinedDoubleConstants), globalBooleanVariables(globalBooleanVariables), globalIntegerVariables(globalIntegerVariables), modules(modules), rewardModels(rewardModels), hasInitialStatesExpression(hasInitialStatesExpression), initialStatesExpression(initialStatesExpression), labels(labels), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
             // Now build the mapping from action names to module indices so that the lookup can later be performed quickly.
-            for (unsigned int moduleIndex = 0; moduleIndex < this->modules.size(); moduleIndex++) {
-                Module const& module = this->modules[moduleIndex];
+            for (unsigned int moduleIndex = 0; moduleIndex < this->getNumberOfModules(); moduleIndex++) {
+                Module const& module = this->getModule(moduleIndex);
                 
                 for (auto const& action : module.getActions()) {
-                    if (this->actionsToModuleIndexMap.count(action) == 0) {
+                    auto const& actionModuleIndicesPair = this->actionsToModuleIndexMap.find(action);
+                    if (actionModuleIndicesPair == this->actionsToModuleIndexMap.end()) {
                         this->actionsToModuleIndexMap[action] = std::set<uint_fast64_t>();
                     }
                     this->actionsToModuleIndexMap[action].insert(moduleIndex);
@@ -65,235 +20,195 @@ namespace storm {
                 }
                 
                 // Put in the appropriate entries for the mapping from variable names to module index.
-                for (uint_fast64_t booleanVariableIndex = 0; booleanVariableIndex < module.getNumberOfBooleanVariables(); ++booleanVariableIndex) {
-                    this->variableToModuleIndexMap[module.getBooleanVariable(booleanVariableIndex).getName()] = moduleIndex;
+                for (auto const& booleanVariable : module.getBooleanVariables()) {
+                    this->variableToModuleIndexMap[booleanVariable.first] = moduleIndex;
                 }
-                for (uint_fast64_t integerVariableIndex = 0; integerVariableIndex < module.getNumberOfIntegerVariables(); ++integerVariableIndex) {
-                    this->variableToModuleIndexMap[module.getIntegerVariable(integerVariableIndex).getName()] = moduleIndex;
-                }
-            }
-        }
-        
-        Program::Program(Program const& otherProgram) : modelType(otherProgram.modelType), globalBooleanVariables(otherProgram.globalBooleanVariables),
-        globalIntegerVariables(otherProgram.globalIntegerVariables), globalBooleanVariableToIndexMap(otherProgram.globalBooleanVariableToIndexMap),
-        globalIntegerVariableToIndexMap(otherProgram.globalIntegerVariableToIndexMap), modules(otherProgram.modules), rewards(otherProgram.rewards),
-        actions(otherProgram.actions), actionsToModuleIndexMap(), variableToModuleIndexMap() {
-            // Perform deep-copy of the maps.
-            for (auto const& booleanUndefinedConstant : otherProgram.booleanUndefinedConstantExpressions) {
-                this->booleanUndefinedConstantExpressions[booleanUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::BooleanConstantExpression>(new storm::ir::expressions::BooleanConstantExpression(*booleanUndefinedConstant.second));
-            }
-            for (auto const& integerUndefinedConstant : otherProgram.integerUndefinedConstantExpressions) {
-                this->integerUndefinedConstantExpressions[integerUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::IntegerConstantExpression>(new storm::ir::expressions::IntegerConstantExpression(*integerUndefinedConstant.second));
-            }
-            for (auto const& doubleUndefinedConstant : otherProgram.doubleUndefinedConstantExpressions) {
-                this->doubleUndefinedConstantExpressions[doubleUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::DoubleConstantExpression>(new storm::ir::expressions::DoubleConstantExpression(*doubleUndefinedConstant.second));
-            }
-            for (auto const& label : otherProgram.labels) {
-                this->labels[label.first] = label.second->clone();
-            }
-        }
-        
-        Program& Program::operator=(Program const& otherProgram) {
-            if (this != &otherProgram) {
-                this->modelType = otherProgram.modelType;
-                this->globalBooleanVariables = otherProgram.globalBooleanVariables;
-                this->globalIntegerVariables = otherProgram.globalIntegerVariables;
-                this->globalBooleanVariableToIndexMap = otherProgram.globalBooleanVariableToIndexMap;
-                this->globalIntegerVariableToIndexMap = otherProgram.globalIntegerVariableToIndexMap;
-                this->modules = otherProgram.modules;
-                this->rewards = otherProgram.rewards;
-                this->actions = otherProgram.actions;
-                this->actionsToModuleIndexMap = otherProgram.actionsToModuleIndexMap;
-                this->variableToModuleIndexMap = otherProgram.variableToModuleIndexMap;
-                
-                // Perform deep-copy of the maps.
-                for (auto const& booleanUndefinedConstant : otherProgram.booleanUndefinedConstantExpressions) {
-                    this->booleanUndefinedConstantExpressions[booleanUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::BooleanConstantExpression>(new storm::ir::expressions::BooleanConstantExpression(*booleanUndefinedConstant.second));
-                }
-                for (auto const& integerUndefinedConstant : otherProgram.integerUndefinedConstantExpressions) {
-                    this->integerUndefinedConstantExpressions[integerUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::IntegerConstantExpression>(new storm::ir::expressions::IntegerConstantExpression(*integerUndefinedConstant.second));
-                }
-                for (auto const& doubleUndefinedConstant : otherProgram.doubleUndefinedConstantExpressions) {
-                    this->doubleUndefinedConstantExpressions[doubleUndefinedConstant.first] = std::unique_ptr<storm::ir::expressions::DoubleConstantExpression>(new storm::ir::expressions::DoubleConstantExpression(*doubleUndefinedConstant.second));
-                }
-                for (auto const& label : otherProgram.labels) {
-                    this->labels[label.first] = label.second->clone();
+                for (auto const& integerVariable : module.getBooleanVariables()) {
+                    this->variableToModuleIndexMap[integerVariable.first] = moduleIndex;
                 }
             }
-            
-            return *this;
         }
         
         Program::ModelType Program::getModelType() const {
             return modelType;
         }
         
-        std::string Program::toString() const {
-            std::stringstream result;
-            switch (modelType) {
-                case UNDEFINED: result << "undefined"; break;
-                case DTMC: result << "dtmc"; break;
-                case CTMC: result << "ctmc"; break;
-                case MDP: result << "mdp"; break;
-                case CTMDP: result << "ctmdp"; break;
-            }
-            result << std::endl;
-            
-            for (auto const& element : booleanUndefinedConstantExpressions) {
-                result << "const bool " << element.second->toString() << ";" << std::endl;
-            }
-            for (auto const& element : integerUndefinedConstantExpressions) {
-                result << "const int " << element.second->toString() << ";" << std::endl;
-            }
-            for (auto const& element : doubleUndefinedConstantExpressions) {
-                result << "const double " << element.second->toString() << ";" << std::endl;
-            }
-            result << std::endl;
-            
-            for (auto const& element : globalBooleanVariables) {
-                result << "global " << element.toString() << std::endl;
-            }
-            for (auto const& element : globalIntegerVariables) {
-                result << "global " << element.toString() << std::endl;
-            }
-            result << std::endl;
-            
-            for (auto const& module : modules) {
-                result << module.toString() << std::endl;
-            }
-            
-            for (auto const& rewardModel : rewards) {
-                result << rewardModel.second.toString() << std::endl;
-            }
-            
-            for (auto const& label : labels) {
-                result << "label \"" << label.first << "\" = " << label.second->toString() <<";" << std::endl;
-            }
-            
-            return result.str();
+        bool Program::hasUndefinedConstants() const {
+            return this->hasUndefinedBooleanConstants() || this->hasUndefinedIntegerConstants() || this->hasUndefinedDoubleConstants();
         }
         
-        storm::ir::BooleanVariable const& Program::getGlobalBooleanVariable(uint_fast64_t index) const {
-            return this->globalBooleanVariables[index];
+        bool Program::hasUndefinedBooleanConstants() const {
+            return !this->undefinedBooleanConstants.empty();
         }
         
-        storm::ir::IntegerVariable const& Program::getGlobalIntegerVariable(uint_fast64_t index) const {
-            return this->globalIntegerVariables[index];
+        bool Program::hasUndefinedIntegerConstants() const {
+            return !this->undefinedIntegerConstants.empty();
         }
         
-        uint_fast64_t Program::getNumberOfModules() const {
-            return this->modules.size();
+        bool Program::hasUndefinedDoubleConstants() const {
+            return !this->undefinedDoubleConstants.empty();
         }
         
-        storm::ir::Module const& Program::getModule(uint_fast64_t index) const {
+        std::set<std::string> const& Program::getUndefinedBooleanConstants() const {
+            return this->undefinedBooleanConstants;
+        }
+
+        std::set<std::string> const& Program::getUndefinedIntegerConstants() const {
+            return this->undefinedIntegerConstants;
+        }
+        
+        std::set<std::string> const& Program::getUndefinedDoubleConstants() const {
+            return this->undefinedDoubleConstants;
+        }
+        
+        std::map<std::string, storm::prism::BooleanVariable> const& Program::getGlobalBooleanVariables() const {
+            return this->globalBooleanVariables;
+        }
+
+        storm::prism::BooleanVariable const& Program::getGlobalBooleanVariable(std::string const& variableName) const {
+            auto const& nameVariablePair = this->getGlobalBooleanVariables().find(variableName);
+            LOG_THROW(nameVariablePair != this->getGlobalBooleanVariables().end(), storm::exceptions::OutOfRangeException, "Unknown boolean variable '" << variableName << "'.");
+            return nameVariablePair->second;
+        }
+        
+        std::map<std::string, storm::prism::IntegerVariable> const& Program::getGlobalIntegerVariables() const {
+            return this->globalIntegerVariables;
+        }
+
+        storm::prism::IntegerVariable const& Program::getGlobalIntegerVariable(std::string const& variableName) const {
+            auto const& nameVariablePair = this->getGlobalIntegerVariables().find(variableName);
+            LOG_THROW(nameVariablePair != this->getGlobalIntegerVariables().end(), storm::exceptions::OutOfRangeException, "Unknown integer variable '" << variableName << "'.");
+            return nameVariablePair->second;
+        }
+        
+        std::size_t Program::getNumberOfGlobalBooleanVariables() const {
+            return this->getGlobalBooleanVariables().size();
+        }
+        
+        std::size_t Program::getNumberOfGlobalIntegerVariables() const {
+            return this->getGlobalIntegerVariables().size();
+        }
+        
+        std::size_t Program::getNumberOfModules() const {
+            return this->getModules().size();
+        }
+        
+        storm::prism::Module const& Program::getModule(uint_fast64_t index) const {
             return this->modules[index];
+        }
+        
+        std::vector<storm::prism::Module> const& Program::getModules() const {
+            return this->modules;
+        }
+        
+        bool Program::definesInitialStatesExpression() const {
+            return this->hasInitialStatesExpression;
+        }
+        
+        storm::expressions::Expression Program::getInitialStatesExpression() const {
+            // If the program specifies the initial states explicitly, we simply return the expression.
+            if (this->definesInitialStatesExpression()) {
+                return this->initialStatesExpression;
+            } else {
+                // Otherwise, we need to assert that all variables are equal to their initial value.
+                storm::expressions::Expression result = storm::expressions::Expression::createTrue();
+                
+                for (auto const& module : this->getModules()) {
+                    for (auto const& booleanVariable : module.getBooleanVariables()) {
+                        result = result && (storm::expressions::Expression::createBooleanVariable(booleanVariable.second.getName()).iff(booleanVariable.second.getInitialValueExpression()));
+                    }
+                    for (auto const& integerVariable : module.getIntegerVariables()) {
+                        result = result && (storm::expressions::Expression::createIntegerVariable(integerVariable.second.getName()) == integerVariable.second.getInitialValueExpression());
+                    }
+                }
+                return result;
+            }
         }
         
         std::set<std::string> const& Program::getActions() const {
             return this->actions;
         }
         
-        std::set<uint_fast64_t> const& Program::getModulesByAction(std::string const& action) const {
-            auto actionModuleSetPair = this->actionsToModuleIndexMap.find(action);
-            if (actionModuleSetPair == this->actionsToModuleIndexMap.end()) {
-                LOG4CPLUS_ERROR(logger, "Action name '" << action << "' does not exist.");
-                throw storm::exceptions::OutOfRangeException() << "Action name '" << action << "' does not exist.";
-            }
+        std::set<uint_fast64_t> const& Program::getModuleIndicesByAction(std::string const& action) const {
+            auto const& actionModuleSetPair = this->actionsToModuleIndexMap.find(action);
+            LOG_THROW(actionModuleSetPair != this->actionsToModuleIndexMap.end(), storm::exceptions::OutOfRangeException, "Action name '" << action << "' does not exist.");
             return actionModuleSetPair->second;
         }
         
-        uint_fast64_t Program::getModuleIndexForVariable(std::string const& variableName) const {
-            auto variableNameToModuleIndexPair = this->variableToModuleIndexMap.find(variableName);
-            if (variableNameToModuleIndexPair != this->variableToModuleIndexMap.end()) {
-                return variableNameToModuleIndexPair->second;
-            }
-            throw storm::exceptions::OutOfRangeException() << "Variable '" << variableName << "' does not exist.";
+        uint_fast64_t Program::getModuleIndexByVariable(std::string const& variableName) const {
+            auto const& variableNameToModuleIndexPair = this->variableToModuleIndexMap.find(variableName);
+            LOG_THROW(variableNameToModuleIndexPair != this->variableToModuleIndexMap.end(), storm::exceptions::OutOfRangeException, "Variable '" << variableName << "' does not exist.");
+            return variableNameToModuleIndexPair->second;
         }
         
-        uint_fast64_t Program::getNumberOfGlobalBooleanVariables() const {
-            return this->globalBooleanVariables.size();
+        std::map<std::string, storm::prism::RewardModel> const& Program::getRewardModels() const {
+            return this->rewardModels;
         }
         
-        uint_fast64_t Program::getNumberOfGlobalIntegerVariables() const {
-            return this->globalIntegerVariables.size();
-        }
-        
-        storm::ir::RewardModel const& Program::getRewardModel(std::string const& name) const {
-            auto nameRewardModelPair = this->rewards.find(name);
-            if (nameRewardModelPair == this->rewards.end()) {
-                LOG4CPLUS_ERROR(logger, "Reward model '" << name << "' does not exist.");
-                throw storm::exceptions::OutOfRangeException() << "Reward model '" << name << "' does not exist.";
-            }
+        storm::prism::RewardModel const& Program::getRewardModel(std::string const& name) const {
+            auto const& nameRewardModelPair = this->getRewardModels().find(name);
+            LOG_THROW(nameRewardModelPair != this->getRewardModels().end(), storm::exceptions::OutOfRangeException, "Reward model '" << name << "' does not exist.");
             return nameRewardModelPair->second;
         }
         
-        std::map<std::string, std::unique_ptr<storm::ir::expressions::BaseExpression>> const& Program::getLabels() const {
+        std::map<std::string, storm::expressions::Expression> const& Program::getLabels() const {
             return this->labels;
         }
         
-        bool Program::hasUndefinedBooleanConstant(std::string const& constantName) const {
-            return this->booleanUndefinedConstantExpressions.find(constantName) != this->booleanUndefinedConstantExpressions.end();
-        }
-        
-        std::unique_ptr<storm::ir::expressions::BooleanConstantExpression> const& Program::getUndefinedBooleanConstantExpression(std::string const& constantName) const {
-            auto constantExpressionPair = this->booleanUndefinedConstantExpressions.find(constantName);
-            if (constantExpressionPair != this->booleanUndefinedConstantExpressions.end()) {
-                return constantExpressionPair->second;
-            } else {
-                throw storm::exceptions::InvalidArgumentException() << "Unknown undefined boolean constant " << constantName << ".";
+        Program Program::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
+            std::vector<storm::prism::Module> newModules;
+            newModules.reserve(this->getNumberOfModules());
+            
+            for (auto const& module : this->getModules()) {
+                newModules.push_back(module.restrictCommands(indexSet));
             }
+            
+            return Program(this->getModelType(), this->getUndefinedBooleanConstants(), this->getUndefinedIntegerConstants(), this->getUndefinedDoubleConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), newModules, this->getRewardModels(), this->definesInitialStatesExpression(), this->getInitialStatesExpression(), this->getLabels());
         }
         
-        bool Program::hasUndefinedIntegerConstant(std::string const& constantName) const {
-            return this->integerUndefinedConstantExpressions.find(constantName) != this->integerUndefinedConstantExpressions.end();
-        }
-        
-        std::unique_ptr<storm::ir::expressions::IntegerConstantExpression> const& Program::getUndefinedIntegerConstantExpression(std::string const& constantName) const {
-            auto constantExpressionPair = this->integerUndefinedConstantExpressions.find(constantName);
-            if (constantExpressionPair != this->integerUndefinedConstantExpressions.end()) {
-                return constantExpressionPair->second;
-            } else {
-                throw storm::exceptions::InvalidArgumentException() << "Unknown undefined integer constant " << constantName << ".";
+        std::ostream& operator<<(std::ostream& stream, Program const& program) {
+            switch (program.getModelType()) {
+                case Program::ModelType::UNDEFINED: stream << "undefined"; break;
+                case Program::ModelType::DTMC: stream << "dtmc"; break;
+                case Program::ModelType::CTMC: stream << "ctmc"; break;
+                case Program::ModelType::MDP: stream << "mdp"; break;
+                case Program::ModelType::CTMDP: stream << "ctmdp"; break;
+                case Program::ModelType::MA: stream << "ma"; break;
             }
-        }
-        
-        bool Program::hasUndefinedDoubleConstant(std::string const& constantName) const {
-            return this->doubleUndefinedConstantExpressions.find(constantName) != this->doubleUndefinedConstantExpressions.end();
-        }
-        
-        std::unique_ptr<storm::ir::expressions::DoubleConstantExpression> const& Program::getUndefinedDoubleConstantExpression(std::string const& constantName) const {
-            auto constantExpressionPair = this->doubleUndefinedConstantExpressions.find(constantName);
-            if (constantExpressionPair != this->doubleUndefinedConstantExpressions.end()) {
-                return constantExpressionPair->second;
-            } else {
-                throw storm::exceptions::InvalidArgumentException() << "Unknown undefined double constant " << constantName << ".";
+            stream << std::endl;
+            
+            for (auto const& element : program.getUndefinedBooleanConstants()) {
+                stream << "const bool " << element << ";" << std::endl;
             }
-        }
-        
-        std::map<std::string, std::unique_ptr<storm::ir::expressions::BooleanConstantExpression>> const& Program::getBooleanUndefinedConstantExpressionsMap() const {
-            return this->booleanUndefinedConstantExpressions;
-        }
-        
-        std::map<std::string, std::unique_ptr<storm::ir::expressions::IntegerConstantExpression>> const& Program::getIntegerUndefinedConstantExpressionsMap() const {
-            return this->integerUndefinedConstantExpressions;
-        }
-        
-        std::map<std::string, std::unique_ptr<storm::ir::expressions::DoubleConstantExpression>> const& Program::getDoubleUndefinedConstantExpressionsMap() const {
-            return this->doubleUndefinedConstantExpressions;
-        }
-        
-        uint_fast64_t Program::getGlobalIndexOfBooleanVariable(std::string const& variableName) const {
-            return this->globalBooleanVariableToIndexMap.at(variableName);
-        }
-        
-        uint_fast64_t Program::getGlobalIndexOfIntegerVariable(std::string const& variableName) const {
-            return this->globalIntegerVariableToIndexMap.at(variableName);
-        }
-        
-        void Program::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
-            for (auto& module : modules) {
-                module.restrictCommands(indexSet);
+            for (auto const& element : program.getUndefinedIntegerConstants()) {
+                stream << "const int " << element << ";" << std::endl;
             }
+            for (auto const& element : program.getUndefinedDoubleConstants()) {
+                stream << "const double " << element << ";" << std::endl;
+            }
+            stream << std::endl;
+            
+            for (auto const& element : program.getGlobalBooleanVariables()) {
+                stream << "global " << element.second << std::endl;
+            }
+            for (auto const& element : program.getGlobalIntegerVariables()) {
+                stream << "global " << element.second << std::endl;
+            }
+            stream << std::endl;
+            
+            for (auto const& module : program.getModules()) {
+                stream << module << std::endl;
+            }
+            
+            for (auto const& rewardModel : program.getRewardModels()) {
+                stream << rewardModel.second << std::endl;
+            }
+            
+            for (auto const& label : program.getLabels()) {
+                stream << "label \"" << label.first << "\" = " << label.second <<";" << std::endl;
+            }
+            
+            return stream;
         }
         
     } // namespace ir

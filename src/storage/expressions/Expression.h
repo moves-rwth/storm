@@ -53,6 +53,9 @@ namespace storm {
             Expression operator<(Expression const& other) const;
             Expression operator<=(Expression const& other) const;
             
+            Expression implies(Expression const& other) const;
+            Expression iff(Expression const& other) const;
+            
             Expression floor() const;
             Expression ceil() const;
 

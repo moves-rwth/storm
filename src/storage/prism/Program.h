@@ -17,7 +17,7 @@ namespace storm {
             /*!
              * An enum for the different model types.
              */
-            enum ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA};
+            enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA};
             
             /*!
              * Creates a program with the given model type, undefined constants, global variables, modules, reward
@@ -32,9 +32,9 @@ namespace storm {
              * @param modules The modules of the program.
              * @param hasInitialStatesExpression A flag indicating whether the program specifies its initial states via
              * an explicit initial construct.
-             * @param initialStatesExpression If the model specifies an explicit initial construct, this expression
-             * defines its initial states. Otherwise it is irrelevant and may be set to an arbitrary (but valid)
-             * expression, e.g. false.
+             * @param initialStatesExpression If the model specifies an explicit initial construct, this
+             * expression defines its initial states. Otherwise it is irrelevant and may be set to an arbitrary (but
+             * valid) expression, e.g. false.
              * @param rewardModels The reward models of the program.
              * @param labels The labels defined for this program.
              */
@@ -116,7 +116,7 @@ namespace storm {
              * @param variableName The name of the global boolean variable to retrieve.
              * @return The global boolean variable with the given name.
              */
-            storm::ir::BooleanVariable const& getGlobalBooleanVariable(std::string const& variableName) const;
+            storm::prism::BooleanVariable const& getGlobalBooleanVariable(std::string const& variableName) const;
             
             /*!
              * Retrieves the global integer variables of the program.
@@ -131,7 +131,7 @@ namespace storm {
              * @param variableName The name of the global integer variable to retrieve.
              * @return The global integer variable with the given name.
              */
-            storm::ir::IntegerVariable const& getGlobalIntegerVariable(std::string const& variableName) const;
+            storm::prism::IntegerVariable const& getGlobalIntegerVariable(std::string const& variableName) const;
 
             /*!
              * Retrieves the number of global boolean variables of the program.
@@ -161,6 +161,27 @@ namespace storm {
              * @return The module with the given index.
              */
             storm::prism::Module const& getModule(uint_fast64_t index) const;
+            
+            /*!
+             * Retrieves all modules of the program.
+             *
+             * @return All modules of the program.
+             */
+            std::vector<storm::prism::Module> const& getModules() const;
+            
+            /*!
+             * Retrieves whether the program explicitly specifies an expression characterizing the initial states.
+             *
+             * @return True iff the program specifies an expression defining the initial states.
+             */
+            bool definesInitialStatesExpression() const;
+            
+            /*!
+             * Retrieves an expression characterizing the initial states of the program.
+             *
+             * @return An expression characterizing the initial states.
+             */
+            storm::expressions::Expression getInitialStatesExpression() const;
             
             /*!
              * Retrieves the set of actions present in the program.
@@ -206,7 +227,7 @@ namespace storm {
              *
              * @return A set of labels that are defined in the program.
              */
-            std::map<std::string, Expression> const& getLabels() const;
+            std::map<std::string, storm::expressions::Expression> const& getLabels() const;
             
             /*!
              * Creates a new program that drops all commands whose indices are not in the given set.

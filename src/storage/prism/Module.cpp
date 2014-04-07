@@ -122,7 +122,7 @@ namespace storm {
             }
         }
         
-        Module Module::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
+        Module Module::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const {
             // First construct the new vector of commands.
             std::vector<storm::prism::Command> newCommands;
             for (auto const& command : commands) {

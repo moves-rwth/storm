@@ -147,7 +147,7 @@ namespace storm {
              * @param indexSet The set of indices for which to keep the commands.
              * @return The module resulting from erasing all commands whose indices are not in the given set.
              */
-            Module restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet);
+            Module restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Module const& module);
 
@@ -167,7 +167,7 @@ namespace storm {
             std::map<std::string, storm::prism::IntegerVariable> integerVariables;
             
             // The commands associated with the module.
-            std::vector<storm::ir::Command> commands;
+            std::vector<storm::prism::Command> commands;
             
             // The set of actions present in this module.
             std::set<std::string> actions;

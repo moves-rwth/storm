@@ -81,7 +81,7 @@ namespace storm {
             }
             i = 0;
             for (auto const& assignment : update.getIntegerAssignments()) {
-                result << assignment.second;
+                stream << assignment.second;
                 if (i < update.getIntegerAssignments().size() - 1) {
                     stream << " & ";
                 }
