@@ -244,6 +244,18 @@ TEST(Expression, OperatorTest) {
     ASSERT_NO_THROW(tempExpression = storm::expressions::Expression::maximum(intVarExpression, doubleConstExpression));
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Double);
     
+    ASSERT_THROW(tempExpression = trueExpression.implies(piExpression), storm::exceptions::InvalidTypeException);
+    ASSERT_NO_THROW(tempExpression = trueExpression.implies(falseExpression));
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
+    ASSERT_NO_THROW(tempExpression = boolVarExpression.implies(boolConstExpression));
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
+    
+    ASSERT_THROW(tempExpression = trueExpression.iff(piExpression), storm::exceptions::InvalidTypeException);
+    ASSERT_NO_THROW(tempExpression = trueExpression.iff(falseExpression));
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
+    ASSERT_NO_THROW(tempExpression = boolVarExpression.iff(boolConstExpression));
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
+    
     ASSERT_THROW(tempExpression = trueExpression.floor(), storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = threeExpression.floor());
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);
