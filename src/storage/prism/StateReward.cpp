@@ -1,38 +1,22 @@
-/*
- * StateReward.cpp
- *
- *  Created on: 12.01.2013
- *      Author: Christian Dehnert
- */
-
-#include <sstream>
-
-#include "StateReward.h"
+#include "src/storage/prism/StateReward.h"
 
 namespace storm {
-    namespace ir {
-        
-        StateReward::StateReward() : statePredicate(), rewardValue() {
+    namespace prism {
+        StateReward::StateReward(storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression) : statePredicateExpression(statePredicateExpression), rewardValueExpression(rewardValueExpression) {
             // Nothing to do here.
         }
         
-        StateReward::StateReward(storm::expressions::Expression const& statePredicate, storm::expressions::Expression const& rewardValue) : statePredicate(statePredicate), rewardValue(rewardValue) {
-            // Nothing to do here.
+        storm::expressions::Expression const& StateReward::getStatePredicateExpression() const {
+            return this->statePredicateExpression;
         }
         
-        std::string StateReward::toString() const {
-            std::stringstream result;
-            result << "\t" << statePredicate << ": " << rewardValue << ";";
-            return result.str();
+        storm::expressions::Expression const& StateReward::getRewardValueExpression() const {
+            return this->rewardValueExpression;
         }
         
-        storm::expressions::Expression const& StateReward::getStatePredicate() const {
-            return this->statePredicate;
+        std::ostream& operator<<(std::ostream& stream, StateReward const& stateReward) {
+            stream << "\t" << stateReward.getStatePredicateExpression() << ": " << stateReward.getRewardValueExpression() << ";";
+            return stream;
         }
-        
-        storm::expressions::Expression const& StateReward::getRewardValue() const {
-            return this->rewardValue;
-        }
-        
-    } // namespace ir
+    } // namespace prism
 } // namespace storm

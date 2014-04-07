@@ -1,155 +1,82 @@
-/*
- * Module.cpp
- *
- *  Created on: 12.01.2013
- *      Author: Christian Dehnert
- */
-
-#include <sstream>
-#include <iostream>
-#include "utility/OsDetection.h"
-
-#include "Module.h"
-#include "src/parser/prismparser/VariableState.h"
+#include "src/storage/prism/Module.h"
+#include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
 namespace storm {
-    namespace ir {
-        
-        Module::Module() : moduleName(), booleanVariables(), integerVariables(), booleanVariableToLocalIndexMap(),
-        integerVariableToLocalIndexMap(), commands(), actions(), actionsToCommandIndexMap() {
-            // Nothing to do here.
-        }
-        
-        Module::Module(std::string const& moduleName,
-                       std::vector<storm::ir::BooleanVariable> const& booleanVariables,
-                       std::vector<storm::ir::IntegerVariable> const& integerVariables,
-                       std::map<std::string, uint_fast64_t> const& booleanVariableToLocalIndexMap,
-                       std::map<std::string, uint_fast64_t> const& integerVariableToLocalIndexMap,
-                       std::vector<storm::ir::Command> const& commands)
-        : moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables),
-        booleanVariableToLocalIndexMap(booleanVariableToLocalIndexMap),
-        integerVariableToLocalIndexMap(integerVariableToLocalIndexMap), commands(commands), actions(), actionsToCommandIndexMap() {
+    namespace prism {
+        Module::Module(std::string const& moduleName, std::map<std::string, storm::prism::BooleanVariable> const& booleanVariables, std::map<std::string, storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands) : moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables), commands(commands), actions(), actionsToCommandIndexMap() {
             // Initialize the internal mappings for fast information retrieval.
             this->collectActions();
         }
         
-        Module::Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState)
-        : moduleName(newModuleName), booleanVariableToLocalIndexMap(oldModule.booleanVariableToLocalIndexMap), integerVariableToLocalIndexMap(oldModule.integerVariableToLocalIndexMap) {
-            LOG4CPLUS_TRACE(logger, "Start renaming " << oldModule.getName() << " to " << moduleName << ".");
-            
-            // Iterate over boolean variables and rename them. If a variable was not renamed, this is an error and an exception
-            // is thrown.
-            this->booleanVariables.reserve(oldModule.getNumberOfBooleanVariables());
-            for (BooleanVariable const& booleanVariable : oldModule.booleanVariables) {
-                auto renamingPair = renaming.find(booleanVariable.getName());
-                if (renamingPair == renaming.end()) {
-                    LOG4CPLUS_ERROR(logger, "Boolean variable " << moduleName << "." << booleanVariable.getName() << " was not renamed.");
-                    throw storm::exceptions::InvalidArgumentException() << "Boolean variable " << moduleName << "." << booleanVariable.getName() << " was not renamed.";
-                } else {
-                    uint_fast64_t globalIndex = variableState.addBooleanVariable(renamingPair->second);
-                    this->booleanVariables.emplace_back(booleanVariable, renamingPair->second, globalIndex, renaming, variableState);
-                }
+        Module::Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming) : moduleName(newModuleName), booleanVariables(), integerVariables(), commands(), actions(), actionsToCommandIndexMap() {
+            // Iterate over boolean variables and rename them. If a variable was not renamed, this is an error and an exception is thrown.
+            for (auto const& nameVariablePair : oldModule.getBooleanVariables()) {
+                auto renamingPair = renaming.find(nameVariablePair.first);
+                LOG_THROW(renamingPair == renaming.end(), storm::exceptions::InvalidArgumentException, "Boolean variable " << moduleName << "." << nameVariablePair.first << " was not renamed.");
+                this->booleanVariables.emplace(nameVariablePair.first, BooleanVariable(nameVariablePair.second, renamingPair->second, renaming));
             }
+            
             // Now do the same for the integer variables.
-            this->integerVariables.reserve(oldModule.getNumberOfIntegerVariables());
-            for (IntegerVariable const& integerVariable : oldModule.integerVariables) {
-                auto renamingPair = renaming.find(integerVariable.getName());
-                if (renamingPair == renaming.end()) {
-                    LOG4CPLUS_ERROR(logger, "Integer variable " << moduleName << "." << integerVariable.getName() << " was not renamed.");
-                    throw storm::exceptions::InvalidArgumentException() << "Integer variable " << moduleName << "." << integerVariable.getName() << " was not renamed.";
-                } else {
-                    uint_fast64_t globalIndex = variableState.addIntegerVariable(renamingPair->second);
-                    this->integerVariables.emplace_back(integerVariable, renamingPair->second, globalIndex, renaming, variableState);
-                }
+            for (auto const& nameVariablePair : oldModule.getIntegerVariables()) {
+                auto renamingPair = renaming.find(nameVariablePair.first);
+                LOG_THROW(renamingPair == renaming.end(), storm::exceptions::InvalidArgumentException, "Integer variable " << moduleName << "." << nameVariablePair.first << " was not renamed.");
+                this->integerVariables.emplace(nameVariablePair.first, IntegerVariable(nameVariablePair.second, renamingPair->second, renaming));
             }
             
             // Now we are ready to clone all commands and rename them if requested.
             this->commands.reserve(oldModule.getNumberOfCommands());
-            for (Command const& command : oldModule.commands) {
-                this->commands.emplace_back(command, variableState.getNextGlobalCommandIndex(), renaming, variableState);
-                variableState.nextGlobalCommandIndex++;
+            for (Command const& command : oldModule.getCommands()) {
+                this->commands.emplace_back(command, command.getGlobalIndex(), renaming);
             }
-            this->collectActions();
             
-            LOG4CPLUS_TRACE(logger, "Finished renaming...");
+            // Finally, update internal mapping.
+            this->collectActions();
         }
         
-        uint_fast64_t Module::getNumberOfBooleanVariables() const {
+        std::size_t Module::getNumberOfBooleanVariables() const {
             return this->booleanVariables.size();
         }
         
-        storm::ir::BooleanVariable const& Module::getBooleanVariable(uint_fast64_t index) const {
-            return this->booleanVariables[index];
-        }
-        
-        storm::ir::BooleanVariable const& Module::getBooleanVariable(std::string const& variableName) const {
-            uint_fast64_t index = this->getBooleanVariableIndex(variableName);
-            return this->booleanVariables[index];
-        }
-        
-        uint_fast64_t Module::getNumberOfIntegerVariables() const {
+        std::size_t Module::getNumberOfIntegerVariables() const {
             return this->integerVariables.size();
         }
         
-        storm::ir::IntegerVariable const& Module::getIntegerVariable(uint_fast64_t index) const {
-            return this->integerVariables[index];
+        storm::prism::BooleanVariable const& Module::getBooleanVariable(std::string const& variableName) const {
+            auto const& nameVariablePair = this->getBooleanVariables().find(variableName);
+            LOG_THROW(nameVariablePair == this->getBooleanVariables().end(), storm::exceptions::InvalidArgumentException, "Unknown boolean variable '" << variableName << "'.");
+            return nameVariablePair->second;
         }
         
-        storm::ir::IntegerVariable const& Module::getIntegerVariable(std::string const& variableName) const {
-            uint_fast64_t index = this->getIntegerVariableIndex(variableName);
-            return this->integerVariables[index];
+        std::map<std::string, storm::prism::BooleanVariable> const& Module::getBooleanVariables() const {
+            return this->booleanVariables;
+        }
+
+        storm::prism::IntegerVariable const& Module::getIntegerVariable(std::string const& variableName) const {
+            auto const& nameVariablePair = this->getIntegerVariables().find(variableName);
+            LOG_THROW(nameVariablePair == this->getIntegerVariables().end(), storm::exceptions::InvalidArgumentException, "Unknown integer variable '" << variableName << "'.");
+            return nameVariablePair->second;
         }
         
-        uint_fast64_t Module::getNumberOfCommands() const {
+        std::map<std::string, storm::prism::IntegerVariable> const& Module::getIntegerVariables() const {
+            return this->integerVariables;
+        }
+        
+        std::size_t Module::getNumberOfCommands() const {
             return this->commands.size();
         }
         
-        uint_fast64_t Module::getBooleanVariableIndex(std::string const& variableName) const {
-            auto it = booleanVariableToLocalIndexMap.find(variableName);
-            if (it != booleanVariableToLocalIndexMap.end()) {
-                return it->second;
-            }
-            LOG4CPLUS_ERROR(logger, "Cannot retrieve index of unknown boolean variable " << variableName << ".");
-            throw storm::exceptions::InvalidArgumentException() << "Cannot retrieve index of unknown boolean variable " << variableName << ".";
-        }
-        
-        uint_fast64_t Module::getIntegerVariableIndex(std::string const& variableName) const {
-            auto it = integerVariableToLocalIndexMap.find(variableName);
-            if (it != integerVariableToLocalIndexMap.end()) {
-                return it->second;
-            }
-            LOG4CPLUS_ERROR(logger, "Cannot retrieve index of unknown integer variable " << variableName << ".");
-            throw storm::exceptions::InvalidArgumentException() << "Cannot retrieve index of unknown integer variable " << variableName << ".";
-        }
-        
-        storm::ir::Command const& Module::getCommand(uint_fast64_t index) const {
+        storm::prism::Command const& Module::getCommand(uint_fast64_t index) const {
             return this->commands[index];
+        }
+        
+        std::vector<storm::prism::Command> const& Module::getCommands() const {
+            return this->commands;
         }
         
         std::string const& Module::getName() const {
             return this->moduleName;
-        }
-        
-        std::string Module::toString() const {
-            std::stringstream result;
-            result << "module " << moduleName << std::endl;
-            for (auto variable : booleanVariables) {
-                result << "\t" << variable.toString() << std::endl;
-            }
-            for (auto variable : integerVariables) {
-                result << "\t" << variable.toString() << std::endl;
-            }
-            for (auto command : commands) {
-                result << "\t" << command.toString() << std::endl;
-            }
-            result << "endmodule" << std::endl;
-            return result.str();
         }
         
         std::set<std::string> const& Module::getActions() const {
@@ -158,20 +85,16 @@ namespace storm {
         
         bool Module::hasAction(std::string const& action) const {
             auto const& actionEntry = this->actions.find(action);
-            if (actionEntry != this->actions.end()) {
-                return true;
-            }
-            return false;
+            return actionEntry != this->actions.end();
         }
         
-        std::set<uint_fast64_t> const& Module::getCommandsByAction(std::string const& action) const {
+        std::set<uint_fast64_t> const& Module::getCommandIndicesByAction(std::string const& action) const {
             auto actionsCommandSetPair = this->actionsToCommandIndexMap.find(action);
             if (actionsCommandSetPair != this->actionsToCommandIndexMap.end()) {
                 return actionsCommandSetPair->second;
             }
             
-            LOG4CPLUS_ERROR(logger, "Action name '" << action << "' does not exist in module.");
-            throw storm::exceptions::OutOfRangeException() << "Action name '" << action << "' does not exist in module.";
+            LOG_THROW(false, storm::exceptions::OutOfRangeException, "Action name '" << action << "' does not exist in module.");
         }
         
         void Module::collectActions() {
@@ -199,19 +122,33 @@ namespace storm {
             }
         }
         
-        void Module::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
+        Module Module::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
             // First construct the new vector of commands.
-            std::vector<storm::ir::Command> newCommands;
+            std::vector<storm::prism::Command> newCommands;
             for (auto const& command : commands) {
                 if (indexSet.find(command.getGlobalIndex()) != indexSet.end()) {
-                    newCommands.push_back(std::move(command));
+                    newCommands.push_back(command);
                 }
             }
-            commands = std::move(newCommands);
             
-            // Then refresh the internal mappings.
-            this->collectActions();
+            return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), newCommands);
         }
+        
+        std::ostream& operator<<(std::ostream& stream, Module const& module) {
+            stream << "module " << module.getName() << std::endl;
+            for (auto const& nameVariablePair : module.getBooleanVariables()) {
+                stream << "\t" << nameVariablePair.second << std::endl;
+            }
+            for (auto const& nameVariablePair : module.getIntegerVariables()) {
+                stream << "\t" << nameVariablePair.second << std::endl;
+            }
+            for (auto const& command : module.getCommands()) {
+                stream << "\t" << command << std::endl;
+            }
+            stream << "endmodule" << std::endl;
+            return stream;
+        }
+
         
     } // namespace ir
 } // namespace storm

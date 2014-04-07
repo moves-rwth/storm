@@ -1,149 +1,115 @@
-/*
- * Module.h
- *
- *  Created on: 04.01.2013
- *      Author: Christian Dehnert
- */
-
-#ifndef STORM_IR_MODULE_H_
-#define STORM_IR_MODULE_H_
-
-#include "utility/OsDetection.h"
-#include <boost/container/flat_set.hpp>
-
-#ifdef LINUX
-#include <boost/container/map.hpp>
-#endif
-#include <map>
+#ifndef STORM_STORAGE_PRISM_MODULE_H_
+#define STORM_STORAGE_PRISM_MODULE_H_
 
 #include <set>
 #include <string>
 #include <vector>
 #include <memory>
+#include <boost/container/flat_set.hpp>
 
-#include "BooleanVariable.h"
-#include "IntegerVariable.h"
-#include "Command.h"
-#include "expressions/VariableExpression.h"
+#include "src/storage/prism/BooleanVariable.h"
+#include "src/storage/prism/IntegerVariable.h"
+#include "src/storage/prism/Command.h"
+#include "src/storage/expressions/VariableExpression.h"
 
 namespace storm {
-    
-    namespace parser {
-        namespace prism {
-            class VariableState;
-        } // namespace prismparser
-    } // namespace parser
-    
-    namespace ir {
-        
-        /*!
-         * A class representing a module.
-         */
+    namespace prism {
         class Module {
         public:
-            /*!
-             * Default constructor. Creates an empty module.
-             */
-            Module();
-            
             /*!
              * Creates a module with the given name, variables and commands.
              *
              * @param moduleName The name of the module.
              * @param booleanVariables The boolean variables defined by the module.
              * @param integerVariables The integer variables defined by the module.
-             * @param booleanVariableToLocalIndexMap A mapping of boolean variables to local (i.e. module-local) indices.
-             * @param integerVariableToLocalIndexMap A mapping of integer variables to local (i.e. module-local) indices.
              * @param commands The commands of the module.
              */
-            Module(std::string const& moduleName, std::vector<storm::ir::BooleanVariable> const& booleanVariables,
-                   std::vector<storm::ir::IntegerVariable> const& integerVariables,
-                   std::map<std::string, uint_fast64_t> const& booleanVariableToLocalIndexMap,
-                   std::map<std::string, uint_fast64_t> const& integerVariableToLocalIndexMap,
-                   std::vector<storm::ir::Command> const& commands);
+            Module(std::string const& moduleName, std::map<std::string, storm::prism::BooleanVariable> const& booleanVariables,
+                   std::map<std::string, storm::prism::IntegerVariable> const& integerVariables,
+                   std::vector<storm::prism::Command> const& commands);
             
             /*!
-             * Special copy constructor, implementing the module renaming functionality.
-             * This will create a new module having all identifiers renamed according to the given map.
+             * Special copy constructor, implementing the module renaming functionality. This will create a new module
+             * having all identifiers renamed according to the given map.
              *
              * @param oldModule The module to be copied.
              * @param newModuleName The name of the new module.
              * @param renaming A mapping of identifiers to the new identifiers they are to be replaced with.
-             * @param variableState An object knowing about the variables in the system.
              */
-            Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, storm::parser::prism::VariableState& variableState);
+            Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming);
+            
+            // Create default implementations of constructors/assignment.
+            Module() = default;
+            Module(Module const& otherVariable) = default;
+            Module& operator=(Module const& otherVariable)= default;
+            Module(Module&& otherVariable) = default;
+            Module& operator=(Module&& otherVariable) = default;
             
             /*!
              * Retrieves the number of boolean variables in the module.
              *
              * @return the number of boolean variables in the module.
              */
-            uint_fast64_t getNumberOfBooleanVariables() const;
-            
-            /*!
-             * Retrieves a reference to the boolean variable with the given index.
-             *
-             * @return A reference to the boolean variable with the given index.
-             */
-            storm::ir::BooleanVariable const& getBooleanVariable(uint_fast64_t index) const;
-            
-            /*!
-             * Retrieves a reference to the boolean variable with the given name.
-             *
-             * @return A reference to the boolean variable with the given name.
-             */
-            storm::ir::BooleanVariable const& getBooleanVariable(std::string const& variableName) const;
+            std::size_t getNumberOfBooleanVariables() const;
             
             /*!
              * Retrieves the number of integer variables in the module.
              *
              * @return The number of integer variables in the module.
              */
-            uint_fast64_t getNumberOfIntegerVariables() const;
-            
-            /*!
-             * Retrieves a reference to the integer variable with the given index.
-             *
-             * @return A reference to the integer variable with the given index.
-             */
-            storm::ir::IntegerVariable const& getIntegerVariable(uint_fast64_t index) const;
+            std::size_t getNumberOfIntegerVariables() const;
             
             /*!
              * Retrieves a reference to the boolean variable with the given name.
              *
+             * @param variableName The name of the boolean variable to retrieve.
              * @return A reference to the boolean variable with the given name.
              */
-            storm::ir::IntegerVariable const& getIntegerVariable(std::string const& variableName) const;
+            storm::prism::BooleanVariable const& getBooleanVariable(std::string const& variableName) const;
             
+            /*!
+             * Retrieves the boolean variables of the module.
+             *
+             * @return The boolean variables of the module.
+             */
+            std::map<std::string, storm::prism::BooleanVariable> const& getBooleanVariables() const;
+            
+            /*!
+             * Retrieves a reference to the integer variable with the given name.
+             *
+             * @param variableName The name of the integer variable to retrieve.
+             * @return A reference to the integer variable with the given name.
+             */
+            storm::prism::IntegerVariable const& getIntegerVariable(std::string const& variableName) const;
+
+            /*!
+             * Retrieves the integer variables of the module.
+             *
+             * @return The integer variables of the module.
+             */
+            std::map<std::string, storm::prism::IntegerVariable> const& getIntegerVariables() const;
+
             /*!
              * Retrieves the number of commands of this module.
              *
              * @return the number of commands of this module.
              */
-            uint_fast64_t getNumberOfCommands() const;
-            
-            /*!
-             * Retrieves the index of the boolean variable with the given name.
-             *
-             * @param variableName The name of the boolean variable whose index to retrieve.
-             * @return The index of the boolean variable with the given name.
-             */
-            uint_fast64_t getBooleanVariableIndex(std::string const& variableName) const;
-            
-            /*!
-             * Retrieves the index of the integer variable with the given name.
-             *
-             * @param variableName The name of the integer variable whose index to retrieve.
-             * @return The index of the integer variable with the given name.
-             */
-            uint_fast64_t getIntegerVariableIndex(std::string const& variableName) const;
+            std::size_t getNumberOfCommands() const;
             
             /*!
              * Retrieves a reference to the command with the given index.
              *
+             * @param index The index of the command to retrieve.
              * @return A reference to the command with the given index.
              */
-            storm::ir::Command const& getCommand(uint_fast64_t index) const;
+            storm::prism::Command const& getCommand(uint_fast64_t index) const;
+            
+            /*!
+             * Retrieves the commands of the module.
+             *
+             * @return The commands of the module.
+             */
+            std::vector<storm::prism::Command> const& getCommands() const;
             
             /*!
              * Retrieves the name of the module.
@@ -151,13 +117,6 @@ namespace storm {
              * @return The name of the module.
              */
             std::string const& getName() const;
-            
-            /*!
-             * Retrieves a string representation of this module.
-             *
-             * @return a string representation of this module.
-             */
-            std::string toString() const;
             
             /*!
              * Retrieves the set of actions present in this module.
@@ -170,7 +129,7 @@ namespace storm {
              * Retrieves whether or not this module contains a command labeled with the given action.
              *
              * @param action The action name to look for in this module.
-             * @return True if the module has at least one command labeled with the given action.
+             * @return True iff the module has at least one command labeled with the given action.
              */
             bool hasAction(std::string const& action) const;
             
@@ -180,15 +139,18 @@ namespace storm {
              * @param action The action with which the commands have to be labelled.
              * @return A set of indices of commands that are labelled with the given action.
              */
-            std::set<uint_fast64_t> const& getCommandsByAction(std::string const& action) const;
+            std::set<uint_fast64_t> const& getCommandIndicesByAction(std::string const& action) const;
             
             /*!
-             * Deletes all commands with indices not in the given set from the module.
+             * Creates a new module that drops all commands whose indices are not in the given set.
              *
              * @param indexSet The set of indices for which to keep the commands.
+             * @return The module resulting from erasing all commands whose indices are not in the given set.
              */
-            void restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet);
+            Module restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet);
             
+            friend std::ostream& operator<<(std::ostream& stream, Module const& module);
+
         private:
             /*!
              * Computes the locally maintained mappings for fast data retrieval.
@@ -199,16 +161,10 @@ namespace storm {
             std::string moduleName;
             
             // A list of boolean variables.
-            std::vector<storm::ir::BooleanVariable> booleanVariables;
+            std::map<std::string, storm::prism::BooleanVariable> booleanVariables;
             
             // A list of integer variables.
-            std::vector<storm::ir::IntegerVariable> integerVariables;
-            
-            // A map of boolean variable names to their index.
-            std::map<std::string, uint_fast64_t> booleanVariableToLocalIndexMap;
-            
-            // A map of integer variable names to their index.
-            std::map<std::string, uint_fast64_t> integerVariableToLocalIndexMap;
+            std::map<std::string, storm::prism::IntegerVariable> integerVariables;
             
             // The commands associated with the module.
             std::vector<storm::ir::Command> commands;
@@ -220,7 +176,7 @@ namespace storm {
             std::map<std::string, std::set<uint_fast64_t>> actionsToCommandIndexMap;
         };
         
-    } // namespace ir
+    } // namespace prism
 } // namespace storm
 
-#endif /* STORM_IR_MODULE_H_ */
+#endif /* STORM_STORAGE_PRISM_MODULE_H_ */

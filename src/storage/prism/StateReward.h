@@ -1,85 +1,53 @@
-/*
- * StateReward.h
- *
- *  Created on: Jan 10, 2013
- *      Author: Christian Dehnert
- */
-
-#ifndef STORM_IR_STATEREWARD_H_
-#define STORM_IR_STATEREWARD_H_
-
-#include <memory>
+#ifndef STORM_STORAGE_PRISM_STATEREWARD_H_
+#define STORM_STORAGE_PRISM_STATEREWARD_H_
 
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
-    namespace ir {
-        
-        /*!
-         * A class representing a state reward.
-         */
+    namespace prism {
         class StateReward {
         public:
             /*!
-             * Default constructor. Creates an empty state reward.
+             * Creates a state reward for the states satisfying the given expression with the value given by a second
+             * expression.
+             *
+             * @param statePredicateExpression The predicate that states earning this state-based reward need to satisfy.
+             * @param rewardValueExpression An expression specifying the values of the rewards to attach to the states.
              */
-            StateReward();
+            StateReward(storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression);
             
-            /*!
-             * Creates a state reward for the states satisfying the given expression with the value given
-             * by a second expression.
-             *
-             * @param statePredicate The predicate that states earning this state-based reward need to
-             * satisfy.
-             * @param rewardValue An expression specifying the values of the rewards to attach to the
-             * states.
-             */
-            StateReward(storm::expressions::Expression const& statePredicate, storm::expressions::Expression const& rewardValue);
-            
-            /*!
-             * Performs a deep-copy of the given reward.
-             *
-             * @param otherReward The reward to copy.
-             */
-            StateReward(StateReward const& otherReward) = default;
-
-            /*!
-             * Performs a deep-copy of the given reward and assigns it to the current one.
-             *
-             * @param otherReward The reward to assign.
-             */
-            StateReward& operator=(StateReward const& otherReward) = default;
-            
-            /*!
-             * Retrieves a string representation of this state reward.
-             *
-             * @return A string representation of this state reward.
-             */
-            std::string toString() const;
+            // Create default implementations of constructors/assignment.
+            StateReward() = default;
+            StateReward(StateReward const& otherVariable) = default;
+            StateReward& operator=(StateReward const& otherVariable)= default;
+            StateReward(StateReward&& otherVariable) = default;
+            StateReward& operator=(StateReward&& otherVariable) = default;
             
             /*!
              * Retrieves the state predicate that is associated with this state reward.
              *
              * @return The state predicate that is associated with this state reward.
              */
-            storm::expressions::Expression const& getStatePredicate() const;
+            storm::expressions::Expression const& getStatePredicateExpression() const;
             
             /*!
              * Retrieves the reward value associated with this state reward.
              *
              * @return The reward value associated with this state reward.
              */
-            storm::expressions::Expression const& getRewardValue() const;
+            storm::expressions::Expression const& getRewardValueExpression() const;
             
+            friend std::ostream& operator<<(std::ostream& stream, StateReward const& stateReward);
+
         private:
             // The predicate that characterizes the states that obtain this reward.
-            storm::expressions::Expression statePredicate;
+            storm::expressions::Expression statePredicateExpression;
             
             // The expression that specifies the value of the reward obtained.
-            storm::expressions::Expression rewardValue;
+            storm::expressions::Expression rewardValueExpression;
         };
         
-    } // namespace ir
+    } // namespace prism
 } // namespace storm
 
-#endif /* STORM_IR_STATEREWARD_H_ */
+#endif /* STORM_STORAGE_PRISM_STATEREWARD_H_ */
