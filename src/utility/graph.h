@@ -33,7 +33,7 @@ namespace storm {
         namespace graph {
             
             /*!
-             * Performs a backwards breadt-first search trough the underlying graph structure
+             * Performs a backwards breath-first search trough the underlying graph structure
              * of the given model to determine which states of the model have a positive probability
              * of satisfying phi until psi. The resulting states are written to the given bit vector.
              *
