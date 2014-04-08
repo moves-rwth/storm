@@ -9,7 +9,7 @@
 
 namespace storm {
     namespace prism {
-        class RewardModel {
+        class RewardModel : public LocatedInformation {
         public:
             /*!
              * Creates a reward model with the given name, state and transition rewards.
@@ -17,15 +17,17 @@ namespace storm {
              * @param rewardModelName The name of the reward model.
              * @param stateRewards A vector of state-based rewards.
              * @param transitionRewards A vector of transition-based rewards.
+             * @param filename The filename in which the reward model is defined.
+             * @param lineNumber The line number in which the reward model is defined.
              */
-            RewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards);
+            RewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             RewardModel() = default;
-            RewardModel(RewardModel const& otherVariable) = default;
-            RewardModel& operator=(RewardModel const& otherVariable)= default;
-            RewardModel(RewardModel&& otherVariable) = default;
-            RewardModel& operator=(RewardModel&& otherVariable) = default;
+            RewardModel(RewardModel const& other) = default;
+            RewardModel& operator=(RewardModel const& other)= default;
+            RewardModel(RewardModel&& other) = default;
+            RewardModel& operator=(RewardModel&& other) = default;
             
             /*!
              * Retrieves the name of the reward model.

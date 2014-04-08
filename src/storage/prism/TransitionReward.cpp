@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace prism {
-        TransitionReward::TransitionReward(std::string const& commandName, storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression) : commandName(commandName), statePredicateExpression(statePredicateExpression), rewardValueExpression(rewardValueExpression) {
+        TransitionReward::TransitionReward(std::string const& commandName, storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), commandName(commandName), statePredicateExpression(statePredicateExpression), rewardValueExpression(rewardValueExpression) {
             // Nothing to do here.
         }
         

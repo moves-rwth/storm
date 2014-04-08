@@ -2,18 +2,18 @@
 
 namespace storm {
     namespace prism {
-        Command::Command(uint_fast64_t globalIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates) : actionName(actionName), guardExpression(guardExpression), updates(updates), globalIndex(globalIndex) {
+        Command::Command(uint_fast64_t globalIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionName(actionName), guardExpression(guardExpression), updates(updates), globalIndex(globalIndex) {
             // Nothing to do here.
         }
         
-        Command::Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming) : actionName(oldCommand.getActionName()), guardExpression(oldCommand.getGuardExpression().substitute<std::map>(renaming)), globalIndex(newGlobalIndex) {
+        Command::Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionName(oldCommand.getActionName()), guardExpression(oldCommand.getGuardExpression().substitute<std::map>(renaming)), globalIndex(newGlobalIndex) {
             auto const& namePair = renaming.find(this->actionName);
             if (namePair != renaming.end()) {
                 this->actionName = namePair->second;
             }
             this->updates.reserve(oldCommand.getNumberOfUpdates());
             for (Update const& update : oldCommand.getUpdates()) {
-                this->updates.emplace_back(update, update.getGlobalIndex(), renaming);
+                this->updates.emplace_back(update, update.getGlobalIndex(), renaming, filename, lineNumber);
             }
         }
 

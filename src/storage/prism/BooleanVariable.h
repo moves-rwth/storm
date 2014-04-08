@@ -11,26 +11,30 @@ namespace storm {
         public:
             // Create default implementations of constructors/assignment.
             BooleanVariable() = default;
-            BooleanVariable(BooleanVariable const& otherVariable) = default;
-            BooleanVariable& operator=(BooleanVariable const& otherVariable)= default;
-            BooleanVariable(BooleanVariable&& otherVariable) = default;
-            BooleanVariable& operator=(BooleanVariable&& otherVariable) = default;
-            
+            BooleanVariable(BooleanVariable const& other) = default;
+            BooleanVariable& operator=(BooleanVariable const& other)= default;
+            BooleanVariable(BooleanVariable&& other) = default;
+            BooleanVariable& operator=(BooleanVariable&& other) = default;
+
             /*!
-             * Creates a boolean variable with the given name and default initial value.
+             * Creates a boolean variable with the given name and the default initial value expression.
              *
              * @param variableName The name of the variable.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            BooleanVariable(std::string const& variableName);
+            BooleanVariable(std::string const& variableName, std::string const& filename, uint_fast64_t lineNumber);
 
             /*!
              * Creates a boolean variable with the given name and the given constant initial value expression.
              *
              * @param variableName The name of the variable.
              * @param initialValueExpression The constant expression that defines the initial value of the variable.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression);
-
+            BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber);
+            
             /*!
              * Creates a copy of the given boolean variable and performs the provided renaming.
              *
@@ -38,8 +42,10 @@ namespace storm {
              * @param newName New name of this variable.
              * @param renaming A mapping from names that are to be renamed to the names they are to be
              * replaced with.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            BooleanVariable(BooleanVariable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming);
+            BooleanVariable(BooleanVariable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber);
             
             friend std::ostream& operator<<(std::ostream& stream, BooleanVariable const& variable);
         };

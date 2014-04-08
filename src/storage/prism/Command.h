@@ -10,7 +10,7 @@
 
 namespace storm {
     namespace prism {
-        class Command {
+        class Command : public LocatedInformation {
         public:
             /*!
              * Creates a command with the given action name, guard and updates.
@@ -19,8 +19,10 @@ namespace storm {
              * @param actionName The action name of the command.
              * @param guardExpression the expression that defines the guard of the command.
              * @param updates A list of updates that is associated with this command.
+             * @param filename The filename in which the command is defined.
+             * @param lineNumber The line number in which the command is defined.
              */
-            Command(uint_fast64_t globalIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates);
+            Command(uint_fast64_t globalIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given command and performs the provided renaming.
@@ -28,15 +30,17 @@ namespace storm {
              * @param oldCommand The command to copy.
              * @param newGlobalIndex The global index of the copy of the command.
              * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
+             * @param filename The filename in which the command is defined.
+             * @param lineNumber The line number in which the command is defined.
              */
-            Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming);
+            Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Command() = default;
-            Command(Command const& otherVariable) = default;
-            Command& operator=(Command const& otherVariable)= default;
-            Command(Command&& otherVariable) = default;
-            Command& operator=(Command&& otherVariable) = default;
+            Command(Command const& other) = default;
+            Command& operator=(Command const& other)= default;
+            Command(Command&& other) = default;
+            Command& operator=(Command&& other) = default;
             
             /*!
              * Retrieves the action name of this command.

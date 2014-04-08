@@ -1,103 +1,61 @@
-/*
- * File:   PrismGrammar.h
- * Author: nafur
- *
- * Created on April 30, 2013, 5:20 PM
- */
+#ifndef STORM_PARSER_PRISMPARSER_PRISMGRAMMAR_H_
+#define	STORM_PARSER_PRISMPARSER_PRISMGRAMMAR_H_
 
-#ifndef STORM_PARSER_PRISMPARSER_PRISMGRAMMAR_H
-#define	STORM_PARSER_PRISMPARSER_PRISMGRAMMAR_H
-
-// All classes of the intermediate representation are used.
-#include "src/ir/IR.h"
-#include "src/parser/prismparser/Includes.h"
-#include "src/parser/prismparser/Tokens.h"
-#include "src/parser/prismparser/IdentifierGrammars.h"
-#include "src/parser/prismparser/VariableState.h"
-#include "src/parser/prismparser/ConstBooleanExpressionGrammar.h"
-#include "src/parser/prismparser/ConstDoubleExpressionGrammar.h"
-#include "src/parser/prismparser/ConstIntegerExpressionGrammar.h"
-#include "src/parser/prismparser/BooleanExpressionGrammar.h"
-#include "src/parser/prismparser/IntegerExpressionGrammar.h"
-
-// Used for file input.
+// Include files for file input.
 #include <istream>
 #include <memory>
+
+// Include boost spirit.
+#include <boost/typeof/typeof.hpp>
+#include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/phoenix.hpp>
+
+// Include headers for spirit iterators. Needed for diagnostics and input stream iteration.
+#include <boost/spirit/include/classic_position_iterator.hpp>
+#include <boost/spirit/include/support_multi_pass.hpp>
+
+namespace qi = boost::spirit::qi;
+namespace phoenix = boost::phoenix;
+
+typedef std::string::const_iterator BaseIteratorType;
+typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
+typedef PositionIteratorType Iterator;
+typedef BOOST_TYPEOF(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol) Skipper;
+typedef BOOST_TYPEOF(qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol | boost::spirit::ascii::space) Skipper2;
+typedef boost::spirit::unused_type Unused;
+
+#include "src/parser/prismparser/Tokens.h"
+
+#include "src/storage/prism/Program.h"
+#include "src/storage/expressions/Expression.h"
+using namespace storm::prism;
+using namespace storm::expressions;
 
 namespace storm {
     namespace parser {
         namespace prism {
-            
-            using namespace storm::ir;
-            using namespace storm::ir::expressions;
-            
-            struct GlobalVariableInformation {
-                std::vector<BooleanVariable> booleanVariables;
-                std::vector<IntegerVariable> integerVariables;
-                std::map<std::string, uint_fast64_t> booleanVariableToIndexMap;
-                std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
-            };
-            
-            /*!
-             * The Boost spirit grammar for the PRISM language. Returns the intermediate representation of
-             * the input that complies with the PRISM syntax.
-             */
-            class PrismGrammar : public qi::grammar<
-            Iterator,
-            Program(),
-            qi::locals<
-            std::map<std::string, std::unique_ptr<BooleanConstantExpression>>,
-            std::map<std::string, std::unique_ptr<IntegerConstantExpression>>,
-            std::map<std::string, std::unique_ptr<DoubleConstantExpression>>,
-            GlobalVariableInformation,
-            std::map<std::string, RewardModel>,
-            std::map<std::string, std::unique_ptr<BaseExpression>>
-            >,
-            Skipper> {
+            class PrismGrammar : public qi::grammar<Iterator, Program(), Skipper> {
             public:
                 /*!
                  * Default constructor that creates an empty and functional grammar.
                  */
                 PrismGrammar();
                 
-                /*!
-                 * Puts all sub-grammars into the mode for performing the second run. A two-run model was chosen
-                 * because modules can involve variables that are only declared afterwards, so the first run
-                 * creates all variables and the second one tries to parse the full model.
-                 */
-                void prepareForSecondRun();
-                
-                /*!
-                 * Resets all sub-grammars, i.e. puts them into an initial state.
-                 */
-                void resetGrammars();
-                
             private:
-                
-                std::shared_ptr<storm::parser::prism::VariableState> state;
-                struct qi::symbols<char, Module> moduleMap_;
-                
                 // The starting point of the grammar.
-                qi::rule<
-                Iterator,
-                Program(),
-                qi::locals<
-				std::map<std::string, std::unique_ptr<BooleanConstantExpression>>,
-				std::map<std::string, std::unique_ptr<IntegerConstantExpression>>,
-				std::map<std::string, std::unique_ptr<DoubleConstantExpression>>,
-                GlobalVariableInformation,
-				std::map<std::string, RewardModel>,
-				std::map<std::string, std::unique_ptr<BaseExpression>>
-                >,
-                Skipper> start;
+                qi::rule<Iterator, Program(), Skipper> start;
+                
+                // Rules for model type.
                 qi::rule<Iterator, Program::ModelType(), Skipper> modelTypeDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, std::unique_ptr<BooleanConstantExpression>>&, std::map<std::string, std::unique_ptr<IntegerConstantExpression>>&, std::map<std::string, std::unique_ptr<DoubleConstantExpression>>&), Skipper> constantDefinitionList;
-                qi::rule<Iterator, std::vector<Module>(), Skipper> moduleDefinitionList;
+                
+                // Rules for global constant definitions.
+                qi::rule<Iterator, qi::unused_type(std::set<std::string>&, std::set<std::string>&, std::set<std::string>&, std::map<std::string, storm::expression::Expression>&, std::map<std::string, storm::expression::Expression>&, std::map<std::string, storm::expression::Expression>&), Skipper> constantDefinitionList;
                 
                 // Rules for global variable definitions
-                qi::rule<Iterator, qi::unused_type(GlobalVariableInformation&), Skipper> globalVariableDefinitionList;
+                qi::rule<Iterator, qi::unused_type(std::map<std::string, BooleanVariable>&, std::map<std::string, IntegerVariable>), Skipper> globalVariableDefinitionList;
                 
-                // Rules for module definition.
+                // Rules for modules definition.
+                qi::rule<Iterator, std::vector<Module>(), Skipper> moduleDefinitionList;
                 qi::rule<Iterator, Module(), qi::locals<std::vector<BooleanVariable>, std::vector<IntegerVariable>, std::map<std::string, uint_fast64_t>, std::map<std::string, uint_fast64_t>>, Skipper> moduleDefinition;
                 qi::rule<Iterator, Module(), qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
                 
@@ -155,6 +113,9 @@ namespace storm {
                 storm::parser::prism::keywordsStruct keywords_;
                 storm::parser::prism::modelTypeStruct modelType_;
                 storm::parser::prism::relationalOperatorStruct relations_;
+                
+                // A mapping from module names to the modules themselves so they can be looked up for renaming later.
+                struct qi::symbols<char, Module> moduleMap_;
                 
                 /*!
                  * Adds a label with the given name and expression to the given label-to-expression map.
@@ -263,5 +224,5 @@ namespace storm {
 } // namespace storm
 
 
-#endif	/* STORM_PARSER_PRISMPARSER_PRISMGRAMMAR_H */
+#endif	/* STORM_PARSER_PRISMPARSER_PRISMGRAMMAR_H_ */
 

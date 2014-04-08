@@ -5,24 +5,24 @@
 
 namespace storm {
     namespace prism {
-        Module::Module(std::string const& moduleName, std::map<std::string, storm::prism::BooleanVariable> const& booleanVariables, std::map<std::string, storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands) : moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables), commands(commands), actions(), actionsToCommandIndexMap() {
+        Module::Module(std::string const& moduleName, std::map<std::string, storm::prism::BooleanVariable> const& booleanVariables, std::map<std::string, storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), integerVariables(integerVariables), commands(commands), actions(), actionsToCommandIndexMap() {
             // Initialize the internal mappings for fast information retrieval.
             this->collectActions();
         }
         
-        Module::Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming) : moduleName(newModuleName), booleanVariables(), integerVariables(), commands(), actions(), actionsToCommandIndexMap() {
+        Module::Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(newModuleName), booleanVariables(), integerVariables(), commands(), actions(), actionsToCommandIndexMap() {
             // Iterate over boolean variables and rename them. If a variable was not renamed, this is an error and an exception is thrown.
             for (auto const& nameVariablePair : oldModule.getBooleanVariables()) {
                 auto renamingPair = renaming.find(nameVariablePair.first);
                 LOG_THROW(renamingPair == renaming.end(), storm::exceptions::InvalidArgumentException, "Boolean variable " << moduleName << "." << nameVariablePair.first << " was not renamed.");
-                this->booleanVariables.emplace(nameVariablePair.first, BooleanVariable(nameVariablePair.second, renamingPair->second, renaming));
+                this->booleanVariables.emplace(nameVariablePair.first, BooleanVariable(nameVariablePair.second, renamingPair->second, renaming, filename, lineNumber));
             }
             
             // Now do the same for the integer variables.
             for (auto const& nameVariablePair : oldModule.getIntegerVariables()) {
                 auto renamingPair = renaming.find(nameVariablePair.first);
                 LOG_THROW(renamingPair == renaming.end(), storm::exceptions::InvalidArgumentException, "Integer variable " << moduleName << "." << nameVariablePair.first << " was not renamed.");
-                this->integerVariables.emplace(nameVariablePair.first, IntegerVariable(nameVariablePair.second, renamingPair->second, renaming));
+                this->integerVariables.emplace(nameVariablePair.first, IntegerVariable(nameVariablePair.second, renamingPair->second, renaming, filename, lineNumber));
             }
             
             // Now we are ready to clone all commands and rename them if requested.

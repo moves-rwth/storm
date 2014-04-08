@@ -3,25 +3,25 @@
 
 namespace storm {
     namespace prism {
-        Update::Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::map<std::string, storm::prism::Assignment> const& booleanAssignments, std::map<std::string, storm::prism::Assignment> const& integerAssignments) : likelihoodExpression(likelihoodExpression), booleanAssignments(booleanAssignments), integerAssignments(integerAssignments), globalIndex(globalIndex) {
+        Update::Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::map<std::string, storm::prism::Assignment> const& booleanAssignments, std::map<std::string, storm::prism::Assignment> const& integerAssignments, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(likelihoodExpression), booleanAssignments(booleanAssignments), integerAssignments(integerAssignments), globalIndex(globalIndex) {
             // Nothing to do here.
         }
         
-        Update::Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming) : likelihoodExpression(update.getLikelihoodExpression().substitute<std::map>(renaming)), booleanAssignments(), integerAssignments(), globalIndex(newGlobalIndex) {
+        Update::Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(update.getLikelihoodExpression().substitute<std::map>(renaming)), booleanAssignments(), integerAssignments(), globalIndex(newGlobalIndex) {
             for (auto const& variableAssignmentPair : update.getBooleanAssignments()) {
                 auto const& namePair = renaming.find(variableAssignmentPair.first);
                 if (namePair != renaming.end()) {
-                    this->booleanAssignments.emplace(namePair->second, Assignment(variableAssignmentPair.second, renaming));
+                    this->booleanAssignments.emplace(namePair->second, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
                 } else {
-                    this->booleanAssignments.emplace(variableAssignmentPair.first, Assignment(variableAssignmentPair.second, renaming));
+                    this->booleanAssignments.emplace(variableAssignmentPair.first, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
                 }
             }
             for (auto const& variableAssignmentPair : update.getIntegerAssignments()) {
                 auto const& namePair = renaming.find(variableAssignmentPair.first);
                 if (renaming.count(variableAssignmentPair.first) > 0) {
-                    this->integerAssignments.emplace(namePair->second, Assignment(variableAssignmentPair.second, renaming));
+                    this->integerAssignments.emplace(namePair->second, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
                 } else {
-                    this->integerAssignments.emplace(variableAssignmentPair.first, Assignment(variableAssignmentPair.second, renaming));
+                    this->integerAssignments.emplace(variableAssignmentPair.first, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
                 }
             }
             this->likelihoodExpression = update.getLikelihoodExpression().substitute<std::map>(renaming);

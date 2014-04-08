@@ -3,11 +3,12 @@
 
 #include <map>
 
-#include "Assignment.h"
+#include "src/storage/prism/LocatedInformation.h"
+#include "src/storage/prism/Assignment.h"
 
 namespace storm {
     namespace prism {
-        class Update {
+        class Update : public LocatedInformation {
         public:
             /*!
              * Creates an update with the given expression specifying the likelihood and the mapping of variable to
@@ -16,8 +17,10 @@ namespace storm {
              * @param globalIndex The global index of the update.
              * @param likelihoodExpression An expression specifying the likelihood of this update.
              * @param assignments A map of variable names to their assignments.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            Update(uint_fast64_t index, storm::expressions::Expression const& likelihoodExpression, std::map<std::string, storm::prism::Assignment> const& booleanAssignments, std::map<std::string, storm::prism::Assignment> const& integerAssignments);
+            Update(uint_fast64_t index, storm::expressions::Expression const& likelihoodExpression, std::map<std::string, storm::prism::Assignment> const& booleanAssignments, std::map<std::string, storm::prism::Assignment> const& integerAssignments, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given update and performs the provided renaming.
@@ -25,15 +28,17 @@ namespace storm {
              * @param update The update that is to be copied.
              * @param newGlobalIndex The global index of the resulting update.
              * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming);
+            Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Update() = default;
-            Update(Update const& otherVariable) = default;
-            Update& operator=(Update const& otherVariable)= default;
-            Update(Update&& otherVariable) = default;
-            Update& operator=(Update&& otherVariable) = default;
+            Update(Update const& other) = default;
+            Update& operator=(Update const& other)= default;
+            Update(Update&& other) = default;
+            Update& operator=(Update&& other) = default;
             
             /*!
              * Retrieves the expression for the likelihood of this update.

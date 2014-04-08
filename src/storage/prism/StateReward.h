@@ -1,11 +1,12 @@
 #ifndef STORM_STORAGE_PRISM_STATEREWARD_H_
 #define STORM_STORAGE_PRISM_STATEREWARD_H_
 
+#include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
     namespace prism {
-        class StateReward {
+        class StateReward : public LocatedInformation {
         public:
             /*!
              * Creates a state reward for the states satisfying the given expression with the value given by a second
@@ -13,15 +14,17 @@ namespace storm {
              *
              * @param statePredicateExpression The predicate that states earning this state-based reward need to satisfy.
              * @param rewardValueExpression An expression specifying the values of the rewards to attach to the states.
+             * @param filename The filename in which the state reward is defined.
+             * @param lineNumber The line number in which the state reward is defined.
              */
-            StateReward(storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression);
+            StateReward(storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             StateReward() = default;
-            StateReward(StateReward const& otherVariable) = default;
-            StateReward& operator=(StateReward const& otherVariable)= default;
-            StateReward(StateReward&& otherVariable) = default;
-            StateReward& operator=(StateReward&& otherVariable) = default;
+            StateReward(StateReward const& other) = default;
+            StateReward& operator=(StateReward const& other)= default;
+            StateReward(StateReward&& other) = default;
+            StateReward& operator=(StateReward&& other) = default;
             
             /*!
              * Retrieves the state predicate that is associated with this state reward.

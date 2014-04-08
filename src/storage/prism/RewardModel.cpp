@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace prism {
-        RewardModel::RewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) : rewardModelName(rewardModelName), stateRewards(stateRewards), transitionRewards(transitionRewards) {
+        RewardModel::RewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), rewardModelName(rewardModelName), stateRewards(stateRewards), transitionRewards(transitionRewards) {
             // Nothing to do here.
         }
         

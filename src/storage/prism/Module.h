@@ -14,7 +14,7 @@
 
 namespace storm {
     namespace prism {
-        class Module {
+        class Module : public LocatedInformation {
         public:
             /*!
              * Creates a module with the given name, variables and commands.
@@ -23,10 +23,10 @@ namespace storm {
              * @param booleanVariables The boolean variables defined by the module.
              * @param integerVariables The integer variables defined by the module.
              * @param commands The commands of the module.
+             * @param filename The filename in which the module is defined.
+             * @param lineNumber The line number in which the module is defined.
              */
-            Module(std::string const& moduleName, std::map<std::string, storm::prism::BooleanVariable> const& booleanVariables,
-                   std::map<std::string, storm::prism::IntegerVariable> const& integerVariables,
-                   std::vector<storm::prism::Command> const& commands);
+            Module(std::string const& moduleName, std::map<std::string, storm::prism::BooleanVariable> const& booleanVariables, std::map<std::string, storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Special copy constructor, implementing the module renaming functionality. This will create a new module
@@ -35,15 +35,17 @@ namespace storm {
              * @param oldModule The module to be copied.
              * @param newModuleName The name of the new module.
              * @param renaming A mapping of identifiers to the new identifiers they are to be replaced with.
+             * @param filename The filename in which the module is defined.
+             * @param lineNumber The line number in which the module is defined.
              */
-            Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming);
+            Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Module() = default;
-            Module(Module const& otherVariable) = default;
-            Module& operator=(Module const& otherVariable)= default;
-            Module(Module&& otherVariable) = default;
-            Module& operator=(Module&& otherVariable) = default;
+            Module(Module const& other) = default;
+            Module& operator=(Module const& other)= default;
+            Module(Module&& other) = default;
+            Module& operator=(Module&& other) = default;
             
             /*!
              * Retrieves the number of boolean variables in the module.

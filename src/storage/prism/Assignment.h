@@ -3,34 +3,39 @@
 
 #include <map>
 
+#include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
     namespace prism {
-        class Assignment {
+        class Assignment : public LocatedInformation {
         public:
             /*!
              * Constructs an assignment using the given variable name and expression.
              *
              * @param variableName The variable that this assignment targets.
              * @param expression The expression to assign to the variable.
+             * @param filename The filename in which the assignment is defined.
+             * @param lineNumber The line number in which the assignment is defined.
              */
-            Assignment(std::string const& variableName, storm::expressions::Expression const& expression);
+            Assignment(std::string const& variableName, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given assignment and performs the provided renaming.
              *
              * @param oldAssignment The assignment to copy.
              * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
+             * @param filename The filename in which the assignment is defined.
+             * @param lineNumber The line number in which the assignment is defined.
              */
-            Assignment(Assignment const& oldAssignment, std::map<std::string, std::string> const& renaming);
+            Assignment(Assignment const& oldAssignment, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Assignment() = default;
-            Assignment(Assignment const& otherVariable) = default;
-            Assignment& operator=(Assignment const& otherVariable)= default;
-            Assignment(Assignment&& otherVariable) = default;
-            Assignment& operator=(Assignment&& otherVariable) = default;
+            Assignment(Assignment const& other) = default;
+            Assignment& operator=(Assignment const& other)= default;
+            Assignment(Assignment&& other) = default;
+            Assignment& operator=(Assignment&& other) = default;
             
             /*!
              * Retrieves the name of the variable that this assignment targets.

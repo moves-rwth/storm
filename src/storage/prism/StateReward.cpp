@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace prism {
-        StateReward::StateReward(storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression) : statePredicateExpression(statePredicateExpression), rewardValueExpression(rewardValueExpression) {
+        StateReward::StateReward(storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), statePredicateExpression(statePredicateExpression), rewardValueExpression(rewardValueExpression) {
             // Nothing to do here.
         }
         

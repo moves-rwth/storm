@@ -3,11 +3,12 @@
 
 #include <map>
 
+#include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
     namespace prism {
-        class Variable {
+        class Variable : public LocatedInformation {
         public:
             // Create default implementations of constructors/assignment.
             Variable(Variable const& otherVariable) = default;
@@ -47,8 +48,10 @@ namespace storm {
              * @param initialValueExpression The constant expression that defines the initial value of the variable.
              * @param hasDefaultInitialValue A flag indicating whether the initial value of the variable is its default
              * value.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            Variable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, bool defaultInitialValue);
+            Variable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, bool defaultInitialValue, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given variable and performs the provided renaming.
@@ -56,8 +59,10 @@ namespace storm {
              * @param oldVariable The variable to copy.
              * @param newName New name of this variable.
              * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            Variable(Variable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming);
+            Variable(Variable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
         private:
             // The name of the variable.

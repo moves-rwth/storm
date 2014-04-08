@@ -2,15 +2,15 @@
 
 namespace storm {
     namespace prism {
-        BooleanVariable::BooleanVariable(std::string const& variableName) : Variable(variableName, storm::expressions::Expression::createFalse(), true) {
+        BooleanVariable::BooleanVariable(std::string const& variableName, std::string const& filename, uint_fast64_t lineNumber) : Variable(variableName, storm::expressions::Expression::createFalse(), true, filename, lineNumber) {
             // Nothing to do here.
         }
 
-        BooleanVariable::BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression) : Variable(variableName, initialValueExpression, false) {
+        BooleanVariable::BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber) : Variable(variableName, initialValueExpression, false, filename, lineNumber) {
             // Nothing to do here.
         }
         
-        BooleanVariable::BooleanVariable(BooleanVariable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming) : Variable(oldVariable, newName, renaming) {
+        BooleanVariable::BooleanVariable(BooleanVariable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : Variable(oldVariable, newName, renaming, filename, lineNumber) {
             // Nothing to do here.
         }
         

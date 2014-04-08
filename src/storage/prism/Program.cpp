@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace prism {
-        Program::Program(ModelType modelType, std::set<std::string> const& undefinedBooleanConstants, std::set<std::string> const& undefinedIntegerConstants, std::set<std::string> const& undefinedDoubleConstants, std::map<std::string, BooleanVariable> const& globalBooleanVariables, std::map<std::string, IntegerVariable> const& globalIntegerVariables, std::vector<storm::prism::Module> const& modules, std::map<std::string, storm::prism::RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::map<std::string, storm::expressions::Expression> const& labels) : modelType(modelType), undefinedBooleanConstants(undefinedBooleanConstants), undefinedIntegerConstants(undefinedIntegerConstants), undefinedDoubleConstants(undefinedDoubleConstants), globalBooleanVariables(globalBooleanVariables), globalIntegerVariables(globalIntegerVariables), modules(modules), rewardModels(rewardModels), hasInitialStatesExpression(hasInitialStatesExpression), initialStatesExpression(initialStatesExpression), labels(labels), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
+        Program::Program(ModelType modelType, std::set<std::string> const& undefinedBooleanConstants, std::map<std::string, storm::expressions::Expression> definedBooleanConstants, std::set<std::string> const& undefinedIntegerConstants, std::map<std::string, storm::expressions::Expression> definedIntegerConstants, std::set<std::string> const& undefinedDoubleConstants, std::map<std::string, storm::expressions::Expression> definedDoubleConstants, std::map<std::string, BooleanVariable> const& globalBooleanVariables, std::map<std::string, IntegerVariable> const& globalIntegerVariables, std::vector<storm::prism::Module> const& modules, std::map<std::string, storm::prism::RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::map<std::string, storm::expressions::Expression> const& labels, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), modelType(modelType), undefinedBooleanConstants(undefinedBooleanConstants), definedBooleanConstants(definedBooleanConstants), undefinedIntegerConstants(undefinedIntegerConstants), definedIntegerConstants(definedIntegerConstants), undefinedDoubleConstants(undefinedDoubleConstants), definedDoubleConstants(definedDoubleConstants), globalBooleanVariables(globalBooleanVariables), globalIntegerVariables(globalIntegerVariables), modules(modules), rewardModels(rewardModels), hasInitialStatesExpression(hasInitialStatesExpression), initialStatesExpression(initialStatesExpression), labels(labels), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
             // Now build the mapping from action names to module indices so that the lookup can later be performed quickly.
             for (unsigned int moduleIndex = 0; moduleIndex < this->getNumberOfModules(); moduleIndex++) {
                 Module const& module = this->getModule(moduleIndex);
@@ -52,15 +52,27 @@ namespace storm {
         std::set<std::string> const& Program::getUndefinedBooleanConstants() const {
             return this->undefinedBooleanConstants;
         }
+        
+        std::map<std::string, storm::expressions::Expression> const& Program::getDefinedBooleanConstants() const {
+            return this->definedBooleanConstants;
+        }
 
         std::set<std::string> const& Program::getUndefinedIntegerConstants() const {
             return this->undefinedIntegerConstants;
         }
         
+        std::map<std::string, storm::expressions::Expression> const& Program::getDefinedIntegerConstants() const {
+            return this->definedIntegerConstants;
+        }
+
         std::set<std::string> const& Program::getUndefinedDoubleConstants() const {
             return this->undefinedDoubleConstants;
         }
-        
+
+        std::map<std::string, storm::expressions::Expression> const& Program::getDefinedDoubleConstants() const {
+            return this->definedDoubleConstants;
+        }
+
         std::map<std::string, storm::prism::BooleanVariable> const& Program::getGlobalBooleanVariables() const {
             return this->globalBooleanVariables;
         }

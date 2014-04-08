@@ -1,11 +1,12 @@
 #ifndef STORM_STORAGE_PRISM_TRANSITIONREWARD_H_
 #define STORM_STORAGE_PRISM_TRANSITIONREWARD_H_
 
+#include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
     namespace prism {
-        class TransitionReward {
+        class TransitionReward : public LocatedInformation {
         public:
             /*!
              * Creates a transition reward for the transitions with the given name emanating from states satisfying the
@@ -15,15 +16,17 @@ namespace storm {
              * @param statePredicateExpression The predicate that needs to hold before taking a transition with the previously
              * specified name in order to obtain the reward.
              * @param rewardValueExpression An expression specifying the values of the rewards to attach to the transitions.
+             * @param filename The filename in which the transition reward is defined.
+             * @param lineNumber The line number in which the transition reward is defined.
              */
-            TransitionReward(std::string const& actionName, storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression);
+            TransitionReward(std::string const& actionName, storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             TransitionReward() = default;
-            TransitionReward(TransitionReward const& otherVariable) = default;
-            TransitionReward& operator=(TransitionReward const& otherVariable)= default;
-            TransitionReward(TransitionReward&& otherVariable) = default;
-            TransitionReward& operator=(TransitionReward&& otherVariable) = default;
+            TransitionReward(TransitionReward const& other) = default;
+            TransitionReward& operator=(TransitionReward const& other)= default;
+            TransitionReward(TransitionReward&& other) = default;
+            TransitionReward& operator=(TransitionReward&& other) = default;
             
             /*!
              * Retrieves the action name that is associated with this transition reward.

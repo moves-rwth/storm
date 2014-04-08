@@ -11,10 +11,10 @@ namespace storm {
         public:
             // Create default implementations of constructors/assignment.
             IntegerVariable() = default;
-            IntegerVariable(IntegerVariable const& otherVariable) = default;
-            IntegerVariable& operator=(IntegerVariable const& otherVariable)= default;
-            IntegerVariable(IntegerVariable&& otherVariable) = default;
-            IntegerVariable& operator=(IntegerVariable&& otherVariable) = default;
+            IntegerVariable(IntegerVariable const& other) = default;
+            IntegerVariable& operator=(IntegerVariable const& other)= default;
+            IntegerVariable(IntegerVariable&& other) = default;
+            IntegerVariable& operator=(IntegerVariable&& other) = default;
 
             /*!
              * Creates an integer variable with the given name and a default initial value.
@@ -22,8 +22,10 @@ namespace storm {
              * @param variableName The name of the variable.
              * @param lowerBoundExpression A constant expression defining the lower bound of the domain of the variable.
              * @param upperBoundExpression A constant expression defining the upper bound of the domain of the variable.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            IntegerVariable(std::string const& variableName, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression);
+            IntegerVariable(std::string const& variableName, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
 
             /*!
              * Creates an integer variable with the given name and the given initial value expression.
@@ -32,8 +34,10 @@ namespace storm {
              * @param lowerBoundExpression A constant expression defining the lower bound of the domain of the variable.
              * @param upperBoundExpression A constant expression defining the upper bound of the domain of the variable.
              * @param initialValueExpression A constant expression that defines the initial value of the variable.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            IntegerVariable(std::string const& variableName, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, storm::expressions::Expression const& initialValueExpression);
+            IntegerVariable(std::string const& variableName, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given integer variable and performs the provided renaming.
@@ -41,8 +45,10 @@ namespace storm {
              * @param oldVariable The variable to copy.
              * @param newName New name of this variable.
              * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
+             * @param filename The filename in which the variable is defined.
+             * @param lineNumber The line number in which the variable is defined.
              */
-            IntegerVariable(IntegerVariable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming);
+            IntegerVariable(IntegerVariable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Retrieves an expression defining the lower bound for this integer variable.
