@@ -16,7 +16,7 @@ namespace storm {
         }
         
         bool Dd<DdType::CUDD>::operator!=(Dd<DdType::CUDD> const& other) const {
-            return this->cuddAdd == other.getCuddAdd();
+            return this->cuddAdd != other.getCuddAdd();
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::operator+(Dd<DdType::CUDD> const& other) const {

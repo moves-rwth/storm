@@ -118,6 +118,9 @@ TEST(CuddDd, OperatorTest) {
     manager->addMetaVariable("x", 1, 9);
     EXPECT_TRUE(manager->getZero() == manager->getZero());
     EXPECT_FALSE(manager->getZero() == manager->getOne());
+
+    EXPECT_FALSE(manager->getZero() != manager->getZero());
+    EXPECT_TRUE(manager->getZero() != manager->getOne());
     
     storm::dd::Dd<storm::dd::DdType::CUDD> dd1 = manager->getOne();
     storm::dd::Dd<storm::dd::DdType::CUDD> dd2 = manager->getOne();
