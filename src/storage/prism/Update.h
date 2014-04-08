@@ -20,7 +20,7 @@ namespace storm {
              * @param filename The filename in which the variable is defined.
              * @param lineNumber The line number in which the variable is defined.
              */
-            Update(uint_fast64_t index, storm::expressions::Expression const& likelihoodExpression, std::map<std::string, storm::prism::Assignment> const& booleanAssignments, std::map<std::string, storm::prism::Assignment> const& integerAssignments, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Update(uint_fast64_t index, storm::expressions::Expression const& likelihoodExpression, std::map<std::string, storm::prism::Assignment> const& assignments, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given update and performs the provided renaming.
@@ -48,46 +48,25 @@ namespace storm {
             storm::expressions::Expression const& getLikelihoodExpression() const;
             
             /*!
-             * Retrieves the number of boolean assignments associated with this update.
+             * Retrieves the number of assignments associated with this update.
              *
-             * @return The number of boolean assignments associated with this update.
+             * @return The number of assignments associated with this update.
              */
-            std::size_t getNumberOfBooleanAssignments() const;
+            std::size_t getNumberOfAssignments() const;
             
             /*!
-             * Retrieves the number of integer assignments associated with this update.
+             * Retrieves a reference to the map of variable names to their respective assignments.
              *
-             * @return The number of integer assignments associated with this update.
+             * @return A reference to the map of variable names to their respective assignments.
              */
-            std::size_t getNumberOfIntegerAssignments() const;
+            std::map<std::string, storm::prism::Assignment> const& getAssignments() const;
             
             /*!
-             * Retrieves a reference to the map of boolean variable names to their respective assignments.
+             * Retrieves a reference to the assignment for the variable with the given name.
              *
-             * @return A reference to the map of boolean variable names to their respective assignments.
+             * @return A reference to the assignment for the variable with the given name.
              */
-            std::map<std::string, storm::prism::Assignment> const& getBooleanAssignments() const;
-            
-            /*!
-             * Retrieves a reference to the map of integer variable names to their respective assignments.
-             *
-             * @return A reference to the map of integer variable names to their respective assignments.
-             */
-            std::map<std::string, storm::prism::Assignment> const& getIntegerAssignments() const;
-            
-            /*!
-             * Retrieves a reference to the assignment for the boolean variable with the given name.
-             *
-             * @return A reference to the assignment for the boolean variable with the given name.
-             */
-            storm::prism::Assignment const& getBooleanAssignment(std::string const& variableName) const;
-            
-            /*!
-             * Retrieves a reference to the assignment for the integer variable with the given name.
-             *
-             * @return A reference to the assignment for the integer variable with the given name.
-             */
-            storm::prism::Assignment const& getIntegerAssignment(std::string const& variableName) const;
+            storm::prism::Assignment const& getAssignment(std::string const& variableName) const;
             
             /*!
              * Retrieves the global index of the update, that is, a unique index over all modules.
@@ -102,11 +81,8 @@ namespace storm {
             // An expression specifying the likelihood of taking this update.
             storm::expressions::Expression likelihoodExpression;
             
-            // A mapping of boolean variable names to their assignments in this update.
-            std::map<std::string, storm::prism::Assignment> booleanAssignments;
-            
-            // A mapping of integer variable names to their assignments in this update.
-            std::map<std::string, storm::prism::Assignment> integerAssignments;
+            // A mapping of variable names to their assignments in this update.
+            std::map<std::string, storm::prism::Assignment> assignments;
             
             // The global index of the update.
             uint_fast64_t globalIndex;

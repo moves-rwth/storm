@@ -1,7 +1,8 @@
 #ifndef STORM_PARSER_PRISMPARSER_TOKENS_H_
 #define	STORM_PARSER_PRISMPARSER_TOKENS_H_
 
-#include "src/storage/expressions/Expression.h"
+#include "src/storage/prism/Program.h"
+#include "src/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace parser {
@@ -10,14 +11,14 @@ namespace storm {
              * A structure mapping the textual representation of a model type to the model type
              * representation of the intermediate representation.
              */
-            struct modelTypeStruct : qi::symbols<char, Program::ModelType> {
+            struct modelTypeStruct : qi::symbols<char, storm::prism::Program::ModelType> {
                 modelTypeStruct() {
                     add
-                    ("dtmc", Program::ModelType::DTMC)
-                    ("ctmc", Program::ModelType::CTMC)
-                    ("mdp", Program::ModelType::MDP)
-                    ("ctmdp", Program::ModelType::CTMDP)
-                    ("ma", Program::ModelType::MA);
+                    ("dtmc", storm::prism::Program::ModelType::DTMC)
+                    ("ctmc", storm::prism::Program::ModelType::CTMC)
+                    ("mdp", storm::prism::Program::ModelType::MDP)
+                    ("ctmdp", storm::prism::Program::ModelType::CTMDP)
+                    ("ma", storm::prism::Program::ModelType::MA);
                 }
             };
             
@@ -45,17 +46,63 @@ namespace storm {
             };
             
             /*!
-             * A structure mapping the textual representation of a binary relation.
+             * A structure mapping the textual representation of binary relations to the corresponding enum values.
              */
-            struct relationalOperatorStruct : qi::symbols<char, BinaryRelationExpression::RelationType> {
-                relationalOperatorStruct() {
+            struct BinaryRelationOperatorStruct : qi::symbols<char, storm::expressions::BinaryRelationExpression::RelationType> {
+                BinaryRelationOperatorStruct() {
                     add
-                    ("=", BinaryRelationExpression::RelationType::EQUAL)
-                    ("!=", BinaryRelationExpression::RelationType::NOT_EQUAL)
-                    ("<", BinaryRelationExpression::RelationType::LESS)
-                    ("<=", BinaryRelationExpression::RelationType::LESS_OR_EQUAL)
-                    (">", BinaryRelationExpression::RelationType::GREATER)
-                    (">=", BinaryRelationExpression::RelationType::GREATER_OR_EQUAL);
+                    ("=", storm::expressions::BinaryRelationExpression::RelationType::Equal)
+                    ("!=", storm::expressions::BinaryRelationExpression::RelationType::NotEqual)
+                    ("<", storm::expressions::BinaryRelationExpression::RelationType::Less)
+                    ("<=", storm::expressions::BinaryRelationExpression::RelationType::LessOrEqual)
+                    (">", storm::expressions::BinaryRelationExpression::RelationType::Greater)
+                    (">=", storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual);
+                }
+            };
+            
+            /*!
+             * A structure mapping the textual representation of binary operators to the corresponding enum values.
+             */
+            struct BinaryBooleanOperatorStruct : qi::symbols<char, storm::expressions::BinaryBooleanFunctionExpression::OperatorType> {
+                BinaryBooleanOperatorStruct() {
+                    add
+                    ("&", storm::expressions::BinaryBooleanFunctionExpression::OperatorType::And)
+                    ("|", storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Or)
+                    ("=>", storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Implies)
+                    ("<=>", storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff);
+                }
+            };
+
+            /*!
+             * A structure mapping the textual representation of binary operators to the corresponding enum values.
+             */
+            struct UnaryBooleanOperatorStruct : qi::symbols<char, storm::expressions::UnaryBooleanFunctionExpression::OperatorType> {
+                UnaryBooleanOperatorStruct() {
+                    add
+                    ("!", storm::expressions::UnaryBooleanFunctionExpression::OperatorType::Not);
+                }
+            };
+            
+            /*!
+             * A structure mapping the textual representation of binary boolean operators to the corresponding enum values.
+             */
+            struct BinaryNumericalOperatorStruct : qi::symbols<char, storm::expressions::BinaryNumericalFunctionExpression::OperatorType> {
+                BinaryNumericalOperatorStruct() {
+                    add
+                    ("+", storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Plus)
+                    ("-", storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Minus)
+                    ("*", storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Times)
+                    ("/", storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Divide);
+                }
+            };
+            
+            /*!
+             * A structure mapping the textual representation of binary operators to the corresponding enum values.
+             */
+            struct UnaryNumericalOperatorStruct : qi::symbols<char, storm::expressions::UnaryNumericalFunctionExpression::OperatorType> {
+                UnaryNumericalOperatorStruct() {
+                    add
+                    ("!", storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus);
                 }
             };
         }

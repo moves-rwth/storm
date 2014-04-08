@@ -32,6 +32,7 @@ namespace storm {
              * @param definedDoubleConstants The defined double constants of the program.
              * @param globalBooleanVariables The global boolean variables of the program.
              * @param globalIntegerVariables The global integer variables of the program.
+             * @param formulas The formulas defined in the program.
              * @param modules The modules of the program.
              * @param hasInitialStatesExpression A flag indicating whether the program specifies its initial states via
              * an explicit initial construct.
@@ -43,7 +44,7 @@ namespace storm {
              * @param filename The filename in which the program is defined.
              * @param lineNumber The line number in which the program is defined.
              */
-            Program(ModelType modelType, std::set<std::string> const& undefinedBooleanConstants, std::map<std::string, storm::expressions::Expression> definedBooleanConstants, std::set<std::string> const& undefinedIntegerConstants, std::map<std::string, storm::expressions::Expression> definedIntegerConstants, std::set<std::string> const& undefinedDoubleConstants, std::map<std::string, storm::expressions::Expression> definedDoubleConstants, std::map<std::string, BooleanVariable> const& globalBooleanVariables, std::map<std::string, IntegerVariable> const& globalIntegerVariables, std::vector<storm::prism::Module> const& modules, std::map<std::string, storm::prism::RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::map<std::string, storm::expressions::Expression> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Program(ModelType modelType, std::set<std::string> const& undefinedBooleanConstants, std::map<std::string, storm::expressions::Expression> const& definedBooleanConstants, std::set<std::string> const& undefinedIntegerConstants, std::map<std::string, storm::expressions::Expression> const& definedIntegerConstants, std::set<std::string> const& undefinedDoubleConstants, std::map<std::string, storm::expressions::Expression> const& definedDoubleConstants, std::map<std::string, BooleanVariable> const& globalBooleanVariables, std::map<std::string, IntegerVariable> const& globalIntegerVariables, std::map<std::string, storm::expressions::Expression> const& formulas, std::vector<storm::prism::Module> const& modules, std::map<std::string, storm::prism::RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::map<std::string, storm::expressions::Expression> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -174,6 +175,13 @@ namespace storm {
             std::size_t getNumberOfGlobalIntegerVariables() const;
 
             /*!
+             * Retrieves the formulas defined in the program.
+             *
+             * @return The formulas defined in the program.
+             */
+            std::map<std::string, storm::expressions::Expression> const& getFormulas() const;
+            
+            /*!
              * Retrieves the number of modules in the program.
              *
              * @return The number of modules in the program.
@@ -286,11 +294,14 @@ namespace storm {
             // A mapping of (defined) double constants to their values (given as expressions).
             std::map<std::string, storm::expressions::Expression> definedDoubleConstants;
 
-            // A list of global boolean variables.
+            // The global boolean variables.
             std::map<std::string, BooleanVariable> globalBooleanVariables;
             
-            // A list of global integer variables.
+            // The global integer variables.
             std::map<std::string, IntegerVariable> globalIntegerVariables;
+            
+            // A mapping of formula names to the corresponding expressions.
+            std::map<std::string, storm::expressions::Expression> formulas;
             
             // The modules associated with the program.
             std::vector<storm::prism::Module> modules;

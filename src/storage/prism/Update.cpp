@@ -3,25 +3,17 @@
 
 namespace storm {
     namespace prism {
-        Update::Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::map<std::string, storm::prism::Assignment> const& booleanAssignments, std::map<std::string, storm::prism::Assignment> const& integerAssignments, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(likelihoodExpression), booleanAssignments(booleanAssignments), integerAssignments(integerAssignments), globalIndex(globalIndex) {
+        Update::Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::map<std::string, storm::prism::Assignment> const& assignments, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(likelihoodExpression), assignments(assignments), globalIndex(globalIndex) {
             // Nothing to do here.
         }
         
-        Update::Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(update.getLikelihoodExpression().substitute<std::map>(renaming)), booleanAssignments(), integerAssignments(), globalIndex(newGlobalIndex) {
-            for (auto const& variableAssignmentPair : update.getBooleanAssignments()) {
+        Update::Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(update.getLikelihoodExpression().substitute<std::map>(renaming)), assignments(), globalIndex(newGlobalIndex) {
+            for (auto const& variableAssignmentPair : update.getAssignments()) {
                 auto const& namePair = renaming.find(variableAssignmentPair.first);
                 if (namePair != renaming.end()) {
-                    this->booleanAssignments.emplace(namePair->second, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
+                    this->assignments.emplace(namePair->second, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
                 } else {
-                    this->booleanAssignments.emplace(variableAssignmentPair.first, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
-                }
-            }
-            for (auto const& variableAssignmentPair : update.getIntegerAssignments()) {
-                auto const& namePair = renaming.find(variableAssignmentPair.first);
-                if (renaming.count(variableAssignmentPair.first) > 0) {
-                    this->integerAssignments.emplace(namePair->second, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
-                } else {
-                    this->integerAssignments.emplace(variableAssignmentPair.first, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
+                    this->assignments.emplace(variableAssignmentPair.first, Assignment(variableAssignmentPair.second, renaming, filename, lineNumber));
                 }
             }
             this->likelihoodExpression = update.getLikelihoodExpression().substitute<std::map>(renaming);
@@ -31,35 +23,18 @@ namespace storm {
             return likelihoodExpression;
         }
         
-        std::size_t Update::getNumberOfBooleanAssignments() const {
-            return booleanAssignments.size();
+        std::size_t Update::getNumberOfAssignments() const {
+            return this->assignments.size();
         }
         
-        std::size_t Update::getNumberOfIntegerAssignments() const {
-            return integerAssignments.size();
+        std::map<std::string, storm::prism::Assignment> const& Update::getAssignments() const {
+            return this->assignments;
         }
         
-        std::map<std::string, storm::prism::Assignment> const& Update::getBooleanAssignments() const {
-            return booleanAssignments;
-        }
-        
-        std::map<std::string, storm::prism::Assignment> const& Update::getIntegerAssignments() const {
-            return integerAssignments;
-        }
-        
-        storm::prism::Assignment const& Update::getBooleanAssignment(std::string const& variableName) const {
-            auto variableAssignmentPair = booleanAssignments.find(variableName);
-            if (variableAssignmentPair == booleanAssignments.end()) {
-                throw storm::exceptions::OutOfRangeException() << "Cannot find boolean assignment for variable '" << variableName << "' in update " << *this << ".";
-            }
-            
-            return variableAssignmentPair->second;
-        }
-        
-        storm::prism::Assignment const& Update::getIntegerAssignment(std::string const& variableName) const {
-            auto variableAssignmentPair = integerAssignments.find(variableName);
-            if (variableAssignmentPair == integerAssignments.end()) {
-                throw storm::exceptions::OutOfRangeException() << "Cannot find integer assignment for variable '" << variableName << "' in update " << *this << ".";
+        storm::prism::Assignment const& Update::getAssignment(std::string const& variableName) const {
+            auto variableAssignmentPair = this->getAssignments().find(variableName);
+            if (variableAssignmentPair == this->getAssignments().end()) {
+                throw storm::exceptions::OutOfRangeException() << "Cannot find assignment for variable '" << variableName << "' in update " << *this << ".";
             }
             
             return variableAssignmentPair->second;
@@ -72,17 +47,9 @@ namespace storm {
         std::ostream& operator<<(std::ostream& stream, Update const& update) {
             stream << update.getLikelihoodExpression() << " : ";
             uint_fast64_t i = 0;
-            for (auto const& assignment : update.getBooleanAssignments()) {
+            for (auto const& assignment : update.getAssignments()) {
                 stream << assignment.second;
-                if (i < update.getBooleanAssignments().size() - 1 || update.getIntegerAssignments().size() > 0) {
-                    stream << " & ";
-                }
-                ++i;
-            }
-            i = 0;
-            for (auto const& assignment : update.getIntegerAssignments()) {
-                stream << assignment.second;
-                if (i < update.getIntegerAssignments().size() - 1) {
+                if (i < update.getAssignments().size() - 1) {
                     stream << " & ";
                 }
                 ++i;

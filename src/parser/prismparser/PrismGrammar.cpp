@@ -1,152 +1,96 @@
-/*
- * PrismGrammar.cpp
- *
- *  Created on: 11.01.2013
- *      Author: chris
- */
-
-// Needed for file IO.
-#include <fstream>
-#include <iomanip>
-#include <limits>
-
-#include "PrismGrammar.h"
-
-#include "src/utility/OsDetection.h"
-
-#include "src/parser/prismparser/Includes.h"
-#include "src/parser/prismparser/BooleanExpressionGrammar.h"
-#include "src/parser/prismparser/ConstBooleanExpressionGrammar.h"
-#include "src/parser/prismparser/ConstDoubleExpressionGrammar.h"
-#include "src/parser/prismparser/ConstIntegerExpressionGrammar.h"
-#include "src/parser/prismparser/IntegerExpressionGrammar.h"
-#include "src/parser/prismparser/IdentifierGrammars.h"
-#include "src/parser/prismparser/VariableState.h"
+#include "src/parser/prismparser/PrismGrammar.h"
 #include "src/exceptions/InvalidArgumentException.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
-// Some typedefs and namespace definitions to reduce code size.
-typedef std::string::const_iterator BaseIteratorType;
-typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
-namespace qi = boost::spirit::qi;
-namespace phoenix = boost::phoenix;
 
 namespace storm {
     namespace parser {
         namespace prism {
-            
-            void PrismGrammar::addLabel(std::string const& name, std::shared_ptr<BaseExpression> const& value, std::map<std::string, std::unique_ptr<BaseExpression>>& nameToExpressionMap) {
-                this->state->labelNames_.add(name, name);
-                nameToExpressionMap[name] = value->clone();
-            }
-            
-            void PrismGrammar::addIntegerAssignment(std::string const& variable, std::shared_ptr<BaseExpression> const& value, std::map<std::string, Assignment>& variableToAssignmentMap) {
-                this->state->assignedIntegerVariables_.add(variable, variable);
-                variableToAssignmentMap[variable] = Assignment(variable, value->clone());
-            }
-            
-            void PrismGrammar::addBooleanAssignment(std::string const& variable, std::shared_ptr<BaseExpression> const& value, std::map<std::string, Assignment>& variableToAssigmentMap) {
-                this->state->assignedBooleanVariables_.add(variable, variable);
-                variableToAssigmentMap[variable] = Assignment(variable, value->clone());
-            }
-            
-            void PrismGrammar::addUndefinedBooleanConstant(std::string const& name, std::map<std::string, std::unique_ptr<BooleanConstantExpression>>& nameToExpressionMap) {
-                this->state->booleanConstants_.add(name, std::shared_ptr<BaseExpression>(new BooleanConstantExpression(name)));
-                this->state->allConstantNames_.add(name, name);
-                nameToExpressionMap.emplace(name, std::unique_ptr<BooleanConstantExpression>(new BooleanConstantExpression(dynamic_cast<BooleanConstantExpression&>(*this->state->booleanConstants_.at(name)))));
-            }
-            
-            void PrismGrammar::addUndefinedIntegerConstant(std::string const& name, std::map<std::string, std::unique_ptr<IntegerConstantExpression>>& nameToExpressionMap) {
-                this->state->integerConstants_.add(name, std::shared_ptr<BaseExpression>(new IntegerConstantExpression(name)));
-                this->state->allConstantNames_.add(name, name);
-                nameToExpressionMap.emplace(name, std::unique_ptr<IntegerConstantExpression>(new IntegerConstantExpression(dynamic_cast<IntegerConstantExpression&>(*this->state->integerConstants_.at(name)))));
-            }
-            
-            void PrismGrammar::addUndefinedDoubleConstant(std::string const& name, std::map<std::string, std::unique_ptr<DoubleConstantExpression>>& nameToExpressionMap) {
-                this->state->doubleConstants_.add(name, std::shared_ptr<BaseExpression>(new DoubleConstantExpression(name)));
-                this->state->allConstantNames_.add(name, name);
-                nameToExpressionMap.emplace(name, std::unique_ptr<DoubleConstantExpression>(new DoubleConstantExpression(dynamic_cast<DoubleConstantExpression&>(*this->state->doubleConstants_.at(name)))));
-            }
-            
-            Module PrismGrammar::renameModule(std::string const& newName, std::string const& oldName, std::map<std::string, std::string> const& renaming) {
-                this->state->moduleNames_.add(newName, newName);
-                Module* old = this->moduleMap_.find(oldName);
-                if (old == nullptr) {
-                    LOG4CPLUS_ERROR(logger, "Renaming module failed: module " << oldName << " does not exist.");
-                    throw storm::exceptions::InvalidArgumentException() << "Renaming module failed: module " << oldName << " does not exist.";
-                }
-                Module res(*old, newName, renaming, *this->state);
-                this->moduleMap_.at(newName) = res;
-                return res;
-            }
-            
-            Module PrismGrammar::createModule(std::string const& name, std::vector<BooleanVariable> const& bools, std::vector<IntegerVariable> const& ints, std::map<std::string, uint_fast64_t> const& boolids, std::map<std::string, uint_fast64_t> const& intids, std::vector<storm::ir::Command> const& commands) {
-                this->state->moduleNames_.add(name, name);
-                Module res(name, bools, ints, boolids, intids, commands);
-                this->moduleMap_.at(name) = res;
-                return res;
-            }
-            
-            void PrismGrammar::createIntegerVariable(std::string const& name, std::shared_ptr<BaseExpression> const& lower, std::shared_ptr<BaseExpression> const& upper, std::shared_ptr<BaseExpression> const& init, std::vector<IntegerVariable>& vars, std::map<std::string, uint_fast64_t>& varids, bool isGlobalVariable) {
-                uint_fast64_t id = this->state->addIntegerVariable(name);
-                uint_fast64_t newLocalIndex = this->state->nextLocalIntegerVariableIndex;
-                vars.emplace_back(newLocalIndex, id, name, lower != nullptr ? lower->clone() : nullptr, upper != nullptr ? upper->clone() : nullptr, init != nullptr ? init->clone() : nullptr);
-                varids[name] = newLocalIndex;
-                ++this->state->nextLocalIntegerVariableIndex;
-                this->state->localIntegerVariables_.add(name, name);
-                if (isGlobalVariable) {
-                    this->state->globalIntegerVariables_.add(name, name);
-                }
-            }
-            
-            void PrismGrammar::createBooleanVariable(std::string const& name, std::shared_ptr<BaseExpression> const& init, std::vector<BooleanVariable>& vars, std::map<std::string, uint_fast64_t>& varids, bool isGlobalVariable) {
-                uint_fast64_t id = this->state->addBooleanVariable(name);
-                uint_fast64_t newLocalIndex = this->state->nextLocalBooleanVariableIndex;
-                vars.emplace_back(newLocalIndex, id, name, init != nullptr ? init->clone() : nullptr);
-                varids[name] = newLocalIndex;
-                ++this->state->nextLocalBooleanVariableIndex;
-                this->state->localBooleanVariables_.add(name, name);
-                if (isGlobalVariable) {
-                    this->state->globalBooleanVariables_.add(name, name);
-                }
-            }
-            
-            StateReward createStateReward(std::shared_ptr<BaseExpression> const& guard, std::shared_ptr<BaseExpression> const& reward) {
-                return StateReward(guard->clone(), reward->clone());
-            }
-            TransitionReward createTransitionReward(std::string const& label, std::shared_ptr<BaseExpression> const& guard, std::shared_ptr<BaseExpression> const& reward) {
-                return TransitionReward(label, guard->clone(), reward->clone());
-            }
-            void createRewardModel(std::string const& name, std::vector<StateReward>& stateRewards, std::vector<TransitionReward>& transitionRewards, std::map<std::string, RewardModel>& mapping) {
-                mapping[name] = RewardModel(name, stateRewards, transitionRewards);
-            }
-            Update PrismGrammar::createUpdate(std::shared_ptr<BaseExpression> const& likelihood, std::map<std::string, Assignment> const& bools, std::map<std::string, Assignment> const& ints) {
-                this->state->nextGlobalUpdateIndex++;
-                return Update(this->state->getNextGlobalUpdateIndex() - 1, likelihood != nullptr ? likelihood->clone() : nullptr, bools, ints);
-            }
-            Command PrismGrammar::createCommand(std::string const& label, std::shared_ptr<BaseExpression> const& guard, std::vector<Update> const& updates) {
-                this->state->nextGlobalCommandIndex++;
-                return Command(this->state->getNextGlobalCommandIndex() - 1, label, guard->clone(), updates);
-            }
-            Program createProgram(
-                                  Program::ModelType modelType,
-                                  std::map<std::string, std::unique_ptr<BooleanConstantExpression>> const& undefBoolConst,
-                                  std::map<std::string, std::unique_ptr<IntegerConstantExpression>> const& undefIntConst,
-                                  std::map<std::string, std::unique_ptr<DoubleConstantExpression>> const& undefDoubleConst,
-                                  GlobalVariableInformation const& globalVariableInformation,
-                                  std::vector<Module> const& modules,
-                                  std::map<std::string, RewardModel> const& rewards,
-                                  std::map<std::string, std::unique_ptr<BaseExpression>> const& labels) {
-                return Program(modelType, undefBoolConst, undefIntConst, undefDoubleConst,
-                               globalVariableInformation.booleanVariables, globalVariableInformation.integerVariables,
-                               globalVariableInformation.booleanVariableToIndexMap,
-                               globalVariableInformation.integerVariableToIndexMap, modules, rewards, labels);
-            }
-            
-            PrismGrammar::PrismGrammar() : PrismGrammar::base_type(start), state(new VariableState()) {
+            PrismGrammar::PrismGrammar() : PrismGrammar::base_type(start) {
+                // Parse simple identifier.
+                identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]] - keywords_;
+                identifier.name("identifier");
+                
+                // Parse a composed expression.
+                expression %= (booleanExpression | numericalExpression);
+                expression.name("expression");
+                
+                booleanExpression %= orExpression;
+                expression.name("boolean expression");
+                
+                orExpression = andExpression[qi::_val = qi::_1] >> *(qi::lit("|") >> andExpression)[qi::_val = qi::_val * qi::_1];
+                orExpression.name("boolean expression");
+                
+                andExpression = notExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> notExpression)[qi::_val = qi::_val * qi::_1];
+                andExpression.name("boolean expression");
+                
+                notExpression = atomicBooleanExpression[qi::_val = qi::_1] | (qi::lit("!") >> atomicBooleanExpression)[qi::_val = !qi::_1];
+                notExpression.name("boolean expression");
+                
+                atomicBooleanExpression %= relativeExpression | booleanVariableExpression | qi::lit("(") >> booleanExpression >> qi::lit(")");
+                atomicBooleanExpression.name("boolean expression");
+                
+                relativeExpression = ((numericalExpression >> ">") > numericalExpression)[qi::_val = qi::_1 > qi::_2] | ((numericalExpression >> ">=") > numericalExpression)[qi::_val = qi::_1 >= qi::_2] | ((numericalExpression >> "<") > numericalExpression)[qi::_val = qi::_1 < qi::_2] | ((numericalExpression >> "<=") > numericalExpression)[qi::_val = qi::_1 <= qi::_2];
+                relativeExpression.name("relative expression");
+                
+                booleanVariableExpression = identifier[qi::_val = phoenix::bind(&storm::expressions::Expression::createBooleanVariable, qi::_1)];
+                booleanVariableExpression.name("boolean variable");
+                
+                numericalExpression %= plusExpression;
+                numericalExpression.name("numerical expression");
+                
+                plusExpression = multiplicationExpression[qi::_val = qi::_1] >> *((qi::lit("+")[qi::_a = true] | qi::lit("-")[qi::_a = false]) >> multiplicationExpression)[phoenix::if_(qi::_a) [qi::_val = qi::_val + qi::_1] .else_ [qi::_val = qi::_val - qi::_1]];
+                plusExpression.name("numerical expression");
+                
+                multiplicationExpression = atomicNumericalExpression[qi::_val = qi::_1] >> *(qi::lit("*") >> atomicNumericalExpression[qi::_val = qi::_val * qi::_1]);
+                multiplicationExpression.name("numerical expression");
+                
+                atomicNumericalExpression %= minMaxExpression | floorCeilExpression | numericalVariableExpression | qi::lit("(") >> numericalExpression >> qi::lit(")");
+                atomicNumericalExpression.name("numerical expression");
+                
+                minMaxExpression %= ((qi::lit("min")[qi::_a = true] | qi::lit("max")[qi::_a = false]) >> qi::lit("(") >> numericalExpression >> qi::lit(",") >> numericalExpression >> qi::lit(")"))[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&storm::expressions::Expression::minimum, qi::_1, qi::_2)] .else_ [qi::_val = phoenix::bind(&storm::expressions::Expression::maximum, qi::_1, qi::_2)]];
+                minMaxExpression.name("min/max expression");
+                
+                floorCeilExpression %= ((qi::lit("floor")[qi::_a = true] | qi::lit("ceil")[qi::_a = false]) >> qi::lit("(") >> numericalExpression >> qi::lit(")"))[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&storm::expressions::Expression::floor, qi::_1)] .else_ [qi::_val = phoenix::bind(&storm::expressions::Expression::ceil, qi::_1)]];
+                floorCeilExpression.name("integer floor/ceil expression");
+
+                numericalVariableExpression = identifier[qi::_val = phoenix::bind(&storm::expressions::Expression::createDoubleVariable, qi::_1)];
+                numericalVariableExpression.name("numerical variable");
+                
+                // Parse a model type.
+                modelTypeDefinition = modelType_;
+                modelTypeDefinition.name("model type");
+                
+                // This block defines all entities that are needed for parsing constant definitions.
+                definedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> identifier >> qi::lit("=") > expression > qi::lit(";"))[phoenix::bind(this->state->booleanConstants_.add, qi::_1, qi::_2), phoenix::bind(this->state->allConstantNames_.add, qi::_1, qi::_1), qi::_val = qi::_2];
+                definedBooleanConstantDefinition.name("defined boolean constant declaration");
+                
+                definedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> ConstIntegerExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->integerConstants_.add, qi::_1, qi::_2), phoenix::bind(this->state->allConstantNames_.add, qi::_1, qi::_1), qi::_val = qi::_2];
+                definedIntegerConstantDefinition.name("defined integer constant declaration");
+                definedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") > ConstDoubleExpressionGrammar::instance(this->state) > qi::lit(";"))[phoenix::bind(this->state->doubleConstants_.add, qi::_1, qi::_2), phoenix::bind(this->state->allConstantNames_.add, qi::_1, qi::_1), qi::_val = qi::_2];
+                definedDoubleConstantDefinition.name("defined double constant declaration");
+                undefinedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") > FreeIdentifierGrammar::instance(this->state) > qi::lit(";"))[phoenix::bind(&PrismGrammar::addUndefinedBooleanConstant, this, qi::_1, qi::_r1)];
+                undefinedBooleanConstantDefinition.name("undefined boolean constant declaration");
+                undefinedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") > FreeIdentifierGrammar::instance(this->state) > qi::lit(";"))[phoenix::bind(&PrismGrammar::addUndefinedIntegerConstant, this, qi::_1, qi::_r1)];
+                undefinedIntegerConstantDefinition.name("undefined integer constant declaration");
+                undefinedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") > FreeIdentifierGrammar::instance(this->state) > qi::lit(";"))[phoenix::bind(&PrismGrammar::addUndefinedDoubleConstant, this, qi::_1, qi::_r1)];
+                undefinedDoubleConstantDefinition.name("undefined double constant definition");
+                definedConstantDefinition %= (definedBooleanConstantDefinition(qi::_r1) | definedIntegerConstantDefinition(qi::_r2) | definedDoubleConstantDefinition(qi::_r3));
+                definedConstantDefinition.name("defined constant definition");
+                undefinedConstantDefinition = (undefinedBooleanConstantDefinition(qi::_r1) | undefinedIntegerConstantDefinition(qi::_r2) | undefinedDoubleConstantDefinition(qi::_r3));
+                undefinedConstantDefinition.name("undefined constant definition");
+                constantDefinitionList = *(undefinedConstantDefinition(qi::_r1, qi::_r2, qi::_r3) | definedConstantDefinition(qi::_r4, qi::_r5, qi::_r6));
+                constantDefinitionList.name("constant definition list");
+                
+                // Parse the ingredients of a probabilistic program.
+                start = (qi::eps >
+                         modelTypeDefinition >
+                         constantDefinitionList(qi::_a, qi::_b, qi::_c, qi::_d, qi::_e, qi::_f) >
+                         formulaDefinitionList >
+                         globalVariableDefinitionList(qi::_d) >
+                         moduleDefinitionList >
+                         rewardDefinitionList(qi::_e) >
+                         labelDefinitionList(qi::_f))[qi::_val = phoenix::bind(&createProgram, qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2, qi::_e, qi::_f)];
+                start.name("probabilistic program declaration");
+
                 
                 labelDefinition = (qi::lit("label") >> -qi::lit("\"") >> FreeIdentifierGrammar::instance(this->state) >> -qi::lit("\"") >> qi::lit("=") >> BooleanExpressionGrammar::instance(this->state) >> qi::lit(";"))
                 [phoenix::bind(&PrismGrammar::addLabel, this, qi::_1, qi::_2, qi::_r1)];
@@ -222,26 +166,6 @@ namespace storm {
                 globalVariableDefinitionList = *(qi::lit("global") > (booleanVariableDefinition(bind(&GlobalVariableInformation::booleanVariables, qi::_r1), bind(&GlobalVariableInformation::booleanVariableToIndexMap, qi::_r1), true) | integerVariableDefinition(bind(&GlobalVariableInformation::integerVariables, qi::_r1), bind(&GlobalVariableInformation::integerVariableToIndexMap, qi::_r1), true)));
                 globalVariableDefinitionList.name("global variable declaration list");
                 
-                // This block defines all entities that are needed for parsing constant definitions.
-                definedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") > ConstBooleanExpressionGrammar::instance(this->state) > qi::lit(";"))[phoenix::bind(this->state->booleanConstants_.add, qi::_1, qi::_2), phoenix::bind(this->state->allConstantNames_.add, qi::_1, qi::_1), qi::_val = qi::_2];
-                definedBooleanConstantDefinition.name("defined boolean constant declaration");
-                definedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> ConstIntegerExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->integerConstants_.add, qi::_1, qi::_2), phoenix::bind(this->state->allConstantNames_.add, qi::_1, qi::_1), qi::_val = qi::_2];
-                definedIntegerConstantDefinition.name("defined integer constant declaration");
-                definedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") > ConstDoubleExpressionGrammar::instance(this->state) > qi::lit(";"))[phoenix::bind(this->state->doubleConstants_.add, qi::_1, qi::_2), phoenix::bind(this->state->allConstantNames_.add, qi::_1, qi::_1), qi::_val = qi::_2];
-                definedDoubleConstantDefinition.name("defined double constant declaration");
-                undefinedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") > FreeIdentifierGrammar::instance(this->state) > qi::lit(";"))[phoenix::bind(&PrismGrammar::addUndefinedBooleanConstant, this, qi::_1, qi::_r1)];
-                undefinedBooleanConstantDefinition.name("undefined boolean constant declaration");
-                undefinedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") > FreeIdentifierGrammar::instance(this->state) > qi::lit(";"))[phoenix::bind(&PrismGrammar::addUndefinedIntegerConstant, this, qi::_1, qi::_r1)]; 
-                undefinedIntegerConstantDefinition.name("undefined integer constant declaration");
-                undefinedDoubleConstantDefinition = (qi::lit("const") >> qi::lit("double") > FreeIdentifierGrammar::instance(this->state) > qi::lit(";"))[phoenix::bind(&PrismGrammar::addUndefinedDoubleConstant, this, qi::_1, qi::_r1)];
-                undefinedDoubleConstantDefinition.name("undefined double constant declaration");
-                definedConstantDefinition %= (definedBooleanConstantDefinition | definedIntegerConstantDefinition | definedDoubleConstantDefinition);
-                definedConstantDefinition.name("defined constant declaration");
-                undefinedConstantDefinition = (undefinedBooleanConstantDefinition(qi::_r1) | undefinedIntegerConstantDefinition(qi::_r2) | undefinedDoubleConstantDefinition(qi::_r3));
-                undefinedConstantDefinition.name("undefined constant declaration");
-                constantDefinitionList = *(definedConstantDefinition | undefinedConstantDefinition(qi::_r1, qi::_r2, qi::_r3));
-                constantDefinitionList.name("constant declaration list");
-                
                 constantBooleanFormulaDefinition = (qi::lit("formula") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> ConstBooleanExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->constantBooleanFormulas_.add, qi::_1, qi::_2)];
                 constantBooleanFormulaDefinition.name("constant boolean formula definition");
                 booleanFormulaDefinition = (qi::lit("formula") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> BooleanExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->booleanFormulas_.add, qi::_1, qi::_2)];
@@ -256,40 +180,7 @@ namespace storm {
                 formulaDefinition.name("formula definition");
                 formulaDefinitionList = *formulaDefinition;
                 formulaDefinitionList.name("formula definition list");
-
-                // This block defines all entities that are needed for parsing a program.
-                modelTypeDefinition = modelType_;
-                modelTypeDefinition.name("model type");
-                start = (qi::eps >
-                         modelTypeDefinition >
-                         constantDefinitionList(qi::_a, qi::_b, qi::_c) >
-                         formulaDefinitionList >
-                         globalVariableDefinitionList(qi::_d) >
-                         moduleDefinitionList >
-                         rewardDefinitionList(qi::_e) >
-                         labelDefinitionList(qi::_f))[qi::_val = phoenix::bind(&createProgram, qi::_1, qi::_a, qi::_b, qi::_c, qi::_d, qi::_2, qi::_e, qi::_f)];
-                start.name("probabilistic program declaration");
             }
-            
-            void PrismGrammar::prepareForSecondRun() {
-                LOG4CPLUS_INFO(logger, "Preparing parser for second run.");
-                this->state->prepareForSecondRun();
-                BooleanExpressionGrammar::secondRun();
-                ConstBooleanExpressionGrammar::secondRun();
-                ConstDoubleExpressionGrammar::secondRun();
-                ConstIntegerExpressionGrammar::secondRun();
-                IntegerExpressionGrammar::secondRun();
-            }
-            
-            void PrismGrammar::resetGrammars() {
-                LOG4CPLUS_INFO(logger, "Resetting grammars.");
-                BooleanExpressionGrammar::resetInstance();
-                ConstBooleanExpressionGrammar::resetInstance();
-                ConstDoubleExpressionGrammar::resetInstance();
-                ConstIntegerExpressionGrammar::resetInstance();
-                IntegerExpressionGrammar::resetInstance();
-            }
-            
         } // namespace prism
     } // namespace parser
 } // namespace storm

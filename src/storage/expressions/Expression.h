@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_
 
-#include <functional>
+#include <memory>
 
 #include "src/storage/expressions/BaseExpression.h"
 
