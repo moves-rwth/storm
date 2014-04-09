@@ -58,9 +58,21 @@ namespace storm {
                 // Parse a model type.
                 modelTypeDefinition = modelType_;
                 modelTypeDefinition.name("model type");
+
+                programHeader =         modelTypeDefinition[phoenix::bind(&GlobalProgramInformation::modelType, qi::_r1) = qi::_1]
+                                >   *(  undefinedConstantDefinition(qi::_r1)
+                                    |   definedConstantDefinition(qi::_r1)
+                                    |   formulaDefinition(qi::_r1)
+                                    |   globalVariableDefinition(qi::_r1)
+                                    );
+                programHeader.name("program header");
+
+                // This block defines all entities that are needed for parsing global variable definitions.
+                globalVariableDefinitionList = *(qi::lit("global") > (booleanVariableDefinition(bind(&GlobalVariableInformation::booleanVariables, qi::_r1), bind(&GlobalVariableInformation::booleanVariableToIndexMap, qi::_r1), true) | integerVariableDefinition(bind(&GlobalVariableInformation::integerVariables, qi::_r1), bind(&GlobalVariableInformation::integerVariableToIndexMap, qi::_r1), true)));
+                globalVariableDefinitionList.name("global variable declaration list");
                 
                 // This block defines all entities that are needed for parsing constant definitions.
-                definedBooleanConstantDefinition = (qi::lit("const") >> qi::lit("bool") >> identifier >> qi::lit("=") > expression > qi::lit(";"))[phoenix::bind(this->state->booleanConstants_.add, qi::_1, qi::_2), phoenix::bind(this->state->allConstantNames_.add, qi::_1, qi::_1), qi::_val = qi::_2];
+                definedBooleanConstantDefinition = ((qi::lit("const") >> qi::lit("bool") >> identifier >> qi::lit("=")) > expression > qi::lit(";"))[phoenix::bind(this->state->booleanConstants_.add, qi::_1, qi::_2), phoenix::bind(this->state->allConstantNames_.add, qi::_1, qi::_1), qi::_val = qi::_2];
                 definedBooleanConstantDefinition.name("defined boolean constant declaration");
                 
                 definedIntegerConstantDefinition = (qi::lit("const") >> qi::lit("int") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> ConstIntegerExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->integerConstants_.add, qi::_1, qi::_2), phoenix::bind(this->state->allConstantNames_.add, qi::_1, qi::_1), qi::_val = qi::_2];
@@ -77,13 +89,10 @@ namespace storm {
                 definedConstantDefinition.name("defined constant definition");
                 undefinedConstantDefinition = (undefinedBooleanConstantDefinition(qi::_r1) | undefinedIntegerConstantDefinition(qi::_r2) | undefinedDoubleConstantDefinition(qi::_r3));
                 undefinedConstantDefinition.name("undefined constant definition");
-                constantDefinitionList = *(undefinedConstantDefinition(qi::_r1, qi::_r2, qi::_r3) | definedConstantDefinition(qi::_r4, qi::_r5, qi::_r6));
-                constantDefinitionList.name("constant definition list");
                 
                 // Parse the ingredients of a probabilistic program.
                 start = (qi::eps >
-                         modelTypeDefinition >
-                         constantDefinitionList(qi::_a, qi::_b, qi::_c, qi::_d, qi::_e, qi::_f) >
+                         programHeader(qi::_a) >
                          formulaDefinitionList >
                          globalVariableDefinitionList(qi::_d) >
                          moduleDefinitionList >
@@ -162,9 +171,6 @@ namespace storm {
                 moduleDefinitionList %= +(moduleDefinition | moduleRenaming);
                 moduleDefinitionList.name("module list");
                 
-                // This block defines all entities that are needed for parsing global variable definitions.
-                globalVariableDefinitionList = *(qi::lit("global") > (booleanVariableDefinition(bind(&GlobalVariableInformation::booleanVariables, qi::_r1), bind(&GlobalVariableInformation::booleanVariableToIndexMap, qi::_r1), true) | integerVariableDefinition(bind(&GlobalVariableInformation::integerVariables, qi::_r1), bind(&GlobalVariableInformation::integerVariableToIndexMap, qi::_r1), true)));
-                globalVariableDefinitionList.name("global variable declaration list");
                 
                 constantBooleanFormulaDefinition = (qi::lit("formula") >> FreeIdentifierGrammar::instance(this->state) >> qi::lit("=") >> ConstBooleanExpressionGrammar::instance(this->state) >> qi::lit(";"))[phoenix::bind(this->state->constantBooleanFormulas_.add, qi::_1, qi::_2)];
                 constantBooleanFormulaDefinition.name("constant boolean formula definition");

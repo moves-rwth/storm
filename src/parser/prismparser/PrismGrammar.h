@@ -16,6 +16,7 @@
 
 namespace qi = boost::spirit::qi;
 namespace phoenix = boost::phoenix;
+namespace prism = storm::prism;
 
 typedef std::string::const_iterator BaseIteratorType;
 typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
@@ -28,13 +29,32 @@ typedef boost::spirit::unused_type Unused;
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
-using namespace storm::prism;
 using namespace storm::expressions;
 
 namespace storm {
     namespace parser {
         namespace prism {
-            class PrismGrammar : public qi::grammar<Iterator, Program(), qi::locals<std::set<std::string>, std::set<std::string>, std::set<std::string>, std::map<std::string, storm::expressions::Expression>, std::map<std::string, storm::expressions::Expression>, std::map<std::string, storm::expressions::Expression>, std::map<std::string, Module>>, Skipper> {
+            class GlobalProgramInformation {
+            public:
+                // Default construct the header information.
+                GlobalProgramInformation() = default;
+                
+                // Members for all essential information that needs to be collected.
+                prism::Program::ModelType modelType;
+                std::set<std::string> undefinedBooleanConstants;
+                std::set<std::string> undefinedIntegerConstants;
+                std::set<std::string> undefinedDoubleConstants;
+                std::map<std::string, storm::expressions::Expression> definedBooleanConstants;
+                std::map<std::string, storm::expressions::Expression> definedIntegerConstants;
+                std::map<std::string, storm::expressions::Expression> definedDoubleConstants;
+                std::map<std::string, storm::expressions::Expression> formulas;
+                std::map<std::string, BooleanVariable> globalBooleanVariables;
+                std::map<std::string, IntegerVariable> globalIntegerVariables;
+                std::map<std::string, Module> modules;
+                std::map<std::string, RewardModel> rewardModels;
+            };
+            
+            class PrismGrammar : public qi::grammar<Iterator, Program(), qi::locals<GlobalProgramInformation>, Skipper> {
             public:
                 /*!
                  * Default constructor that creates an empty and functional grammar.
@@ -43,30 +63,29 @@ namespace storm {
                 
             private:
                 // The starting point of the grammar.
-                // The locals are used for: (a) undefined boolean constants, (b) undefined integer constants, (c) undefined double constants, (d) defined boolean constants, (e) defined integer constants, (f) defined double constants, (g) module name to module map
-                qi::rule<Iterator, Program(), qi::locals<std::set<std::string>, std::set<std::string>, std::set<std::string>, std::map<std::string, storm::expressions::Expression>, std::map<std::string, storm::expressions::Expression>, std::map<std::string, storm::expressions::Expression>, std::map<std::string, Module>>, Skipper> start;
+                qi::rule<Iterator, Program(), qi::locals<GlobalProgramInformation>, Skipper> start;
                 
                 // Rules for model type.
                 qi::rule<Iterator, Program::ModelType(), Skipper> modelTypeDefinition;
                 
-                // Rules for constant definitions.
-                qi::rule<Iterator, qi::unused_type(std::set<std::string>&, std::set<std::string>&, std::set<std::string>&, std::map<std::string, storm::expressions::Expression>&, std::map<std::string, storm::expressions::Expression>&, std::map<std::string, storm::expressions::Expression>&), Skipper> constantDefinitionList;
-                qi::rule<Iterator, qi::unused_type(std::set<std::string>&, std::set<std::string>&, std::set<std::string>&), Skipper> undefinedConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::expressions::Expression>&, std::map<std::string, storm::expressions::Expression>&, std::map<std::string, storm::expressions::Expression>&), Skipper> definedConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::set<std::string>&), Skipper> undefinedBooleanConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::set<std::string>&), Skipper> undefinedIntegerConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::set<std::string>&), Skipper> undefinedDoubleConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::expressions::Expression>&), Skipper> definedBooleanConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::expressions::Expression>&), Skipper> definedIntegerConstantDefinition;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::expressions::Expression>&), Skipper> definedDoubleConstantDefinition;
+                // Rules for parsing the program header.
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> programHeader;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> undefinedConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> definedConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> undefinedBooleanConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> undefinedIntegerConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> undefinedDoubleConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> definedBooleanConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> definedIntegerConstantDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> definedDoubleConstantDefinition;
                 
                 // Rules for global variable definitions.
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, BooleanVariable>&, std::map<std::string, IntegerVariable>), Skipper> globalVariableDefinitionList;
+                qi::rule<Iterator, qi::unused_type(ProgramHeaderInformation&), Skipper> globalVariableDefinition;
                 
                 // Rules for modules definition.
                 qi::rule<Iterator, std::vector<Module>(), Skipper> moduleDefinitionList;
                 qi::rule<Iterator, Module(), qi::locals<std::map<std::string, BooleanVariable>, std::map<std::string, IntegerVariable>>, Skipper> moduleDefinition;
-                qi::rule<Iterator, Module(std::map<std::string, Module>&), qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
+                qi::rule<Iterator, Module(GlobalProgramInformation&>, Skipper> moduleRenaming;
                 
                 // Rules for variable definitions.
                 qi::rule<Iterator, qi::unused_type(std::map<std::string, BooleanVariable>&, std::map<std::string, IntegerVariable>&), Skipper> variableDefinition;
@@ -81,18 +100,15 @@ namespace storm {
                 qi::rule<Iterator, Assignment(), Skipper> assignmentDefinition;
                 
                 // Rules for reward definitions.
-                qi::rule<Iterator, std::map<std::string, RewardModel>(), Skipper> rewardDefinitionList;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, RewardModel>&), qi::locals<std::vector<StateReward>, std::vector<TransitionReward>>, Skipper> rewardDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), qi::locals<std::vector<StateReward>, std::vector<TransitionReward>>, Skipper> rewardModelDefinition;
                 qi::rule<Iterator, StateReward(), Skipper> stateRewardDefinition;
                 qi::rule<Iterator, TransitionReward(), Skipper> transitionRewardDefinition;
                 
                 // Rules for label definitions.
-                qi::rule<Iterator, std::map<std::string, storm::expressions::Expression>(), Skipper> labelDefinitionList;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::expressions::Expression>&), Skipper> labelDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> labelDefinition;
                 
                 // Rules for formula definitions.
-                qi::rule<Iterator, std::map<std::string, storm::expressions::Expression>(), Skipper> formulaDefinitionList;
-                qi::rule<Iterator, qi::unused_type(std::map<std::string, storm::expressions::Expression>&), Skipper> formulaDefinition;
+                qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> formulaDefinition;
                 
                 // Rules for identifier parsing.
                 qi::rule<Iterator, std::string(), Skipper> identifier;
