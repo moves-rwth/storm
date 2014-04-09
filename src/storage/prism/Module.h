@@ -26,7 +26,7 @@ namespace storm {
              * @param filename The filename in which the module is defined.
              * @param lineNumber The line number in which the module is defined.
              */
-            Module(std::string const& moduleName, std::map<std::string, storm::prism::BooleanVariable> const& booleanVariables, std::map<std::string, storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Special copy constructor, implementing the module renaming functionality. This will create a new module
@@ -74,7 +74,7 @@ namespace storm {
              *
              * @return The boolean variables of the module.
              */
-            std::map<std::string, storm::prism::BooleanVariable> const& getBooleanVariables() const;
+            std::vector<storm::prism::BooleanVariable> const& getBooleanVariables() const;
             
             /*!
              * Retrieves a reference to the integer variable with the given name.
@@ -89,14 +89,21 @@ namespace storm {
              *
              * @return The integer variables of the module.
              */
-            std::map<std::string, storm::prism::IntegerVariable> const& getIntegerVariables() const;
+            std::vector<storm::prism::IntegerVariable> const& getIntegerVariables() const;
 
             /*!
              * Retrieves the number of commands of this module.
              *
-             * @return the number of commands of this module.
+             * @return The number of commands of this module.
              */
             std::size_t getNumberOfCommands() const;
+            
+            /*!
+             * Retrieves the total number of updates of this module.
+             *
+             * @return The total number of updates of this module.
+             */
+            std::size_t getNumberOfUpdates() const;
             
             /*!
              * Retrieves a reference to the command with the given index.
@@ -163,11 +170,17 @@ namespace storm {
             std::string moduleName;
             
             // A list of boolean variables.
-            std::map<std::string, storm::prism::BooleanVariable> booleanVariables;
+            std::vector<storm::prism::BooleanVariable> booleanVariables;
+            
+            // A mapping from boolean variables to the corresponding indices in the vector.
+            std::map<std::string, uint_fast64_t> booleanVariableToIndexMap;
             
             // A list of integer variables.
-            std::map<std::string, storm::prism::IntegerVariable> integerVariables;
-            
+            std::vector<storm::prism::IntegerVariable> integerVariables;
+
+            // A mapping from integer variables to the corresponding indices in the vector.
+            std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
+
             // The commands associated with the module.
             std::vector<storm::prism::Command> commands;
             

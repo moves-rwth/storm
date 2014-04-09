@@ -54,6 +54,7 @@
 #include "log4cplus/loggingmacros.h"
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
+log4cplus::Logger logger;
 
 #include "src/parser/PrismParser.h"
 #include "src/adapters/ExplicitModelAdapter.h"
@@ -120,8 +121,6 @@ void printUsage() {
 	std::cout << "\tUser Time: " << std::setprecision(3) << userTime << std::endl;
 #endif
 }
-
-log4cplus::Logger logger;
 
 /*!
  * Initializes the logging framework and sets up logging to console.

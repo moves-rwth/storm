@@ -16,6 +16,7 @@ namespace storm {
             LocatedInformation(std::string const& filename, uint_fast64_t lineNumber);
             
             // Create default implementations of constructors/assignment.
+            LocatedInformation() = default;
             LocatedInformation(LocatedInformation const& other) = default;
             LocatedInformation& operator=(LocatedInformation const& other)= default;
             LocatedInformation(LocatedInformation&& other) = default;

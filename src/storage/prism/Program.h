@@ -7,6 +7,9 @@
 #include <boost/container/flat_set.hpp>
 
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/prism/Constant.h"
+#include "src/storage/prism/Formula.h"
+#include "src/storage/prism/Label.h"
 #include "src/storage/prism/Module.h"
 #include "src/storage/prism/RewardModel.h"
 
@@ -24,12 +27,8 @@ namespace storm {
              * models, labels and initial states.
              *
              * @param modelType The type of the program.
-             * @param undefinedBooleanConstants The undefined boolean constants of the program.
-             * @param definedBooleanConstants The defined boolean constants of the program.
-             * @param undefinedIntegerConstants The undefined integer constants of the program.
-             * @param definedIntegerConstants The defined integer constants of the program.
-             * @param undefinedDoubleConstants The undefined double constants of the program.
-             * @param definedDoubleConstants The defined double constants of the program.
+             * @param undefinedConstants The undefined constants of the program.
+             * @param definedConstants The defined integer constants of the program.
              * @param globalBooleanVariables The global boolean variables of the program.
              * @param globalIntegerVariables The global integer variables of the program.
              * @param formulas The formulas defined in the program.
@@ -44,7 +43,7 @@ namespace storm {
              * @param filename The filename in which the program is defined.
              * @param lineNumber The line number in which the program is defined.
              */
-            Program(ModelType modelType, std::set<std::string> const& undefinedBooleanConstants, std::map<std::string, storm::expressions::Expression> const& definedBooleanConstants, std::set<std::string> const& undefinedIntegerConstants, std::map<std::string, storm::expressions::Expression> const& definedIntegerConstants, std::set<std::string> const& undefinedDoubleConstants, std::map<std::string, storm::expressions::Expression> const& definedDoubleConstants, std::map<std::string, BooleanVariable> const& globalBooleanVariables, std::map<std::string, IntegerVariable> const& globalIntegerVariables, std::map<std::string, storm::expressions::Expression> const& formulas, std::vector<storm::prism::Module> const& modules, std::map<std::string, storm::prism::RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::map<std::string, storm::expressions::Expression> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Program(ModelType modelType, std::vector<Constant> const& undefinedConstants, std::vector<Constant> const& definedConstants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -68,74 +67,25 @@ namespace storm {
             bool hasUndefinedConstants() const;
             
             /*!
-             * Retrieves whether there are boolean undefined constants in the program.
+             * Retrieves the undefined constants of the program.
              *
-             * @return True iff there are boolean undefined constants in the program.
+             * @return The undefined constants of the program.
              */
-            bool hasUndefinedBooleanConstants() const;
+            std::vector<Constant> const& getUndefinedConstants() const;
 
             /*!
-             * Retrieves whether there are integer undefined constants in the program.
+             * Retrieves the defined constants of the program.
              *
-             * @return True iff there are integer undefined constants in the program.
+             * @return The defined constants of the program.
              */
-            bool hasUndefinedIntegerConstants() const;
-            
-            /*!
-             * Retrieves whether there are double undefined constants in the program.
-             *
-             * @return True iff there are double undefined constants in the program.
-             */
-            bool hasUndefinedDoubleConstants() const;
-            
-            /*!
-             * Retrieves the undefined boolean constants of the program.
-             *
-             * @return The undefined boolean constants of the program.
-             */
-            std::set<std::string> const& getUndefinedBooleanConstants() const;
-            
-            /*!
-             * Retrieves the defined boolean constants of the program.
-             *
-             * @return The defined boolean constants of the program.
-             */
-            std::map<std::string, storm::expressions::Expression> const& getDefinedBooleanConstants() const;
-            
-            /*!
-             * Retrieves the undefined integer constants of the program.
-             *
-             * @return The undefined integer constants of the program.
-             */
-            std::set<std::string> const& getUndefinedIntegerConstants() const;
-
-            /*!
-             * Retrieves the defined integer constants of the program.
-             *
-             * @return The defined integer constants of the program.
-             */
-            std::map<std::string, storm::expressions::Expression> const& getDefinedIntegerConstants() const;
-
-            /*!
-             * Retrieves the undefined double constants of the program.
-             *
-             * @return The undefined double constants of the program.
-             */
-            std::set<std::string> const& getUndefinedDoubleConstants() const;
-            
-            /*!
-             * Retrieves the defined double constants of the program.
-             *
-             * @return The defined double constants of the program.
-             */
-            std::map<std::string, storm::expressions::Expression> const& getDefinedDoubleConstants() const;
+            std::vector<Constant> const& getDefinedConstants() const;
 
             /*!
              * Retrieves the global boolean variables of the program.
              *
              * @return The global boolean variables of the program.
              */
-            std::map<std::string, storm::prism::BooleanVariable> const& getGlobalBooleanVariables() const;
+            std::vector<BooleanVariable> const& getGlobalBooleanVariables() const;
             
             /*!
              * Retrieves a the global boolean variable with the given name.
@@ -143,14 +93,14 @@ namespace storm {
              * @param variableName The name of the global boolean variable to retrieve.
              * @return The global boolean variable with the given name.
              */
-            storm::prism::BooleanVariable const& getGlobalBooleanVariable(std::string const& variableName) const;
+            BooleanVariable const& getGlobalBooleanVariable(std::string const& variableName) const;
             
             /*!
              * Retrieves the global integer variables of the program.
              *
              * @return The global integer variables of the program.
              */
-            std::map<std::string, storm::prism::IntegerVariable> const& getGlobalIntegerVariables() const;
+            std::vector<IntegerVariable> const& getGlobalIntegerVariables() const;
 
             /*!
              * Retrieves a the global integer variable with the given name.
@@ -158,7 +108,7 @@ namespace storm {
              * @param variableName The name of the global integer variable to retrieve.
              * @return The global integer variable with the given name.
              */
-            storm::prism::IntegerVariable const& getGlobalIntegerVariable(std::string const& variableName) const;
+            IntegerVariable const& getGlobalIntegerVariable(std::string const& variableName) const;
 
             /*!
              * Retrieves the number of global boolean variables of the program.
@@ -179,7 +129,7 @@ namespace storm {
              *
              * @return The formulas defined in the program.
              */
-            std::map<std::string, storm::expressions::Expression> const& getFormulas() const;
+            std::vector<Formula> const& getFormulas() const;
             
             /*!
              * Retrieves the number of modules in the program.
@@ -194,14 +144,22 @@ namespace storm {
              * @param index The index of the module to retrieve.
              * @return The module with the given index.
              */
-            storm::prism::Module const& getModule(uint_fast64_t index) const;
+            Module const& getModule(uint_fast64_t index) const;
+
+            /*!
+             * Retrieves the module with the given name.
+             *
+             * @param moduleName The name of the module to retrieve.
+             * @return The module with the given name.
+             */
+            Module const& getModule(std::string const& moduleName) const;
             
             /*!
              * Retrieves all modules of the program.
              *
              * @return All modules of the program.
              */
-            std::vector<storm::prism::Module> const& getModules() const;
+            std::vector<Module> const& getModules() const;
             
             /*!
              * Retrieves whether the program explicitly specifies an expression characterizing the initial states.
@@ -246,7 +204,7 @@ namespace storm {
              *
              * @return The reward models of the program.
              */
-            std::map<std::string, storm::prism::RewardModel> const& getRewardModels() const;
+            std::vector<RewardModel> const& getRewardModels() const;
             
             /*!
              * Retrieves the reward model with the given name.
@@ -254,14 +212,14 @@ namespace storm {
              * @param rewardModelName The name of the reward model to return.
              * @return The reward model with the given name.
              */
-            storm::prism::RewardModel const& getRewardModel(std::string const& rewardModelName) const;
+            RewardModel const& getRewardModel(std::string const& rewardModelName) const;
             
             /*!
              * Retrieves all labels that are defined by the probabilitic program.
              *
              * @return A set of labels that are defined in the program.
              */
-            std::map<std::string, storm::expressions::Expression> const& getLabels() const;
+            std::vector<Label> const& getLabels() const;
             
             /*!
              * Creates a new program that drops all commands whose indices are not in the given set.
@@ -276,38 +234,41 @@ namespace storm {
             // The type of the model.
             ModelType modelType;
             
-            // The undefined boolean constants of the program.
-            std::set<std::string> undefinedBooleanConstants;
+            // The undefined constants of the program.
+            std::vector<Constant> undefinedConstants;
             
-            // A mapping of (defined) boolean constants to their values (given as expressions).
-            std::map<std::string, storm::expressions::Expression> definedBooleanConstants;
-
-            // The undefined integer constants of the program.
-            std::set<std::string> undefinedIntegerConstants;
-
-            // A mapping of (defined) integer constants to their values (given as expressions).
-            std::map<std::string, storm::expressions::Expression> definedIntegerConstants;
-
-            // The undefined double constants of the program.
-            std::set<std::string> undefinedDoubleConstants;
-            
-            // A mapping of (defined) double constants to their values (given as expressions).
-            std::map<std::string, storm::expressions::Expression> definedDoubleConstants;
+            // The defined constants of the program.
+            std::vector<Constant> definedConstants;
 
             // The global boolean variables.
-            std::map<std::string, BooleanVariable> globalBooleanVariables;
+            std::vector<BooleanVariable> globalBooleanVariables;
+            
+            // A mapping from global boolean variable names to their corresponding indices.
+            std::map<std::string, uint_fast64_t> globalBooleanVariableToIndexMap;
             
             // The global integer variables.
-            std::map<std::string, IntegerVariable> globalIntegerVariables;
+            std::vector<IntegerVariable> globalIntegerVariables;
             
-            // A mapping of formula names to the corresponding expressions.
-            std::map<std::string, storm::expressions::Expression> formulas;
+            // A mapping from global integer variable names to their corresponding indices.
+            std::map<std::string, uint_fast64_t> globalIntegerVariableToIndexMap;
+            
+            // The formulas defined in the program.
+            std::vector<Formula> formulas;
+            
+            // A mapping of formula names to their corresponding indices.
+            std::map<std::string, uint_fast64_t> formulaToIndexMap;
             
             // The modules associated with the program.
-            std::vector<storm::prism::Module> modules;
+            std::vector<Module> modules;
+            
+            // A mapping of module names to their indices.
+            std::map<std::string, uint_fast64_t> moduleToIndexMap;
             
             // The reward models associated with the program.
-            std::map<std::string, storm::prism::RewardModel> rewardModels;
+            std::vector<RewardModel> rewardModels;
+            
+            // A mapping of reward models to their indices.
+            std::map<std::string, uint_fast64_t> rewardModelToIndexMap;
             
             // A flag that indicates whether the initial states of the program were given explicitly (in the form of an
             // initial construct) or implicitly (attached to the variable declarations).
@@ -317,7 +278,10 @@ namespace storm {
             storm::expressions::Expression initialStatesExpression;
             
             // The labels that are defined for this model.
-            std::map<std::string, storm::expressions::Expression> labels;
+            std::vector<Label> labels;
+            
+            // A mapping from label names to their corresponding indices.
+            std::map<std::string, uint_fast64_t> labelToIndexMap;
             
             // The set of actions present in this program.
             std::set<std::string> actions;

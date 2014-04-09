@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_PRISM_UPDATE_H_
 #define STORM_STORAGE_PRISM_UPDATE_H_
 
-#include <map>
+#include <vector>
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/prism/Assignment.h"
@@ -11,16 +11,15 @@ namespace storm {
         class Update : public LocatedInformation {
         public:
             /*!
-             * Creates an update with the given expression specifying the likelihood and the mapping of variable to
-             * their assignments.
+             * Creates an update with the given expression specifying the likelihood and assignments.
              *
              * @param globalIndex The global index of the update.
              * @param likelihoodExpression An expression specifying the likelihood of this update.
-             * @param assignments A map of variable names to their assignments.
-             * @param filename The filename in which the variable is defined.
-             * @param lineNumber The line number in which the variable is defined.
+             * @param assignments A assignments to variables.
+             * @param filename The filename in which the update is defined.
+             * @param lineNumber The line number in which the update is defined.
              */
-            Update(uint_fast64_t index, storm::expressions::Expression const& likelihoodExpression, std::map<std::string, storm::prism::Assignment> const& assignments, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given update and performs the provided renaming.
@@ -28,8 +27,8 @@ namespace storm {
              * @param update The update that is to be copied.
              * @param newGlobalIndex The global index of the resulting update.
              * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
-             * @param filename The filename in which the variable is defined.
-             * @param lineNumber The line number in which the variable is defined.
+             * @param filename The filename in which the update is defined.
+             * @param lineNumber The line number in which the update is defined.
              */
             Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
@@ -59,7 +58,7 @@ namespace storm {
              *
              * @return A reference to the map of variable names to their respective assignments.
              */
-            std::map<std::string, storm::prism::Assignment> const& getAssignments() const;
+            std::vector<storm::prism::Assignment> const& getAssignments() const;
             
             /*!
              * Retrieves a reference to the assignment for the variable with the given name.
@@ -81,8 +80,11 @@ namespace storm {
             // An expression specifying the likelihood of taking this update.
             storm::expressions::Expression likelihoodExpression;
             
-            // A mapping of variable names to their assignments in this update.
-            std::map<std::string, storm::prism::Assignment> assignments;
+            // The assignments of this update.
+            std::vector<storm::prism::Assignment> assignments;
+            
+            // A mapping from variable names to their assignments.
+            std::map<std::string, uint_fast64_t> variableToAssignmentIndexMap;
             
             // The global index of the update.
             uint_fast64_t globalIndex;
