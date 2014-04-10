@@ -9,7 +9,6 @@
 #define STORM_FORMULA_LTL_UNTIL_H_
 
 #include "AbstractLtlFormula.h"
-#include "src/formula/abstract/Until.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
@@ -70,15 +69,16 @@ class IUntilVisitor {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Until : public storm::property::abstract::Until<T, AbstractLtlFormula<T>>,
-				  public AbstractLtlFormula<T> {
+class Until : public AbstractLtlFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
 	Until() {
-		// Intentionally left empty
+		this->left = NULL;
+		this->right = NULL;
 	}
 
 	/*!
@@ -87,9 +87,9 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	Until(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right)
-		: storm::property::abstract::Until<T, AbstractLtlFormula<T>>(left, right) {
-		// Intentionally left empty
+	Until(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right) {
+		this->left = left;
+		this->right = right;
 	}
 
 	/*!
@@ -99,19 +99,12 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~Until() {
-	  // Intentionally left empty
-	}
-
-	/*!
-	 *	@brief Return string representation of this formula.
-	 *
-	 * In LTL, brackets are needed around the until, as Until may appear nested (in other logics, Until always is the
-	 * root of a path formula); hence this function is overwritten in this class.
-	 *
-	 * @return A string representation of the formula.
-	 */
-	virtual std::string toString() const {
-		return "(" + storm::property::abstract::Until<T, AbstractLtlFormula<T>>::toString() + ")";
+	  if (left != NULL) {
+		  delete left;
+	  }
+	  if (right != NULL) {
+		  delete right;
+	  }
 	}
 
 	/*!
@@ -148,6 +141,83 @@ public:
 	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IUntilVisitor>()->visitUntil(*this);
 	}
+
+	/*!
+	 *	@brief Return string representation of this formula.
+	 *
+	 * In LTL, brackets are needed around the until, as Until may appear nested (in other logics, Until always is the
+	 * root of a path formula); hence this function is overwritten in this class.
+	 *
+	 * @return A string representation of the formula.
+	 */
+	virtual std::string toString() const {
+		std::string result = "(" + left->toString();
+		result += " U ";
+		result += right->toString() + ")";
+		return result;
+	}
+
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *
+     *  @param checker Formula checker object.
+     *  @return true iff all subtrees conform to some logic.
+     */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+        return checker.validate(this->left) && checker.validate(this->right);
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractLtlFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(AbstractLtlFormula<T>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractLtlFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const AbstractLtlFormula<T>& getRight() const {
+		return *right;
+	}
+
+	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+private:
+	AbstractLtlFormula<T>* left;
+	AbstractLtlFormula<T>* right;
 };
 
 } //namespace ltl

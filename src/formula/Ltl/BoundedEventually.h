@@ -8,7 +8,6 @@
 #ifndef STORM_FORMULA_LTL_BOUNDEDEVENTUALLY_H_
 #define STORM_FORMULA_LTL_BOUNDEDEVENTUALLY_H_
 
-#include "src/formula/abstract/BoundedEventually.h"
 #include "AbstractLtlFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <cstdint>
@@ -72,15 +71,16 @@ class IBoundedEventuallyVisitor {
  * @see AbstractLtlFormula
  */
 template <class T>
-class BoundedEventually : public storm::property::abstract::BoundedEventually<T, AbstractLtlFormula<T>>,
-								  public AbstractLtlFormula<T> {
+class BoundedEventually : public AbstractLtlFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
-	BoundedEventually()  {
-		//intentionally left empty
+	BoundedEventually() {
+		this->child = nullptr;
+		bound = 0;
 	}
 
 	/*!
@@ -89,9 +89,9 @@ public:
 	 * @param child The child formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedEventually(AbstractLtlFormula<T>* child, uint_fast64_t bound) :
-		storm::property::abstract::BoundedEventually<T, AbstractLtlFormula<T>>(child, bound){
-		//intentionally left empty
+	BoundedEventually(AbstractLtlFormula<T>* child, uint_fast64_t bound) {
+		this->child = child;
+		this->bound = bound;
 	}
 
 	/*!
@@ -101,8 +101,11 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~BoundedEventually() {
-	  //intentionally left empty
+	  if (child != nullptr) {
+		  delete child;
+	  }
 	}
+
 
 	/*!
 	 * Clones the called object.
@@ -137,6 +140,72 @@ public:
 	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IBoundedEventuallyVisitor>()->visitBoundedEventually(*this);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "F<=";
+		result += std::to_string(bound);
+		result += " ";
+		result += child->toString();
+		return result;
+	}
+
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     *
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->child);
+	}
+
+	/*!
+	 * @returns the child node
+	 */
+	const AbstractLtlFormula<T>& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(AbstractLtlFormula<T>* child) {
+		this->child = child;
+	}
+
+	/*!
+	 *
+	 * @return True if the child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool childIsSet() const {
+		return child != nullptr;
+	}
+
+	/*!
+	 * @returns the maximally allowed number of steps for the bounded until operator
+	 */
+	uint_fast64_t getBound() const {
+		return bound;
+	}
+
+	/*!
+	 * Sets the maximally allowed number of steps for the bounded until operator
+	 *
+	 * @param bound the new bound.
+	 */
+	void setBound(uint_fast64_t bound) {
+		this->bound = bound;
+	}
+
+
+private:
+	AbstractLtlFormula<T>* child;
+	uint_fast64_t bound;
+
 };
 
 } //namespace ltl

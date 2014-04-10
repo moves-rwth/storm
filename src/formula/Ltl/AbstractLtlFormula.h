@@ -10,7 +10,7 @@
 
 #include <vector>
 #include "src/modelchecker/ltl/ForwardDeclarations.h"
-#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/AbstractFormula.h"
 
 // Forward declaration for formula visitor
 namespace storm {
@@ -35,7 +35,7 @@ namespace ltl {
  * Interface class for all LTL root formulas.
  */
 template <class T>
-class AbstractLtlFormula : public virtual storm::property::abstract::AbstractFormula<T> {
+class AbstractLtlFormula : public virtual storm::property::AbstractFormula<T> {
 public:
 	/**
 	 * Empty destructor

@@ -8,8 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_AP_H_
 #define STORM_FORMULA_PRCTL_AP_H_
 
-#include "AbstractStateFormula.h"
-#include "src/formula/abstract/Ap.h"
+#include "src/formula/Prctl/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/prctl/ForwardDeclarations.h"
 
@@ -47,10 +46,10 @@ class IApModelChecker {
  * @see AbstractStateFormula
  */
 template <class T>
-class Ap : public storm::property::abstract::Ap<T>,
-			  public AbstractStateFormula<T> {
+class Ap : public AbstractStateFormula<T> {
 
 public:
+
 	/*!
 	 * Constructor
 	 *
@@ -58,9 +57,8 @@ public:
 	 *
 	 * @param ap The string representing the atomic proposition
 	 */
-	Ap(std::string ap)
-		: storm::property::abstract::Ap<T>(ap) {
-		// Intentionally left empty
+	Ap(std::string ap) {
+		this->ap = ap;
 	}
 
 	/*!
@@ -95,6 +93,35 @@ public:
 		return modelChecker.template as<IApModelChecker>()->checkAp(*this);
 	}
 
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *
+     *	As atomic propositions have no subformulas, we return true here.
+     *
+     *  @param checker Formula checker object.
+     *  @return true
+     */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return true;
+	}
+
+	/*!
+	 * @returns the name of the atomic proposition
+	 */
+	const std::string& getAp() const {
+		return ap;
+	}
+
+	/*!
+	 * @returns a string representation of the leaf.
+	 *
+	 */
+	virtual std::string toString() const override {
+		return getAp();
+	}
+
+private:
+	std::string ap;
 };
 
 } //namespace abstract

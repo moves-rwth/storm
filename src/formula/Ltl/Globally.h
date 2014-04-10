@@ -8,7 +8,6 @@
 #ifndef STORM_FORMULA_LTL_GLOBALLY_H_
 #define STORM_FORMULA_LTL_GLOBALLY_H_
 
-#include "src/formula/abstract/Globally.h"
 #include "AbstractLtlFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/ltl/ForwardDeclarations.h"
@@ -70,15 +69,15 @@ class IGloballyVisitor {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Globally : public storm::property::abstract::Globally<T, AbstractLtlFormula<T>>,
-					  public AbstractLtlFormula<T> {
+class Globally : public AbstractLtlFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
 	Globally() {
-		//intentionally left empty
+		this->child = nullptr;
 	}
 
 	/*!
@@ -86,9 +85,8 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Globally(AbstractLtlFormula<T>* child)
-		: storm::property::abstract::Globally<T, AbstractLtlFormula<T>>(child) {
-		//intentionally left empty
+	Globally(AbstractLtlFormula<T>* child) {
+		this->child = child;
 	}
 
 	/*!
@@ -98,9 +96,10 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to nullptr before deletion)
 	 */
 	virtual ~Globally() {
-	  //intentionally left empty
+	  if (child != nullptr) {
+		  delete child;
+	  }
 	}
-
 
 	/*!
 	 * Clones the called object.
@@ -133,6 +132,51 @@ public:
 	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IGloballyVisitor>()->visitGlobally(*this);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "G ";
+		result += child->toString();
+		return result;
+	}
+
+	/*!
+	 *  @brief Checks if the subtree conforms to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff the subtree conforms to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->child);
+	}
+
+	/*!
+	 * @returns the child node
+	 */
+	const AbstractLtlFormula<T>& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(AbstractLtlFormula<T>* child) {
+		this->child = child;
+	}
+
+	/*!
+	 *
+	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool childIsSet() const {
+		return child != nullptr;
+	}
+
+	private:
+		AbstractLtlFormula<T>* child;
 };
 
 } //namespace ltl

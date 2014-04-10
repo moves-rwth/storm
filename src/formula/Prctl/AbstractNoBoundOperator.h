@@ -8,7 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_ABSTRACTNOBOUNDOPERATOR_H_
 #define STORM_FORMULA_PRCTL_ABSTRACTNOBOUNDOPERATOR_H_
 
-#include "AbstractPrctlFormula.h"
+#include "src/formula/AbstractFormula.h"
 #include "src/formula/abstract/IOptimizingOperator.h"
 
 namespace storm {
@@ -42,8 +42,8 @@ public:
  * Interface class for all PRCTL No bound operators
  */
 template <class T>
-class AbstractNoBoundOperator: public AbstractPrctlFormula<T>,
-										 public virtual storm::property::abstract::IOptimizingOperator {
+class AbstractNoBoundOperator: public storm::property::AbstractFormula<T>,
+										 public virtual storm::property::IOptimizingOperator {
 public:
 	AbstractNoBoundOperator() {
 		// Intentionally left empty.

@@ -9,7 +9,6 @@
 #define STORM_FORMULA_LTL_OR_H_
 
 #include "AbstractLtlFormula.h"
-#include "src/formula/abstract/Or.h"
 
 namespace storm {
 namespace property {
@@ -68,34 +67,44 @@ class IOrVisitor {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Or: public storm::property::abstract::Or<T, AbstractLtlFormula<T>>,
-			 public storm::property::ltl::AbstractLtlFormula<T> {
+class Or: public storm::property::ltl::AbstractLtlFormula<T> {
+
 public:
+
 	/*!
-	 * Empty constructor
+	 * Empty constructor.
+	 * Will create an AND-node without subnotes. Will not represent a complete formula!
 	 */
 	Or() {
-		// Intentionally left empty
-
+		left = NULL;
+		right = NULL;
 	}
 
 	/*!
-	 * Constructor
-	 * Creates an OR node with the parameters as subtrees.
+	 * Constructor.
+	 * Creates an AND note with the parameters as subtrees.
 	 *
-	 * @param left The left subformula
-	 * @param right The right subformula
+	 * @param left The left sub formula
+	 * @param right The right sub formula
 	 */
-	Or(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right)
-		: storm::property::abstract::Or<T,AbstractLtlFormula<T>>(left, right) {
-		// Intentionally left empty
+	Or(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right) {
+		this->left = left;
+		this->right = right;
 	}
 
 	/*!
-	 * Destructor
+	 * Destructor.
+	 *
+	 * The subtrees are deleted with the object
+	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~Or() {
-		// Intentionally left empty
+	  if (left != NULL) {
+		  delete left;
+	  }
+	  if (right != NULL) {
+		  delete right;
+	  }
 	}
 
 	/*!
@@ -133,6 +142,79 @@ public:
 		visitor.template as<IOrVisitor>()->visitOr(*this);
 	}
 
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "(";
+		result += left->toString();
+		result += " | ";
+		result += right->toString();
+		result += ")";
+		return result;
+	}
+
+	/*!
+	 *  @brief Checks if all subtrees conform to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff all subtrees conform to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->left) && checker.validate(this->right);
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractLtlFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(AbstractLtlFormula<T>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractLtlFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const AbstractLtlFormula<T>& getRight() const {
+		return *right;
+	}
+
+	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+private:
+	AbstractLtlFormula<T>* left;
+	AbstractLtlFormula<T>* right;
 };
 
 } /* namespace ltl */

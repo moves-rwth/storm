@@ -9,7 +9,6 @@
 #define STORM_FORMULA_LTL_AP_H_
 
 #include "AbstractLtlFormula.h"
-#include "src/formula/abstract/Ap.h"
 
 namespace storm {
 namespace property {
@@ -63,8 +62,7 @@ class IApVisitor {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Ap: public storm::property::abstract::Ap<T>,
-		    public storm::property::ltl::AbstractLtlFormula<T> {
+class Ap: public storm::property::ltl::AbstractLtlFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -80,13 +78,13 @@ public:
 	 *
 	 * @param ap The string representing the atomic proposition
 	 */
-	Ap(std::string ap) :
-		storm::property::abstract::Ap<T>(ap) {
-		// Intentionally left empty
+	Ap(std::string ap) {
+		this->ap = ap;
 	}
 
 	/*!
 	 * Destructor
+	 * At this time, empty...
 	 */
 	virtual ~Ap() {
 		// Intentionally left empty
@@ -121,6 +119,36 @@ public:
 	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IApVisitor>()->visitAp(*this);
 	}
+
+	/*!
+	 * @returns a string representation of the leaf.
+	 *
+	 */
+	virtual std::string toString() const override {
+		return getAp();
+	}
+
+	/*!
+	 *  @brief Checks if all subtrees conform to some logic.
+	 *
+	 *	As atomic propositions have no subformulas, we return true here.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return true;
+	}
+
+	/*!
+	 * @returns the name of the atomic proposition
+	 */
+	const std::string& getAp() const {
+		return ap;
+	}
+
+private:
+	std::string ap;
 };
 
 } /* namespace ltl */

@@ -5,25 +5,21 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef STORM_FORMULA_ABSTRACT_ABSTRACTFORMULA_H_
-#define STORM_FORMULA_ABSTRACT_ABSTRACTFORMULA_H_
+#ifndef STORM_FORMULA_ABSTRACTFORMULA_H_
+#define STORM_FORMULA_ABSTRACTFORMULA_H_
 
 #include <string>
 
 namespace storm {
 namespace property {
-namespace abstract {
 template <class T> class AbstractFormula;
-} //namespace abstract
 } //namespace property
 } //namespace storm
-
 
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 namespace property {
-namespace abstract {
 
 //abstract
 /*!
@@ -58,7 +54,7 @@ public:
 	virtual ~AbstractFormula() {
 		// Intentionally left empty.
 	}
-	
+
 	/*!
 	 *	@brief Return string representation of this formula.
 	 *
@@ -67,7 +63,7 @@ public:
 	 *	@returns a string representation of the formula
 	 */
 	virtual std::string toString() const = 0;
-	
+
 	/*!
 	 *	@brief Checks if all subtrees are valid in some logic.
 	 *
@@ -85,8 +81,7 @@ public:
 	virtual bool validate(const AbstractFormulaChecker<T>& checker) const = 0;
 };
 
-} // namespace abstract
 } // namespace property
 } // namespace storm
 
-#endif /* STORM_FORMULA_ABSTRACT_ABSTRACTFORMULA_H_ */
+#endif /* STORM_FORMULA_ABSTRACTFORMULA_H_ */

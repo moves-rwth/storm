@@ -5,12 +5,11 @@
  *      Author: thomas
  */
 
-#ifndef STORM_FORMULA_ABSTRACT_IOPTIMIZINGOPERATOR_H_
-#define STORM_FORMULA_ABSTRACT_IOPTIMIZINGOPERATOR_H_
+#ifndef STORM_FORMULA_IOPTIMIZINGOPERATOR_H_
+#define STORM_FORMULA_IOPTIMIZINGOPERATOR_H_
 
 namespace storm {
 namespace property {
-namespace abstract {
 
 /*!
  * @brief Interface for optimizing operators
@@ -19,6 +18,10 @@ namespace abstract {
  */
 class IOptimizingOperator {
 public:
+
+	virtual ~IOptimizingOperator() {
+		// Intentionally left empty
+	}
 
 	/*!
 	 * Retrieves whether the operator is to be interpreted as an optimizing (i.e. min/max) operator.
@@ -35,7 +38,6 @@ public:
 	virtual bool isMinimumOperator() const = 0;
 };
 
-} /* namespace abstract */
 } /* namespace property */
 } /* namespace storm */
-#endif /* IOPTIMIZINGOPERATOR_H_ */
+#endif /* STORM_FORMULA_IOPTIMIZINGOPERATOR_H_ */

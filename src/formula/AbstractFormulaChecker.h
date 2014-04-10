@@ -10,7 +10,7 @@ template <class T> class AbstractFormulaChecker;
 } //namespace storm
 
 
-#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/AbstractFormula.h"
 
 namespace storm {
 namespace property {
@@ -64,7 +64,7 @@ class AbstractFormulaChecker {
 		 *	@param formula A pointer to some formula object.
 		 *	@return true iff the formula is valid.
 		 */
-		virtual bool validate(const storm::property::abstract::AbstractFormula<T>* formula) const = 0;
+		virtual bool validate(const AbstractFormula<T>* formula) const = 0;
 };
 
 } // namespace property

@@ -9,7 +9,6 @@
 #define STORM_FORMULA_LTL_NEXT_H_
 
 #include "AbstractLtlFormula.h"
-#include "src/formula/abstract/Next.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
@@ -69,15 +68,15 @@ class INextVisitor {
  * @see AbstractLtlFormula
  */
 template <class T>
-class Next : public storm::property::abstract::Next<T, AbstractLtlFormula<T>>,
-				 public AbstractLtlFormula<T> {
+class Next : public AbstractLtlFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
 	Next() {
-		//intentionally left empty
+		this->child = NULL;
 	}
 
 	/*!
@@ -85,9 +84,8 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Next(AbstractLtlFormula<T>* child)
-		: storm::property::abstract::Next<T, AbstractLtlFormula<T>>(child) {
-		//intentionally left empty
+	Next(AbstractLtlFormula<T>* child) {
+		this->child = child;
 	}
 
 	/*!
@@ -97,7 +95,9 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~Next() {
-	  //intentionally left empty
+	  if (child != NULL) {
+		  delete child;
+	  }
 	}
 
 	/*!
@@ -131,6 +131,53 @@ public:
 	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<INextVisitor>()->visitNext(*this);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "(";
+		result += " X ";
+		result += child->toString();
+		result += ")";
+		return result;
+	}
+
+	/*!
+	 *  @brief Checks if the subtree conforms to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff the subtree conforms to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->child);
+	}
+
+	/*!
+	 * @returns the child node
+	 */
+	const AbstractLtlFormula<T>& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(AbstractLtlFormula<T>* child) {
+		this->child = child;
+	}
+
+	/*!
+	 *
+	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool childIsSet() const {
+		return child != nullptr;
+	}
+
+private:
+	AbstractLtlFormula<T>* child;
 };
 
 } //namespace ltl

@@ -8,8 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_OR_H_
 #define STORM_FORMULA_PRCTL_OR_H_
 
-#include "AbstractStateFormula.h"
-#include "src/formula/abstract/Or.h"
+#include "src/formula/Prctl/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
@@ -52,28 +51,28 @@ class IOrModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class Or : public storm::property::abstract::Or<T, AbstractStateFormula<T>>,
-			  public AbstractStateFormula<T> {
+class Or : public AbstractStateFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor.
-	 * Will create an OR-node without subnotes. The result does not represent a complete formula!
+	 * Will create an AND-node without subnotes. Will not represent a complete formula!
 	 */
 	Or() {
-		//intentionally left empty
+		left = NULL;
+		right = NULL;
 	}
 
 	/*!
 	 * Constructor.
-	 * Creates an OR note with the parameters as subtrees.
+	 * Creates an AND note with the parameters as subtrees.
 	 *
 	 * @param left The left sub formula
 	 * @param right The right sub formula
 	 */
-	Or(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) :
-		storm::property::abstract::Or<T, AbstractStateFormula<T>>(left, right) {
-		//intentionally left empty
+	Or(FormulaType* left, FormulaType* right) {
+		this->left = left;
+		this->right = right;
 	}
 
 	/*!
@@ -83,7 +82,12 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~Or() {
-	  //intentionally left empty
+	  if (left != NULL) {
+		  delete left;
+	  }
+	  if (right != NULL) {
+		  delete right;
+	  }
 	}
 
 	/*!
@@ -116,6 +120,81 @@ public:
 	virtual storm::storage::BitVector check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "(";
+		result += left->toString();
+		result += " | ";
+		result += right->toString();
+		result += ")";
+		return result;
+	}
+
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *
+     *  @param checker Formula checker object.
+     *  @return true iff all subtrees conform to some logic.
+     */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+        return checker.validate(this->left) && checker.validate(this->right);
+    }
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(FormulaType* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(FormulaType* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const FormulaType& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const FormulaType& getRight() const {
+		return *right;
+	}
+
+	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+private:
+	AbstractStateFormula<T>* left;
+	AbstractStateFormula<T>* right;
+
 };
 
 } //namespace prctl

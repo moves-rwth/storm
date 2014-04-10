@@ -8,8 +8,7 @@
 #ifndef STORM_FORMULA_LTL_BOUNDEDUNTIL_H_
 #define STORM_FORMULA_LTL_BOUNDEDUNTIL_H_
 
-#include "src/formula/abstract/BoundedUntil.h"
-#include "AbstractLtlFormula.h"
+#include "src/formula/Ltl/AbstractLtlFormula.h"
 #include <cstdint>
 #include <string>
 #include "src/modelchecker/ltl/ForwardDeclarations.h"
@@ -72,15 +71,17 @@ class IBoundedUntilVisitor {
  * @see AbstractLtlFormula
  */
 template <class T>
-class BoundedUntil : public storm::property::abstract::BoundedUntil<T, AbstractLtlFormula<T>>,
-							public AbstractLtlFormula<T> {
+class BoundedUntil : public AbstractLtlFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
 	BoundedUntil() {
-		//Intentionally left empty
+		this->left = NULL;
+		this->right = NULL;
+		bound = 0;
 	}
 
 	/*!
@@ -91,9 +92,10 @@ public:
 	 * @param bound The maximal number of steps
 	 */
 	BoundedUntil(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right,
-					 uint_fast64_t bound) :
-					 storm::property::abstract::BoundedUntil<T, AbstractLtlFormula<T>>(left,right,bound) {
-		//intentionally left empty
+					 uint_fast64_t bound) {
+		this->left = left;
+		this->right = right;
+		this->bound = bound;
 	}
 
 	/*!
@@ -103,19 +105,12 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~BoundedUntil() {
-	  //intentionally left empty
-	}
-
-	/*!
-	 *	@brief Return string representation of this formula.
-	 *
-	 * In LTL, brackets are needed around the until, as Until may appear nested (in other logics, Until always is the
-	 * root of a path formula); hence this function is overwritten in this class.
-	 *
-	 * @return A string representation of the formula.
-	 */
-	virtual std::string toString() const {
-		return "(" + storm::property::abstract::BoundedUntil<T, AbstractLtlFormula<T>>::toString() + ")";
+	  if (left != NULL) {
+		  delete left;
+	  }
+	  if (right != NULL) {
+		  delete right;
+	  }
 	}
 
 	/*!
@@ -154,6 +149,102 @@ public:
 	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
 		visitor.template as<IBoundedUntilVisitor>()->visitBoundedUntil(*this);
 	}
+
+	/*!
+	 *	@brief Return string representation of this formula.
+	 *
+	 * In LTL, brackets are needed around the until, as Until may appear nested (in other logics, Until always is the
+	 * root of a path formula); hence this function is overwritten in this class.
+	 *
+	 * @return A string representation of the formula.
+	 */
+	virtual std::string toString() const override {
+		std::string result = "(" + left->toString();
+		result += " U<=";
+		result += std::to_string(bound);
+		result += " ";
+		result += right->toString() + ")";
+		return result;
+	}
+
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *
+     *  @param checker Formula checker object.
+     *  @return true iff all subtrees conform to some logic.
+     */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->left) && checker.validate(this->right);
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractLtlFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(AbstractLtlFormula<T>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractLtlFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const AbstractLtlFormula<T>& getRight() const {
+		return *right;
+	}
+
+	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+	/*!
+	 * @returns the maximally allowed number of steps for the bounded until operator
+	 */
+	uint_fast64_t getBound() const {
+		return bound;
+	}
+
+	/*!
+	 * Sets the maximally allowed number of steps for the bounded until operator
+	 *
+	 * @param bound the new bound.
+	 */
+	void setBound(uint_fast64_t bound) {
+		this->bound = bound;
+	}
+
+private:
+	AbstractLtlFormula<T>* left;
+	AbstractLtlFormula<T>* right;
+	uint_fast64_t bound;
 };
 
 } //namespace ltl

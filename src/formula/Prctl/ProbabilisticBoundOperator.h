@@ -10,7 +10,6 @@
 
 #include "AbstractStateFormula.h"
 #include "AbstractPathFormula.h"
-#include "src/formula/abstract/ProbabilisticBoundOperator.h"
 #include "utility/constants.h"
 
 namespace storm {

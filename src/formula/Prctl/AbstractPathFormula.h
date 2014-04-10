@@ -8,11 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_
 #define STORM_FORMULA_PRCTL_ABSTRACTPATHFORMULA_H_
 
-namespace storm { namespace property { namespace prctl {
-template <class T> class AbstractPathFormula;
-}}}
-
-#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/AbstractFormula.h"
 #include "src/modelchecker/prctl/ForwardDeclarations.h"
 
 #include <vector>
@@ -35,7 +31,7 @@ namespace prctl {
  * @note This class is intentionally not derived from AbstractPrctlFormula, as path formulas are not complete PRCTL formulas.
  */
 template <class T>
-class AbstractPathFormula : public virtual storm::property::abstract::AbstractFormula<T> {
+class AbstractPathFormula : public virtual storm::property::AbstractFormula<T> {
 
 public:
 	/*!
