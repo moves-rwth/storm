@@ -86,8 +86,8 @@ namespace storm {
         void BinaryBooleanFunctionExpression::printToStream(std::ostream& stream) const {
             stream << "(" << *this->getFirstOperand();
             switch (this->getOperatorType()) {
-                case OperatorType::And: stream << " && "; break;
-                case OperatorType::Or: stream << " || "; break;
+                case OperatorType::And: stream << " & "; break;
+                case OperatorType::Or: stream << " | "; break;
                 case OperatorType::Implies: stream << " => "; break;
                 case OperatorType::Iff: stream << " <=> "; break;
             }

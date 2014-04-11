@@ -77,6 +77,11 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, Update const& assignment);
             
         private:
+            /*!
+             * Creates the internal mapping of variables to their assignments.
+             */
+            void createAssignmentMapping();
+            
             // An expression specifying the likelihood of taking this update.
             storm::expressions::Expression likelihoodExpression;
             

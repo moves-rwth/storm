@@ -5,10 +5,11 @@
 namespace storm {
     namespace prism {
         Update::Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(likelihoodExpression), assignments(assignments), variableToAssignmentIndexMap(), globalIndex(globalIndex) {
-            // FIXME: construct the mapping from variable names to assignments and check for uniqueness.
+            this->createAssignmentMapping();
         }
         
         Update::Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(update.getLikelihoodExpression().substitute<std::map>(renaming)), assignments(), variableToAssignmentIndexMap(), globalIndex(newGlobalIndex) {
+            // Rename all assignments.
             for (auto const& assignment : update.getAssignments()) {
                 auto const& namePair = renaming.find(assignment.getVariableName());
                 if (namePair != renaming.end()) {
@@ -17,8 +18,9 @@ namespace storm {
                     this->assignments.emplace_back(Assignment(assignment));
                 }
             }
-            // FIXME: construct the mapping from variable names to assignments and check for uniqueness.
-            this->likelihoodExpression = update.getLikelihoodExpression().substitute<std::map>(renaming);
+
+            // Create the assignment mapping.
+            this->createAssignmentMapping();
         }
         
         storm::expressions::Expression const& Update::getLikelihoodExpression() const {
@@ -41,6 +43,13 @@ namespace storm {
         
         uint_fast64_t Update::getGlobalIndex() const {
             return this->globalIndex;
+        }
+        
+        void Update::createAssignmentMapping() {
+            this->variableToAssignmentIndexMap.clear();
+            for (uint_fast64_t assignmentIndex = 0; assignmentIndex < this->getAssignments().size(); ++assignmentIndex) {
+                this->variableToAssignmentIndexMap[this->getAssignments()[assignmentIndex].getVariableName()] = assignmentIndex;
+            }
         }
         
         std::ostream& operator<<(std::ostream& stream, Update const& update) {

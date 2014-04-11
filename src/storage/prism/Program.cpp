@@ -5,29 +5,8 @@
 
 namespace storm {
     namespace prism {
-        Program::Program(ModelType modelType, std::vector<Constant> const& undefinedConstants, std::vector<Constant> const& definedConstants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), modelType(modelType), undefinedConstants(undefinedConstants), definedConstants(definedConstants), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), hasInitialStatesExpression(hasInitialStatesExpression), initialStatesExpression(initialStatesExpression), labels(labels), labelToIndexMap(), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
-            // FIXME: build the mappings for constants, formulas, modules, global variables, reward models and labels.
-            // Now build the mapping from action names to module indices so that the lookup can later be performed quickly.
-            for (unsigned int moduleIndex = 0; moduleIndex < this->getNumberOfModules(); moduleIndex++) {
-                Module const& module = this->getModule(moduleIndex);
-                
-                for (auto const& action : module.getActions()) {
-                    auto const& actionModuleIndicesPair = this->actionsToModuleIndexMap.find(action);
-                    if (actionModuleIndicesPair == this->actionsToModuleIndexMap.end()) {
-                        this->actionsToModuleIndexMap[action] = std::set<uint_fast64_t>();
-                    }
-                    this->actionsToModuleIndexMap[action].insert(moduleIndex);
-                    this->actions.insert(action);
-                }
-                
-                // Put in the appropriate entries for the mapping from variable names to module index.
-                for (auto const& booleanVariable : module.getBooleanVariables()) {
-                    this->variableToModuleIndexMap[booleanVariable.getName()] = moduleIndex;
-                }
-                for (auto const& integerVariable : module.getBooleanVariables()) {
-                    this->variableToModuleIndexMap[integerVariable.getName()] = moduleIndex;
-                }
-            }
+        Program::Program(ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), modelType(modelType), constants(constants), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), hasInitialStatesExpression(hasInitialStatesExpression), initialStatesExpression(initialStatesExpression), labels(labels), labelToIndexMap(), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
+            this->createMappings();
         }
         
         Program::ModelType Program::getModelType() const {
@@ -35,15 +14,16 @@ namespace storm {
         }
         
         bool Program::hasUndefinedConstants() const {
-            return this->undefinedConstants.size() > 0;
+            for (auto const& constant : this->getConstants()) {
+                if (!constant.isDefined()) {
+                    return true;
+                }
+            }
+            return true;
         }
         
-        std::vector<Constant> const& Program::getUndefinedConstants() const {
-            return this->undefinedConstants;
-        }
-        
-        std::vector<Constant> const& Program::getDefinedConstants() const {
-            return this->definedConstants;
+        std::vector<Constant> const& Program::getConstants() const {
+            return this->constants;
         }
 
         std::vector<BooleanVariable> const& Program::getGlobalBooleanVariables() const {
@@ -76,6 +56,10 @@ namespace storm {
         
         std::vector<Formula> const& Program::getFormulas() const {
             return this->formulas;
+        }
+        
+        std::size_t Program::getNumberOfFormulas() const {
+            return this->formulas.size();
         }
         
         std::size_t Program::getNumberOfModules() const {
@@ -140,6 +124,10 @@ namespace storm {
             return this->rewardModels;
         }
         
+        std::size_t Program::getNumberOfRewardModels() const {
+            return this->rewardModels.size();
+        }
+        
         storm::prism::RewardModel const& Program::getRewardModel(std::string const& name) const {
             auto const& nameIndexPair = this->rewardModelToIndexMap.find(name);
             LOG_THROW(nameIndexPair != this->rewardModelToIndexMap.end(), storm::exceptions::OutOfRangeException, "Reward model '" << name << "' does not exist.");
@@ -150,6 +138,10 @@ namespace storm {
             return this->labels;
         }
         
+        std::size_t Program::getNumberOfLabels() const {
+            return this->labels.size();
+        }
+        
         Program Program::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
             std::vector<storm::prism::Module> newModules;
             newModules.reserve(this->getNumberOfModules());
@@ -158,7 +150,52 @@ namespace storm {
                 newModules.push_back(module.restrictCommands(indexSet));
             }
             
-            return Program(this->getModelType(), this->getUndefinedConstants(), this->getDefinedConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getRewardModels(), this->definesInitialStatesExpression(), this->getInitialStatesExpression(), this->getLabels());
+            return Program(this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getRewardModels(), this->definesInitialStatesExpression(), this->getInitialStatesExpression(), this->getLabels());
+        }
+        
+        void Program::createMappings() {
+            // Build the mappings for global variables, formulas, modules, reward models and labels.
+            for (uint_fast64_t globalVariableIndex = 0; globalVariableIndex < this->getNumberOfGlobalBooleanVariables(); ++globalVariableIndex) {
+                this->globalBooleanVariableToIndexMap[this->getGlobalBooleanVariables()[globalVariableIndex].getName()] = globalVariableIndex;
+            }
+            for (uint_fast64_t globalVariableIndex = 0; globalVariableIndex < this->getNumberOfGlobalIntegerVariables(); ++globalVariableIndex) {
+                this->globalIntegerVariableToIndexMap[this->getGlobalIntegerVariables()[globalVariableIndex].getName()] = globalVariableIndex;
+            }
+            for (uint_fast64_t formulaIndex = 0; formulaIndex < this->getNumberOfFormulas(); ++formulaIndex) {
+                this->formulaToIndexMap[this->getFormulas()[formulaIndex].getFormulaName()] = formulaIndex;
+            }
+            for (uint_fast64_t moduleIndex = 0; moduleIndex < this->getNumberOfModules(); ++moduleIndex) {
+                this->moduleToIndexMap[this->getModules()[moduleIndex].getName()] = moduleIndex;
+            }
+            for (uint_fast64_t rewardModelIndex = 0; rewardModelIndex < this->getNumberOfRewardModels(); ++rewardModelIndex) {
+                this->rewardModelToIndexMap[this->getRewardModels()[rewardModelIndex].getName()] = rewardModelIndex;
+            }
+            for (uint_fast64_t labelIndex = 0; labelIndex < this->getNumberOfLabels(); ++labelIndex) {
+                this->labelToIndexMap[this->getLabels()[labelIndex].getLabelName()] = labelIndex;
+            }
+            
+            // Build the mapping from action names to module indices so that the lookup can later be performed quickly.
+            for (unsigned int moduleIndex = 0; moduleIndex < this->getNumberOfModules(); moduleIndex++) {
+                Module const& module = this->getModule(moduleIndex);
+                
+                for (auto const& action : module.getActions()) {
+                    auto const& actionModuleIndicesPair = this->actionsToModuleIndexMap.find(action);
+                    if (actionModuleIndicesPair == this->actionsToModuleIndexMap.end()) {
+                        this->actionsToModuleIndexMap[action] = std::set<uint_fast64_t>();
+                    }
+                    this->actionsToModuleIndexMap[action].insert(moduleIndex);
+                    this->actions.insert(action);
+                }
+                
+                // Put in the appropriate entries for the mapping from variable names to module index.
+                for (auto const& booleanVariable : module.getBooleanVariables()) {
+                    this->variableToModuleIndexMap[booleanVariable.getName()] = moduleIndex;
+                }
+                for (auto const& integerVariable : module.getBooleanVariables()) {
+                    this->variableToModuleIndexMap[integerVariable.getName()] = moduleIndex;
+                }
+            }
+
         }
         
         std::ostream& operator<<(std::ostream& stream, Program const& program) {
@@ -172,7 +209,7 @@ namespace storm {
             }
             stream << std::endl;
             
-            for (auto const& constant : program.getUndefinedConstants()) {
+            for (auto const& constant : program.getConstants()) {
                 stream << constant << std::endl;
             }
             stream << std::endl;
@@ -182,6 +219,11 @@ namespace storm {
             }
             for (auto const& variable : program.getGlobalIntegerVariables()) {
                 stream << "global " << variable << std::endl;
+            }
+            stream << std::endl;
+            
+            for (auto const& formula : program.getFormulas()) {
+                stream << formula << std::endl;
             }
             stream << std::endl;
             

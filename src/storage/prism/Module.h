@@ -34,11 +34,13 @@ namespace storm {
              *
              * @param oldModule The module to be copied.
              * @param newModuleName The name of the new module.
+             * @param newGlobalCommandIndex The global starting index for commands of the renamed module.
+             * @param newGlobalUpdateIndex The global starting index for the updates of the renamed module.
              * @param renaming A mapping of identifiers to the new identifiers they are to be replaced with.
              * @param filename The filename in which the module is defined.
              * @param lineNumber The line number in which the module is defined.
              */
-            Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Module(Module const& oldModule, std::string const& newModuleName, uint_fast64_t newGlobalCommandIndex, uint_fast64_t newGlobalUpdateIndex, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Module() = default;
@@ -164,7 +166,7 @@ namespace storm {
             /*!
              * Computes the locally maintained mappings for fast data retrieval.
              */
-            void collectActions();
+            void createMappings();
             
             // The name of the module.
             std::string moduleName;

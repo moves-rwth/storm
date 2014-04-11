@@ -23,7 +23,7 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, IntegerVariable const& variable) {
-            stream << variable.getName() << ": [" << variable.getLowerBoundExpression() << ".." << variable.getUpperBoundExpression() << "]" << variable.getInitialValueExpression() << ";";
+            stream << variable.getName() << ": [" << variable.getLowerBoundExpression() << ".." << variable.getUpperBoundExpression() << "]" << " init " << variable.getInitialValueExpression() << ";";
             return stream;
         }
     } // namespace prism

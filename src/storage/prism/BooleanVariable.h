@@ -23,7 +23,7 @@ namespace storm {
              * @param filename The filename in which the variable is defined.
              * @param lineNumber The line number in which the variable is defined.
              */
-            BooleanVariable(std::string const& variableName, std::string const& filename, uint_fast64_t lineNumber);
+            BooleanVariable(std::string const& variableName, std::string const& filename = "", uint_fast64_t lineNumber = 0);
 
             /*!
              * Creates a boolean variable with the given name and the given constant initial value expression.
@@ -33,7 +33,7 @@ namespace storm {
              * @param filename The filename in which the variable is defined.
              * @param lineNumber The line number in which the variable is defined.
              */
-            BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber);
+            BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given boolean variable and performs the provided renaming.

@@ -33,6 +33,7 @@ namespace storm {
             static Expression createBooleanVariable(std::string const& variableName);
             static Expression createIntegerVariable(std::string const& variableName);
             static Expression createDoubleVariable(std::string const& variableName);
+            static Expression createUndefinedVariable(std::string const& variableName);
             static Expression createBooleanConstant(std::string const& constantName);
             static Expression createIntegerConstant(std::string const& constantName);
             static Expression createDoubleConstant(std::string const& constantName);

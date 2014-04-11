@@ -6,19 +6,18 @@
 namespace storm {
     namespace prism {
         Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), actions(), actionsToCommandIndexMap() {
-            // FIXME: construct mappings from variable names to their indices.
             // Initialize the internal mappings for fast information retrieval.
-            this->collectActions();
+            this->createMappings();
         }
         
-        Module::Module(Module const& oldModule, std::string const& newModuleName, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(newModuleName), booleanVariables(), integerVariables(), commands(), actions(), actionsToCommandIndexMap() {
+        Module::Module(Module const& oldModule, std::string const& newModuleName, uint_fast64_t newGlobalCommandIndex, uint_fast64_t newGlobalUpdateIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(newModuleName), booleanVariables(), integerVariables(), commands(), actions(), actionsToCommandIndexMap() {
             // Iterate over boolean variables and rename them. If a variable was not renamed, this is an error and an exception is thrown.
             for (auto const& booleanVariable : oldModule.getBooleanVariables()) {
                 auto const& renamingPair = renaming.find(booleanVariable.getName());
                 LOG_THROW(renamingPair != renaming.end(), storm::exceptions::InvalidArgumentException, "Boolean variable '" << booleanVariable.getName() << " was not renamed.");
                 this->booleanVariables.emplace_back(booleanVariable, renamingPair->second, renaming, filename, lineNumber);
             }
-            
+           
             // Now do the same for the integer variables.
             for (auto const& integerVariable : oldModule.getIntegerVariables()) {
                 auto const& renamingPair = renaming.find(integerVariable.getName());
@@ -26,16 +25,16 @@ namespace storm {
                 this->integerVariables.emplace_back(integerVariable, renamingPair->second, renaming, filename, lineNumber);
             }
             
-            // FIXME: construct mappings from variable names to their indices.
-            
             // Now we are ready to clone all commands and rename them if requested.
             this->commands.reserve(oldModule.getNumberOfCommands());
             for (Command const& command : oldModule.getCommands()) {
-                this->commands.emplace_back(command, command.getGlobalIndex(), renaming);
+                this->commands.emplace_back(command, newGlobalCommandIndex, newGlobalUpdateIndex, renaming, filename, lineNumber);
+                ++newGlobalCommandIndex;
+                newGlobalUpdateIndex += this->commands.back().getNumberOfUpdates();
             }
             
-            // Finally, update internal mapping.
-            this->collectActions();
+            // Finally, update internal mappings.
+            this->createMappings();
         }
         
         std::size_t Module::getNumberOfBooleanVariables() const {
@@ -108,18 +107,28 @@ namespace storm {
             LOG_THROW(false, storm::exceptions::OutOfRangeException, "Action name '" << action << "' does not exist in module.");
         }
         
-        void Module::collectActions() {
-            // Clear the current mapping.
+        void Module::createMappings() {
+            // Clear the current mappings.
             this->actionsToCommandIndexMap.clear();
+            this->booleanVariableToIndexMap.clear();
+            this->integerVariableToIndexMap.clear();
+            
+            // Create the mappings for the variables.
+            for (uint_fast64_t i = 0; i < this->booleanVariables.size(); ++i) {
+                this->booleanVariableToIndexMap[this->getBooleanVariables()[i].getName()] = i;
+            }
+            for (uint_fast64_t i = 0; i < this->integerVariables.size(); ++i) {
+                this->integerVariableToIndexMap[this->getIntegerVariables()[i].getName()] = i;
+            }
             
             // Add the mapping for all commands.
-            for (unsigned int id = 0; id < this->commands.size(); id++) {
-                std::string const& action = this->commands[id].getActionName();
+            for (uint_fast64_t i = 0; i < this->commands.size(); i++) {
+                std::string const& action = this->commands[i].getActionName();
                 if (action != "") {
                     if (this->actionsToCommandIndexMap.find(action) == this->actionsToCommandIndexMap.end()) {
                         this->actionsToCommandIndexMap.emplace(action, std::set<uint_fast64_t>());
                     }
-                    this->actionsToCommandIndexMap[action].insert(id);
+                    this->actionsToCommandIndexMap[action].insert(i);
                     this->actions.insert(action);
                 }
             }

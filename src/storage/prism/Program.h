@@ -27,8 +27,7 @@ namespace storm {
              * models, labels and initial states.
              *
              * @param modelType The type of the program.
-             * @param undefinedConstants The undefined constants of the program.
-             * @param definedConstants The defined integer constants of the program.
+             * @param constants The constants of the program.
              * @param globalBooleanVariables The global boolean variables of the program.
              * @param globalIntegerVariables The global integer variables of the program.
              * @param formulas The formulas defined in the program.
@@ -43,7 +42,7 @@ namespace storm {
              * @param filename The filename in which the program is defined.
              * @param lineNumber The line number in which the program is defined.
              */
-            Program(ModelType modelType, std::vector<Constant> const& undefinedConstants, std::vector<Constant> const& definedConstants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Program(ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -65,21 +64,14 @@ namespace storm {
              * @return True iff there are undefined constants of any type in the program.
              */
             bool hasUndefinedConstants() const;
+
+            /*!
+             * Retrieves all constants defined in the program.
+             *
+             * @return The constants defined in the program.
+             */
+            std::vector<Constant> const& getConstants() const;
             
-            /*!
-             * Retrieves the undefined constants of the program.
-             *
-             * @return The undefined constants of the program.
-             */
-            std::vector<Constant> const& getUndefinedConstants() const;
-
-            /*!
-             * Retrieves the defined constants of the program.
-             *
-             * @return The defined constants of the program.
-             */
-            std::vector<Constant> const& getDefinedConstants() const;
-
             /*!
              * Retrieves the global boolean variables of the program.
              *
@@ -130,6 +122,13 @@ namespace storm {
              * @return The formulas defined in the program.
              */
             std::vector<Formula> const& getFormulas() const;
+            
+            /*!
+             * Retrieves the number of formulas in the program.
+             *
+             * @return The number of formulas in the program.
+             */
+            std::size_t getNumberOfFormulas() const;
             
             /*!
              * Retrieves the number of modules in the program.
@@ -207,6 +206,13 @@ namespace storm {
             std::vector<RewardModel> const& getRewardModels() const;
             
             /*!
+             * Retrieves the number of reward models in the program.
+             *
+             * @return The number of reward models in the program.
+             */
+            std::size_t getNumberOfRewardModels() const;
+            
+            /*!
              * Retrieves the reward model with the given name.
              *
              * @param rewardModelName The name of the reward model to return.
@@ -222,6 +228,13 @@ namespace storm {
             std::vector<Label> const& getLabels() const;
             
             /*!
+             * Retrieves the number of labels in the program.
+             *
+             * @return The number of labels in the program.
+             */
+            std::size_t getNumberOfLabels() const;
+
+            /*!
              * Creates a new program that drops all commands whose indices are not in the given set.
              *
              * @param indexSet The set of indices for which to keep the commands.
@@ -231,14 +244,14 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
         private:
+            // Creates the internal mappings.
+            void createMappings();
+            
             // The type of the model.
             ModelType modelType;
             
             // The undefined constants of the program.
-            std::vector<Constant> undefinedConstants;
-            
-            // The defined constants of the program.
-            std::vector<Constant> definedConstants;
+            std::vector<Constant> constants;
 
             // The global boolean variables.
             std::vector<BooleanVariable> globalBooleanVariables;

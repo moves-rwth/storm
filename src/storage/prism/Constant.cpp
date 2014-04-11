@@ -35,8 +35,9 @@ namespace storm {
             }
             stream << constant.getConstantName();
             if (constant.isDefined()) {
-                stream << " = " << constant.getExpression() << ";";
+                stream << " = " << constant.getExpression();
             }
+            stream << ";";
             return stream;
         }
     }

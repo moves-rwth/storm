@@ -6,14 +6,18 @@ namespace storm {
             // Nothing to do here.
         }
         
-        Command::Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionName(oldCommand.getActionName()), guardExpression(oldCommand.getGuardExpression().substitute<std::map>(renaming)), globalIndex(newGlobalIndex) {
+        Command::Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, uint_fast64_t newGlobalUpdateIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionName(oldCommand.getActionName()), guardExpression(oldCommand.getGuardExpression().substitute<std::map>(renaming)), globalIndex(newGlobalIndex) {
+            // Rename the action name of the command.
             auto const& namePair = renaming.find(this->actionName);
             if (namePair != renaming.end()) {
                 this->actionName = namePair->second;
             }
+            
+            // Rename the updates of the command.
             this->updates.reserve(oldCommand.getNumberOfUpdates());
             for (Update const& update : oldCommand.getUpdates()) {
-                this->updates.emplace_back(update, update.getGlobalIndex(), renaming, filename, lineNumber);
+                this->updates.emplace_back(update, newGlobalUpdateIndex, renaming, filename, lineNumber);
+                ++newGlobalUpdateIndex;
             }
         }
 

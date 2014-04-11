@@ -10,8 +10,16 @@ namespace storm {
             return this->filename;
         }
         
+        void LocatedInformation::setFilename(std::string const& filename) {
+            this->filename = filename;
+        }
+        
         uint_fast64_t LocatedInformation::getLineNumber() const {
             return this->lineNumber;
+        }
+        
+        void LocatedInformation::setLineNumber(uint_fast64_t lineNumber) {
+            this->lineNumber = lineNumber;
         }
     }
 }

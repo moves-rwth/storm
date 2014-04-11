@@ -124,6 +124,10 @@ namespace storm {
             return Expression(std::shared_ptr<BaseExpression>(new VariableExpression(ExpressionReturnType::Double, variableName)));
         }
         
+        Expression Expression::createUndefinedVariable(std::string const& variableName) {
+            return Expression(std::shared_ptr<BaseExpression>(new VariableExpression(ExpressionReturnType::Undefined, variableName)));
+        }
+        
         Expression Expression::createBooleanConstant(std::string const& constantName) {
             return Expression(std::shared_ptr<BaseExpression>(new BooleanConstantExpression(constantName)));
         }
