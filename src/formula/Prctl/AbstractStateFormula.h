@@ -8,7 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_ABSTRACTSTATEFORMULA_H_
 #define STORM_FORMULA_PRCTL_ABSTRACTSTATEFORMULA_H_
 
-#include "src/formula/AbstractFormula.h"
+#include "src/formula/Prctl/AbstractPrctlFormula.h"
 #include "src/storage/BitVector.h"
 #include "src/modelchecker/prctl/ForwardDeclarations.h"
 
@@ -26,7 +26,7 @@ namespace prctl {
  * 	   clone().
  */
 template <class T>
-class AbstractStateFormula : public virtual storm::property::AbstractFormula<T> {
+class AbstractStateFormula : public virtual storm::property::prctl::AbstractPrctlFormula<T> {
 
 public:
 	/*!

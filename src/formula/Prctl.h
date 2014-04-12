@@ -17,7 +17,6 @@
 #include "Prctl/Next.h"
 #include "Prctl/Not.h"
 #include "Prctl/Or.h"
-#include "Prctl/ProbabilisticNoBoundOperator.h"
 #include "Prctl/ProbabilisticBoundOperator.h"
 
 #include "Prctl/Until.h"
@@ -29,12 +28,10 @@
 #include "Prctl/CumulativeReward.h"
 #include "Prctl/ReachabilityReward.h"
 #include "Prctl/RewardBoundOperator.h"
-#include "Prctl/RewardNoBoundOperator.h"
 #include "Prctl/SteadyStateReward.h"
 
 #include "Prctl/AbstractPrctlFormula.h"
 #include "Prctl/AbstractStateFormula.h"
-#include "Prctl/AbstractNoBoundOperator.h"
 #include "Prctl/AbstractPathFormula.h"
 
 #include "modelchecker/prctl/AbstractModelChecker.h"

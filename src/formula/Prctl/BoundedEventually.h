@@ -8,7 +8,6 @@
 #ifndef STORM_FORMULA_PRCTL_BOUNDEDEVENTUALLY_H_
 #define STORM_FORMULA_PRCTL_BOUNDEDEVENTUALLY_H_
 
-#include "src/formula/abstract/BoundedEventually.h"
 #include "src/formula/Prctl/AbstractPathFormula.h"
 #include "src/formula/Prctl/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
@@ -56,15 +55,14 @@ class IBoundedEventuallyModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class BoundedEventually : public storm::property::abstract::BoundedEventually<T, AbstractStateFormula<T>>,
-								  public AbstractPathFormula<T> {
+class BoundedEventually : public AbstractPathFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	BoundedEventually()  {
-		//intentionally left empty
+	BoundedEventually() : child(nullptr), bound(0){
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -73,9 +71,8 @@ public:
 	 * @param child The child formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedEventually(AbstractStateFormula<T>* child, uint_fast64_t bound) :
-		storm::property::abstract::BoundedEventually<T, AbstractStateFormula<T>>(child, bound){
-		//intentionally left empty
+	BoundedEventually(AbstractStateFormula<T>* child, uint_fast64_t bound) : child(child), bound(bound){
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -85,7 +82,9 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~BoundedEventually() {
-	  //intentionally left empty
+	  if (child != nullptr) {
+		  delete child;
+	  }
 	}
 
 	/*!
@@ -117,6 +116,70 @@ public:
 	virtual std::vector<T> check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<IBoundedEventuallyModelChecker>()->checkBoundedEventually(*this, qualitative);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "F<=";
+		result += std::to_string(bound);
+		result += " ";
+		result += child->toString();
+		return result;
+	}
+
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     *
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->child);
+	}
+
+	/*!
+	 * @returns the child node
+	 */
+	const AbstractStateFormula<T>& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(AbstractStateFormula<T>* child) {
+		this->child = child;
+	}
+
+	/*!
+	 *
+	 * @return True if the child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool childIsSet() const {
+		return child != nullptr;
+	}
+
+	/*!
+	 * @returns the maximally allowed number of steps for the bounded until operator
+	 */
+	uint_fast64_t getBound() const {
+		return bound;
+	}
+
+	/*!
+	 * Sets the maximally allowed number of steps for the bounded until operator
+	 *
+	 * @param bound the new bound.
+	 */
+	void setBound(uint_fast64_t bound) {
+		this->bound = bound;
+	}
+
+private:
+	AbstractStateFormula<T>* child;
+	uint_fast64_t bound;
 };
 
 } //namespace prctl

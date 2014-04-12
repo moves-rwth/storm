@@ -8,7 +8,6 @@
 #ifndef STORM_FORMULA_PRCTL_BOUNDEDNARYUNTIL_H_
 #define STORM_FORMULA_PRCTL_BOUNDEDNARYUNTIL_H_
 
-#include "src/formula/abstract/BoundedNaryUntil.h"
 #include "src/formula/Prctl/AbstractPathFormula.h"
 #include "src/formula/Prctl/AbstractStateFormula.h"
 #include <cstdint>
@@ -63,15 +62,16 @@ class IBoundedNaryUntilModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class BoundedNaryUntil : public storm::property::abstract::BoundedNaryUntil<T, AbstractStateFormula<T>>,
-								 public AbstractPathFormula<T> {
+class BoundedNaryUntil : public AbstractPathFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
 	BoundedNaryUntil() {
-
+		this->left = nullptr;
+		this->right = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
 	}
 
 	/*!
@@ -80,9 +80,9 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	BoundedNaryUntil(AbstractStateFormula<T>* left, std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right) :
-		storm::property::abstract::BoundedNaryUntil<T, AbstractStateFormula<T>>(left, right){
-
+	BoundedNaryUntil(AbstractStateFormula<T>* left, std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right) {
+		this->left = left;
+		this->right = right;
 	}
 
 	/*!
@@ -92,9 +92,13 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~BoundedNaryUntil() {
-		//intentionally left empty
+	  if (left != nullptr) {
+		  delete left;
+	  }
+	  if (right != nullptr) {
+		  delete right;
+	  }
 	}
-
 
 	/*!
 	 * Clones the called object.
@@ -132,6 +136,89 @@ public:
 		return modelChecker.template as<IBoundedNaryUntilModelChecker>()->checkBoundedNaryUntil(*this, qualitative);
 	}
 
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::stringstream result;
+		result << "( " << left->toString();
+		for (auto it = this->right->begin(); it != this->right->end(); ++it) {
+			result << " U[" << std::get<1>(*it) << "," << std::get<2>(*it) << "] " << std::get<0>(*it)->toString();
+		}
+		result << ")";
+		return result.str();
+	}
+
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *
+     *  @param checker Formula checker object.
+     *  @return true iff all subtrees conform to some logic.
+     */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		bool res = checker.validate(this->left);
+		for (auto it = this->right->begin(); it != this->right->end(); ++it) {
+			res &= checker.validate(std::get<0>(*it));
+		}
+		return res;
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractStateFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	void setRight(std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void addRight(AbstractStateFormula<T>* newRight, T upperBound, T lowerBound) {
+		this->right->push_back(std::tuple<AbstractStateFormula<T>*,T,T>(newRight, upperBound, lowerBound));
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractStateFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child nodes.
+	 */
+	const std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>& getRight() const {
+		return *right;
+	}
+
+
+private:
+	AbstractStateFormula<T>* left;
+	std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right;
 };
 
 } //namespace prctl

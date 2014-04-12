@@ -8,7 +8,6 @@
 #ifndef STORM_FORMULA_PRCTL_BOUNDEDUNTIL_H_
 #define STORM_FORMULA_PRCTL_BOUNDEDUNTIL_H_
 
-#include "src/formula/abstract/BoundedUntil.h"
 #include "src/formula/Prctl/AbstractPathFormula.h"
 #include "src/formula/Prctl/AbstractStateFormula.h"
 #include <cstdint>
@@ -56,15 +55,15 @@ class IBoundedUntilModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class BoundedUntil : public storm::property::abstract::BoundedUntil<T, AbstractStateFormula<T>>,
-							public AbstractPathFormula<T> {
+class BoundedUntil : public AbstractPathFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
-	BoundedUntil() {
-		//Intentionally left empty
+	BoundedUntil() : left(nullptr), right(nullptr), bound(0){
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -74,12 +73,11 @@ public:
 	 * @param right The left formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedUntil(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right,
-					 uint_fast64_t bound) :
-					 storm::property::abstract::BoundedUntil<T, AbstractStateFormula<T>>(left,right,bound) {
-		//intentionally left empty
+	BoundedUntil(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right, uint_fast64_t bound) {
+		this->left = left;
+		this->right = right;
+		this->bound = bound;
 	}
-
 	/*!
 	 * Destructor.
 	 *
@@ -87,7 +85,12 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~BoundedUntil() {
-	  //intentionally left empty
+	  if (left != NULL) {
+		  delete left;
+	  }
+	  if (right != NULL) {
+		  delete right;
+	  }
 	}
 
 	/*!
@@ -122,6 +125,97 @@ public:
 	virtual std::vector<T> check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<IBoundedUntilModelChecker>()->checkBoundedUntil(*this, qualitative);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = left->toString();
+		result += " U<=";
+		result += std::to_string(bound);
+		result += " ";
+		result += right->toString();
+		return result;
+	}
+
+	/*!
+	 *  @brief Checks if all subtrees conform to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff all subtrees conform to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->left) && checker.validate(this->right);
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractStateFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(AbstractStateFormula<T>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractStateFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const AbstractStateFormula<T>& getRight() const {
+		return *right;
+	}
+
+	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+	/*!
+	 * @returns the maximally allowed number of steps for the bounded until operator
+	 */
+	uint_fast64_t getBound() const {
+		return bound;
+	}
+
+	/*!
+	 * Sets the maximally allowed number of steps for the bounded until operator
+	 *
+	 * @param bound the new bound.
+	 */
+	void setBound(uint_fast64_t bound) {
+		this->bound = bound;
+	}
+
+private:
+	AbstractStateFormula<T>* left;
+	AbstractStateFormula<T>* right;
+	uint_fast64_t bound;
 };
 
 } //namespace prctl

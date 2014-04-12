@@ -56,7 +56,6 @@ class AbstractModelChecker :
 	public virtual storm::property::prctl::INextModelChecker<Type>,
 	public virtual storm::property::prctl::IBoundedUntilModelChecker<Type>,
 	public virtual storm::property::prctl::IBoundedEventuallyModelChecker<Type>,
-	public virtual storm::property::prctl::INoBoundOperatorModelChecker<Type>,
 	public virtual storm::property::prctl::IProbabilisticBoundOperatorModelChecker<Type>,
 	public virtual storm::property::prctl::IRewardBoundOperatorModelChecker<Type>,
 	public virtual storm::property::prctl::IReachabilityRewardModelChecker<Type>,

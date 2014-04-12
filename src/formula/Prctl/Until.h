@@ -10,7 +10,6 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
-#include "src/formula/abstract/Until.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
@@ -54,15 +53,15 @@ class IUntilModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class Until : public storm::property::abstract::Until<T, AbstractStateFormula<T>>,
-				  public AbstractPathFormula<T> {
+class Until : public AbstractPathFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
-	Until() {
-		// Intentionally left empty
+	Until() : left(nullptr), right(nullptr){
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -71,9 +70,8 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	Until(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right)
-		: storm::property::abstract::Until<T, AbstractStateFormula<T>>(left, right) {
-		// Intentionally left empty
+	Until(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) : left(left), right(right){
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -83,7 +81,12 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~Until() {
-	  // Intentionally left empty
+	  if (left != NULL) {
+		  delete left;
+	  }
+	  if (right != NULL) {
+		  delete right;
+	  }
 	}
 
 	/*!
@@ -116,6 +119,78 @@ public:
 	virtual std::vector<T> check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<IUntilModelChecker>()->checkUntil(*this, qualitative);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = left->toString();
+		result += " U ";
+		result += right->toString();
+		return result;
+	}
+
+	/*!
+	 *  @brief Checks if all subtrees conform to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff all subtrees conform to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->left) && checker.validate(this->right);
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractStateFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(AbstractStateFormula<T>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractStateFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const AbstractStateFormula<T>& getRight() const {
+		return *right;
+	}
+
+	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+private:
+	AbstractStateFormula<T>* left;
+	AbstractStateFormula<T>* right;
 };
 
 } //namespace prctl

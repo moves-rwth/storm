@@ -129,7 +129,7 @@ public:
 	/*!
 	 * @returns The child node
 	 */
-	const FormulaType& getChild() const {
+	const AbstractStateFormula<T>& getChild() const {
 		return *child;
 	}
 
@@ -137,7 +137,7 @@ public:
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(FormulaType* child) {
+	void setChild(AbstractStateFormula<T>* child) {
 		this->child = child;
 	}
 

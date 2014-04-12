@@ -10,7 +10,6 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
-#include "src/formula/abstract/SteadyStateReward.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <string>
 
@@ -46,8 +45,7 @@ class ISteadyStateRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class SteadyStateReward: public storm::property::abstract::SteadyStateReward<T>,
-								 public AbstractPathFormula<T> {
+class SteadyStateReward: public AbstractPathFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -82,6 +80,25 @@ public:
 	 */
 	virtual std::vector<T> check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<ISteadyStateRewardModelChecker>()->checkSteadyStateReward(*this, qualitative);
+	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		return "S";
+	}
+
+	/*!
+     *  @brief Checks if all subtrees conform to some logic.
+     *
+     *  As SteadyStateReward objects have no subformulas, we return true here.
+     *
+     *  @param checker Formula checker object.
+     *  @return true
+     */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return true;
 	}
 };
 

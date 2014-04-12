@@ -70,7 +70,7 @@ public:
 	 * @param left The left sub formula
 	 * @param right The right sub formula
 	 */
-	Or(FormulaType* left, FormulaType* right) {
+	Or(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) {
 		this->left = left;
 		this->right = right;
 	}
@@ -148,7 +148,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(FormulaType* newLeft) {
+	void setLeft(AbstractStateFormula<T>* newLeft) {
 		left = newLeft;
 	}
 
@@ -157,21 +157,21 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(FormulaType* newRight) {
+	void setRight(AbstractStateFormula<T>* newRight) {
 		right = newRight;
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const FormulaType& getLeft() const {
+	const AbstractStateFormula<T>& getLeft() const {
 		return *left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	const FormulaType& getRight() const {
+	const AbstractStateFormula<T>& getRight() const {
 		return *right;
 	}
 

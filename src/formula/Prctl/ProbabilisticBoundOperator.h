@@ -11,6 +11,7 @@
 #include "AbstractStateFormula.h"
 #include "AbstractPathFormula.h"
 #include "utility/constants.h"
+#include "src/formula/ComparisonType.h"
 
 namespace storm {
 namespace property {
@@ -52,54 +53,39 @@ class IProbabilisticBoundOperatorModelChecker {
  * @see AbstractPrctlFormula
  */
 template<class T>
-class ProbabilisticBoundOperator : public storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>,
-											  public AbstractStateFormula<T> {
+class ProbabilisticBoundOperator : public AbstractStateFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticBoundOperator()  {
-		// Intentionally left empty
+	ProbabilisticBoundOperator() : comparisonOperator(LESS), bound(0), pathFormula(nullptr) {
+		// Intentionally left empty.
 	}
 
-
 	/*!
-	 * Constructor
+	 * Constructor for non-optimizing operator.
 	 *
-	 * @param comparisonRelation The relation to compare the actual value and the bound
+	 * @param comparisonOperator The relation for the bound.
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	ProbabilisticBoundOperator(
-			storm::property::ComparisonType comparisonRelation,
-			T bound,
-			AbstractPathFormula<T>* pathFormula)
-			: storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula) {
-		// Intentionally left empty
+	ProbabilisticBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
+		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
+		// Intentionally left empty.
 	}
 
 	/*!
+	 * Destructor
 	 *
-	 * @param comparisonRelation
-	 * @param bound
-	 * @param pathFormula
-	 * @param minimumOperator
-	 */
-	ProbabilisticBoundOperator(
-			storm::property::ComparisonType comparisonRelation,
-			T bound,
-			AbstractPathFormula<T>* pathFormula,
-			bool minimumOperator)
-			: storm::property::abstract::ProbabilisticBoundOperator<T, AbstractPathFormula<T>>(comparisonRelation, bound, pathFormula, minimumOperator){
-		// Intentionally left empty
-	}
-
-	/*!
-	 *
+	 * The subtree is deleted with the object
+	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~ProbabilisticBoundOperator() {
-		// Intentionally left empty
+	 if (pathFormula != nullptr) {
+		 delete pathFormula;
+	 }
 	}
 
 	/*!
@@ -129,6 +115,101 @@ public:
 	virtual storm::storage::BitVector check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IProbabilisticBoundOperatorModelChecker>()->checkProbabilisticBoundOperator(*this);
 	}
+
+	/*!
+	 *  @brief Checks if the subtree conforms to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff the subtree conforms to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->pathFormula);
+	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "P ";
+		switch (comparisonOperator) {
+		case LESS: result += "<"; break;
+		case LESS_EQUAL: result += "<="; break;
+		case GREATER: result += ">"; break;
+		case GREATER_EQUAL: result += ">="; break;
+		}
+		result += " ";
+		result += std::to_string(bound);
+		result += " [";
+		result += pathFormula->toString();
+		result += "]";
+		return result;
+	}
+
+	/*!
+	 * @returns the child node (representation of a formula)
+	 */
+	const AbstractPathFormula<T>& getPathFormula () const {
+		return *pathFormula;
+	}
+
+	/*!
+	 * Sets the child node
+	 *
+	 * @param pathFormula the path formula that becomes the new child node
+	 */
+	void setPathFormula(AbstractPathFormula<T>* pathFormula) {
+		this->pathFormula = pathFormula;
+	}
+
+	/*!
+	 *
+	 * @return True if the path formula is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool pathFormulaIsSet() const {
+		return pathFormula != nullptr;
+	}
+
+	/*!
+	 * @returns the comparison relation
+	 */
+	const storm::property::ComparisonType getComparisonOperator() const {
+		return comparisonOperator;
+	}
+
+	void setComparisonOperator(storm::property::ComparisonType comparisonOperator) {
+		this->comparisonOperator = comparisonOperator;
+	}
+
+	/*!
+	 * @returns the bound for the measure
+	 */
+	const T& getBound() const {
+		return bound;
+	}
+
+	/*!
+	 * Sets the interval in which the probability that the path formula holds may lie in.
+	 *
+	 * @param bound The bound for the measure
+	 */
+	void setBound(T bound) {
+		this->bound = bound;
+	}
+
+	bool meetsBound(T value) const {
+		switch (comparisonOperator) {
+		case LESS: return value < bound; break;
+		case LESS_EQUAL: return value <= bound; break;
+		case GREATER: return value > bound; break;
+		case GREATER_EQUAL: return value >= bound; break;
+		default: return false;
+		}
+	}
+
+private:
+	storm::property::ComparisonType comparisonOperator;
+	T bound;
+	AbstractPathFormula<T>* pathFormula;
 };
 
 } //namespace prctl

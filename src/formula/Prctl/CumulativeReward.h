@@ -10,7 +10,6 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
-#include "src/formula/abstract/CumulativeReward.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <string>
 
@@ -49,14 +48,13 @@ class ICumulativeRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class CumulativeReward : public storm::property::abstract::CumulativeReward<T>,
-								 public AbstractPathFormula<T> {
+class CumulativeReward : public AbstractPathFormula<T> {
 
 public:
 	/*!
 	 * Empty constructor
 	 */
-	CumulativeReward() {
+	CumulativeReward() : bound(0){
 		// Intentionally left empty
 	}
 
@@ -65,9 +63,8 @@ public:
 	 *
 	 * @param bound The time bound of the reward formula
 	 */
-	CumulativeReward(T bound) :
-		storm::property::abstract::CumulativeReward<T>(bound) {
-		// Intentionally left empty
+	CumulativeReward(T bound) : bound(bound){
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -101,6 +98,46 @@ public:
 	virtual std::vector<T> check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<ICumulativeRewardModelChecker>()->checkCumulativeReward(*this, qualitative);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "C <= ";
+		result += std::to_string(bound);
+		return result;
+	}
+
+	/*!
+	 *  @brief Checks if all subtrees conform to some logic.
+	 *
+	 *  As CumulativeReward objects have no subformulas, we return true here.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return true;
+	}
+
+	/*!
+	 * @returns the time instance for the instantaneous reward operator
+	 */
+	T getBound() const {
+		return bound;
+	}
+
+	/*!
+	 * Sets the the time instance for the instantaneous reward operator
+	 *
+	 * @param bound the new bound.
+	 */
+	void setBound(T bound) {
+		this->bound = bound;
+	}
+
+private:
+	T bound;
 };
 
 } //namespace prctl

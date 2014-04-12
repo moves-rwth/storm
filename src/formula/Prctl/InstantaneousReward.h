@@ -10,7 +10,6 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
-#include "src/formula/abstract/InstantaneousReward.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <cstdint>
 #include <string>
@@ -50,15 +49,15 @@ class IInstantaneousRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class InstantaneousReward : public storm::property::abstract::InstantaneousReward<T>,
-									 public AbstractPathFormula<T> {
+class InstantaneousReward : public AbstractPathFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
-	InstantaneousReward() {
-		//intentionally left empty
+	InstantaneousReward() : bound(0) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -66,9 +65,8 @@ public:
 	 *
 	 * @param bound The time instance of the reward formula
 	 */
-	InstantaneousReward(uint_fast64_t bound) :
-		storm::property::abstract::InstantaneousReward<T>(bound) {
-		//intentionally left empty
+	InstantaneousReward(uint_fast64_t bound) : bound(bound) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -102,6 +100,46 @@ public:
 	virtual std::vector<T> check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<IInstantaneousRewardModelChecker>()->checkInstantaneousReward(*this, qualitative);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "I=";
+		result += std::to_string(bound);
+		return result;
+	}
+
+	/*!
+	 *  @brief Checks if all subtrees conform to some logic.
+	 *
+	 *  As InstantaneousReward formulas have no subformulas, we return true here.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return true;
+	}
+
+	/*!
+	 * @returns the time instance for the instantaneous reward operator
+	 */
+	uint_fast64_t getBound() const {
+		return bound;
+	}
+
+	/*!
+	 * Sets the the time instance for the instantaneous reward operator
+	 *
+	 * @param bound the new bound.
+	 */
+	void setBound(uint_fast64_t bound) {
+		this->bound = bound;
+	}
+
+private:
+	uint_fast64_t bound;
 };
 
 } //namespace prctl

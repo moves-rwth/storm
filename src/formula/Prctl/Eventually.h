@@ -8,7 +8,6 @@
 #ifndef STORM_FORMULA_PRCTL_EVENTUALLY_H_
 #define STORM_FORMULA_PRCTL_EVENTUALLY_H_
 
-#include "src/formula/abstract/Eventually.h"
 #include "src/formula/Prctl/AbstractPathFormula.h"
 #include "src/formula/Prctl/AbstractStateFormula.h"
 #include "src/modelchecker/prctl/ForwardDeclarations.h"
@@ -53,15 +52,15 @@ class IEventuallyModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class Eventually : public storm::property::abstract::Eventually<T, AbstractStateFormula<T>>,
-						 public AbstractPathFormula<T> {
+class Eventually : public AbstractPathFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
-	Eventually() {
-		// Intentionally left empty
+	Eventually() : child(nullptr) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -69,9 +68,8 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Eventually(AbstractStateFormula<T>* child)
-		: storm::property::abstract::Eventually<T, AbstractStateFormula<T>>(child) {
-
+	Eventually(AbstractStateFormula<T>* child) : child(child){
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -81,7 +79,9 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to nullptr before deletion)
 	 */
 	virtual ~Eventually() {
-		//intentionally left empty
+	  if (child != nullptr) {
+		  delete child;
+	  }
 	}
 
 	/*!
@@ -111,6 +111,51 @@ public:
 	virtual std::vector<T> check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<IEventuallyModelChecker>()->checkEventually(*this, qualitative);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "F ";
+		result += child->toString();
+		return result;
+	}
+
+	/*!
+	 *  @brief Checks if the subtree conforms to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff the subtree conforms to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->child);
+	}
+
+	/*!
+	 * @returns the child node
+	 */
+	const AbstractStateFormula<T>& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(AbstractStateFormula<T>* child) {
+		this->child = child;
+	}
+
+	/*!
+	 *
+	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool childIsSet() const {
+		return child != nullptr;
+	}
+
+private:
+	AbstractStateFormula<T>* child;
 };
 
 } //namespace prctl
