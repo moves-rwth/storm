@@ -10,10 +10,6 @@ namespace storm {
             // Nothing to do here.
         }
         
-        BooleanVariable::BooleanVariable(BooleanVariable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : Variable(oldVariable, newName, renaming, filename, lineNumber) {
-            // Nothing to do here.
-        }
-        
         std::ostream& operator<<(std::ostream& stream, BooleanVariable const& variable) {
             stream << variable.getName() << ": bool " << variable.getInitialValueExpression() << ";";
             return stream;

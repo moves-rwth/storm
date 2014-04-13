@@ -35,18 +35,6 @@ namespace storm {
              */
             BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
-            /*!
-             * Creates a copy of the given boolean variable and performs the provided renaming.
-             *
-             * @param oldVariable The variable to copy.
-             * @param newName New name of this variable.
-             * @param renaming A mapping from names that are to be renamed to the names they are to be
-             * replaced with.
-             * @param filename The filename in which the variable is defined.
-             * @param lineNumber The line number in which the variable is defined.
-             */
-            BooleanVariable(BooleanVariable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber);
-            
             friend std::ostream& operator<<(std::ostream& stream, BooleanVariable const& variable);
         };
         

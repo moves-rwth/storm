@@ -138,6 +138,14 @@ TEST(Expression, OperatorTest) {
     
     storm::expressions::Expression tempExpression;
 
+    ASSERT_THROW(tempExpression = trueExpression.ite(falseExpression, piExpression), storm::exceptions::InvalidTypeException);
+    ASSERT_NO_THROW(tempExpression = boolConstExpression.ite(threeExpression, doubleVarExpression));
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Double);
+    ASSERT_NO_THROW(tempExpression = boolConstExpression.ite(threeExpression, intVarExpression));
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);
+    ASSERT_NO_THROW(tempExpression = boolConstExpression.ite(trueExpression, falseExpression));
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
+    
     ASSERT_THROW(tempExpression = trueExpression + piExpression, storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = threeExpression + threeExpression);
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);
@@ -366,5 +374,10 @@ TEST(Expression, SimpleEvaluationTest) {
     ASSERT_NO_THROW(valuation.setBooleanValue("a", true));
     EXPECT_TRUE(tempExpression.evaluateAsBool(valuation));
     ASSERT_NO_THROW(valuation.setIntegerValue("y", 3));
+    EXPECT_FALSE(tempExpression.evaluateAsBool(valuation));
+    
+    ASSERT_NO_THROW(tempExpression = ((intVarExpression < threeExpression).ite(trueExpression, falseExpression)));
+    ASSERT_THROW(tempExpression.evaluateAsDouble(valuation), storm::exceptions::InvalidTypeException);
+    ASSERT_THROW(tempExpression.evaluateAsInt(valuation), storm::exceptions::InvalidTypeException);
     EXPECT_FALSE(tempExpression.evaluateAsBool(valuation));
 }

@@ -5,21 +5,6 @@ namespace storm {
         Command::Command(uint_fast64_t globalIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionName(actionName), guardExpression(guardExpression), updates(updates), globalIndex(globalIndex) {
             // Nothing to do here.
         }
-        
-        Command::Command(Command const& oldCommand, uint_fast64_t newGlobalIndex, uint_fast64_t newGlobalUpdateIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionName(oldCommand.getActionName()), guardExpression(oldCommand.getGuardExpression().substitute<std::map>(renaming)), globalIndex(newGlobalIndex) {
-            // Rename the action name of the command.
-            auto const& namePair = renaming.find(this->actionName);
-            if (namePair != renaming.end()) {
-                this->actionName = namePair->second;
-            }
-            
-            // Rename the updates of the command.
-            this->updates.reserve(oldCommand.getNumberOfUpdates());
-            for (Update const& update : oldCommand.getUpdates()) {
-                this->updates.emplace_back(update, newGlobalUpdateIndex, renaming, filename, lineNumber);
-                ++newGlobalUpdateIndex;
-            }
-        }
 
         std::string const& Command::getActionName() const {
             return this->actionName;

@@ -7,6 +7,7 @@
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/ExceptionMacros.h"
 
+#include "src/storage/expressions/IfThenElseExpression.h"
 #include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
 #include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "src/storage/expressions/BinaryRelationExpression.h"
@@ -218,6 +219,12 @@ namespace storm {
         Expression Expression::maximum(Expression const& lhs, Expression const& rhs) {
             LOG_THROW(lhs.hasNumericalReturnType() && rhs.hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Operator 'max' requires numerical operands.");
             return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(lhs.getReturnType() == ExpressionReturnType::Int && rhs.getReturnType() == ExpressionReturnType::Int ? ExpressionReturnType::Int : ExpressionReturnType::Double, lhs.getBaseExpressionPointer(), rhs.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Max)));
+        }
+        
+        Expression Expression::ite(Expression const& thenExpression, Expression const& elseExpression) {
+            LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Condition of if-then-else operator must be of boolean type.");
+            LOG_THROW(thenExpression.hasBooleanReturnType() && elseExpression.hasBooleanReturnType() || thenExpression.hasNumericalReturnType() && elseExpression.hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "'then' and 'else' expression of if-then-else operator must have equal return type.");
+            return Expression(std::shared_ptr<BaseExpression>(new IfThenElseExpression(thenExpression.hasBooleanReturnType() && elseExpression.hasBooleanReturnType() ? ExpressionReturnType::Bool : (thenExpression.getReturnType() == ExpressionReturnType::Int && elseExpression.getReturnType() == ExpressionReturnType::Int ? ExpressionReturnType::Int : ExpressionReturnType::Double), this->getBaseExpressionPointer(), thenExpression.getBaseExpressionPointer(), elseExpression.getBaseExpressionPointer())));
         }
         
         Expression Expression::implies(Expression const& other) const {

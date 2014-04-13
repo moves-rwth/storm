@@ -40,17 +40,6 @@ namespace storm {
             IntegerVariable(std::string const& variableName, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
-             * Creates a copy of the given integer variable and performs the provided renaming.
-             *
-             * @param oldVariable The variable to copy.
-             * @param newName New name of this variable.
-             * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
-             * @param filename The filename in which the variable is defined.
-             * @param lineNumber The line number in which the variable is defined.
-             */
-            IntegerVariable(IntegerVariable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
-            
-            /*!
              * Retrieves an expression defining the lower bound for this integer variable.
              *
              * @return An expression defining the lower bound for this integer variable.

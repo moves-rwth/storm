@@ -52,6 +52,11 @@ namespace storm {
             return this->shared_from_this();
         }
         
+        std::ostream& operator<<(std::ostream& stream, ExpressionReturnType const& enumValue) {
+            stream << static_cast<std::underlying_type<ExpressionReturnType>::type>(enumValue);
+            return stream;
+        }
+        
         std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression) {
             expression.printToStream(stream);
             return stream;

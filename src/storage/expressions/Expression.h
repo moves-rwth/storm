@@ -54,6 +54,7 @@ namespace storm {
             Expression operator<(Expression const& other) const;
             Expression operator<=(Expression const& other) const;
             
+            Expression ite(Expression const& thenExpression, Expression const& elseExpression);
             Expression implies(Expression const& other) const;
             Expression iff(Expression const& other) const;
             

@@ -4,6 +4,7 @@
 namespace storm {
     namespace expressions {
         // Forward-declare all expression classes.
+        class IfThenElseExpression;
         class BinaryBooleanFunctionExpression;
         class BinaryNumericalFunctionExpression;
         class BinaryRelationExpression;
@@ -20,6 +21,7 @@ namespace storm {
         
         class ExpressionVisitor {
         public:
+            virtual void visit(IfThenElseExpression const* expression) = 0;
             virtual void visit(BinaryBooleanFunctionExpression const* expression) = 0;
             virtual void visit(BinaryNumericalFunctionExpression const* expression) = 0;
             virtual void visit(BinaryRelationExpression const* expression) = 0;

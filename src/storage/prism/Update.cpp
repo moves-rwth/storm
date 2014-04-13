@@ -8,21 +8,6 @@ namespace storm {
             this->createAssignmentMapping();
         }
         
-        Update::Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(update.getLikelihoodExpression().substitute<std::map>(renaming)), assignments(), variableToAssignmentIndexMap(), globalIndex(newGlobalIndex) {
-            // Rename all assignments.
-            for (auto const& assignment : update.getAssignments()) {
-                auto const& namePair = renaming.find(assignment.getVariableName());
-                if (namePair != renaming.end()) {
-                    this->assignments.emplace_back(Assignment(assignment, renaming, filename, lineNumber));
-                } else {
-                    this->assignments.emplace_back(Assignment(assignment));
-                }
-            }
-
-            // Create the assignment mapping.
-            this->createAssignmentMapping();
-        }
-        
         storm::expressions::Expression const& Update::getLikelihoodExpression() const {
             return likelihoodExpression;
         }

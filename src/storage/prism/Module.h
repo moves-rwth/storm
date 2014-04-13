@@ -28,20 +28,6 @@ namespace storm {
              */
             Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
-            /*!
-             * Special copy constructor, implementing the module renaming functionality. This will create a new module
-             * having all identifiers renamed according to the given map.
-             *
-             * @param oldModule The module to be copied.
-             * @param newModuleName The name of the new module.
-             * @param newGlobalCommandIndex The global starting index for commands of the renamed module.
-             * @param newGlobalUpdateIndex The global starting index for the updates of the renamed module.
-             * @param renaming A mapping of identifiers to the new identifiers they are to be replaced with.
-             * @param filename The filename in which the module is defined.
-             * @param lineNumber The line number in which the module is defined.
-             */
-            Module(Module const& oldModule, std::string const& newModuleName, uint_fast64_t newGlobalCommandIndex, uint_fast64_t newGlobalUpdateIndex, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
-            
             // Create default implementations of constructors/assignment.
             Module() = default;
             Module(Module const& other) = default;

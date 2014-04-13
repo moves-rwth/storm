@@ -28,6 +28,7 @@ namespace storm {
              */
             Expression substitute(BaseExpression const* expression);
             
+            virtual void visit(IfThenElseExpression const* expression) override;
             virtual void visit(BinaryBooleanFunctionExpression const* expression) override;
             virtual void visit(BinaryNumericalFunctionExpression const* expression) override;
             virtual void visit(BinaryRelationExpression const* expression) override;

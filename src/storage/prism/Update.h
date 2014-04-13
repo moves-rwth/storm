@@ -21,17 +21,6 @@ namespace storm {
              */
             Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
-            /*!
-             * Creates a copy of the given update and performs the provided renaming.
-             *
-             * @param update The update that is to be copied.
-             * @param newGlobalIndex The global index of the resulting update.
-             * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
-             * @param filename The filename in which the update is defined.
-             * @param lineNumber The line number in which the update is defined.
-             */
-            Update(Update const& update, uint_fast64_t newGlobalIndex, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
-            
             // Create default implementations of constructors/assignment.
             Update() = default;
             Update(Update const& other) = default;

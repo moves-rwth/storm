@@ -6,13 +6,6 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        Assignment::Assignment(Assignment const& oldAssignment, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variableName(oldAssignment.getVariableName()), expression(oldAssignment.getExpression().substitute<std::map>(renaming)) {
-            auto renamingPair = renaming.find(oldAssignment.variableName);
-            if (renamingPair != renaming.end()) {
-                this->variableName = renamingPair->second;
-            }
-        }
-        
         std::string const& Assignment::getVariableName() const {
             return variableName;
         }

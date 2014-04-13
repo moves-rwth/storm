@@ -9,34 +9,7 @@ namespace storm {
             // Initialize the internal mappings for fast information retrieval.
             this->createMappings();
         }
-        
-        Module::Module(Module const& oldModule, std::string const& newModuleName, uint_fast64_t newGlobalCommandIndex, uint_fast64_t newGlobalUpdateIndex, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(newModuleName), booleanVariables(), integerVariables(), commands(), actions(), actionsToCommandIndexMap() {
-            // Iterate over boolean variables and rename them. If a variable was not renamed, this is an error and an exception is thrown.
-            for (auto const& booleanVariable : oldModule.getBooleanVariables()) {
-                auto const& renamingPair = renaming.find(booleanVariable.getName());
-                LOG_THROW(renamingPair != renaming.end(), storm::exceptions::InvalidArgumentException, "Boolean variable '" << booleanVariable.getName() << " was not renamed.");
-                this->booleanVariables.emplace_back(booleanVariable, renamingPair->second, renaming, filename, lineNumber);
-            }
-           
-            // Now do the same for the integer variables.
-            for (auto const& integerVariable : oldModule.getIntegerVariables()) {
-                auto const& renamingPair = renaming.find(integerVariable.getName());
-                LOG_THROW(renamingPair != renaming.end(), storm::exceptions::InvalidArgumentException, "Integer variable '" << integerVariable.getName() << " was not renamed.");
-                this->integerVariables.emplace_back(integerVariable, renamingPair->second, renaming, filename, lineNumber);
-            }
-            
-            // Now we are ready to clone all commands and rename them if requested.
-            this->commands.reserve(oldModule.getNumberOfCommands());
-            for (Command const& command : oldModule.getCommands()) {
-                this->commands.emplace_back(command, newGlobalCommandIndex, newGlobalUpdateIndex, renaming, filename, lineNumber);
-                ++newGlobalCommandIndex;
-                newGlobalUpdateIndex += this->commands.back().getNumberOfUpdates();
-            }
-            
-            // Finally, update internal mappings.
-            this->createMappings();
-        }
-        
+                
         std::size_t Module::getNumberOfBooleanVariables() const {
             return this->booleanVariables.size();
         }

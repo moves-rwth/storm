@@ -3,6 +3,7 @@
 
 #include "src/storage/expressions/IdentifierSubstitutionVisitor.h"
 
+#include "src/storage/expressions/IfThenElseExpression.h"
 #include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
 #include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "src/storage/expressions/BinaryRelationExpression.h"
@@ -27,6 +28,28 @@ namespace storm {
         Expression IdentifierSubstitutionVisitor<MapType>::substitute(BaseExpression const* expression) {
             expression->accept(this);
             return Expression(this->expressionStack.top());
+        }
+        
+        template<template<typename... Arguments> class MapType>
+        void IdentifierSubstitutionVisitor<MapType>::visit(IfThenElseExpression const* expression) {
+            expression->getCondition()->accept(this);
+            std::shared_ptr<BaseExpression const> conditionExpression = expressionStack.top();
+            expressionStack.pop();
+            
+            expression->getThenExpression()->accept(this);
+            std::shared_ptr<BaseExpression const> thenExpression = expressionStack.top();
+            expressionStack.pop();
+            
+            expression->getElseExpression()->accept(this);
+            std::shared_ptr<BaseExpression const> elseExpression = expressionStack.top();
+            expressionStack.pop();
+            
+            // If the arguments did not change, we simply push the expression itself.
+            if (conditionExpression.get() == expression->getCondition().get() && thenExpression.get() == expression->getThenExpression().get() && elseExpression.get() == expression->getElseExpression().get()) {
+                this->expressionStack.push(expression->getSharedPointer());
+            } else {
+                this->expressionStack.push(std::shared_ptr<BaseExpression>(new IfThenElseExpression(expression->getReturnType(), conditionExpression, thenExpression, elseExpression)));
+            }
         }
         
         template<template<typename... Arguments> class MapType>

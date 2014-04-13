@@ -19,17 +19,7 @@ namespace storm {
              * @param lineNumber The line number in which the assignment is defined.
              */
             Assignment(std::string const& variableName, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
-            
-            /*!
-             * Creates a copy of the given assignment and performs the provided renaming.
-             *
-             * @param oldAssignment The assignment to copy.
-             * @param renaming A mapping from names that are to be renamed to the names they are to be replaced with.
-             * @param filename The filename in which the assignment is defined.
-             * @param lineNumber The line number in which the assignment is defined.
-             */
-            Assignment(Assignment const& oldAssignment, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
-            
+                        
             // Create default implementations of constructors/assignment.
             Assignment() = default;
             Assignment(Assignment const& other) = default;

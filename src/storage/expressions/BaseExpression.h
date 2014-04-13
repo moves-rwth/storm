@@ -17,6 +17,8 @@ namespace storm {
          */
         enum class ExpressionReturnType {Undefined, Bool, Int, Double};
         
+        std::ostream& operator<<(std::ostream& stream, ExpressionReturnType const& enumValue);
+        
         /*!
          * The base class of all expression classes.
          */
