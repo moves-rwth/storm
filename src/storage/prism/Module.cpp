@@ -127,6 +127,28 @@ namespace storm {
             return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), newCommands);
         }
         
+        Module Module::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+            std::vector<BooleanVariable> newBooleanVariables;
+            newBooleanVariables.reserve(this->getNumberOfBooleanVariables());
+            for (auto const& booleanVariable : this->getBooleanVariables()) {
+                newBooleanVariables.emplace_back(booleanVariable.substitute(substitution));
+            }
+            
+            std::vector<IntegerVariable> newIntegerVariables;
+            newBooleanVariables.reserve(this->getNumberOfIntegerVariables());
+            for (auto const& integerVariable : this->getIntegerVariables()) {
+                newIntegerVariables.emplace_back(integerVariable.substitute(substitution));
+            }
+            
+            std::vector<Command> newCommands;
+            newCommands.reserve(this->getNumberOfCommands());
+            for (auto const& command : this->getCommands()) {
+                newCommands.emplace_back(command.substitute(substitution));
+            }
+            
+            return Module(this->getName(), newBooleanVariables, newIntegerVariables, newCommands, this->getFilename(), this->getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Module const& module) {
             stream << "module " << module.getName() << std::endl;
             for (auto const& booleanVariable : module.getBooleanVariables()) {

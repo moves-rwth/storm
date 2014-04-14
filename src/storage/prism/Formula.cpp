@@ -18,6 +18,10 @@ namespace storm {
             return this->getExpression().getReturnType();
         }
         
+        Formula Formula::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+            return Formula(this->getFormulaName(), this->getExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Formula const& formula) {
             stream << "formula " << formula.getFormulaName() << " = " << formula.getExpression() << ";";
             return stream;

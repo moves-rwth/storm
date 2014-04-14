@@ -14,6 +14,10 @@ namespace storm {
             return this->expression;
         }
         
+        Assignment Assignment::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+            return Assignment(this->getVariableName(), this->getExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {
             stream << "(" << assignment.getVariableName() << "' = " << assignment.getExpression() << ")";
             return stream;

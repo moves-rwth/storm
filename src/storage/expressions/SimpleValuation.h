@@ -12,6 +12,9 @@ namespace storm {
     namespace expressions {
         class SimpleValuation : public Valuation {
         public:
+            friend class SimpleValuationPointerHash;
+            friend class SimpleValuationPointerLess;
+            
             /*!
              * Creates a simple valuation that can hold the given number of boolean, integer and double variables.
              *
@@ -39,6 +42,11 @@ namespace storm {
             SimpleValuation(SimpleValuation&&) = default;
             SimpleValuation& operator=(SimpleValuation const&) = default;
             SimpleValuation& operator=(SimpleValuation&&) = default;
+
+            /*!
+             * Compares two simple valuations wrt. equality.
+             */
+            bool operator==(SimpleValuation const& other) const;
             
             /*!
              * Sets the index of the identifier with the given name to the given value.
@@ -91,6 +99,35 @@ namespace storm {
             
             // The value container for all double identifiers.
             std::vector<double> doubleValues;
+        };
+        
+        /*!
+         * A helper class that can pe used as the hash functor for data structures that need to hash a simple valuations
+         * given via pointers.
+         */
+        class SimpleValuationPointerHash {
+        public:
+            std::size_t operator()(SimpleValuation* valuation) const;
+        };
+        
+        /*!
+         * A helper class that can be used as the comparison functor wrt. equality for data structures that need to
+         * store pointers to a simple valuations and need to compare the elements wrt. their content (rather than
+         * pointer equality).
+         */
+        class SimpleValuationPointerCompare {
+        public:
+            bool operator()(SimpleValuation* valuation1, SimpleValuation* valuation2) const;
+        };
+        
+        /*!
+         * A helper class that can be used as the comparison functor wrt. "<" for data structures that need to
+         * store pointers to a simple valuations and need to compare the elements wrt. their content (rather than
+         * pointer equality).
+         */
+        class SimpleValuationPointerLess {
+        public:
+            bool operator()(SimpleValuation* valuation1, SimpleValuation* valuation2) const;
         };
     }
 }

@@ -16,11 +16,8 @@
 #include <boost/functional/hash.hpp>
 #include <boost/container/flat_set.hpp>
 
-#include "src/ir/Program.h"
-#include "src/ir/RewardModel.h"
-#include "src/ir/StateReward.h"
-#include "src/ir/TransitionReward.h"
-#include "src/utility/IRUtility.h"
+#include "src/storage/prism/Program.h"
+#include "src/storage/expressions/SimpleValuation.h"
 #include "src/models/AbstractModel.h"
 #include "src/models/Dtmc.h"
 #include "src/models/Ctmc.h"
@@ -29,13 +26,8 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/Settings.h"
+#include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/WrongFormatException.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
-using namespace storm::utility::ir;
 
 namespace storm {
     namespace adapters {
@@ -43,6 +35,8 @@ namespace storm {
         template<typename ValueType>
         class ExplicitModelAdapter {
         public:
+            typedef storm::expressions::SimpleValuation StateType;
+            
             // A structure holding information about the reachable state space.
             struct StateInformation {
                 StateInformation() : reachableStates(), stateToIndexMap() {
@@ -53,7 +47,7 @@ namespace storm {
                 std::vector<StateType*> reachableStates;
                 
                 // A mapping from states to indices in the list of reachable states.
-                std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
+                std::unordered_map<StateType*, uint_fast64_t, storm::expressions::SimpleValuationPointerHash, storm::expressions::SimpleValuationPointerCompare> stateToIndexMap;
             };
             
             // A structure holding the individual components of a model.
@@ -90,24 +84,24 @@ namespace storm {
              * rewards.
              * @return The explicit model that was given by the probabilistic program.
              */
-            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::ir::Program program, std::string const& constantDefinitionString = "", std::string const& rewardModelName = "") {
+            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, std::string const& constantDefinitionString = "", std::string const& rewardModelName = "") {
                 // Start by defining the undefined constants in the model.
-                defineUndefinedConstants(program, constantDefinitionString);
+                storm::prism::Program definedProgram = program.defineUndefinedConstants(constantDefinitions);
                 
-                ModelComponents modelComponents = buildModelComponents(program, rewardModelName);
+                ModelComponents modelComponents = buildModelComponents(definedProgram, rewardModelName);
                 
                 std::unique_ptr<storm::models::AbstractModel<ValueType>> result;
                 switch (program.getModelType()) {
-                    case storm::ir::Program::DTMC:
+                    case storm::prism::Program::ModelType::DTMC:
                         result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
-                    case storm::ir::Program::CTMC:
+                    case storm::prism::Program::ModelType::CTMC:
                         result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
-                    case storm::ir::Program::MDP:
+                    case storm::prism::Program::ModelType::MDP:
                         result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
-                    case storm::ir::Program::CTMDP:
+                    case storm::prism::Program::ModelType::CTMDP:
                         result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     default:
@@ -116,26 +110,10 @@ namespace storm {
                         break;
                 }
                 
-                // Undefine the constants so that the program can be used again somewhere else.
-                undefineUndefinedConstants(program);
-                
                 return result;
             }
             
         private:
-            /*!
-             * Transforms a state into a somewhat readable string.
-             *
-             * @param state The state to transform into a string.
-             * @return A string representation of the state.
-             */
-            static std::string toString(StateType const* state) {
-                std::stringstream ss;
-                for (unsigned int i = 0; i < state->first.size(); i++) ss << state->first[i] << "\t";
-                for (unsigned int i = 0; i < state->second.size(); i++) ss << state->second[i] << "\t";
-                return ss.str();
-            }
-            
             /*!
              * Applies an update to the given state and returns the resulting new state object. This methods does not
              * modify the given state but returns a new one.
@@ -145,7 +123,7 @@ namespace storm {
              * @params update The update to apply.
              * @return The resulting state.
              */
-            static StateType* applyUpdate(VariableInformation const& variableInformation, StateType const* state, storm::ir::Update const& update) {
+            static StateType* applyUpdate(VariableInformation const& variableInformation, StateType const* state, storm::prism::Update const& update) {
                 return applyUpdate(variableInformation, state, state, update);
             }
             
@@ -160,7 +138,7 @@ namespace storm {
              * @param update The update to apply.
              * @return The resulting state.
              */
-            static StateType* applyUpdate(VariableInformation const& variableInformation, StateType const* state, StateType const* baseState, storm::ir::Update const& update) {
+            static StateType* applyUpdate(VariableInformation const& variableInformation, StateType const* state, StateType const* baseState, storm::prism::Update const& update) {
                 StateType* newState = new StateType(*state);
                 for (auto variableAssignmentPair : update.getBooleanAssignments()) {
                     setValue(newState, variableInformation.booleanVariableToIndexMap.at(variableAssignmentPair.first), variableAssignmentPair.second.getExpression()->getValueAsBool(baseState));
@@ -220,12 +198,12 @@ namespace storm {
              * @param action The action label to select.
              * @return A list of lists of active commands or nothing.
              */
-            static boost::optional<std::vector<std::list<storm::ir::Command>>> getActiveCommandsByAction(storm::ir::Program const& program, StateType const* state, std::string const& action) {
-                boost::optional<std::vector<std::list<storm::ir::Command>>> result((std::vector<std::list<storm::ir::Command>>()));
+            static boost::optional<std::vector<std::list<storm::prism::Command>>> getActiveCommandsByAction(storm::prism::Program const& program, StateType const* state, std::string const& action) {
+                boost::optional<std::vector<std::list<storm::prism::Command>>> result((std::vector<std::list<storm::prism::Command>>()));
                 
                 // Iterate over all modules.
                 for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
-                    storm::ir::Module const& module = program.getModule(i);
+                    storm::prism::Module const& module = program.getModule(i);
                     
                     // If the module has no command labeled with the given action, we can skip this module.
                     if (!module.hasAction(action)) {
@@ -237,14 +215,14 @@ namespace storm {
                     // If the module contains the action, but there is no command in the module that is labeled with
                     // this action, we don't have any feasible command combinations.
                     if (commandIndices.empty()) {
-                        return boost::optional<std::vector<std::list<storm::ir::Command>>>();
+                        return boost::optional<std::vector<std::list<storm::prism::Command>>>();
                     }
                     
-                    std::list<storm::ir::Command> commands;
+                    std::list<storm::prism::Command> commands;
                     
                     // Look up commands by their indices and add them if the guard evaluates to true in the given state.
                     for (uint_fast64_t commandIndex : commandIndices) {
-                        storm::ir::Command const& command = module.getCommand(commandIndex);
+                        storm::prism::Command const& command = module.getCommand(commandIndex);
                         if (command.getGuard()->getValueAsBool(state)) {
                             commands.push_back(command);
                         }
@@ -253,7 +231,7 @@ namespace storm {
                     // If there was no enabled command although the module has some command with the required action label,
                     // we must not return anything.
                     if (commands.size() == 0) {
-                        return boost::optional<std::vector<std::list<storm::ir::Command>>>();
+                        return boost::optional<std::vector<std::list<storm::prism::Command>>>();
                     }
                     
                     result.get().push_back(std::move(commands));
@@ -261,18 +239,18 @@ namespace storm {
                 return result;
             }
                         
-            static std::list<Choice<ValueType>> getUnlabeledTransitions(storm::ir::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
+            static std::list<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
                 std::list<Choice<ValueType>> result;
                 
                 StateType const* currentState = stateInformation.reachableStates[stateIndex];
 
                 // Iterate over all modules.
                 for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
-                    storm::ir::Module const& module = program.getModule(i);
+                    storm::prism::Module const& module = program.getModule(i);
                     
                     // Iterate over all commands.
                     for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
-                        storm::ir::Command const& command = module.getCommand(j);
+                        storm::prism::Command const& command = module.getCommand(j);
                         
                         // Only consider unlabeled commands.
                         if (command.getActionName() != "") continue;
@@ -286,7 +264,7 @@ namespace storm {
                         double probabilitySum = 0;
                         // Iterate over all updates of the current command.
                         for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
-                            storm::ir::Update const& update = command.getUpdate(k);
+                            storm::prism::Update const& update = command.getUpdate(k);
                             
                             // Obtain target state index.
                             std::pair<bool, uint_fast64_t> flagTargetStateIndexPair = getOrAddStateIndex(applyUpdate(variableInformation, currentState, update), stateInformation);
@@ -315,17 +293,17 @@ namespace storm {
                 return result;
             }
             
-            static std::list<Choice<ValueType>> getLabeledTransitions(storm::ir::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
+            static std::list<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
                 std::list<Choice<ValueType>> result;
                 
                 for (std::string const& action : program.getActions()) {
                     StateType const* currentState = stateInformation.reachableStates[stateIndex];
-                    boost::optional<std::vector<std::list<storm::ir::Command>>> optionalActiveCommandLists = getActiveCommandsByAction(program, currentState, action);
+                    boost::optional<std::vector<std::list<storm::prism::Command>>> optionalActiveCommandLists = getActiveCommandsByAction(program, currentState, action);
                     
                     // Only process this action label, if there is at least one feasible solution.
                     if (optionalActiveCommandLists) {
-                        std::vector<std::list<storm::ir::Command>> const& activeCommandList = optionalActiveCommandLists.get();
-                        std::vector<std::list<storm::ir::Command>::const_iterator> iteratorList(activeCommandList.size());
+                        std::vector<std::list<storm::prism::Command>> const& activeCommandList = optionalActiveCommandLists.get();
+                        std::vector<std::list<storm::prism::Command>::const_iterator> iteratorList(activeCommandList.size());
                         
                         // Initialize the list of iterators.
                         for (size_t i = 0; i < activeCommandList.size(); ++i) {
@@ -342,10 +320,10 @@ namespace storm {
                             // FIXME: This does not check whether a global variable is written multiple times. While the
                             // behaviour for this is undefined anyway, a warning should be issued in that case.
                             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                                storm::ir::Command const& command = *iteratorList[i];
+                                storm::prism::Command const& command = *iteratorList[i];
                                 
                                 for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
-                                    storm::ir::Update const& update = command.getUpdate(j);
+                                    storm::prism::Update const& update = command.getUpdate(j);
                                     
                                     for (auto const& stateProbabilityPair : *currentTargetStates) {
                                         StateType* newTargetState = applyUpdate(variableInformation, stateProbabilityPair.first, currentState, update);
@@ -459,7 +437,7 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static std::vector<boost::container::flat_set<uint_fast64_t>> buildMatrices(storm::ir::Program const& program, VariableInformation const& variableInformation, std::vector<storm::ir::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
+            static std::vector<boost::container::flat_set<uint_fast64_t>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
                 std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabels;
                 
                 // Initialize a queue and insert the initial state.
@@ -616,7 +594,7 @@ namespace storm {
              * is considered.
              * @return A structure containing the components of the resulting model.
              */
-            static ModelComponents buildModelComponents(storm::ir::Program const& program, std::string const& rewardModelName) {
+            static ModelComponents buildModelComponents(storm::prism::Program const& program, std::string const& rewardModelName) {
                 ModelComponents modelComponents;
                 
                 VariableInformation variableInformation = createVariableInformation(program);
@@ -625,11 +603,11 @@ namespace storm {
                 StateInformation stateInformation;
                 
                 // Get the selected reward model or create an empty one if none is selected.
-                storm::ir::RewardModel const& rewardModel = rewardModelName != "" ? program.getRewardModel(rewardModelName) : storm::ir::RewardModel();
+                storm::prism::RewardModel const& rewardModel = rewardModelName != "" ? program.getRewardModel(rewardModelName) : storm::prism::RewardModel();
                 
                 // Determine whether we have to combine different choices to one or whether this model can have more than
                 // one choice per state.
-                bool deterministicModel = program.getModelType() == storm::ir::Program::DTMC || program.getModelType() == storm::ir::Program::CTMC;
+                bool deterministicModel = program.getModelType() == storm::prism::Program::DTMC || program.getModelType() == storm::prism::Program::CTMC;
 
                 // Build the transition and reward matrices.
                 storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, !deterministicModel, 0);
@@ -662,8 +640,8 @@ namespace storm {
              * @param stateInformation Information about the state space of the program.
              * @return The state labeling of the given program.
              */
-            static storm::models::AtomicPropositionsLabeling buildStateLabeling(storm::ir::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation) {
-                std::map<std::string, std::unique_ptr<storm::ir::expressions::BaseExpression>> const& labels = program.getLabels();
+            static storm::models::AtomicPropositionsLabeling buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation) {
+                std::map<std::string, std::unique_ptr<storm::prism::expressions::BaseExpression>> const& labels = program.getLabels();
                 
                 storm::models::AtomicPropositionsLabeling result(stateInformation.reachableStates.size(), labels.size() + 1);
                 
@@ -697,7 +675,7 @@ namespace storm {
              * @param stateInformation Information about the state space.
              * @return A vector containing the state rewards for the state space.
              */
-            static std::vector<ValueType> buildStateRewards(std::vector<storm::ir::StateReward> const& rewards, StateInformation const& stateInformation) {
+            static std::vector<ValueType> buildStateRewards(std::vector<storm::prism::StateReward> const& rewards, StateInformation const& stateInformation) {
                 std::vector<ValueType> result(stateInformation.reachableStates.size());
                 for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
                     result[index] = ValueType(0);

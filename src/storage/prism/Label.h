@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_PRISM_LABEL_H_
 #define STORM_STORAGE_PRISM_LABEL_H_
 
+#include <map>
+
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
 
@@ -39,6 +41,14 @@ namespace storm {
              * @return The state predicate expression that is associated with this label.
              */
             storm::expressions::Expression const& getStatePredicateExpression() const;
+            
+            /*!
+             * Substitutes all identifiers in the expression of the label according to the given map.
+             *
+             * @param substitution The substitution to perform.
+             * @return The resulting label.
+             */
+            Label substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Label const& label);
             

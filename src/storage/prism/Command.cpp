@@ -30,6 +30,16 @@ namespace storm {
             return this->globalIndex;
         }
         
+        Command Command::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+            std::vector<Update> newUpdates;
+            newUpdates.reserve(this->getNumberOfUpdates());
+            for (auto const& update : this->getUpdates()) {
+                newUpdates.emplace_back(update.substitute(substitution));
+            }
+            
+            return Command(this->getGlobalIndex(), this->getActionName(), this->getGuardExpression().substitute<std::map>(substitution), newUpdates, this->getFilename(), this->getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Command const& command) {
             stream << "[" << command.getActionName() << "] " << command.getGuardExpression() << " -> ";
             for (uint_fast64_t i = 0; i < command.getUpdates().size(); ++i) {

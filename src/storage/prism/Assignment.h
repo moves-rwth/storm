@@ -41,6 +41,14 @@ namespace storm {
              */
             storm::expressions::Expression const& getExpression() const;
             
+            /*!
+             * Substitutes all identifiers in the assignment according to the given map.
+             *
+             * @param substitution The substitution to perform.
+             * @return The resulting assignment.
+             */
+            Assignment substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             
         private:

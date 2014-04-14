@@ -53,6 +53,14 @@ namespace storm {
              */
             storm::expressions::Expression const& getUpperBoundExpression() const;
             
+            /*!
+             * Substitutes all identifiers in the boolean variable according to the given map.
+             *
+             * @param substitution The substitution to perform.
+             * @return The resulting boolean variable.
+             */
+            IntegerVariable substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            
             friend std::ostream& operator<<(std::ostream& stream, IntegerVariable const& variable);
             
         private:

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "src/storage/prism/StateReward.h"
 #include "src/storage/prism/TransitionReward.h"
@@ -63,6 +64,14 @@ namespace storm {
              * @return The transition rewards associated with this reward model.
              */
             std::vector<storm::prism::TransitionReward> const& getTransitionRewards() const;
+            
+            /*!
+             * Substitutes all identifiers in the reward model according to the given map.
+             *
+             * @param substitution The substitution to perform.
+             * @return The resulting reward model.
+             */
+            RewardModel substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel);
 

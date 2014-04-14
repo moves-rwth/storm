@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_PRISM_TRANSITIONREWARD_H_
 #define STORM_STORAGE_PRISM_TRANSITIONREWARD_H_
 
+#include <map>
+
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
 
@@ -48,6 +50,14 @@ namespace storm {
              * @return The reward value expression associated with this state reward.
              */
             storm::expressions::Expression const& getRewardValueExpression() const;
+            
+            /*!
+             * Substitutes all identifiers in the transition reward according to the given map.
+             *
+             * @param substitution The substitution to perform.
+             * @return The resulting transition reward.
+             */
+            TransitionReward substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, TransitionReward const& transitionReward);
 

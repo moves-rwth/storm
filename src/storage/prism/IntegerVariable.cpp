@@ -18,6 +18,10 @@ namespace storm {
             return this->upperBoundExpression;
         }
         
+        IntegerVariable IntegerVariable::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+            return IntegerVariable(this->getName(), this->getLowerBoundExpression().substitute<std::map>(substitution), this->getUpperBoundExpression().substitute<std::map>(substitution), this->getInitialValueExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, IntegerVariable const& variable) {
             stream << variable.getName() << ": [" << variable.getLowerBoundExpression() << ".." << variable.getUpperBoundExpression() << "]" << " init " << variable.getInitialValueExpression() << ";";
             return stream;

@@ -37,6 +37,16 @@ namespace storm {
             }
         }
         
+        Update Update::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+            std::vector<Assignment> newAssignments;
+            newAssignments.reserve(this->getNumberOfAssignments());
+            for (auto const& assignment : this->getAssignments()) {
+                newAssignments.emplace_back(assignment.substitute(substitution));
+            }
+            
+            return Update(this->getGlobalIndex(), this->getLikelihoodExpression().substitute<std::map>(substitution), newAssignments, this->getFilename(), this->getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Update const& update) {
             stream << update.getLikelihoodExpression() << " : ";
             uint_fast64_t i = 0;

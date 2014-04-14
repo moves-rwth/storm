@@ -73,6 +73,14 @@ namespace storm {
              */
             uint_fast64_t getGlobalIndex() const;
             
+            /*!
+             * Substitutes all identifiers in the command according to the given map.
+             *
+             * @param substitution The substitution to perform.
+             * @return The resulting command.
+             */
+            Command substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Command const& command);
             
         private:

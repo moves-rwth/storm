@@ -26,6 +26,21 @@ namespace storm {
             return this->transitionRewards;
         }
         
+        RewardModel RewardModel::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+            std::vector<StateReward> newStateRewards;
+            newStateRewards.reserve(this->getStateRewards().size());
+            for (auto const& stateReward : this->getStateRewards()) {
+                newStateRewards.emplace_back(stateReward.substitute(substitution));
+            }
+            
+            std::vector<TransitionReward> newTransitionRewards;
+            newTransitionRewards.reserve(this->getTransitionRewards().size());
+            for (auto const& transitionReward : this->getTransitionRewards()) {
+                newTransitionRewards.emplace_back(transitionReward.substitute(substitution));
+            }
+            return RewardModel(this->getName(), newStateRewards, newTransitionRewards, this->getFilename(), this->getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel) {
             stream << "rewards \"" << rewardModel.getName() << "\"" << std::endl;
             for (auto const& reward : rewardModel.getStateRewards()) {

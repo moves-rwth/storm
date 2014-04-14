@@ -9,11 +9,6 @@ namespace storm {
         class Constant : public LocatedInformation {
         public:
             /*!
-             * The possible constant types.
-             */
-            enum class ConstantType {Bool, Integer, Double};
-            
-            /*!
              * Creates a constant with the given type, name and defining expression.
              *
              * @param constantType The type of the constant.
@@ -22,7 +17,7 @@ namespace storm {
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            Constant(ConstantType constantType, std::string const& constantName, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Constant(storm::expressions::ExpressionReturnType constantType, std::string const& constantName, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
 
             /*!
              * Creates an undefined constant with the given type and name.
@@ -32,7 +27,7 @@ namespace storm {
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            Constant(ConstantType constantType, std::string const& constantName, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Constant(storm::expressions::ExpressionReturnType constantType, std::string const& constantName, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Constant() = default;
@@ -53,7 +48,7 @@ namespace storm {
              *
              * @return The type of the constant;
              */
-            ConstantType getConstantType() const;
+            storm::expressions::ExpressionReturnType getConstantType() const;
             
             /*!
              * Retrieves whether the constant is defined, i.e., whether there is an expression defining its value.
@@ -74,7 +69,7 @@ namespace storm {
             
         private:
             // The type of the constant.
-            ConstantType constantType;
+            storm::expressions::ExpressionReturnType constantType;
             
             // The name of the constant.
             std::string constantName;

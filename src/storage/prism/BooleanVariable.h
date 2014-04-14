@@ -35,6 +35,14 @@ namespace storm {
              */
             BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
+            /*!
+             * Substitutes all identifiers in the boolean variable according to the given map.
+             *
+             * @param substitution The substitution to perform.
+             * @return The resulting boolean variable.
+             */
+            BooleanVariable substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            
             friend std::ostream& operator<<(std::ostream& stream, BooleanVariable const& variable);
         };
         

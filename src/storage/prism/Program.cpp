@@ -25,6 +25,10 @@ namespace storm {
         std::vector<Constant> const& Program::getConstants() const {
             return this->constants;
         }
+        
+        std::size_t Program::getNumberOfConstants() const {
+            return this->getConstants().size();
+        }
 
         std::vector<BooleanVariable> const& Program::getGlobalBooleanVariables() const {
             return this->globalBooleanVariables;
@@ -59,7 +63,7 @@ namespace storm {
         }
         
         std::size_t Program::getNumberOfFormulas() const {
-            return this->formulas.size();
+            return this->getFormulas().size();
         }
         
         std::size_t Program::getNumberOfModules() const {
@@ -125,7 +129,7 @@ namespace storm {
         }
         
         std::size_t Program::getNumberOfRewardModels() const {
-            return this->rewardModels.size();
+            return this->getRewardModels().size();
         }
         
         storm::prism::RewardModel const& Program::getRewardModel(std::string const& name) const {
@@ -139,10 +143,10 @@ namespace storm {
         }
         
         std::size_t Program::getNumberOfLabels() const {
-            return this->labels.size();
+            return this->getLabels().size();
         }
         
-        Program Program::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) {
+        Program Program::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const {
             std::vector<storm::prism::Module> newModules;
             newModules.reserve(this->getNumberOfModules());
             
@@ -196,6 +200,89 @@ namespace storm {
                 }
             }
 
+        }
+        
+        Program Program::defineUndefinedConstants(std::map<std::string, storm::expressions::Expression> const& constantDefinitions) const {
+            // For sanity checking, we keep track of all undefined constants that we define in the course of this
+            // procedure.
+            std::set<std::string> definedUndefinedConstants;
+            
+            std::vector<Constant> newConstants;
+            newConstants.reserve(this->getNumberOfConstants());
+            for (auto const& constant : this->getConstants()) {
+                // If the constant is already defined, we need to replace the appearances of undefined constants in its
+                // defining expression
+                if (constant.isDefined()) {
+                    // Make sure we are not trying to define an already defined constant.
+                    LOG_THROW(constantDefinitions.find(constant.getConstantName()) == constantDefinitions.end(), storm::exceptions::InvalidArgumentException, "Illegally defining already defined constant '" << constant.getConstantName() << "'.");
+                    
+                    // Now replace the occurrences of undefined constants in its defining expression.
+                    newConstants.emplace_back(constant.getConstantType(), constant.getConstantName(), constant.getExpression().substitute<std::map>(constantDefinitions), constant.getFilename(), constant.getLineNumber());
+                } else {
+                    auto const& variableExpressionPair = constantDefinitions.find(constant.getConstantName());
+                    
+                    // If the constant is not defined by the mapping, we leave it like it is.
+                    if (variableExpressionPair == constantDefinitions.end()) {
+                        newConstants.emplace_back(constant);
+                    } else {
+                        // Otherwise, we add it to the defined constants and assign it the appropriate expression.
+                        definedUndefinedConstants.insert(constant.getConstantName());
+                        
+                        // Make sure the type of the constant is correct.
+                        LOG_THROW(variableExpressionPair->second.getReturnType() == constant.getConstantType(), storm::exceptions::InvalidArgumentException, "Illegal type of expression defining constant '" << constant.getConstantName() << "'.");
+                        
+                        // Now create the defined constant.
+                        newConstants.emplace_back(constant.getConstantType(), constant.getConstantName(), variableExpressionPair->second, constant.getFilename(), constant.getLineNumber());
+                    }
+                }
+            }
+            
+            // As a sanity check, we make sure that the given mapping does not contain any definitions for identifiers
+            // that are not undefined constants.
+            for (auto const& constantExpressionPair : constantDefinitions) {
+                LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidArgumentException, "Unable to define non-existant constant.");
+            }
+            
+            // Now we can substitute the constants in all expressions appearing in the program.
+            std::vector<BooleanVariable> newBooleanVariables;
+            newBooleanVariables.reserve(this->getNumberOfGlobalBooleanVariables());
+            for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
+                newBooleanVariables.emplace_back(booleanVariable.substitute(constantDefinitions));
+            }
+            
+            std::vector<IntegerVariable> newIntegerVariables;
+            newBooleanVariables.reserve(this->getNumberOfGlobalIntegerVariables());
+            for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
+                newIntegerVariables.emplace_back(integerVariable.substitute(constantDefinitions));
+            }
+        
+            std::vector<Formula> newFormulas;
+            newFormulas.reserve(this->getNumberOfFormulas());
+            for (auto const& formula : this->getFormulas()) {
+                newFormulas.emplace_back(formula.substitute(constantDefinitions));
+            }
+
+            std::vector<Module> newModules;
+            newModules.reserve(this->getNumberOfModules());
+            for (auto const& module : this->getModules()) {
+                newModules.emplace_back(module.substitute(constantDefinitions));
+            }
+            
+            std::vector<RewardModel> newRewardModels;
+            newRewardModels.reserve(this->getNumberOfRewardModels());
+            for (auto const& rewardModel : this->getRewardModels()) {
+                newRewardModels.emplace_back(rewardModel.substitute(constantDefinitions));
+            }
+            
+            storm::expressions::Expression newInitialStateExpression = this->getInitialStatesExpression().substitute<std::map>(constantDefinitions);
+            
+            std::vector<Label> newLabels;
+            newLabels.reserve(this->getNumberOfLabels());
+            for (auto const& label : this->getLabels()) {
+                newLabels.emplace_back(label.substitute(constantDefinitions));
+            }
+            
+            return Program(this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, newRewardModels, this->definesInitialStatesExpression(), newInitialStateExpression, newLabels);
         }
         
         std::ostream& operator<<(std::ostream& stream, Program const& program) {

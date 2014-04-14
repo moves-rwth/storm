@@ -14,6 +14,10 @@ namespace storm {
             return this->statePredicateExpression;
         }
         
+        Label Label::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+            return Label(this->getLabelName(), this->getStatePredicateExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Label const& label) {
             stream << "label \"" << label.getLabelName() << "\" = " << label.getStatePredicateExpression() << ";";
             return stream;

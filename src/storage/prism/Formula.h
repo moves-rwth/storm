@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_PRISM_FORMULA_H_
 #define STORM_STORAGE_PRISM_FORMULA_H_
 
+#include <map>
+
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
 
@@ -46,6 +48,14 @@ namespace storm {
              * @return The return type of the formula.
              */
             storm::expressions::ExpressionReturnType getReturnType() const;
+            
+            /*!
+             * Substitutes all identifiers in the expression of the formula according to the given map.
+             *
+             * @param substitution The substitution to perform.
+             * @return The resulting formula.
+             */
+            Formula substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Formula const& formula);
             

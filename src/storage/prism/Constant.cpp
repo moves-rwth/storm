@@ -2,11 +2,11 @@
 
 namespace storm {
     namespace prism {
-        Constant::Constant(ConstantType constantType, std::string const& constantName, storm::expressions::Expression const& expression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), constantType(constantType), constantName(constantName), defined(true), expression(expression) {
+        Constant::Constant(storm::expressions::ExpressionReturnType constantType, std::string const& constantName, storm::expressions::Expression const& expression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), constantType(constantType), constantName(constantName), defined(true), expression(expression) {
             // Intentionally left empty.
         }
         
-        Constant::Constant(ConstantType constantType, std::string const& constantName, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), constantType(constantType), constantName(constantName), defined(false), expression() {
+        Constant::Constant(storm::expressions::ExpressionReturnType constantType, std::string const& constantName, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), constantType(constantType), constantName(constantName), defined(false), expression() {
             // Intentionally left empty.
         }
         
@@ -14,7 +14,7 @@ namespace storm {
             return this->constantName;
         }
         
-        Constant::ConstantType Constant::getConstantType() const {
+        storm::expressions::ExpressionReturnType Constant::getConstantType() const {
             return this->constantType;
         }
         
@@ -29,9 +29,10 @@ namespace storm {
         std::ostream& operator<<(std::ostream& stream, Constant const& constant) {
             stream << "const ";
             switch (constant.getConstantType()) {
-                case Constant::ConstantType::Bool: stream << "bool "; break;
-                case Constant::ConstantType::Integer: stream << "int "; break;
-                case Constant::ConstantType::Double: stream << "double "; break;
+                case storm::expressions::ExpressionReturnType::Undefined: stream << "undefined "; break;
+                case storm::expressions::ExpressionReturnType::Bool: stream << "bool "; break;
+                case storm::expressions::ExpressionReturnType::Int: stream << "int "; break;
+                case storm::expressions::ExpressionReturnType::Double: stream << "double "; break;
             }
             stream << constant.getConstantName();
             if (constant.isDefined()) {

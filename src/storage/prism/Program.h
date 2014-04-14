@@ -73,6 +73,13 @@ namespace storm {
             std::vector<Constant> const& getConstants() const;
             
             /*!
+             * Retrieves the number of all constants defined in the program.
+             *
+             * @return The number of constants defined in the program.
+             */
+            std::size_t getNumberOfConstants() const;
+            
+            /*!
              * Retrieves the global boolean variables of the program.
              *
              * @return The global boolean variables of the program.
@@ -239,7 +246,17 @@ namespace storm {
              *
              * @param indexSet The set of indices for which to keep the commands.
              */
-            Program restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet);
+            Program restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const;
+            
+            /*!
+             * Defines the undefined constants according to the given map and returns the resulting program.
+             *
+             * @param constantDefinitions A mapping from undefined constant names to the expressions they are supposed
+             * to be replaced with.
+             * @return The program after all undefined constants in the given map have been replaced with their
+             * definitions.
+             */
+            Program defineUndefinedConstants(std::map<std::string, storm::expressions::Expression> const& constantDefinitions) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             

@@ -1,5 +1,7 @@
 #include "src/storage/expressions/SimpleValuation.h"
 
+#include <boost/functional/hash.hpp>
+
 namespace storm {
     namespace expressions {
         SimpleValuation::SimpleValuation(std::size_t booleanVariableCount, std::size_t integerVariableCount, std::size_t doubleVariableCount) : identifierToIndexMap(new std::unordered_map<std::string, uint_fast64_t>), booleanValues(booleanVariableCount), integerValues(integerVariableCount), doubleValues(doubleVariableCount) {
@@ -8,6 +10,10 @@ namespace storm {
         
         SimpleValuation::SimpleValuation(std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> identifierToIndexMap, std::vector<bool> booleanValues, std::vector<int_fast64_t> integerValues, std::vector<double> doubleValues) : identifierToIndexMap(identifierToIndexMap), booleanValues(booleanValues), integerValues(integerValues), doubleValues(doubleValues) {
             // Intentionally left empty.
+        }
+        
+        bool SimpleValuation::operator==(SimpleValuation const& other) const {
+            return this->identifierToIndexMap.get() == other.identifierToIndexMap.get() && this->booleanValues == other.booleanValues && this->integerValues == other.integerValues && this->doubleValues == other.doubleValues;
         }
 
         void SimpleValuation::setIdentifierIndex(std::string const& name, uint_fast64_t index) {
@@ -57,6 +63,42 @@ namespace storm {
             stream << valuation.doubleValues.back() << "] }";
             
             return stream;
+        }
+        
+        std::size_t SimpleValuationPointerHash::operator()(SimpleValuation* valuation) const {
+            size_t seed = 0;
+            for (auto const& value : valuation->booleanValues) {
+                boost::hash_combine<bool>(seed, value);
+            }
+            for (auto const& value : valuation->integerValues) {
+                boost::hash_combine<int_fast64_t>(seed, value);
+            }
+            for (auto const& value : valuation->doubleValues) {
+                boost::hash_combine<double>(seed, value);
+            }
+            return seed;
+        }
+        
+        bool SimpleValuationPointerCompare::operator()(SimpleValuation* valuation1, SimpleValuation* valuation2) const {
+            return *valuation1 == *valuation2;
+        }
+        
+        bool SimpleValuationPointerLess::operator()(SimpleValuation* valuation1, SimpleValuation* valuation2) const {
+            // Compare boolean variables.
+            bool less = valuation1->booleanValues < valuation2->booleanValues;
+            if (less) {
+                return true;
+            }
+            less = valuation1->integerValues < valuation2->integerValues;
+            if (less) {
+                return true;
+            }
+            less = valuation1->doubleValues < valuation2->doubleValues;
+            if (less) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 }
