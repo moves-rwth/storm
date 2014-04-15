@@ -42,6 +42,7 @@ namespace storm {
             SimpleValuation(SimpleValuation&&) = default;
             SimpleValuation& operator=(SimpleValuation const&) = default;
             SimpleValuation& operator=(SimpleValuation&&) = default;
+            virtual ~SimpleValuation() = default;
 
             /*!
              * Compares two simple valuations wrt. equality.

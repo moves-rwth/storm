@@ -15,6 +15,7 @@
 #include <queue>
 #include <boost/functional/hash.hpp>
 #include <boost/container/flat_set.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/SimpleValuation.h"
@@ -72,6 +73,62 @@ namespace storm {
                 std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabeling;
             };
             
+            static std::map<std::string, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
+                std::map<std::string, storm::expressions::Expression> constantDefinitions;
+                std::set<std::string> definedConstants;
+                
+                if (!constantDefinitionString.empty()) {
+                    // Parse the string that defines the undefined constants of the model and make sure that it contains exactly
+                    // one value for each undefined constant of the model.
+                    std::vector<std::string> definitions;
+                    boost::split(definitions, constantDefinitionString, boost::is_any_of(","));
+                    for (auto& definition : definitions) {
+                        boost::trim(definition);
+                        
+                        // Check whether the token could be a legal constant definition.
+                        uint_fast64_t positionOfAssignmentOperator = definition.find('=');
+                        if (positionOfAssignmentOperator == std::string::npos) {
+                            throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: syntax error.";
+                        }
+                        
+                        // Now extract the variable name and the value from the string.
+                        std::string constantName = definition.substr(0, positionOfAssignmentOperator);
+                        boost::trim(constantName);
+                        std::string value = definition.substr(positionOfAssignmentOperator + 1);
+                        boost::trim(value);
+                        
+                        // Check whether the constant is a legal undefined constant of the program and if so, of what type it is.
+                        if (program.hasConstant(constantName)) {
+                            // Get the actual constant and check whether it's in fact undefined.
+                            auto const& constant = program.getConstant(constantName);
+                            LOG_THROW(!constant.isDefined(), storm::exceptions::InvalidArgumentException, "Illegally trying to define already defined constant '" << constantName <<"'.");
+                            LOG_THROW(definedConstants.find(constantName) == definedConstants.end(), storm::exceptions::InvalidArgumentException, "Illegally trying to define constant '" << constantName <<"' twice.");
+                            definedConstants.insert(constantName);
+                            
+                            if (constant.getConstantType() == storm::expressions::ExpressionReturnType::Bool) {
+                                if (value == "true") {
+                                    constantDefinitions[constantName] = storm::expressions::Expression::createTrue();
+                                } else if (value == "false") {
+                                    constantDefinitions[constantName] = storm::expressions::Expression::createFalse();
+                                } else {
+                                    throw storm::exceptions::InvalidArgumentException() << "Illegal value for boolean constant: " << value << ".";
+                                }
+                            } else if (constant.getConstantType() == storm::expressions::ExpressionReturnType::Int) {
+                                int_fast64_t integerValue = std::stoi(value);
+                                constantDefinitions[constantName] = storm::expressions::Expression::createIntegerLiteral(integerValue);
+                            } else if (constant.getConstantType() == storm::expressions::ExpressionReturnType::Double) {
+                                double doubleValue = std::stod(value);
+                                constantDefinitions[constantName] = storm::expressions::Expression::createDoubleLiteral(doubleValue);
+                            }
+                        } else {
+                            throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: unknown undefined constant " << constantName << ".";
+                        }
+                    }
+                }
+                
+                return constantDefinitions;
+            }
+            
             /*!
              * Convert the program given at construction time to an abstract model. The type of the model is the one
              * specified in the program. The given reward model name selects the rewards that the model will contain.
@@ -86,7 +143,11 @@ namespace storm {
              */
             static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, std::string const& constantDefinitionString = "", std::string const& rewardModelName = "") {
                 // Start by defining the undefined constants in the model.
+                // First, we need to parse the constant definition string.
+                std::map<std::string, storm::expressions::Expression> constantDefinitions = parseConstantDefinitionString(program, constantDefinitionString);
+                
                 storm::prism::Program definedProgram = program.defineUndefinedConstants(constantDefinitions);
+                LOG_THROW(!definedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
                 
                 ModelComponents modelComponents = buildModelComponents(definedProgram, rewardModelName);
                 
@@ -118,13 +179,12 @@ namespace storm {
              * Applies an update to the given state and returns the resulting new state object. This methods does not
              * modify the given state but returns a new one.
              *
-             * @param variableInformation A structure with information about the variables in the program.
              * @params state The state to which to apply the update.
              * @params update The update to apply.
              * @return The resulting state.
              */
-            static StateType* applyUpdate(VariableInformation const& variableInformation, StateType const* state, storm::prism::Update const& update) {
-                return applyUpdate(variableInformation, state, state, update);
+            static StateType* applyUpdate(StateType const* state, storm::prism::Update const& update) {
+                return applyUpdate(state, state, update);
             }
             
             /*!
@@ -132,14 +192,22 @@ namespace storm {
              * over the variable values of the given base state. This methods does not modify the given state but
              * returns a new one.
              *
-             * @param variableInformation A structure with information about the variables in the program.
              * @param state The state to which to apply the update.
              * @param baseState The state used for evaluating the update.
              * @param update The update to apply.
              * @return The resulting state.
              */
-            static StateType* applyUpdate(VariableInformation const& variableInformation, StateType const* state, StateType const* baseState, storm::prism::Update const& update) {
+            static StateType* applyUpdate(StateType const* state, StateType const* baseState, storm::prism::Update const& update) {
                 StateType* newState = new StateType(*state);
+                for (auto const& assignment : update.getAssignments()) {
+                    switch (assignment.getExpression().getReturnType()) {
+                        case storm::expressions::ExpressionReturnType::Bool: newState->setBooleanValue(assignment.getVariableName(), assignment.getExpression().evaluateAsBool(*baseState)); break;
+                        case storm::expressions::ExpressionReturnType::Int:
+                            int_fast64_t newValue = assignment.getExpression().evaluateAsInt(*baseState));
+                            newState->setIntegerValue(assignment.getVariableName(), assignment.getExpression().evaluateAsInt(*baseState)); break;
+                        default: LOG_ASSERT(false, "Invalid type of assignment.");
+                    }
+                }
                 for (auto variableAssignmentPair : update.getBooleanAssignments()) {
                     setValue(newState, variableInformation.booleanVariableToIndexMap.at(variableAssignmentPair.first), variableAssignmentPair.second.getExpression()->getValueAsBool(baseState));
                 }

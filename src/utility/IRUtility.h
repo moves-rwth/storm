@@ -11,7 +11,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "src/storage/LabeledValues.h"
-#include "src/ir/IR.h"
+#include "src/storage/prism/Program.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"

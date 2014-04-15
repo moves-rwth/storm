@@ -66,6 +66,22 @@ namespace storm {
             bool hasUndefinedConstants() const;
 
             /*!
+             * Retrieves whether the given constant exists in the program.
+             *
+             * @param constantName The name of the constant to search.
+             * @return True iff the constant exists in the program.
+             */
+            bool hasConstant(std::string const& constantName) const;
+            
+            /*!
+             * Retrieves the constant with the given name if it exists.
+             *
+             * @param constantName The name of the constant to retrieve.
+             * @return The constant with the given name if it exists.
+             */
+            Constant const& getConstant(std::string const& constantName) const;
+            
+            /*!
              * Retrieves all constants defined in the program.
              *
              * @return The constants defined in the program.
@@ -269,6 +285,9 @@ namespace storm {
             
             // The undefined constants of the program.
             std::vector<Constant> constants;
+            
+            // A mapping from constant names to their corresponding indices.
+            std::map<std::string, uint_fast64_t> constantToIndexMap;
 
             // The global boolean variables.
             std::vector<BooleanVariable> globalBooleanVariables;

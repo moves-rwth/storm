@@ -464,32 +464,32 @@ namespace storm {
         
         storm::prism::Constant PrismParser::createUndefinedBooleanConstant(std::string const& newConstant) const {
             this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
-            return storm::prism::Constant(storm::prism::Constant::ConstantType::Bool, newConstant, this->getFilename());
+            return storm::prism::Constant(storm::expressions::ExpressionReturnType::Bool, newConstant, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createUndefinedIntegerConstant(std::string const& newConstant) const {
             this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
-            return storm::prism::Constant(storm::prism::Constant::ConstantType::Integer, newConstant, this->getFilename());
+            return storm::prism::Constant(storm::expressions::ExpressionReturnType::Int, newConstant, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createUndefinedDoubleConstant(std::string const& newConstant) const {
             this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
-            return storm::prism::Constant(storm::prism::Constant::ConstantType::Double, newConstant, this->getFilename());
+            return storm::prism::Constant(storm::expressions::ExpressionReturnType::Double, newConstant, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
-            return storm::prism::Constant(storm::prism::Constant::ConstantType::Bool, newConstant, expression, this->getFilename());
+            return storm::prism::Constant(storm::expressions::ExpressionReturnType::Bool, newConstant, expression, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
-            return storm::prism::Constant(storm::prism::Constant::ConstantType::Integer, newConstant, expression, this->getFilename());
+            return storm::prism::Constant(storm::expressions::ExpressionReturnType::Int, newConstant, expression, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
-            return storm::prism::Constant(storm::prism::Constant::ConstantType::Double, newConstant, expression, this->getFilename());
+            return storm::prism::Constant(storm::expressions::ExpressionReturnType::Double, newConstant, expression, this->getFilename());
         }
         
         storm::prism::Formula PrismParser::createFormula(std::string const& formulaName, storm::expressions::Expression expression) const {
