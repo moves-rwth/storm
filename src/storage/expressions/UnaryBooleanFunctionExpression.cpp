@@ -13,7 +13,7 @@ namespace storm {
             return this->operatorType;
         }
         
-        bool UnaryBooleanFunctionExpression::evaluateAsBool(Valuation const& valuation) const {
+        bool UnaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) const {
             LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
 
             bool operandEvaluated = this->getOperand()->evaluateAsBool(valuation);

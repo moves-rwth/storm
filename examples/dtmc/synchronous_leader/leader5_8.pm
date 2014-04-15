@@ -4,8 +4,8 @@
 dtmc
 
 // CONSTANTS
-const N = 5; // number of processes
-const K = 8; // range of probabilistic choice
+const int N = 5; // number of processes
+const int K = 8; // range of probabilistic choice
 
 // counter module used to count the number of processes that have been read
 // and to know when a process has decided

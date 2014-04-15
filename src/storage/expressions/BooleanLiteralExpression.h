@@ -22,7 +22,7 @@ namespace storm {
             virtual ~BooleanLiteralExpression() = default;
 
             // Override base class methods.
-            virtual bool evaluateAsBool(Valuation const& valuation) const override;
+            virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const override;
             virtual bool isConstant() const override;
             virtual bool isTrue() const override;
             virtual bool isFalse() const override;

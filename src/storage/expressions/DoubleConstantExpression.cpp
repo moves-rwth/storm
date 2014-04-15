@@ -1,4 +1,5 @@
 #include "src/storage/expressions/DoubleConstantExpression.h"
+#include "src/exceptions/ExceptionMacros.h"
 
 namespace storm {
     namespace expressions {
@@ -6,8 +7,9 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        double DoubleConstantExpression::evaluateAsDouble(Valuation const& valuation) const {
-            return valuation.getDoubleValue(this->getConstantName());
+        double DoubleConstantExpression::evaluateAsDouble(Valuation const* valuation) const {
+            LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
+            return valuation->getDoubleValue(this->getConstantName());
         }
         
         std::shared_ptr<BaseExpression const> DoubleConstantExpression::simplify() const {

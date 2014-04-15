@@ -9,7 +9,7 @@ namespace storm {
             // Intentionally left empty.
         }
                 
-        bool BinaryRelationExpression::evaluateAsBool(Valuation const& valuation) const {
+        bool BinaryRelationExpression::evaluateAsBool(Valuation const* valuation) const {
             LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
 
             double firstOperandEvaluated = this->getFirstOperand()->evaluateAsDouble(valuation);

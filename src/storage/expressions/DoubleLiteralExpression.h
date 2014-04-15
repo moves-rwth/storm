@@ -22,7 +22,7 @@ namespace storm {
             virtual ~DoubleLiteralExpression() = default;
             
             // Override base class methods.
-            virtual double evaluateAsDouble(Valuation const& valuation) const override;
+            virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual bool isConstant() const override;
             virtual std::set<std::string> getVariables() const override;
             virtual std::set<std::string> getConstants() const override;

@@ -24,15 +24,15 @@ namespace storm {
             return this->getReturnType() == ExpressionReturnType::Bool;
         }
         
-        int_fast64_t BaseExpression::evaluateAsInt(Valuation const& evaluation) const {
+        int_fast64_t BaseExpression::evaluateAsInt(Valuation const* valuation) const {
             LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
         }
         
-        bool BaseExpression::evaluateAsBool(Valuation const& evaluation) const {
+        bool BaseExpression::evaluateAsBool(Valuation const* valuation) const {
             LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
         }
         
-        double BaseExpression::evaluateAsDouble(Valuation const& evaluation) const {
+        double BaseExpression::evaluateAsDouble(Valuation const* valuation) const {
             LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
         }
         

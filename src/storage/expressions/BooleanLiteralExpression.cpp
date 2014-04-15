@@ -6,7 +6,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        bool BooleanLiteralExpression::evaluateAsBool(Valuation const& valuation) const {
+        bool BooleanLiteralExpression::evaluateAsBool(Valuation const* valuation) const {
             return this->getValue();
         }
         

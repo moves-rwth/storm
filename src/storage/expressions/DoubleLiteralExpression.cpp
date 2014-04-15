@@ -6,7 +6,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        double DoubleLiteralExpression::evaluateAsDouble(Valuation const& valuation) const {
+        double DoubleLiteralExpression::evaluateAsDouble(Valuation const* valuation) const {
             return this->getValue();
         }
         

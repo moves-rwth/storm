@@ -12,27 +12,33 @@ namespace storm {
             return this->variableName;
         }
         
-        bool VariableExpression::evaluateAsBool(Valuation const& evaluation) const {
+        bool VariableExpression::evaluateAsBool(Valuation const* valuation) const {
+            LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
             LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as boolean: return type is not a boolean.");
             
-            return evaluation.getBooleanValue(this->getVariableName());
+            return valuation->getBooleanValue(this->getVariableName());
         }
 
-        int_fast64_t VariableExpression::evaluateAsInt(Valuation const& evaluation) const {
+        int_fast64_t VariableExpression::evaluateAsInt(Valuation const* valuation) const {
+            LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
             LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as integer: return type is not an integer.");
             
-            return evaluation.getIntegerValue(this->getVariableName());
+            return valuation->getIntegerValue(this->getVariableName());
         }
         
-        double VariableExpression::evaluateAsDouble(Valuation const& evaluation) const {
+        double VariableExpression::evaluateAsDouble(Valuation const* valuation) const {
+            LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
             LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as double: return type is not a double.");
             
             switch (this->getReturnType()) {
-                case ExpressionReturnType::Int: return static_cast<double>(evaluation.getIntegerValue(this->getVariableName())); break;
-                case ExpressionReturnType::Double: evaluation.getDoubleValue(this->getVariableName()); break;
+                case ExpressionReturnType::Int: return static_cast<double>(valuation->getIntegerValue(this->getVariableName())); break;
+                case ExpressionReturnType::Double: valuation->getDoubleValue(this->getVariableName()); break;
                 default: break;
             }
-            LOG_THROW(false, storm::exceptions::InvalidTypeException, "Type of variable is required to be numeric.");
+            LOG_ASSERT(false, "Type of variable is required to be numeric.");
+            
+            // Silence warning. This point can never be reached.
+            return 0;
         }
         
         std::set<std::string> VariableExpression::getVariables() const {

@@ -14,7 +14,7 @@ namespace storm {
             return this->operatorType;
         }
         
-        int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const& valuation) const {
+        int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
             LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
             
             int_fast64_t firstOperandEvaluation = this->getFirstOperand()->evaluateAsInt(valuation);
@@ -29,7 +29,7 @@ namespace storm {
             }
         }
         
-        double BinaryNumericalFunctionExpression::evaluateAsDouble(Valuation const& valuation) const {
+        double BinaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valuation) const {
             LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
             
             double firstOperandEvaluation = this->getFirstOperand()->evaluateAsDouble(valuation);

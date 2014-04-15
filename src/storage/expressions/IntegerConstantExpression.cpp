@@ -1,4 +1,5 @@
 #include "src/storage/expressions/IntegerConstantExpression.h"
+#include "src/exceptions/ExceptionMacros.h"
 
 namespace storm {
     namespace expressions {
@@ -6,12 +7,13 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        int_fast64_t IntegerConstantExpression::evaluateAsInt(Valuation const& valuation) const {
-            return valuation.getIntegerValue(this->getConstantName());
+        int_fast64_t IntegerConstantExpression::evaluateAsInt(Valuation const* valuation) const {
+            LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
+            return valuation->getIntegerValue(this->getConstantName());
         }
         
-        double IntegerConstantExpression::evaluateAsDouble(Valuation const& valuation) const {
-            return static_cast<double>(valuation.getIntegerValue(this->getConstantName()));
+        double IntegerConstantExpression::evaluateAsDouble(Valuation const* valuation) const {
+            return static_cast<double>(this->evaluateAsInt(valuation));
         }
         
         std::shared_ptr<BaseExpression const> IntegerConstantExpression::simplify() const {

@@ -48,7 +48,7 @@ namespace storm {
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The boolean value of the expression under the given valuation.
              */
-            virtual bool evaluateAsBool(Valuation const& valuation) const;
+            virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const;
 
             /*!
              * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
@@ -58,7 +58,7 @@ namespace storm {
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The integer value of the expression under the given valuation.
              */
-            virtual int_fast64_t evaluateAsInt(Valuation const& valuation) const;
+            virtual int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const;
             
             /*!
              * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
@@ -68,7 +68,7 @@ namespace storm {
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The double value of the expression under the given valuation.
              */
-            virtual double evaluateAsDouble(Valuation const& valuation) const;
+            virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const;
 
             /*!
              * Retrieves whether the expression is constant, i.e., contains no variables or undefined constants.

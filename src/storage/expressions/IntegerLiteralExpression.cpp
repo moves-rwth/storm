@@ -6,12 +6,12 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        int_fast64_t IntegerLiteralExpression::evaluateAsInt(Valuation const& valuation) const {
+        int_fast64_t IntegerLiteralExpression::evaluateAsInt(Valuation const* valuation) const {
             return this->getValue();
         }
         
-        double IntegerLiteralExpression::evaluateAsDouble(Valuation const& valuation) const {
-            return static_cast<double>(this->getValue());
+        double IntegerLiteralExpression::evaluateAsDouble(Valuation const* valuation) const {
+            return static_cast<double>(this->evaluateAsInt(valuation));
         }
         
         bool IntegerLiteralExpression::isConstant() const {

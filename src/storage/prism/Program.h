@@ -274,6 +274,14 @@ namespace storm {
              */
             Program defineUndefinedConstants(std::map<std::string, storm::expressions::Expression> const& constantDefinitions) const;
             
+            /*!
+             * Substitutes all constants appearing in the expressions of the program by their defining expressions. For
+             * this to work, all constants need to be defined prior to calling this.
+             *
+             * @return The resulting program that only contains expressions over variables of the program.
+             */
+            Program substituteConstants() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
         private:

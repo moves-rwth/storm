@@ -34,7 +34,7 @@
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/solver/GurobiLpSolver.h"
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
-#include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
+// #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 #include "src/counterexamples/PathBasedSubsystemGenerator.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/MarkovAutomatonParser.h"
@@ -58,7 +58,7 @@ log4cplus::Logger logger;
 
 #include "src/parser/PrismParser.h"
 #include "src/adapters/ExplicitModelAdapter.h"
-#include "src/adapters/SymbolicModelAdapter.h"
+// #include "src/adapters/SymbolicModelAdapter.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
 
@@ -534,7 +534,7 @@ int main(const int argc, const char* argv[]) {
             // First, we build the model using the given symbolic model description and constant definitions.
             std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
             std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
-            storm::ir::Program program = storm::parser::PrismParserFromFile(programFile);
+            storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
             std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
             model->printModelInformationToStream(std::cout);
             
@@ -558,7 +558,7 @@ int main(const int argc, const char* argv[]) {
                     if (useMILP) {
                         storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr);
                     } else {
-                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
+                        // storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
                     }
                     
                     // Once we are done with the formula, delete it.

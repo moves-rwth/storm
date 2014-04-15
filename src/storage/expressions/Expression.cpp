@@ -37,15 +37,15 @@ namespace storm {
             return IdentifierSubstitutionVisitor<MapType>(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
         }
         
-        bool Expression::evaluateAsBool(Valuation const& valuation) const {
+        bool Expression::evaluateAsBool(Valuation const* valuation) const {
             return this->getBaseExpression().evaluateAsBool(valuation);
         }
         
-        int_fast64_t Expression::evaluateAsInt(Valuation const& valuation) const {
+        int_fast64_t Expression::evaluateAsInt(Valuation const* valuation) const {
             return this->getBaseExpression().evaluateAsInt(valuation);
         }
         
-        double Expression::evaluateAsDouble(Valuation const& valuation) const {
+        double Expression::evaluateAsDouble(Valuation const* valuation) const {
             return this->getBaseExpression().evaluateAsDouble(valuation);
         }
         

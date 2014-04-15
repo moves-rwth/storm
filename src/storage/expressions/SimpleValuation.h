@@ -37,7 +37,6 @@ namespace storm {
             SimpleValuation(std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> identifierToIndexMap, std::vector<bool> booleanValues, std::vector<int_fast64_t> integerValues, std::vector<double> doubleValues);
 
             // Instantiate some constructors and assignments with their default implementations.
-            SimpleValuation() = default;
             SimpleValuation(SimpleValuation const&) = default;
             SimpleValuation(SimpleValuation&&) = default;
             SimpleValuation& operator=(SimpleValuation const&) = default;

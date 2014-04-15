@@ -19,7 +19,7 @@ namespace storm {
                     return true;
                 }
             }
-            return true;
+            return false;
         }
         
         bool Program::hasConstant(std::string const& constantName) const {
@@ -255,46 +255,58 @@ namespace storm {
                 LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidArgumentException, "Unable to define non-existant constant.");
             }
             
+            return Program(this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getRewardModels(), this->definesInitialStatesExpression(), this->getInitialStatesExpression(), this->getLabels());
+        }
+        
+        Program Program::substituteConstants() const {
+            // We start by creating the appropriate substitution
+            std::map<std::string, storm::expressions::Expression> constantSubstitution;
+            for (auto const& constant : this->getConstants()) {
+                LOG_THROW(constant.isDefined(), storm::exceptions::InvalidArgumentException, "Cannot substitute constants in program that contains undefined constants.");
+                
+                constantSubstitution.emplace(constant.getConstantName(), constant.getExpression());
+            }
+            
             // Now we can substitute the constants in all expressions appearing in the program.
             std::vector<BooleanVariable> newBooleanVariables;
             newBooleanVariables.reserve(this->getNumberOfGlobalBooleanVariables());
             for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
-                newBooleanVariables.emplace_back(booleanVariable.substitute(constantDefinitions));
+                newBooleanVariables.emplace_back(booleanVariable.substitute(constantSubstitution));
             }
             
             std::vector<IntegerVariable> newIntegerVariables;
             newBooleanVariables.reserve(this->getNumberOfGlobalIntegerVariables());
             for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
-                newIntegerVariables.emplace_back(integerVariable.substitute(constantDefinitions));
+                newIntegerVariables.emplace_back(integerVariable.substitute(constantSubstitution));
             }
-        
+            
             std::vector<Formula> newFormulas;
             newFormulas.reserve(this->getNumberOfFormulas());
             for (auto const& formula : this->getFormulas()) {
-                newFormulas.emplace_back(formula.substitute(constantDefinitions));
+                newFormulas.emplace_back(formula.substitute(constantSubstitution));
             }
-
+            
             std::vector<Module> newModules;
             newModules.reserve(this->getNumberOfModules());
             for (auto const& module : this->getModules()) {
-                newModules.emplace_back(module.substitute(constantDefinitions));
+                newModules.emplace_back(module.substitute(constantSubstitution));
             }
             
             std::vector<RewardModel> newRewardModels;
             newRewardModels.reserve(this->getNumberOfRewardModels());
             for (auto const& rewardModel : this->getRewardModels()) {
-                newRewardModels.emplace_back(rewardModel.substitute(constantDefinitions));
+                newRewardModels.emplace_back(rewardModel.substitute(constantSubstitution));
             }
             
-            storm::expressions::Expression newInitialStateExpression = this->getInitialStatesExpression().substitute<std::map>(constantDefinitions);
+            storm::expressions::Expression newInitialStateExpression = this->getInitialStatesExpression().substitute<std::map>(constantSubstitution);
             
             std::vector<Label> newLabels;
             newLabels.reserve(this->getNumberOfLabels());
             for (auto const& label : this->getLabels()) {
-                newLabels.emplace_back(label.substitute(constantDefinitions));
+                newLabels.emplace_back(label.substitute(constantSubstitution));
             }
             
-            return Program(this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, newRewardModels, this->definesInitialStatesExpression(), newInitialStateExpression, newLabels);
+            return Program(this->getModelType(), std::vector<Constant>(), newBooleanVariables, newIntegerVariables, newFormulas, newModules, newRewardModels, this->definesInitialStatesExpression(), newInitialStateExpression, newLabels);
         }
         
         std::ostream& operator<<(std::ostream& stream, Program const& program) {

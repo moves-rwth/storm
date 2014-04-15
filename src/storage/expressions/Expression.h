@@ -94,7 +94,7 @@ namespace storm {
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The boolean value of the expression under the given valuation.
              */
-            bool evaluateAsBool(Valuation const& valuation) const;
+            bool evaluateAsBool(Valuation const* valuation = nullptr) const;
             
             /*!
              * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
@@ -104,7 +104,7 @@ namespace storm {
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The integer value of the expression under the given valuation.
              */
-            int_fast64_t evaluateAsInt(Valuation const& valuation) const;
+            int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const;
             
             /*!
              * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
@@ -114,7 +114,7 @@ namespace storm {
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The double value of the expression under the given valuation.
              */
-            double evaluateAsDouble(Valuation const& valuation) const;
+            double evaluateAsDouble(Valuation const* valuation = nullptr) const;
             
             /*!
              * Simplifies the expression according to some basic rules.

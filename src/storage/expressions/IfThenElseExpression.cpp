@@ -6,7 +6,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        bool IfThenElseExpression::evaluateAsBool(Valuation const& valuation) const {
+        bool IfThenElseExpression::evaluateAsBool(Valuation const* valuation) const {
             bool conditionValue = this->condition->evaluateAsBool(valuation);
             if (conditionValue) {
                 return this->thenExpression->evaluateAsBool(valuation);
@@ -15,7 +15,7 @@ namespace storm {
             }
         }
         
-        int_fast64_t IfThenElseExpression::evaluateAsInt(Valuation const& valuation) const {
+        int_fast64_t IfThenElseExpression::evaluateAsInt(Valuation const* valuation) const {
             bool conditionValue = this->condition->evaluateAsBool(valuation);
             if (conditionValue) {
                 return this->thenExpression->evaluateAsInt(valuation);
@@ -24,7 +24,7 @@ namespace storm {
             }
         }
         
-        double IfThenElseExpression::evaluateAsDouble(Valuation const& valuation) const {
+        double IfThenElseExpression::evaluateAsDouble(Valuation const* valuation) const {
             bool conditionValue = this->condition->evaluateAsBool(valuation);
             if (conditionValue) {
                 return this->thenExpression->evaluateAsDouble(valuation);
