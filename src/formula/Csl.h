@@ -15,9 +15,7 @@
 #include "Csl/Next.h"
 #include "Csl/Not.h"
 #include "Csl/Or.h"
-#include "Csl/ProbabilisticNoBoundOperator.h"
 #include "Csl/ProbabilisticBoundOperator.h"
-#include "Csl/SteadyStateNoBoundOperator.h"
 #include "Csl/SteadyStateBoundOperator.h"
 
 #include "Csl/Until.h"

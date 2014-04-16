@@ -8,8 +8,8 @@
 #ifndef STORM_FORMULA_PRCTL_NEXT_H_
 #define STORM_FORMULA_PRCTL_NEXT_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "src/formula/Prctl/AbstractPathFormula.h"
+#include "src/formula/Prctl/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {

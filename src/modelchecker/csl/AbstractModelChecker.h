@@ -46,7 +46,6 @@ class AbstractModelChecker :
 	public virtual storm::property::csl::INextModelChecker<Type>,
 	public virtual storm::property::csl::ITimeBoundedUntilModelChecker<Type>,
 	public virtual storm::property::csl::ITimeBoundedEventuallyModelChecker<Type>,
-	public virtual storm::property::csl::INoBoundOperatorModelChecker<Type>,
 	public virtual storm::property::csl::IProbabilisticBoundOperatorModelChecker<Type> {
 	
 public:

@@ -9,13 +9,11 @@
 #define STORM_FORMULA_CSL_STEADYSTATEOPERATOR_H_
 
 #include "AbstractStateFormula.h"
-#include "src/formula/abstract/SteadyStateBoundOperator.h"
 #include "src/formula/AbstractFormulaChecker.h"
+#include "src/formula/ComparisonType.h"
 
 namespace storm {
-
 namespace property {
-
 namespace csl {
 
 template <class T> class SteadyStateBoundOperator;
@@ -54,33 +52,39 @@ class ISteadyStateBoundOperatorModelChecker {
  * @see AbstractCslFormula
  */
 template <class T>
-class SteadyStateBoundOperator : public storm::property::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>,
-											public AbstractStateFormula<T> {
+class SteadyStateBoundOperator : public AbstractStateFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
-	SteadyStateBoundOperator() : storm::property::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>
-		(LESS_EQUAL, storm::utility::constantZero<T>(), nullptr) {
+	SteadyStateBoundOperator() : comparisonOperator(LESS), bound(storm::utility::constantZero<T>()), stateFormula(nullptr) {
 		// Intentionally left empty
 	}
 
 	/*!
 	 * Constructor
 	 *
+	 * @param comparisonOperator The relation for the bound.
+	 * @param bound The bound for the probability
 	 * @param stateFormula The child node
 	 */
-	SteadyStateBoundOperator(
-		storm::property::ComparisonType comparisonRelation, T bound, AbstractStateFormula<T>* stateFormula) :
-			storm::property::abstract::SteadyStateBoundOperator<T, AbstractStateFormula<T>>(comparisonRelation, bound, stateFormula) {
+	SteadyStateBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, AbstractStateFormula<T>* stateFormula)
+		: comparisonOperator(comparisonOperator), bound(bound), stateFormula(stateFormula) {
+		// Intentionally left empty
 	}
 
 	/*!
 	 * Destructor
+	 *
+	 * The subtree is deleted with the object
+	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~SteadyStateBoundOperator() {
-		// Intentionally left empty
+		if (stateFormula != nullptr) {
+		 delete stateFormula;
+		}
 	}
 
 	/*!
@@ -108,7 +112,100 @@ public:
 	virtual storm::storage::BitVector check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<ISteadyStateBoundOperatorModelChecker>()->checkSteadyStateBoundOperator(*this);
 	}
-	
+
+	/*!
+	 *  @brief Checks if the subtree conforms to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff the subtree conforms to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->stateFormula);
+	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "S ";
+		switch (comparisonOperator) {
+		case LESS: result += "< "; break;
+		case LESS_EQUAL: result += "<= "; break;
+		case GREATER: result += "> "; break;
+		case GREATER_EQUAL: result += ">= "; break;
+		}
+		result += std::to_string(bound);
+		result += " [";
+		result += stateFormula->toString();
+		result += "]";
+		return result;
+	}
+
+	/*!
+	 * @returns the child node (representation of a formula)
+	 */
+	const AbstractStateFormula<T>& getStateFormula () const {
+		return *stateFormula;
+	}
+
+	/*!
+	 * Sets the child node
+	 *
+	 * @param stateFormula the state formula that becomes the new child node
+	 */
+	void setStateFormula(AbstractStateFormula<T>* stateFormula) {
+		this->stateFormula = stateFormula;
+	}
+
+	/*!
+	 *
+	 * @return True if the state formula is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool stateFormulaIsSet() const {
+		return stateFormula != nullptr;
+	}
+
+	/*!
+	 * @returns the comparison relation
+	 */
+	const ComparisonType getComparisonOperator() const {
+		return comparisonOperator;
+	}
+
+	void setComparisonOperator(ComparisonType comparisonOperator) {
+		this->comparisonOperator = comparisonOperator;
+	}
+
+	/*!
+	 * @returns the bound for the measure
+	 */
+	const T& getBound() const {
+		return bound;
+	}
+
+	/*!
+	 * Sets the interval in which the probability that the path formula holds may lie in.
+	 *
+	 * @param bound The bound for the measure
+	 */
+	void setBound(T bound) {
+		this->bound = bound;
+	}
+
+	bool meetsBound(T value) const {
+		switch (comparisonOperator) {
+		case LESS: return value < bound; break;
+		case LESS_EQUAL: return value <= bound; break;
+		case GREATER: return value > bound; break;
+		case GREATER_EQUAL: return value >= bound; break;
+		default: return false;
+		}
+	}
+
+private:
+	ComparisonType comparisonOperator;
+	T bound;
+	AbstractStateFormula<T>* stateFormula;
 };
 
 } //namespace csl

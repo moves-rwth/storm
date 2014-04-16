@@ -16,7 +16,7 @@ template<class T> class AbstractPathFormula;
 } //namespace property
 } //namespace storm
 
-#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/Csl/AbstractCslFormula.h"
 #include "src/modelchecker/csl/ForwardDeclarations.h"
 
 #include <vector>
@@ -40,7 +40,7 @@ namespace csl {
  * 		This class is intentionally not derived from AbstractCslFormula, as a path formula is not a complete CSL formula.
  */
 template <class T>
-class AbstractPathFormula : public virtual storm::property::abstract::AbstractFormula<T> {
+class AbstractPathFormula : public virtual storm::property::csl::AbstractCslFormula<T> {
 
 public:
 	/*!

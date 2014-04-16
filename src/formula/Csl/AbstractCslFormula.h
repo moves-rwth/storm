@@ -8,7 +8,7 @@
 #ifndef ABSTRACTCSLFORMULA_H_
 #define ABSTRACTCSLFORMULA_H_
 
-#include "src/formula/abstract/AbstractFormula.h"
+#include "src/formula/AbstractFormula.h"
 
 namespace storm {
 namespace property {
@@ -18,7 +18,7 @@ namespace csl {
  * Abstract base class for all CSL root formulas.
  */
 template <class T>
-class AbstractCslFormula : public virtual storm::property::abstract::AbstractFormula<T>{
+class AbstractCslFormula : public virtual storm::property::AbstractFormula<T>{
 public:
 	virtual ~AbstractCslFormula() {
 		// Intentionally left empty

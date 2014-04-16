@@ -26,7 +26,7 @@ namespace prctl {
  * 	   clone().
  */
 template <class T>
-class AbstractStateFormula : public virtual storm::property::prctl::AbstractPrctlFormula<T> {
+class AbstractStateFormula : public storm::property::prctl::AbstractPrctlFormula<T> {
 
 public:
 	/*!

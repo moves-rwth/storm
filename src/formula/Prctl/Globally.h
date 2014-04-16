@@ -8,8 +8,8 @@
 #ifndef STORM_FORMULA_PRCTL_GLOBALLY_H_
 #define STORM_FORMULA_PRCTL_GLOBALLY_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "src/formula/Prctl/AbstractPathFormula.h"
+#include "src/formula/Prctl/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/prctl/ForwardDeclarations.h"
 
@@ -84,7 +84,6 @@ public:
 		  delete child;
 	  }
 	}
-
 
 	/*!
 	 * Clones the called object.

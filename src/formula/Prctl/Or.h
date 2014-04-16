@@ -54,9 +54,10 @@ template <class T>
 class Or : public AbstractStateFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor.
-	 * Will create an AND-node without subnotes. Will not represent a complete formula!
+	 * Will create an OR-node without subnotes. Will not represent a complete formula!
 	 */
 	Or() {
 		left = NULL;
@@ -65,7 +66,7 @@ public:
 
 	/*!
 	 * Constructor.
-	 * Creates an AND note with the parameters as subtrees.
+	 * Creates an OR note with the parameters as subtrees.
 	 *
 	 * @param left The left sub formula
 	 * @param right The right sub formula

@@ -52,6 +52,7 @@ template <class T>
 class Not : public AbstractStateFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */

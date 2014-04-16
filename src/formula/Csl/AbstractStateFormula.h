@@ -8,15 +8,7 @@
 #ifndef STORM_FORMULA_CSL_ABSTRACTSTATEFORMULA_H_
 #define STORM_FORMULA_CSL_ABSTRACTSTATEFORMULA_H_
 
-namespace storm {
-namespace property {
-namespace csl {
-template<class T> class AbstractStateFormula;
-}
-}
-}
-
-#include "AbstractCslFormula.h"
+#include "src/formula/Csl/AbstractCslFormula.h"
 #include "src/storage/BitVector.h"
 #include "src/modelchecker/csl/ForwardDeclarations.h"
 
@@ -34,7 +26,7 @@ namespace csl {
  * 	   clone().
  */
 template <class T>
-class AbstractStateFormula : public AbstractCslFormula<T> {
+class AbstractStateFormula : public storm::property::csl::AbstractCslFormula<T> {
 
 public:
 	/*!

@@ -8,9 +8,8 @@
 #ifndef STORM_FORMULA_CSL_TIMEBOUNDEDUNTIL_H_
 #define STORM_FORMULA_CSL_TIMEBOUNDEDUNTIL_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
-#include "src/formula/abstract/TimeBoundedUntil.h"
+#include "src/formula/Csl/AbstractPathFormula.h"
+#include "src/formula/Csl/AbstractStateFormula.h"
 
 namespace storm {
 namespace property {
@@ -37,9 +36,9 @@ class ITimeBoundedUntilModelChecker {
 };
 
 template <class T>
-class TimeBoundedUntil: public storm::property::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>,
-								public AbstractPathFormula<T> {
+class TimeBoundedUntil: public AbstractPathFormula<T> {
 public:
+
 	/**
 	 * Constructor providing bounds only;
 	 * Sub formulas are set to null.
@@ -47,10 +46,10 @@ public:
 	 * @param lowerBound
 	 * @param upperBound
 	 */
-	TimeBoundedUntil(T lowerBound, T upperBound) :
-		storm::property::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>(lowerBound, upperBound) {
-		// Intentionally left empty
+	TimeBoundedUntil(T lowerBound, T upperBound) : left(nullptr), right(nullptr) {
+		setInterval(lowerBound, upperBound);
 	}
+
 
 	/**
 	 * Full constructor
@@ -59,16 +58,20 @@ public:
 	 * @param left
 	 * @param right
 	 */
-	TimeBoundedUntil(T lowerBound, T upperBound, AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) :
-		storm::property::abstract::TimeBoundedUntil<T, AbstractStateFormula<T>>(lowerBound, upperBound, left, right) {
-
+	TimeBoundedUntil(T lowerBound, T upperBound, AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) : left(left), right(right) {
+		setInterval(lowerBound, upperBound);
 	}
 
 	/*!
 	 * Destructor
 	 */
 	virtual ~TimeBoundedUntil() {
-	   // Intentionally left empty
+	   if (left != nullptr) {
+		delete left;
+	   }
+	   if (right != nullptr) {
+		delete right;
+	   }
 	}
 
 	/*!
@@ -102,6 +105,121 @@ public:
 	virtual std::vector<T> check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<ITimeBoundedUntilModelChecker>()->checkTimeBoundedUntil(*this, qualitative);
 	}
+
+	/*!
+	 *  @brief Checks if the subtree conforms to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff the subtree conforms to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->left) && checker.validate(this->right);
+	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = left->toString();
+		result += " U";
+		if (upperBound == std::numeric_limits<double>::infinity()) {
+			result = ">=" + std::to_string(lowerBound);
+		} else {
+			result = "[";
+			result += std::to_string(lowerBound);
+			result += ",";
+			result += std::to_string(upperBound);
+			result += "]";
+		}
+		result += " ";
+		result += right->toString();
+		return result;
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractStateFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(AbstractStateFormula<T>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractStateFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const AbstractStateFormula<T>& getRight() const {
+		return *right;
+	}
+
+	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+	/**
+	 * Getter for lowerBound attribute
+	 *
+	 * @return lower bound of the operator.
+	 */
+	T getLowerBound() const {
+		return lowerBound;
+	}
+
+	/**
+	 * Getter for upperBound attribute
+	 * @return upper bound of the operator.
+	 */
+	T getUpperBound() const {
+		return upperBound;
+	}
+
+	/**
+	 * Set the time interval for the time bounded operator
+	 *
+	 * @param lowerBound
+	 * @param upperBound
+	 * @throw InvalidArgumentException if the lower bound is larger than the upper bound.
+	 */
+	void setInterval(T lowerBound, T upperBound) {
+		if (lowerBound > upperBound) {
+			throw new storm::exceptions::InvalidArgumentException("Lower bound is larger than upper bound");
+		}
+		this->lowerBound = lowerBound;
+		this->upperBound = upperBound;
+	}
+
+private:
+	AbstractStateFormula<T>* left;
+	AbstractStateFormula<T>* right;
+	T lowerBound, upperBound;
 };
 
 } /* namespace csl */

@@ -8,8 +8,7 @@
 #ifndef STORM_FORMULA_CSL_AND_H_
 #define STORM_FORMULA_CSL_AND_H_
 
-#include "AbstractStateFormula.h"
-#include "src/formula/abstract/And.h"
+#include "src/formula/Csl/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/csl/ForwardDeclarations.h"
 #include <string>
@@ -54,15 +53,17 @@ class IAndModelChecker {
  * @see AbstractCslFormula
  */
 template <class T>
-class And : public storm::property::abstract::And<T, AbstractStateFormula<T>>, public AbstractStateFormula<T> {
+class And : public AbstractStateFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor.
 	 * Will create an AND-node without subnotes. Will not represent a complete formula!
 	 */
 	And() {
-		//intentionally left empty
+		left = NULL;
+		right = NULL;
 	}
 
 	/*!
@@ -72,9 +73,9 @@ public:
 	 * @param left The left sub formula
 	 * @param right The right sub formula
 	 */
-	And(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right)
-		: storm::property::abstract::And<T, AbstractStateFormula<T>>(left, right) {
-		//intentionally left empty
+	And(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) {
+		this->left = left;
+		this->right = right;
 	}
 
 	/*!
@@ -84,7 +85,12 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~And() {
-		//intentionally left empty
+		if (left != NULL) {
+			delete left;
+		}
+		if (right != NULL) {
+			delete right;
+		}
 	}
 
 	/*!
@@ -117,6 +123,80 @@ public:
 	virtual storm::storage::BitVector check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "(";
+		result += left->toString();
+		result += " & ";
+		result += right->toString();
+		result += ")";
+		return result;
+	}
+
+	/*!
+	 *	@brief Checks if all subtrees conform to some logic.
+	 *
+	 *	@param checker Formula checker object.
+	 *	@return true iff all subtrees conform to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->left) && checker.validate(this->right);
+	}
+
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft the new left child.
+	 */
+	void setLeft(AbstractStateFormula<T>* newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child node.
+	 *
+	 * @param newRight the new right child.
+	 */
+	void setRight(AbstractStateFormula<T>* newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * @returns a pointer to the left child node
+	 */
+	const AbstractStateFormula<T>& getLeft() const {
+		return *left;
+	}
+
+	/*!
+	 * @returns a pointer to the right child node
+	 */
+	const AbstractStateFormula<T>& getRight() const {
+		return *right;
+	}
+
+	/*!
+	 *
+	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool leftIsSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 *
+	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool rightIsSet() const {
+		return right != nullptr;
+	}
+
+private:
+	AbstractStateFormula<T>* left;
+	AbstractStateFormula<T>* right;
 
 };
 

@@ -8,9 +8,8 @@
 #ifndef STORM_FORMULA_CSL_NEXT_H_
 #define STORM_FORMULA_CSL_NEXT_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
-#include "src/formula/abstract/Next.h"
+#include "src/formula/Csl/AbstractPathFormula.h"
+#include "src/formula/Csl/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
@@ -53,15 +52,15 @@ class INextModelChecker {
  * @see AbstractCslFormula
  */
 template <class T>
-class Next : public storm::property::abstract::Next<T, AbstractStateFormula<T>>,
-				 public AbstractPathFormula<T> {
+class Next : public AbstractPathFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
-	Next() {
-		//intentionally left empty
+	Next() : child(nullptr){
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -69,19 +68,20 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Next(AbstractStateFormula<T>* child)
-		: storm::property::abstract::Next<T, AbstractStateFormula<T>>(child) {
-		//intentionally left empty
+	Next(AbstractStateFormula<T>* child) : child(child){
+		// Intentionally left empty.
 	}
 
 	/*!
 	 * Constructor.
 	 *
 	 * Also deletes the subtree.
-	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
+	 * (this behavior can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~Next() {
-	  //intentionally left empty
+	  if (child != NULL) {
+		  delete child;
+	  }
 	}
 
 	/*!
@@ -111,6 +111,53 @@ public:
 	virtual std::vector<T> check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
 		return modelChecker.template as<INextModelChecker>()->checkNext(*this, qualitative);
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "(";
+		result += " X ";
+		result += child->toString();
+		result += ")";
+		return result;
+	}
+
+	/*!
+	 *  @brief Checks if the subtree conforms to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff the subtree conforms to some logic.
+	 */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->child);
+	}
+
+	/*!
+	 * @returns the child node
+	 */
+	const AbstractStateFormula<T>& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(AbstractStateFormula<T>* child) {
+		this->child = child;
+	}
+
+	/*!
+	 *
+	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool childIsSet() const {
+		return child != nullptr;
+	}
+
+private:
+	AbstractStateFormula<T>* child;
 };
 
 } //namespace csl

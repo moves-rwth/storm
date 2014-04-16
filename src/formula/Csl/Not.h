@@ -8,8 +8,7 @@
 #ifndef STORM_FORMULA_CSL_NOT_H_
 #define STORM_FORMULA_CSL_NOT_H_
 
-#include "AbstractStateFormula.h"
-#include "src/formula/abstract/Not.h"
+#include "src/formula/Csl/AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/csl/ForwardDeclarations.h"
 
@@ -50,24 +49,23 @@ class INotModelChecker {
  * @see AbstractCslFormula
  */
 template <class T>
-class Not : public storm::property::abstract::Not<T, AbstractStateFormula<T>>,
-			   public AbstractStateFormula<T> {
+class Not : public AbstractStateFormula<T> {
 
 public:
+
 	/*!
 	 * Empty constructor
 	 */
 	Not() {
-		//intentionally left empty
+		this->child = NULL;
 	}
 
 	/*!
 	 * Constructor
 	 * @param child The child node
 	 */
-	Not(AbstractStateFormula<T>* child) :
-		storm::property::abstract::Not<T, AbstractStateFormula<T>>(child){
-		//intentionally left empty
+	Not(AbstractStateFormula<T>* child) {
+		this->child = child;
 	}
 
 	/*!
@@ -77,7 +75,9 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~Not() {
-	  //intentionally left empty
+	  if (child != NULL) {
+		  delete child;
+	  }
 	}
 
 	/*!
@@ -107,6 +107,51 @@ public:
 	virtual storm::storage::BitVector check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);  
 	}
+
+	/*!
+	 * @returns a string representation of the formula
+	 */
+	virtual std::string toString() const override {
+		std::string result = "!";
+		result += child->toString();
+		return result;
+	}
+
+	/*!
+     *  @brief Checks if the subtree conforms to some logic.
+     *
+     *  @param checker Formula checker object.
+     *  @return true iff the subtree conforms to some logic.
+     */
+	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+		return checker.validate(this->child);
+	}
+
+	/*!
+	 * @returns The child node
+	 */
+	const AbstractStateFormula<T>& getChild() const {
+		return *child;
+	}
+
+	/*!
+	 * Sets the subtree
+	 * @param child the new child node
+	 */
+	void setChild(AbstractStateFormula<T>* child) {
+		this->child = child;
+	}
+
+	/*!
+	 *
+	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
+	 */
+	bool childIsSet() const {
+		return child != nullptr;
+	}
+
+private:
+	AbstractStateFormula<T>* child;
 };
 
 } //namespace csl
