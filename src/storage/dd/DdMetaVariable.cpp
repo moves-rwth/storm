@@ -47,6 +47,6 @@ namespace storm {
         }
         
         // Explicitly instantiate DdMetaVariable.
-        template class DdMetaVariable<CUDD>;
+        template class DdMetaVariable<DdType::CUDD>;
     }
 }

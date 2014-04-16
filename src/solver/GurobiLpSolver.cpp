@@ -1,6 +1,7 @@
 #include "src/solver/GurobiLpSolver.h"
 
 #ifdef STORM_HAVE_GUROBI
+#include <numeric>
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/settings/Settings.h"
@@ -162,12 +163,29 @@ namespace storm {
                 throw storm::exceptions::InvalidStateException() << "Sizes of variable indices vector and coefficients vector do not match.";
             }
             
-            // Convert the uint vector to ints for proper input to Gurobi.
-            std::vector<int> variablesCopy(variables.begin(), variables.end());
+            // As Gurobi requires the indices to be unique, we now explicitly make them unique. For this, we sort the
+            // variables and coefficients and eliminated duplicates by adding the coefficients.
             
-            // Copy the coefficients, because Gurobi does not take the coefficients as const values. The alternative to this would be casting
-            // away the constness, which gives undefined behaviour if Gurobi actually modifies something.
-            std::vector<double> coefficientsCopy(coefficients);
+            // We start by sorting both vectors.
+            std::vector<uint_fast64_t> sortedVariables(variables);
+			std::vector<double> sortedCoefficients(coefficients);
+            std::vector<uint_fast64_t> permutation(variables.size());
+            std::iota(permutation.begin(), permutation.end(), 0);
+            std::sort(permutation.begin(), permutation.end(), [&] (uint_fast64_t i, uint_fast64_t j) { return variables[i] < variables[j]; } );
+            std::transform(permutation.begin(), permutation.end(), sortedVariables.begin(), [&] (uint_fast64_t i) { return variables[i]; } );
+            std::transform(permutation.begin(), permutation.end(), sortedCoefficients.begin(), [&] (uint_fast64_t i) { return coefficients[i]; } );
+            
+            // Now we perform the duplicate elimination step.
+            std::vector<int> uniqueVariables;
+            std::vector<double> uniqueCoefficients;
+			for (uint_fast64_t i = 0; i < sortedVariables.size(); ++i) {
+				if (!uniqueVariables.empty() && uniqueVariables.back() == sortedVariables[i]) {
+					uniqueCoefficients.back() += sortedCoefficients[i];
+                } else {
+					uniqueVariables.push_back(static_cast<int>(sortedVariables[i]));
+					uniqueCoefficients.push_back(sortedCoefficients[i]);
+                }
+            }
             
             bool strictBound = boundType == LESS || boundType == GREATER;
             char sense = boundType == LESS || boundType == LESS_EQUAL ? GRB_LESS_EQUAL : boundType == EQUAL ? GRB_EQUAL : GRB_GREATER_EQUAL;
@@ -181,7 +199,7 @@ namespace storm {
                     rightHandSideValue += storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
                 }
             }
-            int error = GRBaddconstr(model, variablesCopy.size(), variablesCopy.data(), coefficientsCopy.data(), sense, rightHandSideValue, name == "" ? nullptr : name.c_str());
+            int error = GRBaddconstr(model, uniqueVariables.size(), uniqueVariables.data(), uniqueCoefficients.data(), sense, rightHandSideValue, name == "" ? nullptr : name.c_str());
             
             if (error) {
                 LOG4CPLUS_ERROR(logger, "Unable to assert Gurobi constraint (" << GRBgeterrormsg(env) << ", error code " << error << ").");

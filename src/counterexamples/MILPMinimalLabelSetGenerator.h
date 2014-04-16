@@ -11,7 +11,7 @@
 #include <chrono>
 
 #include "src/models/Mdp.h"
-#include "src/ir/Program.h"
+#include "src/storage/prism/Program.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
@@ -92,8 +92,7 @@ namespace storm {
                 StateInformation result;
                 result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.relevantStates &= ~psiStates;
-                result.problematicStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
-                result.problematicStates.complement();
+                result.problematicStates = storm::utility::graph::performProb0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.problematicStates &= result.relevantStates;
                 LOG4CPLUS_DEBUG(logger, "Found " << phiStates.getNumberOfSetBits() << " filter states.");
                 LOG4CPLUS_DEBUG(logger, "Found " << psiStates.getNumberOfSetBits() << " target states.");
@@ -1001,7 +1000,7 @@ namespace storm {
              * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
              * formula can be either an unbounded until formula or an eventually formula.
              */
-            static void computeCounterexample(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::property::prctl::AbstractPrctlFormula<double> const* formulaPtr) {
+            static void computeCounterexample(storm::prism::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::property::prctl::AbstractPrctlFormula<double> const* formulaPtr) {
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << formulaPtr->toString() << std::endl;
                 // First, we need to check whether the current formula is an Until-Formula.
                 storm::property::prctl::ProbabilisticBoundOperator<double> const* probBoundFormula = dynamic_cast<storm::property::prctl::ProbabilisticBoundOperator<double> const*>(formulaPtr);
@@ -1046,9 +1045,8 @@ namespace storm {
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 
                 std::cout << "Resulting program:" << std::endl;
-                storm::ir::Program restrictedProgram(program);
-                restrictedProgram.restrictCommands(usedLabelSet);
-                std::cout << restrictedProgram.toString() << std::endl;
+                storm::prism::Program restrictedProgram = program.restrictCommands(usedLabelSet);
+                std::cout << restrictedProgram << std::endl;
                 std::cout << std::endl << "-------------------------------------------" << std::endl;
                 
                 // FIXME: Return the DTMC that results from applying the max scheduler in the MDP restricted to the computed label set.

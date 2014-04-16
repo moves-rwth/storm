@@ -1,9 +1,10 @@
 #ifndef STORM_STORAGE_DD_CUDDDD_H_
 #define STORM_STORAGE_DD_CUDDDD_H_
 
-#include <unordered_map>
+#include <map>
 #include <set>
 #include <memory>
+#include <iostream>
 
 #include "src/storage/dd/Dd.h"
 #include "src/utility/OsDetection.h"
@@ -17,26 +18,35 @@ namespace storm {
         template<DdType Type> class DdManager;
         
         template<>
-        class Dd<CUDD> {
+        class Dd<DdType::CUDD> {
         public:
             // Declare the DdManager class as friend so it can access the internals of a DD.
-            friend class DdManager<CUDD>;
+            friend class DdManager<DdType::CUDD>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Dd() = default;
-            Dd(Dd<CUDD> const& other) = default;
-			Dd& operator=(Dd<CUDD> const& other) = default;
+            Dd(Dd<DdType::CUDD> const& other) = default;
+			Dd& operator=(Dd<DdType::CUDD> const& other) = default;
 #ifndef WINDOWS
-            Dd(Dd<CUDD>&& other) = default;
-            Dd& operator=(Dd<CUDD>&& other) = default;
+            Dd(Dd<DdType::CUDD>&& other) = default;
+            Dd& operator=(Dd<DdType::CUDD>&& other) = default;
 #endif
             
             /*!
              * Retrieves whether the two DDs represent the same function.
              *
              * @param other The DD that is to be compared with the current one.
+             * @return True if the DDs represent the same function.
              */
-            bool operator==(Dd<CUDD> const& other) const;
+            bool operator==(Dd<DdType::CUDD> const& other) const;
+            
+            /*!
+             * Retrieves whether the two DDs represent different functions.
+             *
+             * @param other The DD that is to be compared with the current one.
+             * @return True if the DDs represent the different functions.
+             */
+            bool operator!=(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Adds the two DDs.
@@ -44,7 +54,7 @@ namespace storm {
              * @param other The DD to add to the current one.
              * @return The result of the addition.
              */
-            Dd<CUDD> operator+(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> operator+(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Adds the given DD to the current one.
@@ -52,7 +62,7 @@ namespace storm {
              * @param other The DD to add to the current one.
              * @return A reference to the current DD after the operation.
              */
-            Dd<CUDD>& operator+=(Dd<CUDD> const& other);
+            Dd<DdType::CUDD>& operator+=(Dd<DdType::CUDD> const& other);
             
             /*!
              * Multiplies the two DDs.
@@ -60,7 +70,7 @@ namespace storm {
              * @param other The DD to multiply with the current one.
              * @return The result of the multiplication.
              */
-            Dd<CUDD> operator*(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> operator*(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Multiplies the given DD with the current one and assigns the result to the current DD.
@@ -68,7 +78,7 @@ namespace storm {
              * @param other The DD to multiply with the current one.
              * @return A reference to the current DD after the operation.
              */
-            Dd<CUDD>& operator*=(Dd<CUDD> const& other);
+            Dd<DdType::CUDD>& operator*=(Dd<DdType::CUDD> const& other);
             
             /*!
              * Subtracts the given DD from the current one.
@@ -76,7 +86,7 @@ namespace storm {
              * @param other The DD to subtract from the current one.
              * @return The result of the subtraction.
              */
-            Dd<CUDD> operator-(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> operator-(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Subtracts the given DD from the current one and assigns the result to the current DD.
@@ -84,7 +94,7 @@ namespace storm {
              * @param other The DD to subtract from the current one.
              * @return A reference to the current DD after the operation.
              */
-            Dd<CUDD>& operator-=(Dd<CUDD> const& other);
+            Dd<DdType::CUDD>& operator-=(Dd<DdType::CUDD> const& other);
             
             /*!
              * Divides the current DD by the given one.
@@ -92,7 +102,7 @@ namespace storm {
              * @param other The DD by which to divide the current one.
              * @return The result of the division.
              */
-            Dd<CUDD> operator/(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> operator/(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Divides the current DD by the given one and assigns the result to the current DD.
@@ -100,14 +110,14 @@ namespace storm {
              * @param other The DD by which to divide the current one.
              * @return A reference to the current DD after the operation.
              */
-            Dd<CUDD>& operator/=(Dd<CUDD> const& other);
+            Dd<DdType::CUDD>& operator/=(Dd<DdType::CUDD> const& other);
             
             /*!
              * Subtracts the DD from the constant zero function.
              *
              * @return The resulting function represented as a DD.
              */
-            Dd<CUDD> minus() const;
+            Dd<DdType::CUDD> minus() const;
             
             /*!
              * Retrieves the logical complement of the current DD. The result will map all encodings with a value
@@ -115,7 +125,7 @@ namespace storm {
              *
              * @return The logical complement of the current DD.
              */
-            Dd<CUDD> operator~() const;
+            Dd<DdType::CUDD> operator~() const;
             
             /*!
              * Logically complements the current DD. The result will map all encodings with a value
@@ -123,7 +133,7 @@ namespace storm {
              *
              * @return A reference to the current DD after the operation.
              */
-            Dd<CUDD>& complement();
+            Dd<DdType::CUDD>& complement();
             
             /*!
              * Retrieves the function that maps all evaluations to one that have an identical function values.
@@ -131,7 +141,7 @@ namespace storm {
              * @param other The DD with which to perform the operation.
              * @return The resulting function represented as a DD.
              */
-            Dd<CUDD> equals(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> equals(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one that have distinct function values.
@@ -139,7 +149,7 @@ namespace storm {
              * @param other The DD with which to perform the operation.
              * @return The resulting function represented as a DD.
              */
-            Dd<CUDD> notEquals(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> notEquals(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first DD are less
@@ -148,7 +158,7 @@ namespace storm {
              * @param other The DD with which to perform the operation.
              * @return The resulting function represented as a DD.
              */
-            Dd<CUDD> less(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> less(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first DD are less or
@@ -157,7 +167,7 @@ namespace storm {
              * @param other The DD with which to perform the operation.
              * @return The resulting function represented as a DD.
              */
-            Dd<CUDD> lessOrEqual(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> lessOrEqual(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first DD are greater
@@ -166,7 +176,7 @@ namespace storm {
              * @param other The DD with which to perform the operation.
              * @return The resulting function represented as a DD.
              */
-            Dd<CUDD> greater(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> greater(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first DD are greater
@@ -175,7 +185,7 @@ namespace storm {
              * @param other The DD with which to perform the operation.
              * @return The resulting function represented as a DD.
              */
-            Dd<CUDD> greaterOrEqual(Dd<CUDD> const& other) const;
+            Dd<DdType::CUDD> greaterOrEqual(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Existentially abstracts from the given meta variables.
@@ -222,7 +232,7 @@ namespace storm {
              * matrix multiplication.
              * @return A DD representing the result of the matrix-matrix multiplication.
              */
-            Dd<CUDD> multiplyMatrix(Dd<CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames);
+            Dd<DdType::CUDD> multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames);
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
@@ -294,7 +304,16 @@ namespace storm {
              * have. All values must be within the range of the respective meta variable.
              * @param targetValue The new function value of the modified encodings.
              */
-            void setValue(std::unordered_map<std::string, int_fast64_t> const& metaVariableNameToValueMap, double targetValue);
+            void setValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap = std::map<std::string, int_fast64_t>(), double targetValue = 0);
+            
+            /*!
+             * Retrieves the value of the function when all meta variables are assigned the values of the given mapping.
+             * Note that the mapping must specify values for all meta variables contained in the DD.
+             *
+             * @param metaVariableNameToValueMap A mapping of meta variable names to their values.
+             * @return The value of the function evaluated with the given input.
+             */
+            double getValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap = std::map<std::string, int_fast64_t>()) const;
             
             /*!
              * Retrieves whether this DD represents the constant one function.
@@ -309,6 +328,13 @@ namespace storm {
              * @return True if this DD represents the constant zero function.
              */
             bool isZero() const;
+            
+            /*!
+             * Retrieves whether this DD represents a constant function.
+             *
+             * @return True if this DD represents a constants function.
+             */
+            bool isConstant() const;
             
             /*!
              * Retrieves whether the given meta variable is contained in the DD.
@@ -345,20 +371,21 @@ namespace storm {
              *
              * @param filename The name of the file to which the DD is to be exported.
              */
-            void exportToDot(std::string const& filename) const;
+            void exportToDot(std::string const& filename = "") const;
             
             /*!
              * Retrieves the manager that is responsible for this DD.
              *
              * A pointer to the manager that is responsible for this DD.
              */
-            std::shared_ptr<DdManager<CUDD>> getDdManager() const;
+            std::shared_ptr<DdManager<DdType::CUDD>> getDdManager() const;
             
+            friend std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd);
         private:
             /*!
-             * Retrieves the CUDD ADD object associated with this DD.
+             * Retrieves a reference to the CUDD ADD object associated with this DD.
              *
-             * @return The CUDD ADD object assoicated with this DD.
+             * @return The CUDD ADD object associated with this DD.
              */
             ADD getCuddAdd();
             
@@ -390,10 +417,10 @@ namespace storm {
              * @param cuddAdd The CUDD ADD to store.
              * @param
              */
-            Dd(std::shared_ptr<DdManager<CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames = std::set<std::string>());
+            Dd(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames = std::set<std::string>());
             
             // A pointer to the manager responsible for this DD.
-            std::shared_ptr<DdManager<CUDD>> ddManager;
+            std::shared_ptr<DdManager<DdType::CUDD>> ddManager;
             
             // The ADD created by CUDD.
             ADD cuddAdd;
