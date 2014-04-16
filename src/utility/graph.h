@@ -49,7 +49,7 @@ namespace storm {
                 // Prepare the resulting bit vector.
                 storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
                 
-                // Add all psi states as the already satisfy the condition.
+                // Add all psi states as they already satisfy the condition.
                 statesWithProbabilityGreater0 |= psiStates;
                 
                 // Initialize the stack used for the DFS with the states.
