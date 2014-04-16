@@ -14,13 +14,13 @@ namespace storm {
             /*!
              * Creates a label with the given name and state predicate expression.
              *
-             * @param labelName The name of the label.
+             * @param name The name of the label.
              * @param statePredicateExpression The predicate that needs to hold before taking a transition with the previously
              * specified name in order to obtain the reward.
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            Label(std::string const& labelName, storm::expressions::Expression const& statePredicateExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Label(std::string const& name, storm::expressions::Expression const& statePredicateExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Label() = default;
@@ -36,7 +36,7 @@ namespace storm {
              *
              * @return The name that is associated with this label.
              */
-            std::string const& getLabelName() const;
+            std::string const& getName() const;
             
             /*!
              * Retrieves the state predicate expression that is associated with this label.
@@ -57,7 +57,7 @@ namespace storm {
             
         private:
             // The name of the label.
-            std::string labelName;
+            std::string name;
             
             // A predicate that needs to be satisfied by states for the label to be attached.
             storm::expressions::Expression statePredicateExpression;

@@ -169,7 +169,7 @@ namespace storm {
         void Program::createMappings() {
             // Build the mappings for constants, global variables, formulas, modules, reward models and labels.
             for (uint_fast64_t constantIndex = 0; constantIndex < this->getNumberOfConstants(); ++constantIndex) {
-                this->constantToIndexMap[this->getConstants()[constantIndex].getConstantName()] = constantIndex;
+                this->constantToIndexMap[this->getConstants()[constantIndex].getName()] = constantIndex;
             }
             for (uint_fast64_t globalVariableIndex = 0; globalVariableIndex < this->getNumberOfGlobalBooleanVariables(); ++globalVariableIndex) {
                 this->globalBooleanVariableToIndexMap[this->getGlobalBooleanVariables()[globalVariableIndex].getName()] = globalVariableIndex;
@@ -178,7 +178,7 @@ namespace storm {
                 this->globalIntegerVariableToIndexMap[this->getGlobalIntegerVariables()[globalVariableIndex].getName()] = globalVariableIndex;
             }
             for (uint_fast64_t formulaIndex = 0; formulaIndex < this->getNumberOfFormulas(); ++formulaIndex) {
-                this->formulaToIndexMap[this->getFormulas()[formulaIndex].getFormulaName()] = formulaIndex;
+                this->formulaToIndexMap[this->getFormulas()[formulaIndex].getName()] = formulaIndex;
             }
             for (uint_fast64_t moduleIndex = 0; moduleIndex < this->getNumberOfModules(); ++moduleIndex) {
                 this->moduleToIndexMap[this->getModules()[moduleIndex].getName()] = moduleIndex;
@@ -187,7 +187,7 @@ namespace storm {
                 this->rewardModelToIndexMap[this->getRewardModels()[rewardModelIndex].getName()] = rewardModelIndex;
             }
             for (uint_fast64_t labelIndex = 0; labelIndex < this->getNumberOfLabels(); ++labelIndex) {
-                this->labelToIndexMap[this->getLabels()[labelIndex].getLabelName()] = labelIndex;
+                this->labelToIndexMap[this->getLabels()[labelIndex].getName()] = labelIndex;
             }
             
             // Build the mapping from action names to module indices so that the lookup can later be performed quickly.
@@ -226,25 +226,25 @@ namespace storm {
                 // defining expression
                 if (constant.isDefined()) {
                     // Make sure we are not trying to define an already defined constant.
-                    LOG_THROW(constantDefinitions.find(constant.getConstantName()) == constantDefinitions.end(), storm::exceptions::InvalidArgumentException, "Illegally defining already defined constant '" << constant.getConstantName() << "'.");
+                    LOG_THROW(constantDefinitions.find(constant.getName()) == constantDefinitions.end(), storm::exceptions::InvalidArgumentException, "Illegally defining already defined constant '" << constant.getName() << "'.");
                     
                     // Now replace the occurrences of undefined constants in its defining expression.
-                    newConstants.emplace_back(constant.getConstantType(), constant.getConstantName(), constant.getExpression().substitute<std::map>(constantDefinitions), constant.getFilename(), constant.getLineNumber());
+                    newConstants.emplace_back(constant.getType(), constant.getName(), constant.getExpression().substitute<std::map>(constantDefinitions), constant.getFilename(), constant.getLineNumber());
                 } else {
-                    auto const& variableExpressionPair = constantDefinitions.find(constant.getConstantName());
+                    auto const& variableExpressionPair = constantDefinitions.find(constant.getName());
                     
                     // If the constant is not defined by the mapping, we leave it like it is.
                     if (variableExpressionPair == constantDefinitions.end()) {
                         newConstants.emplace_back(constant);
                     } else {
                         // Otherwise, we add it to the defined constants and assign it the appropriate expression.
-                        definedUndefinedConstants.insert(constant.getConstantName());
+                        definedUndefinedConstants.insert(constant.getName());
                         
                         // Make sure the type of the constant is correct.
-                        LOG_THROW(variableExpressionPair->second.getReturnType() == constant.getConstantType(), storm::exceptions::InvalidArgumentException, "Illegal type of expression defining constant '" << constant.getConstantName() << "'.");
+                        LOG_THROW(variableExpressionPair->second.getReturnType() == constant.getType(), storm::exceptions::InvalidArgumentException, "Illegal type of expression defining constant '" << constant.getName() << "'.");
                         
                         // Now create the defined constant.
-                        newConstants.emplace_back(constant.getConstantType(), constant.getConstantName(), variableExpressionPair->second, constant.getFilename(), constant.getLineNumber());
+                        newConstants.emplace_back(constant.getType(), constant.getName(), variableExpressionPair->second, constant.getFilename(), constant.getLineNumber());
                     }
                 }
             }
@@ -267,7 +267,7 @@ namespace storm {
                 LOG_THROW(constant.isDefined(), storm::exceptions::InvalidArgumentException, "Cannot substitute constants in program that contains undefined constants.");
                 
                 // Put the corresponding expression in the substitution.
-                constantSubstitution.emplace(constant.getConstantName(), constant.getExpression());
+                constantSubstitution.emplace(constant.getName(), constant.getExpression());
                 
                 // If there is at least one more constant to come, we substitute the costants we have so far.
                 if (constantIndex + 1 < newConstants.size()) {

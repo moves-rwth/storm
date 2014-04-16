@@ -2,20 +2,20 @@
 
 namespace storm {
     namespace prism {
-        Constant::Constant(storm::expressions::ExpressionReturnType constantType, std::string const& constantName, storm::expressions::Expression const& expression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), constantType(constantType), constantName(constantName), defined(true), expression(expression) {
+        Constant::Constant(storm::expressions::ExpressionReturnType type, std::string const& name, storm::expressions::Expression const& expression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), type(type), name(name), defined(true), expression(expression) {
             // Intentionally left empty.
         }
         
-        Constant::Constant(storm::expressions::ExpressionReturnType constantType, std::string const& constantName, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), constantType(constantType), constantName(constantName), defined(false), expression() {
+        Constant::Constant(storm::expressions::ExpressionReturnType type, std::string const& name, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), type(type), name(name), defined(false), expression() {
             // Intentionally left empty.
         }
         
-        std::string const& Constant::getConstantName() const {
-            return this->constantName;
+        std::string const& Constant::getName() const {
+            return this->name;
         }
         
-        storm::expressions::ExpressionReturnType Constant::getConstantType() const {
-            return this->constantType;
+        storm::expressions::ExpressionReturnType Constant::getType() const {
+            return this->type;
         }
         
         bool Constant::isDefined() const {
@@ -27,18 +27,18 @@ namespace storm {
         }
         
         Constant Constant::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
-            return Constant(this->getConstantType(), this->getConstantName(), this->getExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
+            return Constant(this->getType(), this->getName(), this->getExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, Constant const& constant) {
             stream << "const ";
-            switch (constant.getConstantType()) {
+            switch (constant.getType()) {
                 case storm::expressions::ExpressionReturnType::Undefined: stream << "undefined "; break;
                 case storm::expressions::ExpressionReturnType::Bool: stream << "bool "; break;
                 case storm::expressions::ExpressionReturnType::Int: stream << "int "; break;
                 case storm::expressions::ExpressionReturnType::Double: stream << "double "; break;
             }
-            stream << constant.getConstantName();
+            stream << constant.getName();
             if (constant.isDefined()) {
                 stream << " = " << constant.getExpression();
             }

@@ -14,13 +14,12 @@ namespace storm {
             /*!
              * Creates a formula with the given name and expression.
              *
-             * @param formulaName The name of the label.
-             * @param expression The predicate that needs to hold before taking a transition with the previously
-             * specified name in order to obtain the reward.
+             * @param name The name of the formula.
+             * @param expression The expression associated with this formula.
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            Formula(std::string const& formulaName, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Formula(std::string const& name, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Formula() = default;
@@ -36,7 +35,7 @@ namespace storm {
              *
              * @return The name that is associated with this formula.
              */
-            std::string const& getFormulaName() const;
+            std::string const& getName() const;
             
             /*!
              * Retrieves the expression that is associated with this formula.
@@ -50,7 +49,7 @@ namespace storm {
              *
              * @return The return type of the formula.
              */
-            storm::expressions::ExpressionReturnType getReturnType() const;
+            storm::expressions::ExpressionReturnType getType() const;
             
             /*!
              * Substitutes all identifiers in the expression of the formula according to the given map.
@@ -64,7 +63,7 @@ namespace storm {
             
         private:
             // The name of the formula.
-            std::string formulaName;
+            std::string name;
             
             // A predicate that needs to be satisfied by states for the label to be attached.
             storm::expressions::Expression expression;

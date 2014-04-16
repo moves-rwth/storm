@@ -120,7 +120,7 @@ namespace storm {
                             LOG_THROW(definedConstants.find(constantName) == definedConstants.end(), storm::exceptions::InvalidArgumentException, "Illegally trying to define constant '" << constantName <<"' twice.");
                             definedConstants.insert(constantName);
                             
-                            if (constant.getConstantType() == storm::expressions::ExpressionReturnType::Bool) {
+                            if (constant.getType() == storm::expressions::ExpressionReturnType::Bool) {
                                 if (value == "true") {
                                     constantDefinitions[constantName] = storm::expressions::Expression::createTrue();
                                 } else if (value == "false") {
@@ -128,10 +128,10 @@ namespace storm {
                                 } else {
                                     throw storm::exceptions::InvalidArgumentException() << "Illegal value for boolean constant: " << value << ".";
                                 }
-                            } else if (constant.getConstantType() == storm::expressions::ExpressionReturnType::Int) {
+                            } else if (constant.getType() == storm::expressions::ExpressionReturnType::Int) {
                                 int_fast64_t integerValue = std::stoi(value);
                                 constantDefinitions[constantName] = storm::expressions::Expression::createIntegerLiteral(integerValue);
-                            } else if (constant.getConstantType() == storm::expressions::ExpressionReturnType::Double) {
+                            } else if (constant.getType() == storm::expressions::ExpressionReturnType::Double) {
                                 double doubleValue = std::stod(value);
                                 constantDefinitions[constantName] = storm::expressions::Expression::createDoubleLiteral(doubleValue);
                             }
@@ -753,13 +753,13 @@ namespace storm {
                 
                 // Initialize labeling.
                 for (auto const& label : labels) {
-                    result.addAtomicProposition(label.getLabelName());
+                    result.addAtomicProposition(label.getName());
                 }
                 for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
                     for (auto const& label : labels) {
                         // Add label to state, if the corresponding expression is true.
                         if (label.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates[index])) {
-                            result.addAtomicPropositionToState(label.getLabelName(), index);
+                            result.addAtomicPropositionToState(label.getName(), index);
                         }
                     }
                 }

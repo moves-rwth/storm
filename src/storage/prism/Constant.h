@@ -14,13 +14,13 @@ namespace storm {
             /*!
              * Creates a constant with the given type, name and defining expression.
              *
-             * @param constantType The type of the constant.
-             * @param constantName The name of the constant.
+             * @param type The type of the constant.
+             * @param name The name of the constant.
              * @param expression The expression that defines the constant.
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            Constant(storm::expressions::ExpressionReturnType constantType, std::string const& constantName, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Constant(storm::expressions::ExpressionReturnType type, std::string const& name, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
 
             /*!
              * Creates an undefined constant with the given type and name.
@@ -46,14 +46,14 @@ namespace storm {
              *
              * @return The name of the constant.
              */
-            std::string const& getConstantName() const;
+            std::string const& getName() const;
             
             /*!
              * Retrieves the type of the constant.
              *
              * @return The type of the constant;
              */
-            storm::expressions::ExpressionReturnType getConstantType() const;
+            storm::expressions::ExpressionReturnType getType() const;
             
             /*!
              * Retrieves whether the constant is defined, i.e., whether there is an expression defining its value.
@@ -82,10 +82,10 @@ namespace storm {
             
         private:
             // The type of the constant.
-            storm::expressions::ExpressionReturnType constantType;
+            storm::expressions::ExpressionReturnType type;
             
             // The name of the constant.
-            std::string constantName;
+            std::string name;
             
             // A flag that stores whether or not the constant is defined.
             bool defined;

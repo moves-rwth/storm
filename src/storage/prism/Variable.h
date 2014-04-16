@@ -47,14 +47,14 @@ namespace storm {
             /*!
              * Creates a variable with the given name and initial value.
              *
-             * @param variableName The name of the variable.
+             * @param name The name of the variable.
              * @param initialValueExpression The constant expression that defines the initial value of the variable.
              * @param hasDefaultInitialValue A flag indicating whether the initial value of the variable is its default
              * value.
              * @param filename The filename in which the variable is defined.
              * @param lineNumber The line number in which the variable is defined.
              */
-            Variable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, bool defaultInitialValue, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Variable(std::string const& name, storm::expressions::Expression const& initialValueExpression, bool defaultInitialValue, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given variable and performs the provided renaming.
@@ -69,7 +69,7 @@ namespace storm {
             
         private:
             // The name of the variable.
-            std::string variableName;
+            std::string name;
             
             // The constant expression defining the initial value of the variable.
             storm::expressions::Expression initialValueExpression;
