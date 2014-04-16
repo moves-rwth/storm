@@ -261,10 +261,18 @@ namespace storm {
         Program Program::substituteConstants() const {
             // We start by creating the appropriate substitution
             std::map<std::string, storm::expressions::Expression> constantSubstitution;
-            for (auto const& constant : this->getConstants()) {
+            std::vector<Constant> newConstants(this->getConstants());
+            for (uint_fast64_t constantIndex = 0; constantIndex < newConstants.size(); ++constantIndex) {
+                auto const& constant = newConstants[constantIndex];
                 LOG_THROW(constant.isDefined(), storm::exceptions::InvalidArgumentException, "Cannot substitute constants in program that contains undefined constants.");
                 
+                // Put the corresponding expression in the substitution.
                 constantSubstitution.emplace(constant.getConstantName(), constant.getExpression());
+                
+                // If there is at least one more constant to come, we substitute the costants we have so far.
+                if (constantIndex + 1 < newConstants.size()) {
+                    newConstants[constantIndex + 1] = newConstants[constantIndex + 1].substitute(constantSubstitution);
+                }
             }
             
             // Now we can substitute the constants in all expressions appearing in the program.
@@ -306,7 +314,7 @@ namespace storm {
                 newLabels.emplace_back(label.substitute(constantSubstitution));
             }
             
-            return Program(this->getModelType(), std::vector<Constant>(), newBooleanVariables, newIntegerVariables, newFormulas, newModules, newRewardModels, this->definesInitialStatesExpression(), newInitialStateExpression, newLabels);
+            return Program(this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, newRewardModels, this->definesInitialStatesExpression(), newInitialStateExpression, newLabels);
         }
         
         std::ostream& operator<<(std::ostream& stream, Program const& program) {

@@ -16,30 +16,14 @@ namespace storm {
             friend class SimpleValuationPointerLess;
             
             /*!
-             * Creates a simple valuation that can hold the given number of boolean, integer and double variables.
-             *
-             * @param booleanVariableCount The number of boolean variables in the valuation.
-             * @param integerVariableCount The number of integer variables in the valuation.
-             * @param doubleVariableCount The number of double variables in the valuation.
-             */
-            SimpleValuation(std::size_t booleanVariableCount, std::size_t integerVariableCount, std::size_t doubleVariableCount);
-            
-            /*!
-             * Creates a simple evaluation based on the given identifier to index map and value containers for the
-             * different types of variables.
-             *
-             * @param identifierToIndexMap A shared pointer to a mapping from identifier to their local indices in the
-             * value containers.
-             * @param booleanValues The value container for all boolean identifiers.
-             * @param integerValues The value container for all integer identifiers.
-             * @param doubleValues The value container for all double identifiers.
-             */
-            SimpleValuation(std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> identifierToIndexMap, std::vector<bool> booleanValues, std::vector<int_fast64_t> integerValues, std::vector<double> doubleValues);
+             * Creates a simple valuation without any identifiers.
+            */
+            SimpleValuation();
 
             // Instantiate some constructors and assignments with their default implementations.
             SimpleValuation(SimpleValuation const&) = default;
-            SimpleValuation(SimpleValuation&&) = default;
             SimpleValuation& operator=(SimpleValuation const&) = default;
+            SimpleValuation(SimpleValuation&&) = default;
             SimpleValuation& operator=(SimpleValuation&&) = default;
             virtual ~SimpleValuation() = default;
 
@@ -49,12 +33,28 @@ namespace storm {
             bool operator==(SimpleValuation const& other) const;
             
             /*!
-             * Sets the index of the identifier with the given name to the given value.
+             * Adds a boolean identifier with the given name.
              *
-             * @param name The name of the identifier for which to set the index.
-             * @param index The new index of the identifier.
+             * @param name The name of the boolean identifier to add.
+             * @param initialValue The initial value of the identifier.
              */
-            void setIdentifierIndex(std::string const& name, uint_fast64_t index);
+            void addBooleanIdentifier(std::string const& name, bool initialValue = false);
+            
+            /*!
+             * Adds a integer identifier with the given name.
+             *
+             * @param name The name of the integer identifier to add.
+             * @param initialValue The initial value of the identifier.
+             */
+            void addIntegerIdentifier(std::string const& name, int_fast64_t initialValue = 0);
+
+            /*!
+             * Adds a double identifier with the given name.
+             *
+             * @param name The name of the double identifier to add.
+             * @param initialValue The initial value of the identifier.
+             */
+            void addDoubleIdentifier(std::string const& name, double initialValue = 0);
             
             /*!
              * Sets the value of the boolean identifier with the given name to the given value.
@@ -88,8 +88,14 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, SimpleValuation const& valuation);
 
         private:
-            // A mapping of identifiers to their local indices in the value containers.
-            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> identifierToIndexMap;
+            // A mapping of boolean identifiers to their local indices in the value container.
+            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> booleanIdentifierToIndexMap;
+            
+            // A mapping of integer identifiers to their local indices in the value container.
+            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> integerIdentifierToIndexMap;
+            
+            // A mapping of double identifiers to their local indices in the value container.
+            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> doubleIdentifierToIndexMap;
             
             // The value container for all boolean identifiers.
             std::vector<bool> booleanValues;

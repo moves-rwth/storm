@@ -336,8 +336,11 @@ namespace storm {
                         
                         // Only consider unlabeled commands.
                         if (command.getActionName() != "") continue;
+
                         // Skip the command, if it is not enabled.
-                        if (!command.getGuardExpression().evaluateAsBool(currentState)) continue;
+                        if (!command.getGuardExpression().evaluateAsBool(currentState)) {
+                            continue;
+                        }
                         
                         result.push_back(Choice<ValueType>(""));
                         Choice<ValueType>& choice = result.back();
@@ -521,31 +524,19 @@ namespace storm {
                 
                 // Initialize a queue and insert the initial state.
                 std::queue<uint_fast64_t> stateQueue;
-                uint_fast64_t numberOfBooleanVariables = program.getNumberOfGlobalBooleanVariables();
-                uint_fast64_t numberOfIntegerVariables = program.getNumberOfGlobalIntegerVariables();
-                for (auto const& module : program.getModules()) {
-                    numberOfBooleanVariables += module.getNumberOfBooleanVariables();
-                    numberOfIntegerVariables += module.getNumberOfIntegerVariables();
-                }
-                StateType* initialState = new StateType(numberOfBooleanVariables, numberOfIntegerVariables, 0);
-                uint_fast64_t booleanIndex = 0;
-                uint_fast64_t integerIndex = 0;
+                StateType* initialState = new StateType;
                 for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
-                    initialState->setIdentifierIndex(booleanVariable.getName(), booleanIndex++);
-                    initialState->setBooleanValue(booleanVariable.getName(), booleanVariable.getInitialValueExpression().evaluateAsBool());
+                    initialState->addBooleanIdentifier(booleanVariable.getName(), booleanVariable.getInitialValueExpression().evaluateAsBool());
                 }
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                    initialState->setIdentifierIndex(integerVariable.getName(), booleanIndex++);
-                    initialState->setIntegerValue(integerVariable.getName(), integerVariable.getInitialValueExpression().evaluateAsInt());
+                    initialState->addIntegerIdentifier(integerVariable.getName(), integerVariable.getInitialValueExpression().evaluateAsInt());
                 }
                 for (auto const& module : program.getModules()) {
                     for (auto const& booleanVariable : module.getBooleanVariables()) {
-                        initialState->setIdentifierIndex(booleanVariable.getName(), booleanIndex++);
-                        initialState->setBooleanValue(booleanVariable.getName(), booleanVariable.getInitialValueExpression().evaluateAsBool());
+                        initialState->addBooleanIdentifier(booleanVariable.getName(), booleanVariable.getInitialValueExpression().evaluateAsBool());
                     }
                     for (auto const& integerVariable : module.getIntegerVariables()) {
-                        initialState->setIdentifierIndex(integerVariable.getName(), integerIndex++);
-                        initialState->setIntegerValue(integerVariable.getName(), integerVariable.getInitialValueExpression().evaluateAsInt());
+                        initialState->addIntegerIdentifier(integerVariable.getName(), integerVariable.getInitialValueExpression().evaluateAsInt());
                     }
                 }
         

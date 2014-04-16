@@ -157,11 +157,11 @@ namespace storm {
             transitionRewardDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expression > qi::lit(":") > plusExpression > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_a, qi::_2, qi::_3)];
             transitionRewardDefinition.name("transition reward definition");
             
-            rewardModelDefinition = (qi::lit("rewards") > qi::lit("\"") > identifier > qi::lit("\"")
-                                     > +(   stateRewardDefinition[phoenix::push_back(qi::_a, qi::_1)]
-                                         |   transitionRewardDefinition[phoenix::push_back(qi::_b, qi::_1)]
+            rewardModelDefinition = (qi::lit("rewards") > -(qi::lit("\"") > identifier[qi::_a = qi::_1] > qi::lit("\""))
+                                     > +(   stateRewardDefinition[phoenix::push_back(qi::_b, qi::_1)]
+                                         |   transitionRewardDefinition[phoenix::push_back(qi::_c, qi::_1)]
                                          )
-                                     >> qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_1, qi::_a, qi::_b)];
+                                     >> qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
             rewardModelDefinition.name("reward model definition");
             
             initialStatesConstruct = (qi::lit("init") > expression > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesExpression, phoenix::ref(*this), qi::_1, qi::_r1)];

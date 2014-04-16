@@ -225,7 +225,7 @@ namespace storm {
             qi::rule<Iterator, storm::prism::Assignment(), Skipper> assignmentDefinition;
             
             // Rules for reward definitions.
-            qi::rule<Iterator, storm::prism::RewardModel(), qi::locals<std::vector<storm::prism::StateReward>, std::vector<storm::prism::TransitionReward>>, Skipper> rewardModelDefinition;
+            qi::rule<Iterator, storm::prism::RewardModel(), qi::locals<std::string, std::vector<storm::prism::StateReward>, std::vector<storm::prism::TransitionReward>>, Skipper> rewardModelDefinition;
             qi::rule<Iterator, storm::prism::StateReward(), Skipper> stateRewardDefinition;
             qi::rule<Iterator, storm::prism::TransitionReward(), qi::locals<std::string>, Skipper> transitionRewardDefinition;
             

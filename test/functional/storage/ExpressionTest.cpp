@@ -359,25 +359,25 @@ TEST(Expression, SimpleEvaluationTest) {
     
     ASSERT_NO_THROW(tempExpression = (intVarExpression < threeExpression || boolVarExpression) && boolConstExpression);
     
-    ASSERT_NO_THROW(storm::expressions::SimpleValuation valuation(2, 2, 2));
-    storm::expressions::SimpleValuation valuation(2, 2, 2);
-    ASSERT_NO_THROW(valuation.setIdentifierIndex("x", 0));
-    ASSERT_NO_THROW(valuation.setIdentifierIndex("a", 1));
-    ASSERT_NO_THROW(valuation.setIdentifierIndex("y", 0));
-    ASSERT_NO_THROW(valuation.setIdentifierIndex("b", 1));
-    ASSERT_NO_THROW(valuation.setIdentifierIndex("z", 0));
-    ASSERT_NO_THROW(valuation.setIdentifierIndex("c", 1));
+    ASSERT_NO_THROW(storm::expressions::SimpleValuation valuation);
+    storm::expressions::SimpleValuation valuation;
+    ASSERT_NO_THROW(valuation.addBooleanIdentifier("x"));
+    ASSERT_NO_THROW(valuation.addBooleanIdentifier("a"));
+    ASSERT_NO_THROW(valuation.addIntegerIdentifier("y"));
+    ASSERT_NO_THROW(valuation.addIntegerIdentifier("b"));
+    ASSERT_NO_THROW(valuation.addDoubleIdentifier("z"));
+    ASSERT_NO_THROW(valuation.addDoubleIdentifier("c"));
     
-    ASSERT_THROW(tempExpression.evaluateAsDouble(valuation), storm::exceptions::InvalidTypeException);
-    ASSERT_THROW(tempExpression.evaluateAsInt(valuation), storm::exceptions::InvalidTypeException);
-    EXPECT_FALSE(tempExpression.evaluateAsBool(valuation));
+    ASSERT_THROW(tempExpression.evaluateAsDouble(&valuation), storm::exceptions::InvalidTypeException);
+    ASSERT_THROW(tempExpression.evaluateAsInt(&valuation), storm::exceptions::InvalidTypeException);
+    EXPECT_FALSE(tempExpression.evaluateAsBool(&valuation));
     ASSERT_NO_THROW(valuation.setBooleanValue("a", true));
-    EXPECT_TRUE(tempExpression.evaluateAsBool(valuation));
+    EXPECT_TRUE(tempExpression.evaluateAsBool(&valuation));
     ASSERT_NO_THROW(valuation.setIntegerValue("y", 3));
-    EXPECT_FALSE(tempExpression.evaluateAsBool(valuation));
+    EXPECT_FALSE(tempExpression.evaluateAsBool(&valuation));
     
     ASSERT_NO_THROW(tempExpression = ((intVarExpression < threeExpression).ite(trueExpression, falseExpression)));
-    ASSERT_THROW(tempExpression.evaluateAsDouble(valuation), storm::exceptions::InvalidTypeException);
-    ASSERT_THROW(tempExpression.evaluateAsInt(valuation), storm::exceptions::InvalidTypeException);
-    EXPECT_FALSE(tempExpression.evaluateAsBool(valuation));
+    ASSERT_THROW(tempExpression.evaluateAsDouble(&valuation), storm::exceptions::InvalidTypeException);
+    ASSERT_THROW(tempExpression.evaluateAsInt(&valuation), storm::exceptions::InvalidTypeException);
+    EXPECT_FALSE(tempExpression.evaluateAsBool(&valuation));
 }

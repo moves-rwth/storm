@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_PRISM_CONSTANT_H_
 #define STORM_STORAGE_PRISM_CONSTANT_H_
 
+#include <map>
+
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
 
@@ -64,6 +66,14 @@ namespace storm {
              * @return The expression that defines the constant.
              */
             storm::expressions::Expression const& getExpression() const;
+            
+            /*!
+             * Substitutes all identifiers in the constant according to the given map.
+             *
+             * @param substitution The substitution to perform.
+             * @return The resulting constant.
+             */
+            Constant substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Constant const& constant);
             

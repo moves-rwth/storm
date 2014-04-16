@@ -46,7 +46,7 @@ namespace storm {
         void BinaryRelationExpression::printToStream(std::ostream& stream) const {
             stream << "(" << *this->getFirstOperand();
             switch (this->getRelationType()) {
-                case RelationType::Equal: stream << " == "; break;
+                case RelationType::Equal: stream << " = "; break;
                 case RelationType::NotEqual: stream << " != "; break;
                 case RelationType::Greater: stream << " > "; break;
                 case RelationType::GreaterOrEqual: stream << " >= "; break;

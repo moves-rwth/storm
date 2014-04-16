@@ -4,63 +4,79 @@
 
 namespace storm {
     namespace expressions {
-        SimpleValuation::SimpleValuation(std::size_t booleanVariableCount, std::size_t integerVariableCount, std::size_t doubleVariableCount) : identifierToIndexMap(new std::unordered_map<std::string, uint_fast64_t>), booleanValues(booleanVariableCount), integerValues(integerVariableCount), doubleValues(doubleVariableCount) {
-            // Intentionally left empty.
-        }
-        
-        SimpleValuation::SimpleValuation(std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> identifierToIndexMap, std::vector<bool> booleanValues, std::vector<int_fast64_t> integerValues, std::vector<double> doubleValues) : identifierToIndexMap(identifierToIndexMap), booleanValues(booleanValues), integerValues(integerValues), doubleValues(doubleValues) {
+        SimpleValuation::SimpleValuation() : booleanIdentifierToIndexMap(new std::unordered_map<std::string, uint_fast64_t>()), integerIdentifierToIndexMap(new std::unordered_map<std::string, uint_fast64_t>()), doubleIdentifierToIndexMap(new std::unordered_map<std::string, uint_fast64_t>()), booleanValues(), integerValues(), doubleValues() {
             // Intentionally left empty.
         }
         
         bool SimpleValuation::operator==(SimpleValuation const& other) const {
-            return this->identifierToIndexMap.get() == other.identifierToIndexMap.get() && this->booleanValues == other.booleanValues && this->integerValues == other.integerValues && this->doubleValues == other.doubleValues;
+            return this->booleanIdentifierToIndexMap.get() == other.booleanIdentifierToIndexMap.get() && this->integerIdentifierToIndexMap.get() == other.integerIdentifierToIndexMap.get() && this->doubleIdentifierToIndexMap.get() == other.doubleIdentifierToIndexMap.get() && this->booleanValues == other.booleanValues && this->integerValues == other.integerValues && this->doubleValues == other.doubleValues;
         }
-
-        void SimpleValuation::setIdentifierIndex(std::string const& name, uint_fast64_t index) {
-            (*this->identifierToIndexMap)[name] = index;
+        
+        void SimpleValuation::addBooleanIdentifier(std::string const& name, bool initialValue) {
+            this->booleanIdentifierToIndexMap->emplace(name, this->booleanValues.size());
+            this->booleanValues.push_back(false);
+        }
+        
+        void SimpleValuation::addIntegerIdentifier(std::string const& name, int_fast64_t initialValue) {
+            this->integerIdentifierToIndexMap->emplace(name, this->integerValues.size());
+            this->integerValues.push_back(initialValue);
+        }
+        
+        void SimpleValuation::addDoubleIdentifier(std::string const& name, double initialValue) {
+            this->doubleIdentifierToIndexMap->emplace(name, this->doubleValues.size());
+            this->doubleValues.push_back(initialValue);
         }
         
         void SimpleValuation::setBooleanValue(std::string const& name, bool value) {
-            this->booleanValues[this->identifierToIndexMap->at(name)] = value;
+            this->booleanValues[this->booleanIdentifierToIndexMap->at(name)] = value;
         }
         
         void SimpleValuation::setIntegerValue(std::string const& name, int_fast64_t value) {
-            this->integerValues[this->identifierToIndexMap->at(name)] = value;
+            this->integerValues[this->integerIdentifierToIndexMap->at(name)] = value;
         }
         
         void SimpleValuation::setDoubleValue(std::string const& name, double value) {
-            this->doubleValues[this->identifierToIndexMap->at(name)] = value;
+            this->doubleValues[this->doubleIdentifierToIndexMap->at(name)] = value;
         }
         
         bool SimpleValuation::getBooleanValue(std::string const& name) const {
-            auto const& nameIndexPair = this->identifierToIndexMap->find(name);
+            auto const& nameIndexPair = this->booleanIdentifierToIndexMap->find(name);
             return this->booleanValues[nameIndexPair->second];
         }
         
         int_fast64_t SimpleValuation::getIntegerValue(std::string const& name) const {
-            auto const& nameIndexPair = this->identifierToIndexMap->find(name);
+            auto const& nameIndexPair = this->integerIdentifierToIndexMap->find(name);
             return this->integerValues[nameIndexPair->second];
         }
         
         double SimpleValuation::getDoubleValue(std::string const& name) const {
-            auto const& nameIndexPair = this->identifierToIndexMap->find(name);
+            auto const& nameIndexPair = this->doubleIdentifierToIndexMap->find(name);
             return this->doubleValues[nameIndexPair->second];
         }
         
         std::ostream& operator<<(std::ostream& stream, SimpleValuation const& valuation) {
-            stream << "valuation { bool[";
-            for (uint_fast64_t i = 0; i < valuation.booleanValues.size() - 1; ++i) {
-                stream << valuation.booleanValues[i] << ", ";
+            stream << "valuation { bool [";
+            if (!valuation.booleanValues.empty()) {
+                for (uint_fast64_t i = 0; i < valuation.booleanValues.size() - 1; ++i) {
+                    stream << valuation.booleanValues[i] << ", ";
+                }
+                stream << valuation.booleanValues.back();
             }
-            stream << valuation.booleanValues.back() << "] ints[";
-            for (uint_fast64_t i = 0; i < valuation.integerValues.size() - 1; ++i) {
-                stream << valuation.integerValues[i] << ", ";
+            stream << "] int [";
+            if (!valuation.integerValues.empty()) {
+                for (uint_fast64_t i = 0; i < valuation.integerValues.size() - 1; ++i) {
+                    stream << valuation.integerValues[i] << ", ";
+                }
+                stream << valuation.integerValues.back();
             }
-            stream << valuation.integerValues.back() << "] double[";
-            for (uint_fast64_t i = 0; i < valuation.doubleValues.size() - 1; ++i) {
-                stream << valuation.doubleValues[i] << ", ";
+            stream << "] double [";
+            if (!valuation.doubleValues.empty()) {
+                for (uint_fast64_t i = 0; i < valuation.doubleValues.size() - 1; ++i) {
+                    stream << valuation.doubleValues[i] << ", ";
+                }
+                stream << valuation.doubleValues.back();
             }
-            stream << valuation.doubleValues.back() << "] }";
+            stream << "] }";
             
             return stream;
         }
