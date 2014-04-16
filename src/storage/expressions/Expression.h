@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -21,8 +22,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             Expression(Expression const& other) = default;
             Expression& operator=(Expression const& other) = default;
+#ifndef WINDOWS
             Expression(Expression&&) = default;
             Expression& operator=(Expression&&) = default;
+#endif
             
             // Static factory methods to create atomic expression parts.
             static Expression createBooleanLiteral(bool value);

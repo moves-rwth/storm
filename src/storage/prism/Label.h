@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -25,8 +26,10 @@ namespace storm {
             Label() = default;
             Label(Label const& other) = default;
             Label& operator=(Label const& other)= default;
+#ifndef WINDOWS
             Label(Label&& other) = default;
             Label& operator=(Label&& other) = default;
+#endif
             
             /*!
              * Retrieves the name that is associated with this label.

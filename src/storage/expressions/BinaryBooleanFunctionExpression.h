@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_BINARYBOOLEANFUNCTIONEXPRESSION_H_
 
 #include "src/storage/expressions/BinaryExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -25,8 +26,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             BinaryBooleanFunctionExpression(BinaryBooleanFunctionExpression const& other) = default;
             BinaryBooleanFunctionExpression& operator=(BinaryBooleanFunctionExpression const& other) = default;
+#ifndef WINDOWS
             BinaryBooleanFunctionExpression(BinaryBooleanFunctionExpression&&) = default;
             BinaryBooleanFunctionExpression& operator=(BinaryBooleanFunctionExpression&&) = default;
+#endif
             virtual ~BinaryBooleanFunctionExpression() = default;
             
             // Override base class methods.

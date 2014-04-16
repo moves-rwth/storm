@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_VARIABLEEXPRESSION_H_
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -17,9 +18,11 @@ namespace storm {
             
             // Instantiate constructors and assignments with their default implementations.
             VariableExpression(VariableExpression const&) = default;
-            VariableExpression(VariableExpression&&) = default;
             VariableExpression& operator=(VariableExpression const&) = default;
+#ifndef WINDOWS
+            VariableExpression(VariableExpression&&) = default;
             VariableExpression& operator=(VariableExpression&&) = default;
+#endif
             virtual ~VariableExpression() = default;
 
             // Override base class methods.

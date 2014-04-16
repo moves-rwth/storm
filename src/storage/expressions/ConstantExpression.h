@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_CONSTANTEXPRESSION_H_
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -18,8 +19,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             ConstantExpression(ConstantExpression const& other) = default;
             ConstantExpression& operator=(ConstantExpression const& other) = default;
+#ifndef WINDOWS
             ConstantExpression(ConstantExpression&&) = default;
             ConstantExpression& operator=(ConstantExpression&&) = default;
+#endif
             virtual ~ConstantExpression() = default;
             
             // Override base class methods.

@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_UNARYNUMERICALFUNCTIONEXPRESSION_H_
 
 #include "src/storage/expressions/UnaryExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -24,8 +25,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             UnaryNumericalFunctionExpression(UnaryNumericalFunctionExpression const& other) = default;
             UnaryNumericalFunctionExpression& operator=(UnaryNumericalFunctionExpression const& other) = default;
+#ifndef WINDOWS
             UnaryNumericalFunctionExpression(UnaryNumericalFunctionExpression&&) = default;
             UnaryNumericalFunctionExpression& operator=(UnaryNumericalFunctionExpression&&) = default;
+#endif
             virtual ~UnaryNumericalFunctionExpression() = default;
             
             // Override base class methods.

@@ -7,6 +7,7 @@
 
 #include "src/storage/prism/StateReward.h"
 #include "src/storage/prism/TransitionReward.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -27,8 +28,10 @@ namespace storm {
             RewardModel() = default;
             RewardModel(RewardModel const& other) = default;
             RewardModel& operator=(RewardModel const& other)= default;
+#ifndef WINDOWS
             RewardModel(RewardModel&& other) = default;
             RewardModel& operator=(RewardModel&& other) = default;
+#endif
             
             /*!
              * Retrieves the name of the reward model.

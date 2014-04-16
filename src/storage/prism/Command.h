@@ -7,6 +7,7 @@
 
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/prism/Update.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -28,8 +29,10 @@ namespace storm {
             Command() = default;
             Command(Command const& other) = default;
             Command& operator=(Command const& other)= default;
+#ifndef WINDOWS
             Command(Command&& other) = default;
             Command& operator=(Command&& other) = default;
+#endif
             
             /*!
              * Retrieves the action name of this command.

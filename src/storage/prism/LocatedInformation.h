@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "src/utility/OsDetection.h"
+
 namespace storm {
     namespace prism {
         class LocatedInformation {
@@ -19,8 +21,10 @@ namespace storm {
             LocatedInformation() = default;
             LocatedInformation(LocatedInformation const& other) = default;
             LocatedInformation& operator=(LocatedInformation const& other)= default;
+#ifndef WINDOWS
             LocatedInformation(LocatedInformation&& other) = default;
             LocatedInformation& operator=(LocatedInformation&& other) = default;
+#endif
             
             /*!
              * Retrieves the name of the file in which the information was found.

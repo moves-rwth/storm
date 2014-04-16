@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -35,8 +36,10 @@ namespace storm {
             Constant() = default;
             Constant(Constant const& other) = default;
             Constant& operator=(Constant const& other)= default;
+#ifndef WINDOWS
             Constant(Constant&& other) = default;
             Constant& operator=(Constant&& other) = default;
+#endif
             
             /*!
              * Retrieves the name of the constant.

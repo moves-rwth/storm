@@ -12,6 +12,7 @@
 #include "src/storage/prism/Label.h"
 #include "src/storage/prism/Module.h"
 #include "src/storage/prism/RewardModel.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -48,8 +49,10 @@ namespace storm {
             Program() = default;
             Program(Program const& other) = default;
             Program& operator=(Program const& other) = default;
+#ifndef WINDOWS
             Program(Program&& other) = default;
             Program& operator=(Program&& other) = default;
+#endif
             
             /*!
              * Retrieves the model type of the model.

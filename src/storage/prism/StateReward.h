@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -25,8 +26,10 @@ namespace storm {
             StateReward() = default;
             StateReward(StateReward const& other) = default;
             StateReward& operator=(StateReward const& other)= default;
+#ifndef WINDOWS
             StateReward(StateReward&& other) = default;
             StateReward& operator=(StateReward&& other) = default;
+#endif
             
             /*!
              * Retrieves the state predicate that is associated with this state reward.

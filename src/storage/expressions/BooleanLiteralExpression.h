@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_BOOLEANLITERALEXPRESSION_H_
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -17,8 +18,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             BooleanLiteralExpression(BooleanLiteralExpression const& other) = default;
             BooleanLiteralExpression& operator=(BooleanLiteralExpression const& other) = default;
+#ifndef WINDOWS
             BooleanLiteralExpression(BooleanLiteralExpression&&) = default;
             BooleanLiteralExpression& operator=(BooleanLiteralExpression&&) = default;
+#endif
             virtual ~BooleanLiteralExpression() = default;
 
             // Override base class methods.

@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_DOUBLELITERALEXPRESSION_H_
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -17,8 +18,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             DoubleLiteralExpression(DoubleLiteralExpression const& other) = default;
             DoubleLiteralExpression& operator=(DoubleLiteralExpression const& other) = default;
+#ifndef WINDOWS
             DoubleLiteralExpression(DoubleLiteralExpression&&) = default;
             DoubleLiteralExpression& operator=(DoubleLiteralExpression&&) = default;
+#endif
             virtual ~DoubleLiteralExpression() = default;
             
             // Override base class methods.

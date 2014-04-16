@@ -9,6 +9,7 @@
 #include "src/storage/expressions/Valuation.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -33,9 +34,11 @@ namespace storm {
             
             // Create default versions of constructors and assignments.
             BaseExpression(BaseExpression const&) = default;
-            BaseExpression(BaseExpression&&) = default;
             BaseExpression& operator=(BaseExpression const&) = default;
+#ifndef WINDOWS
+            BaseExpression(BaseExpression&&) = default;
             BaseExpression& operator=(BaseExpression&&) = default;
+#endif
             
             // Make the destructor virtual (to allow destruction via base class pointer) and default it.
             virtual ~BaseExpression() = default;

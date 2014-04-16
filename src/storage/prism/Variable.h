@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -13,8 +14,10 @@ namespace storm {
             // Create default implementations of constructors/assignment.
             Variable(Variable const& otherVariable) = default;
             Variable& operator=(Variable const& otherVariable)= default;
+#ifndef WINDOWS
             Variable(Variable&& otherVariable) = default;
             Variable& operator=(Variable&& otherVariable) = default;
+#endif
             
             /*!
              * Retrieves the name of the variable.

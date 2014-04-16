@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_BOOLEANCONSTANTEXPRESSION_H_
 
 #include "src/storage/expressions/ConstantExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -17,8 +18,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             BooleanConstantExpression(BooleanConstantExpression const& other) = default;
             BooleanConstantExpression& operator=(BooleanConstantExpression const& other) = default;
+#ifndef WINDOWS
             BooleanConstantExpression(BooleanConstantExpression&&) = default;
             BooleanConstantExpression& operator=(BooleanConstantExpression&&) = default;
+#endif
             virtual ~BooleanConstantExpression() = default;
             
             // Override base class methods.

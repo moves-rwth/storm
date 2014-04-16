@@ -4,6 +4,7 @@
 #include <map>
 
 #include "src/storage/prism/Variable.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -13,8 +14,10 @@ namespace storm {
             IntegerVariable() = default;
             IntegerVariable(IntegerVariable const& other) = default;
             IntegerVariable& operator=(IntegerVariable const& other)= default;
+#ifndef WINDOWS
             IntegerVariable(IntegerVariable&& other) = default;
             IntegerVariable& operator=(IntegerVariable&& other) = default;
+#endif
 
             /*!
              * Creates an integer variable with the given name and a default initial value.

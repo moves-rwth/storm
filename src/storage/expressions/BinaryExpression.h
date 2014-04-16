@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_BINARYEXPRESSION_H_
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -22,8 +23,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             BinaryExpression(BinaryExpression const& other) = default;
             BinaryExpression& operator=(BinaryExpression const& other) = default;
+#ifndef WINDOWS
             BinaryExpression(BinaryExpression&&) = default;
             BinaryExpression& operator=(BinaryExpression&&) = default;
+#endif
             virtual ~BinaryExpression() = default;
 
             // Override base class methods.

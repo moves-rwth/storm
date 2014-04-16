@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_INTEGERCONSTANTEXPRESSION_H_
 
 #include "src/storage/expressions/ConstantExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -17,8 +18,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             IntegerConstantExpression(IntegerConstantExpression const& other) = default;
             IntegerConstantExpression& operator=(IntegerConstantExpression const& other) = default;
+#ifndef WINDOWS
             IntegerConstantExpression(IntegerConstantExpression&&) = default;
             IntegerConstantExpression& operator=(IntegerConstantExpression&&) = default;
+#endif
             virtual ~IntegerConstantExpression() = default;
             
             // Override base class methods.

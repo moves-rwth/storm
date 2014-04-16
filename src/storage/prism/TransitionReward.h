@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -27,8 +28,10 @@ namespace storm {
             TransitionReward() = default;
             TransitionReward(TransitionReward const& other) = default;
             TransitionReward& operator=(TransitionReward const& other)= default;
+#ifndef WINDOWS
             TransitionReward(TransitionReward&& other) = default;
             TransitionReward& operator=(TransitionReward&& other) = default;
+#endif
             
             /*!
              * Retrieves the action name that is associated with this transition reward.

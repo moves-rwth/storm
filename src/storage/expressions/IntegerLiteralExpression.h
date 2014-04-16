@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_INTEGERLITERALEXPRESSION_H_
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -17,8 +18,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             IntegerLiteralExpression(IntegerLiteralExpression const& other) = default;
             IntegerLiteralExpression& operator=(IntegerLiteralExpression const& other) = default;
+#ifndef
             IntegerLiteralExpression(IntegerLiteralExpression&&) = default;
             IntegerLiteralExpression& operator=(IntegerLiteralExpression&&) = default;
+#endif
             virtual ~IntegerLiteralExpression() = default;
             
             // Override base class methods.

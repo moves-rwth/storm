@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/prism/Assignment.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -25,8 +26,10 @@ namespace storm {
             Update() = default;
             Update(Update const& other) = default;
             Update& operator=(Update const& other)= default;
+#ifndef WINDOWS
             Update(Update&& other) = default;
             Update& operator=(Update&& other) = default;
+#endif
             
             /*!
              * Retrieves the expression for the likelihood of this update.

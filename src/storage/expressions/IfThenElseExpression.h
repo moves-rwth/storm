@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_IFTHENELSEEXPRESSION_H_
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -19,8 +20,10 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             IfThenElseExpression(IfThenElseExpression const& other) = default;
             IfThenElseExpression& operator=(IfThenElseExpression const& other) = default;
+#ifndef WINDOWS
             IfThenElseExpression(IfThenElseExpression&&) = default;
             IfThenElseExpression& operator=(IfThenElseExpression&&) = default;
+#endif
             virtual ~IfThenElseExpression() = default;
             
             // Override base class methods.

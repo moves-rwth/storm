@@ -11,6 +11,7 @@
 #include "src/storage/prism/IntegerVariable.h"
 #include "src/storage/prism/Command.h"
 #include "src/storage/expressions/VariableExpression.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -32,8 +33,10 @@ namespace storm {
             Module() = default;
             Module(Module const& other) = default;
             Module& operator=(Module const& other)= default;
+#ifndef WINDOWS
             Module(Module&& other) = default;
             Module& operator=(Module&& other) = default;
+#endif
             
             /*!
              * Retrieves the number of boolean variables in the module.

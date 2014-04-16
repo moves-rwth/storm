@@ -4,6 +4,7 @@
 #include <map>
 
 #include "src/storage/prism/Variable.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {
@@ -13,8 +14,10 @@ namespace storm {
             BooleanVariable() = default;
             BooleanVariable(BooleanVariable const& other) = default;
             BooleanVariable& operator=(BooleanVariable const& other)= default;
+#ifndef WINDOWS
             BooleanVariable(BooleanVariable&& other) = default;
             BooleanVariable& operator=(BooleanVariable&& other) = default;
+#endif
 
             /*!
              * Creates a boolean variable with the given name and the default initial value expression.
