@@ -132,6 +132,13 @@ namespace storm {
             
         private:
             /*!
+             * Retrieves a list of names of the DD variables in the order of their index.
+             *
+             * @return A list of DD variable names.
+             */
+            std::vector<std::string> getDdVariableNames() const;
+            
+            /*!
              * Retrieves the underlying CUDD manager.
              *
              * @return The underlying CUDD manager.

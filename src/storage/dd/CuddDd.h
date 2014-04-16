@@ -89,6 +89,13 @@ namespace storm {
             Dd<DdType::CUDD> operator-(Dd<DdType::CUDD> const& other) const;
             
             /*!
+             * Subtracts the DD from the constant zero function.
+             *
+             * @return The resulting function represented as a DD.
+             */
+            Dd<DdType::CUDD> operator-() const;
+            
+            /*!
              * Subtracts the given DD from the current one and assigns the result to the current DD.
              *
              * @param other The DD to subtract from the current one.
@@ -113,19 +120,19 @@ namespace storm {
             Dd<DdType::CUDD>& operator/=(Dd<DdType::CUDD> const& other);
             
             /*!
-             * Subtracts the DD from the constant zero function.
-             *
-             * @return The resulting function represented as a DD.
-             */
-            Dd<DdType::CUDD> minus() const;
-            
-            /*!
              * Retrieves the logical complement of the current DD. The result will map all encodings with a value
              * unequal to zero to false and all others to true.
              *
              * @return The logical complement of the current DD.
              */
             Dd<DdType::CUDD> operator~() const;
+
+            /*!
+             * Performs a logical or of the current and the given DD.
+             *
+             * @return The logical or of the operands.
+             */
+            Dd<DdType::CUDD> logicalOr(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Logically complements the current DD. The result will map all encodings with a value
@@ -232,7 +239,7 @@ namespace storm {
              * matrix multiplication.
              * @return A DD representing the result of the matrix-matrix multiplication.
              */
-            Dd<DdType::CUDD> multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames);
+            Dd<DdType::CUDD> multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames) const;
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.

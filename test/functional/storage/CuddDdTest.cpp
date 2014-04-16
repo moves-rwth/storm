@@ -150,6 +150,9 @@ TEST(CuddDd, OperatorTest) {
     
     dd1 = ~dd3;
     EXPECT_TRUE(dd1 == manager->getOne());
+
+    dd3 = dd1.logicalOr(dd2);
+    EXPECT_TRUE(dd3 == manager->getOne());
     
     dd1 = manager->getIdentity("x");
     dd2 = manager->getConstant(5);
@@ -253,7 +256,6 @@ TEST(CuddDd, GetSetValueTest) {
     storm::dd::Dd<storm::dd::DdType::CUDD> dd1 = manager->getOne();
     ASSERT_NO_THROW(dd1.setValue("x", 4, 2));
     EXPECT_EQ(2, dd1.getLeafCount());
-    dd1.exportToDot("dd1.dot");
     
     std::map<std::string, int_fast64_t> metaVariableToValueMap;
     metaVariableToValueMap.emplace("x", 1);
