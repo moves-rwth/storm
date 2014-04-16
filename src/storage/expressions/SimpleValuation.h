@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "src/storage/expressions/Valuation.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
@@ -23,8 +24,10 @@ namespace storm {
             // Instantiate some constructors and assignments with their default implementations.
             SimpleValuation(SimpleValuation const&) = default;
             SimpleValuation& operator=(SimpleValuation const&) = default;
-            SimpleValuation(SimpleValuation&&) = default;
+#ifndef WINDOWS            
+			SimpleValuation(SimpleValuation&&) = default;
             SimpleValuation& operator=(SimpleValuation&&) = default;
+#endif
             virtual ~SimpleValuation() = default;
 
             /*!

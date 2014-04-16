@@ -85,7 +85,7 @@ namespace storm {
                 }
             };
             
-            struct keywordsStruct : qi::symbols<char, bool> {
+            struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
                 keywordsStruct() {
                     add
                     ("dtmc", 1)

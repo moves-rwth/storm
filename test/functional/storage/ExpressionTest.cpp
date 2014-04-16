@@ -1,4 +1,5 @@
 #include <map>
+#include <string>
 
 #include "gtest/gtest.h"
 #include "src/storage/expressions/Expression.h"
