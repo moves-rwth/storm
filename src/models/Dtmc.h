@@ -314,7 +314,7 @@ private:
 				LOG4CPLUS_ERROR(logger, "Row " << row << " is a deadlock (sum == " <<  sum << ").");
 				return false;
 			}
-			if (storm::utility::isOne(sum)) {
+			if (!storm::utility::isOne(sum)) {
 				LOG4CPLUS_ERROR(logger, "Row " << row << " has sum " << sum << ".");
 				return false;
 			}

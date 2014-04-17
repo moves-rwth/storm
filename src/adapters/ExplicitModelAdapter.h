@@ -369,7 +369,7 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        LOG_THROW(!storm::utility::isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "'.");
+                        LOG_THROW(storm::utility::isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (sum = " << probabilitySum << ").");
                     }
                 }
                 
@@ -477,7 +477,7 @@ namespace storm {
                             // Check that the resulting distribution is in fact a distribution.
                             if (!storm::utility::isOne(probabilitySum)) {
                                 LOG4CPLUS_ERROR(logger, "Sum of update probabilities do not some to one for some command.");
-                                throw storm::exceptions::WrongFormatException() << "Sum of update probabilities do not some to one for some command.";
+                                throw storm::exceptions::WrongFormatException() << "Sum of update probabilities do sum to " << probabilitySum << " to one for some command.";
                             }
                             
                             // Dispose of the temporary maps.

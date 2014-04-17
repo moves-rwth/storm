@@ -206,7 +206,7 @@ inline storm::storage::LabeledValues<double> constantInfinity() {
 template<typename T>
 inline bool isOne(T sum)
 {
-	return (sum-T(1)).isZero();
+	return sum == T(1);
 }
 
 template<>

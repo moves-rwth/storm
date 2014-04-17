@@ -10,6 +10,11 @@
 
 #include "ExpressionVisitor.h"
 #include "BaseExpression.h"
+#include "IfThenElseExpression.h"
+#include "DoubleConstantExpression.h"
+#include "DoubleLiteralExpression.h"
+
+#include "src/storage/parameters.h"
 
 namespace storm {
 namespace expressions {
@@ -18,6 +23,12 @@ namespace expressions {
 	struct StateType
 	{
 		typedef int type;
+	};
+	
+	template<>
+	struct StateType<Polynomial>
+	{
+		typedef carl::Variable type;
 	};
 		
 	template<typename T, typename S>
@@ -30,19 +41,62 @@ namespace expressions {
 				
 			}
 			
-			virtual void visit(IfThenElseExpression const* expression) = 0;
-            virtual void visit(BinaryBooleanFunctionExpression const* expression) = 0;
-            virtual void visit(BinaryNumericalFunctionExpression const* expression) = 0;
-            virtual void visit(BinaryRelationExpression const* expression) = 0;
-            virtual void visit(BooleanConstantExpression const* expression) = 0;
-            virtual void visit(DoubleConstantExpression const* expression) = 0;
-            virtual void visit(IntegerConstantExpression const* expression) = 0;
-            virtual void visit(VariableExpression const* expression) = 0;
-            virtual void visit(UnaryBooleanFunctionExpression const* expression) = 0;
-            virtual void visit(UnaryNumericalFunctionExpression const* expression) = 0;
-            virtual void visit(BooleanLiteralExpression const* expression) = 0;
-            virtual void visit(IntegerLiteralExpression const* expression) = 0;
-            virtual void visit(DoubleLiteralExpression const* expression) = 0;
+			virtual ~ExpressionEvaluationVisitor() {}
+			
+			virtual void visit(IfThenElseExpression const* expression) 
+			{
+				bool condititionValue = expression->getCondition()->evaluateAsBool();
+				
+			}
+		
+            virtual void visit(BinaryBooleanFunctionExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(BinaryNumericalFunctionExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(BinaryRelationExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(BooleanConstantExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(DoubleConstantExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(IntegerConstantExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(VariableExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(UnaryBooleanFunctionExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(UnaryNumericalFunctionExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(BooleanLiteralExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(IntegerLiteralExpression const* expression) 
+			{
+				
+			}
+            virtual void visit(DoubleLiteralExpression const* expression) 
+			{
+				
+			}
 
 		const T& value() const
 		{
@@ -64,11 +118,11 @@ namespace expressions {
 		}
 		
 		
-		T evaluate(Expression const& expr, storm::expressions::SimpleValuation const*)
+		T evaluate(Expression const& expr, storm::expressions::SimpleValuation const* val)
 		{
 			ExpressionEvaluationVisitor<T, typename StateType<T>::type>*  visitor = new ExpressionEvaluationVisitor<T, typename StateType<T>::type>(&mState);
-			expr.getBaseExpression().accept(visitor);
-			T result =  visitor->value();
+			//expr.getBaseExpression().accept(visitor);
+			T result = T(mpq_class(expr.evaluateAsDouble(val)));
 			delete visitor;
 			return result;
 		}

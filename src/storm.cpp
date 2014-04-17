@@ -59,7 +59,7 @@ log4cplus::Logger logger;
 #include "src/parser/PrismParser.h"
 #include "src/adapters/ExplicitModelAdapter.h"
 // #include "src/adapters/SymbolicModelAdapter.h"
-
+#include "stormParametric.h"
 #include "src/exceptions/InvalidSettingsException.h"
 
 // Includes for the linked libraries and versions header
@@ -535,73 +535,85 @@ int main(const int argc, const char* argv[]) {
             std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
             std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
             storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
-            std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
-            model->printModelInformationToStream(std::cout);
             
-            if (s->isSet("mincmd")) {
-                if (model->getType() != storm::models::MDP) {
-                    LOG4CPLUS_ERROR(logger, "Minimal command counterexample generation is only supported for models of type MDP.");
-                    throw storm::exceptions::InternalTypeErrorException() << "Minimal command counterexample generation is only supported for models of type MDP.";
-                }
-                
-                std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
-                
-                // Determine whether we are required to use the MILP-version or the SAT-version.
-                bool useMILP = s->getOptionByLongName("mincmd").getArgumentByName("method").getValueAsString() == "milp";
-                
-                // Now parse the property file and receive the list of parsed formulas.
-                std::string const& propertyFile = s->getOptionByLongName("mincmd").getArgumentByName("propertyFile").getValueAsString();
-                std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(propertyFile);
+            if(s->isSet("parameters"))
+            {
+                storm::storm_parametric(constants, program);
+            }
+            else
+            {
+                std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
+                model->printModelInformationToStream(std::cout);
 
-                // Now generate the counterexamples for each formula.
-                for (storm::property::prctl::AbstractPrctlFormula<double>* formulaPtr : formulaList) {
-                    if (useMILP) {
-                        storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr);
-                    } else {
-                        // storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
+                if (s->isSet("mincmd")) {
+                    if (model->getType() != storm::models::MDP) {
+                        LOG4CPLUS_ERROR(logger, "Minimal command counterexample generation is only supported for models of type MDP.");
+                        throw storm::exceptions::InternalTypeErrorException() << "Minimal command counterexample generation is only supported for models of type MDP.";
                     }
-                    
-                    // Once we are done with the formula, delete it.
-                    delete formulaPtr;
+
+                    std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
+
+                    // Determine whether we are required to use the MILP-version or the SAT-version.
+                    bool useMILP = s->getOptionByLongName("mincmd").getArgumentByName("method").getValueAsString() == "milp";
+
+                    // Now parse the property file and receive the list of parsed formulas.
+                    std::string const& propertyFile = s->getOptionByLongName("mincmd").getArgumentByName("propertyFile").getValueAsString();
+                    std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(propertyFile);
+
+                    // Now generate the counterexamples for each formula.
+                    for (storm::property::prctl::AbstractPrctlFormula<double>* formulaPtr : formulaList) {
+                        if (useMILP) {
+                            storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr);
+                        } else {
+                            // storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
+                        }
+
+                        // Once we are done with the formula, delete it.
+                        delete formulaPtr;
+                    }
+                } else if (s->isSet("prctl")) {
+                    // Determine which engine is to be used to choose the right model checker.
+                    LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
+
+                    // Depending on the model type, the appropriate model checking procedure is chosen.
+                    storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
+
+                    switch (model->getType()) {
+                        case storm::models::DTMC:
+                            LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+                            modelchecker = createPrctlModelChecker(*model->as<storm::models::Dtmc<double>>());
+                            checkPrctlFormulae(*modelchecker);
+                            break;
+                        case storm::models::MDP:
+                            LOG4CPLUS_INFO(logger, "Model is an MDP.");
+                            modelchecker = createPrctlModelChecker(*model->as<storm::models::Mdp<double>>());
+                            checkPrctlFormulae(*modelchecker);
+                            break;
+                        case storm::models::CTMC:
+                            LOG4CPLUS_INFO(logger, "Model is a CTMC.");
+                            LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+                            break;
+                        case storm::models::CTMDP:
+                            LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
+                            LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+                            break;
+                        case storm::models::MA:
+                            LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
+                            break;
+                        case storm::models::Unknown:
+                        default:
+                            LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
+                            break;
+                    }
+
+                    if (modelchecker != nullptr) {
+                        delete modelchecker;
+                    }
                 }
-            } else if (s->isSet("prctl")) {
-                // Determine which engine is to be used to choose the right model checker.
-				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
-                
-				// Depending on the model type, the appropriate model checking procedure is chosen.
-				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
-                
-				switch (model->getType()) {
-                    case storm::models::DTMC:
-                        LOG4CPLUS_INFO(logger, "Model is a DTMC.");
-                        modelchecker = createPrctlModelChecker(*model->as<storm::models::Dtmc<double>>());
-                        checkPrctlFormulae(*modelchecker);
-                        break;
-                    case storm::models::MDP:
-                        LOG4CPLUS_INFO(logger, "Model is an MDP.");
-                        modelchecker = createPrctlModelChecker(*model->as<storm::models::Mdp<double>>());
-                        checkPrctlFormulae(*modelchecker);
-                        break;
-                    case storm::models::CTMC:
-                        LOG4CPLUS_INFO(logger, "Model is a CTMC.");
-                        LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
-                        break;
-                    case storm::models::CTMDP:
-                        LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
-                        LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
-                        break;
-                    case storm::models::MA:
-                        LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
-                        break;
-                    case storm::models::Unknown:
-                    default:
-                        LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
-                        break;
-				}
-                
-				if (modelchecker != nullptr) {
-					delete modelchecker;
-				}
+                else if (s->isSet("reachability"))
+                {
+                    LOG4CPLUS_ERROR(logger, "Only supported for parameteric systems.");
+                }
             }
         }
         
