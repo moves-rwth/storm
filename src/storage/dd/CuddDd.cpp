@@ -55,6 +55,10 @@ namespace storm {
             return result;
         }
         
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator-() const {
+            return this->getDdManager()->getZero() - *this;
+        }
+        
         Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator-=(Dd<DdType::CUDD> const& other) {
             this->cuddAdd -= other.getCuddAdd();
             
@@ -79,10 +83,24 @@ namespace storm {
             return *this;
         }
         
-        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator~() const {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator!() const {
             Dd<DdType::CUDD> result(*this);
             result.complement();
             return result;
+        }
+
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator&&(Dd<DdType::CUDD> const& other) const {
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
+            
+            // Rewrite a and b to not((not a) or (not b)). 
+            return Dd<DdType::CUDD>(this->getDdManager(), ~(~this->getCuddAdd()).Or(~other.getCuddAdd()), metaVariableNames);
+        }
+        
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator||(Dd<DdType::CUDD> const& other) const {
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Or(other.getCuddAdd()), metaVariableNames);
         }
         
         Dd<DdType::CUDD>& Dd<DdType::CUDD>::complement() {
@@ -194,6 +212,14 @@ namespace storm {
             this->cuddAdd = this->cuddAdd.MaxAbstract(cubeDd.getCuddAdd());
         }
         
+        bool Dd<DdType::CUDD>::equalModuloPrecision(Dd<DdType::CUDD> const& other, double precision, bool relative) const {
+            if (relative) {
+                return this->getCuddAdd().EqualSupNormRel(other.getCuddAdd(), precision);
+            } else {
+                return this->getCuddAdd().EqualSupNorm(other.getCuddAdd(), precision);
+            }
+        }
+        
         void Dd<DdType::CUDD>::swapVariables(std::vector<std::pair<std::string, std::string>> const& metaVariablePairs) {
             std::vector<ADD> from;
             std::vector<ADD> to;
@@ -230,7 +256,7 @@ namespace storm {
             this->cuddAdd = this->cuddAdd.SwapVariables(from, to);
         }
         
-        Dd<DdType::CUDD> Dd<DdType::CUDD>::multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames) {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames) const {
             std::vector<ADD> summationDdVariables;
             
             // Create the CUDD summation variables.
@@ -358,9 +384,32 @@ namespace storm {
 			if (filename.empty()) {
 				this->getDdManager()->getCuddManager().DumpDot(cuddAddVector);
             } else {
+                // Build the name input of the DD.
+                std::vector<char*> ddNames;
+                std::string ddName("f");
+                ddNames.push_back(new char[ddName.size() + 1]);
+                std::copy(ddName.c_str(), ddName.c_str() + 2, ddNames.back());
+                
+                // Now build the variables names.
+                std::vector<std::string> ddVariableNamesAsStrings = this->getDdManager()->getDdVariableNames();
+                std::vector<char*> ddVariableNames;
+                for (auto const& element : ddVariableNamesAsStrings) {
+                    ddVariableNames.push_back(new char[element.size() + 1]);
+                    std::copy(element.c_str(), element.c_str() + element.size() + 1, ddVariableNames.back());
+                }
+                
+                // Open the file, dump the DD and close it again.
                 FILE* filePointer = fopen(filename.c_str() , "w");
-				this->getDdManager()->getCuddManager().DumpDot(cuddAddVector, nullptr, nullptr, filePointer);
+				this->getDdManager()->getCuddManager().DumpDot(cuddAddVector, &ddVariableNames[0], &ddNames[0], filePointer);
                 fclose(filePointer);
+                
+                // Finally, delete the names.
+                for (char* element : ddNames) {
+                    delete element;
+                }
+                for (char* element : ddVariableNames) {
+                    delete element;
+                }
             }
         }
         

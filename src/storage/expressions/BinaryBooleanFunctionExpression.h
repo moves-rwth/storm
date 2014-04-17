@@ -11,7 +11,7 @@ namespace storm {
             /*!
              * An enum type specifying the different operators applicable.
              */
-            enum class OperatorType {And, Or, Implies, Iff};
+            enum class OperatorType {And, Or, Xor, Implies, Iff};
             
             /*!
              * Creates a binary boolean function expression with the given return type, operands and operator.

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <string>
 #include <algorithm>
 
 #include "src/storage/dd/CuddDdManager.h"
@@ -44,14 +45,14 @@ namespace storm {
             if (value & (1ull << (ddVariables.size() - 1))) {
                 result = ddVariables[0];
             } else {
-                result = ~ddVariables[0];
+                result = !ddVariables[0];
             }
             
             for (std::size_t i = 1; i < ddVariables.size(); ++i) {
                 if (value & (1ull << (ddVariables.size() - i - 1))) {
                     result *= ddVariables[i];
                 } else {
-                    result *= ~ddVariables[i];
+                    result *= !ddVariables[i];
                 }
             }
                         
@@ -178,6 +179,28 @@ namespace storm {
         
         Cudd& DdManager<DdType::CUDD>::getCuddManager() {
             return this->cuddManager;
+        }
+        
+        std::vector<std::string> DdManager<DdType::CUDD>::getDdVariableNames() const {
+            // First, we initialize a list DD variables and their names.
+            std::vector<std::pair<ADD, std::string>> variableNamePairs;
+            for (auto const& nameMetaVariablePair : this->metaVariableMap) {
+                DdMetaVariable<DdType::CUDD> const& metaVariable = nameMetaVariablePair.second;
+                for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
+                    variableNamePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), metaVariable.getName() + "." + std::to_string(variableIndex));
+                }
+            }
+            
+            // Then, we sort this list according to the indices of the ADDs.
+            std::sort(variableNamePairs.begin(), variableNamePairs.end(), [](std::pair<ADD, std::string> const& a, std::pair<ADD, std::string> const& b) { return a.first.getNode()->index < b.first.getNode()->index; });
+            
+            // Now, we project the sorted vector to its second component.
+            std::vector<std::string> result;
+            for (auto const& element : variableNamePairs) {
+                result.push_back(element.second);
+            }
+            
+            return result;
         }
     }
 }

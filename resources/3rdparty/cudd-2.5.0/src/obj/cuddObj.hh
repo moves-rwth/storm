@@ -426,8 +426,8 @@ public:
     ADD TimesPlus(const ADD& B, std::vector<ADD> z) const;
     ADD Triangle(const ADD& g, std::vector<ADD> z) const;
     ADD Eval(int * inputs) const;
-    bool EqualSupNorm(const ADD& g, CUDD_VALUE_TYPE tolerance, int pr) const;
-
+    bool EqualSupNorm(const ADD& g, CUDD_VALUE_TYPE tolerance, int pr = 0) const;
+    bool EqualSupNormRel(const ADD& g, CUDD_VALUE_TYPE tolerance, int pr = 0) const;
 }; // ADD
 
 
