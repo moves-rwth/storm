@@ -388,14 +388,14 @@ namespace storm {
                 std::vector<char*> ddNames;
                 std::string ddName("f");
                 ddNames.push_back(new char[ddName.size() + 1]);
-                memcpy(ddNames.back(), ddName.c_str(), 2);
+                std::copy(ddName.c_str(), ddName.c_str() + 2, ddNames.back());
                 
                 // Now build the variables names.
                 std::vector<std::string> ddVariableNamesAsStrings = this->getDdManager()->getDdVariableNames();
                 std::vector<char*> ddVariableNames;
                 for (auto const& element : ddVariableNamesAsStrings) {
                     ddVariableNames.push_back(new char[element.size() + 1]);
-                    memcpy(ddVariableNames.back(), element.c_str(), element.size() + 1);
+                    std::copy(element.c_str(), element.c_str() + element.size() + 1, ddVariableNames.back());
                 }
                 
                 // Open the file, dump the DD and close it again.
